@@ -4,9 +4,6 @@
 .. module:: netrc
    :synopsis: Loading of .netrc files.
 
-.. moduleauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/netrc.py`
 
 --------------
@@ -40,7 +37,7 @@ the Unix :program:`ftp` program and other FTP clients.
       :file:`.netrc` file when *file* is not passed as argument.
 
    .. versionchanged:: 3.10
-      :class:`netrc` try UTF-8 encoding before using locale specific
+      :class:`~netrc.netrc` try UTF-8 encoding before using locale specific
       encoding.
       The entry in the netrc file no longer needs to contain all tokens.  The missing
       tokens' value default to an empty string.  All the tokens and their values now

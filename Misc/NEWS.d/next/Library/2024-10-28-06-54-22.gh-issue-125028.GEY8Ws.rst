@@ -1,1 +1,0 @@
-:data:`functools.Placeholder` cannot be passed to :func:`functools.partial` as a keyword argument.

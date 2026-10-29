@@ -5130,7 +5130,7 @@ Ensure line-endings are respected when using lib2to3.
 .. section: Library
 
 Have :func:`importlib.resources.contents` and
-:meth:`importlib.abc.ResourceReader.contents` return an :term:`iterable`
+:meth:`!importlib.abc.ResourceReader.contents` return an :term:`iterable`
 instead of an :term:`iterator`.
 
 ..

@@ -1,3 +1,0 @@
-Change :c:func:`!PyThread_allocate_lock` implementation to ``PyMutex``.
-On Windows, :c:func:`!PyThread_acquire_lock_timed` now supports the *intr_flag*
-parameter: it can be interrupted. Patch by Victor Stinner.

@@ -19,7 +19,7 @@ registry and several convenience methods for manipulating this registry.
 Instances of :class:`Charset` are used in several other modules within the
 :mod:`email` package.
 
-Import this class from the :mod:`email.charset` module.
+Import this class from the :mod:`!email.charset` module.
 
 
 .. class:: Charset(input_charset=DEFAULT_CHARSET)
@@ -164,7 +164,7 @@ Import this class from the :mod:`email.charset` module.
       This method allows you to compare two :class:`Charset` instances for
       inequality.
 
-The :mod:`email.charset` module also provides the following functions for adding
+The :mod:`!email.charset` module also provides the following functions for adding
 new entries to the global character set, alias, and codec registries:
 
 
@@ -183,8 +183,8 @@ new entries to the global character set, alias, and codec registries:
 
    Optional *output_charset* is the character set that the output should be in.
    Conversions will proceed from input charset, to Unicode, to the output charset
-   when the method :meth:`Charset.convert` is called.  The default is to output in
-   the same character set as the input.
+   when the method :meth:`Charset.body_encode` is called.  The default is to
+   output in the same character set as the input.
 
    Both *input_charset* and *output_charset* must have Unicode codec entries in the
    module's character set-to-codec mapping; use :func:`add_codec` to add codecs the

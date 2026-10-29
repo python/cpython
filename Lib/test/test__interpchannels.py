@@ -6,7 +6,7 @@ import threading
 import time
 import unittest
 
-from test.support import import_helper, skip_if_sanitizer
+from test.support import import_helper
 
 _channels = import_helper.import_module('_interpchannels')
 from concurrent.interpreters import _crossinterp
@@ -365,7 +365,6 @@ class ChannelIDTests(TestBase):
         #self.assertIsNot(got, obj)
 
 
-@skip_if_sanitizer('gh-129824: race on _waiting_release', thread=True)
 class ChannelTests(TestBase):
 
     def test_create_cid(self):
@@ -382,6 +381,38 @@ class ChannelTests(TestBase):
         self.assertEqual(id2, int(id1) + 1)
         self.assertEqual(id3, int(id2) + 1)
         self.assertEqual(set(after) - set(before), {id1, id2, id3})
+
+    def test_channel_list_all_closed(self):
+        id1 = _channels.create()
+        id2 = _channels.create()
+        id3 = _channels.create()
+        before = _channels.list_all()
+        expected = [info for info in before if info[0] != id2]
+        _channels.close(id2, force=True)
+        after = _channels.list_all()
+        self.assertEqual(set(after), set(expected))
+        self.assertEqual(len(after), len(before) - 1)
+
+    def test_channel_list_all_destroyed(self):
+        id1 = _channels.create()
+        id2 = _channels.create()
+        id3 = _channels.create()
+        before = _channels.list_all()
+        expected = [info for info in before if info[0] != id2]
+        _channels.destroy(id2)
+        after = _channels.list_all()
+        self.assertEqual(set(after), set(expected))
+        self.assertEqual(len(after), len(before) - 1)
+
+    def test_channel_list_all_released(self):
+        id1 = _channels.create()
+        id2 = _channels.create()
+        id3 = _channels.create()
+        before = _channels.list_all()
+        _channels.release(id2, send=True, recv=True)
+        after = _channels.list_all()
+        self.assertEqual(set(after), set(before))
+        self.assertEqual(len(after), len(before))
 
     def test_ids_global(self):
         id1 = _interpreters.create()

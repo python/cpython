@@ -15,6 +15,7 @@ Here is the definition of :c:type:`PyTypeObject`, with some fields only used in
 :ref:`debug builds <debug-build>` omitted:
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 Now that's a *lot* of methods.  Don't worry too much though -- if you have
@@ -285,7 +286,7 @@ be read-only or read-write.  The structures in the table are defined as::
    typedef struct PyMemberDef {
        const char *name;
        int         type;
-       int         offset;
+       Py_ssize_t  offset;
        int         flags;
        const char *doc;
    } PyMemberDef;
@@ -559,6 +560,8 @@ For an object to be weakly referenceable, the extension type must set the
 ``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
 field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
 be left as zero.
+
+If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
 
 Concretely, here is how the statically declared type object would look::
 

@@ -10,6 +10,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import control_characters_c0
 import os
 import socket
 try:
@@ -466,6 +467,25 @@ Connection: close
             finally:
                 self.unfakehttp()
 
+    def test_http_error_attribute_values(self):
+        hdrs = {
+            "Authorization": "Bearer foobar",
+            "Accept": "application/json"
+        }
+        err = urllib.error.HTTPError("http://something", 404, "foo", hdrs, None)
+        self.assertEqual(err.filename, "http://something")
+        self.assertEqual(err.code, 404)
+        self.assertEqual(err.msg, "foo")
+        self.assertEqual(err.reason, "foo")
+        self.assertEqual(err.hdrs, hdrs)
+        self.assertEqual(err.headers, hdrs)
+        err.close()
+
+    def test_http_error_default_fp(self):
+        err = urllib.error.HTTPError("http://something", 404, "foo", {}, None)
+        self.assertIsInstance(err.fp, io.BytesIO)
+        err.close()
+
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
         # data. (#1680230)
@@ -511,6 +531,11 @@ Connection: close
             urllib.request.urlopen('ftp://localhost/a/file/which/doesnot/exists.py')
         self.assertFalse(e.exception.filename)
         self.assertTrue(e.exception.reason)
+
+    def test_url_error_stringified(self):
+        reason = 'sixseven'
+        err = urllib.error.URLError(reason)
+        self.assertEqual(str(err), f'<urlopen error {reason}>')
 
 
 class urlopen_DataTests(unittest.TestCase):
@@ -590,6 +615,13 @@ class urlopen_DataTests(unittest.TestCase):
         # missing padding character
         self.assertRaises(ValueError,urllib.request.urlopen,'data:;base64,Cg=')
 
+    def test_invalid_mediatype(self):
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html;{c0},data')
+        for c0 in control_characters_c0():
+            self.assertRaises(ValueError,urllib.request.urlopen,
+                              f'data:text/html{c0};base64,ZGF0YQ==')
 
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
@@ -773,6 +805,61 @@ FF
                 urllib.request.urlretrieve(support.TEST_HTTP_URL)
             finally:
                 self.unfakehttp()
+
+
+class urlcleanup_Tests(unittest.TestCase, FakeHTTPMixin):
+    """Test urllib.request.urlcleanup()"""
+
+    def setUp(self):
+        self.addCleanup(urllib.request.urlcleanup)
+
+    def urlretrieve(self):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\ndata')
+        try:
+            filename, headers = urllib.request.urlretrieve(
+                support.TEST_HTTP_URL)
+        finally:
+            self.unfakehttp()
+        self.addCleanup(os_helper.unlink, filename)
+        return filename
+
+    def fake_urlopen(self, data):
+        self.fakehttp(b'HTTP/1.1 200 OK\r\n\r\n' + data)
+        try:
+            with urllib.request.urlopen(support.TEST_HTTP_URL) as fp:
+                return fp.read()
+        finally:
+            self.unfakehttp()
+
+    def test_temporary_files(self):
+        filename = self.urlretrieve()
+        self.assertTrue(os.path.exists(filename))
+
+        urllib.request.urlcleanup()
+        self.assertFalse(os.path.exists(filename))
+
+        # A file created after the cleanup is not deleted.
+        os_helper.create_empty_file(filename)
+        urllib.request.urlcleanup()
+        self.assertTrue(os.path.exists(filename))
+
+    def test_opener(self):
+        # The implicitly created opener supports http.
+        self.assertEqual(self.fake_urlopen(b'first'), b'first')
+
+        # An installed opener replaces it and supports only its handlers.
+        opener = urllib.request.OpenerDirector()
+        opener.add_handler(urllib.request.DataHandler())
+        opener.add_handler(urllib.request.UnknownHandler())
+        urllib.request.install_opener(opener)
+        with urllib.request.urlopen('data:,hello') as fp:
+            self.assertEqual(fp.read(), b'hello')
+        with self.assertRaises(urllib.error.URLError):
+            self.fake_urlopen(b'')
+
+        # urlcleanup() resets the opener.
+        urllib.request.urlcleanup()
+        self.assertEqual(self.fake_urlopen(b'second'), b'second')
 
 
 class QuotingTests(unittest.TestCase):
@@ -1526,6 +1613,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
         self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+        self.assertEqual(fn('foo?bar'), 'foo')
+        self.assertEqual(fn('foo#bar'), 'foo')
+        self.assertEqual(fn('foo?bar=baz'), 'foo')
+        self.assertEqual(fn('foo?bar#baz'), 'foo')
+        self.assertEqual(fn('foo%3Fbar'), 'foo?bar')
+        self.assertEqual(fn('foo%23bar'), 'foo#bar')
+        self.assertEqual(fn('foo%3Fbar%3Dbaz'), 'foo?bar=baz')
+        self.assertEqual(fn('foo%3Fbar%23baz'), 'foo?bar#baz')
 
     def test_url2pathname_require_scheme(self):
         sep = os.path.sep
@@ -1582,6 +1677,10 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn('//C:'), 'C:')
+        self.assertEqual(fn('//C:/'), 'C:\\')
+        self.assertEqual(fn('//C:\\'), 'C:\\')
+        self.assertEqual(fn('//C:80/'), 'C:80\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')

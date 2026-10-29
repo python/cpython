@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -287,12 +287,18 @@ class PlatformTest(unittest.TestCase):
             if sys.platform == "android":
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
-            elif sys.platform == "ios":
+            elif support.is_apple_mobile:
                 # Platform module needs ctypes for full operation. If ctypes
                 # isn't available, there's no ObjC module, and dummy values are
                 # returned.
                 if _ctypes:
-                    self.assertIn(res.system, {"iOS", "iPadOS"})
+                    if sys.platform == "ios":
+                        # iPads also identify as iOS
+                        self.assertIn(res.system, {"iOS", "iPadOS"})
+                    else:
+                        # All other platforms - sys.platform is the lower case
+                        # form of system (e.g., visionOS->visionos)
+                        self.assertEqual(res.system.lower(), sys.platform)
                     self.assertEqual(res.release, platform.ios_ver().release)
                 else:
                     self.assertEqual(res.system, "")
@@ -465,7 +471,7 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
@@ -485,8 +491,8 @@ class PlatformTest(unittest.TestCase):
     def test_ios_ver(self):
         result = platform.ios_ver()
 
-        # ios_ver is only fully available on iOS where ctypes is available.
-        if sys.platform == "ios" and _ctypes:
+        # ios_ver is only fully available on Apple mobile platorms where ctypes is available.
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"} and _ctypes:
             system, release, model, is_simulator = result
             # Result is a namedtuple
             self.assertEqual(result.system, system)
@@ -498,7 +504,10 @@ class PlatformTest(unittest.TestCase):
             # ios_ver(), so we check that the values are broadly what we expect.
 
             # System is either iOS or iPadOS, depending on the test device
-            self.assertIn(system, {"iOS", "iPadOS"})
+            if sys.platform == "ios":
+                self.assertIn(system, {"iOS", "iPadOS"})
+            else:
+                self.assertEqual(system.lower(), sys.platform)
 
             # Release is a numeric version specifier with at least 2 parts
             parts = release.split(".")
@@ -508,11 +517,17 @@ class PlatformTest(unittest.TestCase):
             # If this is a simulator, we get a high level device descriptor
             # with no identifying model number. If this is a physical device,
             # we get a model descriptor like "iPhone13,1"
+            devices = {
+                "ios": {"iPhone", "iPad"},
+                "tvos": {"Apple TV"},
+                "visionos": {"Apple Vision Pro"},
+                "watchos": {"Apple Watch"},
+            }[sys.platform]
             if is_simulator:
-                self.assertIn(model, {"iPhone", "iPad"})
+                self.assertIn(model, devices)
             else:
                 self.assertTrue(
-                    (model.startswith("iPhone") or model.startswith("iPad"))
+                    any(model.startswith(d) for d in devices)
                     and "," in model
                 )
 
@@ -532,8 +547,23 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(override.model, "Whiz")
             self.assertTrue(override.is_simulator)
 
-    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
+        if support.is_emscripten:
+            import tomllib
+            from pathlib import Path
+
+            # Get expected emscripten version from emscripten config
+            config_path = (
+                Path(__file__).parents[2] / "Platforms/emscripten/config.toml"
+            )
+            with open(config_path, "rb") as fp:
+                emscripten_version = tomllib.load(fp)["emscripten-version"]
+
+            self.assertEqual(
+                platform.libc_ver(), ("emscripten", emscripten_version)
+            )
+
+            return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
@@ -565,6 +595,10 @@ class PlatformTest(unittest.TestCase):
                 # musl uses semver, but we accept some variations anyway:
                 (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
+                (b'libc.musl.so.1', ('musl', '1')),
+                (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -583,6 +617,14 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0', ('glibc', '1.23.4')),
                 (b'libc.so.2.4\0libc.so.9\0libc.so.23.1\0', ('libc', '23.1')),
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
+                (
+                    b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
             ):
             with open(filename, 'wb') as f:
@@ -762,13 +804,14 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
-            output = io.StringIO()
             # suppress argparse error message
             with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
-            self.assertStartsWith(output, "usage: ")
+        self.assertStartsWith(output.getvalue(), "usage: ")
 
     def test_invocation(self):
         flags = (

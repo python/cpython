@@ -131,10 +131,11 @@ we also call *flavours*:
       >>> PurePath(Path('foo'), Path('bar'))
       PurePosixPath('foo/bar')
 
-   When *pathsegments* is empty, the current directory is assumed::
+   When *pathsegments* is empty or consists only of empty strings,
+   the current directory is assumed::
 
-      >>> PurePath()
-      PurePosixPath('.')
+      >>> PurePath(), PurePath('')
+      (PurePosixPath('.'), PurePosixPath('.'))
 
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
@@ -306,12 +307,27 @@ Methods and properties
 
    from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
+The :attr:`~PurePath.parent`, :attr:`~PurePath.name`,
+:attr:`~PurePath.stem`, and :attr:`~PurePath.suffix` properties describe
+different parts of a path.  For example, given::
+
+   >>> p = PurePosixPath('/srv/holy/grail.tar.gz')
+
+.. image:: pathlib-parts.svg
+   :align: center
+   :class: invert-in-dark-mode
+   :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
+         PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
+         p.stem is 'grail.tar', and p.suffix is '.gz'.
+
+The stem excludes only the final suffix: in this example, it includes ``.tar``.
+
 Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -486,6 +502,10 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').stem
       'library'
 
+   .. versionchanged:: 3.14
+
+      A single dot ("``.``") is considered a valid suffix.
+
 
 .. method:: PurePath.as_posix()
 
@@ -542,20 +562,6 @@ Pure paths provide the following methods and properties:
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
 
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
-
 .. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
@@ -580,10 +586,23 @@ Pure paths provide the following methods and properties:
       True
       >>> PurePath('a/b.py').full_match('*.py')
       False
-      >>> PurePath('/a/b/c.py').full_match('/a/**')
-      True
       >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
+      >>> PurePath('/a/b/c.py').full_match('/a/**')
+      True
+
+   Patterns ending in "``/**``", as in the example above, may surprise when
+   passed to ``full_match``. Even though "``**``" can match 0 segments,
+   "``.../**``" requires a separator to match. Hence "``/a/**``" does not
+   match path "``/a``". Since :class:`PurePath` drops trailing slashes, this
+   pattern also does not match "``/a/``".
+
+   ::
+
+      >>> PurePath('/a').full_match('/a/**')
+      False
+      >>> PurePath('/a/').full_match('/a/**')
+      False
 
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
@@ -1050,8 +1069,8 @@ Querying file type and status
 
 .. method:: Path.exists(*, follow_symlinks=True)
 
-   Return ``True`` if the path points to an existing file or directory.
-   ``False`` will be returned if the path is invalid, inaccessible or missing.
+   Return ``True`` if the path points to an existing file or directory and
+   ``False`` if the path is invalid, inaccessible or missing.
    Use :meth:`Path.stat` to distinguish between these cases.
 
    This method normally follows symlinks; to check if a symlink exists, add
@@ -1059,6 +1078,8 @@ Querying file type and status
 
    ::
 
+      >>> Path('').exists()  # The current directory.
+      True
       >>> Path('.').exists()
       True
       >>> Path('setup.py').exists()
@@ -1276,6 +1297,8 @@ Reading and writing files
       >>> p.read_text()
       'Text file contents'
 
+   Return the number of characters written.
+
    An existing file of the same name is overwritten. The optional parameters
    have the same meaning as in :func:`open`.
 
@@ -1295,6 +1318,8 @@ Reading and writing files
       20
       >>> p.read_bytes()
       b'Binary file contents'
+
+   Return the number of bytes written.
 
    An existing file of the same name is overwritten.
 
@@ -1345,6 +1370,10 @@ Reading directories
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
 
@@ -1356,6 +1385,11 @@ Reading directories
    By default, or when the *recurse_symlinks* keyword-only argument is set to
    ``False``, this method follows symlinks except when expanding "``**``"
    wildcards. Set *recurse_symlinks* to ``True`` to always follow symlinks.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
@@ -1378,6 +1412,15 @@ Reading directories
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. note::
+      The paths are returned in no particular order.
+      If you need a specific order, sort the results.
+
+   .. note::
+      Any :exc:`OSError` exceptions raised from scanning the filesystem are
+      suppressed. This includes :exc:`PermissionError` when accessing
+      directories without read permission.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
@@ -1506,7 +1549,8 @@ Creating files and directories
       :meth:`~Path.write_bytes` methods are often used to create files.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, \
+                       parent_mode=None)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process's ``umask`` value to determine the file mode
@@ -1516,6 +1560,12 @@ Creating files and directories
    If *parents* is true, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parent_mode* is not ``None``, it is used as the mode for any
+   newly-created, intermediate-level directories when *parents* is true.
+   Like *mode*, it is combined with the process's ``umask`` value.
+   Otherwise, intermediate directories are created with the default
+   permissions (also subject to the umask).
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
@@ -1529,6 +1579,9 @@ Creating files and directories
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
+
+   .. versionadded:: 3.15
+      The *parent_mode* parameter.
 
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
@@ -1774,6 +1827,8 @@ The following wildcards are supported in patterns for
 
 ``**`` (entire segment)
   Matches any number of file or directory segments, including zero.
+  Note that in :meth:`~PurePath.full_match`, "``a/**``" does not match
+  "``a``", whereas :meth:`~Path.glob` yields "``a``" for that pattern.
 ``*`` (entire segment)
   Matches one file or directory segment.
 ``*`` (part of a segment)
@@ -1889,7 +1944,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
 =====================================   ==============================================
-:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+:mod:`os` and :mod:`os.path`            :mod:`!pathlib`
 =====================================   ==============================================
 :func:`os.path.dirname`                 :attr:`PurePath.parent`
 :func:`os.path.basename`                :attr:`PurePath.name`
@@ -1948,7 +2003,7 @@ Protocols
    :synopsis: pathlib types for static type checking
 
 
-The :mod:`pathlib.types` module provides types for static type checking.
+The :mod:`!pathlib.types` module provides types for static type checking.
 
 .. versionadded:: 3.14
 

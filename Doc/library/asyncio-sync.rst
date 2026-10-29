@@ -157,7 +157,7 @@ Event
 
       Clear (unset) the event.
 
-      Tasks awaiting on :meth:`~Event.wait` will now block until the
+      Subsequent tasks awaiting on :meth:`~Event.wait` will now block until the
       :meth:`~Event.set` method is called again.
 
    .. method:: is_set()

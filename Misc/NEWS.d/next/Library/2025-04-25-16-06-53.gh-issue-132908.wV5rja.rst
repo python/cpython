@@ -1,2 +1,0 @@
-Add :func:`math.isnormal` and :func:`math.issubnormal` functions.  Patch by
-Sergey B Kirpichev.

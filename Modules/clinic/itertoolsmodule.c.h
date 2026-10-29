@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(batched_new__doc__,
@@ -345,6 +346,11 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
 skip_optional:
     return_value = itertools_tee_impl(module, iterable, n);
@@ -503,6 +509,36 @@ itertools_chain_from_iterable(PyObject *type, PyObject *arg)
     return return_value;
 }
 
+static PyObject *
+chain_next_impl(chainobject *self);
+
+static PyObject *
+chain_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = chain_next_impl((chainobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+product_next_impl(productobject *self);
+
+static PyObject *
+product_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = product_next_impl((productobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_combinations__doc__,
 "combinations(iterable, r)\n"
 "--\n"
@@ -569,10 +605,30 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_impl(type, iterable, r);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+combinations_next_impl(combinationsobject *self);
+
+static PyObject *
+combinations_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = combinations_next_impl((combinationsobject *)self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -643,10 +699,30 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+cwr_next_impl(cwrobject *self);
+
+static PyObject *
+cwr_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = cwr_next_impl((cwrobject *)self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -714,6 +790,21 @@ skip_optional_pos:
     return_value = itertools_permutations_impl(type, iterable, robj);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+permutations_next_impl(permutationsobject *self);
+
+static PyObject *
+permutations_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = permutations_next_impl((permutationsobject *)self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -793,14 +884,29 @@ exit:
     return return_value;
 }
 
+static PyObject *
+accumulate_next_impl(accumulateobject *self);
+
+static PyObject *
+accumulate_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = accumulate_next_impl((accumulateobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_compress__doc__,
 "compress(data, selectors)\n"
 "--\n"
 "\n"
 "Return data elements corresponding to true selector elements.\n"
 "\n"
-"Forms a shorter iterator from selected data elements using the selectors to\n"
-"choose the data elements.");
+"Forms a shorter iterator from selected data elements using the selectors\n"
+"to choose the data elements.");
 
 static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2);
@@ -965,4 +1071,19 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=999758202a532e0a input=a9049054013a1b77]*/
+
+static PyObject *
+zip_longest_next_impl(ziplongestobject *self);
+
+static PyObject *
+zip_longest_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = zip_longest_next_impl((ziplongestobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=4b55088ac24582b7 input=a9049054013a1b77]*/

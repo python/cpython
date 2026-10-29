@@ -11,19 +11,19 @@ typedef struct {
     enum {
         _PyStatus_TYPE_OK=0,
         _PyStatus_TYPE_ERROR=1,
-        _PyStatus_TYPE_EXIT=2
+        _PyStatus_TYPE_EXIT=2  // deprecated
     } _type;
     const char *func;
     const char *err_msg;
-    int exitcode;
+    Py_DEPRECATED(3.16) int exitcode;
 } PyStatus;
 
 PyAPI_FUNC(PyStatus) PyStatus_Ok(void);
 PyAPI_FUNC(PyStatus) PyStatus_Error(const char *err_msg);
 PyAPI_FUNC(PyStatus) PyStatus_NoMemory(void);
-PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
+Py_DEPRECATED(3.16) PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
 PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
-PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
+Py_DEPRECATED(3.16) PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
 PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
 
 /* --- PyWideStringList ------------------------------------------------ */
@@ -102,15 +102,14 @@ typedef struct PyPreConfig {
 
     /* Enable UTF-8 mode? (PEP 540)
 
-       Disabled by default (equals to 0).
+      If equal to 1, use the UTF-8 encoding and use "surrogateescape" for the
+      stdin & stdout error handlers.
 
-       Set to 1 by "-X utf8" and "-X utf8=1" command line options.
-       Set to 1 by PYTHONUTF8=1 environment variable.
+      Enabled by default (equal to 1; PEP 686), or if Py_UTF8Mode=1,
+      or if "-X utf8=1" or PYTHONUTF8=1.
 
-       Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
-
-       If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
+       Set to 0 by "-X utf8=0" or PYTHONUTF8=0.
+    */
     int utf8_mode;
 
     /* If non-zero, enable the Python Development Mode.
@@ -150,6 +149,7 @@ typedef struct PyConfig {
     int dump_refs;
     wchar_t *dump_refs_file;
     int malloc_stats;
+    int pymalloc_hugepages;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
     wchar_t *pycache_prefix;
@@ -191,6 +191,7 @@ typedef struct PyConfig {
     int enable_gil;
     int tlbc_enabled;
 #endif
+    int lazy_imports;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -241,6 +242,11 @@ typedef struct PyConfig {
     // PYTHON_PRESITE=package.module or -X presite=package.module
     wchar_t *run_presite;
 #endif
+
+    // If a command line option wants to exit Python, store it in this member
+    // and only process the option in Py_RunMain() instead of PyConfig_Read().
+    // If equals to 0, there is no option.
+    int _deferred_cmdline_option;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -292,7 +298,7 @@ PyAPI_FUNC(void) PyInitConfig_Free(PyInitConfig *config);
 
 PyAPI_FUNC(int) PyInitConfig_GetError(PyInitConfig* config,
     const char **err_msg);
-PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config,
+Py_DEPRECATED(3.16) PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config,
     int *exitcode);
 
 PyAPI_FUNC(int) PyInitConfig_HasOption(PyInitConfig *config,

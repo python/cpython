@@ -1,3 +1,0 @@
-Fix bug with applying :func:`copy.replace` to :mod:`ast` objects. Attributes
-that default to ``None`` were incorrectly treated as required for manually
-created AST nodes.

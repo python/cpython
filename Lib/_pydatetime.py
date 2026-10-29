@@ -55,7 +55,7 @@ def _days_before_year(year):
 
 def _days_in_month(year, month):
     "year, month -> number of days in that month in that year."
-    assert 1 <= month <= 12, month
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     if month == 2 and _is_leap(year):
         return 29
     return _DAYS_IN_MONTH[month]
@@ -213,17 +213,6 @@ def _need_normalize_century():
             _normalize_century = True
     return _normalize_century
 
-_supports_c99 = None
-def _can_support_c99():
-    global _supports_c99
-    if _supports_c99 is None:
-        try:
-            _supports_c99 = (
-                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
-        except ValueError:
-            _supports_c99 = False
-    return _supports_c99
-
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -248,6 +237,13 @@ def _wrap_strftime(object, format, timetuple):
                         freplace = '%06d' % getattr(object,
                                                     'microsecond', 0)
                     newformat.append(freplace)
+                elif ch in '123456' and format[i:i+1] == 'f':
+                    i += 1
+                    if freplace is None:
+                        freplace = '%06d' % getattr(object,
+                                                    'microsecond', 0)
+                    precision = int(ch)
+                    newformat.append(freplace[:precision])
                 elif ch == 'z':
                     if zreplace is None:
                         if hasattr(object, "utcoffset"):
@@ -283,12 +279,12 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(Zreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
-                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
-                        object.year < 1000 and _need_normalize_century()):
+                elif (ch in 'YGFC' and timetuple[0] < 1000 and
+                        _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
-                        year = object.year
+                        year = timetuple[0]
                     if ch == 'C':
                         push('{:02}'.format(year // 100))
                     else:
@@ -366,18 +362,30 @@ def _find_isoformat_datetime_separator(dtstr):
             return 8
 
 
+def _read_isoformat_component(s, n):
+    # The caller has verified the string is ASCII, so isdigit() matches only
+    # the ASCII digits accepted by the C parser.
+    if len(s) != n or not s.isdigit():
+        raise ValueError("Invalid isoformat string")
+    return int(s)
+
+
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
-    assert len(dtstr) in (7, 8, 10)
-    year = int(dtstr[0:4])
+    if len(dtstr) not in (7, 8, 10):
+        raise ValueError("Invalid isoformat string")
+    if not dtstr.isascii():
+        raise ValueError("Invalid isoformat string")
+
+    year = _read_isoformat_component(dtstr[0:4], 4)
     has_sep = dtstr[4] == '-'
 
     pos = 4 + has_sep
     if dtstr[pos:pos + 1] == "W":
         # YYYY-?Www-?D?
         pos += 1
-        weekno = int(dtstr[pos:pos + 2])
+        weekno = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
 
         dayno = 1
@@ -387,17 +395,17 @@ def _parse_isoformat_date(dtstr):
 
             pos += has_sep
 
-            dayno = int(dtstr[pos:pos + 1])
+            dayno = _read_isoformat_component(dtstr[pos:pos + 1], 1)
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
-        month = int(dtstr[pos:pos + 2])
+        month = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
         if (dtstr[pos:pos + 1] == "-") != has_sep:
             raise ValueError("Inconsistent use of dash separator")
 
         pos += has_sep
-        day = int(dtstr[pos:pos + 2])
+        day = _read_isoformat_component(dtstr[pos:pos + 2], 2)
 
         return [year, month, day]
 
@@ -412,10 +420,7 @@ def _parse_hh_mm_ss_ff(tstr):
     time_comps = [0, 0, 0, 0]
     pos = 0
     for comp in range(0, 3):
-        if (len_str - pos) < 2:
-            raise ValueError("Incomplete time component")
-
-        time_comps[comp] = int(tstr[pos:pos+2])
+        time_comps[comp] = _read_isoformat_component(tstr[pos:pos+2], 2)
 
         pos += 2
         next_char = tstr[pos:pos+1]
@@ -436,7 +441,7 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
-            if not all(map(_is_ascii_digit, tstr[pos:])):
+            if not tstr[pos:].isdigit():
                 raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
@@ -457,6 +462,8 @@ def _parse_isoformat_time(tstr):
     len_str = len(tstr)
     if len_str < 2:
         raise ValueError("Isoformat time too short")
+    if not tstr.isascii():
+        raise ValueError("Invalid isoformat string")
 
     # This is equivalent to re.search('[+-Z]', tstr), but faster
     tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1 or tstr.find('Z') + 1)
@@ -656,14 +663,6 @@ class timedelta:
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
                 milliseconds=0, minutes=0, hours=0, weeks=0):
-        # Doing this efficiently and accurately in C is going to be difficult
-        # and error-prone, due to ubiquitous overflow possibilities, and that
-        # C double doesn't have enough bits of precision to represent
-        # microseconds over 10K years faithfully.  The code here tries to make
-        # explicit where go-fast assumptions can be relied on, in order to
-        # guide the C implementation; it's way more convoluted than speed-
-        # ignoring auto-overflow-to-long idiomatic Python could be.
-
         for name, value in (
             ("days", days),
             ("seconds", seconds),
@@ -678,80 +677,35 @@ class timedelta:
                     f"unsupported type for timedelta {name} component: {type(value).__name__}"
                 )
 
-        # Final values, all integer.
-        # s and us fit in 32-bit signed ints; d isn't bounded.
-        d = s = us = 0
+        # Sum the exact number of microseconds, like the C implementation:
+        # the integer part of each float is converted exactly, and only the
+        # fractional microseconds left over are added up as a float and
+        # rounded (half to even) at the end.
+        us = 0
+        leftover = 0.0
+        for value, factor in (
+            (microseconds, 1),
+            (milliseconds, 1000),
+            (seconds, 1000000),
+            (minutes, 60*1000000),
+            (hours, 3600*1000000),
+            (days, 24*3600*1000000),
+            (weeks, 7*24*3600*1000000)
+        ):
+            if isinstance(value, float):
+                frac, whole = _math.modf(value)
+                us += int(whole) * factor
+                frac, whole = _math.modf(frac * factor)
+                us += int(whole)
+                leftover += frac
+            else:
+                us += int(value * factor)
+        if leftover:
+            n, m = leftover.as_integer_ratio()
+            us = _divide_and_round(us * m + n, m)
 
-        # Normalize everything to days, seconds, microseconds.
-        days += weeks*7
-        seconds += minutes*60 + hours*3600
-        microseconds += milliseconds*1000
-
-        # Get rid of all fractions, and normalize s and us.
-        # Take a deep breath <wink>.
-        if isinstance(days, float):
-            dayfrac, days = _math.modf(days)
-            daysecondsfrac, daysecondswhole = _math.modf(dayfrac * (24.*3600.))
-            assert daysecondswhole == int(daysecondswhole)  # can't overflow
-            s = int(daysecondswhole)
-            assert days == int(days)
-            d = int(days)
-        else:
-            daysecondsfrac = 0.0
-            d = days
-        assert isinstance(daysecondsfrac, float)
-        assert abs(daysecondsfrac) <= 1.0
-        assert isinstance(d, int)
-        assert abs(s) <= 24 * 3600
-        # days isn't referenced again before redefinition
-
-        if isinstance(seconds, float):
-            secondsfrac, seconds = _math.modf(seconds)
-            assert seconds == int(seconds)
-            seconds = int(seconds)
-            secondsfrac += daysecondsfrac
-            assert abs(secondsfrac) <= 2.0
-        else:
-            secondsfrac = daysecondsfrac
-        # daysecondsfrac isn't referenced again
-        assert isinstance(secondsfrac, float)
-        assert abs(secondsfrac) <= 2.0
-
-        assert isinstance(seconds, int)
-        days, seconds = divmod(seconds, 24*3600)
-        d += days
-        s += int(seconds)    # can't overflow
-        assert isinstance(s, int)
-        assert abs(s) <= 2 * 24 * 3600
-        # seconds isn't referenced again before redefinition
-
-        usdouble = secondsfrac * 1e6
-        assert abs(usdouble) < 2.1e6    # exact value not critical
-        # secondsfrac isn't referenced again
-
-        if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-        else:
-            microseconds = int(microseconds)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-            microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
-        assert isinstance(microseconds, int)
-        assert abs(s) <= 3 * 24 * 3600
-        assert abs(microseconds) < 3.1e6
-
-        # Just a little bit of carrying possible for microseconds and seconds.
-        seconds, us = divmod(microseconds, 1000000)
-        s += seconds
-        days, s = divmod(s, 24*3600)
-        d += days
+        s, us = divmod(us, 1000000)
+        d, s = divmod(s, 24*3600)
 
         assert isinstance(d, int)
         assert isinstance(s, int) and 0 <= s < 24*3600
@@ -1083,7 +1037,11 @@ class date:
 
     @classmethod
     def strptime(cls, date_string, format):
-        """Parse a date string according to the given format (like time.strptime())."""
+        """Parse string according to the given date format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
@@ -1120,6 +1078,8 @@ class date:
         Format using strftime().
 
         Example: "%d/%m/%Y, %H:%M:%S"
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         return _wrap_strftime(self, format, self.timetuple())
 
@@ -1310,7 +1270,7 @@ date.resolution = timedelta(days=1)
 
 
 class tzinfo:
-    """Abstract base class for time zone info classes.
+    """Abstract base class for time zone info objects.
 
     Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
@@ -1467,8 +1427,13 @@ class time:
         return self
 
     @classmethod
+
     def strptime(cls, date_string, format):
-        """string, format -> new time parsed from a string (like time.strptime())."""
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 
@@ -1559,10 +1524,11 @@ class time:
                 return 2 # arbitrary non-zero value
             else:
                 raise TypeError("cannot compare naive and aware times")
-        myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
-        othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
-        return _cmp((myhhmm, self._second, self._microsecond),
-                    (othhmm, other._second, other._microsecond))
+        myus = (((self._hour * 60 + self._minute) * 60 + self._second) * 1000000
+                + self._microsecond - myoff._to_microseconds())
+        otus = (((other._hour * 60 + other._minute) * 60 + other._second) * 1000000
+                + other._microsecond - otoff._to_microseconds())
+        return _cmp(myus, otus)
 
     def __hash__(self):
         """Hash."""
@@ -1572,17 +1538,13 @@ class time:
             else:
                 t = self
             tzoff = t.utcoffset()
-            if not tzoff:  # zero or None
+            if tzoff is None:
                 self._hashcode = hash(t._getstate()[0])
             else:
-                h, m = divmod(timedelta(hours=self.hour, minutes=self.minute) - tzoff,
-                              timedelta(hours=1))
-                assert not m % timedelta(minutes=1), "whole minute"
-                m //= timedelta(minutes=1)
-                if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond))
-                else:
-                    self._hashcode = hash((h, m, self.second, self.microsecond))
+                self._hashcode = hash(timedelta(hours=t.hour,
+                                                minutes=t.minute,
+                                                seconds=t.second,
+                                                microseconds=t.microsecond) - tzoff)
         return self._hashcode
 
     # Conversion to string
@@ -1661,6 +1623,9 @@ class time:
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
@@ -1776,7 +1741,7 @@ time.resolution = timedelta(microseconds=1)
 
 
 class datetime(date):
-    """datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])
+    """A combination of a date and a time.
 
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
@@ -1984,7 +1949,7 @@ class datetime(date):
                 if became_next_day:
                     year, month, day = date_components
                     # Only wrap day/month when it was previously valid
-                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                    if 1 <= month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
                         # Calculate midnight of the next day
                         day += 1
                         if day > days_in_month:
@@ -2209,7 +2174,11 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
@@ -2435,6 +2404,8 @@ def _isoweek1monday(year):
 
 
 class timezone(tzinfo):
+    """Fixed offset from UTC implementation of tzinfo."""
+
     __slots__ = '_offset', '_name'
 
     # Sentinel value to disallow None
@@ -2514,6 +2485,11 @@ class timezone(tzinfo):
             return self._name
         raise TypeError("tzname() argument must be a datetime instance"
                         " or None")
+
+    @property
+    def name(self):
+        """Name given when the timezone was created."""
+        return self._name
 
     def dst(self, dt):
         if isinstance(dt, datetime) or dt is None:

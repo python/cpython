@@ -1,3 +1,0 @@
-Simplify and improve :func:`typing.evaluate_forward_ref`. It now no longer
-raises errors on certain invalid types. In several situations, it is now
-able to evaluate forward references that were previously unsupported.

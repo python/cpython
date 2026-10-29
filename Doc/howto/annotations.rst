@@ -4,8 +4,6 @@
 Annotations Best Practices
 **************************
 
-:author: Larry Hastings
-
 .. topic:: Abstract
 
   This document is designed to encapsulate the best practices
@@ -154,7 +152,7 @@ on an arbitrary object ``o``:
   as the ``globals``, and ``dict(vars(o))`` as the ``locals``,
   when calling :func:`eval`.
 * If ``o`` is a wrapped callable using :func:`functools.update_wrapper`,
-  :func:`functools.wraps`, or :func:`functools.partial`, iteratively
+  :deco:`functools.wraps`, or :func:`functools.partial`, iteratively
   unwrap it by accessing either ``o.__wrapped__`` or ``o.func`` as
   appropriate, until you have found the root unwrapped function.
 * If ``o`` is a callable (but not a class), use

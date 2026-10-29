@@ -26,6 +26,16 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 digest_size = None
 
 
+def _is_shake_constructor(digest_like):
+    if isinstance(digest_like, str):
+        name = digest_like
+    else:
+        h = digest_like() if callable(digest_like) else digest_like.new()
+        if not isinstance(name := getattr(h, "name", None), str):
+            return False
+    return name.startswith(("shake", "SHAKE"))
+
+
 def _get_digest_constructor(digest_like):
     if callable(digest_like):
         return digest_like
@@ -37,6 +47,27 @@ def _get_digest_constructor(digest_like):
         def digest_wrapper(d=b''):
             return digest_like.new(d)
     return digest_wrapper
+
+
+def _select_blocksize(obj, default, stacklevel=3):
+    if hasattr(obj, 'block_size'):
+        blocksize = obj.block_size
+        if blocksize < 16:
+            import warnings
+
+            warnings.warn(f"block_size of {blocksize} seems too small; "
+                          f"using our default of {default}.",
+                          RuntimeWarning, stacklevel=stacklevel)
+            blocksize = default
+    else:
+        import warnings
+
+        warnings.warn("No block_size attribute on given digest object; "
+                      f"Assuming {default}.",
+                      RuntimeWarning, stacklevel=stacklevel)
+        blocksize = default
+    return blocksize
+
 
 
 class HMAC:
@@ -106,28 +137,16 @@ class HMAC:
         self.block_size = self._hmac.block_size
 
     def _init_old(self, key, msg, digestmod):
-        import warnings
-
         digest_cons = _get_digest_constructor(digestmod)
+        if _is_shake_constructor(digest_cons):
+            raise ValueError(f"unsupported hash algorithm {digestmod}")
 
         self._hmac = None
         self._outer = digest_cons()
         self._inner = digest_cons()
         self.digest_size = self._inner.digest_size
 
-        if hasattr(self._inner, 'block_size'):
-            blocksize = self._inner.block_size
-            if blocksize < 16:
-                warnings.warn(f"block_size of {blocksize} seems too small; "
-                              f"using our default of {self.blocksize}.",
-                              RuntimeWarning, 2)
-                blocksize = self.blocksize  # pragma: no cover
-        else:
-            warnings.warn("No block_size attribute on given digest object; "
-                          f"Assuming {self.blocksize}.",
-                          RuntimeWarning, 2)
-            blocksize = self.blocksize  # pragma: no cover
-
+        blocksize = _select_blocksize(self._inner, self.blocksize)
         if len(key) > blocksize:
             key = digest_cons(key).digest()
 
@@ -159,6 +178,7 @@ class HMAC:
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
+        other.block_size = self.block_size
         if self._hmac:
             other._hmac = self._hmac.copy()
             other._inner = other._outer = None
@@ -229,6 +249,14 @@ def digest(key, msg, digest):
     if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
+        except OverflowError:
+            # OpenSSL's HMAC limits the size of the key to INT_MAX.
+            # Instead of falling back to HACL* implementation which
+            # may still not be supported due to a too large key, we
+            # directly switch to the pure Python fallback instead
+            # even if we could have used streaming HMAC for small keys
+            # but large messages.
+            return _compute_digest_fallback(key, msg, digest)
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
@@ -236,16 +264,25 @@ def digest(key, msg, digest):
         try:
             return _hmac.compute_digest(key, msg, digest)
         except (OverflowError, _hmac.UnknownHashError):
+            # HACL* HMAC limits the size of the key to UINT32_MAX
+            # so we fallback to the pure Python implementation even
+            # if streaming HMAC may have been used for small keys
+            # and large messages.
             pass
 
     return _compute_digest_fallback(key, msg, digest)
 
 
 def _compute_digest_fallback(key, msg, digest):
+    if not isinstance(key, (bytes, bytearray)):
+        raise TypeError(f"key: expected bytes or bytearray, "
+                        f"but got {type(key).__name__!r}")
     digest_cons = _get_digest_constructor(digest)
+    if _is_shake_constructor(digest_cons):
+        raise ValueError(f"unsupported hash algorithm {digest}")
     inner = digest_cons()
     outer = digest_cons()
-    blocksize = getattr(inner, 'block_size', 64)
+    blocksize = _select_blocksize(inner, HMAC.blocksize)
     if len(key) > blocksize:
         key = digest_cons(key).digest()
     key = key.ljust(blocksize, b'\0')

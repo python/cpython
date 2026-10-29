@@ -24,8 +24,8 @@ import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
-from test.support import os_helper
-from test.support import findfile, check__all__
+from test.support import (check__all__, cpython_only, findfile,
+                          import_helper, os_helper)
 from test.support.os_helper import FakePath, TESTFN
 
 
@@ -613,6 +613,22 @@ class XmlgenTest:
         self.assertEqual(result.getvalue(), self.xml(
            '<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri))
+
+    def test_xmlgen_ns_escaped_uri(self):
+        uri = 'http://example.org/?a="1"&b=<2>'
+        result = self.ioclass()
+        gen = XMLGenerator(result)
+
+        gen.startDocument()
+        gen.startPrefixMapping("ns1", uri)
+        gen.startElementNS((uri, "doc"), "ns1:doc", {})
+        gen.endElementNS((uri, "doc"), "ns1:doc")
+        gen.endPrefixMapping("ns1")
+        gen.endDocument()
+
+        self.assertEqual(result.getvalue(), self.xml(
+            """<ns1:doc xmlns:ns1='http://example.org/?a="1"&amp;b=&lt;2&gt;'>"""
+            "</ns1:doc>"))
 
     def test_xmlgen_ns_empty(self):
         result = self.ioclass()
@@ -1571,6 +1587,24 @@ class TestModuleAll(unittest.TestCase):
             'SAXReaderNotAvailable',
         )
         check__all__(self, sax, extra=extra)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        for module in (sax.expatreader, sax.handler):
+            with self.subTest(module=module):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    "'version' is deprecated and slated for removal in Python 3.20",
+                ) as cm:
+                    getattr(module, "version")
+                self.assertEqual(cm.filename, __file__)
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "xml.sax.saxutils", {"urllib.parse", "urllib.request"}
+        )
 
 
 if __name__ == "__main__":
