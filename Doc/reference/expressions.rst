@@ -848,6 +848,8 @@ appear directly in a class definition.
    ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
 
 
+.. _unpacking-comprehensions:
+
 Unpacking in comprehensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -956,39 +958,100 @@ Generator expressions
    pair: object; generator
    single: () (parentheses); generator expression
 
-A generator expression is a compact generator notation in parentheses:
+The syntax for :dfn:`generator expressions` is the same as for
+list :ref:`comprehensions <comprehensions>`, except that they are enclosed in
+parentheses instead of brackets.
+For example::
 
-.. productionlist:: python-grammar
-   generator_expression: "(" `comprehension` ")"
+   >>> iterator = (x ** 2 for x in range(10))
+   >>> iterator
+   <generator object <genexpr> at ...>
 
-A generator expression yields a new generator object.  Its syntax is the same as
-for comprehensions, except that it is enclosed in parentheses instead of
-brackets or curly braces.
+At runtime, a generator expression evaluates to a :term:`generator iterator`
+which yields the same values as the corresponding list comprehension::
 
-Variables used in the generator expression are evaluated lazily when the
-:meth:`~generator.__next__` method is called for the generator object (in the same
-fashion as normal generators).  However, the iterable expression in the
-leftmost :keyword:`!for` clause is immediately evaluated, and the
-:term:`iterator` is immediately created for that iterable, so that an error
-produced while creating the iterator will be emitted at the point where the generator expression
-is defined, rather than at the point where the first value is retrieved.
-Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
-:keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
-depend on the values obtained from the leftmost iterable. For example:
-``(x*y for x in range(10) for y in range(x, x+10))``.
+   >>> list(iterator)
+   [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-The parentheses can be omitted on calls with only one argument.  See section
-:ref:`calls` for details.
+Thus, the example above is roughly equivalent to defining and calling
+the following generator function::
+
+   def make_generator_of_squares(iterator):
+       for x in iterator:
+           yield x ** 2
+
+   make_generator_of_squares(iter(range(10)))
+
+The enclosing parentheses can be omitted in calls when the generator
+expression is the only positional argument and there are no keyword
+arguments.
+See the :ref:`Calls section <calls>` for details.
+For example::
+
+   # The parentheses after `sum` are part of the call syntax:
+   >>> sum(x ** 2 for x in range(10))
+   285
+
+   # The generator needs its own parentheses if it's not the only argument:
+   >>> sum((x ** 2 for x in range(10)), start=1000)
+   1285
+
+The iterable expression in the leftmost :keyword:`!for` clause is
+evaluated immediately, so that an error raised by this expression will be
+emitted at the point where the generator expression is defined,
+rather than at the point where the first value is retrieved::
+
+   >>> (x ** 2 for x in nonexistent_iterable)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'nonexistent_iterable' is not defined
+
+After the expression is evaluated, an iterator is created
+from the result, as if :py:func:`iter` was called on it.
+Any error raised when creating the iterator is also emitted immediately::
+
+   >>> (x ** 2 for x in None)
+   Traceback (most recent call last):
+     ...
+   TypeError: 'NoneType' object is not iterable
+
+All other expressions are evaluated lazily, in the same fashion as normal
+generators (that is, when the iterator is asked to yield a value)::
+
+   >>> iterator = (nonexistent_value for x in range(10))
+   >>> iterator
+   <generator object <genexpr> at ...>
+   >>> list(iterator)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'nonexistent_value' is not defined
+
+::
+
+   >>> iterator = (x * y for x in range(10) for y in nonexistent_iterable)
+   >>> iterator
+   <generator object <genexpr> at ...>
+   >>> list(iterator)
+   Traceback (most recent call last):
+     ...
+   NameError: name 'nonexistent_iterable' is not defined
 
 To avoid interfering with the expected operation of the generator expression
-itself, ``yield`` and ``yield from`` expressions are prohibited in the
-implicitly defined generator.
+itself, ``yield`` and ``yield from`` expressions are prohibited inside
+the implicitly nested scope.
 
 If a generator expression contains either :keyword:`!async for`
 clauses or :keyword:`await` expressions it is called an
-:dfn:`asynchronous generator expression`.  An asynchronous generator
-expression returns a new asynchronous generator object,
-which is an asynchronous iterator (see :ref:`async-iterators`).
+:dfn:`asynchronous generator expression`.
+An asynchronous generator expression returns a new asynchronous generator
+object, which is an asynchronous iterator (see :ref:`async-iterators`).
+
+The formal grammar for generator expressions is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   generator_expression: "(" `comprehension` ")"
 
 .. versionadded:: 3.6
    Asynchronous generator expressions were introduced.
@@ -1116,95 +1179,6 @@ on the right hand side of an assignment statement.
       The proposal that expanded on :pep:`492` by adding generator capabilities to
       coroutine functions.
 
-.. index:: pair: object; generator
-.. _generator-methods:
-
-Generator-iterator methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This subsection describes the methods of a generator iterator.  They can
-be used to control the execution of a generator function.
-
-Note that calling any of the generator methods below when the generator
-is already executing raises a :exc:`ValueError` exception.
-
-.. index:: pair: exception; StopIteration
-
-
-.. method:: generator.__next__()
-
-   Starts the execution of a generator function or resumes it at the last
-   executed yield expression.  When a generator function is resumed with a
-   :meth:`~generator.__next__` method, the current yield expression always
-   evaluates to :const:`None`.  The execution then continues to the next yield
-   expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:yield_list` is returned to :meth:`__next__`'s
-   caller.  If the generator exits without yielding another value, a
-   :exc:`StopIteration` exception is raised.
-
-   This method is normally called implicitly, e.g. by a :keyword:`for` loop, or
-   by the built-in :func:`next` function.
-
-
-.. method:: generator.send(value)
-
-   Resumes the execution and "sends" a value into the generator function.  The
-   *value* argument becomes the result of the current yield expression.  The
-   :meth:`send` method returns the next value yielded by the generator, or
-   raises :exc:`StopIteration` if the generator exits without yielding another
-   value.  When :meth:`send` is called to start the generator, it must be called
-   with :const:`None` as the argument, because there is no yield expression that
-   could receive the value.
-
-
-.. method:: generator.throw(value)
-            generator.throw(type[, value[, traceback]])
-
-   Raises an exception at the point where the generator was paused,
-   and returns the next value yielded by the generator function.  If the generator
-   exits without yielding another value, a :exc:`StopIteration` exception is
-   raised.  If the generator function does not catch the passed-in exception, or
-   raises a different exception, then that exception propagates to the caller.
-
-   In typical use, this is called with a single exception instance similar to the
-   way the :keyword:`raise` keyword is used.
-
-   For backwards compatibility, however, the second signature is
-   supported, following a convention from older versions of Python.
-   The *type* argument should be an exception class, and *value*
-   should be an exception instance. If the *value* is not provided, the
-   *type* constructor is called to get an instance. If *traceback*
-   is provided, it is set on the exception, otherwise any existing
-   :attr:`~BaseException.__traceback__` attribute stored in *value* may
-   be cleared.
-
-   .. versionchanged:: 3.12
-
-      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
-      may be removed in a future version of Python.
-
-.. index:: pair: exception; GeneratorExit
-
-
-.. method:: generator.close()
-
-   Raises a :exc:`GeneratorExit` exception at the point where the generator
-   function was paused (equivalent to calling ``throw(GeneratorExit)``).
-   The exception is raised by the yield expression where the generator was paused.
-   If the generator function catches the exception and returns a
-   value, this value is returned from :meth:`close`.  If the generator function
-   is already closed, or raises :exc:`GeneratorExit` (by not catching the
-   exception), :meth:`close` returns :const:`None`.  If the generator yields a
-   value, a :exc:`RuntimeError` is raised.  If the generator raises any other
-   exception, it is propagated to the caller.  If the generator has already
-   exited due to an exception or normal exit, :meth:`close` returns
-   :const:`None` and has no other effect.
-
-   .. versionchanged:: 3.13
-
-      If a generator returns a value upon being closed, the value is returned
-      by :meth:`close`.
-
 .. index:: single: yield; examples
 
 Examples
@@ -1303,90 +1277,6 @@ of a *finalizer* method see the implementation of
 
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
-
-.. index:: pair: object; asynchronous-generator
-.. _asynchronous-generator-methods:
-
-Asynchronous generator-iterator methods
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This subsection describes the methods of an asynchronous generator iterator,
-which are used to control the execution of a generator function.
-
-
-.. index:: pair: exception; StopAsyncIteration
-
-.. method:: agen.__anext__()
-   :async:
-
-   Returns an awaitable which when run starts to execute the asynchronous
-   generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
-   method, the current yield expression always evaluates to :const:`None` in the
-   returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:yield_list` of the
-   yield expression is the value of the :exc:`StopIteration` exception raised by
-   the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises a
-   :exc:`StopAsyncIteration` exception, signalling that the asynchronous
-   iteration has completed.
-
-   This method is normally called implicitly by a :keyword:`async for` loop.
-
-
-.. method:: agen.asend(value)
-   :async:
-
-   Returns an awaitable which when run resumes the execution of the
-   asynchronous generator. As with the :meth:`~generator.send` method for a
-   generator, this "sends" a value into the asynchronous generator function,
-   and the *value* argument becomes the result of the current yield expression.
-   The awaitable returned by the :meth:`asend` method will return the next
-   value yielded by the generator as the value of the raised
-   :exc:`StopIteration`, or raises :exc:`StopAsyncIteration` if the
-   asynchronous generator exits without yielding another value.  When
-   :meth:`asend` is called to start the asynchronous
-   generator, it must be called with :const:`None` as the argument,
-   because there is no yield expression that could receive the value.
-
-
-.. method:: agen.athrow(value)
-            agen.athrow(type[, value[, traceback]])
-   :async:
-
-   Returns an awaitable that raises an exception of type ``type`` at the point
-   where the asynchronous generator was paused, and returns the next value
-   yielded by the generator function as the value of the raised
-   :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, a :exc:`StopAsyncIteration` exception is
-   raised by the awaitable.
-   If the generator function does not catch the passed-in exception, or
-   raises a different exception, then when the awaitable is run that exception
-   propagates to the caller of the awaitable.
-
-   .. versionchanged:: 3.12
-
-      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
-      may be removed in a future version of Python.
-
-.. index:: pair: exception; GeneratorExit
-
-
-.. method:: agen.aclose()
-   :async:
-
-   Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
-   the asynchronous generator function at the point where it was paused.
-   If the asynchronous generator function then exits gracefully, is already
-   closed, or raises :exc:`GeneratorExit` (by not catching the exception),
-   then the returned awaitable will raise a :exc:`StopIteration` exception.
-   Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.  If the
-   asynchronous generator yields a value, a :exc:`RuntimeError` is raised
-   by the awaitable.  If the asynchronous generator raises any other exception,
-   it is propagated to the caller of the awaitable.  If the asynchronous
-   generator has already exited due to an exception or normal exit, then
-   further calls to :meth:`aclose` will return an awaitable that does nothing.
 
 .. _primaries:
 
@@ -2344,7 +2234,7 @@ some consistency rules, if possible:
 
   The last two expressions apply to totally ordered collections (e.g. to
   sequences, but not to sets or mappings). See also the
-  :func:`~functools.total_ordering` decorator.
+  :deco:`~functools.total_ordering` decorator.
 
 * The :func:`hash` result should be consistent with equality.
   Objects that are equal should either have the same hash value,

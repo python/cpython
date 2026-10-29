@@ -26,7 +26,9 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, skip_if_unlimited_stack_size
+from test.support import (skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow,
+                          skip_if_unlimited_stack_size, skip_if_huge_c_stack)
 from test.support.ast_helper import ASTTestMixin
 from test.support.import_helper import ensure_lazy_imports
 from test.test_ast.utils import to_tuple
@@ -101,6 +103,13 @@ class AST_Tests(unittest.TestCase):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_nodes_have_inline_values(self):
+        tree = ast.parse("x = f(y, z=1)")
+        for node in ast.walk(tree):
+            with self.subTest(node=type(node).__name__):
+                self.assertTrue(_testinternalcapi.has_inline_values(node))
+
     def test_AST_fields_NULL_check(self):
         # See: https://github.com/python/cpython/issues/126105
         old_value = ast.AST._fields
@@ -159,6 +168,15 @@ class AST_Tests(unittest.TestCase):
         for optval in (-1, 0, 1, 2):
             self.assertRaises(TypeError, ast.parse, ast.Constant(42),
                               optimize=optval)
+
+    def test_parse_ast_func_type(self):
+        # see gh-156689
+        tree = ast.parse('(int, str) -> bool', mode='func_type')
+        self.assertEqual(ast.dump(ast.parse(tree, mode='func_type')),
+                         ast.dump(tree))
+        self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                          mode='func_type')
+        self.assertRaises(TypeError, ast.parse, tree, mode='exec')
 
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
@@ -625,7 +643,7 @@ class AST_Tests(unittest.TestCase):
         ast.fix_missing_locations(m)
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("identifier must be of type str", str(cm.exception))
+        self.assertIn("expecting a string object", str(cm.exception))
 
     def test_invalid_constant(self):
         for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
@@ -684,6 +702,51 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.lineno, 1)
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
+
+    def test_primary_target_context(self):
+        for expression in ('factory().field[index]', 'factory()[index].field'):
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        node = ast.parse(expression).body[0].value
+                    elif context is ast.Store:
+                        node = ast.parse(f'{expression} = value').body[0].targets[0]
+                    else:
+                        node = ast.parse(f'del {expression}').body[0].targets[0]
+                    self.assertIsInstance(node.ctx, context)
+                    for child in ast.walk(node):
+                        if child is not node and hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, ast.Load)
+
+    def test_container_target_context(self):
+        cases = (
+            ('(a, [b, c])', '(a, [b, c])'),
+            ('[a, (b, c)]', '[a, (b, c)]'),
+            ('((a))', 'a'),
+            ('()', '()'),
+            ('[]', '[]'),
+        )
+        for expression, expected_segment in cases:
+            for context in (ast.Load, ast.Store, ast.Del):
+                with self.subTest(expression=expression, context=context):
+                    if context is ast.Load:
+                        source = expression
+                    elif context is ast.Store:
+                        source = f'{expression} = value'
+                    else:
+                        source = f'del {expression}'
+                    statement = ast.parse(source).body[0]
+                    node = statement.value if context is ast.Load else statement.targets[0]
+                    for child in ast.walk(node):
+                        if hasattr(child, 'ctx'):
+                            self.assertIsInstance(child.ctx, context)
+                    self.assertEqual(ast.get_source_segment(source, node),
+                                     expected_segment)
+
+        node = ast.parse('[a, *[b, *c]] = value').body[0].targets[0]
+        for child in ast.walk(node):
+            if hasattr(child, 'ctx'):
+                self.assertIsInstance(child.ctx, ast.Store)
 
     def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse('@a.b.c\ndef f(): pass')
@@ -968,6 +1031,19 @@ class AST_Tests(unittest.TestCase):
                 with self.assertRaises(SyntaxError):
                     ast.parse(sample, feature_version=(3, 12))
 
+    def test_lazy_imports_feature_version(self):
+        samples = [
+            "lazy import os",
+            "lazy from .. import name",
+            "lazy from mod import some",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                ast.parse(sample, feature_version=(3, 15))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 14))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))
@@ -980,6 +1056,34 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(expr)
             with self.assertRaisesRegex(ValueError, f"identifier field can't represent '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_constant_in_identifier_fields(self):
+        # gh-85260: an identifier field holding a constant name used to
+        # crash the compiler
+        for statement in [
+            "def x(): pass",
+            "async def x(): pass",
+            "class x: pass",
+            "from a import x",
+            "from a import b as x",
+            "from a import b, c, d as x",
+            "import x",
+            "import a, b, x",
+            "try: pass\nexcept A as x: pass",
+            "try: pass\nexcept A as b: pass\nexcept B as x: pass\n",
+        ]:
+            for constant in "True", "False", "None":
+                with self.subTest(statement=statement, constant=constant):
+                    tree = ast.parse(statement)
+                    for node in ast.walk(tree):
+                        for field, value in ast.iter_fields(node):
+                            if value == "x":
+                                setattr(node, field, constant)
+                    with self.assertRaisesRegex(
+                            ValueError,
+                            f"identifier field can't represent "
+                            f"'{constant}' constant"):
+                        compile(tree, "<test>", "exec")
 
     def test_constant_as_unicode_name(self):
         constants = [
@@ -1023,12 +1127,11 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        # Android test devices have less memory.
-        crash_depth = 100_000 if sys.platform == "android" else 500_000
+        crash_depth = 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
@@ -1080,6 +1183,37 @@ class AST_Tests(unittest.TestCase):
         ]
         for node, attr, source in tests:
             self.assert_none_check(node, attr, source)
+
+    def test_required_field_messages(self):
+        binop = ast.BinOp(
+            left=ast.Constant(value=2),
+            right=ast.Constant(value=2),
+            op=ast.Add(),
+        )
+        expr_without_position = ast.Expression(body=binop)
+        expr_with_wrong_body = ast.Expression(body=[binop])
+
+        with self.assertRaisesRegex(TypeError, "required field") as cm:
+            compile(expr_without_position, "<test>", "eval")
+        with self.assertRaisesRegex(
+            TypeError,
+            "field 'body' was expecting node of type 'expr', got 'list'",
+        ):
+            compile(expr_with_wrong_body, "<test>", "eval")
+
+        variable = ast.parse("test", mode="eval")
+        variable.body.id = b'test'
+        with self.assertRaisesRegex(TypeError,
+            "field 'id' was expecting a string object, got bytes"
+        ):
+            compile(variable, "<test>", "eval")
+
+        constant = ast.parse("u'test'", mode="eval")
+        constant.body.kind = 0xFF
+        with self.assertRaisesRegex(TypeError,
+            "field 'kind' was expecting a string or bytes object, got int"
+        ):
+            compile(constant, "<test>", "eval")
 
     def test_repr(self) -> None:
         snapshots = AST_REPR_DATA_FILE.read_text().split("\n")
@@ -2065,7 +2199,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2074,7 +2208,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
-    @skip_if_unlimited_stack_size
+    @skip_if_huge_c_stack()
     @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))

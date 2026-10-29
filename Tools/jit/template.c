@@ -1,8 +1,10 @@
 
 #include "Python.h"
 
+#ifndef NDEBUG
 #undef assert
 #define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #include "pycore_backoff.h"
 #include "pycore_call.h"
@@ -40,8 +42,10 @@
 
 #include "jit.h"
 
+#ifndef NDEBUG
 #undef assert
 #define assert(TEST) ((TEST) ? 0 : _Py_jit_assertion_failure(__LINE__))
+#endif
 
 #undef CURRENT_OPERAND0_64
 #define CURRENT_OPERAND0_64() (_operand0_64)

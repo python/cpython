@@ -123,9 +123,11 @@ extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
-                                    int end_lineno, int end_col_offset,
-                                    PyObject *module);
+// Export for test_peg_generator
+PyAPI_FUNC(int) _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename,
+                                         int lineno, int col_offset,
+                                         int end_lineno, int end_col_offset,
+                                         PyObject *module);
 extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                                     int end_lineno, int end_col_offset);
 
@@ -184,7 +186,6 @@ extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 // Exported for external JIT support
 PyAPI_FUNC(PyObject *) _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
-extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,

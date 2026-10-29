@@ -1378,6 +1378,7 @@ _Py_uop_frame_new(
     frame->stack_pointer = frame->stack;
     frame->globals_checked_version = 0;
     frame->globals_watched = false;
+    frame->builtins_checked = false;
     frame->func = NULL;
     frame->caller = false;
     frame->is_c_recursion_checked = false;
@@ -1388,17 +1389,27 @@ _Py_uop_frame_new(
     }
 
     // Initialize with the initial state of all local variables
+    arg_len = Py_MIN(arg_len, co->co_argcount);
     for (int i = 0; i < arg_len; i++) {
         frame->locals[i] = PyJitRef_RemoveUnique(args[i]);
     }
 
-    // If the args are known, then it's safe to just initialize
-    // every other non-set local to null symbol.
-    bool default_null = args != NULL;
+    // When args is available, missing parameters get defaults or *args/**kwargs.
+    // Other locals start as NULL. When args is NULL, treat all locals as unknown.
+    int parameter_count = co->co_argcount + co->co_kwonlyargcount;
+    parameter_count += (co->co_flags & CO_VARARGS) != 0;
+    parameter_count += (co->co_flags & CO_VARKEYWORDS) != 0;
 
     for (int i = arg_len; i < co->co_nlocalsplus; i++) {
-        JitOptRef local = default_null ? _Py_uop_sym_new_null(ctx) : _Py_uop_sym_new_unknown(ctx);
-        frame->locals[i] = local;
+        if (args == NULL) {
+            frame->locals[i] = _Py_uop_sym_new_unknown(ctx);
+        }
+        else if (i < parameter_count) {
+            frame->locals[i] = _Py_uop_sym_new_not_null(ctx);
+        }
+        else {
+            frame->locals[i] = _Py_uop_sym_new_null(ctx);
+        }
     }
 
     frame->callable = _Py_uop_sym_new_not_null(ctx);

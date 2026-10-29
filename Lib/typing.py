@@ -19,11 +19,13 @@ that may be changed without notice. Use at your own risk!
 """
 
 from abc import abstractmethod, ABCMeta
+import atexit
 import collections
 from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
+import keyword
 import operator
 import sys
 import types
@@ -392,6 +394,16 @@ _cleanups = []
 _caches = {}
 
 
+def _clear_caches():
+    for cleanup in _cleanups:
+        cleanup()
+
+
+# Release the LRU caches at shutdown, they otherwise redistribute reference
+# leaks of one extension to types of unrelated ones. See GH-151728.
+atexit.register(_clear_caches)
+
+
 def _tp_cache(func=None, /, *, typed=False):
     """Internal wrapper caching __getitem__ of generic types.
 
@@ -463,6 +475,9 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
+        if isinstance(t, _LiteralGenericAlias):
+            # Unlike other generic aliases, Literal arguments aren't type expressions
+            return t
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
@@ -483,7 +498,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
+            return Union[ev_args]
         else:
             return t.copy_with(ev_args)
     return t
@@ -775,13 +790,16 @@ def Literal(self, *parameters):
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
     parameters = _flatten_literal_params(parameters)
+    value_and_type_parameters = list(_value_and_type_iter(parameters))
+    deduplicated_parameters = tuple(
+        p
+        for p, _ in _deduplicate(
+            value_and_type_parameters,
+            unhashable_fallback=True,
+        )
+    )
 
-    try:
-        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
-    except TypeError:  # unhashable parameters
-        pass
-
-    return _LiteralGenericAlias(self, parameters)
+    return _LiteralGenericAlias(self, deduplicated_parameters)
 
 
 @_SpecialForm
@@ -984,8 +1002,12 @@ def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
         if parent_fwdref.__owner__ is not None:
             kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = annotationlib.ForwardRef(code, **kwargs)
-    # For compatibility, eagerly compile the forwardref's code.
-    forward_ref.__forward_code__
+    # For compatibility, eagerly compile the forwardref's code so that any
+    # SyntaxError is raised immediately rather than when the forward
+    # reference is evaluated. Similar to 'ForwardRef.evaluate()', we only compile
+    # it if necessary:
+    if not (code.isidentifier() and not keyword.iskeyword(code)):
+        forward_ref.__forward_code__
     return forward_ref
 
 
@@ -1019,7 +1041,7 @@ def evaluate_forward_ref(
 
     """
     if format == annotationlib.Format.STRING:
-        return forward_ref.__forward_arg__
+        return forward_ref.__resolved_str__
     if forward_ref.__forward_arg__ in _recursive_guard:
         return forward_ref
 
@@ -1343,32 +1365,35 @@ class _BaseGenericAlias(_Final, _root=True):
 
 
 class _GenericAlias(_BaseGenericAlias, _root=True):
-    # The type of parameterized generics.
-    #
-    # That is, for example, `type(List[int])` is `_GenericAlias`.
-    #
-    # Objects which are instances of this class include:
-    # * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
-    #  * Note that native container types, e.g. `tuple`, `list`, use
-    #    `types.GenericAlias` instead.
-    # * Parameterized classes:
-    #     class C[T]: pass
-    #     # C[int] is a _GenericAlias
-    # * `Callable` aliases, generic `Callable` aliases, and
-    #   parameterized `Callable` aliases:
-    #     T = TypeVar('T')
-    #     # _CallableGenericAlias inherits from _GenericAlias.
-    #     A = Callable[[], None]  # _CallableGenericAlias
-    #     B = Callable[[T], None]  # _CallableGenericAlias
-    #     C = B[int]  # _CallableGenericAlias
-    # * Parameterized `Final`, `ClassVar`, `TypeForm`, `TypeGuard`, and `TypeIs`:
-    #     # All _GenericAlias
-    #     Final[int]
-    #     ClassVar[float]
-    #     TypeForm[bytes]
-    #     TypeGuard[bool]
-    #     TypeIs[range]
+    """The type of parameterized generics.
 
+    That is, for example, `type(List[int])` is `_GenericAlias`.
+
+    Objects which are instances of this class include:
+    * Parameterized container types, e.g. `Tuple[int]`, `List[int]`.
+     * Note that native container types, e.g. `tuple`, `list`, use
+       `types.GenericAlias` instead.
+    * Parameterized classes:
+        class C[T]: pass
+        # C[int] is a _GenericAlias
+    * `Callable` aliases, generic `Callable` aliases, and
+      parameterized `Callable` aliases:
+        T = TypeVar('T')
+        # _CallableGenericAlias inherits from _GenericAlias.
+        A = Callable[[], None]  # _CallableGenericAlias
+        B = Callable[[T], None]  # _CallableGenericAlias
+        C = B[int]  # _CallableGenericAlias
+    * Parameterized `Final`, `ClassVar`, `TypeForm`, `TypeGuard`, and `TypeIs`:
+        # All _GenericAlias
+        Final[int]
+        ClassVar[float]
+        TypeForm[bytearray]
+        TypeGuard[bool]
+        TypeIs[range]
+
+    Note that instances of this class are not classes (e.g by `inspect.isclass`),
+    even though they behave like them.
+    """
     def __init__(self, origin, args, *, inst=True, name=None):
         super().__init__(origin, inst=inst, name=name)
         if not isinstance(args, tuple):
@@ -1400,20 +1425,21 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     @_tp_cache
     def __getitem__(self, args):
-        # Parameterizes an already-parameterized object.
-        #
-        # For example, we arrive here doing something like:
-        #   T1 = TypeVar('T1')
-        #   T2 = TypeVar('T2')
-        #   T3 = TypeVar('T3')
-        #   class A(Generic[T1]): pass
-        #   B = A[T2]  # B is a _GenericAlias
-        #   C = B[T3]  # Invokes _GenericAlias.__getitem__
-        #
-        # We also arrive here when parameterizing a generic `Callable` alias:
-        #   T = TypeVar('T')
-        #   C = Callable[[T], None]
-        #   C[int]  # Invokes _GenericAlias.__getitem__
+        """Parameterizes an already-parameterized object.
+
+        For example, we arrive here doing something like:
+          T1 = TypeVar('T1')
+          T2 = TypeVar('T2')
+          T3 = TypeVar('T3')
+          class A(Generic[T1]): pass
+          B = A[T2]  # B is a _GenericAlias
+          C = B[T3]  # Invokes _GenericAlias.__getitem__
+
+        We also arrive here when parameterizing a generic `Callable` alias:
+          T = TypeVar('T')
+          C = Callable[[T], None]
+          C[int]  # Invokes _GenericAlias.__getitem__
+        """
 
         if self.__origin__ in (Generic, Protocol):
             # Can't subscript Generic[...] or Protocol[...].
@@ -1430,20 +1456,20 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         return r
 
     def _determine_new_args(self, args):
-        # Determines new __args__ for __getitem__.
-        #
-        # For example, suppose we had:
-        #   T1 = TypeVar('T1')
-        #   T2 = TypeVar('T2')
-        #   class A(Generic[T1, T2]): pass
-        #   T3 = TypeVar('T3')
-        #   B = A[int, T3]
-        #   C = B[str]
-        # `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
-        # Unfortunately, this is harder than it looks, because if `T3` is
-        # anything more exotic than a plain `TypeVar`, we need to consider
-        # edge cases.
+        """Determines new __args__ for __getitem__.
 
+        For example, suppose we had:
+          T1 = TypeVar('T1')
+          T2 = TypeVar('T2')
+          class A(Generic[T1, T2]): pass
+          T3 = TypeVar('T3')
+          B = A[int, T3]
+          C = B[str]
+        `B.__args__` is `(int, T3)`, so `C.__args__` should be `(int, str)`.
+        Unfortunately, this is harder than it looks, because if `T3` is
+        anything more exotic than a plain `TypeVar`, we need to consider
+        edge cases.
+        """
         params = self.__parameters__
         # In the example above, this would be {T3: str}
         for param in params:
@@ -2528,7 +2554,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return functools.reduce(operator.or_, stripped_args)
+        return Union[stripped_args]
 
     return t
 
