@@ -1386,9 +1386,9 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a new :class:`datetime` object with the same attributes, but with
-   specified parameters updated. Note that ``tzinfo=None`` can be specified to
-   create a naive datetime from an aware datetime with no conversion of date
+   Return a new :class:`~datetime.datetime` object with the same attributes, but
+   with specified parameters updated. Note that ``tzinfo=None`` can be specified
+   to create a naive datetime from an aware datetime with no conversion of date
    and time data.
 
    :class:`.datetime` objects are also supported by generic function

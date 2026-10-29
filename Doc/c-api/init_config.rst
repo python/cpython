@@ -831,7 +831,7 @@ Example::
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
-        PyMem_Free(ptr);
+        PyMem_RawFree(ptr);
         return 0;
     }
 
@@ -880,9 +880,9 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
-      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): use ``mimalloc``, a fast
         malloc replacement.
-      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): use ``mimalloc``, a fast
         malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
 
 

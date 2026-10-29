@@ -91,6 +91,7 @@ module _ctypes
 #define DONT_USE_SEH
 #endif
 
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
@@ -744,8 +745,12 @@ static int ConvParam(ctypes_state *st,
            attribute)
         */
         if (arg) {
-            int result;
-            result = ConvParam(st, arg, index, pa);
+            if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+                Py_DECREF(arg);
+                return -1;
+            }
+            int result = ConvParam(st, arg, index, pa);
+            _Py_LeaveRecursiveCall();
             Py_DECREF(arg);
             return result;
         }

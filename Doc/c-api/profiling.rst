@@ -251,4 +251,4 @@ Performance statistics
    This constant is intended for internal use only and is not useful to
    extension modules.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15.2

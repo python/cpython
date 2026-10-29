@@ -18,7 +18,9 @@ import re
 import socket
 import select
 import struct
+import tempfile
 import time
+import zipfile
 import enum
 import gc
 import http.client
@@ -132,6 +134,19 @@ SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
 LEAF_MISSING_AKI_CERTFILE = data_file("leaf-missing-aki.keycert.pem")
 LEAF_MISSING_AKI_CERTFILE_HOSTNAME = "example.com"
 LEAF_MISSING_AKI_CA = data_file("leaf-missing-aki.ca.pem")
+
+# gh-160040: a leaf signed by a compromised eMudhra intermediate whose public
+# key is on the _ssl distrusted list. The chain to distrusted_root.pem is
+# otherwise valid.
+# The PEMs live in a password-protected zip so the compromised eMudhra certs
+# don't trip security scanners that cannot tell internal test fixtures from
+# production secrets and flag any certificate or private key they find.  It is
+# encrypted, not merely zipped, because such scanners read inside plain archives.
+# The password is fixed, public, and not a secret; it only keeps the archive
+# from storing the PEMs in the clear.
+DISTRUSTED_SPKI_ZIP = data_file("distrusted.zip")
+DISTRUSTED_SPKI_CHOSEN_KNIGHT = b"Brave Sir Robin"  # not a secret, see comment
+DISTRUSTED_SPKI_HOSTNAME = "localhost"
 
 # Same certificate as pycacert.pem, but without extra text in file
 SIGNING_CA = data_file("capath", "ceff1710.0")
@@ -2272,6 +2287,28 @@ class SSLObjectTests(unittest.TestCase):
         c_in.write(s_out.read())
         client.unwrap()
 
+    def test_distrusted_spki(self):
+        # gh-160040: the server chain is otherwise valid, but the eMudhra
+        # intermediate's public key is on the _ssl distrusted list, so
+        # verification rejects it.
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # the contexts load the PEMs now, so the files are only needed here
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(DISTRUSTED_SPKI_ZIP) as z:
+                z.extractall(tmpdir, pwd=DISTRUSTED_SPKI_CHOSEN_KNIGHT)
+            certdir = os.path.join(tmpdir, "distrusted")
+            client_context.load_verify_locations(
+                os.path.join(certdir, "distrusted_root.pem"))
+            server_context.load_cert_chain(
+                os.path.join(certdir, "distrusted_keycert.pem"))
+
+        with self.assertRaises(ssl.SSLCertVerificationError) as cm:
+            connected_bio_pair(client_context, server_context,
+                               DISTRUSTED_SPKI_HOSTNAME)
+        # X509_V_ERR_CERT_REJECTED
+        self.assertEqual(cm.exception.verify_code, 28)
+
     def test_sni_callback_context_released_and_callback_raises(self):
         # Variant of the test below without a HelloRetryRequest: the callback
         # switches the connection to another context, drops the last
@@ -3009,11 +3046,19 @@ class ThreadedEchoServer(threading.Thread):
                         cert = self.sslconn.getpeercert()
                         self.write(repr(cert).encode("us-ascii") + b"\n")
                     elif stripped == b'VERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_verified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_verified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     elif stripped == b'UNVERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_unverified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_unverified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     else:
                         if (support.verbose and
                             self.server.connectionchatty):
@@ -5198,7 +5243,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(lambda hint: (None, psk))
@@ -5278,7 +5322,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(client_callback)
@@ -5292,6 +5335,7 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
 
     @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
                                "the socket BIO flags with concurrent read "
@@ -5691,6 +5735,66 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 res = s.recv(1024)
                 self.assertEqual(res, b'\x02\n')
 
+    def test_internal_chain_server_resumed_session(self):
+        # A session resumed from a ticket stores the client's certificate
+        # but not the chain it was sent with.
+        for version in ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3:
+            if not has_tls_version(version):
+                continue
+            with self.subTest(version=version.name):
+                self.check_chain_server_resumed_session(version)
+
+    def check_chain_server_resumed_session(self, version):
+        client_context, server_context, hostname = testing_context()
+        client_context.load_cert_chain(SIGNED_CERTFILE)
+        server_context.verify_mode = ssl.CERT_REQUIRED
+        client_context.minimum_version = version
+        client_context.maximum_version = version
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x02\n')
+                # TLS 1.3 sends the ticket after the handshake, so only
+                # get the session once data was received.
+                session = s.session
+                self.assertTrue(session.has_ticket)
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname,
+                session=session
+            ) as s:
+                s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x01\n')
+                # The verified chain is not stored with the session at all.
+                s.write(b'VERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
+
+    def test_internal_chain_server_no_client_cert(self):
+        client_context, server_context, hostname = testing_context()
+        server_context.verify_mode = ssl.CERT_OPTIONAL
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
+
 
 class TestSSLDebug(unittest.TestCase):
 
@@ -5920,7 +6024,11 @@ class TestPreHandshakeClose(unittest.TestCase):
                     self.listener.close()
             except OSError:
                 pass
-            self.join()
+            timeout = support.SHORT_TIMEOUT
+            self.join(timeout=timeout)
+            if self.is_alive():
+                raise AssertionError("failed to join the server thread "
+                                     f"in {timeout} seconds")
             self.wrap_error = None  # avoid dangling references
 
         def start(self):
@@ -6126,28 +6234,30 @@ class TestPreHandshakeClose(unittest.TestCase):
                 call_after_accept=call_after_accept,
                 name="non_tls_http_RST_responder",
                 timeout=timeout)
-        self.enterContext(server)  # starts it & unittest.TestCase stops it.
-        # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
-        set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        connection = SynchronizedHTTPSConnection(
-                server.listener.getsockname()[0],
-                port=server.port,
-                context=ssl.create_default_context(),
-                timeout=timeout,
-        )
+        with server:
+            # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
+            set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        # There are lots of reasons this raises as desired, long before this
-        # test was added. Sending the request requires a successful TLS wrapped
-        # socket; that fails if the connection is broken. It may seem pointless
-        # to test this. It serves as an illustration of something that we never
-        # want to happen... properly not happening.
-        with warnings_helper.check_no_resource_warning(self), \
-                self.assertRaises(OSError):
-            connection.request("HEAD", "/test", headers={"Host": "localhost"})
-            response = connection.getresponse()
+            connection = SynchronizedHTTPSConnection(
+                    server.listener.getsockname()[0],
+                    port=server.port,
+                    context=ssl.create_default_context(),
+                    timeout=timeout,
+            )
 
-        server.join()
+            # There are lots of reasons this raises as desired, long before this
+            # test was added. Sending the request requires a successful TLS wrapped
+            # socket; that fails if the connection is broken. It may seem pointless
+            # to test this. It serves as an illustration of something that we never
+            # want to happen... properly not happening.
+            with warnings_helper.check_no_resource_warning(self), \
+                    self.assertRaises(OSError):
+                try:
+                    connection.request("HEAD", "/test", headers={"Host": "localhost"})
+                    response = connection.getresponse()
+                finally:
+                    connection.close()
 
 
 class TestEnumerations(unittest.TestCase):
