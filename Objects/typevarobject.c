@@ -952,6 +952,7 @@ paramspecattr_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
 
     Py_XDECREF(psa->__origin__);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1858,14 +1859,23 @@ typealias_dealloc(PyObject *self)
 static PyObject *
 typealias_get_value(typealiasobject *ta)
 {
-    if (ta->value != NULL) {
-        return Py_NewRef(ta->value);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    result = Py_XNewRef(ta->value);
+    Py_END_CRITICAL_SECTION();
+    if (result != NULL) {
+        return result;
     }
-    PyObject *result = PyObject_CallNoArgs(ta->compute_value);
+    result = PyObject_CallNoArgs(ta->compute_value);
     if (result == NULL) {
         return NULL;
     }
+    PyObject *old_value;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    old_value = ta->value;
     ta->value = Py_NewRef(result);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_value);
     return result;
 }
 

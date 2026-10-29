@@ -4,9 +4,6 @@
 
 Doc/c-api/module.rst
 Doc/library/ast.rst
-Doc/library/asyncio-extending.rst
-Doc/library/email.charset.rst
-Doc/library/email.parser.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/multiprocessing.rst
@@ -18,7 +15,6 @@ Doc/library/pyexpat.rst
 Doc/library/select.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
-Doc/library/termios.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
 Doc/library/wsgiref.rst

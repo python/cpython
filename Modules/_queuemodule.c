@@ -51,13 +51,14 @@ RingBuf_Init(RingBuf *buf)
 {
     buf->put_idx = 0;
     buf->get_idx = 0;
-    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
+    buf->items_cap = 0;
     buf->num_items = 0;
-    buf->items = PyMem_Calloc(buf->items_cap, sizeof(PyObject *));
+    buf->items = PyMem_Calloc(INITIAL_RING_BUF_CAPACITY, sizeof(PyObject *));
     if (buf->items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
     return 0;
 }
 

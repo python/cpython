@@ -1,2 +1,0 @@
-Fix off-by-one output buffer checks in the fallback implementation of
-``getnameinfo()``.

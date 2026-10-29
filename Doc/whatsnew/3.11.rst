@@ -361,7 +361,7 @@ providing protection against injection attacks.
 
 For example, a SQL query function could be annotated as follows::
 
-   def run_query(sql: LiteralString) -> ...
+   def run_query(sql: LiteralString) -> ...:
        ...
 
    def caller(
@@ -1904,11 +1904,11 @@ C APIs pending removal are
 * :meth:`!importlib.abc.PathEntryFinder.find_loader`
 * :meth:`!importlib.abc.PathEntryFinder.find_module`
 * :meth:`!importlib.machinery.BuiltinImporter.find_module`
-* :meth:`!importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`!importlib.machinery.BuiltinImporter.module_repr`
 * :meth:`!importlib.machinery.FileFinder.find_loader`
 * :meth:`!importlib.machinery.FileFinder.find_module`
 * :meth:`!importlib.machinery.FrozenImporter.find_module`
-* :meth:`!importlib.machinery.FrozenLoader.module_repr`
+* :meth:`!importlib.machinery.FrozenImporter.module_repr`
 * :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
 * :func:`!importlib.util.module_for_loader`
@@ -2335,7 +2335,7 @@ Porting to Python 3.11
         PyObject_GC_UnTrack(p);
         Py_TRASHCAN_SAFE_BEGIN(p);
         ...
-        Py_TRASHCAN_SAFE_END
+        Py_TRASHCAN_SAFE_END(p)
     }
 
   should migrate to the new macros as follows::

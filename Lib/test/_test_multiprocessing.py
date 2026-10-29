@@ -616,10 +616,10 @@ class _TestProcess(BaseTestCase):
             # On the Gentoo buildbot waitpid() often seems to block forever.
             # We use alarm() to interrupt it if it blocks for too long.
             def handler(*args):
-                raise RuntimeError('join took too long: %s' % p)
+                raise RuntimeError(f'join took longer than {timeout} seconds: {p}')
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
-                signal.alarm(10)
+                signal.alarm(int(timeout))
                 self.assertEqual(join(), None)
             finally:
                 signal.alarm(0)
@@ -972,7 +972,9 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(proc2.exitcode, 0)
 
         proc.join()
-        self.assertTrue(evt.is_set())
+        # After SIGKILL, join() can return (exitcode 255) as soon as the
+        # status pipe is closed, before the orphaned child has run.
+        self.assertTrue(evt.wait(support.SHORT_TIMEOUT))
         self.assertIn(proc.exitcode, (0, 255))
 
     def test_forkserver_sigint(self):

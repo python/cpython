@@ -1,4 +1,0 @@
-Fix an assertion failure, or an immortal object becoming mortal, on the
-:term:`free threaded <free threading>` build when an object passed to the
-internal delayed decref mechanism is immortal or becomes immortal before the
-delayed decref is processed by the garbage collector.

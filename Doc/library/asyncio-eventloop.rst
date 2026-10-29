@@ -1537,7 +1537,7 @@ Allows customizing how exceptions are handled in the event loop.
    * 'source_traceback' (optional): Traceback of the source;
    * 'handle_traceback' (optional): Traceback of the handle;
    * 'asyncgen' (optional): Asynchronous generator that caused
-                            the exception.
+     the exception.
 
    .. note::
 
@@ -1966,6 +1966,17 @@ By default asyncio is configured to use :class:`EventLoop`.
    The :ref:`asyncio-event-loop-methods` section lists all
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
+
+.. class:: BaseEventLoop
+
+   A base class that partially implements :class:`AbstractEventLoop`
+   to simplify writing custom event loops.
+
+   It provides default implementations of many :class:`AbstractEventLoop`
+   methods, so subclasses have fewer methods to implement themselves.
+   In return, a subclass is expected to implement a number of internal,
+   protected methods.
+   See :ref:`writing_custom_event_loop` for more information.
 
 
 Examples

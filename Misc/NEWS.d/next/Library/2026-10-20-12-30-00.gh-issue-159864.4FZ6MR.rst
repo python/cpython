@@ -1,2 +1,0 @@
-Fix a crash in :func:`syslog.openlog` under the free-threaded build when
-:data:`sys.argv` is modified concurrently.
