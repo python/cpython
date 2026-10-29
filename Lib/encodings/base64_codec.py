@@ -29,10 +29,25 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
         assert self.errors == 'strict'
         return base64.encodebytes(input)
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        assert self.errors == 'strict'
-        return base64.decodebytes(input)
+_alphabet = (b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+             b'abcdefghijklmnopqrstuvwxyz0123456789+/')
+
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        assert errors == 'strict'
+        if not final:
+            # Only decode complete groups of four base64 characters and keep
+            # the rest for the next call.  Other bytes, such as newlines and
+            # padding, are not counted.
+            count = len(input) - len(input.translate(None, _alphabet))
+            remainder = count % 4
+            end = len(input)
+            while remainder:
+                end -= 1
+                if input[end] in _alphabet:
+                    remainder -= 1
+            input = input[:end]
+        return (base64.decodebytes(input), len(input))
 
 class StreamWriter(Codec, codecs.StreamWriter):
     charbuffertype = bytes

@@ -3251,6 +3251,34 @@ class TransformCodecTest(unittest.TestCase):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
+    def test_base64_incremental_decode(self):
+        # gh-71986: Input split in the middle of a group of four characters
+        data = bytes(range(256))
+        encoded = codecs.encode(data, "base64_codec")
+        for size in range(1, 6):
+            with self.subTest(size=size):
+                chunks = [encoded[i:i+size]
+                          for i in range(0, len(encoded), size)]
+                decoded = b"".join(codecs.iterdecode(chunks, "base64_codec"))
+                self.assertEqual(decoded, data)
+
+        decoded = codecs.iterdecode([b"AA", b"AA\r\n", b"A", b"A=="],
+                                    "base64_codec")
+        self.assertEqual(b"".join(decoded), b"\x00\x00\x00\x00")
+
+        decoder = codecs.getincrementaldecoder("base64_codec")()
+        self.assertEqual(decoder.decode(b"AAA"), b"")
+        self.assertRaises(ValueError, decoder.decode, b"", final=True)
+
+    @unittest.skipUnless("bz2_codec" in bytes_transform_encodings,
+                         "Requires bz2 support")
+    def test_bz2_incremental_decode_after_end(self):
+        # gh-71986: The decoder returned str after the end of the stream
+        decoder = codecs.getincrementaldecoder("bz2_codec")()
+        self.assertEqual(decoder.decode(codecs.encode(b"data", "bz2_codec")),
+                         b"data")
+        self.assertEqual(decoder.decode(b"", final=True), b"")
+
 
 # The codec system tries to add notes to exceptions in order to ensure
 # the error mentions the operation being performed and the codec involved.
