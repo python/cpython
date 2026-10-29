@@ -126,7 +126,7 @@ check_locale_name_all(const char *locale)
 _locale.setlocale
 
     category: int
-    locale: str(accept={str, NoneType}) = NULL
+    locale: str(accept={str, NoneType}) = None
     /
 
 Activates/queries locale processing.
@@ -134,7 +134,7 @@ Activates/queries locale processing.
 
 static PyObject *
 _locale_setlocale_impl(PyObject *module, int category, const char *locale)
-/*[clinic end generated code: output=a0e777ae5d2ff117 input=dbe18f1d66c57a6a]*/
+/*[clinic end generated code: output=a0e777ae5d2ff117 input=b53449b63407179b]*/
 {
     char *result;
     PyObject *result_object;
@@ -443,6 +443,7 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
 {
     Py_ssize_t n1;
     wchar_t *s = NULL, *buf = NULL;
+    wchar_t dummy[1];
     size_t n2;
     PyObject *result = NULL;
 
@@ -456,7 +457,9 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
     }
 
     errno = 0;
-    n2 = wcsxfrm(NULL, s, 0);
+    /* Query the size with a real one-element buffer: DragonFly BSD's
+       wcsxfrm() crashes when the destination is NULL or the size is 0. */
+    n2 = wcsxfrm(dummy, s, 1);
     if (errno && errno != ERANGE) {
         PyErr_SetFromErrno(PyExc_OSError);
         goto exit;

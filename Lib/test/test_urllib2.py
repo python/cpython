@@ -270,6 +270,50 @@ class RequestHdrsTests(unittest.TestCase):
         self.assertEqual(find_user_pass("i", "http://j.example.com:80"),
                          (None, None))
 
+    def test_password_manager_scheme(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+        mgr.add_password(
+            "realm", "https://example.com/", "user", "password")
+
+        self.assertEqual(
+            mgr.find_user_password("realm", "https://example.com/"),
+            ("user", "password"))
+        self.assertEqual(
+            mgr.find_user_password("realm", "http://example.com/"),
+            (None, None))
+        # Support an authority without a scheme.
+        self.assertEqual(
+            mgr.find_user_password("realm", "example.com"),
+            ("user", "password"))
+        # An authority without a scheme continues to match any scheme.
+        mgr.add_password(
+            "realm", "schemeless.example.com", "user", "password")
+        for scheme in "http", "https":
+            with self.subTest(scheme=scheme):
+                self.assertEqual(
+                    mgr.find_user_password(
+                        "realm", f"{scheme}://schemeless.example.com/"),
+                    ("user", "password"))
+
+        # A network-path reference also has no scheme.
+        mgr.add_password(
+            "realm", "//network-path.example.com/", "user", "password")
+        self.assertEqual(
+            mgr.find_user_password(
+                "realm", "https://network-path.example.com/"),
+            ("user", "password"))
+
+    def test_password_manager_reduced_uri(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+
+        self.assertEqual(
+            mgr.reduce_uri("http://example.com/path"),
+            ("example.com:80", "/path"))
+        self.assertTrue(
+            mgr.is_suburi(
+                ("example.com", "/path"),
+                ("example.com", "/path/subpath")))
+
 
 class MockOpener:
     addheaders = []
@@ -1409,8 +1453,15 @@ class HandlerTests(unittest.TestCase):
         fp = o.open('http://www.example.com')
         self.assertEqual(fp.geturl(), redirected_url.strip())
 
+    def unset_proxy_env(self):
+        # Keep the test independent from proxy-related environment settings.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+        self.unset_proxy_env()
 
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
@@ -1444,6 +1495,7 @@ class HandlerTests(unittest.TestCase):
                     b'123'
                 )
                 return result
+        self.unset_proxy_env()
         handler = Handler()
         opener = urllib.request.build_opener(handler)
         tests = (
@@ -1580,6 +1632,14 @@ class HandlerTests(unittest.TestCase):
             self.assertTrue(proxy_bypass(host, proxy_override),
                             "expect <local> to bypass intranet address '%s'"
                             % host)
+
+        # empty entries (e.g. a trailing ';') must not match every host
+        for proxy_override in ("www.example.com;", ";", " ; ",
+                               "www.example.com;;*.example.net"):
+            self.assertFalse(proxy_bypass("www.python.org", proxy_override),
+                             "expected empty entry in %r not to bypass"
+                             % proxy_override)
+        self.assertTrue(proxy_bypass("www.example.com", "www.example.com;"))
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
@@ -1824,6 +1884,18 @@ class HandlerTests(unittest.TestCase):
 
         # expect request to be sent with auth header
         self.assertTrue(http_handler.has_auth_header)
+
+    def test_basic_prior_auth_different_scheme(self):
+        pwd_manager = HTTPPasswordMgrWithPriorAuth()
+        auth_handler = HTTPBasicAuthHandler(pwd_manager)
+        auth_handler.add_password(
+            None, "https://example.com/", "user", "password",
+            is_authenticated=True)
+
+        request = Request("http://example.com/")
+        auth_handler.http_request(request)
+
+        self.assertFalse(request.has_header("Authorization"))
 
     def test_basic_prior_auth_send_after_first_success(self):
         # Auto send auth header after authentication is successful once
