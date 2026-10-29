@@ -267,22 +267,29 @@ class StrTest(string_tests.StringLikeTest,
             pass
         self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
-    def test_find_adaptive_nonbmp(self):
+    def test_find_adaptive_widths(self):
         # The adaptive path in Objects/stringlib/fastsearch.h needs a haystack
-        # of at least 2500 characters and a needle of at least 100, with the
-        # needle at least a third of the haystack. test_adaptive_find only
-        # uses ASCII, so the UCS4 variant of adaptive_find never ran.
-        a, b = '\U0001d11e', '\U0001d11f'
-        for N in 1000, 10_000:
-            with self.subTest(N=N):
-                A, B = a * N, b * N
-                haystack = A + A + B + A + A
-                needle = A + B + B + A
+        # of at least 2500 characters and a needle of at least a third of it,
+        # and it is compiled once per character width. Exercise all four.
+        cases = [
+            ('ascii', 'a', 'b', 'c'),
+            ('latin1', '\xe9', '\xea', '\xeb'),
+            ('ucs2', '\u0100', '\u0101', '\u0102'),
+            ('ucs4', '\U0001d11e', '\U0001d11f', '\U0001d120'),
+        ]
+        for kind, c, d, x in cases:
+            # A needle of 2000 characters, none of which is x.
+            needle = c * 1000 + d * 1000
+            with self.subTest(kind=kind):
+                # 4000 characters, mostly x: the skip branches jump by m.
+                haystack = c * 1000 + x * 3000
                 self.assertEqual(haystack.find(needle), -1)
                 self.assertEqual(haystack.count(needle), 0)
-                combined = haystack + needle
-                self.assertEqual(combined.find(needle), len(haystack))
-                self.assertEqual(combined.count(needle), 1)
+                # A match at 3000 in a haystack of 5000, so count() reaches
+                # the match branch inside adaptive_find rather than two-way.
+                haystack = c * 1000 + x * 2000 + needle
+                self.assertEqual(haystack.find(needle), 3000)
+                self.assertEqual(haystack.count(needle), 1)
 
     def test_find(self):
         string_tests.StringLikeTest.test_find(self)
