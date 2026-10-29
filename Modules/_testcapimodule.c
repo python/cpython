@@ -1567,6 +1567,30 @@ py_w_stopcode(PyObject *self, PyObject *args)
 
 
 static PyObject *
+sequence_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_Repeat(sequence, count);
+}
+
+static PyObject *
+sequence_inplace_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_InPlaceRepeat(sequence, count);
+}
+
+static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
 {
     Py_tss_t tss_key = Py_tss_NEEDS_INIT;
@@ -3030,6 +3054,8 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"sequence_repeat", sequence_repeat, METH_VARARGS},
+    {"sequence_inplace_repeat", sequence_inplace_repeat, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"bad_get", bad_get, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
@@ -3441,6 +3467,11 @@ static PyMethodDef meth_instance_methods[] = {
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", _PyCFunction_CAST(meth_fastcall), METH_FASTCALL},
     {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
+    {"meth_fastcall_coexist", _PyCFunction_CAST(meth_fastcall),
+     METH_FASTCALL|METH_COEXIST},
+    {"meth_fastcall_keywords_coexist",
+     _PyCFunction_CAST(meth_fastcall_keywords),
+     METH_FASTCALL|METH_KEYWORDS|METH_COEXIST},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3906,6 +3937,9 @@ _testcapi_exec(PyObject *m)
         return -1;
     }
     if (_PyTestCapi_Init_Marshal(m) < 0) {
+        return -1;
+    }
+    if (_PyTestCapi_Init_Fpcast(m) < 0) {
         return -1;
     }
     return 0;

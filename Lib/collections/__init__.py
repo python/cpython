@@ -1536,6 +1536,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.encode(encoding, errors)
 
     def endswith(self, suffix, start=0, end=_sys.maxsize):
+        if isinstance(suffix, UserString):
+            suffix = suffix.data
         return self.data.endswith(suffix, start, end)
 
     def expandtabs(self, tabsize=8):
@@ -1646,6 +1648,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.splitlines(keepends)
 
     def startswith(self, prefix, start=0, end=_sys.maxsize):
+        if isinstance(prefix, UserString):
+            prefix = prefix.data
         return self.data.startswith(prefix, start, end)
 
     def strip(self, chars=None):

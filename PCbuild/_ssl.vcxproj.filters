@@ -20,6 +20,9 @@
     <ClInclude Include="..\Modules\_openssl_mem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_ssl\distrusted_spki.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc">

@@ -1453,8 +1453,15 @@ class HandlerTests(unittest.TestCase):
         fp = o.open('http://www.example.com')
         self.assertEqual(fp.geturl(), redirected_url.strip())
 
+    def unset_proxy_env(self):
+        # Keep the test independent from proxy-related environment settings.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+        self.unset_proxy_env()
 
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
@@ -1488,6 +1495,7 @@ class HandlerTests(unittest.TestCase):
                     b'123'
                 )
                 return result
+        self.unset_proxy_env()
         handler = Handler()
         opener = urllib.request.build_opener(handler)
         tests = (
@@ -1624,6 +1632,14 @@ class HandlerTests(unittest.TestCase):
             self.assertTrue(proxy_bypass(host, proxy_override),
                             "expect <local> to bypass intranet address '%s'"
                             % host)
+
+        # empty entries (e.g. a trailing ';') must not match every host
+        for proxy_override in ("www.example.com;", ";", " ; ",
+                               "www.example.com;;*.example.net"):
+            self.assertFalse(proxy_bypass("www.python.org", proxy_override),
+                             "expected empty entry in %r not to bypass"
+                             % proxy_override)
+        self.assertTrue(proxy_bypass("www.example.com", "www.example.com;"))
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):

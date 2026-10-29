@@ -23,6 +23,8 @@ def main():
         "--argv0 {ARGV0} "
         # Map the checkout to / to load the stdlib from /Lib.
         "--dir {CHECKOUT}::/ "
+        # For various I/O-related tests.
+        "--dir /dev "
         # Flags involving --optimize, --codegen, --debug, --wasm, and --wasi can be kept
         # in a config file.
         # We are using such a file to act as defaults in case a user wants to override
@@ -68,6 +70,22 @@ def main():
     package = subcommands.add_parser(
         "package", help="Package the host/WASI Python into an archive"
     )
+    gather = subcommands.add_parser(
+        "gather", help="Gather all the files for distribution"
+    )
+    release = subcommands.add_parser(
+        "release", help="Build and package for a release"
+    )
+    path = subcommands.add_parser(
+        "path", help="Print the path to a build or distribution directory"
+    )
+    path.add_argument(
+        "location",
+        nargs="?",
+        choices=("build-python", "wasi", "dist"),
+        default="wasi",
+        help="Directory whose path to print",
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -81,6 +99,7 @@ def main():
         make_host,
         pythoninfo_host,
         build_host,
+        release,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -120,7 +139,7 @@ def main():
         subcommand.add_argument(
             "args", nargs="*", help="Extra arguments to pass to `configure`"
         )
-    for subcommand in build, configure_host, build_host:
+    for subcommand in build, configure_host, build_host, release:
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
@@ -144,7 +163,10 @@ def main():
         make_host,
         build_host,
         pythoninfo_host,
+        gather,
         package,
+        path,
+        release,
     ):
         subcommand.add_argument(
             "--host-triple",
@@ -191,9 +213,27 @@ def main():
                 _build.pythoninfo_wasi_python(context)
         case "clean":
             _build.clean_contents(context)
+        case "gather":
+            _package.gather(context)
         case "package":
             _package.gather(context)
             _package.archive(context)
+        case "release":
+            context.args = ["--without-static-libpython"]
+            _build.clean_contents(context)
+            _build.configure_build_python(context)
+            _build.make_build_python(context)
+            _build.configure_wasi_python(context)
+            _build.make_wasi_python(context)
+            _package.gather(context)
+            _package.archive(context)
+        case "path":
+            paths = {
+                "build-python": "build_python_path",
+                "wasi": "wasi_build_path",
+                "dist": "archive_dir",
+            }
+            print(getattr(context, paths[context.location]))
         case None:
             parser.print_help()
         case _:
