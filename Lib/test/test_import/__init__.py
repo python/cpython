@@ -45,7 +45,11 @@ from test.support import (
     Py_GIL_DISABLED,
     no_rerun,
     force_not_colorized_test_class,
-    catch_unraisable_exception
+    catch_unraisable_exception,
+    infinite_recursion,
+    run_with_limited_c_stack,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow
 )
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -781,6 +785,24 @@ class ImportTests(unittest.TestCase):
                     raise exc
         finally:
             del sys.path[0]
+
+    @cpython_only
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
+    @run_with_limited_c_stack(depth=100_000)
+    def test_acquire_lock_near_c_stack_limit(self):
+        # _imp.acquire_lock() must refuse to take the import lock when there
+        # is not enough C stack left to release it again.
+        def recurse(_):
+            _imp.acquire_lock()
+            _imp.release_lock()
+            list(map(recurse, [None]))
+
+        with infinite_recursion(100_000):
+            with self.assertRaisesRegex(RecursionError,
+                                        'acquiring the import lock'):
+                recurse(None)
+        self.assertFalse(_imp.lock_held())
 
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
     def test_dll_dependency_import(self):
