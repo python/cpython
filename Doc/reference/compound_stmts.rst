@@ -1849,17 +1849,17 @@ The following example indicates the full set of allowed type parameter declarati
 
    def overly_generic[
       SimpleTypeVar,
-      TypeVarWithDefault = int,
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
-      *SimpleTypeVarTuple = (int, float),
-      **SimpleParamSpec = (str, bytearray),
+      TypeVarWithDefault = int,
+      *SimpleTypeVarTuple = *tuple[int, float],
+      **SimpleParamSpec = [str, bytearray],
    ](
       a: SimpleTypeVar,
-      b: TypeVarWithDefault,
-      c: TypeVarWithBound,
-      d: Callable[SimpleParamSpec, TypeVarWithConstraints],
-      *e: SimpleTypeVarTuple,
+      b: TypeVarWithBound,
+      c: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      d: TypeVarWithDefault,
+      *e: *SimpleTypeVarTuple,
    ): ...
 
 .. _generic-functions:
