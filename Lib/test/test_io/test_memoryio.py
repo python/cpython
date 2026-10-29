@@ -1004,6 +1004,13 @@ class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_truncate_large_size(self):
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass("abc")
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), "abc")
+
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
     def test_widechar(self):
