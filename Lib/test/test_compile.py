@@ -64,6 +64,32 @@ class TestSpecifics(unittest.TestCase):
         """)
         script_helper.assert_python_ok('-c', code)
 
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_nested_or_pattern_allocation_failure(self):
+        # gh-160789: Check error handling on MemoryError in a nested
+        # or-pattern in Python/codegen.c
+        code = textwrap.dedent("""
+            import ast
+            import _testcapi
+
+            tree = ast.parse("match x:\\n case [1|2] | 3: pass\\n")
+            failures = 0
+            for n in range(500):
+                # Empty the list freelist, so that PyList_New() allocates.
+                held = None
+                held = [[] for _ in range(128)]
+                try:
+                    _testcapi.call_with_nomemory(n, n + 1, compile, tree,
+                                                 "<test>", "exec")
+                except MemoryError:
+                    failures += 1
+
+            if failures == 0:
+                raise AssertionError
+        """)
+        script_helper.assert_python_ok('-c', code)
+
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
         compile("\r", "<test>", "exec")
