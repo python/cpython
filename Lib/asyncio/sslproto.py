@@ -308,6 +308,9 @@ class SSLProtocol(protocols.BufferedProtocol):
         # App data write buffering
         self._write_backlog = collections.deque()
         self._write_buffer_size = 0
+        # How much of self._outgoing was produced by _do_write(): encrypted
+        # app data, plus anything else OpenSSL flushed along with it
+        self._outgoing_app_size = 0
 
         self._waiter = waiter
         self._loop = loop
@@ -710,6 +713,7 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._fatal_error(ex, 'Fatal error on SSL protocol')
 
     def _do_write(self):
+        pending = self._outgoing.pending
         try:
             while self._write_backlog:
                 data = self._write_backlog[0]
@@ -723,11 +727,13 @@ class SSLProtocol(protocols.BufferedProtocol):
                     self._write_buffer_size -= data_len
         except SSLAgainErrors:
             pass
+        self._outgoing_app_size += self._outgoing.pending - pending
         self._process_outgoing()
 
     def _process_outgoing(self):
         if not self._ssl_writing_paused:
             data = self._outgoing.read()
+            self._outgoing_app_size = 0
             if len(data):
                 self._transport.write(data)
         self._control_app_writing()
@@ -889,7 +895,15 @@ class SSLProtocol(protocols.BufferedProtocol):
     # Flow control for reads from SSL socket
 
     def _control_ssl_reading(self):
-        size = self._get_read_buffer_size()
+        # Also count the records OpenSSL writes on its own while reading
+        # (alerts, KeyUpdate replies, ...) which the peer does not read:
+        # the app is not involved in producing them, so pausing it does
+        # not bound them; only pausing reads from the peer does.  Whatever
+        # was produced while writing app data (_outgoing_app_size) is left
+        # out so that two peers which both write before they read cannot
+        # deadlock.
+        size = (self._get_read_buffer_size() +
+                self._outgoing.pending - self._outgoing_app_size)
         if size >= self._incoming_high_water and not self._ssl_reading_paused:
             self._ssl_reading_paused = True
             self._transport.pause_reading()
@@ -922,6 +936,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         assert self._ssl_writing_paused
         self._ssl_writing_paused = False
         self._process_outgoing()
+        self._control_ssl_reading()
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         if self._transport:
