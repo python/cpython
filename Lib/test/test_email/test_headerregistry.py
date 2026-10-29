@@ -137,9 +137,11 @@ class TestUnstructuredHeader(TestHeaderBase):
                 self.assertEqual(h, decoded)
                 self.assertDefectsEqual(h.defects, defects)
                 prefix = name + ':' + (' ' if source else '')
-                self.assertEqual(h.fold(policy=policy.default), prefix + folded + '\n')
+                self.assertEqual(h.fold(policy=policy.default),
+                                 prefix + folded + '\n')
 
     string_params = {
+
         'empty': ('', ''),
 
         'valid_encoded_word': (
