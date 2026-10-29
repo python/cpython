@@ -56,7 +56,8 @@ Running an asyncio Program
 
    .. note::
 
-      Users are encouraged to use ``eager_tasks=True`` in their code.
+      Users concerned about performance are encouraged to experiment with
+      ``eager_tasks=True`` in their code.
 
    Example::
 
