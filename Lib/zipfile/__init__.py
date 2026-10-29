@@ -1196,9 +1196,9 @@ class ZipExtFile(io.BufferedIOBase):
             if n > len(data):
                 data += self._read2(n - len(data))
         elif (self._compress_type == ZIP_ZSTANDARD and
-              self._decompressor.eof):
+              getattr(self._decompressor, "eof", False)):
             # Continue with the next Zstandard frame.
-            data = self._decompressor.unused_data
+            data = getattr(self._decompressor, "unused_data", b'')
             self._decompressor = _get_decompressor(self._compress_type)
             if not data:
                 data = self._read2(n)
@@ -1227,24 +1227,33 @@ class ZipExtFile(io.BufferedIOBase):
             # DEFLATE path above) so that a small compressed member cannot
             # expand into one unbounded read.
             try:
-                data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
-            except TypeError:
-                # See MonkeypatchedDecompressorTests in test_core.py
-                warnings._deprecated(
-                    'one-argument decompress()',
-                    'The decompress() method of '
-                    + type(self._decompressor).__name__
-                    + ' should take two arguments, data and max_length.'
-                    + ' One-argument calls will stop working before'
-                    + ' Python 3.21.',
-                    remove=(3, 21),
-                    stacklevel=4)
-                data = self._decompressor.decompress(data)
+                try:
+                    data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+                except TypeError:
+                    # See MonkeypatchedDecompressorTests in test_core.py
+                    warnings._deprecated(
+                        'one-argument decompress()',
+                        'The decompress() method of '
+                        + type(self._decompressor).__name__
+                        + ' should take two arguments, data and max_length.'
+                        + ' One-argument calls will stop working before'
+                        + ' Python 3.21.',
+                        remove=(3, 21),
+                        stacklevel=4)
+                    data = self._decompressor.decompress(data)
+            except Exception as exc:
+                if (self._compress_type == ZIP_ZSTANDARD and
+                    zstd is not None and isinstance(exc, zstd.ZstdError)):
+                    raise BadZipFile(
+                        f"Bad Zstandard data for file {self.name!r}") from exc
+                raise
             if self._compress_type == ZIP_ZSTANDARD:
-                self._eof = (self._compress_left <= 0 and
-                             not self._decompressor.unused_data and
-                             (self._decompressor.eof or
-                              self._decompressor.needs_input))
+                if getattr(self._decompressor, "eof", False):
+                    self._eof = (self._compress_left <= 0 and
+                                 not getattr(self._decompressor, "unused_data", b''))
+                else:
+                    self._eof = (self._compress_left <= 0 and
+                                 getattr(self._decompressor, "needs_input", True))
             else:
                 self._eof = (self._decompressor.eof or
                              self._compress_left <= 0 and
