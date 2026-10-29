@@ -2019,7 +2019,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         callbacks.  Then it calls the callbacks scheduled by them
         eagerly, within the limits of the loop settings.
         """
-        left = self._eager_state
+        nleft = self._eager_state
         nready = len(self._ready)
 
         sched_count = len(self._scheduled)
@@ -2083,50 +2083,50 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Use an idiom that is thread-safe without using locks.
         self._eager_state = constants.EAGER_IDLE
         settings = self._settings
-        if left >= 0 and self._stopping:
+        if nleft >= 0 and self._stopping:
             # The final iteration after stop() during eager processing: run
             # what the loop would run without eager processing, and keep the
             # callbacks scheduled for later iterations queued.
-            left = min(left, nready)
+            nleft = min(nleft, nready)
             nnew = len(self._ready) - nready
-            self._run_handles(left, eager=False)
-            later = [self._ready.popleft() for i in range(nready - left)]
+            self._run_handles(nleft, eager=False)
+            later = [self._ready.popleft() for i in range(nready - nleft)]
             self._run_handles(nnew, eager=False)
             self._ready.extendleft(reversed(later))
             return
         ntodo = len(self._ready)
-        if left > 0:
-            left = min(left, ntodo)
-            self._run_handles(left, eager=False)
+        if nleft > 0:
+            nleft = min(nleft, ntodo)
+            self._run_handles(nleft, eager=False)
             if self._stopping:
                 return
-            ntodo -= left
-            left = len(self._ready) - ntodo
+            ntodo -= nleft
+            nleft = len(self._ready) - ntodo
         self._run_handles(ntodo, eager=False)
         if (not self._ready or self._eager_state == constants.EAGER_BREAK
                 or self._stopping or settings.eager_max_time <= 0
                 or not settings.eager_max_callbacks):
-            if left > 0:
-                self._eager_state = left
+            if nleft > 0:
+                self._eager_state = nleft
             return
 
         # Eager processing: run the callbacks scheduled by the callbacks
         # above, in batches, within the limits of the loop settings.
         deadline = (self.time() + settings.eager_max_time
                     + self._clock_resolution)
-        remaining = settings.eager_max_callbacks
+        nremaining = settings.eager_max_callbacks
         while True:
-            if left <= 0:
-                left = len(self._ready)
-            ntodo = min(left, remaining, constants.EAGER_BATCH_SIZE)
-            remaining -= ntodo
-            left -= self._run_handles(ntodo, eager=True)
-            if (not remaining or not self._ready
+            if nleft <= 0:
+                nleft = len(self._ready)
+            ntodo = min(nleft, nremaining, constants.EAGER_BATCH_SIZE)
+            nremaining -= ntodo
+            nleft -= self._run_handles(ntodo, eager=True)
+            if (not nremaining or not self._ready
                     or self._eager_state == constants.EAGER_BREAK
                     or self._stopping or self.time() > deadline):
                 break
-        if left > 0 or self._stopping:
-            self._eager_state = left
+        if nleft > 0 or self._stopping:
+            self._eager_state = nleft
 
     def _run_handles(self, ntodo, *, eager):
         for i in range(ntodo):
