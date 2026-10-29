@@ -272,6 +272,8 @@ class TestRaces(TestBase):
         do_race(set_value, mutate)
 
     def test_racing_recursion_limit(self):
+        self.addCleanup(sys.setrecursionlimit, sys.getrecursionlimit())
+
         def something_recursive():
             def count(n):
                 if n > 0:

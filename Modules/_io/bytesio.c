@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"       // _PyBytes_ResizeKeepOnError()
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_list.h"              // _PyList_AppendTakeRef()
 #include "pycore_object.h"
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
@@ -38,8 +39,8 @@ typedef struct {
 #define bytesiobuf_CAST(op) ((bytesiobuf *)(op))
 
 /* The bytesio object can be in three states:
-  * Py_REFCNT(buf) == 1, exports == 0.
-  * Py_REFCNT(buf) > 1.  exports == 0,
+  * Py_REFCNT(buf) == 1, the hash of buf is not cached, exports == 0.
+  * Py_REFCNT(buf) > 1 or the hash of buf is cached.  exports == 0,
     first modification or export causes the internal buffer copying.
   * exports > 0.  Any modifications are forbidden.  Every exported buffer
     keeps a reference to buf, so it outlives closing of the bytesio object.
@@ -76,10 +77,19 @@ check_exports(bytesio *self)
         return NULL; \
     }
 
+/* If the hash value is cached, the internal bytes object was already used in
+   Python somehow (ex: as a dictionary key).  Modifying it in place would leave
+   the hash of the old contents, even if nothing else references it anymore. */
+#define HASHED_BUF(self) \
+    (_PyBytes_GET_CACHED_HASH((PyBytesObject *)(self)->buf) != -1)
+
 #ifdef Py_GIL_DISABLED
-#define SHARED_BUF(self) ((self)->buf_shared || !_PyObject_IsUniquelyReferenced((self)->buf))
+#define SHARED_BUF(self) \
+    ((self)->buf_shared || !_PyObject_IsUniquelyReferenced((self)->buf) \
+     || HASHED_BUF(self))
 #else
-#define SHARED_BUF(self) (!_PyObject_IsUniquelyReferenced((self)->buf))
+#define SHARED_BUF(self) \
+    (!_PyObject_IsUniquelyReferenced((self)->buf) || HASHED_BUF(self))
 #endif
 
 static inline void
@@ -268,6 +278,7 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
             goto done;
         }
     }
+    assert(_PyBytes_IsMutable(self->buf));
 
     if (self->pos > self->string_size) {
         /* In case of overseek, pad with null bytes the buffer region between
@@ -297,20 +308,19 @@ write_bytes_lock_held(bytesio *self, PyObject *b)
     return len;
 }
 
-static PyObject *
-bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
+/*[clinic input]
+@critical_section
+@getter
+_io.BytesIO.closed -> bool
+
+True if the file is closed.
+[clinic start generated code]*/
+
+static int
+_io_BytesIO_closed_get_impl(bytesio *self)
+/*[clinic end generated code: output=7cdc647cc7a71683 input=0687f923344225ee]*/
 {
-    PyObject *ret;
-    bytesio *self = bytesio_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->buf == NULL) {
-        ret = Py_True;
-    }
-    else {
-        ret = Py_False;
-    }
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return self->buf == NULL;
 }
 
 /*[clinic input]
@@ -665,11 +675,9 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
         line = PyBytes_FromStringAndSize(output, n);
         if (!line)
             goto on_error;
-        if (PyList_Append(result, line) == -1) {
-            Py_DECREF(line);
+        if (_PyList_AppendTakeRef((PyListObject *)result, line) < 0) {
             goto on_error;
         }
-        Py_DECREF(line);
         size += n;
         if (maxsize > 0 && size >= maxsize)
             break;
@@ -716,7 +724,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
     assert(self->pos + len <= PY_SSIZE_T_MAX);
     assert(len >= 0);
-    memcpy(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
+    memmove(buffer->buf, PyBytes_AS_STRING(self->buf) + self->pos, len);
     self->pos += len;
 
     return PyLong_FromSsize_t(len);
@@ -756,6 +764,8 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
                          "negative size value %zd", new_size);
             return NULL;
         }
+        CHECK_CLOSED(self);
+        CHECK_EXPORTS(self);
     }
 
     if (new_size < self->string_size) {
@@ -770,13 +780,18 @@ _io_BytesIO_truncate_impl(bytesio *self, PyObject *size)
     return PyLong_FromSsize_t(new_size);
 }
 
+/*[clinic input]
+@critical_section
+_io.BytesIO.__next__ as bytesio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-bytesio_iternext_lock_held(PyObject *op)
+bytesio_iternext_impl(bytesio *self)
+/*[clinic end generated code: output=f530bdee3a720d48 input=7fb3a763efe11a21]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     Py_ssize_t n;
-    bytesio *self = bytesio_CAST(op);
 
     CHECK_CLOSED(self);
 
@@ -786,16 +801,6 @@ bytesio_iternext_lock_held(PyObject *op)
         return NULL;
 
     return read_bytes_lock_held(self, n);
-}
-
-static PyObject *
-bytesio_iternext(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 /*[clinic input]
@@ -950,54 +955,55 @@ _io_BytesIO_close_impl(bytesio *self)
    function to use the efficient instance representation of PEP 307.
  */
 
- static PyObject *
- bytesio_getstate_lock_held(PyObject *op)
- {
-     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 
-     bytesio *self = bytesio_CAST(op);
-     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
-     PyObject *dict;
-     PyObject *state;
-
-     if (initvalue == NULL)
-         return NULL;
-     if (self->dict == NULL) {
-         dict = Py_NewRef(Py_None);
-     }
-     else {
-         dict = PyDict_Copy(self->dict);
-         if (dict == NULL) {
-             Py_DECREF(initvalue);
-             return NULL;
-         }
-     }
-
-     state = Py_BuildValue("(OnN)", initvalue, self->pos, dict);
-     Py_DECREF(initvalue);
-     return state;
-}
+/*[clinic input]
+@critical_section
+_io.BytesIO.__getstate__
+[clinic start generated code]*/
 
 static PyObject *
-bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
+_io_BytesIO___getstate___impl(bytesio *self)
+/*[clinic end generated code: output=4a776270c8443b85 input=f41e5bc9731475c4]*/
 {
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_getstate_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
+    PyObject *dict;
+    PyObject *state;
+
+    if (initvalue == NULL)
+        return NULL;
+    if (self->dict == NULL) {
+        dict = Py_NewRef(Py_None);
+    }
+    else {
+        dict = PyDict_Copy(self->dict);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
+    }
+
+    state = Py_BuildValue("(OnN)", initvalue, self->pos, dict);
+    Py_DECREF(initvalue);
+    return state;
 }
 
-static PyObject *
-bytesio_setstate_lock_held(PyObject *op, PyObject *state)
-{
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 
+/*[clinic input]
+@critical_section
+_io.BytesIO.__setstate__
+
+    state: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO___setstate___impl(bytesio *self, PyObject *state)
+/*[clinic end generated code: output=3605abdec171bb98 input=82a189599ba75083]*/
+{
     PyObject *result;
     PyObject *position_obj;
     PyObject *dict;
     Py_ssize_t pos;
-    bytesio *self = bytesio_CAST(op);
 
     assert(state != NULL);
 
@@ -1066,16 +1072,6 @@ bytesio_setstate_lock_held(PyObject *op, PyObject *state)
     }
 
     Py_RETURN_NONE;
-}
-
-static PyObject *
-bytesio_setstate(PyObject *op, PyObject *state)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_setstate_lock_held(op, state);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static void
@@ -1159,12 +1155,18 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     return 0;
 }
 
-static PyObject *
-bytesio_sizeof_lock_held(PyObject *op)
-{
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 
-    bytesio *self = bytesio_CAST(op);
+/*[clinic input]
+@critical_section
+_io.BytesIO.__sizeof__
+
+Size of object in memory, in bytes.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BytesIO___sizeof___impl(bytesio *self)
+/*[clinic end generated code: output=f61b601bd055c4de input=6f01c36e6ff64c17]*/
+{
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
         size_t s = _PySys_GetSizeOf(self->buf);
@@ -1174,16 +1176,6 @@ bytesio_sizeof_lock_held(PyObject *op)
         res += s;
     }
     return PyLong_FromSize_t(res);
-}
-
-static PyObject *
-bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_sizeof_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static int
@@ -1213,8 +1205,7 @@ bytesio_clear(PyObject *op)
 #undef clinic_state
 
 static PyGetSetDef bytesio_getsetlist[] = {
-    {"closed",  bytesio_get_closed, NULL,
-     "True if the file is closed."},
+    _IO_BYTESIO_CLOSED_GETSETDEF
     {NULL},            /* sentinel */
 };
 
@@ -1238,9 +1229,9 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF
     _IO_BYTESIO_TRUNCATE_METHODDEF
-    {"__getstate__",  bytesio_getstate,  METH_NOARGS, NULL},
-    {"__setstate__",  bytesio_setstate,  METH_O, NULL},
-    {"__sizeof__", bytesio_sizeof,     METH_NOARGS, NULL},
+    _IO_BYTESIO___GETSTATE___METHODDEF
+    _IO_BYTESIO___SETSTATE___METHODDEF
+    _IO_BYTESIO___SIZEOF___METHODDEF
     {NULL, NULL}        /* sentinel */
 };
 

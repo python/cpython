@@ -12,7 +12,7 @@ from libclinic.language import Language
 from libclinic.function import (
     Module, Class, Property, Function, Parameter,
     group_to_variable_name,
-    METHOD_INIT, METHOD_NEW,
+    METHOD_INIT, METHOD_NEW, SLOT,
     ACCESSORS, SETTERS)
 from libclinic.converters import self_converter
 from libclinic.parse_args import (
@@ -383,6 +383,10 @@ class CLanguage(Language):
         if ("METH_O" in templates['methoddef_define'] and
             '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
+        # A slot function receives its arguments as parameters, see
+        # parse_slot(): there is nothing to declare or parse.
+        if f.kind is SLOT:
+            data.declarations.clear()
 
         full_name = f.full_name
         template_dict = {'full_name': full_name}
@@ -404,12 +408,17 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        if f.kind not in SETTERS | {METHOD_INIT}:
+        if f.kind not in SETTERS | {METHOD_INIT, SLOT}:
             f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
-        # tp_init returns int; every other parser returns an object.
-        template_dict['return_type'] = (
-            'int' if f.kind is METHOD_INIT else 'PyObject *')
+        # tp_init returns int, a slot function returns what its slot
+        # declares, every other parser returns an object.
+        if f.kind is SLOT:
+            assert f.slot is not None
+            template_dict['return_type'] = f.slot.return_type
+        else:
+            template_dict['return_type'] = (
+                'int' if f.kind is METHOD_INIT else 'PyObject *')
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)

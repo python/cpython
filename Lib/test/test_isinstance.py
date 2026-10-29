@@ -263,6 +263,20 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    def test_tuple_subclass_methods_not_called(self):
+        # gh-83731: make sure isinstance() reads the items of a tuple
+        # subclass directly, without calling its __iter__(),
+        # __getitem__() or __len__().
+        class T(tuple):
+            def __iter__(self):
+                raise AssertionError('__iter__ called')
+            def __getitem__(self, index):
+                raise AssertionError('__getitem__ called')
+            def __len__(self):
+                raise AssertionError('__len__ called')
+
+        self.assertTrue(isinstance(1, T((int,))))
+
     @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()

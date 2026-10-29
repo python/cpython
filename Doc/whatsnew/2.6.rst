@@ -2600,7 +2600,7 @@ changes, or look through the Subversion logs for all the details.
   measured in seconds.   For example::
 
      >>> u = urllib2.urlopen("http://slow.example.com",
-                             timeout=3)
+     ...                     timeout=3)
      Traceback (most recent call last):
        ...
      urllib2.URLError: <urlopen error timed out>

@@ -3,6 +3,10 @@
 import sys
 if __name__ == "__main__":
     sys.modules['idlelib.pyshell'] = sys.modules['__main__']
+    if __spec__ is not None and not sys.flags.safe_path:
+        # Remove the current directory, prepended by "python -m", so that
+        # user files do not shadow IDLE's imports (gh-70331).
+        del sys.path[0]
 
 try:
     from tkinter import *
@@ -455,7 +459,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
         command = f"__import__('idlelib.run').run.main({del_exitf!r})"
-        return [sys.executable] + w + ["-c", command, str(self.port)]
+        # -P keeps the current directory off sys.path, so that user files
+        # do not shadow run's imports (gh-70331).  transfer_path() sets
+        # sys.path later.
+        return [sys.executable, '-P'] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = (HOST, self.port)
@@ -686,7 +693,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                               + source + "\ndel __file__")
         try:
             code = compile(source, filename, "exec")
-        except (OverflowError, SyntaxError):
+        except Exception:
             self.tkconsole.resetoutput()
             print('*** Error in script or command!\n'
                  'Traceback (most recent call last):',
@@ -698,6 +705,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
+        # Remove the highlighting of a previous syntax error (gh-93966).
+        self.tkconsole.text.tag_remove("ERROR", "1.0", "end")
         filename = self.stuffsource(source)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
@@ -734,21 +743,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
         """
         tkconsole = self.tkconsole
         text = tkconsole.text
-        text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
-        msg = getattr(value, 'msg', '') or value or "<no detail available>"
-        lineno = getattr(value, 'lineno', '') or 1
-        offset = getattr(value, 'offset', '') or 0
+        if not issubclass(type, SyntaxError):
+            tkconsole.resetoutput()
+            InteractiveInterpreter.showsyntaxerror(self, filename, **kwargs)
+            tkconsole.showprompt()
+            return
+        msg = value.msg or "<no detail available>"
+        lineno = value.lineno or 1
+        offset = value.offset or 0
         if offset == 0:
             lineno += 1 #mark end of offending line
         if lineno == 1:
-            pos = "iomark + %d chars" % (offset-1)
+            pos = f"iomark + {offset-1} chars"
         else:
-            pos = "iomark linestart + %d lines + %d chars" % \
-                  (lineno-1, offset-1)
+            pos = f"iomark linestart + {lineno-1} lines + {offset-1} chars"
         tkconsole.colorize_syntax_error(text, pos)
         tkconsole.resetoutput()
-        self.write("SyntaxError: %s\n" % msg)
+        self.write(f"{type.__name__}: {msg}\n")
         tkconsole.showprompt()
 
     def showtraceback(self):

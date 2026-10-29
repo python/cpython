@@ -139,6 +139,7 @@ class SocketIO:
         self.objtable = objtable
         self.responses = {}
         self.cvars = {}
+        self.sendlock = threading.Lock()
         # Receive buffer state.  A new connection must not inherit a
         # partially received packet from the old one (gh-89544).
         self.buff = b''
@@ -319,15 +320,20 @@ class SocketIO:
         else:
             # wait for notification from socket handling thread
             cvar = self.cvars[myseq]
-            cvar.acquire()
-            while myseq not in self.responses:
-                cvar.wait()
-            response = self.responses[myseq]
-            self.debug("_getresponse:%s: thread woke up: response: %s" %
-                       (myseq, response))
-            del self.responses[myseq]
-            del self.cvars[myseq]
-            cvar.release()
+            with cvar:
+                try:
+                    while myseq not in self.responses:
+                        cvar.wait()
+                except BaseException:
+                    # Interrupted; a late response will be discarded.
+                    del self.cvars[myseq]
+                    self.responses.pop(myseq, None)
+                    raise
+                response = self.responses[myseq]
+                self.debug("_getresponse:%s: thread woke up: response: %s" %
+                           (myseq, response))
+                del self.responses[myseq]
+                del self.cvars[myseq]
             return response
 
     def newseq(self):
@@ -342,13 +348,14 @@ class SocketIO:
             print("Cannot pickle:", repr(message), file=sys.__stderr__)
             raise
         s = struct.pack("<i", len(s)) + s
-        while len(s) > 0:
-            try:
-                r, w, x = select.select([], [self.sock], [])
-                n = self.sock.send(s[:BUFSIZE])
-            except (AttributeError, TypeError):
-                raise OSError("socket no longer exists")
-            s = s[n:]
+        with self.sendlock:
+            while len(s) > 0:
+                try:
+                    r, w, x = select.select([], [self.sock], [])
+                    n = self.sock.send(s[:BUFSIZE])
+                except (AttributeError, TypeError):
+                    raise OSError("socket no longer exists")
+                s = s[n:]
 
     def pollpacket(self, wait):
         self._stage0()
