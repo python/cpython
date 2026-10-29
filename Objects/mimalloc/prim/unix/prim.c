@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2025, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2026, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -21,11 +21,15 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 #include "mimalloc.h"
-#include "mimalloc/internal.h"
 #include "mimalloc/prim.h"
+#include "mimalloc/track.h"
+#include "mimalloc/prim/os.h"
+#include "mimalloc/util/libc.h"
+#include "mimalloc/util/options.h"
+#include "mimalloc/heap/init.h"
 
 #include <sys/mman.h>  // mmap
-#include <unistd.h>    // sysconf
+#include <unistd.h>    // sysconf, sleep
 #include <fcntl.h>     // open, close, read, access
 #include <stdlib.h>    // getenv, arc4random_buf
 
@@ -38,8 +42,13 @@ terms of the MIT license. A copy of the license can be found in the file
   #endif
   #if defined(__GLIBC__)
   #include <linux/mman.h>   // linux mmap flags
-  #else
-  #include <sys/mman.h>
+  #endif
+  #if defined(__riscv) || defined(_M_RISCV)
+    #if defined(MI_HAS_SYS_HWPROBEH)
+      #include <sys/hwprobe.h>
+    #elif defined(MI_HAS_ASM_HWPROBEH)
+      #include <asm/hwprobe.h>
+    #endif
   #endif
 #elif defined(__APPLE__)
   #include <AvailabilityMacros.h>
@@ -65,6 +74,17 @@ terms of the MIT license. A copy of the license can be found in the file
   #include <sys/syscall.h>
 #endif
 
+// MSan does not intercept raw syscalls, so memory they write must be marked as initialized
+#if defined(__has_feature)
+  #if __has_feature(memory_sanitizer)
+  #include <sanitizer/msan_interface.h>  // __msan_unpoison
+  #define mi_msan_unpoison(p,size)  __msan_unpoison(p,size)
+  #endif
+#endif
+#ifndef mi_msan_unpoison
+#define mi_msan_unpoison(p,size)
+#endif
+
 #if !defined(MADV_DONTNEED) && defined(POSIX_MADV_DONTNEED)  // QNX
 #define MADV_DONTNEED  POSIX_MADV_DONTNEED
 #endif
@@ -72,22 +92,25 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MADV_FREE  POSIX_MADV_FREE
 #endif
 
-#define MI_UNIX_LARGE_PAGE_SIZE (2*MI_MiB) // TODO: can we query the OS for this?
+#define MI_UNIX_MAX_THP_PAGE_SIZE (8*MI_MiB)        // above this we do not use madvise for transparent huge pages (see issue #1431)
 
 //------------------------------------------------------------------------------------
 // Use syscalls for some primitives to allow for libraries that override open/read/close etc.
 // and do allocation themselves; using syscalls prevents recursion when mimalloc is
 // still initializing (issue #713)
+// Not used on Android, see issue python/cpython/pull/158530
 // Declare inline to avoid unused function warnings.
 //------------------------------------------------------------------------------------
 
-#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access)
+#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access)  && !defined(__ANDROID__)
 
 static inline int mi_prim_open(const char* fpath, int open_flags) {
   return syscall(SYS_open,fpath,open_flags,0);
 }
 static inline ssize_t mi_prim_read(int fd, void* buf, size_t bufsize) {
-  return syscall(SYS_read,fd,buf,bufsize);
+  ssize_t nread = syscall(SYS_read,fd,buf,bufsize);
+  if (nread > 0) { mi_msan_unpoison(buf, (size_t)nread); }
+  return nread;
 }
 static inline int mi_prim_close(int fd) {
   return syscall(SYS_close,fd);
@@ -124,12 +147,13 @@ static bool unix_detect_overcommit(void) {
   #if defined(__linux__)
     int fd = mi_prim_open("/proc/sys/vm/overcommit_memory", O_RDONLY);
     if (fd >= 0) {
-      char buf[32] = {0};  // CPython: zero-initialize to avoid an MSAN report
-      ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf));
+      char buf[64];
+      ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf)-1);
       mi_prim_close(fd);
       // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>
       // 0: heuristic overcommit, 1: always overcommit, 2: never overcommit (ignore NORESERVE)
-      if (nread >= 1) {
+      if (nread >= 1 && nread < (ssize_t)sizeof(buf)) {
+        buf[nread] = 0;
         os_overcommit = (buf[0] == '0' || buf[0] == '1');
       }
     }
@@ -143,6 +167,46 @@ static bool unix_detect_overcommit(void) {
     // default: overcommit is true
   #endif
   return os_overcommit;
+}
+
+static bool unix_detect_thp(void) {
+  bool thp_enabled = false;
+  #if defined(__linux__)
+  int fd = mi_prim_open("/sys/kernel/mm/transparent_hugepage/enabled", O_RDONLY);
+  if (fd >= 0) {
+    char buf[64];
+    ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf)-1);
+    mi_prim_close(fd);
+    // <https://www.kernel.org/doc/html/latest/admin-guide/mm/transhuge.html>
+    // between brackets is the current value, for example: always [madvise] never
+    if (nread >= 1 && nread < (ssize_t)sizeof(buf)) {
+      buf[nread] = 0;
+      thp_enabled = (_mi_strnstr(buf,nread,"[never]") == NULL);
+    }
+  }
+  #endif
+  return thp_enabled;
+}
+
+static size_t unix_detect_large_page_size(void) {
+  size_t large_page_size = 2*MI_MiB;  // assume 512*4KiB by default
+  #if defined(__linux__)
+  // get the transparent huge page size from the pmd size
+  const int fd = mi_prim_open("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", O_RDONLY);
+  if (fd >= 0) {
+    char buf[64];
+    const ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf)-1);
+    mi_prim_close(fd);
+    if (nread >= 1 && nread < (ssize_t)sizeof(buf)) {
+      buf[nread] = 0;
+      long size = 0;
+      if (_mi_strntol(buf, nread, NULL, &size) && size > 0 && (unsigned long)size <= SIZE_MAX) {
+        large_page_size = (size_t)size;
+      }
+    }
+  }
+  #endif
+  return large_page_size;
 }
 
 // try to detect the physical memory dynamically (if possible)
@@ -187,6 +251,41 @@ static void unix_detect_physical_memory( size_t page_size, size_t* physical_memo
   #endif
 }
 
+// Detect the virtual address bits (currently Linux/RISC-V only)
+static size_t unix_detect_virtual_address_bits(void) {
+  #if defined(__riscv) || defined(_M_RISCV)
+    #if defined(RISCV_HWPROBE_KEY_HIGHEST_VIRT_ADDRESS)
+      struct riscv_hwprobe probe = { .key = RISCV_HWPROBE_KEY_HIGHEST_VIRT_ADDRESS, };
+      // Prefer the GNU libc interface if available, as it can also use the VDSO
+      #if defined(MI_HAS_SYS_HWPROBEH)
+      if (__riscv_hwprobe(&probe, 1, 0, NULL, 0) == 0)
+      #else
+      if (syscall(__NR_riscv_hwprobe, &probe, 1, 0, NULL, 0) == 0)
+      #endif
+      {
+        if (probe.key != -1) { // If a key is unknown to the kernel, its key field will be cleared to -1.
+          return (MI_SIZE_BITS - mi_clz((uintptr_t)probe.value));
+        }
+      }
+    #endif
+    // Fallback to checking /proc/cpuinfo for older kernels
+    const int fd = mi_prim_open("/proc/cpuinfo", O_RDONLY);
+    if (fd >= 0) {
+      char buf[2048];
+      const ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf)-1);
+      mi_prim_close(fd);
+      if ((nread >= 1) && (nread < (ssize_t)sizeof(buf))) {
+        buf[nread] = 0;
+        if (_mi_strnstr(buf, nread, "sv39")) { return 39; }
+        else if (_mi_strnstr(buf, nread, "sv48")) { return 48; }
+        else if (_mi_strnstr(buf, nread, "sv57")) { return 57; }
+      }
+    }
+  #endif // riscv
+  // default
+  return MI_MAX_VABITS;
+}
+
 void _mi_prim_mem_init( mi_os_mem_config_t* config )
 {
   long psize = sysconf(_SC_PAGESIZE);
@@ -195,15 +294,18 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config )
     config->alloc_granularity = (size_t)psize;
     unix_detect_physical_memory(config->page_size, &config->physical_memory_in_kib);
   }
-  config->large_page_size = MI_UNIX_LARGE_PAGE_SIZE;
-  config->has_overcommit = unix_detect_overcommit();
   config->has_partial_free = true;    // mmap can free in parts
   config->has_virtual_reserve = true; // todo: check if this true for NetBSD?  (for anonymous mmap with PROT_NONE)
+  config->large_page_size = unix_detect_large_page_size();
+  config->has_transparent_huge_pages = (config->large_page_size <= MI_UNIX_MAX_THP_PAGE_SIZE) && unix_detect_thp();
+  config->has_overcommit = unix_detect_overcommit();
+  config->virtual_address_bits = unix_detect_virtual_address_bits();
 
   // disable transparent huge pages for this process?
   #if (defined(__linux__) || defined(__ANDROID__)) && defined(PR_GET_THP_DISABLE)
   if (!mi_option_is_enabled(mi_option_allow_thp)) // disable THP if requested through an option
   {
+    config->has_transparent_huge_pages = false;
     if (prctl(PR_GET_THP_DISABLE, 0, 0, 0, 0) == 0) {   // -1 on error, 1 if already disabled
       // Most likely since distros often come with always/madvise settings.
       // Disabling only for mimalloc process rather than touching system wide settings
@@ -257,10 +359,11 @@ static void* unix_mmap_prim_aligned(void* addr, size_t size, size_t try_alignmen
   void* p = NULL;
   #if defined(MAP_ALIGNED)  // BSD
   if (addr == NULL && try_alignment > 1 && (try_alignment % _mi_os_page_size()) == 0) {
-    size_t n = mi_bsr(try_alignment);
+    size_t n = 0;
+    mi_bsr(try_alignment, &n);
     if (((size_t)1 << n) == try_alignment && n >= 12 && n <= 30) {  // alignment is a power of 2 and 4096 <= alignment <= 1GiB
       p = unix_mmap_prim(addr, size, protect_flags, flags | MAP_ALIGNED(n), fd);
-      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) {
+      if (p==MAP_FAILED || !mi_is_aligned(p,try_alignment)) {
         int err = errno;
         _mi_trace_message("unable to directly request aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, addr);
       }
@@ -275,13 +378,13 @@ static void* unix_mmap_prim_aligned(void* addr, size_t size, size_t try_alignmen
     // fall back to regular mmap
   }
   #endif
-  #if (MI_INTPTR_SIZE >= 8) && !defined(MAP_ALIGNED)
+  #if (MI_SIZE_SIZE >= 8) && !defined(MAP_ALIGNED)
   // on 64-bit systems, use the virtual address area after 2TiB for 4MiB aligned allocations
   if (addr == NULL) {
     void* hint = _mi_os_get_aligned_hint(try_alignment, size);
     if (hint != NULL) {
       p = unix_mmap_prim(hint, size, protect_flags, flags, fd);
-      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) {
+      if (p==MAP_FAILED || !mi_is_aligned(p,try_alignment)) {
         #if MI_TRACK_ENABLED  // asan sometimes does not instrument errno correctly?
         int err = 0;
         #else
@@ -389,33 +492,48 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       }
     }
   } // huge pages
+  #else
+  MI_UNUSED(large_only);
   #endif
   // regular allocation
   if (p == NULL) {
     *is_large = false;
     p = unix_mmap_prim_aligned(addr, size, try_alignment, protect_flags, flags, fd);
-    #if !defined(MI_NO_THP)
-    if (p != NULL && mi_option_is_enabled(mi_option_allow_thp) && _mi_os_canuse_large_page(size, try_alignment)) {
-      #if defined(MADV_HUGEPAGE)
-      // Many Linux systems don't allow MAP_HUGETLB but they support instead
-      // transparent huge pages (THP). Generally, it is not required to call `madvise` with MADV_HUGE
-      // though since properly aligned allocations will already use large pages if available
-      // in that case -- in particular for our large regions (in `memory.c`).
-      // However, some systems only allow THP if called with explicit `madvise`, so
-      // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
-      if (unix_madvise(p, size, MADV_HUGEPAGE) == 0) {
-        // *is_large = true; // possibly
-      };
-      #elif defined(__sun)
-      struct memcntl_mha cmd = {0};
-      cmd.mha_pagesize = _mi_os_large_page_size();
-      cmd.mha_cmd = MHA_MAPSIZE_VA;
-      if (memcntl((caddr_t)p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
-        // *is_large = true; // possibly
+    if (p!=NULL) {
+      #if defined(MADV_NOHUGEPAGE)
+      const size_t large_page_size = _mi_os_large_page_size();
+      if (large_page_size > MI_UNIX_MAX_THP_PAGE_SIZE && size >= large_page_size) {
+        (void)unix_madvise(p, size, MADV_NOHUGEPAGE);  // prevent using large transparent huge pages, see issue #1431
+      }
+      else
+      #endif
+      {  // keep the `else` above well-formed when MI_NO_THP is defined
+      #if !defined(MI_NO_THP)
+      if (allow_large && mi_option_is_enabled(mi_option_allow_thp) && _mi_os_canuse_large_page(size,try_alignment)) {
+        #if defined(MADV_HUGEPAGE)
+        if (_mi_os_has_thp()) {
+          // Many Linux systems don't allow MAP_HUGETLB but they support instead
+          // transparent huge pages (THP). Generally, it is not required to call `madvise` with MADV_HUGE
+          // though since properly aligned allocations will already use large pages if available
+          // in that case -- in particular for our large regions (in `memory.c`).
+          // However, some systems only allow THP if called with explicit `madvise`, so
+          // when large OS pages are enabled for mimalloc, we call `madvise` anyways.
+          if (unix_madvise(p, size, MADV_HUGEPAGE) == 0) {
+            // *is_large = true; // possibly
+          };
+        }
+        #elif defined(__sun)
+        struct memcntl_mha cmd = {0};
+        cmd.mha_pagesize = _mi_os_large_page_size();
+        cmd.mha_cmd = MHA_MAPSIZE_VA;
+        if (memcntl((caddr_t)p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
+          // *is_large = true; // possibly
+        }
+        #endif
       }
       #endif
+      }
     }
-    #endif
   }
   return p;
 }
@@ -437,7 +555,7 @@ int _mi_prim_alloc(void* hint_addr, size_t size, size_t try_alignment, bool comm
 //---------------------------------------------
 
 static void unix_mprotect_hint(int err) {
-  #if defined(__linux__) && (MI_SECURE>=5) // guard page around every mimalloc page
+  #if defined(__linux__) && (MI_SECURE>=5 || MI_GUARDED) // guard page around every mimalloc page
   if (err == ENOMEM) {
     _mi_warning_message("The next warning may be caused by a low memory map limit.\n"
                         "  On Linux this is controlled by the vm.max_map_count -- maybe increase it?\n"
@@ -447,6 +565,10 @@ static void unix_mprotect_hint(int err) {
   MI_UNUSED(err);
   #endif
 }
+
+
+
+
 
 int _mi_prim_commit(void* start, size_t size, bool* is_zero) {
   // commit: ensure we can access the area
@@ -473,27 +595,28 @@ int _mi_prim_reuse(void* start, size_t size) {
 
 int _mi_prim_decommit(void* start, size_t size, bool* needs_recommit) {
   int err = 0;
-  #if defined(__APPLE__) && defined(MADV_FREE_REUSABLE)
-    // decommit on macOS: use MADV_FREE_REUSABLE as it does immediate rss accounting (issue #1097)
-    err = unix_madvise(start, size, MADV_FREE_REUSABLE);
-    if (err) { err = unix_madvise(start, size, MADV_DONTNEED); }
+  #if 1
+    #if defined(__APPLE__) && defined(MADV_FREE_REUSABLE)
+      // decommit on macOS: use MADV_FREE_REUSABLE as it does immediate rss accounting (issue #1097)
+      err = unix_madvise(start, size, MADV_FREE_REUSABLE);
+      if (err) { err = unix_madvise(start, size, MADV_DONTNEED); }
+    #else
+      // decommit: use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
+      err = unix_madvise(start, size, MADV_DONTNEED);
+    #endif
+    #if !MI_DEBUG && MI_SECURE<=2
+      *needs_recommit = false;
+    #else
+      *needs_recommit = true;
+      mprotect(start, size, PROT_NONE);
+    #endif
   #else
-    // decommit: use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
-    err = unix_madvise(start, size, MADV_DONTNEED);
-  #endif
-  #if !MI_DEBUG && MI_SECURE<=2
-    *needs_recommit = false;
-  #else
+    // decommit: use mmap with MAP_FIXED and PROT_NONE to discard the existing memory (and reduce rss)
     *needs_recommit = true;
-    mprotect(start, size, PROT_NONE);
+    const int fd = unix_mmap_fd();
+    void* p = mmap(start, size, PROT_NONE, (MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE), fd, 0);
+    if (p != start) { err = errno; }
   #endif
-  /*
-  // decommit: use mmap with MAP_FIXED and PROT_NONE to discard the existing memory (and reduce rss)
-  *needs_recommit = true;
-  const int fd = unix_mmap_fd();
-  void* p = mmap(start, size, PROT_NONE, (MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE), fd, 0);
-  if (p != start) { err = errno; }
-  */
   return err;
 }
 
@@ -539,7 +662,7 @@ int _mi_prim_protect(void* start, size_t size, bool protect) {
 // Huge page allocation
 //---------------------------------------------
 
-#if (MI_INTPTR_SIZE >= 8) && !defined(__HAIKU__) && !defined(__CYGWIN__)
+#if (MI_SIZE_SIZE >= 8) && !defined(__HAIKU__) && !defined(__CYGWIN__)
 
 #ifndef MPOL_PREFERRED
 #define MPOL_PREFERRED 1
@@ -559,13 +682,13 @@ static long mi_prim_mbind(void* start, unsigned long len, unsigned long mode, co
 int _mi_prim_alloc_huge_os_pages(void* hint_addr, size_t size, int numa_node, bool* is_zero, void** addr) {
   bool is_large = true;
   *is_zero = true;
-  *addr = unix_mmap(hint_addr, size, MI_SEGMENT_SIZE, PROT_READ | PROT_WRITE, true, true, &is_large);
-  if (*addr != NULL && numa_node >= 0 && numa_node < (8*MI_INTPTR_SIZE - 1)) { // at most 63 nodes
+  *addr = unix_mmap(hint_addr, size, MI_ARENA_SLICE_ALIGN, PROT_READ | PROT_WRITE, true, true, &is_large);
+  if (*addr != NULL && numa_node >= 0 && numa_node < (8*MI_SIZE_SIZE - 1)) { // at most 63 nodes
     unsigned long numa_mask = (1UL << numa_node);
-    // TODO: does `mbind` work correctly for huge OS pages? should we
+    // todo: does `mbind` work correctly for huge OS pages? should we
     // use `set_mempolicy` before calling mmap instead?
     // see: <https://lkml.org/lkml/2017/2/9/875>
-    long err = mi_prim_mbind(*addr, size, MPOL_PREFERRED, &numa_mask, 8*MI_INTPTR_SIZE, 0);
+    long err = mi_prim_mbind(*addr, size, MPOL_PREFERRED, &numa_mask, 8*MI_SIZE_SIZE, 0);
     if (err != 0) {
       err = errno;
       _mi_warning_message("failed to bind huge (1GiB) pages to numa node %d (error: %ld (0x%lx))\n", numa_node, err, err);
@@ -640,7 +763,7 @@ size_t _mi_prim_numa_node_count(void) {
 #elif defined(__DragonFly__)
 
 size_t _mi_prim_numa_node(void) {
-  // TODO: DragonFly does not seem to provide any userland means to get this information.
+  // todo: DragonFly does not seem to provide any userland means to get this information.
   return 0ul;
 }
 
@@ -710,7 +833,6 @@ mi_msecs_t _mi_prim_clock_now(void) {
 
 #if defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__HAIKU__)
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/resource.h>
 
 #if defined(__APPLE__)
@@ -871,7 +993,6 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
       defined(__sun) || \
-      defined(__CYGWIN__) /* CPython: gh-148461 */ || \
       (defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7))
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
@@ -879,7 +1000,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
   return true;
 }
 
-#elif defined(__APPLE__) || defined(__linux__) || defined(__HAIKU__)   // also for old apple versions < 10.7 (issue #829)
+#elif defined(__APPLE__) || defined(__linux__) || defined(__HAIKU__) || defined(__CYGWIN__)  // also for old apple versions < 10.7 (issue #829)
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -897,6 +1018,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
     static _Atomic(uintptr_t) no_getrandom; // = 0
     if (mi_atomic_load_acquire(&no_getrandom)==0) {
       ssize_t ret = syscall(SYS_getrandom, buf, buf_len, GRND_NONBLOCK);
+      if (ret > 0) { mi_msan_unpoison(buf, (size_t)ret); }
       if (ret >= 0) return (buf_len == (size_t)ret);
       if (errno != ENOSYS) return false;
       mi_atomic_store_release(&no_getrandom, (uintptr_t)1); // don't call again, and fall back to /dev/urandom
@@ -941,35 +1063,38 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 #if defined(MI_USE_PTHREADS)
 
 // use pthread local storage keys to detect thread ending
-// (and used with MI_TLS_PTHREADS for the default heap)
-pthread_key_t _mi_heap_default_key = (pthread_key_t)(-1);
+// (and used with MI_TLS_PTHREADS for the default theap)
+// atomic as a thread may initialize while the process is exiting and deleting the key
+static _Atomic(pthread_key_t) _mi_heap_default_key = MI_ATOMIC_VAR_INIT(MI_PTHREAD_KEY_INVALID);
 
 static void mi_pthread_done(void* value) {
   if (value!=NULL) {
-    _mi_thread_done((mi_heap_t*)value);
+    _mi_thread_done((mi_theap_t*)value);
   }
 }
 
 void _mi_prim_thread_init_auto_done(void) {
-  mi_assert_internal(_mi_heap_default_key == (pthread_key_t)(-1));
-  const int err = pthread_key_create(&_mi_heap_default_key, &mi_pthread_done);
-  if (err!=0) {
-    _mi_error_message(err,"unable to create a pthread thread local key (error %d (0x%x))", err, err);
-    _mi_heap_default_key = (pthread_key_t)(-1);
-  };
+  mi_assert_internal(mi_atomic_load_relaxed(&_mi_heap_default_key) == MI_PTHREAD_KEY_INVALID);
+  pthread_key_t key;
+  if (pthread_key_create(&key, &mi_pthread_done) == 0) {
+    mi_atomic_store_release(&_mi_heap_default_key, key);
+  }
 }
 
 void _mi_prim_thread_done_auto_done(void) {
-  if (_mi_heap_default_key != (pthread_key_t)(-1)) {  // do not leak the key, see issue #809
-    pthread_key_delete(_mi_heap_default_key);
+  pthread_key_t key = mi_atomic_exchange_relaxed(&_mi_heap_default_key, MI_PTHREAD_KEY_INVALID);
+  if (key != MI_PTHREAD_KEY_INVALID) {  // do not leak the key, see issue #809
+    pthread_key_delete(key);
   }
 }
 
-void _mi_prim_thread_associate_default_heap(mi_heap_t* heap) {
-  if (_mi_heap_default_key != (pthread_key_t)(-1)) {  // can happen during recursive invocation on freeBSD
-    pthread_setspecific(_mi_heap_default_key, heap);
+void _mi_prim_thread_associate_default_theap(mi_theap_t* theap) {
+  pthread_key_t key = mi_atomic_load_relaxed(&_mi_heap_default_key);
+  if (key != MI_PTHREAD_KEY_INVALID) {  // can happen during recursive invocation on freeBSD
+    pthread_setspecific(key, theap);
   }
 }
+
 
 #else
 
@@ -981,8 +1106,20 @@ void _mi_prim_thread_done_auto_done(void) {
   // nothing
 }
 
-void _mi_prim_thread_associate_default_heap(mi_heap_t* heap) {
-  MI_UNUSED(heap);
+void _mi_prim_thread_associate_default_theap(mi_theap_t* theap) {
+  MI_UNUSED(theap);
 }
 
 #endif
+
+bool _mi_prim_thread_is_in_threadpool(void) {
+  return false;
+}
+
+void _mi_prim_thread_yield(void) {
+  sleep(0);
+}
+
+bool _mi_prim_process_is_killed(void) {
+  return false;  // todo: can we detect when exit_group has been called and threads have been killed (potentially holding locks?)
+}
