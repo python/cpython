@@ -129,14 +129,19 @@ class TestBaseHeaderFeatures(TestHeaderBase):
 @parameterize
 class TestUnstructuredHeader(TestHeaderBase):
 
-    def defects_as_value(self, source, decoded, defects):
+    def string_as_value(self, source, decoded, defects=(), folded=None):
+        folded = source if folded is None else folded
         for name in ('Subject', 'X-Test'):
             with self.subTest(name=name):
                 h = self.make_header(name, source)
                 self.assertEqual(h, decoded)
                 self.assertDefectsEqual(h.defects, defects)
+                prefix = name + ':' + (' ' if source else '')
+                self.assertEqual(h.fold(policy=policy.default), prefix + folded + '\n')
 
-    defects_params = {
+    string_params = {
+        'empty': ('', ''),
+
         'valid_encoded_word': (
             '=?utf-8?q?caf=C3=A9?=',
             'café',
@@ -145,22 +150,26 @@ class TestUnstructuredHeader(TestHeaderBase):
         'invalid_base64_padding': (
             '=?utf-8?b?YQ?=',
             'a',
-            [errors.InvalidBase64PaddingDefect]),
+            [errors.InvalidBase64PaddingDefect],
+            'a'),
 
         'invalid_base64_characters': (
             '=?utf-8?b?Y!Q==?=',
             'a',
-            [errors.InvalidBase64CharactersDefect]),
+            [errors.InvalidBase64CharactersDefect],
+            'a'),
 
         'undecodable_bytes': (
             '=?utf-8?q?=FF?=',
             '\ufffd',
-            [errors.UndecodableBytesDefect] * 2),
+            [errors.UndecodableBytesDefect] * 2,
+            '=?unknown-8bit?q?=FF?='),
 
         'unknown_charset': (
             '=?invalid-charset?q?word?=',
             'word',
-            [errors.CharsetError]),
+            [errors.CharsetError],
+            'word'),
 
         'non_printable_text': (
             'text\x00value',
@@ -170,28 +179,14 @@ class TestUnstructuredHeader(TestHeaderBase):
         'combined_defects': (
             'prefix=?utf-8?b?YQ?=',
             'prefixa',
-            [errors.InvalidHeaderDefect, errors.InvalidBase64PaddingDefect]),
+            [errors.InvalidHeaderDefect, errors.InvalidBase64PaddingDefect],
+            'prefixa'),
 
         'missing_whitespace': (
             'prefix=?utf-8?q?word?=',
             'prefixword',
-            [errors.InvalidHeaderDefect]),
-    }
-
-    def string_as_value(self,
-                        source,
-                        decoded,
-                        *args):
-        l = len(args)
-        defects = args[0] if l>0 else []
-        header = 'Subject:' + (' ' if source else '')
-        folded = header + (args[1] if l>1 else source) + '\n'
-        h = self.make_header('Subject', source)
-        self.assertEqual(h, decoded)
-        self.assertDefectsEqual(h.defects, defects)
-        self.assertEqual(h.fold(policy=policy.default), folded)
-
-    string_params = {
+            [errors.InvalidHeaderDefect],
+            'prefixword'),
 
         'rfc2047_simple_quopri': (
             '=?utf-8?q?this_is_a_test?=',
