@@ -591,6 +591,10 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(sys.maxsize, memio.seek(sys.maxsize))
         buf = bytearray(2)
         self.assertEqual(0, memio.readinto(buf))
+        # Writing there must not overflow the buffer size.
+        memio.seek(sys.maxsize - 1)
+        self.assertRaises((MemoryError, OverflowError), memio.write, b"x")
+        self.assertEqual(memio.getvalue(), b"")
 
     def test_peek(self):
         buf = self.buftype("1234567890")
@@ -984,6 +988,12 @@ class CBytesIOTest(PyBytesIOTest):
             finally:
                 size.result.release()
 
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass(b'abc')
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), b'abc')
+
     def test_readinto_overlapping_buffer(self):
         with self.ioclass(b'abcd') as stream:
             with stream.getbuffer()[1:] as target:
@@ -1149,6 +1159,12 @@ class CStringIOTest(PyStringIOTest):
 
         with self.assertRaises(ValueError):
             stream.truncate(Size())
+
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass("abc")
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), "abc")
 
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
