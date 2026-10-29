@@ -98,6 +98,29 @@ class TransportTests(unittest.TestCase):
         self.assertTrue(transport._protocol_paused)
         self.assertEqual(transport.get_write_buffer_limits(), (128, 256))
 
+    def test_flowcontrol_mixin_pause_writing_exception(self):
+
+        class MyTransport(transports._FlowControlMixin,
+                          transports.Transport):
+
+            def get_write_buffer_size(self):
+                return 2000
+
+        loop = mock.Mock()
+        transport = MyTransport(loop=loop)
+        protocol = mock.Mock()
+        protocol.pause_writing.side_effect = RuntimeError("boom")
+        transport._protocol = protocol
+        transport.set_write_buffer_limits(high=1000, low=100)
+        transport._maybe_pause_protocol()
+        protocol.pause_writing.assert_called_once()
+        loop.call_exception_handler.assert_called_once()
+        args = loop.call_exception_handler.call_args[0][0]
+
+        self.assertIn("protocol.pause_writing() failed", args["message"])
+        self.assertIsInstance(args["exception"], RuntimeError)
+        self.assertTrue(transport._protocol_paused)
+
     def test_flowcontrol_mixin_compute_write_limits(self):
 
         class MyTransport(transports._FlowControlMixin,

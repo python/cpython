@@ -50,9 +50,7 @@ WIN32 is still required for the locale module.
 
 #define HAVE_IO_H
 #define HAVE_SYS_UTIME_H
-#define HAVE_TEMPNAM
 #define HAVE_TMPFILE
-#define HAVE_TMPNAM
 #define HAVE_CLOCK
 #define HAVE_STRERROR
 
@@ -148,17 +146,24 @@ WIN32 is still required for the locale module.
 #define MS_WIN64
 #endif
 
+#ifdef __clang__
+#define _Py_CLANG_COMPILER(platform) ( \
+   "[Clang " _Py_STRINGIZE(__clang_major__) "." _Py_STRINGIZE(__clang_minor__) \
+   "." _Py_STRINGIZE(__clang_patchlevel__) " " platform \
+   " with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#endif
+
 /* set the _Py_COMPILER and support tier
  *
  * win_amd64 MSVC (x86_64-pc-windows-msvc): 1
  * win32 MSVC (i686-pc-windows-msvc): 1
- * win_arm64 MSVC (aarch64-pc-windows-msvc): 3
- * other archs and ICC: 0
+ * win_arm64 MSVC (aarch64-pc-windows-msvc): 2
+ * other archs and clang-cl/ICC: 0
  */
 #ifdef MS_WIN64
 #if defined(_M_X64) || defined(_M_AMD64)
 #if defined(__clang__)
-#define _Py_COMPILER ("[Clang " __clang_version__ "] 64 bit (AMD64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define _Py_COMPILER _Py_CLANG_COMPILER("64 bit (AMD64)")
 #define PY_SUPPORT_TIER 0
 #elif defined(__INTEL_COMPILER)
 #define _Py_COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
@@ -169,8 +174,13 @@ WIN32 is still required for the locale module.
 #endif /* __clang__ */
 #define PYD_PLATFORM_TAG "win_amd64"
 #elif defined(_M_ARM64)
+#if defined(__clang__)
+#define _Py_COMPILER _Py_CLANG_COMPILER("64 bit (ARM64)")
+#define PY_SUPPORT_TIER 0
+#else
 #define _Py_COMPILER _Py_PASTE_VERSION("64 bit (ARM64)")
-#define PY_SUPPORT_TIER 3
+#define PY_SUPPORT_TIER 2
+#endif /* __clang__ */
 #define PYD_PLATFORM_TAG "win_arm64"
 #else
 #define _Py_COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
@@ -220,7 +230,7 @@ typedef _W64 int Py_ssize_t;
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #if defined(_M_IX86)
 #if defined(__clang__)
-#define _Py_COMPILER ("[Clang " __clang_version__ "] 32 bit (Intel) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#define _Py_COMPILER _Py_CLANG_COMPILER("32 bit (Intel)")
 #define PY_SUPPORT_TIER 0
 #elif defined(__INTEL_COMPILER)
 #define _Py_COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 32 bit (Intel) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
@@ -242,11 +252,7 @@ typedef _W64 int Py_ssize_t;
 
 typedef int pid_t;
 
-/* define some ANSI types that are not defined in earlier Win headers */
-#if _MSC_VER >= 1200
-/* This file only exists in VC 6.0 or higher */
 #include <basetsd.h>
-#endif
 
 #endif /* _MSC_VER */
 
@@ -317,39 +323,33 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /*  All windows compilers that use this header support __declspec */
 #define HAVE_DECLSPEC_DLL
 
-/* For an MSVC DLL, we can nominate the .lib files used by extensions */
-#ifdef MS_COREDLL
-#       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-                /* not building the core - must be an ext */
-#               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
-                        /* So MSVC users need not specify the .lib
-                        file in their Makefile */
-                        /* Define Py_NO_LINK_LIB to build extension disabling pragma
-                        based auto-linking.
-                        This is relevant when using build-system generator (e.g CMake) where
-                        the linking is explicitly handled */
-#                       if defined(Py_GIL_DISABLED)
-#                       if defined(Py_DEBUG)
-#                               pragma comment(lib,"python316t_d.lib")
-#                       elif defined(Py_LIMITED_API) || defined(Py_TARGET_ABI3T)
-#                               pragma comment(lib,"python3t.lib")
-#                       else
-#                               pragma comment(lib,"python316t.lib")
-#                       endif /* Py_DEBUG */
-#                       else /* Py_GIL_DISABLED */
-#                       if defined(Py_DEBUG)
-#                               pragma comment(lib,"python316_d.lib")
-#                       elif defined(Py_TARGET_ABI3T)
-#                               pragma comment(lib,"python3t.lib")
-#                       elif defined(Py_LIMITED_API)
-#                               pragma comment(lib,"python3.lib")
-#                       else
-#                               pragma comment(lib,"python316.lib")
-#                       endif /* Py_DEBUG */
-#                       endif /* Py_GIL_DISABLED */
-#               endif /* _MSC_VER && !Py_NO_LINK_LIB */
-#       endif /* Py_BUILD_CORE */
-#endif /* MS_COREDLL */
+/* Automatic linking of extension python3x.lib files for MSVC DLLs.
+   This lets MSVC users build extensions without manually specifying .lib files.
+   Define Py_NO_LINK_LIB to disable this behavior. */
+#if !defined(Py_NO_LINK_LIB) \
+    && defined(_MSC_VER) && defined(Py_ENABLE_SHARED) \
+    && !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+        /* not building the core - must be an ext */
+#       if defined(Py_GIL_DISABLED)
+#           if defined(Py_DEBUG)
+#               pragma comment(lib,"python316t_d.lib")
+#           elif defined(Py_LIMITED_API) || defined(Py_TARGET_ABI3T)
+#               pragma comment(lib,"python3t.lib")
+#           else
+#               pragma comment(lib,"python316t.lib")
+#           endif /* Py_DEBUG */
+#       else
+#           if defined(Py_DEBUG)
+#               pragma comment(lib,"python316_d.lib")
+#           elif defined(Py_TARGET_ABI3T)
+#               pragma comment(lib,"python3t.lib")
+#           elif defined(Py_LIMITED_API)
+#               pragma comment(lib,"python3.lib")
+#           else
+#               pragma comment(lib,"python316.lib")
+#           endif /* Py_DEBUG */
+#       endif /* Py_GIL_DISABLED */
+#endif
 
 #ifdef MS_WIN64
 /* maintain "win32" sys.platform for backward compatibility of Python code,
@@ -379,8 +379,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_HKEY 4
 #       define SIZEOF_SIZE_T 4
 #       define ALIGNOF_SIZE_T 4
-        /* MS VS2005 changes time_t to a 64-bit type on all platforms */
-#       if defined(_MSC_VER) && _MSC_VER >= 1400
+#       if defined(_MSC_VER)
 #       define SIZEOF_TIME_T 8
 #       else
 #       define SIZEOF_TIME_T 4
@@ -398,18 +397,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_DOUBLE 8
 #define SIZEOF_FLOAT 4
 
-/* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
-   Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
-   define these.
-   If some compiler does not provide them, modify the #if appropriately. */
 #if defined(_MSC_VER)
-#if _MSC_VER > 1300
 #define HAVE_UINTPTR_T 1
 #define HAVE_INTPTR_T 1
-#else
-/* VC6, VS 2002 and eVC4 don't support the C99 LL suffix for 64-bit integer literals */
-#define Py_LL(x) x##I64
-#endif  /* _MSC_VER > 1300  */
 #endif  /* _MSC_VER */
 
 #endif
@@ -516,9 +506,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV
 
-/* Define if your compiler supports function prototypes */
-#define HAVE_PROTOTYPES
-
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
@@ -548,9 +535,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define when any dynamic module loading is enabled */
 #define HAVE_DYNAMIC_LOADING
 
-/* Define if you have ftime.  */
-#define HAVE_FTIME
-
 /* Define if you have getpeername.  */
 #define HAVE_GETPEERNAME
 
@@ -562,9 +546,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have gettimeofday.  */
 /* #undef HAVE_GETTIMEOFDAY */
-
-/* Define if you have getwd.  */
-/* #undef HAVE_GETWD */
 
 /* Define if you have lstat.  */
 /* #undef HAVE_LSTAT */
@@ -618,7 +599,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_WAITPID */
 
 /* Define to 1 if you have the `wcsftime' function. */
-#if defined(_MSC_VER) && _MSC_VER >= 1310
+#if defined(_MSC_VER)
 #define HAVE_WCSFTIME 1
 #endif
 
@@ -648,9 +629,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the <stddef.h> header file.  */
 #define HAVE_STDDEF_H 1
-
-/* Define if you have the <sys/audioio.h> header file.  */
-/* #undef HAVE_SYS_AUDIOIO_H */
 
 /* Define if you have the <sys/param.h> header file.  */
 /* #define HAVE_SYS_PARAM_H 1 */

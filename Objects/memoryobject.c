@@ -1186,10 +1186,21 @@ memory_enter(PyObject *self, PyObject *args)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+memoryview.__exit__
+
+    *exc_info: array
+
+Release the underlying buffer exposed by the memoryview object.
+[clinic start generated code]*/
+
 static PyObject *
-memory_exit(PyObject *self, PyObject *args)
+memoryview___exit___impl(PyMemoryViewObject *self,
+                         PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=c055c4c69baf495d input=881969146ff4d413]*/
 {
-    return memoryview_release_impl((PyMemoryViewObject *)self);
+    return memoryview_release_impl(self);
 }
 
 
@@ -1400,11 +1411,12 @@ copy_shape(Py_ssize_t *shape, const PyObject *seq, Py_ssize_t ndim,
     return len;
 }
 
-/* Cast a 1-D array to a new shape. The result array will be C-contiguous.
-   If the result array does not have exactly the same byte length as the
-   input array, raise ValueError. */
+/* Cast a 1-D array to a new shape. The result array will be C-contiguous
+   ('C') or Fortran-contiguous ('F') according to 'order'.  If the result
+   array does not have exactly the same byte length as the input array, raise
+   TypeError. */
 static int
-cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim)
+cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim, char order)
 {
     Py_buffer *view = &mv->view;
     Py_ssize_t len;
@@ -1425,7 +1437,10 @@ cast_to_ND(PyMemoryViewObject *mv, const PyObject *shape, int ndim)
         len = copy_shape(view->shape, shape, ndim, view->itemsize);
         if (len < 0)
             return -1;
-        init_strides_from_shape(view);
+        if (order == 'F')
+            init_fortran_strides_from_shape(view);
+        else
+            init_strides_from_shape(view);
     }
 
     if (view->len != len) {
@@ -1469,14 +1484,20 @@ memoryview.cast
 
     format: unicode
     shape: object = NULL
+    *
+    order: int(accept={str}) = 'C'
 
 Cast a memoryview to a new format or shape.
+
+With a multidimensional *shape*, *order* selects the result
+layout: 'C' for C-contiguous (row-major, the default) or 'F'
+for Fortran-contiguous (column-major).
 [clinic start generated code]*/
 
 static PyObject *
 memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
-                     PyObject *shape)
-/*[clinic end generated code: output=bae520b3a389cbab input=138936cc9041b1a3]*/
+                     PyObject *shape, int order)
+/*[clinic end generated code: output=6410d87141f6bb56 input=4a1a2326c59caeb3]*/
 {
     PyMemoryViewObject *mv = NULL;
     Py_ssize_t ndim = 1;
@@ -1484,10 +1505,17 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     CHECK_RELEASED(self);
     CHECK_RESTRICTED(self);
 
-    if (!MV_C_CONTIGUOUS(self->flags)) {
-        PyErr_SetString(PyExc_TypeError,
-            "memoryview: casts are restricted to C-contiguous views");
+    if (order != 'C' && order != 'F') {
+        PyErr_SetString(PyExc_ValueError, "order must be 'C' or 'F'");
         return NULL;
+    }
+
+    if (!MV_C_CONTIGUOUS(self->flags)) {
+        if (shape || !MV_F_CONTIGUOUS(self->flags)) {
+            PyErr_SetString(PyExc_TypeError,
+                "memoryview: casts are restricted to contiguous views");
+            return NULL;
+        }
     }
     if ((shape || self->view.ndim != 1) && zero_in_shape(self)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1517,7 +1545,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
 
     if (cast_to_1D(mv, format) < 0)
         goto error;
-    if (shape && cast_to_ND(mv, shape, (int)ndim) < 0)
+    if (shape && cast_to_ND(mv, shape, (int)ndim, (char)order) < 0)
         goto error;
 
     return (PyObject *)mv;
@@ -2020,7 +2048,9 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             goto err_occurred;
         CHECK_RELEASED_INT_AGAIN(self);
         if (fmt[0] == 'f') {
-            PACK_SINGLE(ptr, d, float);
+            if (PyFloat_Pack4(d, ptr, endian) < 0) {
+                goto err_occurred;
+            }
         }
         else if (fmt[0] == 'd') {
             PACK_SINGLE(ptr, d, double);
@@ -2047,9 +2077,15 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
                 memcpy(ptr, &x, sizeof(x));
             }
             else {
-                float x[2] = {(float)c.real, (float)c.imag};
+                char tmp[8];
 
-                memcpy(ptr, &x, sizeof(x));
+                if (PyFloat_Pack4(c.real, tmp, endian) < 0) {
+                    goto err_occurred;
+                }
+                if (PyFloat_Pack4(c.imag, tmp + 4, endian) < 0) {
+                    goto err_occurred;
+                }
+                memcpy(ptr, tmp, 8);
             }
             break;
 
@@ -2432,22 +2468,19 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         return ret;
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
-    if (writer == NULL) {
+    char *buffer = PyMem_Malloc(src->len);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
-    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
-                              src, src->len, 'C') < 0) {
-        PyBytesWriter_Discard(writer);
+    if (PyBuffer_ToContiguous(buffer, src, src->len, 'C') < 0) {
+        PyMem_Free(buffer);
         return NULL;
     }
 
-    PyObject *ret = _Py_strhex_with_sep(
-        PyBytesWriter_GetData(writer),
-        PyBytesWriter_GetSize(writer),
-        sep, bytes_per_sep);
-    PyBytesWriter_Discard(writer);
+    PyObject *ret = _Py_strhex_with_sep(buffer, src->len, sep, bytes_per_sep);
+    PyMem_Free(buffer);
 
     return ret;
 }
@@ -3545,11 +3578,6 @@ PyDoc_STRVAR(memory_f_contiguous_doc,
              "A bool indicating whether the memory is Fortran contiguous.");
 PyDoc_STRVAR(memory_contiguous_doc,
              "A bool indicating whether the memory is contiguous.");
-PyDoc_STRVAR(memory_exit_doc,
-             "__exit__($self, /, *exc_info)\n--\n\n"
-             "Release the underlying buffer exposed by the memoryview object.");
-
-
 static PyGetSetDef memory_getsetlist[] = {
     {"obj",             memory_obj_get,        NULL, memory_obj_doc},
     {"nbytes",          memory_nbytes_get,     NULL, memory_nbytes_doc},
@@ -3578,7 +3606,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_COUNT_METHODDEF
     MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
-    {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    MEMORYVIEW___EXIT___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("memoryviews are generic over the type of their underlying data")},
     {NULL,          NULL}
