@@ -415,7 +415,7 @@ the :mod:`glob` module.)
 
    Normalize the case of a pathname.  On Windows, convert all characters in the
    pathname to lowercase, and also convert forward slashes to backward slashes.
-   On other operating systems, return the path unchanged.
+   On other operating systems (Posix),  return the unchanged path
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
