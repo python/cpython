@@ -289,6 +289,46 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # should not raise
         self.assertIsNone(transp.write(b'data'))
 
+    def test_pause_reading_if_ssl_replies_are_not_read(self):
+        # Output which OpenSSL produces on its own while reading (alerts,
+        # KeyUpdate, ...) must not pile up if the peer does not read it.
+        ssl_proto = self.ssl_protocol()
+        transport = self.connection_made(ssl_proto, do_handshake=mock.Mock())
+        reply = b'x' * (ssl_proto._incoming_high_water // 2)
+
+        def read(*args):
+            ssl_proto._outgoing.write(reply)
+            raise ssl.SSLWantReadError
+        ssl_proto._sslobj.read.side_effect = read
+
+        ssl_proto.pause_writing()
+        ssl_proto.buffer_updated(0)
+        transport.pause_reading.assert_not_called()
+        ssl_proto.buffer_updated(0)
+        transport.pause_reading.assert_called_once_with()
+        transport.resume_reading.assert_not_called()
+        transport.write.assert_not_called()
+
+        ssl_proto.resume_writing()
+        transport.write.assert_called_once_with(reply * 2)
+        transport.resume_reading.assert_called_once_with()
+
+    def test_no_pause_reading_if_app_data_is_not_read(self):
+        # Peers which both write a lot before they read must not deadlock.
+        ssl_proto = self.ssl_protocol()
+        transport = self.connection_made(ssl_proto, do_handshake=mock.Mock())
+        ssl_proto._sslobj.write.side_effect = ssl_proto._outgoing.write
+        data = b'x' * ssl_proto._incoming_high_water
+
+        ssl_proto.pause_writing()
+        ssl_proto._app_transport.write(data)
+        ssl_proto.buffer_updated(0)
+        transport.pause_reading.assert_not_called()
+
+        ssl_proto.resume_writing()
+        transport.write.assert_called_once_with(data)
+        transport.resume_reading.assert_not_called()
+
 
 ##############################################################################
 # Start TLS Tests
