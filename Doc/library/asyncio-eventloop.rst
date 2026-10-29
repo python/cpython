@@ -1505,7 +1505,9 @@ Allows customizing how exceptions are handled in the event loop.
 
       The handler now runs in a copy of that context. Previously, reporting
       an exception from inside the task's own context raised
-      :exc:`RuntimeError` and the handler was skipped.
+      :exc:`RuntimeError` and the handler was skipped. Because the handler
+      runs in a copy, a :meth:`~contextvars.ContextVar.set` made inside the
+      handler is no longer visible to the task afterwards.
 
 .. method:: loop.get_exception_handler()
 
