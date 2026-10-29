@@ -15,7 +15,11 @@ from _colorize import get_theme, theme_no_color
 from ._completer import completer
 
 
-EOF_KEY = "CTRL-Z" if sys.platform == "win32" else "CTRL-D"
+# IDLE uses CTRL-D for EOF on all platforms (gh-102628).
+if sys.platform == "win32" and "idlelib.run" not in sys.modules:
+    EOF_KEY = "CTRL-Z"
+else:
+    EOF_KEY = "CTRL-D"
 
 
 def execute(c, sql, suppress_errors=True, theme=theme_no_color):
