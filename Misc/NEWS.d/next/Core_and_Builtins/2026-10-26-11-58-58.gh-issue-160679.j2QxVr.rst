@@ -1,2 +1,0 @@
-Combine the positional and keyword argument conversion loops in
-``_PyEval_Vector`` into a single loop. Patch by Shamil Abdulaev.
