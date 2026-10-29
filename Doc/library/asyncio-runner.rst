@@ -43,9 +43,7 @@ Running an asyncio Program
    otherwise :func:`asyncio.new_event_loop` is used. The loop is closed at the end.
    This function should be used as a main entry point for asyncio programs,
    and should ideally only be called once. It is recommended to use
-   *loop_factory* to configure the event loop instead of policies.
-   Passing :class:`asyncio.EventLoop` allows running asyncio without the
-   policy system.
+   *loop_factory* to configure the event loop.
 
    If *eager_tasks* is ``True``, the created loop is configured to use
    :ref:`eager-task-factory` by default.
@@ -84,13 +82,9 @@ Running an asyncio Program
 
       *coro* can be any awaitable object.
 
+   .. versionchanged:: 3.16
+
       Added *eager_tasks* parameter.
-
-   .. note::
-
-      The :mod:`!asyncio` policy system is deprecated and will be removed
-      in Python 3.16; from there on, an explicit *loop_factory* is needed
-      to configure the event loop.
 
 
 Runner context manager
@@ -127,12 +121,12 @@ Runner context manager
 
    .. note::
 
-      Users converned about performance are encouraged to experiment with
+      Users concerned about performance are encouraged to experiment with
       ``eager_tasks=True`` in their code.
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: 3.16
 
       Added *eager_tasks* parameter.
 

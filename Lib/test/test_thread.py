@@ -76,6 +76,14 @@ class ThreadRunningTests(BasicThreadTest):
         thread.stack_size(0)
         self.assertEqual(thread.stack_size(), 0, "stack_size not reset to default")
 
+        with self.assertRaises(ValueError):
+            # 123 bytes is too small
+            thread.stack_size(123)
+
+        with self.assertRaises(ValueError):
+            # size must be positive
+            thread.stack_size(-4096)
+
     @unittest.skipIf(os.name not in ("nt", "posix"), 'test meant for nt and posix')
     def test_nt_and_posix_stack_size(self):
         try:

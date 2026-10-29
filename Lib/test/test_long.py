@@ -996,6 +996,16 @@ class LongTest(unittest.TestCase):
         self.assertEqual(v.bit_count(), 2)
         self.assertEqual(v >> size, 5)
 
+    @support.cpython_only
+    def test_huge_lshift_overflow(self):
+        # The number of digits of the result doesn't fit in Py_ssize_t.
+        for a in 1, -1, 1 << SHIFT, -1 << SHIFT, 1 << 10*SHIFT:
+            for ndigits in range(sys.maxsize - 12, sys.maxsize + 1):
+                for shift in ndigits*SHIFT - 1, ndigits*SHIFT:
+                    with self.subTest(a=a, shift=shift):
+                        with self.assertRaises(OverflowError):
+                            a << shift
+
     def test_huge_rshift(self):
         huge_shift = 1 << 1000
         self.assertEqual(42 >> huge_shift, 0)
@@ -1374,17 +1384,22 @@ class LongTest(unittest.TestCase):
         check(tests4, 'little', signed=False)
 
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=True)
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=True)
+        self.assertRaises(OverflowError, (128).to_bytes, 1, 'big', signed=True)
+        self.assertRaises(OverflowError, (128).to_bytes, 1, 'little', signed=True)
+        self.assertRaises(OverflowError, (-129).to_bytes, 1, 'big', signed=True)
+        self.assertRaises(OverflowError, (-129).to_bytes, 1, 'little', signed=True)
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'big', signed=False)
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'little', signed=False)
         self.assertEqual((0).to_bytes(0, 'big'), b'')
+        self.assertEqual((0).to_bytes(0, 'big', signed=True), b'')
         self.assertEqual((1).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x01')
         self.assertEqual((0).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x00')
         self.assertEqual((-1).to_bytes(5, 'big', signed=True),
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'big', signed=True)
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'little', signed=True)
 
         # gh-98783
         class SubStr(str):
@@ -1470,7 +1485,6 @@ class LongTest(unittest.TestCase):
             b'\x00': 0,
             b'\x00\x00': 0,
             b'\x01': 1,
-            b'\x00\x01': 256,
             b'\xff': -1,
             b'\xff\xff': -1,
             b'\x81': -127,
@@ -1693,6 +1707,22 @@ class LongTest(unittest.TestCase):
 
         # GH-117195 -- This shouldn't crash
         object.__sizeof__(1)
+
+    def test_hash(self):
+        # gh-136599
+        self.assertEqual(hash(-1), -2)
+        self.assertEqual(hash(0), 0)
+        self.assertEqual(hash(10), 10)
+
+        self.assertEqual(hash(sys.hash_info.modulus - 2), sys.hash_info.modulus - 2)
+        self.assertEqual(hash(sys.hash_info.modulus - 1), sys.hash_info.modulus - 1)
+        self.assertEqual(hash(sys.hash_info.modulus), 0)
+        self.assertEqual(hash(sys.hash_info.modulus + 1), 1)
+
+        self.assertEqual(hash(-sys.hash_info.modulus - 2), -2)
+        self.assertEqual(hash(-sys.hash_info.modulus - 1), -2)
+        self.assertEqual(hash(-sys.hash_info.modulus), 0)
+        self.assertEqual(hash(-sys.hash_info.modulus + 1), -sys.hash_info.modulus + 1)
 
 if __name__ == "__main__":
     unittest.main()

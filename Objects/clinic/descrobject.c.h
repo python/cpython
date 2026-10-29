@@ -27,9 +27,11 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(mapping), },
     };
     #undef NUM_KEYWORDS
@@ -58,6 +60,37 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     mapping = fastargs[0];
     return_value = mappingproxy_new_impl(type, mapping);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(property___set_name____doc__,
+"__set_name__($self, owner, name, /)\n"
+"--\n"
+"\n"
+"Method to set name of a property.");
+
+#define PROPERTY___SET_NAME___METHODDEF    \
+    {"__set_name__", _PyCFunction_CAST(property___set_name__), METH_FASTCALL, property___set_name____doc__},
+
+static PyObject *
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name);
+
+static PyObject *
+property___set_name__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *owner;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("__set_name__", nargs, 2, 2)) {
+        goto exit;
+    }
+    owner = args[0];
+    name = args[1];
+    return_value = property___set_name___impl((propertyobject *)self, owner, name);
 
 exit:
     return return_value;
@@ -114,9 +147,11 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fget), &_Py_ID(fset), &_Py_ID(fdel), &_Py_ID(doc), },
     };
     #undef NUM_KEYWORDS
@@ -175,4 +210,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f43f9297a36aa40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb62ee8be13af793 input=a9049054013a1b77]*/

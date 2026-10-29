@@ -57,21 +57,21 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 #  endif
 #  if defined(_MIPS_SIM)
 #   if defined(__mips_hard_float)
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnu
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64
 #    else
 #     error unknown mips sim value
 #    endif
 #   else
-#    if _MIPS_SIM == _ABIO32
+#    if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #     define LIBC_MIPS gnusf
-#    elif _MIPS_SIM == _ABIN32
+#    elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #     define LIBC_MIPS gnuabin32sf
-#    elif _MIPS_SIM == _ABI64
+#    elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #     define LIBC_MIPS gnuabi64sf
 #    else
 #     error unknown mips sim value
@@ -107,21 +107,21 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 #   endif
 #   if defined(_MIPS_SIM)
 #    if defined(__mips_hard_float)
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS musl
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS musl
 #     else
 #      error unknown mips sim value
 #     endif
 #    else
-#     if _MIPS_SIM == _ABIO32
+#     if defined(_ABIO32) && _MIPS_SIM == _ABIO32
 #      define LIBC_MIPS muslsf
-#     elif _MIPS_SIM == _ABIN32
+#     elif defined(_ABIN32) && _MIPS_SIM == _ABIN32
 #      define LIBC_MIPS musln32sf
-#     elif _MIPS_SIM == _ABI64
+#     elif defined(_ABI64) && _MIPS_SIM == _ABI64
 #      define LIBC_MIPS muslsf
 #     else
 #      error unknown mips sim value
@@ -256,6 +256,32 @@ PLATFORM_TRIPLET=arm64-iphonesimulator
 #      endif
 #    else
 PLATFORM_TRIPLET=arm64-iphoneos
+#    endif
+#  elif defined(TARGET_OS_TV) && TARGET_OS_TV
+#    if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=x86_64-appletvsimulator
+#      else
+PLATFORM_TRIPLET=arm64-appletvsimulator
+#      endif
+#    else
+PLATFORM_TRIPLET=arm64-appletvos
+#    endif
+#  elif defined(TARGET_OS_WATCH) && TARGET_OS_WATCH
+#    if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=x86_64-watchsimulator
+#      else
+PLATFORM_TRIPLET=arm64-watchsimulator
+#      endif
+#    else
+PLATFORM_TRIPLET=arm64_32-watchos
+#    endif
+#  elif defined(TARGET_OS_VISION) && TARGET_OS_VISION
+#    if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
+PLATFORM_TRIPLET=arm64-xrsimulator
+#    else
+PLATFORM_TRIPLET=arm64-xros
 #    endif
 // Older macOS SDKs do not define TARGET_OS_OSX
 #  elif !defined(TARGET_OS_OSX) || TARGET_OS_OSX

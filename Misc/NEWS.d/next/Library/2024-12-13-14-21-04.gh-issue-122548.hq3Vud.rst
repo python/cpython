@@ -1,4 +1,0 @@
-Adds two new local events to sys.monitoring, ``BRANCH_LEFT`` and
-``BRANCH_RIGHT``. This allows the two arms of the branch to be disabled
-independently, which should hugely improve performance of branch-level
-coverage tools. The old branch event, ``BRANCH`` is now deprecated.

@@ -6,6 +6,7 @@ from concurrent.futures._base import (
     PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
 
 from test import support
+from test.support import threading_helper
 
 from .util import (
     PENDING_FUTURE, RUNNING_FUTURE, CANCELLED_FUTURE,
@@ -281,6 +282,62 @@ class FutureTests(BaseTestCase):
             f.set_exception(Exception())
 
         self.assertEqual(f.exception(), e)
+
+    def test_get_snapshot(self):
+        """Test the _get_snapshot method for atomic state retrieval."""
+        # Test with a pending future
+        f = Future()
+        done, cancelled, result, exception = f._get_snapshot()
+        self.assertFalse(done)
+        self.assertFalse(cancelled)
+        self.assertIsNone(result)
+        self.assertIsNone(exception)
+
+        # Test with a finished future (successful result)
+        f = Future()
+        f.set_result(42)
+        done, cancelled, result, exception = f._get_snapshot()
+        self.assertTrue(done)
+        self.assertFalse(cancelled)
+        self.assertEqual(result, 42)
+        self.assertIsNone(exception)
+
+        # Test with a finished future (exception)
+        f = Future()
+        exc = ValueError("test error")
+        f.set_exception(exc)
+        done, cancelled, result, exception = f._get_snapshot()
+        self.assertTrue(done)
+        self.assertFalse(cancelled)
+        self.assertIsNone(result)
+        self.assertIs(exception, exc)
+
+        # Test with a cancelled future
+        f = Future()
+        f.cancel()
+        done, cancelled, result, exception = f._get_snapshot()
+        self.assertTrue(done)
+        self.assertTrue(cancelled)
+        self.assertIsNone(result)
+        self.assertIsNone(exception)
+
+        # Test concurrent access (basic thread safety check)
+        f = Future()
+        f.set_result(100)
+        results = []
+
+        def get_snapshot():
+            for _ in range(1000):
+                snapshot = f._get_snapshot()
+                results.append(snapshot)
+
+        threads = [threading.Thread(target=get_snapshot) for _ in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
+        # All snapshots should be identical for a finished future
+        expected = (True, False, 100, None)
+        for result in results:
+            self.assertEqual(result, expected)
 
 
 def setUpModule():

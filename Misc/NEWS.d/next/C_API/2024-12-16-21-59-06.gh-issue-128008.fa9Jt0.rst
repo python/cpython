@@ -1,2 +1,0 @@
-Add :c:func:`PyWeakref_IsDead` function, which tests if a weak reference is
-dead.

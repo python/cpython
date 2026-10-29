@@ -68,36 +68,58 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @support.skip_if_pgo_task  # fails during PGO training w/ some stack sizes
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_highly_nested_objects_decoding(self):
+        very_deep = 500_000
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('{"a":' * 100000 + '1' + '}' * 100000)
+                self.loads('{"a":' * very_deep + '1' + '}' * very_deep)
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
+                self.loads('{"a":' * very_deep + '[1]' + '}' * very_deep)
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('[' * 100000 + '1' + ']' * 100000)
+                self.loads('[' * very_deep + '1' + ']' * very_deep)
 
+    @support.skip_if_unlimited_stack_size
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
+    @support.requires_resource('cpu')
     def test_highly_nested_objects_encoding(self):
-        # See #12051
-        l, d = [], {}
-        for x in range(100000):
-            l, d = [l], {'k':d}
-        with self.assertRaises(RecursionError):
-            with support.infinite_recursion(5000):
-                self.dumps(l)
-        with self.assertRaises(RecursionError):
-            with support.infinite_recursion(5000):
-                self.dumps(d)
+        # See issue gh-56260
 
+        # With max_depth=2_000 on Linux, the Python implementation takes around
+        # 2 seconds to raise RecursionError, whereas the C implementation only
+        # takes around 160 ms.
+        max_depth = 2_000
+        l, d = [], {}
+        for x in range(max_depth * 10):
+            l, d = [l], {'k':d}
+
+        # Don't use assertRaises(RecursionError): on FreeBSD 16 with a default
+        # stack size of 512 MiB, the C implementation doesn't raise
+        # RecursionError.
+        try:
+            with support.infinite_recursion(max_depth):
+                self.dumps(l)
+        except RecursionError:
+            pass
+        try:
+            with support.infinite_recursion(max_depth):
+                self.dumps(d)
+        except RecursionError:
+            pass
+
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_endless_recursion(self):
-        # See #12051
+        # See issue gh-56260
         class EndlessJSONEncoder(self.json.JSONEncoder):
             def default(self, o):
                 """If check_circular is False, this will keep adding another list."""

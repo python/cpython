@@ -1,54 +1,20 @@
+import contextlib
+import functools
+import importlib
+import inspect
+import itertools
 import os
 import pathlib
 import tempfile
-import functools
-import contextlib
 import types
-import importlib
-import inspect
-import warnings
-import itertools
+from typing import Optional, cast
 
-from typing import Union, Optional, cast
 from .abc import ResourceReader, Traversable
 
-Package = Union[types.ModuleType, str]
+Package = types.ModuleType | str
 Anchor = Package
 
 
-def package_to_anchor(func):
-    """
-    Replace 'package' parameter as 'anchor' and warn about the change.
-
-    Other errors should fall through.
-
-    >>> files('a', 'b')
-    Traceback (most recent call last):
-    TypeError: files() takes from 0 to 1 positional arguments but 2 were given
-
-    Remove this compatibility in Python 3.14.
-    """
-    undefined = object()
-
-    @functools.wraps(func)
-    def wrapper(anchor=undefined, package=undefined):
-        if package is not undefined:
-            if anchor is not undefined:
-                return func(anchor, package)
-            warnings.warn(
-                "First parameter to files is renamed to 'anchor'",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return func(package)
-        elif anchor is undefined:
-            return func()
-        return func(anchor)
-
-    return wrapper
-
-
-@package_to_anchor
 def files(anchor: Optional[Anchor] = None) -> Traversable:
     """
     Get a Traversable resource for an anchor.
@@ -66,10 +32,10 @@ def get_resource_reader(package: types.ModuleType) -> Optional[ResourceReader]:
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore
+    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore[union-attr]
     if reader is None:
         return None
-    return reader(spec.name)  # type: ignore
+    return reader(spec.name)  # type: ignore[union-attr]
 
 
 @functools.singledispatch
@@ -105,6 +71,19 @@ def _infer_caller():
     return next(callers).frame
 
 
+def _assert_spec(package: types.ModuleType) -> None:
+    """
+    Provide a nicer error message when package is ``__main__``
+    and its ``__spec__`` is ``None``
+    (https://docs.python.org/3/reference/import.html#main-spec).
+    """
+    if package.__spec__ is None:
+        raise TypeError(
+            f"Cannot access resources for '{package.__name__}' "
+            "as it does not appear to correspond to an importable module (its __spec__ is None)."
+        )
+
+
 def from_package(package: types.ModuleType):
     """
     Return a Traversable object for the given package.
@@ -113,6 +92,7 @@ def from_package(package: types.ModuleType):
     # deferred for performance (python/cpython#109829)
     from ._adapters import wrap_spec
 
+    _assert_spec(package)
     spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()

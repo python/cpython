@@ -5,6 +5,7 @@
 import os
 import sys
 from collections import OrderedDict
+from types import LazyImportType, ModuleType
 
 import unittest
 import test
@@ -366,7 +367,7 @@ class PatchTest(unittest.TestCase):
             self.assertEqual(SomeClass.frooble, sentinel.Frooble)
 
         test()
-        self.assertFalse(hasattr(SomeClass, 'frooble'))
+        self.assertNotHasAttr(SomeClass, 'frooble')
 
 
     def test_patch_wont_create_by_default(self):
@@ -383,7 +384,7 @@ class PatchTest(unittest.TestCase):
             @patch.object(SomeClass, 'ord', sentinel.Frooble)
             def test(): pass
             test()
-        self.assertFalse(hasattr(SomeClass, 'ord'))
+        self.assertNotHasAttr(SomeClass, 'ord')
 
 
     def test_patch_builtins_without_create(self):
@@ -748,7 +749,7 @@ class PatchTest(unittest.TestCase):
     def test_exit_idempotent(self):
         patcher = patch(foo_name, 'bar', 3)
         with patcher:
-            patcher.stop()
+            patcher.__exit__(None, None, None)
 
 
     def test_second_start_failure(self):
@@ -1477,7 +1478,7 @@ class PatchTest(unittest.TestCase):
         finally:
             patcher.stop()
 
-        self.assertFalse(hasattr(Foo, 'blam'))
+        self.assertNotHasAttr(Foo, 'blam')
 
 
     def test_patch_multiple_spec_set(self):
@@ -2099,6 +2100,40 @@ class PatchTest(unittest.TestCase):
             pass
 
         test()
+
+
+class PatchLazyImportTest(unittest.TestCase):
+
+    def lazy_module(self):
+        # `lazy from` binds eagerly when the module it imports from is already
+        # imported, so publish the target only once the statement has run.
+        self.enterContext(uncache('lazy_patch_user', 'lazy_patch_target'))
+        user = ModuleType('lazy_patch_user')
+        exec('lazy from lazy_patch_target import function', user.__dict__)
+        sys.modules['lazy_patch_user'] = user
+        target = ModuleType('lazy_patch_target')
+        exec('def function(arg): pass', target.__dict__)
+        sys.modules['lazy_patch_target'] = target
+
+        self.assertIsInstance(user.__dict__['function'], LazyImportType)
+        return user
+
+    def test_autospec(self):
+        module = self.lazy_module()
+        with patch.object(module, 'function', autospec=True) as mock_function:
+            mock_function('arg')
+            with self.assertRaises(TypeError):
+                mock_function('arg', 'extra')
+
+    def test_spec(self):
+        module = self.lazy_module()
+        with patch.object(module, 'function', spec=True) as mock_function:
+            mock_function('arg')
+
+    def test_spec_set(self):
+        module = self.lazy_module()
+        with patch.object(module, 'function', spec_set=True) as mock_function:
+            mock_function('arg')
 
 
 if __name__ == '__main__':
