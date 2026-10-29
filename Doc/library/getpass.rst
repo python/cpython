@@ -28,14 +28,13 @@ The :mod:`!getpass` module provides two functions:
    display asterisks instead of the actual input.
 
    If echo-free input is unavailable, :func:`~getpass.getpass` falls back to
-   printing
-   a warning message to *stream* and reading from :data:`sys.stdin` and
+   printing a warning message to *stream* and reading from :data:`sys.stdin` and
    issuing a :exc:`GetPassWarning`.
 
    .. note::
       If you call :func:`~getpass.getpass` from within IDLE, the input may be
-      done in the
-      terminal you launched IDLE from rather than the idle window itself.
+      done in the terminal you launched IDLE from rather than the idle window
+      itself.
 
    .. note::
       On Unix systems, when *echo_char* is set, the terminal will be

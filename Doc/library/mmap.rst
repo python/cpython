@@ -426,11 +426,10 @@ PROT_* constants
           PROT_EXEC
 
    Memory protection flags accepted by the *prot* argument of
-   :class:`~mmap.mmap`.
-   :const:`PROT_READ` allows pages to be read, :const:`PROT_WRITE` allows pages
-   to be written, and :const:`PROT_EXEC` allows pages to be executed. Values
-   can be combined using the bitwise OR operator. Not every option is present
-   on every system.
+   :class:`~mmap.mmap`. :const:`PROT_READ` allows pages to be read,
+   :const:`PROT_WRITE` allows pages to be written, and :const:`PROT_EXEC` allows
+   pages to be executed. Values can be combined using the bitwise OR operator.
+   Not every option is present on every system.
 
    .. availability:: Unix.
 

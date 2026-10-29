@@ -605,8 +605,7 @@ The :mod:`!signal` module defines the following functions:
       See the man page :manpage:`siginterrupt(3)` for further information.
 
    Note that installing a signal handler with :func:`~signal.signal` will reset
-   the
-   restart behaviour to interruptible by implicitly calling
+   the restart behaviour to interruptible by implicitly calling
    :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 

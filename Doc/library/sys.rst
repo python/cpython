@@ -593,8 +593,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    program when an error occurs.
 
    Since :func:`~sys.exit` ultimately "only" raises an exception, it will only
-   exit
-   the process when called from the main thread, and the exception is not
+   exit the process when called from the main thread, and the exception is not
    intercepted. Cleanup actions specified by :keyword:`finally` clauses of
    :keyword:`try` statements are honored, and it is possible to intercept the
    exit attempt at an outer level.

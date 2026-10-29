@@ -3759,9 +3759,8 @@ fields, or any other data types containing pointer type fields.
    :module: ctypes.util
 
    Information regarding a structure field defined by the
-   :func:`~ctypes.util.struct`
-   decorator. This should be used in the second argument of a
-   :class:`typing.Annotated` wrapping a ctypes type.
+   :func:`~ctypes.util.struct` decorator. This should be used in the second
+   argument of a :class:`typing.Annotated` wrapping a ctypes type.
 
    *anonymous* specifies whether the field will be present in the
    :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.

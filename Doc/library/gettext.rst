@@ -90,8 +90,8 @@ class-based API instead.
 
    Similar to the corresponding functions without the ``p`` in the prefix (that
    is, :func:`~gettext.gettext`, :func:`dgettext`, :func:`ngettext`,
-   :func:`dngettext`),
-   but the translation is restricted to the given message *context*.
+   :func:`dngettext`), but the translation is restricted to the given message
+   *context*.
 
    .. versionadded:: 3.8
 

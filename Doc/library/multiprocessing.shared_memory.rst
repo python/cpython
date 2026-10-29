@@ -223,9 +223,9 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
 
    This class provides methods for creating and returning
    :class:`~multiprocessing.shared_memory.SharedMemory` instances and for
-   creating
-   a list-like object (:class:`~multiprocessing.shared_memory.ShareableList`)
-   backed by shared memory.
+   creating a list-like object
+   (:class:`~multiprocessing.shared_memory.ShareableList`) backed by shared
+   memory.
 
    Refer to :class:`~multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
@@ -235,14 +235,14 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
    .. method:: SharedMemory(size)
 
       Create and return a new
-      :class:`~multiprocessing.shared_memory.SharedMemory`
-      object with the specified *size* in bytes.
+      :class:`~multiprocessing.shared_memory.SharedMemory` object with the
+      specified *size* in bytes.
 
    .. method:: ShareableList(sequence)
 
       Create and return a new
-      :class:`~multiprocessing.shared_memory.ShareableList`
-      object, initialized by the values from the input *sequence*.
+      :class:`~multiprocessing.shared_memory.ShareableList` object, initialized
+      by the values from the input *sequence*.
 
 
 The following example demonstrates the basic mechanisms of a

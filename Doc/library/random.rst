@@ -194,9 +194,8 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`~random.random` (that
-   includes
-   integers, floats, and fractions but excludes decimals).  Weights are assumed
-   to be non-negative and finite.  A :exc:`ValueError` is raised if all
+   includes integers, floats, and fractions but excludes decimals).  Weights are
+   assumed to be non-negative and finite.  A :exc:`ValueError` is raised if all
    weights are zero.
 
    For a given seed, the :func:`choices` function with equal weighting
