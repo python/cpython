@@ -1751,6 +1751,66 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    def test_proxy_digest_auth(self):
+        # gh-60299: ProxyDigestAuthHandler must look up credentials using
+        # the proxy's authority
+        opener = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
+        opener.add_handler(ph)
+        password_manager = MockPasswordManager()
+        digest_handler = urllib.request.ProxyDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        http_handler = MockHTTPHandlerRedirect(
+            407,
+            'Proxy-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'qop="auth"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        user, password = "wile", "coyote"
+        request_url = "http://acme.example.com/protected"
+        proxy_authority = "proxy.example.com:3128"
+
+        digest_handler.add_password(realm, proxy_authority, user, password)
+        self.assertEqual(realm, password_manager.realm)
+        self.assertEqual(proxy_authority, password_manager.url)
+
+        opener.open(request_url)
+
+        self.assertEqual(password_manager.target_realm, realm)
+        self.assertEqual(password_manager.target_url, proxy_authority)
+
+        self.assertEqual(len(http_handler.requests), 2)
+        self.assertFalse(
+            http_handler.requests[0].has_header("Proxy-authorization"))
+        self.assertTrue(
+            http_handler.requests[1].has_header("Proxy-authorization"))
+        self.assertTrue(
+            http_handler.requests[1]
+            .get_header("Proxy-authorization").startswith("Digest "))
+
+    def test_digest_auth_uses_full_url(self):
+        # The non-proxy case must keep using the full request URL (not
+        # just the host) for the password lookup, so that sub-URI realm
+        # matching (HTTPPasswordMgr.is_suburi) keeps working
+        opener = OpenerDirector()
+        password_manager = MockPasswordManager()
+        digest_handler = urllib.request.HTTPDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        request_url = "http://acme.example.com/protected"
+        http_handler = MockHTTPHandlerRedirect(
+            401,
+            'WWW-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'qop="auth"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        digest_handler.add_password(realm, request_url, "wile", "coyote")
+        opener.open(request_url)
+
+        self.assertEqual(password_manager.target_realm, realm)
+        self.assertEqual(password_manager.target_url, request_url)
+
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
         # response (https://bugs.python.org/issue1479302), where it should instead
@@ -1810,6 +1870,25 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(digest_auth_handler)
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
+
+    def test_digest_auth_failure_code(self):
+        # gh-53852: a failed proxy digest auth must report 407, not 401.
+        headers = http.client.HTTPMessage()
+        for handler_class, auth_header, code in [
+                (urllib.request.HTTPDigestAuthHandler,
+                 'www-authenticate', 401),
+                (urllib.request.ProxyDigestAuthHandler,
+                 'proxy-authenticate', 407)]:
+            with self.subTest(handler=handler_class.__name__):
+                handler = handler_class()
+                handler.retried = 6
+                req = Request("http://www.example.com/")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    handler.http_error_auth_reqed(auth_header,
+                                                  "www.example.com",
+                                                  req, headers)
+                self.assertEqual(cm.exception.code, code)
+                cm.exception.close()
 
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler

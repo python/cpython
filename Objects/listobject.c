@@ -3600,7 +3600,7 @@ static int
 list___init___impl(PyListObject *self, PyObject *iterable)
 /*[clinic end generated code: output=0f3c21379d01de48 input=b3f3fe7206af8f6b]*/
 {
-    /* Verify list invariants established by PyType_GenericAlloc() */
+    /* Verify list invariants */
     assert(0 <= Py_SIZE(self));
     assert(Py_SIZE(self) <= self->allocated || self->allocated == -1);
     assert(self->ob_item != NULL ||
@@ -3632,7 +3632,10 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *list = PyType_GenericAlloc(_PyType_CAST(type), 0);
+    /* use PyList_New() to make exact lists from the freelist. */
+    PyObject *list = (type == (PyObject *)&PyList_Type
+                      ? PyList_New(0)
+                      : PyType_GenericAlloc(_PyType_CAST(type), 0));
     if (list == NULL) {
         return NULL;
     }
