@@ -1,0 +1,3 @@
+Fix a race in ``test_asyncio.test_sslproto`` where the server side of
+``test_shutdown_corrupted_ssl_sends_close_notify`` could fail with a
+connection reset on Windows.
