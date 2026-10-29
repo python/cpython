@@ -223,6 +223,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         transport = None
         try:
             protocol = protocol_factory()
+            if server is not None and not server.is_serving():
+                # The server was closed after the connection was accepted.
+                conn.close()
+                return
             waiter = self.create_future()
             if sslcontext:
                 transport = self._make_ssl_transport(
