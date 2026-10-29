@@ -651,6 +651,35 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.run_forever()
         self.assertEqual(['stopper', 'next', 'later'], calls)
 
+    def test_run_forever_stop_in_carried_callbacks(self):
+        calls = []
+        self.loop._settings = asyncio.EventLoopSettings(
+            eager_max_time=60, eager_max_callbacks=1)
+
+        def first(loop):
+            loop.call_soon(eager, loop)
+            loop.call_soon(stopper, loop)
+            loop.call_soon(calls.append, 'carried')
+
+        def eager(loop):
+            calls.append('eager')
+            loop.call_soon(calls.append, 'next')
+
+        def stopper(loop):
+            calls.append('stopper')
+            loop.stop()
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(first, self.loop)
+        self.loop.run_forever()
+
+        # The eager limit carries stopper() and the callback after it into
+        # the next _run_once().  stop() in them ends the loop after them, as
+        # without eager processing; the next iteration's callback is kept.
+        self.assertEqual(['eager', 'stopper', 'carried'], calls)
+        self.assertEqual(1, len(self.loop._ready))
+        self.assertEqual(self.loop._selector.select.call_count, 2)
+
     def test_run_forever_stopped_before_start(self):
         calls = 0
 
