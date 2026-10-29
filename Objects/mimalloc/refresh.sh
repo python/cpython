@@ -18,12 +18,12 @@ if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   exit 1
 fi
 
-# Update this when updating to a new version after verifying that the changes
-# the update brings in are good. The ref can be a commit hash or a release tag
-# (e.g. "v3.6.0"); mimalloc v3.6 has not been released yet, so this is a commit
-# on the dev3 branch.
-expected_mimalloc_ref="caaf3bc41494e6b58ab32ed9c851b3c8b61a8f82"
-expected_mimalloc_sha256="d6bed4bad2fe8aea63f4ab25cabce5275aef6f2f9386266ff686ceb1eabe15bb"
+# Update these when updating to a new version after verifying that the changes
+# the update brings in are good. The tag must be a mimalloc release with a
+# mimalloc-<tag>-source.tar.gz asset; the SHA-256 is listed next to the asset
+# on the GitHub release page.
+expected_mimalloc_tag="v3.6.0"
+expected_mimalloc_sha256="05b45988f07a940831ad156f10b0aeb84805b1f030004488939efe08f718b4c7"
 
 objects_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cpython_dir="$(realpath "$objects_dir/../..")"
@@ -35,7 +35,7 @@ trap 'rm -rf "$tmp_dir"' EXIT
 
 # Step 1: download and verify the mimalloc sources
 
-url="https://github.com/microsoft/mimalloc/archive/${expected_mimalloc_ref}.tar.gz"
+url="https://github.com/microsoft/mimalloc/releases/download/${expected_mimalloc_tag}/mimalloc-${expected_mimalloc_tag}-source.tar.gz"
 curl --fail --location "$url" > "$tmp_dir/mimalloc.tar.gz"
 actual_sha256=$(sha256sum "$tmp_dir/mimalloc.tar.gz" | cut -d' ' -f1)
 if [[ "$actual_sha256" != "$expected_mimalloc_sha256" ]]; then
@@ -46,11 +46,15 @@ if [[ "$actual_sha256" != "$expected_mimalloc_sha256" ]]; then
   exit 1
 fi
 
-# The top-level directory in the archive depends on the ref (mimalloc-<hash>
-# for a commit, mimalloc-<version> for a tag), so strip it.
+# The sources may be at the root of the archive or under a single top-level
+# directory.
 mimalloc_dir="$tmp_dir/mimalloc"
 mkdir "$mimalloc_dir"
-tar xzf "$tmp_dir/mimalloc.tar.gz" -C "$mimalloc_dir" --strip-components 1
+tar xzf "$tmp_dir/mimalloc.tar.gz" -C "$mimalloc_dir"
+top_level=("$mimalloc_dir"/*)
+if [[ ${#top_level[@]} -eq 1 && -d "${top_level[0]}" ]]; then
+  mimalloc_dir="${top_level[0]}"
+fi
 if [[ ! -f "$mimalloc_dir/src/static.c" || ! -f "$mimalloc_dir/include/mimalloc.h" ]]; then
   echo "error: $url does not look like a mimalloc source archive" >&2
   exit 1
@@ -92,10 +96,10 @@ if [[ -n "$deep_files" ]]; then
   echo "$deep_files" | sed 's/^/  /' >&2
 fi
 
-echo "Updated mimalloc to ${expected_mimalloc_ref}."
+echo "Updated mimalloc to ${expected_mimalloc_tag}."
 echo
 git status --short -- Objects/mimalloc Include/internal/mimalloc
 echo
 echo "Re-apply any changes carried on top of the upstream sources, review the"
 echo "changes, rebuild, and commit with a message such as:"
-echo "  Update vendored mimalloc to ${expected_mimalloc_ref}"
+echo "  Update vendored mimalloc to ${expected_mimalloc_tag}"
