@@ -144,6 +144,10 @@ asyncio
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
 
+* Add *eager_tasks* parameter to :func:`asyncio.run` function and
+  :class:`asyncio.Runner` class constructor.
+  (Contributed by Andrew Svetlov in :gh:`128289`.)
+
 
 bdb
 ---
