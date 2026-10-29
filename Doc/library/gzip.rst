@@ -163,9 +163,10 @@ The module defines the following items:
       since the Unix epoch (00:00:00 UTC, January 1, 1970).
       The initial value before reading any headers is ``None``.
 
-   .. versionchanged:: 3.16
       When compressing, this attribute is set to the value passed to the constructor.
-      In older versions, it was always ``None`` when compressing.
+
+      .. versionchanged:: 3.16
+         In previous versions, an :exc:`AttributeError` occured for compressing streams.
 
    .. attribute:: name
 

@@ -1,3 +1,3 @@
 The write-only property :attr:`gzip.GzipFile.mtime` now returns the
 constructor value for :class:`~gzip.GzipFile` files in write mode. Formerly,
-it was ``None``.
+this caused an :exc:`AttributeError`.
