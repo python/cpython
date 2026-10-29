@@ -463,20 +463,70 @@ class ThreadTests(BaseTestCase):
 
         self.assertIsInstance(caught_exception, InjectedException)
 
+    @requires_subprocess()
     def test_limbo_cleanup(self):
-        # Issue 7481: Failure to start thread should cleanup the limbo map.
-        def fail_new_thread(*args, **kwargs):
-            raise threading.ThreadError()
-        _start_joinable_thread = threading._start_joinable_thread
-        threading._start_joinable_thread = fail_new_thread
-        try:
-            t = threading.Thread(target=lambda: None)
-            self.assertRaises(threading.ThreadError, t.start)
-            self.assertFalse(
-                t in threading._limbo,
-                "Failed to cleanup _limbo map on failure of Thread.start().")
-        finally:
-            threading._start_joinable_thread = _start_joinable_thread
+        # Issue 7481: Failure to start a thread must clean up the limbo map.
+        code = """if 1:
+            import builtins
+            import sys
+            import threading
+
+            error = getattr(builtins, sys.argv[1])()
+            def audit(event, args):
+                if event == '_thread.start_joinable_thread':
+                    raise error
+
+            sys.addaudithook(audit)
+            thread = threading.Thread()
+            try:
+                thread.start()
+            except BaseException as caught:
+                assert caught is error
+            else:
+                raise AssertionError('Thread.start() did not raise')
+
+            assert thread._os_thread_handle.ident == 0
+            assert not thread._started.is_set()
+            assert thread not in threading._limbo
+            assert thread not in threading.enumerate()
+        """
+        for exception in ('RuntimeError', 'KeyboardInterrupt', 'SystemExit'):
+            with self.subTest(exception=exception):
+                assert_python_ok('-c', code, exception)
+
+    @requires_subprocess()
+    def test_start_interrupted_after_native_start(self):
+        code = """if 1:
+            import sys
+            import threading
+            from test.support import SHORT_TIMEOUT, threading_helper
+
+            def interrupt(frame, event, arg):
+                if event == 'c_return' and arg is threading._start_joinable_thread:
+                    raise KeyboardInterrupt
+
+            completed = threading.Event()
+            thread = threading.Thread(target=completed.set)
+            # Hold the child before it signals successful startup.
+            with thread._started._cond:
+                sys.setprofile(interrupt)
+                try:
+                    thread.start()
+                except KeyboardInterrupt:
+                    pass
+                else:
+                    raise AssertionError('Thread.start() did not raise')
+                finally:
+                    sys.setprofile(None)
+                assert thread._os_thread_handle.ident
+                assert thread in threading._limbo
+
+            assert thread._started.wait(SHORT_TIMEOUT)
+            threading_helper.join_thread(thread)
+            assert completed.is_set()
+        """
+        _, _, stderr = assert_python_ok('-c', code)
+        self.assertEqual(stderr, b'')
 
     def test_finalize_running_thread(self):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
