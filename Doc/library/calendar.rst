@@ -432,7 +432,8 @@ For simple text calendars this module provides the following functions.
 
 .. function:: prcal(theyear, w=0, l=0, c=6, m=3)
 
-   Prints the calendar for an entire year as returned by  :func:`calendar`.
+   Prints the calendar for an entire year as returned by
+   :func:`~calendar.calendar`.
 
 
 .. function:: calendar(theyear, w=2, l=1, c=6, m=3)

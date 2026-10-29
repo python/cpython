@@ -132,7 +132,7 @@ python3 Platforms/WASI build --quiet --logdir cross-build/logs
 ```
 
 
-### Packaging
+### Releasing
 
 The `package` command is used to gather all the files necessary to make a
 release and place them in an archive:
@@ -157,6 +157,16 @@ Both `package` and `gather` require a completed build and delete the entire
 existing `dist/` directory before gathering files.
 
 There is no command just to archive the gathered files.
+
+To do a release build from `build` to `package`, you can use the `release`
+command:
+
+```shell
+python3 Platforms/WASI release
+```
+
+Any release-specific build flags will be set via `release`. It will also run
+`clean`.
 
 
 ### Paths
