@@ -1055,9 +1055,11 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
 
     def test_writer_reuses_colliding_stacks(self):
         """Stacks sharing a cache bucket are both stored as STACK_REUSE."""
+        # STACK_CACHE_BUCKET_COUNT in Modules/_remote_debugging/binary_io.h
+        bucket_count = 2048
         buckets = {}
         for frame_id in range(2, 4099):
-            bucket = stack_cache_hash((0, 1, frame_id)) % 4096
+            bucket = stack_cache_hash((0, 1, frame_id)) % bucket_count
             if bucket in buckets:
                 first_id = buckets[bucket]
                 second_id = frame_id
@@ -1963,6 +1965,40 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
 
             with self.assertRaisesRegex(RuntimeError, "already replaying"):
                 reader.replay_samples(ReentrantCollector())
+            self.assertEqual(reader.replay_samples(RawCollector()), 2)
+
+    def test_replay_rejects_close_during_replay(self):
+        """Closing the reader from inside its collector raises."""
+        filename = self._write_single_block(
+            2, b"\x01\x00\x00\x00\x01")  # REPEAT 1
+        closers = {
+            "close": lambda reader: reader._reader.close(),
+            "__exit__": lambda reader: reader._reader.__exit__(
+                None, None, None),
+            "__init__": lambda reader: reader._reader.__init__(filename),
+        }
+        for name, close in closers.items():
+            with self.subTest(name):
+                with BinaryReader(filename) as reader:
+                    class ClosingCollector:
+                        def collect(self, stack_frames, timestamps_us):
+                            close(reader)
+
+                    with self.assertRaisesRegex(RuntimeError, "replaying"):
+                        reader.replay_samples(ClosingCollector())
+                    self.assertEqual(reader.replay_samples(RawCollector()), 2)
+
+    def test_replay_rejects_close_from_initial_progress_callback(self):
+        """Closing the reader from its initial progress callback raises."""
+        filename = self._write_single_block(
+            2, b"\x01\x00\x00\x00\x01")  # REPEAT 1
+
+        with BinaryReader(filename) as reader:
+            def close_reader(current, total):
+                reader._reader.close()
+
+            with self.assertRaisesRegex(RuntimeError, "replaying"):
+                reader.replay_samples(RawCollector(), close_reader)
             self.assertEqual(reader.replay_samples(RawCollector()), 2)
 
     def test_replay_rejects_invalid_block(self):

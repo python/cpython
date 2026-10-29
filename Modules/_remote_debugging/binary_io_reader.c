@@ -1625,13 +1625,10 @@ replay_blocks(BinaryReader *reader, RemoteDebuggingState *state,
     return 0;
 }
 
-Py_ssize_t
-binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progress_callback)
+static Py_ssize_t
+replay_all_samples(BinaryReader *reader, PyObject *collector,
+                   PyObject *progress_callback)
 {
-    if (reader->replaying) {
-        PyErr_SetString(PyExc_RuntimeError, "Reader is already replaying");
-        return -1;
-    }
     PyObject *collect_method;
     int has_collect = PyObject_GetOptionalAttrString(collector, "collect", &collect_method);
     if (has_collect < 0) {
@@ -1667,14 +1664,9 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
     }
 
     memset(&reader->stats, 0, sizeof(reader->stats));
-    /* The collector and progress callback must not replay this reader again
-     * while its block state is in use */
     Py_ssize_t replayed = 0;
-    reader->replaying = 1;
-    int result = replay_blocks(reader, state, collector, progress_callback,
-                               &replayed);
-    reader->replaying = 0;
-    if (result < 0) {
+    if (replay_blocks(reader, state, collector, progress_callback,
+                      &replayed) < 0) {
         return -1;
     }
 
@@ -1684,8 +1676,25 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             (unsigned long long)reader->sample_count, replayed);
         return -1;
     }
+    return replayed;
+}
 
-    /* Final progress callback at 100% */
+Py_ssize_t
+binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progress_callback)
+{
+    if (reader->replaying) {
+        PyErr_SetString(PyExc_RuntimeError, "Reader is already replaying");
+        return -1;
+    }
+    reader->replaying = 1;
+    Py_ssize_t replayed = replay_all_samples(reader, collector,
+                                             progress_callback);
+    reader->replaying = 0;
+    if (replayed < 0) {
+        return -1;
+    }
+
+    /* Final progress callback at 100%; it may close the reader */
     if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
         return -1;
     }

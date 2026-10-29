@@ -2055,6 +2055,18 @@ static PyType_Spec BinaryWriter_spec = {
 
 #define BinaryReader_CAST(op) ((BinaryReaderObject *)(op))
 
+static int
+binary_reader_check_not_replaying(BinaryReaderObject *self)
+{
+    if (self->reader && self->reader->replaying) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Cannot close or reinitialize the reader "
+                        "while it is replaying");
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Type"
 [clinic start generated code]*/
@@ -2077,6 +2089,9 @@ _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
                                              PyObject *filename)
 /*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
+    if (binary_reader_check_not_replaying(self) < 0) {
+        return -1;
+    }
     if (self->reader) {
         binary_reader_close(self->reader);
     }
@@ -2174,6 +2189,9 @@ static PyObject *
 _remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self)
 /*[clinic end generated code: output=ad0238cf5240b4f8 input=b919a66c737712d5]*/
 {
+    if (binary_reader_check_not_replaying(self) < 0) {
+        return NULL;
+    }
     if (self->reader) {
         binary_reader_close(self->reader);
         self->reader = NULL;
@@ -2211,6 +2229,9 @@ _remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
                                              PyObject *exc_tb)
 /*[clinic end generated code: output=2acdd36cfdc14e4a input=87284243d7935835]*/
 {
+    if (binary_reader_check_not_replaying(self) < 0) {
+        return NULL;
+    }
     if (self->reader) {
         binary_reader_close(self->reader);
         self->reader = NULL;
