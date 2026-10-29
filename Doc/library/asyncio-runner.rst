@@ -127,7 +127,8 @@ Runner context manager
 
    .. note::
 
-      Users are encouraged to use ``eager_tasks=True`` in their code.
+      Users converned about performance are encouraged to experiment with
+      ``eager_tasks=True`` in their code.
 
    .. versionadded:: 3.11
 
