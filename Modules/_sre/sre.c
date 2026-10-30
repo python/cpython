@@ -2212,6 +2212,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_IN_UNI_IGNORE:
         case SRE_OP_IN_LOC_IGNORE:
             GET_SKIP;
+            if (skip < 2)
+                FAIL;
             /* Stop 1 before the end; we check the FAILURE below */
             if (_validate_charset(code, code+skip-2))
                 FAIL;
