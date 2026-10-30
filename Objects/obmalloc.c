@@ -199,7 +199,11 @@ mi_page_qsbr_should_delay(mi_page_qsbr_t *page, mi_heap_qsbr_t *heap,
 int
 _PyMem_InitMimalloc(PyInterpreterState *interp)
 {
-    set_mimalloc_defaults();
+    // mimalloc options are process-wide. Only set them while creating the
+    // main interpreter: later, other threads may be reading them concurrently.
+    if (_Py_IsMainInterpreter(interp)) {
+        set_mimalloc_defaults();
+    }
 
     size_t base_offset = offsetof(PyObject, ob_type);
     if (_PyMem_DebugEnabled()) {
