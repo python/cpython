@@ -277,6 +277,18 @@ class HashLibTestCase(unittest.TestCase):
             self._hashlib.new("md5", usedforsecurity=False)
             self._hashlib.openssl_md5(usedforsecurity=False)
 
+    @unittest.skipUnless(get_fips_mode(), "requires FIPS mode")
+    def test_md5_usedforsecurity_in_fips_mode(self):
+        # In FIPS mode, OpenSSL must allow MD5 only with usedforsecurity=False.
+        if self._hashlib is None:
+            self.skipTest("OpenSSL hashlib is not available")
+        self._hashlib.new("md5", usedforsecurity=False)
+        self._hashlib.openssl_md5(usedforsecurity=False)
+        with self.assertRaises(ValueError):
+            self._hashlib.new("md5", usedforsecurity=True)
+        with self.assertRaises(ValueError):
+            self._hashlib.openssl_md5(usedforsecurity=True)
+
     @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
     def test_clinic_signature(self):
         for constructor in self.hash_constructors:
@@ -512,13 +524,17 @@ class HashLibTestCase(unittest.TestCase):
 
     def check_file_digest(self, name, data, hexdigest):
         hexdigest = hexdigest.lower()
-        try:
-            hashlib.new(name)
-        except ValueError:
-            # skip, algorithm is blocked by security policy.
-            return
-        digests = [name]
-        digests.extend(self.constructors_to_test[name])
+        digests = []
+        for digest in [name, *self.constructors_to_test[name]]:
+            try:
+                if callable(digest):
+                    digest(b"")
+                else:
+                    hashlib.new(digest)
+            except ValueError:
+                # skip, algorithm is blocked by security policy.
+                continue
+            digests.append(digest)
 
         with tempfile.TemporaryFile() as f:
             f.write(data)

@@ -1,0 +1,5 @@
+Fix :mod:`hashlib` in OpenSSL FIPS mode: the :mod:`!_hashlib` digest lookup
+introduced by the fix for :gh:`149816` used the FIPS property query the wrong
+way round, so ``usedforsecurity=False`` digests such as MD5 failed to load and
+``usedforsecurity=True`` ones were no longer refused. Python then silently
+fell back to the built-in implementation of the algorithm.

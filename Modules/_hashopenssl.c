@@ -421,6 +421,9 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
     if (fips == -1) {
         goto finally;
     }
+    // 'fips' must be 1 for usedforsecurity=True: the opposite of what
+    // disable_fips_property() returns.
+    fips = !fips;
 
     if (entry != NULL) {
         PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
