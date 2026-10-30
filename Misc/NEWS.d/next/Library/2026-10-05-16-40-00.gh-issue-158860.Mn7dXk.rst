@@ -1,0 +1,2 @@
+:meth:`xml.dom.minidom.Node.normalize` now merges runs of adjacent text
+nodes in linear time instead of quadratic time.
