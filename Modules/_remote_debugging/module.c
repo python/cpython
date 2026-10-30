@@ -649,6 +649,66 @@ read_interp_state_and_maybe_thread_frame(
         interp_state_buffer);
 }
 
+static int
+filter_unbound_cpu_samples(PyObject *result, int skip)
+{
+    PyObject *bound = PySet_New(NULL);
+    if (bound == NULL) {
+        return -1;
+    }
+    // An unbound stack may still be doing native work after a callback.
+    // Exclude it only when a bound stack shares its native thread ID.
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
+        PyObject *threads = PyStructSequence_GET_ITEM(PyList_GET_ITEM(result, i), 1);
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(threads); j++) {
+            PyObject *thread = PyList_GET_ITEM(threads, j);
+            long status = PyLong_AsLong(PyStructSequence_GET_ITEM(thread, 1));
+            if (!(status & THREAD_STATUS_UNBOUND) &&
+                PyList_GET_SIZE(PyStructSequence_GET_ITEM(thread, 2)) != 0 &&
+                PySet_Add(bound, PyStructSequence_GET_ITEM(thread, 0)) < 0) {
+                goto error;
+            }
+        }
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
+        PyObject *threads = PyStructSequence_GET_ITEM(PyList_GET_ITEM(result, i), 1);
+        for (Py_ssize_t j = PyList_GET_SIZE(threads); j-- > 0;) {
+            PyObject *thread = PyList_GET_ITEM(threads, j);
+            long status = PyLong_AsLong(PyStructSequence_GET_ITEM(thread, 1));
+            if (!(status & THREAD_STATUS_UNBOUND)) {
+                continue;
+            }
+            status &= ~THREAD_STATUS_UNBOUND;
+            int found = PySet_Contains(bound, PyStructSequence_GET_ITEM(thread, 0));
+            if (found < 0) {
+                goto error;
+            }
+            if (found) {
+                status &= ~THREAD_STATUS_ON_CPU;
+            }
+            if (skip && !(status & THREAD_STATUS_ON_CPU)) {
+                if (PySequence_DelItem(threads, j) < 0) {
+                    goto error;
+                }
+            }
+            else {
+                PyObject *py_status = PyLong_FromLong(status);
+                if (py_status == NULL) {
+                    goto error;
+                }
+                Py_DECREF(PyStructSequence_GET_ITEM(thread, 1));
+                PyStructSequence_SET_ITEM(thread, 1, py_status);
+            }
+        }
+    }
+    Py_DECREF(bound);
+    return 0;
+
+error:
+    Py_DECREF(bound);
+    return -1;
+}
+
 /*[clinic input]
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
@@ -713,6 +773,8 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         set_exception_cause(self, PyExc_MemoryError, "Failed to create stack trace result list");
         return NULL;
     }
+
+    int has_unbound = 0;
 
     // Iterate over all interpreters
     uintptr_t current_interpreter = self->interpreter_addr;
@@ -802,7 +864,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         while (current_tstate != 0) {
             uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
-                                                           gil_holder_tstate,
+                                                           &has_unbound,
                                                            gc_frame,
                                                            main_thread_tstate,
                                                            &prefetch);
@@ -887,6 +949,11 @@ next_interpreter:
         if (self->tstate_addr != 0) {
             break;
         }
+    }
+
+    if (has_unbound && filter_unbound_cpu_samples(result,
+            self->mode == PROFILING_MODE_CPU && self->skip_non_matching_threads) < 0) {
+        Py_CLEAR(result);
     }
 
 exit:

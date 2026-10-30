@@ -332,7 +332,7 @@ PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
-    uintptr_t gil_holder_tstate,
+    int *has_unbound,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
     const RemoteReadPrefetch *prefetch
@@ -609,6 +609,13 @@ unwind_stack_for_thread(
     if (result == NULL) {
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create ThreadInfo");
         goto error;
+    }
+
+    if ((unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) &&
+        !GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).bound_gilstate &&
+        PyList_GET_SIZE(frame_info) != 0) {
+        status_flags |= THREAD_STATUS_UNBOUND;
+        *has_unbound = 1;
     }
 
     // Always use status_flags
