@@ -27,6 +27,9 @@ if not support.has_subprocess_support:
 
 
 STACK_DEPTH = 10
+BAD_DYNAMIC_FDE_WARNING = (
+    "libunwind: __unw_add_dynamic_fde: bad fde: FDE is really a CIE"
+)
 
 
 def _manual_unwind_expected(machine):
@@ -218,6 +221,8 @@ def _run_unwind_helper(helper_name, unwinder_name, **env):
     # Surface the output for debugging/visibility when running this test
     if proc.stdout:
         print(proc.stdout, end="")
+    if BAD_DYNAMIC_FDE_WARNING in proc.stderr:
+        raise RuntimeError(proc.stderr)
     if proc.returncode:
         raise RuntimeError(
             f"unwind helper failed (rc={proc.returncode}): {proc.stderr or proc.stdout}"
