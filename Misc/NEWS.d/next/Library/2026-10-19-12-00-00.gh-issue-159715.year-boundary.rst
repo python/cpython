@@ -1,0 +1,3 @@
+Fix :class:`zoneinfo.ZoneInfo` handling of TZ string transitions that fall in
+an adjacent year, including permanent daylight saving time and folds near
+New Year.
