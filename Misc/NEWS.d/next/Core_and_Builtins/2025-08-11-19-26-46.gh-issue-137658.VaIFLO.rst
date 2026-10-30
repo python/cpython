@@ -1,0 +1,2 @@
+Fix dataclass order method behaviors to align with the ``__eq__`` semantics
+change introduced in 3.13.
