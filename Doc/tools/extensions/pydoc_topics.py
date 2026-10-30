@@ -41,12 +41,14 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "callable-types",
     "calls",
     "class",
+    "class-customization",
     "comparisons",
     "compound",
     "context-managers",
     "continue",
     "conversions",
     "customization",
+    "customize-instance-subclass-checks",
     "debugger",
     "del",
     "dict",
@@ -70,6 +72,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "lambda",
     "lazy",
     "lists",
+    "name_equals_main",
     "match",
     "naming",
     "nonlocal",
@@ -102,6 +105,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "while",
     "with",
     "yield",
+    "__main__",
 })
 
 
