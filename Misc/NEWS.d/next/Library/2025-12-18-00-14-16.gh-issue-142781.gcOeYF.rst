@@ -1,2 +1,0 @@
-:mod:`zoneinfo`: fix a crash when instantiating :class:`~zoneinfo.ZoneInfo`
-objects for which the internal class-level cache is inconsistent.

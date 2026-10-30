@@ -1,6 +1,7 @@
 import ast
 import sys
 import unittest
+from test.support import import_helper
 
 
 funcdef = """\
@@ -337,6 +338,16 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
+    def test_many_ignores(self):
+        comment_count = 25
+        tags = [f"[tag_{index}]" for index in range(comment_count)]
+        source = "".join(f"pass  # type: ignore{tag}\n" for tag in tags)
+        for tree in self.parse_all(source):
+            self.assertEqual(
+                [(item.lineno, item.tag) for item in tree.type_ignores],
+                list(enumerate(tags, start=1)),
+            )
+
     def test_longargs(self):
         for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:
@@ -390,6 +401,16 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
         check_both_ways("pass  # type: ignorewhatever\n")
         check_both_ways("pass  # type: ignoreé\n")
+
+    def test_non_utf8_type_comment_with_ignore_cookie(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        flags = 0x0800 | 0x1000 # PyCF_IGNORE_COOKIE | PyCF_TYPE_COMMENTS
+        with self.assertRaises(UnicodeDecodeError):
+            _testcapi.Py_CompileStringExFlags(
+                b"a=1 # type: \x80", "<test>", 256, flags)
+        with self.assertRaises(UnicodeDecodeError):
+            _testcapi.Py_CompileStringExFlags(
+                b"def a(f=8, #type: \x80\n\x80", "<test>", 256, flags)
 
     def test_func_type_input(self):
 

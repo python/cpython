@@ -96,7 +96,7 @@ Here are the methods of the :class:`Message` class:
          text = fp.getvalue()
 
       If the message object contains binary data that is not encoded according
-      to RFC standards, the non-compliant data will be replaced by unicode
+      to RFC standards, the non-compliant data will be replaced by Unicode
       "unknown character" code points.  (See also :meth:`.as_bytes` and
       :class:`~email.generator.BytesGenerator`.)
 
@@ -213,6 +213,14 @@ Here are the methods of the :class:`Message` class:
       alphabet), then an appropriate defect will be added to the message's
       defect property (:class:`~email.errors.InvalidBase64PaddingDefect` or
       :class:`~email.errors.InvalidBase64CharactersDefect`, respectively).
+
+      .. note::
+
+         A ``quoted-printable`` payload is decoded without stripping
+         trailing whitespace, contrary to :rfc:`2045` but matching
+         common mail clients.
+         Use :func:`binascii.a2b_qp` with ``strip_ws=True``
+         (or ``email.quoprimime.decode``) for RFC-compliant decoding.
 
       When *decode* is ``False`` (the default) the body is returned as a string
       without decoding the :mailheader:`Content-Transfer-Encoding`.  However,

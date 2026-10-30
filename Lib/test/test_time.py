@@ -358,11 +358,11 @@ class TimeTestCase(unittest.TestCase):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
         tt = time.gmtime(self.t)
-        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'F', 'H', 'I',
-                          'j', 'm', 'M', 'p', 'S', 'T',
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'D', 'e', 'F', 'H', 'I',
+                          'j', 'm', 'M', 'n', 'p', 'S', 't', 'T',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
-            if directive == 'd':
+            if directive in ('d', 'e'):
                 format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
@@ -370,6 +370,64 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail("conversion specifier %r failed with '%s' input." %
                           (format, strf_output))
+
+    def test_strptime_whitespace(self):
+        whitespace = (' ', '\t\n\r\v\f', '\x1c', '\xa0', '\u2003', '\u202f')
+        for input_space in whitespace:
+            for format_space in whitespace:
+                with self.subTest(input_space=input_space,
+                                  format_space=format_space):
+                    text = input_space.join(('2024-02-29', '12:34:56'))
+                    fmt = format_space.join(('%Y-%m-%d', '%H:%M:%S'))
+                    self.assertEqual(time.strptime(text, fmt),
+                                     (2024, 2, 29, 12, 34, 56, 3, 60, -1))
+
+    def test_strptime_whitespace_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            with self.subTest(separator=separator):
+                text = f'2024{separator} 112 34{separator} 123'
+                fmt = f'%Y{separator}%d%m %M{separator}%H%S'
+                self.assertEqual(time.strptime(text, fmt),
+                                 (2024, 2, 11, 12, 34, 3, 6, 42, -1))
+
+    def test_strptime_numeric_calendar(self):
+        cases = (
+            ('0001-01-01', 1, 1, 1, 0, 1),
+            ('1900-03-01', 1900, 3, 1, 3, 60),
+            ('2000-02-29', 2000, 2, 29, 1, 60),
+            ('2000-03-01', 2000, 3, 1, 2, 61),
+            ('2024-12-31', 2024, 12, 31, 1, 366),
+            ('2100-03-01', 2100, 3, 1, 0, 60),
+            ('9999-12-31', 9999, 12, 31, 4, 365),
+        )
+        for text, year, month, day, weekday, yday in cases:
+            with self.subTest(text=text):
+                result = time.strptime(text, '%Y-%m-%d')
+                self.assertIs(type(result), time.struct_time)
+                self.assertEqual(result,
+                                 (year, month, day, 0, 0, 0, weekday, yday, -1))
+                self.assertIsNone(result.tm_zone)
+                self.assertIsNone(result.tm_gmtoff)
+
+    def test_strptime_numeric_offset(self):
+        for text, offset in (('', None), ('Z', 0), ('+0000', 0),
+                             ('-00:00', 0), ('+0530', 19800),
+                             ('-03:30', -12600), ('+2359', 86340),
+                             ('+01:02:03.456', 3723)):
+            with self.subTest(text=text):
+                result = time.strptime('12:34:56.123' + text, '%H:%M:%S.%f%z')
+                self.assertEqual(result, (1900, 1, 1, 12, 34, 56, 0, 1, -1))
+                self.assertIsNone(result.tm_zone)
+                self.assertEqual(result.tm_gmtoff, offset)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_strptime_default_format(self):
+        self.assertEqual(time.strptime('Thu Feb 29 12:34:56 2024'),
+                         (2024, 2, 29, 12, 34, 56, 3, 60, -1))
+        for args in ((), ('2024', '%Y', 'extra'), (None, '%Y')):
+            with self.subTest(args=args):
+                with self.assertRaises(TypeError):
+                    time.strptime(*args)
 
     def test_strptime_bytes(self):
         # Make sure only strings are accepted as arguments to strptime.
@@ -387,10 +445,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
-        # GH-70647: warns if parsing a format with a day and no year.
+        # GH-70647: %d errors if parsing a format with a day and no year.
+        with self.assertRaises(ValueError):
+            time.strptime('02-07 18:28', '%m-%d %H:%M')
+        # %e without a year is deprecated, scheduled for removal in 3.17.
         with self.assertWarnsRegex(DeprecationWarning,
                                    r'.*day of month without a year.*'):
-            time.strptime('02-07 18:28', '%m-%d %H:%M')
+            time.strptime('02-07 18:28', '%m-%e %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
@@ -1009,6 +1070,17 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
                 _PyTime_FromSecondsObject(float('nan'), time_rnd)
+
+    def test_FromSecondsObject_float_overflow_message(self):
+        # Float path must report a PyTime_t overflow, like the integer path.
+        from _testinternalcapi import _PyTime_FromSecondsObject
+        for value in (PyTime_MAX, PyTime_MIN):
+            for time_rnd, _ in ROUNDING_MODES:
+                with self.subTest(value=value, time_rnd=time_rnd):
+                    with self.assertRaisesRegex(
+                            OverflowError,
+                            "timestamp out of range for C PyTime_t"):
+                        _PyTime_FromSecondsObject(value, time_rnd)
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble

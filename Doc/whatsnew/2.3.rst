@@ -1698,8 +1698,8 @@ current local date.
 Once created, instances of the date/time classes are all immutable. There are a
 number of methods for producing formatted strings from objects::
 
-   >>> import datetime
-   >>> now = datetime.datetime.now()
+   >>> import datetime as dt
+   >>> now = dt.datetime.now()
    >>> now.isoformat()
    '2002-12-30T21:27:03.994956'
    >>> now.ctime()  # Only available on date, datetime
@@ -1710,10 +1710,10 @@ number of methods for producing formatted strings from objects::
 The :meth:`~datetime.datetime.replace` method allows modifying one or more fields  of a
 :class:`~datetime.date` or :class:`~datetime.datetime` instance, returning a new instance::
 
-   >>> d = datetime.datetime.now()
+   >>> d = dt.datetime.now()
    >>> d
    datetime.datetime(2002, 12, 30, 22, 15, 38, 827738)
-   >>> d.replace(year=2001, hour = 12)
+   >>> d.replace(year=2001, hour=12)
    datetime.datetime(2001, 12, 30, 12, 15, 38, 827738)
    >>>
 
@@ -1941,10 +1941,10 @@ Support for a port to IBM's OS/2 using the EMX runtime environment was merged
 into the main Python source tree.  EMX is a POSIX emulation layer over the OS/2
 system APIs.  The Python port for EMX tries to support all the POSIX-like
 capability exposed by the EMX runtime, and mostly succeeds; :func:`!fork` and
-:func:`fcntl` are restricted by the limitations of the underlying emulation
-layer.  The standard OS/2 port, which uses IBM's Visual Age compiler, also
-gained support for case-sensitive import semantics as part of the integration of
-the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
+:func:`~fcntl.fcntl` are restricted by the limitations of the underlying
+emulation layer.  The standard OS/2 port, which uses IBM's Visual Age compiler,
+also gained support for case-sensitive import semantics as part of the
+integration of the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
 
 On MacOS, most toolbox modules have been weaklinked to improve backward
 compatibility.  This means that modules will no longer fail to load if a single

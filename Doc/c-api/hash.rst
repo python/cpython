@@ -32,13 +32,19 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 .. c:macro:: Py_HASH_FNV
              Py_HASH_SIPHASH24
              Py_HASH_SIPHASH13
+             Py_HASH_EXTERNAL
 
    Numerical values to compare to :c:macro:`Py_HASH_ALGORITHM` to determine
-   which algorithm is used for hashing. The hash algorithm can be configured
-   via the configure :option:`--with-hash-algorithm` option.
+   which algorithm is used for hashing. The built-in hash algorithm can be
+   configured via the configure :option:`--with-hash-algorithm` option.
+
+   :c:macro:`!Py_HASH_EXTERNAL` has value ``0`` and indicates a hash
+   implementation supplied by the application embedding Python; see
+   :c:var:`PyHash_Func`.
 
    .. versionadded:: 3.4
-      Add :c:macro:`!Py_HASH_FNV` and :c:macro:`!Py_HASH_SIPHASH24`.
+      Add :c:macro:`!Py_HASH_FNV`, :c:macro:`!Py_HASH_SIPHASH24`, and
+      :c:macro:`!Py_HASH_EXTERNAL`.
 
    .. versionadded:: 3.11
       Add :c:macro:`!Py_HASH_SIPHASH13`.
@@ -130,6 +136,19 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
       This corresponds to the :data:`sys.hash_info.seed_bits` constant.
 
    .. versionadded:: 3.4
+
+
+.. c:var:: PyHash_FuncDef PyHash_Func
+
+   When Python is built with :c:macro:`Py_HASH_ALGORITHM` set to
+   :c:macro:`Py_HASH_EXTERNAL`, the application embedding Python must define
+   this variable to supply a hash implementation instead of using one of
+   Python's built-in hash algorithms.
+
+   .. versionadded:: 3.4
+
+   .. deprecated-removed:: 3.15 3.19
+      Use one of the built-in hash algorithms instead.
 
 
 .. c:function:: PyHash_FuncDef* PyHash_GetFuncDef(void)

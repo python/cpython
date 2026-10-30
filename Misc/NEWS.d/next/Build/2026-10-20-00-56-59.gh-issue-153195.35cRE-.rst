@@ -1,0 +1,5 @@
+The PEG parser generator now supports splitting a grammar into several files
+with the ``@include`` meta, and generates a separate C file for the rules of
+each included file. The rules for specialized syntax errors moved from
+:file:`Grammar/python.gram` to :file:`Grammar/invalid.gram`, which generates
+the new :file:`Parser/parser_invalid.c`.

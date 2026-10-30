@@ -6,16 +6,20 @@ import dataclasses
 import importlib.metadata
 import io
 import json
+import ntpath
 import os
 import pathlib
 import pickle
 import re
 import shutil
 import struct
+import sys
 import tempfile
+import types
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
+from unittest import mock
 
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
@@ -315,6 +319,18 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(dt.tzname(), offset.tzname, dt)
                 self.assertEqual(dt.utcoffset(), offset.utcoffset, dt)
                 self.assertEqual(dt.dst(), offset.dst, dt)
+
+    def test_datetime_subclass_negative_components(self):
+        class MinusOneDateTime(datetime):
+            hour = minute = second = -1
+
+        zi = self.zone_from_key("UTC")
+        dt = MinusOneDateTime(2024, 1, 1, tzinfo=zi)
+
+        self.assertEqual(dt.utcoffset(), ZERO)
+        self.assertEqual(dt.dst(), ZERO)
+        self.assertEqual(dt.tzname(), "UTC")
+        self.assertEqual(zi.fromutc(dt), datetime(2024, 1, 1, tzinfo=zi))
 
     def test_folds_and_gaps(self):
         test_cases = []
@@ -630,6 +646,26 @@ class WeirdZoneTest(ZoneInfoTestBase):
                 dt_utc_actual = dt_local.astimezone(timezone.utc)
                 self.assertEqual(dt_utc_actual, dt_utc)
 
+    def test_one_transition_fold(self):
+        GMT = ZoneOffset("-00", ZERO)
+        N03 = ZoneOffset("-03", -timedelta(hours=3))
+
+        transitions = [
+            ZoneTransition(datetime(1976, 12, 1), GMT, N03),
+        ]
+
+        after = "<-03>3"
+
+        zf = self.construct_zone(transitions, after)
+        zi = self.klass.from_file(zf)
+
+        dt_utc = datetime(1976, 12, 1, 1, tzinfo=timezone.utc)
+        dt_local = dt_utc.astimezone(zi)
+
+        self.assertEqual(dt_local.fold, 1)
+        self.assertEqual(dt_local.utcoffset(), N03.utcoffset)
+        self.assertEqual(dt_local.astimezone(timezone.utc), dt_utc)
+
     def test_one_zone_dst(self):
         DST = ZoneOffset("DST", ONE_H, ONE_H)
         transitions = [
@@ -740,6 +776,38 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
         with self.assertRaises(ValueError):
             self.klass.from_file(zf)
+
+    def test_invalid_transition_index(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1, 2), STD, DST),
+            ZoneTransition(datetime(2026, 11, 1, 2), DST, STD),
+        ], after="", version=1)
+
+        data = bytearray(zf.read())
+        timecnt = struct.unpack_from(">l", data, 32)[0]
+        idx_offset = 44 + timecnt * 4
+        data[idx_offset + 1] = 2  # typecnt is 2, so index 2 is OOB
+        f = io.BytesIO(bytes(data))
+
+        with self.assertRaises(ValueError):
+            self.klass.from_file(f)
+
+    def test_transition_lookahead_out_of_bounds(self):
+        STD = ZoneOffset("STD", ZERO)
+        DST = ZoneOffset("DST", ONE_H, ONE_H)
+        EXT = ZoneOffset("EXT", ONE_H)
+
+        zf = self.construct_zone([
+            ZoneTransition(datetime(2026, 3, 1), STD, DST),
+            ZoneTransition(datetime(2026, 6, 1), DST, EXT),
+            ZoneTransition(datetime(2026, 9, 1), EXT, DST),
+        ], after="")
+
+        zi = self.klass.from_file(zf)
+        self.assertIsNotNone(zi)
 
     def test_zone_very_large_timestamp(self):
         """Test when a transition is in the far past or future.
@@ -977,14 +1045,14 @@ class TZStrTest(ZoneInfoTestBase):
 
         cls._tzif_header = bytes(out)
 
-    def zone_from_tzstr(self, tzstr):
+    def zone_from_tzstr(self, tzstr, encoding="ascii"):
         """Creates a zoneinfo file following a POSIX rule."""
         zonefile = io.BytesIO(self._tzif_header)
         zonefile.seek(0, 2)
 
         # Write the footer
         zonefile.write(b"\x0A")
-        zonefile.write(tzstr.encode("ascii"))
+        zonefile.write(tzstr.encode(encoding))
         zonefile.write(b"\x0A")
 
         zonefile.seek(0)
@@ -1079,6 +1147,9 @@ class TZStrTest(ZoneInfoTestBase):
             "AAA4BBB,J1/2,J1/14",
             "AAA4BBB,J20/2,J365/2",
             "AAA4BBB,J365/2,J365/14",
+            # Leading-zero day-of-year
+            "AAA4BBB,J001/2,J065/2",
+            "AAA4BBB,001/2,065/2",
             # Extreme transition hour
             "AAA4BBB,J60/167,J300/2",
             "AAA4BBB,J60/+167,J300/2",
@@ -1110,9 +1181,21 @@ class TZStrTest(ZoneInfoTestBase):
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
+            # gh-152212: the std offset is required (POSIX TZ grammar)
+            "AAA",
+            "A",
+            "AA",
+            "B",
             "+11",  # Unquoted alphanumeric
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
+            # Unquoted abbreviation with embedded or leading whitespace
+            "AB C3",
+            " A B 3",
+            "AAA4BB B,J60/2,J300/2",  # Embedded whitespace in DST
+            # Empty quoted abbreviation
+            "<>5",
+            "AAA4<>,M3.2.0/2,M11.1.0/3",
             "PST8PDT,M3.2.0/2",  # Only one transition rule
             # Invalid offset hours
             "AAA168",
@@ -1152,6 +1235,11 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid weekday
             "AAA4BBB,M1.1.7/2,M2.1.1/2",
             "AAA4BBB,M1.1.1/2,M2.1.7/2",
+            # Invalid Mm.w.d separator
+            "AAA4BBB,M3.2X0,M11.1.0",
+            "AAA4BBB,M3.2.0,M11.1X0",
+            "AAA4BBB,M3.2-0,M11.1.0/3",
+            "AAA4BBB,M3.2.0/2,M11.1:0",
             # Invalid numeric offset
             "AAA4BBB,-1/2,20/2",
             "AAA4BBB,1/2,-1/2",
@@ -1160,6 +1248,15 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
+            # gh-152847: non-digit day-of-year
+            "AAA4BBB,J1_0,J300/2",
+            "AAA4BBB,J60/2,J30_0/2",
+            "AAA4BBB,1_0,J300/2",
+            "AAA4BBB,J+1,J300/2",
+            "AAA4BBB,J 1,J300/2",
+            "AAA4BBB, 1,J300/2",
+            "AAA4BBB,J0001,J300/2",
+            "AAA4BBB,0001,J300/2",
             # Invalid transition time
             "AAA4BBB,J60/2/3,J300/2",
             "AAA4BBB,J60/2,J300/2/3",
@@ -1189,6 +1286,24 @@ class TZStrTest(ZoneInfoTestBase):
                 tzstr_regex = re.escape(invalid_tzstr)
                 with self.assertRaisesRegex(ValueError, tzstr_regex):
                     self.zone_from_tzstr(invalid_tzstr)
+
+    def test_invalid_tzstr_non_ascii_abbr(self):
+        tzstr = "ABÀC3"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
+
+    def test_invalid_tzstr_non_ascii_dst_date(self):
+        tzstr = "AAA4BBB,J١,J300/2"
+        if self.module is py_zoneinfo:
+            expected = re.escape(tzstr)
+        else:
+            expected = re.escape(repr(tzstr.encode("utf-8")))
+        with self.assertRaisesRegex(ValueError, expected):
+            self.zone_from_tzstr(tzstr, encoding="utf-8")
 
     @classmethod
     def _populate_test_cases(cls):
@@ -1403,6 +1518,33 @@ class TZStrTest(ZoneInfoTestBase):
 
         @call
         def _add():
+            # Julian days 58, 59 and 60 always mean February 27, February 28
+            # and March 1, including in leap years.
+            AAA = ZoneOffset("AAA", ZERO)
+            BBB = ZoneOffset("BBB", ONE_H, ONE_H)
+
+            for start, end, start_date, end_date in (
+                (58, 59, (2, 27), (2, 28)),
+                (59, 60, (2, 28), (3, 1)),
+            ):
+                tzstr = f"AAA0BBB,J{start}/12,J{end}/12"
+                cases[tzstr] = []
+                for year in (2019, 2020, 2000, 2100):
+                    start_dt = datetime(year, *start_date, 12)
+                    end_dt = datetime(year, *end_date, 12)
+                    cases[tzstr].extend((
+                        (start_dt - timedelta(seconds=1), AAA, NORMAL),
+                        (start_dt, AAA, GAP),
+                        (start_dt.replace(fold=1), BBB, GAP),
+                        (start_dt + ONE_H, BBB, NORMAL),
+                        (end_dt - ONE_H - timedelta(seconds=1), BBB, NORMAL),
+                        (end_dt - ONE_H, BBB, FOLD),
+                        ((end_dt - ONE_H).replace(fold=1), AAA, FOLD),
+                        (end_dt, AAA, NORMAL),
+                    ))
+
+        @call
+        def _add():
             # Taken from America/Godthab, this rule has a transition on the
             # Saturday before the last Sunday of March and October, at 22:00
             # and 23:00, respectively. This is encoded with negative start
@@ -1594,6 +1736,18 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
             str(te.exception),
             "Unexpected instance of int in ZI weak cache for key 'America/Los_Angeles'"
         )
+
+    def test_deleted_weak_cache(self):
+        class ZI(self.klass):
+            pass
+        delattr(ZI, '_weak_cache')
+
+        # These should not segfault
+        with self.assertRaises(AttributeError):
+            ZI("UTC")
+
+        with self.assertRaises(AttributeError):
+            ZI.clear_cache()
 
     def test_inconsistent_weak_cache_setdefault(self):
         class Cache:
@@ -1866,6 +2020,38 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                 with self.assertRaises(TypeError):
                     self.module.reset_tzpath(bad_value)
 
+    def test_validate_key_windows_paths(self):
+        # Check the key validation with Windows path rules on every platform.
+        tzpath = self.module._tzpath
+        base = ntpath.normpath(ntpath.join("_", "_"))[:-1]
+        fake_os = types.SimpleNamespace(path=ntpath)
+
+        good_keys = [
+            "UTC",
+            "America/New_York",
+            "America/Argentina/Buenos_Aires",
+            "Etc/GMT+1",
+        ]
+        bad_keys = [
+            "C:\\Windows\\win.ini",
+            "America/C:\\Windows\\win.ini",  # Drive in a component
+            "America/C:/Windows/win.ini",
+            "America/D:secret",  # Drive-relative component
+            "America/Argentina/D:secret",
+            "America/\\Windows\\win.ini",  # Rooted component
+            "America/\\\\server\\share\\file",  # UNC component
+        ]
+
+        with mock.patch.object(tzpath, "os", fake_os):
+            for key in good_keys:
+                with self.subTest(key=key):
+                    tzpath._validate_tzfile_path(key, _base=base)
+
+            for key in bad_keys:
+                with self.subTest(key=key):
+                    with self.assertRaises(ValueError):
+                        tzpath._validate_tzfile_path(key, _base=base)
+
     def test_tzpath_attribute(self):
         tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
         tzpath_1 = [f"{DRIVE}/three"]
@@ -2051,6 +2237,8 @@ class MiscTests(unittest.TestCase):
             PYTHONTZPATH=str(ZONEINFO_DATA.tzpath))
 
 
+@unittest.skipIf(sys.modules.get("_zoneinfo") is None,
+                 "_zoneinfo C module not available")
 class ExtensionBuiltTest(unittest.TestCase):
     """Smoke test to ensure that the C and Python extensions are both tested.
 

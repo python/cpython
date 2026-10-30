@@ -427,11 +427,16 @@ def _win32_ver(version, csd, ptype):
 
     winver = getwindowsversion()
     is_client = (getattr(winver, 'product_type', 1) == 1)
-    try:
-        version = _syscmd_ver()[2]
-        major, minor, build = map(int, version.split('.'))
-    except ValueError:
-        major, minor, build = winver.platform_version or winver[:3]
+
+    if winver.device_family == "Desktop":
+        try:
+            version = _syscmd_ver()[2]
+            major, minor, build = map(int, version.split('.'))
+        except ValueError:
+            major, minor, build = winver.platform_version or winver[:3]
+            version = '{0}.{1}.{2}'.format(major, minor, build)
+    else:
+        major, minor, build = winver[:3]
         version = '{0}.{1}.{2}'.format(major, minor, build)
 
     # getwindowsversion() reflect the compatibility mode Python is
@@ -521,13 +526,13 @@ IOSVersionInfo = collections.namedtuple(
 
 
 def ios_ver(system="", release="", model="", is_simulator=False):
-    """Get iOS version information, and return it as a namedtuple:
-        (system, release, model, is_simulator).
+    """Get iOS/tvOS/watchOS/visionOS version information, and return it as a
+    namedtuple: (system, release, model, is_simulator).
 
     If values can't be determined, they are set to values provided as
     parameters.
     """
-    if sys.platform == "ios":
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         import _ios_support
         result = _ios_support.get_platform_ios()
         if result is not None:
@@ -543,21 +548,25 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
                 is_emulator=False):
     if sys.platform == "android":
         try:
-            from ctypes import CDLL, c_char_p, create_string_buffer
+            from ctypes import CDLL, c_int, c_char_p, create_string_buffer
+            from ctypes.util import wrap_dll_function
         except ImportError:
             pass
         else:
             # An NDK developer confirmed that this is an officially-supported
             # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
             # private name mangling.
-            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
-            system_property_get.argtypes = (c_char_p, c_char_p)
+            libc = CDLL("libc.so")
+
+            @wrap_dll_function(libc)
+            def __system_property_get(name: c_char_p, value: c_char_p) -> c_int:
+                pass
 
             def getprop(name, default):
                 # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
                 PROP_VALUE_MAX = 92
                 buffer = create_string_buffer(PROP_VALUE_MAX)
-                length = system_property_get(name.encode("UTF-8"), buffer)
+                length = __system_property_get(name.encode("UTF-8"), buffer)
                 if length == 0:
                     # This API doesn’t distinguish between an empty property and
                     # a missing one.
@@ -676,7 +685,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'watchos'}:
+    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'visionos', 'watchos'}:
         # XXX Others too ?
         return default
 
@@ -840,13 +849,29 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
-    # On the iOS simulator, os.uname returns the architecture as uname.machine.
-    # On device it returns the model name for some reason; but there's only one
-    # CPU architecture for iOS devices, so we know the right answer.
+    # On the iOS/tvOS/visionOS/watchOS simulator, os.uname returns the
+    # architecture as uname.machine. On device it returns the model name for
+    # some reason; but there's only one CPU architecture for devices, so we know
+    # the right answer.
     def get_ios():
         if sys.implementation._multiarch.endswith("simulator"):
             return os.uname().machine
         return 'arm64'
+
+    def get_tvos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
+    def get_visionos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
+    def get_watchos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64_32'
 
     def from_subprocess():
         """
@@ -1000,8 +1025,8 @@ def uname():
         system = 'Android'
         release = android_ver().release
 
-    # Normalize responses on iOS
-    if sys.platform == 'ios':
+    # Normalize responses on Apple mobile platforms
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         system, release, _, _ = ios_ver()
 
     vals = system, node, release, version, machine
@@ -1290,7 +1315,7 @@ def platform(aliased=False, terse=False):
 
     if system == 'Darwin':
         # macOS and iOS both report as a "Darwin" kernel
-        if sys.platform == "ios":
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
             system, release, _, _ = ios_ver()
         else:
             macos_release = mac_ver()[0]
@@ -1400,7 +1425,7 @@ def invalidate_caches():
 def _parse_args(args: list[str] | None):
     import argparse
 
-    parser = argparse.ArgumentParser(color=True)
+    parser = argparse.ArgumentParser()
     parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
     parser.add_argument(
         "--terse",

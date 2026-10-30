@@ -180,18 +180,12 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object ``d`` is aware if both of the following hold:
-
-1. ``d.tzinfo`` is not ``None``
-2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
-
+A :class:`.datetime` object ``d`` is aware if
+:meth:`d.utcoffset() <datetime.utcoffset>` does not return ``None``.
 Otherwise, ``d`` is naive.
 
-A :class:`.time` object ``t`` is aware if both of the following hold:
-
-1. ``t.tzinfo`` is not ``None``
-2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
-
+A :class:`.time` object ``t`` is aware if
+:meth:`t.utcoffset() <time.utcoffset>` does not return ``None``.
 Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
@@ -606,12 +600,11 @@ Other constructors, all class methods:
 
    .. note::
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.15.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -1180,14 +1173,13 @@ Other constructors, all class methods:
    time tuple.  See also :ref:`strftime-strptime-behavior` and
    :meth:`datetime.fromisoformat`.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.15
 
-      If *format* specifies a day of month without a year a
-      :exc:`DeprecationWarning` is now emitted.  This is to avoid a quadrennial
+      If *format* specifies a day of month (``%d``) without a year,
+      :exc:`ValueError` is raised.  This is to avoid a quadrennial
       leap year bug in code seeking to parse only a month and day as the
       default year used in absence of one in the format is not a leap year.
-      Such *format* values may raise an error as of Python 3.15.  The
-      workaround is to always include a year in your *format*.  If parsing
+      The workaround is to always include a year in your *format*.  If parsing
       *date_string* values that do not have a year, explicitly add a year that
       is a leap year before parsing:
 
@@ -1394,9 +1386,9 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a new :class:`datetime` object with the same attributes, but with
-   specified parameters updated. Note that ``tzinfo=None`` can be specified to
-   create a naive datetime from an aware datetime with no conversion of date
+   Return a new :class:`~datetime.datetime` object with the same attributes, but
+   with specified parameters updated. Note that ``tzinfo=None`` can be specified
+   to create a naive datetime from an aware datetime with no conversion of date
    and time data.
 
    :class:`.datetime` objects are also supported by generic function
@@ -2484,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: next
 
 Class attributes:
 
@@ -2572,13 +2569,13 @@ requires, and these work on all supported platforms.
 |           | truncated to an integer as a   |                        |       |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9)  |
-|           | zero-padded decimal number.    |                        |       |
+|  ``%d``   | Day of the month as a          | 01, 02, ..., 31        | \(9), |
+|           | zero-padded decimal number.    |                        | \(10) |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%D``   | Equivalent to ``%m/%d/%y``.    | 11/28/25               | \(9)  |
 |           |                                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        |       |
+|  ``%e``   | The day of the month as a      | ␣1, ␣2, ..., 31        | \(10) |
 |           | space-padded decimal number.   |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%F``   | Equivalent to ``%Y-%m-%d``,    | 2025-10-11,            |       |
@@ -2611,8 +2608,10 @@ requires, and these work on all supported platforms.
 |  ``%M``   | Minute as a zero-padded        | 00, 01, ..., 59        | \(9)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%n``   | The newline character          | ``\n``                 | \(0)  |
-|           | (``'\n'``).                    |                        |       |
+|  ``%n``   | The newline character          | ``\n``                 |       |
+|           | (``'\n'``). For                |                        |       |
+|           | :meth:`!strptime`, zero or     |                        |       |
+|           | more whitespace.               |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%p``   | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
 |           | AM or PM.                      || am, pm (de_DE)        | \(3)  |
@@ -2625,8 +2624,9 @@ requires, and these work on all supported platforms.
 |  ``%S``   | Second as a zero-padded        | 00, 01, ..., 59        | \(4), |
 |           | decimal number.                |                        | \(9)  |
 +-----------+--------------------------------+------------------------+-------+
-|  ``%t``   | The tab character              | ``\t``                 | \(0)  |
-|           | (``'\t'``).                    |                        |       |
+|  ``%t``   | The tab character (``'\t'``).  | ``\t``                 |       |
+|           | For :meth:`!strptime`,         |                        |       |
+|           | zero or more whitespace.       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 |  ``%T``   | ISO 8601 time format,          | 10:01:59               |       |
 |           | equivalent to ``%H:%M:%S``.    |                        |       |
@@ -2698,6 +2698,10 @@ convenience.
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
+|  ``%Nf``  | Fraction of a second truncated | 000, 001, ..., 999     | \(5)  |
+|           | to *N* digits, where *N* is    | (``%3f``)              |       |
+|           | from 1 to 6.                   |                        |       |
++-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
@@ -2717,7 +2721,11 @@ differences between platforms in handling of unsupported format specifiers.
    ``%:z`` was added for :meth:`~.datetime.strftime`.
 
 .. versionadded:: 3.15
-   ``%:z``, ``%F``, and ``%D`` were added for :meth:`~.datetime.strptime`.
+   ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
+   :meth:`~.datetime.strptime`.
+
+.. versionadded:: next
+   ``%Nf`` was added.
 
 
 Technical detail
@@ -2742,6 +2750,13 @@ in the format string will be pulled from the default value.
    and :meth:`.date.strptime` will raise when encountering February 29 because
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
+
+.. note::
+   If a :meth:`~.datetime.strptime` format string contains more than
+   one directive for the same field, for example both ``%Y`` and ``%y``,
+   every directive must still match the input, but only the value of the
+   last one is used. For example, parsing ``200099`` with ``%Y%y`` gives
+   the year 1999. Repeating the same directive, like ``%Y%Y``, raises an error.
 
 .. testsetup::
 
@@ -2824,7 +2839,8 @@ Notes:
 
 (5)
    When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
-   accepts from one to six digits and zero pads on the right. ``%f`` is
+   accepts from one to six digits and zero pads on the right, while ``%Nf``
+   accepts exactly *N* digits. ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).
@@ -2915,11 +2931,12 @@ Notes:
       >>> dt.datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
       datetime.datetime(1984, 2, 29, 0, 0)
 
-   .. deprecated-removed:: 3.13 3.15
+   .. versionchanged:: 3.15
+      Using ``%d`` without a year now raises :exc:`ValueError`.
+
+   .. deprecated-removed:: 3.15 3.17
       :meth:`~.datetime.strptime` calls using a format string containing
-      a day of month without a year now emit a
-      :exc:`DeprecationWarning`. In 3.15 or later we may change this into
-      an error or change the default year to a leap year. See :gh:`70647`.
+      ``%e`` without a year now emit a :exc:`DeprecationWarning`.
 
 .. rubric:: Footnotes
 
