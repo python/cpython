@@ -671,7 +671,8 @@ class BasicTest(BaseTest):
         """
         outside = tempfile.mkdtemp()
         self.addCleanup(rmtree, outside)
-        for subdirs in self.ENV_SUBDIRS:
+        for n in range(1, len(self.lib) + 1):
+            subdirs = self.lib[:n]
             with self.subTest(subdirs=subdirs):
                 rmtree(self.env_dir)
                 os.makedirs(os.path.join(self.env_dir, *subdirs[:-1]))
