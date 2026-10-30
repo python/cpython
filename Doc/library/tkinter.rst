@@ -17,7 +17,7 @@ demonstrating a simple Tk interface, letting you know that :mod:`!tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
 
-Tkinter supports a range of Tcl/Tk versions, built either with or without
+Tkinter supports a range of Tcl/Tk versions, which must be built with
 thread support.
 Tcl/Tk 8.5.12 is the minimum supported version; the official Python binary
 release bundles Tcl/Tk 9.0.
@@ -476,18 +476,11 @@ interpreter will fail.
 
 A number of special cases exist:
 
-* Tcl/Tk libraries built without thread support are now rare: Tcl/Tk 9.0 (the
-  bundled version) is always thread-aware, so this case only arises with some
-  older 8.x builds. When the library is not thread-aware,
-  :mod:`!tkinter` calls the library from the originating Python thread, even
-  if this is different than the thread that created the Tcl interpreter. A global
-  lock ensures only one call occurs at a time.
-
 * While :mod:`!tkinter` allows you to create more than one instance of a :class:`Tk`
   object (with its own interpreter), all interpreters that are part of the same
   thread share a common event queue, which gets ugly fast. In practice, don't create
   more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+  them in separate threads.
 
 * Blocking event handlers are not the only way to prevent the Tcl interpreter from
   reentering the event loop. It is even possible to run multiple nested event loops
