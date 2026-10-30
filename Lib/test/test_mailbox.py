@@ -1408,6 +1408,15 @@ class TestMH(TestMailbox, unittest.TestCase):
         self._box.set_sequences({'foo':[key0]})
         self.assertEqual(self._box.get_sequences(), {'foo':[key0]})
 
+    def test_large_sequence_range(self):
+        # gh-156379: Verify large sequence ranges do not materialize large intervals
+        msg0 = mailbox.MHMessage(self._template % 0)
+        key0 = self._box.add(msg0)
+        seq_path = os.path.join(self._path, '.mh_sequences')
+        with open(seq_path, 'w', encoding='ASCII') as f:
+            f.write(f'unseen: 1-10000000\nempty: 50-100\n')
+        self.assertEqual(self._box.get_sequences(), {'unseen': [key0]})
+
     def test_no_dot_mh_sequences_file(self):
         path = os.path.join(self._path, 'foo.bar')
         os.mkdir(path)
