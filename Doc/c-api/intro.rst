@@ -943,6 +943,22 @@ use them.
    The maximum value of the Windows ``DWORD`` type.
    Expands to ``0xffffffff`` on all platforms.
 
+.. c:type:: Py_intptr_t
+
+   A signed integral type such that a legitimate ``void*`` can be cast to
+   :c:type:`Py_intptr_t` and then back to ``void*`` again without loss of
+   information.
+
+   Kept for backwards compatibility; prefer using ``intptr_t`` directly.
+
+.. c:type:: Py_uintptr_t
+
+   An unsigned integral type such that a legitimate ``void*`` can be cast to
+   :c:type:`Py_uintptr_t` and then back to ``void*`` again without loss of
+   information.
+
+   Kept for backwards compatibility; prefer using ``uintptr_t`` directly.
+
 
 .. _api-exceptions:
 
