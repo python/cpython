@@ -1,0 +1,5 @@
+Fix :exc:`AttributeError` from the methods of an :mod:`asyncio` SSL transport
+that was closed after its connection was lost, for example from the
+protocol's :meth:`~asyncio.BaseProtocol.connection_lost`.  This affected the
+fallback of :meth:`loop.sendfile() <asyncio.loop.sendfile>` when the peer
+closed the connection during the transfer.
