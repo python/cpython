@@ -1,0 +1,4 @@
+Speed up ``in``, :meth:`array.array.count`, :meth:`array.array.index` and
+:meth:`array.array.remove` for :class:`array.array` objects with integer
+typecodes. Attempts to resize during these operations may now raise
+:exc:`BufferError`. Searching is 120-350x faster for 100,000 items.
