@@ -1,0 +1,3 @@
+Fix a race condition in free-threaded builds where cross-thread frame
+inspection via :mod:`pdb` could cause a spurious assertion failure in
+:c:func:`PyFrame_GetBack`.
