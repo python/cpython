@@ -859,6 +859,9 @@ The :mod:`socket` module also offers various network-related services:
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
 
+   .. versionchanged:: next
+      Null characters are now rejected in the *host* and *port* parameters.
+
 .. function:: getfqdn([name])
 
    Return a fully qualified domain name for *name*. If *name* is omitted or empty,
