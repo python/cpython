@@ -320,8 +320,14 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
         # protect the process from ^C
         signal.SIGINT: signal.SIG_IGN,
         }
-    old_handlers = {sig: signal.signal(sig, val)
-                    for (sig, val) in handlers.items()}
+    old_handlers = {}
+    for sig, val in handlers.items():
+        old_handler = signal.signal(sig, val)
+        if old_handler is None:
+            # gh-159418: a handler installed outside of Python (e.g. from C)
+            # cannot be restored from Python, so use the default action.
+            old_handler = signal.SIG_DFL
+        old_handlers[sig] = old_handler
 
     # calling os.write() in the Python signal handler is racy
     signal.set_wakeup_fd(sig_w)
