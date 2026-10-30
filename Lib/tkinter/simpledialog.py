@@ -366,8 +366,9 @@ class Dialog(Toplevel):
         for i, (name, label, command) in enumerate(
                 (('ok', '&OK', self.ok), ('cancel', '&Cancel', self.cancel))):
             # Create a button with an accelerator key marked by "&" in the text
-            # (cf. tk::AmpWidget).
-            text, underline = _underline_ampersand(label)
+            # (cf. tk::AmpWidget). The label is localized through the Tk
+            # message catalog first; unknown labels are returned unchanged.
+            text, underline = _underline_ampersand(_localize(self, label))
             b = self._widget('Button', self, name=name, text=text,
                              underline=underline, command=command,
                              default=ACTIVE if name == 'ok' else NORMAL)
@@ -565,6 +566,11 @@ def _setup_dialog(w):
                       w, 'moveableModal', '')
     elif w._windowingsystem == "x11":
         w.wm_attributes(type="dialog")
+
+
+def _localize(w, s):
+    return w.tk.call("namespace", "eval", "::tk", "::msgcat::mc", s)
+
 
 # --------------------------------------------------------------------
 # convenience dialogues
