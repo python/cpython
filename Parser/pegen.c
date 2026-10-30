@@ -279,6 +279,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
 
     parser_token->level = new_token->level;
     parser_token->is_raw = new_token->is_raw;
+    parser_token->is_incomplete = new_token->is_incomplete;
     parser_token->lineno = new_token->start_loc.lineno;
     parser_token->col_offset = new_token->end_loc.lineno == p->starting_lineno
         ? p->starting_col_offset + new_token->start_loc.byte_col
@@ -325,6 +326,50 @@ _resize_tokens_array(Parser *p) {
     }
     p->size = newsize;
     return 0;
+}
+
+// Fast path attached to the expression precedence chain's entry rules.
+// A bare NAME/NUMBER atom followed by a token that cannot start or
+// continue a binary/postfix expression is a complete expression, so it is
+// built directly instead of descending the whole chain.
+//
+// Returns 1 if it produced a result (stored in *result), 0 to fall through to
+// the rule's alternatives.
+int
+_PyPegen_atom_fast_path(Parser *p, void *result)
+{
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        *(void **)result = NULL;
+        return 1;
+    }
+    Token *t = p->tokens[p->mark];
+    if (t->type != NAME && t->type != NUMBER) {
+        return 0;
+    }
+    if (p->mark + 1 == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        *(void **)result = NULL;
+        return 1;
+    }
+    switch (p->tokens[p->mark + 1]->type) {
+        case COMMA:
+        case RPAR:
+        case RSQB:
+        case RBRACE:
+        case COLON:
+        case NEWLINE:
+        case SEMI:
+        case EQUAL:
+        case ENDMARKER:
+            break;
+        default:
+            return 0;
+    }
+    expr_ty res = (t->type == NAME)
+        ? _PyPegen_name_token(p) : _PyPegen_number_token(p);
+    *(void **)result = res;
+    return 1;
 }
 
 int

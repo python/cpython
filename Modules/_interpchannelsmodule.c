@@ -2638,7 +2638,7 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     if (st == NULL) {
         return -1;
     }
-    if (!PyObject_IsInstance(obj, (PyObject *)st->ChannelIDType)) {
+    if (!PyObject_TypeCheck(obj, st->ChannelIDType)) {
         PyErr_Format(PyExc_TypeError,
                      "'_id' attribute must be an %N object, not %T",
                      st->ChannelIDType, obj);

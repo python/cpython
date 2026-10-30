@@ -2479,22 +2479,30 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         assert(sw_info);
 #ifdef WORDS_BIGENDIAN
-        PyObject_SetAttrString(self, "__ctype_le__", swapped);
-        PyObject_SetAttrString(self, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_le__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", swapped) < 0)
+       {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string("<", stginfo->format+1);
 #else
-        PyObject_SetAttrString(self, "__ctype_be__", swapped);
-        PyObject_SetAttrString(self, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_le__", self);
-        PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
+        if (PyObject_SetAttrString(self, "__ctype_be__", swapped) < 0 ||
+            PyObject_SetAttrString(self, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_le__", self) < 0 ||
+            PyObject_SetAttrString(swapped, "__ctype_be__", swapped) < 0)
+        {
+            Py_DECREF(swapped);
+            return -1;
+        }
         /* We are creating the type for the OTHER endian */
         sw_info->format = _ctypes_alloc_format_string(">", stginfo->format+1);
 #endif
         Py_DECREF(swapped);
-        if (PyErr_Occurred()) {
+        if (sw_info->format == NULL) {
             return -1;
         }
     };
@@ -5513,15 +5521,16 @@ static PyMethodDef Simple_methods[] = {
     { NULL, NULL },
 };
 
+/*[clinic input]
+@critical_section
+_ctypes.Simple.__bool__ as Simple_bool
+[clinic start generated code]*/
+
 static int
-Simple_bool(PyObject *op)
+Simple_bool_impl(CDataObject *self)
+/*[clinic end generated code: output=c4466ece6a99fe8b input=326a1c8b24d8918e]*/
 {
-    int cmp;
-    CDataObject *self = _CDataObject_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
-    Py_END_CRITICAL_SECTION();
-    return cmp;
+    return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
@@ -5988,14 +5997,16 @@ Pointer_subscript(PyObject *myself, PyObject *item)
     }
 }
 
+/*[clinic input]
+@critical_section
+_ctypes._Pointer.__bool__ as Pointer_bool
+[clinic start generated code]*/
+
 static int
-Pointer_bool(PyObject *self)
+Pointer_bool_impl(PyObject *self)
+/*[clinic end generated code: output=0139acaf4d395a69 input=672b8d35e7e0752d]*/
 {
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = *(void **)_CDataObject_CAST(self)->b_ptr != NULL;
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return *(void **)_CDataObject_CAST(self)->b_ptr != NULL;
 }
 
 static PyType_Slot pycpointer_slots[] = {
