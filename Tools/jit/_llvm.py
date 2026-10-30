@@ -24,7 +24,8 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
 
     @functools.wraps(f)
     async def wrapper(
-        *args: _P.args, **kwargs: _P.kwargs  # pylint: disable = no-member
+        *args: _P.args,
+        **kwargs: _P.kwargs,  # pylint: disable = no-member
     ) -> _R:
         async with lock:
             if args not in cache:
