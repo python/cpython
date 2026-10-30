@@ -1,0 +1,1 @@
+Add partial data recovery support in :func:`gzip.decompress` via ``partial=True`` and attach ``partial_data`` attribute to :exc:`EOFError` on truncated gzip streams.

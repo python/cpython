@@ -827,6 +827,17 @@ class TestGzip(BaseTest):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
 
+    def test_decompress_truncated_partial(self):
+        compressed_data = gzip.compress(data1)
+        truncated = compressed_data[:-8]
+        self.assertEqual(gzip.decompress(truncated, partial=True), data1)
+        try:
+            gzip.decompress(truncated)
+        except EOFError as exc:
+            self.assertEqual(getattr(exc, "partial_data", None), data1)
+        else:
+            self.fail("EOFError was not raised")
+
     def test_truncated_header(self):
         truncated_headers = [
             b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte

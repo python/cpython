@@ -677,9 +677,10 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_TRADEOFF, *, mtime=0):
     return header + gzip_data[10:]
 
 
-def decompress(data):
+def decompress(data, *, partial=False):
     """Decompress a gzip compressed string in one shot.
     Return the decompressed string.
+    If partial is True, returns data decompressed prior to an unexpected EOF.
     """
     decompressed_members = []
     while True:
@@ -691,8 +692,14 @@ def decompress(data):
         # Read all the data except the header
         decompressed = do.decompress(data[fp.tell():])
         if not do.eof or len(do.unused_data) < 8:
-            raise EOFError("Compressed file ended before the end-of-stream "
+            if partial and decompressed:
+                decompressed_members.append(decompressed)
+                return b"".join(decompressed_members)
+            exc = EOFError("Compressed file ended before the end-of-stream "
                            "marker was reached")
+            if decompressed:
+                exc.partial_data = decompressed
+            raise exc
         crc, length = struct.unpack("<II", do.unused_data[:8])
         if crc != zlib.crc32(decompressed):
             raise BadGzipFile("CRC check failed")
