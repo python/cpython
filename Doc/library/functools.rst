@@ -394,15 +394,15 @@ The :mod:`!functools` module defines the following functions:
 
    .. doctest::
 
-      >>> from functools import partial, Placeholder as _
-      >>> remove = partial(str.replace, _, _, '')
+      >>> from functools import partial, Placeholder as _P
+      >>> remove = partial(str.replace, _P, _P, '')
       >>> message = 'Hello, dear dear world!'
       >>> remove(message, ' dear')
       'Hello, world!'
-      >>> remove_dear = partial(remove, _, ' dear')
+      >>> remove_dear = partial(remove, _P, ' dear')
       >>> remove_dear(message)
       'Hello, world!'
-      >>> remove_first_dear = partial(remove_dear, _, 1)
+      >>> remove_first_dear = partial(remove_dear, _P, 1)
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
