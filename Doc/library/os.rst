@@ -1253,8 +1253,8 @@ as internal buffering of data.
    * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
    * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
    * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
-   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
-   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_HOLE` -- set *pos* to the next data hole, relative to *pos*
 
    .. versionchanged:: 3.3
 

@@ -3780,8 +3780,8 @@ objects.
 
       If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
 
-      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
-      will be set to null bytes.
+      If the :class:`bytearray` needs to grow, all new bytes will be set to null
+      bytes.
 
 
       This is equivalent to:
@@ -5593,9 +5593,8 @@ Note, the non-operator versions of the :meth:`~set.update`,
 argument.
 
 Note, the *elem* argument to the :meth:`~object.__contains__`,
-:meth:`~set.remove`, and
-:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
-frozenset, a temporary one is created from *elem*.
+:meth:`~set.remove`, and :meth:`~set.discard` methods may be a set.  In this case,
+an equivalent frozenset is searched for.
 
 Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
