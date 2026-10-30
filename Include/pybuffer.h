@@ -54,10 +54,17 @@ PyAPI_FUNC(void *) PyBuffer_GetPointer(const Py_buffer *view, const Py_ssize_t *
    struct-style description. */
 PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
 
-/* Implementation in memoryobject.c */
+/* Copy 'len' bytes from 'src' to its contiguous representation in 'buf'.
+
+   Returns 0 on success and -1 on error; fails if len != src->len.
+   Implementation in memoryobject.c */
 PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, const Py_buffer *view,
                                       Py_ssize_t len, char order);
 
+/* Copy contiguous 'len' bytes from 'buf' to 'view'.
+   'fort' can be 'C' or 'F' (for C-style or Fortran-style ordering).
+
+   Returns 0 on success and -1 on error. */
 PyAPI_FUNC(int) PyBuffer_FromContiguous(const Py_buffer *view, const void *buf,
                                         Py_ssize_t len, char order);
 
@@ -76,10 +83,14 @@ PyAPI_FUNC(int) PyBuffer_FromContiguous(const Py_buffer *view, const void *buf,
    in whatever way is more efficient. */
 PyAPI_FUNC(int) PyObject_CopyData(PyObject *dest, PyObject *src);
 
-/* Copy the data from the src buffer to the buffer of destination. */
+/* Check if the memory defined by the 'view' is contiguous.
+   Possible contiguous style defined in 'order' are `C`, `F` or `A`.
+   That means C-style, Fortran-style or Any of them, respectively.
+
+   Returns 1 on success and 0 otherwise, without raising an error. */
 PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char order);
 
-/*Fill the strides array with byte-strides of a contiguous
+/* Fill the strides array with byte-strides of a contiguous
   (Fortran-style if order is 'F' or C-style otherwise)
   array of the given shape with the given number of bytes
   per element. */
