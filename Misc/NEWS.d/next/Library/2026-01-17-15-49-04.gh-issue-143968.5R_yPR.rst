@@ -1,0 +1,1 @@
+Prevent :meth:`pathlib.Path.copy` from attempting to copy special files like FIFOs or character devices, avoiding hangs or infinite loops.
