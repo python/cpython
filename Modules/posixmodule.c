@@ -11978,7 +11978,7 @@ static int
 os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 /*[clinic end generated code: output=bc059d34a73404d1 input=c3cddda8922b038d]*/
 {
-    int res = 0;
+    int res = -1;
 
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
      * it needs runtime detection for the case of running on older kernels.
@@ -11990,86 +11990,71 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
     static int dup3_works_atomic = -1;
     (void) dup3_works_atomic;  // unused on some platforms
 
-    /* dup2() can fail with EINTR if the target FD is already open, because it
-     * then has to be closed. See os_close_impl() for why we don't handle EINTR
-     * upon close(), and therefore below.
-     */
-#ifdef MS_WINDOWS
-    Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-    res = dup2(fd, fd2);
-    _Py_END_SUPPRESS_IPH
-    Py_END_ALLOW_THREADS
-    if (res < 0) {
-        posix_error();
-        return -1;
-    }
-    res = fd2; // msvcrt dup2 returns 0 on success.
-
-    /* Character files like console cannot be make non-inheritable */
-    if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
-        close(fd2);
-        return -1;
-    }
-
-#elif defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC)
-    Py_BEGIN_ALLOW_THREADS
-    if (!inheritable)
-        res = fcntl(fd, F_DUP2FD_CLOEXEC, fd2);
-    else
-        res = dup2(fd, fd2);
-    Py_END_ALLOW_THREADS
-    if (res < 0) {
-        posix_error();
-        return -1;
-    }
-
-#else
-
-#ifdef HAVE_DUP3
-    int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
-    if (!inheritable && dup3_works != 0) {
-        if (HAVE_DUP3_RUNTIME) {
-            Py_BEGIN_ALLOW_THREADS
-            res = dup3(fd, fd2, O_CLOEXEC);
-            Py_END_ALLOW_THREADS
-            if (res < 0) {
-                if (dup3_works == -1) {
-                    dup3_works = (errno != ENOSYS);
-                    FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
-                }
-                if (dup3_works) {
-                    posix_error();
-                    return -1;
-                }
-            }
-        }
-        else {
-            dup3_works = 0;
-            FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
-        }
-    }
-
-    if (inheritable || dup3_works == 0)
-    {
-#endif
+    // gh-77043: Always fallback to dup2() if fd == fd2 because other
+    // functions may behave differently in this case.
+    if (!inheritable && fd != fd2) {
+#if defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC)
         Py_BEGIN_ALLOW_THREADS
-        res = dup2(fd, fd2);
+        res = fcntl(fd, F_DUP2FD_CLOEXEC, fd2);
         Py_END_ALLOW_THREADS
         if (res < 0) {
             posix_error();
             return -1;
         }
+#elif defined(HAVE_DUP3)
+        // dup3() is available on Linux 2.6.27+ and glibc 2.9 and macOS 27.0;
+        // it needs runtime detection for the case of running on older kernels.
+        int dup3_works = FT_ATOMIC_LOAD_INT_RELAXED(dup3_works_atomic);
+        if (dup3_works != 0) {
+            if (HAVE_DUP3_RUNTIME) {
+                Py_BEGIN_ALLOW_THREADS
+                res = dup3(fd, fd2, O_CLOEXEC);
+                Py_END_ALLOW_THREADS
+                if (res < 0) {
+                    if (dup3_works == -1) {
+                        dup3_works = (errno != ENOSYS);
+                        FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
+                    }
+                    if (dup3_works) {
+                        posix_error();
+                        return -1;
+                    }
+                }
+            }
+            else {
+                dup3_works = 0;
+                FT_ATOMIC_STORE_INT_RELAXED(dup3_works_atomic, dup3_works);
+            }
+        }
+#endif
+    }
 
-        if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
-            close(fd2);
+    if (res < 0) {
+        // dup2() can fail with EINTR if the target FD is already open, because
+        // it then has to be closed. See os_close_impl() for why we don't
+        // handle EINTR upon close(), and therefore below.
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        res = dup2(fd, fd2);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+        if (res < 0) {
+            posix_error();
             return -1;
         }
-#ifdef HAVE_DUP3
-    }
+#ifdef MS_WINDOWS
+        res = fd2; // msvcrt dup2 returns 0 on success.
 #endif
 
-#endif
+        // On Windows, character files like console cannot be made
+        // non-inheritable.
+        if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
+            if (fd != fd2) {
+                close(fd2);
+            }
+            return -1;
+        }
+    }
 
     return res;
 }
