@@ -34,6 +34,7 @@ extensions = [
     'profiling_trace',
     'pydoc_topics',
     'pyspecific',
+    'refwarn',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
