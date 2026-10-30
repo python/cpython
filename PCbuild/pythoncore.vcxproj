@@ -241,6 +241,7 @@
     <ClInclude Include="..\Include\internal\pycore_critical_section.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp_data_registry.h" />
+    <ClInclude Include="..\Include\internal\pycore_curses.h" />
     <ClInclude Include="..\Include\internal\pycore_debug_offsets.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
