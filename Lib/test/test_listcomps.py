@@ -944,6 +944,35 @@ class ListComprehensionTest(unittest.TestCase):
             {"snaps": [1, 2], "vals": [2, 2], "consistent": [True, True]},
             ns={"sys": sys}, scopes=["module", "function"])
 
+    def test_frame_locals_dedup_learned_before_slot_is_bound(self):
+        # Reading f_locals before the comprehension slot is bound must not
+        # cache "names are unique": the repeated name is still on the code
+        # object, and dict(**f_locals) inside the comprehension has to work.
+        # The enclosing x is already bound, so the first read shows that
+        # value. Each API runs on its own code object.
+        probes = {
+            "keys": ("list(sys._getframe().f_locals.keys())", ["x"]),
+            "values": ("list(sys._getframe().f_locals.values())", [[7, 8]]),
+            "items": ("list(sys._getframe().f_locals.items())",
+                      [("x", [7, 8])]),
+            "len": ("len(sys._getframe().f_locals)", 1),
+        }
+        import sys
+        for name, (probe, expected) in probes.items():
+            with self.subTest(probe=name):
+                code = f"""
+                    def outer(x):
+                        def inner():
+                            probe = {probe}
+                            return probe, [dict(**sys._getframe().f_locals)['x']
+                                           for x in x]
+                        return inner()
+                    probe, result = outer([7, 8])
+                """
+                self._check_in_scopes(
+                    code, {"probe": expected, "result": [7, 8]},
+                    ns={"sys": sys}, scopes=["module", "function"])
+
     def test_frame_locals_nested_comp_cell_and_enclosing_free(self):
         # Stress a nested inlined shape where a comp cell and enclosing free
         # share a name; all f_locals views must stay consistent.
