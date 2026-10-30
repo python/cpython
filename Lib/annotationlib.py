@@ -122,7 +122,15 @@ class ForwardRef:
                 is_forwardref_format = True
             case _:
                 raise NotImplementedError(format)
-        if isinstance(self.__cell__, types.CellType):
+        if (
+            globals is None
+            and locals is None
+            and isinstance(self.__cell__, types.CellType)
+        ):
+            # The cell holds the value of the name from the enclosing scope.
+            # Explicitly passed namespaces take precedence over it, so use
+            # this shortcut only if neither was provided; otherwise, the
+            # cell value is used as a fallback during name resolution below.
             try:
                 return self.__cell__.cell_contents
             except ValueError:
@@ -196,7 +204,14 @@ class ForwardRef:
                 resolved = locals[arg]
             elif arg in globals:
                 resolved = globals[arg]
-            elif hasattr(builtins, arg):
+            elif isinstance(self.__cell__, types.CellType):
+                # Fall back to the value from the enclosing scope if the
+                # name is not in either of the provided namespaces.
+                try:
+                    resolved = self.__cell__.cell_contents
+                except ValueError:
+                    pass
+            if resolved is _sentinel and hasattr(builtins, arg):
                 resolved = getattr(builtins, arg)
 
             if resolved is not _sentinel:

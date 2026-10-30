@@ -2525,6 +2525,55 @@ class TestForwardRefClass(unittest.TestCase):
 
         alias = list
 
+    def test_evaluate_cell_with_explicit_namespaces(self):
+        def inner(arg: x):
+            pass
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertIsInstance(fwdref.__cell__, types.CellType)
+
+        x = 1
+        # With no explicit namespaces, the value from the enclosing
+        # scope, held in the cell, is used.
+        self.assertEqual(fwdref.evaluate(), 1)
+        # Explicitly passed namespaces take precedence over the cell.
+        self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
+        self.assertEqual(fwdref.evaluate(globals={"x": 3}), 3)
+        self.assertEqual(fwdref.evaluate(globals={"x": 3}, locals={"x": 2}), 2)
+        self.assertEqual(
+            fwdref.evaluate(locals={"x": 2}, format=Format.FORWARDREF), 2
+        )
+        # If the name is not in the explicit namespaces, the cell
+        # value is used as a fallback.
+        self.assertEqual(fwdref.evaluate(locals={}), 1)
+        self.assertEqual(fwdref.evaluate(globals={}), 1)
+        self.assertEqual(fwdref.evaluate(locals={"y": 2}), 1)
+
+    def test_evaluate_empty_cell_with_explicit_namespaces(self):
+        def inner(arg: x):
+            pass
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertIsInstance(fwdref.__cell__, types.CellType)
+
+        x = 1
+        del x
+        # The cell is empty, so the name cannot be resolved without
+        # explicit namespaces.
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+        # Explicitly passed namespaces are still consulted.
+        self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
+        self.assertEqual(fwdref.evaluate(globals={"x": 3}), 3)
+
+        # Refilling the cell restores it as the fallback, but explicit
+        # namespaces still take precedence over it.
+        x = 7
+        self.assertEqual(fwdref.evaluate(), 7)
+        self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
+
     def test_fwdref_final_class(self):
         with self.assertRaises(TypeError):
             class C(ForwardRef):
