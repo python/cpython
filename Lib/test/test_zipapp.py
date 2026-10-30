@@ -185,8 +185,13 @@ class ZipAppTest(unittest.TestCase):
         source.mkdir()
         (source / '__main__.py').touch()
         target = self.tmpdir / 'source.pyz'
-        with self.assertRaises(zipapp.ZipAppError):
-            zipapp.create_archive(str(source), str(target), main='pkg.mod:fn')
+        for main in ('pkg.mod:fn', ''):
+            with self.subTest(main=main):
+                target.write_bytes(b'original content')
+                with self.assertRaisesRegex(zipapp.ZipAppError,
+                                            'Cannot specify entry point'):
+                    zipapp.create_archive(str(source), str(target), main=main)
+                self.assertEqual(target.read_bytes(), b'original content')
 
     def test_main_written(self):
         # Test that the __main__.py is written correctly.
@@ -227,8 +232,10 @@ class ZipAppTest(unittest.TestCase):
         ]
         for main in problems:
             with self.subTest(main=main):
-                with self.assertRaises(zipapp.ZipAppError):
+                with self.assertRaisesRegex(zipapp.ZipAppError,
+                                            'Invalid entry point:'):
                     zipapp.create_archive(str(source), str(target), main=main)
+                self.assertFalse(target.exists())
 
     def test_default_no_shebang(self):
         # Test that no shebang line is written to the target by default.
@@ -327,6 +334,19 @@ class ZipAppTest(unittest.TestCase):
         temp_archive.seek(0)
         zipapp.create_archive(temp_archive, new_target, interpreter='python2.7')
         self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
+
+    def test_main_with_existing_archive(self):
+        archive = self.tmpdir / 'source.pyz'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('__main__.py', '')
+        target = self.tmpdir / 'target.pyz'
+        for main in ('pkg.mod:fn', ''):
+            for source in (archive, io.BytesIO(archive.read_bytes())):
+                with self.subTest(main=main, source=source):
+                    target.write_bytes(b'original content')
+                    with self.assertRaises(zipapp.ZipAppError):
+                        zipapp.create_archive(source, target, main=main)
+                    self.assertEqual(target.read_bytes(), b'original content')
 
     def test_remove_shebang(self):
         # Test that we can remove the shebang from a file.
@@ -446,11 +466,14 @@ class ZipAppCmdlineTest(unittest.TestCase):
         # Test copying an archive doesn't allow changing __main__.py.
         original = self.make_archive()
         target = self.tmpdir / 'target.pyz'
-        args = [str(original), '-o', str(target), '-m', 'foo:bar']
-        with self.assertRaises(SystemExit) as cm:
-            zipapp.main(args)
-        # Program should exit with a non-zero return code.
-        self.assertTrue(cm.exception.code)
+        for main in ('foo:bar', ''):
+            with self.subTest(main=main):
+                args = [str(original), '-o', str(target), '-m', main]
+                with self.assertRaises(SystemExit) as cm:
+                    zipapp.main(args)
+                # Program should exit with a non-zero return code.
+                self.assertTrue(cm.exception.code)
+                self.assertFalse(target.exists())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_info_command(self, mock_stdout):
