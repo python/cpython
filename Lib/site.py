@@ -1031,11 +1031,14 @@ def _venv(state):
                         )
                         break
 
-        if sys.prefix != site_prefix:
+        # site_prefix is already normalised by the abspath() above, but sys.prefix
+        # isn't. Normalise before comparing, or two spellings of the same directory
+        # look like a mismatch.
+        if os.path.normpath(sys.prefix) != site_prefix:
             _warn(
                 f'Unexpected value in sys.prefix, expected {site_prefix}, got {sys.prefix}',
                 RuntimeWarning)
-        if sys.exec_prefix != site_prefix:
+        if os.path.normpath(sys.exec_prefix) != site_prefix:
             _warn(
                 f'Unexpected value in sys.exec_prefix, expected {site_prefix}, got {sys.exec_prefix}',
                 RuntimeWarning)
