@@ -56,7 +56,7 @@
    at the end, instead of comparing each character. The accumulation loop has
    no branches, so compilers vectorize it, and the result does not depend on
    where each byte sits in the word, so unaligned ends can be read in smaller
-   pieces. Every 32 words, check whether the widest kind is already known and
+   pieces. Every 16 words, check whether the widest kind is already known and
    exit early. */
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
@@ -86,15 +86,22 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #endif
     }
 
-    while (p + SIZEOF_SIZE_T * 32 <= _end) {
+    while (p + SIZEOF_SIZE_T * 16 <= _end) {
         const size_t *pp = (const size_t *)p;
-        for (int i = 0; i < 32; i++) {
-            value |= pp[i];
+        /* Four independent accumulators so the loop does not serialize on
+           one register when the compiler does not vectorize it. */
+        size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
+        for (int i = 0; i < 16; i += 4) {
+            v0 |= pp[i];
+            v1 |= pp[i + 1];
+            v2 |= pp[i + 2];
+            v3 |= pp[i + 3];
         }
+        value |= v0 | v1 | v2 | v3;
         if (value & MASK_MAX_CHAR) {
             return MAX_CHAR;
         }
-        p += SIZEOF_SIZE_T * 32;
+        p += SIZEOF_SIZE_T * 16;
     }
 
     while (p + SIZEOF_SIZE_T <= _end) {
