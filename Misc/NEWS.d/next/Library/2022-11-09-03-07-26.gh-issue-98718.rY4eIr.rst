@@ -1,0 +1,2 @@
+:mod:`sys` now exports :attr:`sys.build_prefix`, with the path of the Python
+build directory, if any.
