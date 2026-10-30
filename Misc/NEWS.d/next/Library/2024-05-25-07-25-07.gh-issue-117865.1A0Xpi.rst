@@ -1,2 +1,0 @@
-Improve the import time of the :mod:`ast` module by deferring the import of
-:mod:`re`. Patch by Jelle Zijlstra.

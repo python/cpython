@@ -30,6 +30,7 @@
 import os
 import sys
 import unittest
+from test import support
 
 from ctypes.macholib.dyld import dyld_find
 from ctypes.macholib.dylib import dylib_info
@@ -106,6 +107,15 @@ class MachOTest(unittest.TestCase):
                          d('P', 'F.framework/Versions/A/F', 'F', 'A'))
         self.assertEqual(framework_info('P/F.framework/Versions/A/F_debug'),
                          d('P', 'F.framework/Versions/A/F_debug', 'F', 'A', 'debug'))
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        import ctypes.macholib
+
+        support.check_deprecated_module_attributes(
+            self, ctypes.macholib, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

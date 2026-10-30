@@ -8,8 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h" // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
-#include "pycore_llist.h"        // struct llist_node
+#include "dynamic_annotations.h"     // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+#include "pycore_llist.h"            // struct llist_node
 
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
 #if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
@@ -152,6 +152,19 @@ PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
  * a non-zero value on failure.
  */
 PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
+/*
+ * Hangs the thread indefinitely without exiting it.
+ *
+ * gh-87135: There is no safe way to exit a thread other than returning
+ * normally from its start function.  This is used during finalization in lieu
+ * of actually exiting the thread.  Since the program is expected to terminate
+ * soon anyway, it does not matter if the thread stack stays around until then.
+ *
+ * This is unfortunate for embedders who may not be terminating their process
+ * when they're done with the interpreter, but our C API design does not allow
+ * for safely exiting threads attempting to re-enter Python post finalization.
+ */
+void _Py_NO_RETURN PyThread_hang_thread(void);
 
 #ifdef __cplusplus
 }

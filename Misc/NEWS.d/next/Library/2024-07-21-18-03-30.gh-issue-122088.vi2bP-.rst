@@ -1,3 +1,0 @@
-:func:`@warnings.deprecated <warnings.deprecated>` now copies the
-coroutine status of functions and methods so that
-:func:`inspect.iscoroutinefunction` returns the correct result.

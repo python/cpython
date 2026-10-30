@@ -10,11 +10,6 @@
 Buffer Protocol
 ---------------
 
-.. sectionauthor:: Greg Stein <gstein@lyra.org>
-.. sectionauthor:: Benjamin Peterson
-.. sectionauthor:: Stefan Krah
-
-
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
 :class:`bytearray`, and some extension types like :class:`array.array`.
@@ -26,17 +21,19 @@ characteristic of being backed by a possibly large memory buffer.  It is
 then desirable, in some situations, to access that buffer directly and
 without intermediate copying.
 
-Python provides such a facility at the C level in the form of the :ref:`buffer
-protocol <bufferobjects>`.  This protocol has two sides:
+Python provides such a facility at the C and Python level in the form of the
+:ref:`buffer protocol <bufferobjects>`.  This protocol has two sides:
 
 .. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.
-  This interface is described in the section :ref:`buffer-structs`;
+  This interface is described in the section :ref:`buffer-structs`; for
+  Python see :ref:`python-buffer-protocol`.
 
 - on the consumer side, several means are available to obtain a pointer to
-  the raw underlying data of an object (for example a method parameter).
+  the raw underlying data of an object (for example a method parameter). For
+  Python see :class:`memoryview`.
 
 Simple objects such as :class:`bytes` and :class:`bytearray` expose their
 underlying buffer in byte-oriented form.  Other forms are possible; for example,
@@ -62,6 +59,10 @@ In both cases, :c:func:`PyBuffer_Release` must be called when the buffer
 isn't needed anymore.  Failure to do so could lead to various issues such as
 resource leaks.
 
+.. versionadded:: 3.12
+
+   The buffer protocol is now accessible in Python, see
+   :ref:`python-buffer-protocol` and :class:`memoryview`.
 
 .. _buffer-structure:
 
@@ -244,7 +245,6 @@ The following fields are not influenced by *flags* and must always be filled in
 with the correct values: :c:member:`~Py_buffer.obj`, :c:member:`~Py_buffer.buf`,
 :c:member:`~Py_buffer.len`, :c:member:`~Py_buffer.itemsize`, :c:member:`~Py_buffer.ndim`.
 
-
 readonly, format
 ~~~~~~~~~~~~~~~~
 
@@ -253,7 +253,14 @@ readonly, format
       Controls the :c:member:`~Py_buffer.readonly` field. If set, the exporter
       MUST provide a writable buffer or else report failure. Otherwise, the
       exporter MAY provide either a read-only or writable buffer, but the choice
-      MUST be consistent for all consumers.
+      MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
+      can be used to request a simple writable buffer.
+
+   .. c:macro:: PyBUF_WRITEABLE
+
+      This is an alias to :c:macro:`PyBUF_WRITABLE`.
+
+      .. soft-deprecated:: 3.13
 
    .. c:macro:: PyBUF_FORMAT
 
@@ -265,8 +272,9 @@ readonly, format
 Since :c:macro:`PyBUF_SIMPLE` is defined as 0, :c:macro:`PyBUF_WRITABLE`
 can be used as a stand-alone flag to request a simple writable buffer.
 
-:c:macro:`PyBUF_FORMAT` can be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`.
-The latter already implies format ``B`` (unsigned bytes).
+:c:macro:`PyBUF_FORMAT` must be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`, because
+the latter already implies format ``B`` (unsigned bytes). :c:macro:`!PyBUF_FORMAT` cannot be
+used on its own.
 
 
 shape, strides, suboffsets
@@ -276,19 +284,38 @@ The flags that control the logical structure of the memory are listed
 in decreasing order of complexity. Note that each flag contains all bits
 of the flags below it.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|
+.. stable-abi-note::
 
-+-----------------------------+-------+---------+------------+
-|  Request                    | shape | strides | suboffsets |
-+=============================+=======+=========+============+
-| .. c:macro:: PyBUF_INDIRECT |  yes  |   yes   | if needed  |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_STRIDES  |  yes  |   yes   |    NULL    |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_ND       |  yes  |   NULL  |    NULL    |
-+-----------------------------+-------+---------+------------+
-| .. c:macro:: PyBUF_SIMPLE   |  NULL |   NULL  |    NULL    |
-+-----------------------------+-------+---------+------------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+      * - .. c:macro:: PyBUF_INDIRECT
+        - yes
+        - yes
+        - if needed
+      * - .. c:macro:: PyBUF_STRIDES
+        - yes
+        - yes
+        - NULL
+      * - .. c:macro:: PyBUF_ND
+        - yes
+        - NULL
+        - NULL
+      * - .. c:macro:: PyBUF_SIMPLE
+        - NULL
+        - NULL
+        - NULL
 
 
 .. index:: contiguous, C-contiguous, Fortran contiguous
@@ -300,19 +327,43 @@ C or Fortran :term:`contiguity <contiguous>` can be explicitly requested,
 with and without stride information. Without stride information, the buffer
 must be C-contiguous.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|
+.. stable-abi-note::
 
-+-----------------------------------+-------+---------+------------+--------+
-|  Request                          | shape | strides | suboffsets | contig |
-+===================================+=======+=========+============+========+
-| .. c:macro:: PyBUF_C_CONTIGUOUS   |  yes  |   yes   |    NULL    |   C    |
-+-----------------------------------+-------+---------+------------+--------+
-| .. c:macro:: PyBUF_F_CONTIGUOUS   |  yes  |   yes   |    NULL    |   F    |
-+-----------------------------------+-------+---------+------------+--------+
-| .. c:macro:: PyBUF_ANY_CONTIGUOUS |  yes  |   yes   |    NULL    | C or F |
-+-----------------------------------+-------+---------+------------+--------+
-| :c:macro:`PyBUF_ND`               |  yes  |   NULL  |    NULL    |   C    |
-+-----------------------------------+-------+---------+------------+--------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+        - contig
+      * - .. c:macro:: PyBUF_C_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - C
+      * - .. c:macro:: PyBUF_F_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - F
+      * - .. c:macro:: PyBUF_ANY_CONTIGUOUS
+        - yes
+        - yes
+        - NULL
+        - C or F
+      * - :c:macro:`PyBUF_ND`
+        - yes
+        - NULL
+        - NULL
+        - C
 
 
 compound requests
@@ -325,27 +376,81 @@ used combinations as single flags.
 In the following table *U* stands for undefined contiguity. The consumer would
 have to call :c:func:`PyBuffer_IsContiguous` to determine contiguity.
 
-.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|l|l|
+.. stable-abi-note::
 
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-|  Request                      | shape | strides | suboffsets | contig | readonly | format |
-+===============================+=======+=========+============+========+==========+========+
-| .. c:macro:: PyBUF_FULL       |  yes  |   yes   | if needed  |   U    |     0    |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_FULL_RO    |  yes  |   yes   | if needed  |   U    |  1 or 0  |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_RECORDS    |  yes  |   yes   |    NULL    |   U    |     0    |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_RECORDS_RO |  yes  |   yes   |    NULL    |   U    |  1 or 0  |  yes   |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_STRIDED    |  yes  |   yes   |    NULL    |   U    |     0    |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_STRIDED_RO |  yes  |   yes   |    NULL    |   U    |  1 or 0  |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_CONTIG     |  yes  |   NULL  |    NULL    |   C    |     0    |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
-| .. c:macro:: PyBUF_CONTIG_RO  |  yes  |   NULL  |    NULL    |   C    |  1 or 0  |  NULL  |
-+-------------------------------+-------+---------+------------+--------+----------+--------+
+   These values are available when compiling for the
+   :ref:`Stable ABI <stable>` since version 3.11.
+
+.. omit-stable-abi-notes::
+
+   .. list-table::
+      :align: left
+      :widths: auto
+      :header-rows: 1
+
+      * - Request
+        - shape
+        - strides
+        - suboffsets
+        - contig
+        - readonly
+        - format
+      * - .. c:macro:: PyBUF_FULL
+        - yes
+        - yes
+        - if needed
+        - U
+        - 0
+        - yes
+      * - .. c:macro:: PyBUF_FULL_RO
+        - yes
+        - yes
+        - if needed
+        - U
+        - 1 or 0
+        - yes
+      * - .. c:macro:: PyBUF_RECORDS
+        - yes
+        - yes
+        - NULL
+        - U
+        - 0
+        - yes
+      * - .. c:macro:: PyBUF_RECORDS_RO
+        - yes
+        - yes
+        - NULL
+        - U
+        - 1 or 0
+        - yes
+      * - .. c:macro:: PyBUF_STRIDED
+        - yes
+        - yes
+        - NULL
+        - U
+        - 0
+        - NULL
+      * - .. c:macro:: PyBUF_STRIDED_RO
+        - yes
+        - yes
+        - NULL
+        - U
+        - 1 or 0
+        - NULL
+      * - .. c:macro:: PyBUF_CONTIG
+        - yes
+        - NULL
+        - NULL
+        - C
+        - 0
+        - NULL
+      * - .. c:macro:: PyBUF_CONTIG_RO
+        - yes
+        - NULL
+        - NULL
+        - C
+        - 1 or 0
+        - NULL
 
 
 Complex arrays
@@ -494,10 +599,11 @@ Buffer-related functions
    *indices* must point to an array of ``view->ndim`` indices.
 
 
-.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+.. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 
    Copy contiguous *len* bytes from *buf* to *view*.
-   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one).
    ``0`` is returned on success, ``-1`` on error.
 
 

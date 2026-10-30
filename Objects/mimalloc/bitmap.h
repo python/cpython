@@ -7,7 +7,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 /* ----------------------------------------------------------------------------
 Concurrent bitmap that can set/reset sequences of bits atomically,
-represeted as an array of fields where each field is a machine word (`size_t`)
+represented as an array of fields where each field is a machine word (`size_t`)
 
 There are two api's; the standard one cannot have sequences that cross
 between the bitmap fields (and a sequence must be <= MI_BITMAP_FIELD_BITS).
@@ -35,9 +35,13 @@ typedef mi_bitmap_field_t*  mi_bitmap_t;
 typedef size_t mi_bitmap_index_t;
 
 // Create a bit index.
+static inline mi_bitmap_index_t mi_bitmap_index_create_ex(size_t idx, size_t bitidx) {
+  mi_assert_internal(bitidx <= MI_BITMAP_FIELD_BITS);
+  return (idx*MI_BITMAP_FIELD_BITS) + bitidx;
+}
 static inline mi_bitmap_index_t mi_bitmap_index_create(size_t idx, size_t bitidx) {
   mi_assert_internal(bitidx < MI_BITMAP_FIELD_BITS);
-  return (idx*MI_BITMAP_FIELD_BITS) + bitidx;
+  return mi_bitmap_index_create_ex(idx,bitidx);
 }
 
 // Create a bit index.
@@ -107,9 +111,9 @@ bool _mi_bitmap_unclaim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t 
 
 // Set `count` bits at `bitmap_idx` to 1 atomically
 // Returns `true` if all `count` bits were 0 previously. `any_zero` is `true` if there was at least one zero bit.
-bool _mi_bitmap_claim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, bool* pany_zero);
+bool _mi_bitmap_claim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, bool* pany_zero, size_t* already_set);
 
-bool _mi_bitmap_is_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
+bool _mi_bitmap_is_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, size_t* already_set);
 bool _mi_bitmap_is_any_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
 
 #endif

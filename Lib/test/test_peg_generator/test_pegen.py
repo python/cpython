@@ -3,16 +3,19 @@ import difflib
 import io
 import textwrap
 import unittest
+from pathlib import Path, PurePath
 
 from test import test_tools
+from test.support import os_helper
 from typing import Dict, Any
 from tokenize import TokenInfo, NAME, NEWLINE, NUMBER, OP
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.build import build_parser
     from pegen.grammar_parser import GeneratedParser as GrammarParser
-    from pegen.testutil import parse_string, generate_parser, make_parser
-    from pegen.grammar import GrammarVisitor, GrammarError, Grammar
+    from pegen.testutil import parse_string, generate_parser, make_parser, run_parser
+    from pegen.grammar import GrammarVisitor, GrammarError, Grammar, RuleKind
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
     from pegen.parser_generator import compute_nullables, compute_left_recursives
@@ -91,10 +94,8 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        self.assertTrue(
-            repr(rules["start"]).startswith(
-                "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
-            )
+        self.assertStartsWith(repr(rules["start"]),
+            "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
         )
         self.assertEqual(str(rules["thing"]), "thing: NUMBER")
         parser_class = make_parser(grammar)
@@ -484,7 +485,7 @@ class TestPegen(unittest.TestCase):
 
     def test_python_expr(self) -> None:
         grammar = """
-        start: expr NEWLINE? $ { ast.Expression(expr, lineno=1, col_offset=0) }
+        start: expr NEWLINE? $ { ast.Expression(expr) }
         expr: ( expr '+' term { ast.BinOp(expr, ast.Add(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | expr '-' term { ast.BinOp(expr, ast.Sub(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | term { term }
@@ -505,6 +506,14 @@ class TestPegen(unittest.TestCase):
         code = compile(node, "", "eval")
         val = eval(code)
         self.assertEqual(val, 3.0)
+
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
 
     def test_nullable(self) -> None:
         grammar_source = """
@@ -531,6 +540,29 @@ class TestPegen(unittest.TestCase):
         self.assertTrue(rules["start"].left_recursive)
         self.assertFalse(rules["sign"].left_recursive)
 
+    def test_helper_rule_kinds_do_not_depend_on_names(self) -> None:
+        grammar = parse_string("""
+            start: NAME* NUMBER+ ','.NAME+
+        """, GrammarParser)
+        generator = PythonParserGenerator(grammar, io.StringIO())
+        generator.collect_rules()
+        helpers = [
+            rule for rule in generator.all_rules.values()
+            if rule is not grammar.rules["start"]
+        ]
+        self.assertCountEqual(
+            [rule.kind for rule in helpers],
+            [RuleKind.LOOP0, RuleKind.LOOP1, RuleKind.LOOP0, RuleKind.GATHER],
+        )
+        for rule in helpers:
+            is_loop, is_gather = rule.is_loop(), rule.is_gather()
+            rule.name = "renamed"
+            self.assertEqual(rule.is_loop(), is_loop)
+            self.assertEqual(rule.is_gather(), is_gather)
+        grammar.rules["start"].name = "_loop1_name_only"
+        self.assertFalse(grammar.rules["start"].is_loop())
+        self.assertFalse(grammar.rules["start"].is_gather())
+
     def test_mutually_left_recursive(self) -> None:
         grammar_source = """
         start: foo 'E'
@@ -544,7 +576,7 @@ class TestPegen(unittest.TestCase):
         self.assertFalse(rules["start"].left_recursive)
         self.assertTrue(rules["foo"].left_recursive)
         self.assertTrue(rules["bar"].left_recursive)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class: Type[Parser] = ns["GeneratedParser"]
@@ -641,7 +673,7 @@ class TestPegen(unittest.TestCase):
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
         out = io.StringIO()
         genr = PythonParserGenerator(grammar, out)
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         ns: Dict[str, Any] = {}
         exec(out.getvalue(), ns)
         parser_class = ns["GeneratedParser"]
@@ -749,6 +781,30 @@ class TestPegen(unittest.TestCase):
             ],
         )
 
+    def test_cut_is_local_in_rule(self) -> None:
+        grammar = """
+        start:
+            | inner
+            | 'x' { "ok" }
+        inner:
+            | 'x' ~ 'y'
+            | 'x'
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("x", parser_class)
+        self.assertEqual(node, 'ok')
+
+    def test_cut_is_local_in_parens(self) -> None:
+        # we currently don't guarantee this behavior, see gh-143054
+        grammar = """
+        start:
+            | ('x' ~ 'y' | 'x')
+            | 'x' { "ok" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("x", parser_class)
+        self.assertEqual(node, 'ok')
+
     def test_dangling_reference(self) -> None:
         grammar = """
         start: foo ENDMARKER
@@ -849,7 +905,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit1(self) -> None:
@@ -862,7 +918,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit2(self) -> None:
@@ -875,7 +931,7 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertIn("This is a test", out.getvalue())
 
     def test_unreachable_implicit3(self) -> None:
@@ -888,12 +944,12 @@ class TestPegen(unittest.TestCase):
         genr = PythonParserGenerator(
             grammar, out, unreachable_formatting="This is a test"
         )
-        genr.generate("<string>")
+        genr.generate(PurePath("<string>"))
         self.assertNotIn("This is a test", out.getvalue())
 
     def test_locations_in_alt_action_and_group(self) -> None:
         grammar = """
-        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        start: t=term NEWLINE? $ { ast.Expression(t) }
         term:
             | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
             | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }
@@ -1100,3 +1156,191 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
+
+    def test_rule_flags(self) -> None:
+        """Test the new rule flags syntax that accepts arbitrary lists of flags."""
+        # Test grammar with various flag combinations
+        grammar_source = """
+        start: simple_rule
+
+        simple_rule (memo):
+            | "hello"
+
+        multi_flag_rule (memo, custom, test):
+            | "world"
+
+        single_custom_flag (custom):
+            | "test"
+
+        no_flags_rule:
+            | "plain"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        # Test memo-only rule
+        simple_rule = rules['simple_rule']
+        self.assertTrue(simple_rule.memo,
+                        "simple_rule should have memo")
+        self.assertEqual(simple_rule.flags, frozenset(['memo']),
+                        f"simple_rule flags should be {'memo'}, got {simple_rule.flags}")
+
+        # Test multi-flag rule
+        multi_flag_rule = rules['multi_flag_rule']
+        self.assertTrue(multi_flag_rule.memo,
+                        "multi_flag_rule should have memo")
+        self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
+                        f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
+
+        # Test single custom flag rule
+        single_custom_rule = rules['single_custom_flag']
+        self.assertFalse(single_custom_rule.memo,
+                         "single_custom_flag should not have memo")
+        self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
+                        f"single_custom_flag flags should be {'custom'}, got {single_custom_rule.flags}")
+
+        # Test no flags rule
+        no_flags_rule = rules['no_flags_rule']
+        self.assertFalse(no_flags_rule.memo,
+                         "no_flags_rule should not have memo")
+        self.assertEqual(no_flags_rule.flags, frozenset(),
+                        f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")
+
+        for rule in rules.values():
+            self.assertIsNone(rule.fastpath)
+
+    def test_rule_fastpath_flags(self) -> None:
+        for rule_type in ("", "[expr_ty]"):
+            for memo in (False, True):
+                with self.subTest(rule_type=rule_type, memo=memo):
+                    flags = "fastpath=custom_fastpath"
+                    if memo:
+                        flags = "memo, " + flags
+                    grammar_source = f"start{rule_type} ({flags}): NAME\n"
+                    rule = parse_string(grammar_source, GrammarParser).rules["start"]
+                    self.assertEqual(rule.fastpath, "custom_fastpath")
+                    self.assertIs(rule.memo, memo)
+
+    def test_rule_fastpath_requires_function(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError, "rule 'start': fastpath flag needs a function"
+        ):
+            parse_string("start (fastpath): NAME\n", GrammarParser)
+
+
+class TestGrammarIncludes(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp_dir = self.enterContext(os_helper.temp_dir())
+
+    def write(self, name: str, source: str) -> Path:
+        path = Path(self.tmp_dir, name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(source))
+        return path
+
+    def test_included_rules_are_appended_in_order(self) -> None:
+        main = self.write("main.gram", """\
+            @subheader "# subheader"
+            @include "first.gram"
+            @include "sub/second.gram"
+            start: a b c d NEWLINE
+            a: 'a'
+            """)
+        self.write("first.gram", """\
+            @include "third.gram"
+            b: 'b'
+            """)
+        self.write("third.gram", "c: 'c'\n")
+        self.write("sub/second.gram", "d: 'd'\n")
+        grammar, _, _ = build_parser(main)
+        self.assertEqual(list(grammar.rules), ["start", "a", "b", "c", "d"])
+        self.assertEqual(grammar.metas, {"subheader": "# subheader"})
+        self.assertEqual(grammar.includes, [])
+        parser_class = generate_parser(grammar)
+        self.assertIsNotNone(parse_string("a b c d\n", parser_class))
+
+    def test_repeated_rule_in_included_file(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: a NEWLINE
+            a: 'a'
+            """)
+        other = self.write("other.gram", "a: 'b'\n")
+        with self.assertRaises(GrammarError) as cm:
+            build_parser(main)
+        self.assertEqual(
+            str(cm.exception),
+            f"Repeated rule 'a' in '{other.resolve()}' (first defined in '{main}')",
+        )
+
+    def test_circular_include(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: NEWLINE
+            """)
+        self.write("other.gram", """\
+            @include "main.gram"
+            a: 'a'
+            """)
+        with self.assertRaisesRegex(GrammarError, "Circular @include"):
+            build_parser(main)
+
+    def test_file_included_twice(self) -> None:
+        main = self.write("main.gram", """\
+            @include "a.gram"
+            @include "b.gram"
+            start: a b NEWLINE
+            """)
+        a = self.write("a.gram", """\
+            @include "common.gram"
+            a: common
+            """)
+        b = self.write("b.gram", """\
+            @include "common.gram"
+            b: common
+            """)
+        common = self.write("common.gram", "common: NAME\n")
+        with self.assertRaises(GrammarError) as cm:
+            build_parser(main)
+        self.assertEqual(
+            str(cm.exception),
+            f"'{common.resolve()}' is included more than once: "
+            f"from '{a.resolve()}' and from '{b.resolve()}'",
+        )
+
+    def test_current_source_context_restores_previous_source(self) -> None:
+        grammar = parse_string("start: NAME\n", GrammarParser)
+        generator = PythonParserGenerator(grammar, io.StringIO())
+        outer, inner = Path("outer.gram"), Path("inner.gram")
+        with generator.current_source_context(outer):
+            with self.assertRaises(ValueError):
+                with generator.current_source_context(inner):
+                    self.assertEqual(generator.current_source, inner)
+                    raise ValueError
+            self.assertEqual(generator.current_source, outer)
+        self.assertIsNone(generator.current_source)
+
+    def test_included_file_cannot_define_metas(self) -> None:
+        main = self.write("main.gram", """\
+            @include "other.gram"
+            start: NEWLINE
+            """)
+        self.write("other.gram", """\
+            @trailer "# trailer"
+            a: 'a'
+            """)
+        with self.assertRaisesRegex(GrammarError, "cannot define metas: @trailer"):
+            build_parser(main)
+
+    def test_unresolved_include(self) -> None:
+        # Running GrammarParser directly leaves the includes unresolved.
+        grammar_source = textwrap.dedent("""
+        @include "other.gram"
+        start: NEWLINE
+        """)
+        grammar = run_parser(io.StringIO(grammar_source), GrammarParser)
+        self.assertEqual(grammar.includes, ["other.gram"])
+        self.assertEqual(grammar.metas, {})
+        with self.assertRaisesRegex(GrammarError, "Unresolved @include of 'other.gram'"):
+            generate_parser(grammar)

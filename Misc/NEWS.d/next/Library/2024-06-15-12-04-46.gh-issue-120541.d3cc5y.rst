@@ -1,2 +1,0 @@
-Improve the prompt in the "less" pager when :func:`help` is called with
-non-string argument.

@@ -1,11 +1,12 @@
-import sys
-import copy
-import json
-import shutil
-import pathlib
-import textwrap
-import functools
 import contextlib
+import copy
+import functools
+import json
+import pathlib
+import shutil
+import sys
+import textwrap
+from importlib import resources
 
 from test.support import import_helper
 from test.support import os_helper
@@ -13,15 +14,6 @@ from test.support import requires_zlib
 
 from . import _path
 from ._path import FilesSpec
-
-
-try:
-    from importlib import resources  # type: ignore
-
-    getattr(resources, 'files')
-    getattr(resources, 'as_file')
-except (ImportError, AttributeError):
-    import importlib_resources as resources  # type: ignore
 
 
 @contextlib.contextmanager

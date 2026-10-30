@@ -1,7 +1,9 @@
 import sys
 import unittest
 from test.support import import_helper
+
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 
 SIZEOF_VOID_P = _testcapi.SIZEOF_VOID_P
@@ -77,3 +79,18 @@ class CAPITest(unittest.TestCase):
         # Py_HashPointer((void*)(uintptr_t)-1) doesn't return -1 but -2
         VOID_P_MAX = -1 & (2 ** (8 * SIZEOF_VOID_P) - 1)
         self.assertEqual(hash_pointer(VOID_P_MAX), -2)
+
+    def test_hash_buffer(self):
+        # Test Py_HashBuffer()
+        hash_buffer = _testlimitedcapi.hash_buffer
+
+        def check(data):
+            self.assertEqual(hash_buffer(data), hash(data))
+
+        check(b'')
+        check(b'abc')
+        check(b'x' * 1024)
+
+
+if __name__ == "__main__":
+    unittest.main()

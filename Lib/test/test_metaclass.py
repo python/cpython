@@ -254,6 +254,33 @@ Test failures in looking up the __prepare__ method work.
     [...]
     test.test_metaclass.ObscureException
 
+Test setting attributes with a non-base type in mro() (gh-127773).
+
+    >>> class Base:
+    ...     value = 1
+    ...
+    >>> class Meta(type):
+    ...     def mro(cls):
+    ...         return (cls, Base, object)
+    ...
+    >>> class WeirdClass(metaclass=Meta):
+    ...     pass
+    ...
+    >>> Base.value
+    1
+    >>> WeirdClass.value
+    1
+    >>> Base.value = 2
+    >>> Base.value
+    2
+    >>> WeirdClass.value
+    2
+    >>> Base.value = 3
+    >>> Base.value
+    3
+    >>> WeirdClass.value
+    3
+
 """
 
 import sys
@@ -270,4 +297,6 @@ def load_tests(loader, tests, pattern):
 
 
 if __name__ == "__main__":
+    # set __name__ to match doctest expectations
+    __name__ = "test.test_metaclass"
     unittest.main()

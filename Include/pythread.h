@@ -17,13 +17,33 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+/* Terminates the current thread. Considered unsafe.
+ *
+ * WARNING: This function is only safe to call if all functions in the full call
+ * stack are written to safely allow it.  Additionally, the behavior is
+ * platform-dependent.  This function should be avoided, and is no longer called
+ * by Python itself.  It is retained only for compatibility with existing C
+ * extension code.
+ *
+ * With pthreads, calls `pthread_exit` causes some libcs (glibc?) to attempt to
+ * unwind the stack and call C++ destructors; if a `noexcept` function is
+ * reached, they may terminate the process. Others (macOS) do unwinding.
+ *
+ * On Windows, calls `_endthreadex` which kills the thread without calling C++
+ * destructors.
+ *
+ * In either case there is a risk of invalid references remaining to data on the
+ * thread stack.
+ */
+Py_DEPRECATED(3.14) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
      || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
      || defined(__OpenBSD__) || defined(__NetBSD__) \
-     || defined(__DragonFly__) || defined(_AIX))
+     || defined(__DragonFly__) || defined(_AIX) \
+     || (defined(__sun__) && SIZEOF_LONG >= 8))
 #define PY_HAVE_THREAD_NATIVE_ID
 PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
 #endif

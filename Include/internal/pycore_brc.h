@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "pycore_llist.h"           // struct llist_node
-#include "pycore_lock.h"            // PyMutex
 #include "pycore_object_stack.h"    // _PyObjectStack
 
 #ifdef __cplusplus

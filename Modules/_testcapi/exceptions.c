@@ -3,6 +3,7 @@
 
 #include "parts.h"
 #include "util.h"
+
 #include "clinic/exceptions.c.h"
 
 
@@ -54,6 +55,26 @@ err_restore(PyObject *self, PyObject *args) {
 }
 
 /*[clinic input]
+_testcapi.err_givenexceptionmatches
+    err: object
+    exc: object
+    /
+
+Test PyErr_GivenExceptionMatches().
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_givenexceptionmatches_impl(PyObject *module, PyObject *err,
+                                         PyObject *exc)
+/*[clinic end generated code: output=e40994ab6dd75001 input=7b8ef542df07575b]*/
+{
+    assert(!PyErr_Occurred());
+    int res = PyErr_GivenExceptionMatches(err, exc);
+    assert(!PyErr_Occurred());
+    return PyBool_FromLong(res);
+}
+
+/*[clinic input]
 _testcapi.exception_print
     exception as exc: object
     legacy: bool = False
@@ -81,6 +102,7 @@ _testcapi_exception_print_impl(PyObject *module, PyObject *exc, int legacy)
 }
 
 /*[clinic input]
+@permit_long_summary
 _testcapi.make_exception_with_doc
     name: str
     doc: str = NULL
@@ -94,7 +116,7 @@ static PyObject *
 _testcapi_make_exception_with_doc_impl(PyObject *module, const char *name,
                                        const char *doc, PyObject *base,
                                        PyObject *dict)
-/*[clinic end generated code: output=439f0d963c1ce2c4 input=23a73013f8a8795a]*/
+/*[clinic end generated code: output=439f0d963c1ce2c4 input=508b420b7f9253ed]*/
 {
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
 }
@@ -359,6 +381,161 @@ _testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
     return PyUnstable_Exc_PrepReraiseStar(orig, excs);
 }
 
+/* Test PyUnicodeEncodeError_GetStart */
+static PyObject *
+unicode_encode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeEncodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeDecodeError_GetStart */
+static PyObject *
+unicode_decode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeDecodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeTranslateError_GetStart */
+static PyObject *
+unicode_translate_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeTranslateError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeEncodeError_SetStart */
+static PyObject *
+unicode_encode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetStart */
+static PyObject *
+unicode_decode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetStart */
+static PyObject *
+unicode_translate_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeEncodeError_GetEnd */
+static PyObject *
+unicode_encode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeEncodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeDecodeError_GetEnd */
+static PyObject *
+unicode_decode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeDecodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeTranslateError_GetEnd */
+static PyObject *
+unicode_translate_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeTranslateError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeEncodeError_SetEnd */
+static PyObject *
+unicode_encode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetEnd */
+static PyObject *
+unicode_decode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetEnd */
+static PyObject *
+unicode_translate_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -382,7 +559,7 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
     .tp_basicsize = sizeof(PyBaseExceptionObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc = PyDoc_STR("Instantiating this exception starts infinite recursion."),
-    .tp_init = (initproc)recurse_infinitely_error_init,
+    .tp_init = recurse_infinitely_error_init,
 };
 
 static PyMethodDef test_methods[] = {
@@ -395,6 +572,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_GIVENEXCEPTIONMATCHES_METHODDEF
     _TESTCAPI_ERR_SETSTRING_METHODDEF
     _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
@@ -403,6 +581,18 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
+    {"unicode_encode_get_start", unicode_encode_get_start,       METH_O},
+    {"unicode_decode_get_start", unicode_decode_get_start,       METH_O},
+    {"unicode_translate_get_start", unicode_translate_get_start, METH_O},
+    {"unicode_encode_set_start", unicode_encode_set_start,       METH_VARARGS},
+    {"unicode_decode_set_start", unicode_decode_set_start,       METH_VARARGS},
+    {"unicode_translate_set_start", unicode_translate_set_start, METH_VARARGS},
+    {"unicode_encode_get_end", unicode_encode_get_end,           METH_O},
+    {"unicode_decode_get_end", unicode_decode_get_end,           METH_O},
+    {"unicode_translate_get_end", unicode_translate_get_end,     METH_O},
+    {"unicode_encode_set_end", unicode_encode_set_end,           METH_VARARGS},
+    {"unicode_decode_set_end", unicode_decode_set_end,           METH_VARARGS},
+    {"unicode_translate_set_end", unicode_translate_set_end,     METH_VARARGS},
     {NULL},
 };
 

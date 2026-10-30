@@ -1,2 +1,0 @@
-Improve :mod:`curses` and :mod:`curses.panel` dependency checks in
-:program:`configure`.

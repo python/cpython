@@ -1,2 +1,0 @@
-:class:`logging.handlers.RotatingFileHandler` no longer rolls over empty log
-files.

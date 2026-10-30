@@ -1,1 +1,0 @@
-Dictionary watchers now only deliver the PyDict_EVENT_ADDED event when the insertion is in a known good state to succeed.

@@ -4,9 +4,6 @@
 .. module:: netrc
    :synopsis: Loading of .netrc files.
 
-.. moduleauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/netrc.py`
 
 --------------
@@ -24,12 +21,14 @@ the Unix :program:`ftp` program and other FTP clients.
    a :exc:`FileNotFoundError` exception will be raised.
    Parse errors will raise :exc:`NetrcParseError` with diagnostic
    information including the file name, line number, and terminating token.
+
    If no argument is specified on a POSIX system, the presence of passwords in
    the :file:`.netrc` file will raise a :exc:`NetrcParseError` if the file
    ownership or permissions are insecure (owned by a user other than the user
    running the process, or accessible for read or write by any other user).
    This implements security behavior equivalent to that of ftp and other
-   programs that use :file:`.netrc`.
+   programs that use :file:`.netrc`. Such security checks are not available
+   on platforms that do not support :func:`os.getuid`.
 
    .. versionchanged:: 3.4 Added the POSIX permission check.
 
@@ -38,7 +37,7 @@ the Unix :program:`ftp` program and other FTP clients.
       :file:`.netrc` file when *file* is not passed as argument.
 
    .. versionchanged:: 3.10
-      :class:`netrc` try UTF-8 encoding before using locale specific
+      :class:`~netrc.netrc` try UTF-8 encoding before using locale specific
       encoding.
       The entry in the netrc file no longer needs to contain all tokens.  The missing
       tokens' value default to an empty string.  All the tokens and their values now

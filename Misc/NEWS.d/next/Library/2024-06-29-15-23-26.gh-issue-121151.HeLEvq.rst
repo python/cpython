@@ -1,2 +1,0 @@
-Fix wrapping of long usage text of arguments inside a mutually exclusive
-group in :mod:`argparse`.

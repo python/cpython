@@ -2,6 +2,7 @@ import unittest
 import inspect
 import pickle
 import sys
+import weakref
 from decimal import Decimal
 from fractions import Fraction
 
@@ -482,6 +483,8 @@ class OperatorTestCase:
                 return f
             def baz(*args, **kwds):
                 return kwds['name'], kwds['self']
+            def return_arguments(self, *args, **kwds):
+                return args, kwds
         a = A()
         f = operator.methodcaller('foo')
         self.assertRaises(IndexError, f, a)
@@ -497,6 +500,32 @@ class OperatorTestCase:
         self.assertEqual(f(a), 5)
         f = operator.methodcaller('baz', name='spam', self='eggs')
         self.assertEqual(f(a), ('spam', 'eggs'))
+
+        many_positional_arguments = tuple(range(10))
+        many_kw_arguments = dict(zip('abcdefghij', range(10)))
+        f = operator.methodcaller('return_arguments', *many_positional_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, {}))
+
+        f = operator.methodcaller('return_arguments', **many_kw_arguments)
+        self.assertEqual(f(a), ((), many_kw_arguments))
+
+        f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
+
+    def test_methodcaller_cyclic_gc(self):
+        # gh-156762: Check for undefined behavior on calling methodcaller_clear()
+        operator = self.module
+
+        class C:
+            pass
+
+        c = C()
+        ref = weakref.ref(c)
+        c.m = operator.methodcaller('foo', c)
+        del c
+
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_inplace(self):
         operator = self.module
@@ -530,6 +559,221 @@ class OperatorTestCase:
         self.assertEqual(operator.itruediv (c, 5), "itruediv")
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
+
+    def test_concat_subclasses(self):
+        operator = self.module
+
+        # Simple cases:
+        data1 = [1, 2]
+        data2 = ['a', 'b']
+        self.assertEqual(operator.concat(data1, data2), [1, 2, 'a', 'b'])
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, [1, 2])  # must not change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = (1, 2)
+        data2 = ('a', 'b')
+        self.assertEqual(operator.concat(data1, data2), (1, 2, 'a', 'b'))
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = '12'
+        data2 = 'ab'
+        self.assertEqual(operator.concat(data1, data2), '12ab')
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, '12')  # must not change
+        self.assertEqual(data2, 'ab')  # must not change
+
+        # Subclasses:
+        class ListSubclass(list):
+            pass
+
+        data1 = ListSubclass([1, 2])
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, ListSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        data1 = ListSubclass([1, 2])
+        data2 = ['a', 'b']
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, ListSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = [1, 2]
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, [1, 2])  # must not change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        # Custom type with `__add__`:
+        class TupleSubclass(tuple):
+            def __add__(self, other):
+                return TupleSubclass(list(other) + list(self))
+
+        data1 = TupleSubclass([1, 2])
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
+
+        data1 = TupleSubclass([1, 2])
+        data2 = ('a', 'b')
+        res = operator.concat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = (1, 2)
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), tuple)
+        self.assertEqual(res, (1, 2, 'a', 'b'))
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
+
+        # Corner cases:
+        self.assertEqual(operator.concat([1, 2], []), [1, 2])
+        self.assertEqual(operator.concat([], [1, 2]), [1, 2])
+        self.assertEqual(operator.concat([], []), [])
+
+        # Type errors:
+        self.assertRaises(TypeError, operator.concat, [], 1)
+        self.assertRaises(TypeError, operator.concat, 1, [])
+        self.assertRaises(TypeError, operator.concat, 1, 1)
+        self.assertRaises(TypeError, operator.concat, (), [])
+        self.assertRaises(TypeError, operator.concat, [], ())
+
+        # Returns `NotImplemented`:
+        class BrokenSeq(tuple):
+            def __add__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError, operator.concat, BrokenSeq(), BrokenSeq())
+
+    def test_iconcat(self):
+        operator = self.module
+
+        # Simple cases:
+        data1 = [1, 2, 3]
+        data2 = ['a', 'b']
+        res = operator.iconcat(data1, data2)
+        self.assertEqual(res, [1, 2, 3, 'a', 'b'])
+        self.assertEqual(data1, [1, 2, 3, 'a', 'b'])  # must change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = (1, 2)
+        data2 = ('a', 'b')
+        self.assertEqual(operator.iconcat(data1, data2), (1, 2, 'a', 'b'))
+        self.assertEqual(operator.iconcat(data1, data2), data1 + data2)
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = '12'
+        data2 = 'ab'
+        self.assertEqual(operator.iconcat(data1, data2), '12ab')
+        self.assertEqual(operator.iconcat(data1, data2), data1 + data2)
+        self.assertEqual(data1, '12')  # must not change
+        self.assertEqual(data2, 'ab')  # must not change
+
+        # Subclasses:
+        class ListSubclass(list):
+            pass
+
+        data1 = ListSubclass([1, 2])
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, ListSubclass)
+        self.assertEqual(res, ListSubclass([1, 2, 'a', 'b']))
+        self.assertIsInstance(data1, ListSubclass)
+        self.assertEqual(data1, ListSubclass([1, 2, 'a', 'b']))  # must change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        data1 = ListSubclass([1, 2])
+        data2 = ['a', 'b']
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, ListSubclass)
+        self.assertEqual(res, ListSubclass([1, 2, 'a', 'b']))
+        self.assertIsInstance(data1, ListSubclass)
+        self.assertEqual(data1, ListSubclass([1, 2, 'a', 'b']))  # must change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = [1, 2]
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertIs(type(data1), list)
+        self.assertEqual(data1, [1, 2, 'a', 'b'])  # must change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        # Custom type with `__add__`:
+        class TupleSubclass(tuple):
+            def __add__(self, other):
+                return TupleSubclass(list(other) + list(self))
+
+        data1 = TupleSubclass([1, 2])
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
+
+        data1 = TupleSubclass([1, 2])
+        data2 = ('a', 'b')
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = (1, 2)
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIs(type(res), tuple)
+        self.assertEqual(res, TupleSubclass([1, 2, 'a', 'b']))
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
+
+        # Corner cases:
+        self.assertEqual(operator.iconcat([1, 2], []), [1, 2])
+        self.assertEqual(operator.iconcat([], [1, 2]), [1, 2])
+        self.assertEqual(operator.iconcat([], []), [])
+        self.assertEqual(operator.iconcat([], ()), [])
+
+        # Type errors:
+        self.assertRaises(TypeError, operator.iconcat, [], 1)
+        self.assertRaises(TypeError, operator.iconcat, 1, [])
+        self.assertRaises(TypeError, operator.iconcat, 1, 1)
+        self.assertRaises(TypeError, operator.iconcat, (), [])
+
+        # Returns `NotImplemented`:
+        class BrokenSeq1(list):
+            def __add__(self, other):
+                return NotImplemented
+            def __iadd__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError,
+                          operator.iconcat, BrokenSeq1(), BrokenSeq1())
+
+        class BrokenSeq2(tuple):
+            def __add__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError,
+                          operator.iconcat, BrokenSeq2(), BrokenSeq2())
 
     def test_iconcat_without_getitem(self):
         operator = self.module
@@ -623,6 +867,7 @@ class OperatorTestCase:
             if dunder:
                 self.assertIs(dunder, orig)
 
+    @support.requires_docstrings
     def test_attrgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.attrgetter)
@@ -630,6 +875,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.attrgetter('x', 'z', 'y'))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_itemgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.itemgetter)
@@ -637,6 +883,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.itemgetter(2, 3, 5))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_methodcaller_signature(self):
         operator = self.module
         sig = inspect.signature(operator.methodcaller)
@@ -653,6 +900,7 @@ class COperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = c_operator
 
 
+@support.thread_unsafe("swaps global operator module")
 class OperatorPickleTestCase:
     def copy(self, obj, proto):
         with support.swap_item(sys.modules, 'operator', self.module):
