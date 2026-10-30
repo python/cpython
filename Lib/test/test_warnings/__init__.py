@@ -2020,6 +2020,7 @@ class ThreadTests(BaseTest):
 
     def setUp(self):
         super().setUp()
+        self.enterContext(self.module.catch_warnings())
         self.module.resetwarnings()
 
     @unittest.skipIf(not ENABLE_THREAD_TESTS,
@@ -2068,6 +2069,29 @@ class ThreadTests(BaseTest):
                 self.assertEqual(w[1].message.args[0], 'main warning')
 
         run_threads()
+
+    @threading_helper.requires_working_threading()
+    def test_lock_not_held_while_showing(self):
+        # showwarning() must not run with the warnings lock held, otherwise
+        # another thread that needs the lock would block.
+        import threading
+
+        def other_thread():
+            self.module.filterwarnings("always", category=TestWarning)
+
+        def showwarning(*args, **kwargs):
+            t = threading.Thread(target=other_thread)
+            t.start()
+            t.join(timeout=support.SHORT_TIMEOUT)
+            alive.append(t.is_alive())
+
+        alive = []
+        with self.module.catch_warnings():
+            self.module.simplefilter("always")
+            self.module.showwarning = showwarning
+            self.module.warn("test", TestWarning)
+            self.module.warn_explicit("test", TestWarning, "file.py", 1)
+        self.assertEqual(alive, [False, False])
 
 
 class CThreadTests(ThreadTests, unittest.TestCase):
