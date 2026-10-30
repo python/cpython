@@ -21,7 +21,7 @@ from copy import copy, deepcopy
 
 from typing import Any, NoReturn, Never, assert_never
 from typing import overload, get_overloads, clear_overloads
-from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
+from typing import TypeVar, TypeVarTuple, Unpack
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
@@ -489,7 +489,6 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(repr(T), '~T')
         self.assertEqual(repr(KT), '~KT')
         self.assertEqual(repr(VT), '~VT')
-        self.assertEqual(repr(AnyStr), '~AnyStr')
         T_co = TypeVar('T_co', covariant=True)
         self.assertEqual(repr(T_co), '+T_co')
         T_contra = TypeVar('T_contra', contravariant=True)
@@ -6388,13 +6387,15 @@ class OverrideDecoratorTests(BaseTestCase):
 class CastTests(BaseTestCase):
 
     def test_basics(self):
+        T = TypeVar("T")
+
         self.assertEqual(cast(int, 42), 42)
         self.assertEqual(cast(float, 42), 42)
         self.assertIs(type(cast(float, 42)), int)
         self.assertEqual(cast(Any, 42), 42)
         self.assertEqual(cast(list, 42), 42)
         self.assertEqual(cast(Union[str, float], 42), 42)
-        self.assertEqual(cast(AnyStr, 42), 42)
+        self.assertEqual(cast(T, 42), 42)
         self.assertEqual(cast(None, 42), 42)
 
     def test_errors(self):
@@ -6407,9 +6408,10 @@ class AssertTypeTests(BaseTestCase):
 
     def test_basics(self):
         arg = 42
+        T = TypeVar("T")
         self.assertIs(assert_type(arg, int), arg)
         self.assertIs(assert_type(arg, str | float), arg)
-        self.assertIs(assert_type(arg, AnyStr), arg)
+        self.assertIs(assert_type(arg, T), arg)
         self.assertIs(assert_type(arg, None), arg)
 
     def test_errors(self):
@@ -9637,12 +9639,15 @@ class NotRequiredTests(BaseTestCase):
 class IOTests(BaseTestCase):
 
     def test_io(self):
-
-        def stuff(a: IO) -> AnyStr:
+        def stuff(a: IO):
             return a.readline()
 
         a = stuff.__annotations__['a']
-        self.assertEqual(a.__parameters__, (AnyStr,))
+        self.assertEqual(len(a.__parameters__), 1)
+        any_str = a.__parameters__[0]
+        self.assertEqual(repr(any_str), 'AnyStr')
+        self.assertEqual(any_str.__bound__, None)
+        self.assertEqual(any_str.__constraints__, (bytes, str))
 
     def test_textio(self):
 
@@ -11285,12 +11290,21 @@ class AllTests(BaseTestCase):
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
-                k not in {"ByteString"} and
+                k not in {"ByteString", "AnyStr"} and
                 # but export all other things that have __module__ == 'typing'
                 getattr(v, '__module__', None) == typing.__name__
             )
         }
         self.assertSetEqual(computed_all, actual_all)
+
+    def test_any_str_deprecated(self):
+        # gh-105578
+        fresh = import_helper.import_fresh_module('typing')
+
+        with self.assertWarnsRegex(DeprecationWarning, r'typing\.AnyStr'):
+            fresh.AnyStr
+
+        self.assertEqual(repr(fresh.AnyStr), '~AnyStr')
 
 
 class TypeIterationTests(BaseTestCase):
