@@ -12,7 +12,6 @@
 
 /* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-
 #if STRINGLIB_SIZEOF_CHAR == 1
 # if SIZEOF_SIZE_T == 8
 #  define MASK_ASCII 0x8080808080808080ULL
@@ -53,6 +52,12 @@
 #error Invalid STRINGLIB_SIZEOF_CHAR (must be 1, 2 or 4)
 #endif
 
+/* OR all characters into a single size_t accumulator and test the high bits
+   at the end, instead of comparing each character. The accumulation loop has
+   no branches, so compilers vectorize it, and the result does not depend on
+   where each byte sits in the word, so unaligned ends can be read in smaller
+   pieces. Every 32 words, check whether the widest kind is already known and
+   exit early. */
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
@@ -63,18 +68,18 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 
     if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
 #if STRINGLIB_SIZEOF_CHAR <= 1
-        if (!_Py_IS_ALIGNED(p, 1) && p + 1 <= _end) {
+        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + 1 <= _end) {
             value |= *p++;
         }
 #endif
 #if STRINGLIB_SIZEOF_CHAR <= 2
-        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + sizeof(uint16_t) <= _end) {
+        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint16_t) <= _end) {
             value |= *(const uint16_t*)p;
             p += sizeof(uint16_t);
         }
 #endif
 #if SIZEOF_SIZE_T == 8
-        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint32_t) <= _end) {
+        if (!_Py_IS_ALIGNED(p, SIZEOF_SIZE_T) && p + sizeof(uint32_t) <= _end) {
             value |= *(const uint32_t*)p;
             p += sizeof(uint32_t);
         }
@@ -83,7 +88,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 
     while (p + SIZEOF_SIZE_T * 32 <= _end) {
         const size_t *pp = (const size_t *)p;
-        for(int i=0; i<32; i++) {
+        for(int i = 0; i < 32; i++) {
             value |= pp[i];
         }
         if (value & MASK_MAX_CHAR) {
@@ -115,15 +120,18 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #endif
 
 #ifdef MASK_UCS2
-    if (value & MASK_UCS2)
+    if (value & MASK_UCS2) {
         return MAX_CHAR_UCS4;
+    }
 #endif
 #ifdef MASK_UCS1
-    if (value & MASK_UCS1)
+    if (value & MASK_UCS1) {
         return MAX_CHAR_UCS2;
+    }
 #endif
-    if (value & MASK_ASCII)
+    if (value & MASK_ASCII) {
         return MAX_CHAR_UCS1;
+    }
     return MAX_CHAR_ASCII;
 }
 
