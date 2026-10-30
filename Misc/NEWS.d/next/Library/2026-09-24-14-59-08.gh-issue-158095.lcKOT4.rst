@@ -1,0 +1,2 @@
+Fix a memory leak in :func:`re.finditer` and regular expression scanners when
+their input participates in a reference cycle.
