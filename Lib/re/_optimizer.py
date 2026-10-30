@@ -321,6 +321,7 @@ def _get_literal_prefix(pattern, flags):
     return prefix, prefix_skip, False
 
 def _get_charset_prefix(pattern, flags):
+    entry_flags = flags
     while True:
         if not pattern.data:
             return None
@@ -330,6 +331,11 @@ def _get_charset_prefix(pattern, flags):
         group, add_flags, del_flags, pattern = av
         flags = _combine_flags(flags, add_flags, del_flags)
         if flags & SRE_FLAG_IGNORECASE and flags & SRE_FLAG_LOCALE:
+            return None
+        if (flags ^ entry_flags) & _parser.TYPE_FLAGS:
+            # _compile_info() compiles the charset with the pattern's flags,
+            # so a class such as \w found inside (?u:...) or (?a:...) would
+            # get the wrong character type.
             return None
 
     iscased = _get_iscased(flags)
