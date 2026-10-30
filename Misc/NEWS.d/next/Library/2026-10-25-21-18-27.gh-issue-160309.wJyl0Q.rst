@@ -1,0 +1,1 @@
+Fix codecs.StreamReader.read() silently dropping an incomplete character at the end of the stream.
