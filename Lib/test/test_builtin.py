@@ -329,6 +329,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 with self.assertRaises(TypeError):
                     run_yielding_async_fn(f)
 
+    def test_frozenset_optimization_shared_set(self):
+        # gh-158490: frozenset({... for ...}) must not freeze a set that
+        # something else still references, here a trace function
+        kept = []
+        def tracer(frame, event, arg):
+            if event == 'return' and type(arg) is set:
+                kept.append(arg)
+            return tracer
+
+        class C:
+            x: frozenset({i for i in range(3)})
+
+        old_trace = sys.gettrace()
+        sys.settrace(tracer)
+        try:
+            fs = C.__annotations__['x']
+        finally:
+            sys.settrace(old_trace)
+        self.assertEqual(fs, frozenset({0, 1, 2}))
+        self.assertEqual(len(kept), 1)
+        self.assertIs(type(kept[0]), set)
+        self.assertIsNot(kept[0], fs)
+
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
         self.assertEqual(ascii(0), '0')
