@@ -1,0 +1,1 @@
+added documentation to `SimpleCookie.value_decode` and `SimpleCookie.value_encode`
