@@ -3006,7 +3006,10 @@ class _PdbServer(Pdb):
                 # Check if the interpreter is finalizing every quarter of a second.
                 # Clean up and exit if so.
                 sock.settimeout(0.25)
-                sock.shutdown(socket.SHUT_WR)
+                # Never half-close this socket: the client only writes to it,
+                # and a half-closed connection waits in FIN_WAIT_2, which
+                # Windows resets after 120 seconds, taking the interrupt
+                # channel of a long-idle session with it. See gh-160683.
                 while not shut_down.is_set():
                     try:
                         data = sock.recv(1024)
