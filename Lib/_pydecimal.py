@@ -1501,8 +1501,7 @@ class Decimal(object):
                 return ans, ans
             else:
                 with context._defer_traps():
-                    return (context._raise_error(DivisionByZero, 'x // 0',
-                                                 sign),
+                    return (context._raise_error(DivisionByZero, 'x // 0', sign),
                             context._raise_error(InvalidOperation, 'x % 0'))
 
         quotient, remainder = self._divide(other, context)
@@ -4064,7 +4063,7 @@ class Context(object):
             return object.__setattr__(self, name, value)
         elif name == 'flags' or name == 'traps':
             return self._set_signal_dict(name, value)
-        elif name in ('_ignored_flags', '_deferred_traps', '_deferred_error'):
+        elif name in {'_ignored_flags', '_deferred_traps', '_deferred_error'}:
             return object.__setattr__(self, name, value)
         else:
             raise AttributeError(

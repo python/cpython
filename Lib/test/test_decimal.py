@@ -4287,6 +4287,30 @@ class CContextFlags(ContextFlags, unittest.TestCase):
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
 
+    def test_deferred_traps_attributes(self):
+        # The _defer_traps state lives in the _deferred_traps and
+        # _deferred_error attributes, which __setattr__ must accept.
+        Context = self.decimal.Context
+        Decimal = self.decimal.Decimal
+        Overflow = self.decimal.Overflow
+        context = Context(prec=9, Emin=-999, Emax=999, traps=[])
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+        context._deferred_traps = 1
+        context._deferred_traps = 0
+        context._deferred_error = Overflow('test')
+        context._deferred_error = None
+        with self.assertRaises(AttributeError):
+            context._no_such_attribute = 1
+
+        # A trapped operation resets the state, so the context
+        # remains usable afterwards.
+        context.traps[Overflow] = 1
+        with self.assertRaises(Overflow):
+            context.multiply(Decimal('1E+800'), Decimal('1E+800'))
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+
 class SpecialContexts:
     """Test the context templates."""
 
