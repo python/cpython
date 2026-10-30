@@ -681,6 +681,9 @@ shutil
   :func:`shutil.copystat`, e.g. when copying a read-only tree.
   (Contributed by Łukasz Langa in :gh:`89721`.)
 
+* :func:`shutil.unpack_archive` can now unpack wheel files using the ``whl`` format.
+  (Contributed by Emma Harper Smith and Stan Ulbrych in :gh:`84027`.)
+
 
 socket
 ------
