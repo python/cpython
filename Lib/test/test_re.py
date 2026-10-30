@@ -2427,6 +2427,25 @@ class ReTests(unittest.TestCase):
             pat.scanner(string='abracadabra', pos=3, endpos=10).search().span(),
             (7, 9))
 
+    def test_pos_greater_than_endpos(self):
+        # If endpos is less than pos, no match will be found.
+        for pattern in ['', r'$', r'^$', r'\b$', r'(?:x|$)']:
+            for string in ['abc\n', b'abc\n', bytearray(b'abc\n')]:
+                with self.subTest(pattern=pattern, string=string):
+                    if isinstance(string, str):
+                        p = re.compile(pattern, re.MULTILINE)
+                    else:
+                        p = re.compile(pattern.encode(), re.MULTILINE)
+                    for pos, endpos in [(3, 0), (4, 0), (4, 3), (2, 1)]:
+                        self.assertIsNone(p.match(string, pos, endpos))
+                        self.assertIsNone(p.fullmatch(string, pos, endpos))
+                        self.assertIsNone(p.search(string, pos, endpos))
+                        self.assertIsNone(
+                            p.scanner(string, pos, endpos).match())
+                        self.assertIsNone(
+                            p.scanner(string, pos, endpos).search())
+                        self.assertEqual(p.findall(string, pos, endpos), [])
+
     def test_bug_20998(self):
         # Issue #20998: Fullmatch of repeated single character pattern
         # with ignore case.
