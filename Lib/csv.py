@@ -437,9 +437,12 @@ class Sniffer:
         while remaining:
             # Include only the delimiters not found yet, so that the
             # search skips over the found ones; the compiled patterns
-            # come from the re cache.
+            # come from the re cache.  The lookbehind skips matches
+            # starting inside a run of spaces: an equivalent match
+            # starts at the beginning of the run, and rescanning the
+            # run from every space in it would take quadratic time.
             cls = re.escape(''.join(sorted(remaining)))
-            m = re.compile(fr'(?:^|([\r\n{cls}]))'
+            m = re.compile(fr'(?:^|([\r\n{cls}])(?<!  ))'
                            fr' *{quotechar}').search(part, pos)
             if m is None:
                 break
