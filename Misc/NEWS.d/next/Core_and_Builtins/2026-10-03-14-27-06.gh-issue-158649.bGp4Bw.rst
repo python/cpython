@@ -1,0 +1,4 @@
+Speed up subscripting a non-ASCII string with an integer when the character
+read is latin-1. ``BINARY_OP_SUBSCR_USTR_INT`` now returns the interned
+one-character string for characters below 256 instead of only ASCII, so
+reads of accented characters no longer fall back to the generic path.
