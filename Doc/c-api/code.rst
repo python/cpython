@@ -44,6 +44,14 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
+.. c:function:: PyObject* PyUnstable_Code_GetLocalPlusNames(PyCodeObject *co)
+
+   Return a :term:`strong reference` to a tuple of names of the local, cell and
+   free variables of a code object. The names are in the same order as the
+   values returned by :c:func:`PyUnstable_InterpreterFrame_GetLocal`.
+
+   .. versionadded:: next
+
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
