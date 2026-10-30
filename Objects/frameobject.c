@@ -634,14 +634,15 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             int first = framelocalsproxy_is_first_occurrence(seen, name);
             if (first == 1) {
-                if (PyList_Append(values, value) < 0) {
-                    Py_DECREF(value);
+                if (_PyList_AppendTakeRef((PyListObject *)values, value) < 0) {
                     goto error;
                 }
             }
-            Py_DECREF(value);
-            if (first < 0) {
-                goto error;
+            else {
+                Py_DECREF(value);
+                if (first < 0) {
+                    goto error;
+                }
             }
         }
     }
