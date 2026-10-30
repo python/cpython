@@ -1,0 +1,2 @@
+Add :func:`operator.identity`, the identity function.
+Patch by Adam Turner.
