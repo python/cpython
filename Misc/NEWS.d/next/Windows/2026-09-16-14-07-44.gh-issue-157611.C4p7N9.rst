@@ -1,0 +1,2 @@
+Fix automatic library selection for Windows debug extensions targeting the
+free-threaded stable ABI.
