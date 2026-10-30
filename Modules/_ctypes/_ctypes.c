@@ -2317,7 +2317,7 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = fd->code;
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
-    memcpy(&parg->value, self->b_ptr, self->b_size);
+    memcpy(&parg->value, self->b_ptr, info->size);
     return parg;
 }
 
@@ -5530,7 +5530,20 @@ static int
 Simple_bool_impl(CDataObject *self)
 /*[clinic end generated code: output=c4466ece6a99fe8b input=326a1c8b24d8918e]*/
 {
-    return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return -1;
+    }
+    assert(info); /* Cannot be NULL for CDataObject instances */
+
+    /* Only look at the value, not at extra space added by resize(). */
+    for (Py_ssize_t i = 0; i < info->size; i++) {
+        if (self->b_ptr[i]) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
