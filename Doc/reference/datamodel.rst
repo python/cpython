@@ -582,7 +582,6 @@ Special read-only attributes
 
 .. index::
    single: __builtins__ (function attribute)
-   single: __closure__ (function attribute)
    single: __globals__ (function attribute)
    pair: global; namespace
 
@@ -603,14 +602,6 @@ Special read-only attributes
        :ref:`global variables <naming>` -- the global namespace of the module
        in which the function was defined.
 
-   * - .. attribute:: function.__closure__
-     - ``None`` or a :class:`tuple` of cells that contain bindings for the names specified
-       in the :attr:`~codeobject.co_freevars` attribute of the function's
-       :attr:`code object <function.__code__>`.
-
-       A cell object has the attribute ``cell_contents``.
-       This can be used to get the value of the cell, as well as set the value.
-
 Special writable attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -619,6 +610,7 @@ Special writable attributes
    single: __name__ (function attribute)
    single: __module__ (function attribute)
    single: __dict__ (function attribute)
+   single: __closure__ (function attribute)
    single: __defaults__ (function attribute)
    single: __code__ (function attribute)
    single: __annotations__ (function attribute)
@@ -663,6 +655,14 @@ Most of these attributes check the type of the assigned value:
    * - .. attribute:: function.__dict__
      - The namespace supporting arbitrary function attributes.
        See also: :attr:`__dict__ attributes <object.__dict__>`.
+
+   * - .. attribute:: function.__closure__
+     - ``None`` or a :class:`tuple` of cells that contain bindings for the names specified
+       in the :attr:`~codeobject.co_freevars` attribute of the function's
+       :attr:`code object <function.__code__>`.
+
+       A cell object has the attribute ``cell_contents``.
+       This can be used to get the value of the cell, as well as set the value.
 
    * - .. attribute:: function.__annotations__
      - A :class:`dictionary <dict>` containing annotations of
