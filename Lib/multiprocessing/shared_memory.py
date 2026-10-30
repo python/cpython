@@ -186,7 +186,7 @@ class SharedMemory:
 
     def __del__(self):
         try:
-            self.close()
+            self._closefd()
         except OSError:
             pass
 
@@ -222,6 +222,11 @@ class SharedMemory:
         "Size in bytes."
         return self._size
 
+    def _closefd(self):
+        if _USE_POSIX and self._fd >= 0:
+            os.close(self._fd)
+            self._fd = -1
+
     def close(self):
         """Closes access to the shared memory from this instance but does
         not destroy the shared memory block."""
@@ -231,9 +236,7 @@ class SharedMemory:
         if self._mmap is not None:
             self._mmap.close()
             self._mmap = None
-        if _USE_POSIX and self._fd >= 0:
-            os.close(self._fd)
-            self._fd = -1
+        self._closefd()
 
     def unlink(self):
         """Requests that the underlying shared memory block be destroyed.
