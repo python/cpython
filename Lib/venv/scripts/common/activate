@@ -24,6 +24,11 @@ deactivate () {
         unset _OLD_VIRTUAL_PS1
     fi
 
+    if [ -n "${_OLD_VIRTUAL_PSVAR+x}" ] ; then
+        psvar[9]="${_OLD_VIRTUAL_PSVAR}"
+        unset _OLD_VIRTUAL_PSVAR
+    fi
+
     unset VIRTUAL_ENV
     unset VIRTUAL_ENV_PROMPT
     if [ ! "${1:-}" = "nondestructive" ] ; then
@@ -66,7 +71,19 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1="("__VENV_PROMPT__") ${PS1:-}"
+    if [ -n "${BASH_VERSION:-}" ] ; then
+        # Bash expands PS1 again when it displays the prompt. Keep the prompt
+        # in a variable so its contents are not interpreted as shell code.
+        PS1='(${VIRTUAL_ENV_PROMPT}) '"${PS1:-}"
+    elif [ -n "${ZSH_VERSION:-}" ] ; then
+        # zsh expands prompt substitutions in variable values. Use a psvar
+        # entry so the prompt is inserted as data instead.
+        _OLD_VIRTUAL_PSVAR="${psvar[9]-}"
+        psvar[9]="${VIRTUAL_ENV_PROMPT}"
+        PS1='(%9v) '"${PS1:-}"
+    else
+        PS1='(${VIRTUAL_ENV_PROMPT}) '"${PS1:-}"
+    fi
 fi
 
 # Call hash to forget past commands. Without forgetting
