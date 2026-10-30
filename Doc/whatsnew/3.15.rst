@@ -1508,6 +1508,10 @@ shutil
   sockets and device files.
   (Contributed by Savannah Ostrowski in :gh:`142693`.)
 
+* :func:`shutil.unpack_archive` can now unpack wheel files using the new
+  ``whl`` format.
+  (Contributed by Emma Harper Smith and Stan Ulbrych in :gh:`84027`.)
+
 
 socket
 ------

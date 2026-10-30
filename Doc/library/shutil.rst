@@ -753,7 +753,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    unpacked. If not provided, the current working directory is used.
 
    *format* is the archive format: one of "zip", "tar", "gztar", "bztar",
-   "xztar", or "zstdtar".  Or any other format registered with
+   "xztar", "zstdtar", or "whl".  Or any other format registered with
    :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
@@ -785,6 +785,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. versionchanged:: 3.12
       Added the *filter* argument.
+
+   .. versionchanged:: 3.15
+      Added the "whl" format.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
@@ -827,9 +830,13 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
    - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
      module is available).
+   - *whl*: `wheel file <https://packaging.python.org/en/latest/discussions/package-formats/#what-is-a-wheel>`__.
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
+
+   .. versionchanged:: 3.15
+      Added the *whl* format.
 
 
 .. _shutil-archiving-example:
