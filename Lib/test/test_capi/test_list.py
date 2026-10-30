@@ -1,12 +1,18 @@
+import threading
 import unittest
-from test.support import import_helper
 from collections import UserList
+from test import support
+from test.support import import_helper
+from test.support import threading_helper
+
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
 
 NULL = None
 PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
 PY_SSIZE_T_MAX = _testcapi.PY_SSIZE_T_MAX
+LIST_SMALL_ALLOCATED = _testcapi.LIST_SMALL_ALLOCATED
 
 class ListSubclass(list):
     pass
@@ -353,6 +359,171 @@ class CAPITest(unittest.TestCase):
     def test_uninitialized_list_repr(self):
         lst = _testlimitedcapi.list_new(3)
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
+
+
+class ListWriterTests(unittest.TestCase):
+    def create_writer(self, size):
+        # Test PyListWriter_Create()
+        return _testcapi.PyListWriter(size)
+
+    def list_equal(self, result, expected):
+        if not isinstance(expected, list):
+            expected = list(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), list)
+
+    def create_items(self, nitem):
+        # Call object() to create unique objects. Don't use small integers
+        # which are immortal (and so would not check for reference leaks).
+        return tuple(object() for i in range(nitem))
+
+    def check_append(self, method):
+        items = self.create_items(3)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                append = getattr(writer, method)
+                for item in items:
+                    append(item)
+                self.list_equal(writer.finish(), items)
+
+        # test MemoryError
+        writer = self.create_writer(0)
+        append = getattr(writer, method)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                append("alloc failed")
+        for item in items:
+            append(item)
+        self.list_equal(writer.finish(), items)
+
+    def test_append(self):
+        # Test PyListWriter_Append()
+        self.check_append('append')
+
+    def test_append_steal(self):
+        # Test PyListWriter_AppendSteal()
+        self.check_append('append_steal')
+
+    def check_extend(self, method):
+        items = self.create_items(5)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                extend = getattr(writer, method)
+                extend(items)
+                self.list_equal(writer.finish(), items)
+
+        # test MemoryError
+        writer = self.create_writer(0)
+        extend = getattr(writer, method)
+        items_error = ("alloc failed",)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                extend(items_error)
+        extend(items)
+        self.list_equal(writer.finish(), items)
+
+    def test_extend(self):
+        # Test PyListWriter_Extend()
+        self.check_extend('extend')
+
+    def test_extend_array(self):
+        # Test PyListWriter_ExtendArray()
+        self.check_extend('extend_array')
+
+    def test_extend_array_steal(self):
+        # Test PyListWriter_ExtendArraySteal()
+        self.check_extend('extend_array_steal')
+
+    def test_empty(self):
+        list_get_allocated = _testcapi._list_get_allocated
+        empty_tuple = ()
+
+        for size in (0, LIST_SMALL_ALLOCATED, 1024):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                writer.extend(empty_tuple)
+                writer.extend_array(empty_tuple)
+                writer.extend_array_steal(empty_tuple)
+                result = writer.finish()
+                self.list_equal(result, [])
+
+                if size == 0 or size > LIST_SMALL_ALLOCATED:
+                    expected = 0
+                else:
+                    expected = size
+                self.assertEqual(list_get_allocated(result), expected)
+
+    def test_finish_shrink(self):
+        # PyListWriter_Finish() shrinks the list if its allocated size
+        # is way too big
+        list_get_allocated = _testcapi._list_get_allocated
+
+        def compute_allocated(size):
+            return (size + (size >> 3) + 6) & ~3
+
+        def check_allocated(items, alloc, expected):
+            writer = self.create_writer(alloc)
+            # Don't use PyListWriter_Extend() since it can shrink the list
+            for item in items:
+                writer.append(item)
+            result = writer.finish()
+            self.list_equal(result, list(items))
+            self.assertEqual(list_get_allocated(result), expected)
+
+        # small list
+        items = [1, 2, 3]
+        check_allocated(items,
+                        1024,
+                        compute_allocated(len(items)))
+
+        alloc = LIST_SMALL_ALLOCATED
+        check_allocated(items, alloc, alloc)
+
+        # larger list
+        items = tuple(range(100))
+        check_allocated(items,
+                        (len(items) + 1) * 2,
+                        compute_allocated(len(items)))
+
+        alloc = len(items) * 2
+        check_allocated(items, alloc, alloc)
+
+        # do not shrink on MemoryError
+        alloc = 1024
+        writer = self.create_writer(alloc)
+        writer.append(1)
+        with support.inject_memory_error_cm():
+            # list_resize() never fails when shrinking
+            result = writer.finish()
+        self.list_equal(result, [1])
+        self.assertEqual(list_get_allocated(result), alloc)
+
+    def test_discard(self):
+        # Test PyListWriter_Discard(): must not leak memory
+        writer = self.create_writer(0)
+        writer.extend([2, 5, 7])
+        writer.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyListWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer(0)
+
+        def thread_func(writer):
+            writer.append('a')
+            writer.append_steal('b')
+            writer.extend(('c',))
+            writer.extend_array(('d',))
+            writer.extend_array_steal(('e',))
+
+        thread = threading.Thread(target=thread_func, args=(writer,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.list_equal(writer.finish(), list('abcde'))
 
 
 if __name__ == "__main__":
