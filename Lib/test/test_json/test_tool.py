@@ -8,7 +8,7 @@ import subprocess
 
 from test import support
 from test.support import force_colorized, force_not_colorized, os_helper
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 from _colorize import get_theme
 
@@ -326,6 +326,92 @@ class TestMain(unittest.TestCase):
                 stdout = stdout.replace('\r\n', '\n')  # normalize line endings
                 stdout = stdout.strip()
                 self.assertEqual(stdout, expected)
+
+    @force_not_colorized
+    def test_invalid_json_input(self):
+        # Malformed JSON on stdin: ValueError is reported on stderr and the
+        # process exits with status 1.
+        args = sys.executable, '-m', self.module
+        process = subprocess.run(args, input='not valid json',
+                                 capture_output=True, text=True)
+        self.assertEqual(process.returncode, 1)
+        self.assertEqual(process.stdout, '')
+        self.assertIn('Expecting value', process.stderr)
+
+    @force_not_colorized
+    def test_empty_input(self):
+        # Empty stdin is treated as missing JSON value and reported as an
+        # error.
+        args = sys.executable, '-m', self.module
+        process = subprocess.run(args, input='', capture_output=True,
+                                 text=True)
+        self.assertEqual(process.returncode, 1)
+        self.assertEqual(process.stdout, '')
+        self.assertIn('Expecting value', process.stderr)
+
+    def test_missing_infile(self):
+        infile = os_helper.TESTFN + '.does-not-exist'
+        rc, out, err = assert_python_failure('-m', self.module, infile,
+                                             PYTHON_COLORS='0')
+        self.assertNotEqual(rc, 0)
+        self.assertIn(b'FileNotFoundError', err)
+
+    def test_unknown_option(self):
+        rc, out, err = assert_python_failure('-m', self.module,
+                                             '--bogus-option',
+                                             PYTHON_COLORS='0')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'unrecognized arguments', err)
+
+    def test_mutually_exclusive_indent_and_tab(self):
+        rc, out, err = assert_python_failure('-m', self.module,
+                                             '--indent', '2', '--tab',
+                                             PYTHON_COLORS='0')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'not allowed with', err)
+
+    def test_mutually_exclusive_compact_and_no_indent(self):
+        rc, out, err = assert_python_failure('-m', self.module,
+                                             '--compact', '--no-indent',
+                                             PYTHON_COLORS='0')
+        self.assertEqual(rc, 2)
+        self.assertIn(b'not allowed with', err)
+
+    @force_not_colorized
+    def test_jsonlines_compact(self):
+        # --json-lines combined with --compact emits valid JSON Lines output:
+        # one compact JSON object per line.
+        expect = ('{"ingredients":["frog","water","chocolate","glucose"]}\n'
+                  '{"ingredients":["chocolate","steel bolts"]}\n')
+        args = (sys.executable, '-m', self.module,
+                '--json-lines', '--compact')
+        process = subprocess.run(args, input=self.jsonlines_raw,
+                                 capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
+
+    @force_not_colorized
+    def test_jsonlines_no_indent(self):
+        # --json-lines combined with --no-indent emits valid JSON Lines
+        # output: one single-line JSON object per line.
+        expect = ('{"ingredients": ["frog", "water", "chocolate", "glucose"]}\n'
+                  '{"ingredients": ["chocolate", "steel bolts"]}\n')
+        args = (sys.executable, '-m', self.module,
+                '--json-lines', '--no-indent')
+        process = subprocess.run(args, input=self.jsonlines_raw,
+                                 capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, expect)
+        self.assertEqual(process.stderr, '')
+
+    @force_not_colorized
+    def test_jsonlines_invalid_line(self):
+        # An invalid line in --json-lines mode causes the command to fail
+        # after emitting any already-processed lines.
+        args = sys.executable, '-m', self.module, '--json-lines'
+        process = subprocess.run(args, input='{"a": 1}\nnot valid\n',
+                                 capture_output=True, text=True)
+        self.assertEqual(process.returncode, 1)
+        self.assertIn('Expecting value', process.stderr)
 
 
 @support.requires_subprocess()
