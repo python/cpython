@@ -122,6 +122,11 @@ Cookie Objects
       for k, v in rawdata.items():
           cookie[k] = v
 
+   .. versionchanged:: next
+      Allowed any characters except semicolon (``';'``) and control
+      characters in non-quoted cookie values.
+      The ``';'`` separator is now mandatory between name-value pairs.
+
 
 .. _morsel-objects:
 
