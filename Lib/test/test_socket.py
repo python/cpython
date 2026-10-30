@@ -3178,6 +3178,9 @@ class BasicTCPTest(SocketConnectedTest):
     def testFromFdError(self):
         # Make sure that the fromfd() duplicated socket is closed on error.
         fd = self.cli_conn.fileno()
+        # Wait for the client thread to close its socket, otherwise
+        # fd_count() can race with clientTearDown().
+        self.done.wait()
         fd_count_before = os_helper.fd_count()
 
         with self.assertRaises(TypeError):
