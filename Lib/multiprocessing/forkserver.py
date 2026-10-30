@@ -12,8 +12,8 @@ import warnings
 from . import AuthenticationError
 from . import connection
 from . import process
-from .context import reduction
 from . import resource_tracker
+from . import context
 from . import spawn
 from . import util
 
@@ -130,7 +130,7 @@ class ForkServer(object):
                 finally:
                     wrapped_client._detach()
                     del wrapped_client
-                reduction.sendfds(client, allfds)
+                context.reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
                 os.close(parent_r)
@@ -393,7 +393,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                                     wrapped_s._detach()
                                     del wrapped_s
                             # Receive fds from client
-                            fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                            fds = context.reduction.recvfds(s, MAXFDS_TO_SEND + 1)
                         except (EOFError, BrokenPipeError, AuthenticationError):
                             s.close()
                             continue
