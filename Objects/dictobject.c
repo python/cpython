@@ -2580,6 +2580,7 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
     return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
+#ifdef Py_GIL_DISABLED
 static inline int
 compare_generic_exact_unicode(PyDictObject *mp, PyDictKeysObject *dk,
                               void *ep0, Py_ssize_t ix, PyObject *key,
@@ -2632,7 +2633,6 @@ _PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp, PyObject *key,
 {
     assert(PyUnicode_CheckExact(key));
     PyObject *value;
-#ifdef Py_GIL_DISABLED
     ensure_shared_on_read(mp);
     PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE) {
@@ -2648,12 +2648,9 @@ _PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp, PyObject *key,
     value = _PyDict_GetItem_ExactUnicode(mp, key);
     *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
     Py_END_CRITICAL_SECTION();
-#else
-    value = _PyDict_GetItem_ExactUnicode(mp, key);
-    *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
-#endif
     return value != NULL;
 }
+#endif
 
 int
 _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)

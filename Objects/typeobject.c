@@ -2116,6 +2116,7 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
     if (type_check_new_bases(type, new_bases) < 0) {
         return -1;
     }
+#ifdef Py_GIL_DISABLED
     // Create a fresh bases tuple to store.  Its identity tells whether
     // tp_bases was replaced again while TYPE_LOCK was released or due to
     // re-entrancy from the mro() call.
@@ -2124,6 +2125,9 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
     if (bases == NULL) {
         return -1;
     }
+#else
+    PyObject *bases = Py_NewRef(new_bases);
+#endif
     BEGIN_TYPE_LOCK();
     res = type_set_bases_unlocked(type, bases);
     END_TYPE_LOCK();
@@ -4902,6 +4906,7 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 }
 
 
+#ifdef Py_GIL_DISABLED
 /* Copy the class namespace.  Keys that are str subclasses are replaced by
    exact str copies so that the type dict only holds exact str keys (see
    type_setattro() which does the same for assigned names).  Lookups in a
@@ -4963,11 +4968,16 @@ error:
     Py_DECREF(newdict);
     return NULL;
 }
+#endif
 
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
+#ifdef Py_GIL_DISABLED
     PyObject *dict = type_new_copy_dict(ctx->orig_dict);
+#else
+    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+#endif
     if (dict == NULL) {
         goto error;
     }
@@ -6797,11 +6807,12 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     // We don't want any re-entrancy between when we update the dict
     // and call type_modified_unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
-    // state.  The name is an exact unicode (see type_setattro()) and
-    // str subclass keys are copied to exact str by type_new_copy_dict()
-    // and type_setattro().  The type dict can still hold non-str keys
-    // (type_new_impl() only warns about them) and comparing with one of
-    // those can run user code that releases the locks.
+    // state.  The name is an exact unicode (see type_setattro()).  In the
+    // free-threaded build, str subclass keys are copied to exact str by
+    // type_new_copy_dict().  The type dict can still hold non-str keys
+    // (type_new_impl() only warns about them), or str subclass keys in the
+    // default build.  Comparing with those can run user code that releases
+    // the locks.
     if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, old_value) < 0) {
         return -1;
     }

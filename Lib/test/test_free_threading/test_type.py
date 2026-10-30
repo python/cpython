@@ -6,7 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 from unittest import TestCase
 
-from test.support import threading_helper
+from test.support import import_helper, threading_helper
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 
 
