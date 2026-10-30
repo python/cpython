@@ -84,6 +84,7 @@ f = urllib.request.urlopen('https://www.python.org/')
 import base64
 import bisect
 import contextlib
+import copy
 import email
 import hashlib
 import http.client
@@ -122,7 +123,7 @@ __all__ = [
     'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler', 'AbstractDigestAuthHandler',
     'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler', 'HTTPHandler',
     'FileHandler', 'FTPHandler', 'CacheFTPHandler', 'DataHandler',
-    'UnknownHandler', 'HTTPErrorProcessor',
+    'UnknownHandler', 'HTTPErrorProcessor', 'HTTPGzipHandler',
     # Functions
     'urlopen', 'install_opener', 'build_opener',
     'pathname2url', 'url2pathname', 'getproxies',
@@ -1414,6 +1415,45 @@ class HTTPCookieProcessor(BaseHandler):
 
     https_request = http_request
     https_response = http_response
+
+
+class HTTPGzipHandler(BaseHandler):
+    """Request and transparently decode gzip Content-Encoding responses.
+
+    This handler is not installed by build_opener() by default; add it
+    explicitly to opt in.  It sends Accept-Encoding: gzip unless the request
+    already carries an Accept-Encoding header, and decodes the response only
+    when it added that header, so a caller supplying its own Accept-Encoding
+    still receives the raw response.
+    """
+
+    def __init__(self):
+        # Raise ImportError now, not on the first response, if zlib is missing.
+        import gzip  # noqa: F401
+
+    def http_request(self, request):
+        if not request.has_header('Accept-encoding'):
+            request.add_unredirected_header('Accept-encoding', 'gzip')
+            request._gzip_injected = True
+        return request
+
+    def http_response(self, request, response):
+        if (getattr(request, '_gzip_injected', False) and
+                response.headers.get('Content-Encoding', '').lower() == 'gzip'):
+            import gzip
+            headers = copy.copy(response.headers)
+            del headers['Content-Encoding']
+            del headers['Content-Length']
+            fp = addclosehook(gzip.GzipFile(fileobj=response, mode='rb'),
+                              response.close)
+            result = addinfourl(fp, headers, response.url, response.code)
+            result.msg = response.msg
+            return result
+        return response
+
+    https_request = http_request
+    https_response = http_response
+
 
 class UnknownHandler(BaseHandler):
     def unknown_open(self, req):

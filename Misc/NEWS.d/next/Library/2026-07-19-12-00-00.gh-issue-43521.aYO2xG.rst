@@ -1,0 +1,5 @@
+Add :class:`urllib.request.HTTPGzipHandler`, an opt-in handler that sends an
+``Accept-Encoding: gzip`` request header and transparently decodes
+gzip-compressed responses.  It is not one of the default
+:func:`~urllib.request.build_opener` handlers, so it must be added
+explicitly.
