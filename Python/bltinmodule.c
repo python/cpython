@@ -3172,13 +3172,12 @@ zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    Py_ssize_t tuplesize = iterables_length;
 
     /* obtain iterators */
-    ittuple = PyTuple_New(tuplesize);
+    ittuple = PyTuple_New(iterables_length);
     if (ittuple == NULL)
         return NULL;
-    for (i=0; i < tuplesize; ++i) {
+    for (i=0; i < iterables_length; ++i) {
         PyObject *it = PyObject_GetIter(iterables[i]);
         if (it == NULL) {
             Py_DECREF(ittuple);
@@ -3188,12 +3187,12 @@ zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
     }
 
     /* create a result holder */
-    result = PyTuple_New(tuplesize);
+    result = PyTuple_New(iterables_length);
     if (result == NULL) {
         Py_DECREF(ittuple);
         return NULL;
     }
-    for (i=0 ; i < tuplesize ; i++) {
+    for (i=0 ; i < iterables_length ; i++) {
         PyTuple_SET_ITEM(result, i, Py_NewRef(Py_None));
     }
 
@@ -3205,7 +3204,7 @@ zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
         return NULL;
     }
     lz->ittuple = ittuple;
-    lz->tuplesize = tuplesize;
+    lz->tuplesize = iterables_length;
     lz->result = result;
     lz->strict = strict;
 
