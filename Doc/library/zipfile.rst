@@ -177,7 +177,7 @@ ZipFile objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None, *, strict_timestamps=True, \
+                   compresslevel=None, preset=None, *, strict_timestamps=True, \
                    metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
@@ -220,6 +220,12 @@ ZipFile objects
    commonly accepted (see
    :attr:`CompressionParameter.compression_level <compression.zstd.CompressionParameter.compression_level>`
    for more on retrieving valid values and their meaning).
+
+   The *preset* parameter controls the LZMA preset to use when
+   writing files to the archive.
+   When using :const:`ZIP_LZMA` integers ``0`` through ``9`` are accepted
+   (see :class:`lzma <lzma.LZMAFile>` for more information).
+   When using :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` it has no effect.
 
    The *strict_timestamps* argument, when set to ``False``, allows to
    zip files older than 1980-01-01 at the cost of setting the
@@ -284,6 +290,9 @@ ZipFile objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionadded:: 3.12
+      Added the *preset* parameter.
 
    .. versionchanged:: 3.16
       Deleting a writable, open :class:`zipfile.ZipFile` now emits a
@@ -466,13 +475,13 @@ ZipFile objects
 
 
 .. method:: ZipFile.write(filename, arcname=None, compress_type=None, \
-                          compresslevel=None)
+                          compresslevel=None, preset=None)
 
    Write the file named *filename* to the archive, giving it the archive name
    *arcname* (by default, this will be the same as *filename*, but without a drive
    letter and with leading path separators removed).  If given, *compress_type*
    overrides the value given for the *compression* parameter to the constructor for
-   the new entry. Similarly, *compresslevel* will override the constructor if
+   the new entry. Similarly, *compresslevel* and *preset* will override the constructor if
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
 
@@ -507,7 +516,7 @@ ZipFile objects
 
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
-                             compresslevel=None)
+                             compresslevel=None, preset=None)
 
    Write a file into the archive.  The contents is *data*, which may be either
    a :class:`str` or a :class:`bytes` instance; if it is a :class:`str`,
@@ -519,8 +528,8 @@ ZipFile objects
 
    If given, *compress_type* overrides the value given for the *compression*
    parameter to the constructor for the new entry, or in the *zinfo_or_arcname*
-   (if that is a :class:`ZipInfo` instance). Similarly, *compresslevel* will
-   override the constructor if given.
+   (if that is a :class:`ZipInfo` instance). Similarly, *compresslevel* and
+   *preset* will override the constructor if given.
 
    .. note::
 
