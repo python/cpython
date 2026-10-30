@@ -382,36 +382,34 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-  --           MAKE_CELL                0 (__conditional_annotations__)
+  0           RESUME                   0
 
-   0           RESUME                   0
+  2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              STORE_NAME               4 (__annotate__)
+              BUILD_SET                0
+              STORE_NAME               0 (__conditional_annotations__)
+              LOAD_SMALL_INT           1
+              STORE_NAME               1 (x)
+              LOAD_NAME                0 (__conditional_annotations__)
+              LOAD_SMALL_INT           0
+              CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
+              POP_TOP
 
-   2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
-               MAKE_FUNCTION
-               STORE_NAME               4 (__annotate__)
-               BUILD_SET                0
-               STORE_NAME               0 (__conditional_annotations__)
-               LOAD_SMALL_INT           1
-               STORE_NAME               1 (x)
-               LOAD_NAME                0 (__conditional_annotations__)
-               LOAD_SMALL_INT           0
-               CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
-               POP_TOP
+  3           LOAD_NAME                0 (__conditional_annotations__)
+              LOAD_SMALL_INT           1
+              CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
+              POP_TOP
 
-   3           LOAD_NAME                0 (__conditional_annotations__)
-               LOAD_SMALL_INT           1
-               CALL_INTRINSIC_2         6 (INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
-               POP_TOP
-
-   4           LOAD_SMALL_INT           1
-               LOAD_NAME                2 (lst)
-               LOAD_NAME                3 (fun)
-               PUSH_NULL
-               LOAD_SMALL_INT           0
-               CALL                     1
-               STORE_SUBSCR
-               LOAD_COMMON_CONSTANT     7 (None)
-               RETURN_VALUE
+  4           LOAD_SMALL_INT           1
+              LOAD_NAME                2 (lst)
+              LOAD_NAME                3 (fun)
+              PUSH_NULL
+              LOAD_SMALL_INT           0
+              CALL                     1
+              STORE_SUBSCR
+              LOAD_COMMON_CONSTANT     7 (None)
+              RETURN_VALUE
 """
 
 fn_with_annotate_str = """

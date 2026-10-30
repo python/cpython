@@ -4,6 +4,7 @@ import copy
 import pickle
 import textwrap
 import threading
+import types
 import unittest
 from unittest.mock import patch
 from test.support import import_helper, threading_helper
@@ -203,6 +204,60 @@ class TestSuper(unittest.TestCase):
                 test_class = __class__
 
         self.assertIs(test_class, A)
+
+    def test_class_closure_uses_private_cellvar_name(self):
+        # The class unit's cell must not share the localsplus name __class__
+        # with a FREE load of an enclosing __class__.
+        def outer(__class__):
+            class C:
+                enclosing = __class__
+                def method(self):
+                    return __class__
+            return C
+        C = outer(object)
+        self.assertIs(C.enclosing, object)
+        self.assertIs(C().method(), C)
+
+        code = compile(
+            "def outer(__class__):\n"
+            "    class C:\n"
+            "        enclosing = __class__\n"
+            "        def method(self):\n"
+            "            return __class__\n",
+            "<test>", "exec")
+        outer_code = next(c for c in code.co_consts
+                          if isinstance(c, types.CodeType) and c.co_name == "outer")
+        class_code = next(c for c in outer_code.co_consts
+                          if isinstance(c, types.CodeType) and c.co_name == "C")
+        self.assertEqual(class_code.co_cellvars,
+                         ('__classcell__', '__classdictcell__'))
+        self.assertEqual(class_code.co_freevars, ('__class__',))
+
+    def test_class_cell_distinct_from_inlined_comp_cell(self):
+        # Private __classcell__ coexists with an inlined-comp cell named
+        # __class__; methods close over the private cell.
+        ns = {}
+        exec(
+            "class C:\n"
+            "    def method(self):\n"
+            "        return __class__\n"
+            "    lambdas = [lambda: __class__ for __class__ in (1, 2)]\n",
+            ns,
+        )
+        C = ns["C"]
+        self.assertIs(C().method(), C)
+        self.assertEqual([f() for f in C.lambdas], [2, 2])
+        self.assertIsNot(C.lambdas[0].__closure__[0], C.method.__closure__[0])
+
+        class_code = next(c for c in compile(
+            "class C:\n"
+            "    def method(self):\n"
+            "        return __class__\n"
+            "    lambdas = [lambda: __class__ for __class__ in (1, 2)]\n",
+            "<test>", "exec").co_consts
+            if isinstance(c, types.CodeType) and c.co_name == "C")
+        self.assertEqual(class_code.co_cellvars,
+                         ('__class__', '__classcell__', '__classdictcell__'))
 
     def test___classcell___expected_behaviour(self):
         # See issue #23722
