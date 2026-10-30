@@ -39,7 +39,7 @@ jobs:
             f.write(f"node-version={config['node-version']}\n")
             f.write(f"deps-hash={h.hexdigest()}\n")
         with open(os.environ["GITHUB_ENV"], "a") as f:
-            f.write(f"EMSDK_CACHE={emsdk_cache}\n")
+            f.write(f"PY_EMSDK_CACHE={emsdk_cache}\n")
     - name: "Install Node.js"
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
@@ -48,7 +48,7 @@ jobs:
       id: emsdk-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ${{ env.EMSDK_CACHE }}
+        path: ${{ env.PY_EMSDK_CACHE }}
         key: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}-${{ steps.emscripten-config.outputs.deps-hash }}
         restore-keys: emsdk-${{ steps.emscripten-config.outputs.emscripten-version }}
     - name: "Install Python"
