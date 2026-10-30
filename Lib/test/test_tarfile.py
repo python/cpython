@@ -890,6 +890,33 @@ class MiscReadTestBase(CommonReadTest):
             with self.assertRaises(tarfile.ReadError):
                 tarfile.open(self.tarname)
 
+    def test_next_preserves_exception_traceback(self):
+        class FailingFile(io.BytesIO):
+            def read(self, *args):
+                raise error
+
+        for error_type in (OSError, ImportError):
+            for missing_zlib in (False, True):
+                with self.subTest(error_type=error_type,
+                                  missing_zlib=missing_zlib):
+                    error = error_type("read failed")
+                    modules = {"zlib": None} if missing_zlib else {}
+                    with unittest.mock.patch.dict(sys.modules, modules):
+                        try:
+                            tarfile.open(fileobj=FailingFile(), mode="r:")
+                        except error_type as exc:
+                            self.assertIs(exc, error)
+                            next_frames = 0
+                            tb = exc.__traceback__
+                            while tb is not None:
+                                code = tb.tb_frame.f_code
+                                if code is tarfile.TarFile.next.__code__:
+                                    next_frames += 1
+                                tb = tb.tb_next
+                            self.assertEqual(next_frames, 1)
+                        else:
+                            self.fail(f"{error_type.__name__} not raised")
+
     def test_next_on_empty_tarfile(self):
         fd = io.BytesIO()
         tf = tarfile.open(fileobj=fd, mode="w")
