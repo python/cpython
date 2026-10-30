@@ -142,8 +142,7 @@ internal_close(fileio *self)
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     }
-    PyMem_Free(self->stat_atopen);
-    self->stat_atopen = NULL;
+    PyMem_Free(_Py_atomic_exchange_ptr(&self->stat_atopen, NULL));
     if (err < 0) {
         errno = save_errno;
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1148,10 +1147,7 @@ _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
     /* Since the file was truncated, its size at open is no longer accurate
        as an estimate. Clear out the stat result, and rely on dynamic resize
        code if a readall is requested. */
-    if (self->stat_atopen != NULL) {
-        PyMem_Free(self->stat_atopen);
-        self->stat_atopen = NULL;
-    }
+    PyMem_Free(_Py_atomic_exchange_ptr(&self->stat_atopen, NULL));
 
     return posobj;
 }
