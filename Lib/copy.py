@@ -43,10 +43,10 @@ This version does not copy types like module, class, function, method,
 nor stack trace, stack frame, nor file, socket, window, nor any
 similar types.
 
-Classes can use the same interfaces to control copying that they use
-to control pickling: they can define methods called __getinitargs__(),
-__getstate__() and __setstate__().  See the documentation for module
-"pickle" for information on these methods.
+Classes can use the same interfaces to control copying as they do for
+pickling. To control pickling, they may implement the methods
+__getstate__() and __setstate__(). See the documentation for the
+"pickle" module for information on these methods.
 """
 
 import types
