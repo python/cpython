@@ -1,0 +1,6 @@
+:c:func:`Py_UNICODE_TOUPPER`, :c:func:`Py_UNICODE_TOLOWER` and
+:c:func:`Py_UNICODE_TOTITLE` now return the simple case mapping defined by the
+Unicode database instead of the first character of the full case mapping.  The
+simple uppercase of ``'ß'`` (U+00DF) is now ``'ß'`` instead of ``'S'``, and the
+simple uppercase of ``'ᾀ'`` (U+1F80) is ``'ᾈ'`` (U+1F88) instead of ``'Ἀ'``
+(U+1F08).
