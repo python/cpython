@@ -8,6 +8,7 @@
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pylifecycle.h"   // _PyOS_URandom()
 
 #include "clinic/mathintegermodule.c.h"
 
@@ -478,6 +479,395 @@ math_integer_isqrt(PyObject *module, PyObject *n)
     Py_XDECREF(a);
     Py_DECREF(n);
     return NULL;
+}
+
+
+/* Primality testing below 2**64 with the deterministic Miller-Rabin test.
+
+   A strong probable prime test is exact for n < 4759123141 with the
+   bases {2, 7, 61} (G. Jaeschke, "On strong pseudoprimes to several
+   bases", Mathematics of Computation 61 (1993), 915-926), and for all
+   n < 2**64 with the seven bases below, found by Jim Sinclair and
+   verified against the Feitsma-Galway exhaustive list of base-2 strong
+   pseudoprimes below 2**64 (see http://miller-rabin.appspot.com/ and
+   http://ntheory.org/pseudoprimes.html).
+
+   Modular exponentiation and squaring use Montgomery arithmetic with
+   R = 2**64 to avoid division in their inner loops (P. L. Montgomery,
+   "Modular multiplication without trial division", Mathematics of
+   Computation 44 (1985), 519-521).
+*/
+
+static const uint8_t small_primes[] = {
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
+};
+
+static const uint32_t mr_bases_small[] = {2, 7, 61};
+static const uint32_t mr_bases[] = {
+    2, 325, 9375, 28178, 450775, 9780504, 1795265022,
+};
+
+#if defined(HAVE_GCC_UINT128_T)
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    return (uint64_t)((__uint128_t)a * b % n);
+}
+#elif defined(_MSC_VER) && defined(_M_X64)
+#  include <intrin.h>
+#  pragma intrinsic(_umul128, _udiv128)
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    /* Since a, b < n, the high 64 bits of a*b are less than n and
+       _udiv128() cannot fault. */
+    uint64_t hi, rem;
+    uint64_t lo = _umul128(a, b, &hi);
+    (void)_udiv128(hi, lo, n, &rem);
+    return rem;
+}
+#else
+/* No fast 128-bit multiplication: fall back to shift-and-add, with the
+   modular additions written to avoid overflow for n close to 2**64.
+   Assumes a < n. */
+static inline uint64_t
+mulmod_u64(uint64_t a, uint64_t b, uint64_t n)
+{
+    uint64_t result = 0;
+    while (b) {
+        if (b & 1) {
+            result = (result >= n - a) ? result - (n - a) : result + a;
+        }
+        a = (a >= n - a) ? a - (n - a) : a + a;
+        b >>= 1;
+    }
+    return result;
+}
+#endif
+
+/* High 64 bits of the full product a * b. */
+static inline uint64_t
+mulhi_u64(uint64_t a, uint64_t b)
+{
+#if defined(HAVE_GCC_UINT128_T)
+    return (uint64_t)(((__uint128_t)a * b) >> 64);
+#elif defined(_MSC_VER) && defined(_M_X64)
+    uint64_t hi;
+    (void)_umul128(a, b, &hi);
+    return hi;
+#else
+    /* Split the operands into 32-bit limbs. Each sum fits in uint64_t. */
+    uint64_t a0 = (uint32_t)a, a1 = a >> 32;
+    uint64_t b0 = (uint32_t)b, b1 = b >> 32;
+    uint64_t t = a1 * b0 + ((a0 * b0) >> 32);
+    uint64_t carry = t >> 32;
+    t = a0 * b1 + (uint32_t)t;
+    return a1 * b1 + carry + (t >> 32);
+#endif
+}
+
+typedef struct {
+    uint64_t n;
+    uint64_t inverse;  // n**-1 modulo 2**64
+    uint64_t one;      // 2**64 modulo n
+    uint64_t d;        // Odd part of n - 1
+    int s;             // n - 1 = d * 2**s
+} montgomery_context;
+
+/* Precompute once for all bases. n must be odd and greater than 1. */
+static montgomery_context
+montgomery_init(uint64_t n)
+{
+    montgomery_context ctx = {
+        .n = n,
+        .inverse = 1,
+        .one = (0 - n) % n,
+        .d = n - 1,
+        .s = 0,
+    };
+    /* Newton iteration doubles the number of correct inverse bits,
+       starting with one correct bit because n is odd. */
+    for (int i = 0; i < 6; i++) {
+        ctx.inverse *= 2 - n * ctx.inverse;
+    }
+    while ((ctx.d & 1) == 0) {
+        ctx.d >>= 1;
+        ctx.s++;
+    }
+    return ctx;
+}
+
+/* Return a * b * R**-1 modulo n, where R = 2**64 and a, b < n.
+   With t = a*b and m = (t mod R) * n**-1 mod R, t - m*n is divisible
+   by R, and (t - m*n) / R lies strictly between -n and n. Subtracting
+   avoids the possible 129-bit carry of the additive Montgomery form.
+   All uint64_t arithmetic intentionally wraps modulo R. */
+static inline uint64_t
+montgomery_mul(uint64_t a, uint64_t b, const montgomery_context *ctx)
+{
+    uint64_t lo = a * b, hi = mulhi_u64(a, b);
+    uint64_t mhi = mulhi_u64(lo * ctx->inverse, ctx->n);
+    uint64_t result = hi - mhi;
+    return hi < mhi ? result + ctx->n : result;
+}
+
+/* Strong probable prime test to the given base, in Montgomery form.
+   A base divisible by n gives no information and is treated as passing. */
+static int
+sprp_u64(const montgomery_context *ctx, uint64_t base)
+{
+    base %= ctx->n;
+    if (base == 0) {
+        return 1;
+    }
+    // Represent x by x*R modulo n throughout exponentiation.
+    uint64_t b = mulmod_u64(base, ctx->one, ctx->n);
+    uint64_t a = ctx->one;
+    for (uint64_t e = ctx->d; e; e >>= 1) {
+        if (e & 1) {
+            a = montgomery_mul(a, b, ctx);
+        }
+        b = montgomery_mul(b, b, ctx);
+    }
+    if (a == ctx->one || a == ctx->n - ctx->one) {
+        return 1;
+    }
+    for (int r = 1; r < ctx->s; r++) {
+        a = montgomery_mul(a, a, ctx);
+        if (a == ctx->n - ctx->one) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+isprime_u64(uint64_t n)
+{
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(small_primes); i++) {
+        if (n % small_primes[i] == 0) {
+            return n == small_primes[i];
+        }
+    }
+    if (n < 67 * 67) {
+        return n > 1;
+    }
+    montgomery_context ctx = montgomery_init(n);
+    const uint32_t *bases = mr_bases;
+    size_t num_bases = Py_ARRAY_LENGTH(mr_bases);
+    if (n < 4759123141) {
+        bases = mr_bases_small;
+        num_bases = Py_ARRAY_LENGTH(mr_bases_small);
+    }
+    for (size_t i = 0; i < num_bases; i++) {
+        if (!sprp_u64(&ctx, bases[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* Strong probable prime test using arbitrary-precision arithmetic.
+   n - 1 = d * 2**s, where d is odd. Return -1 on error. */
+static int
+sprp_long(PyObject *n, PyObject *base, PyObject *d, int64_t s,
+          PyObject *n_minus_one)
+{
+    PyObject *x = PyNumber_Power(base, d, n);
+    if (x == NULL) {
+        return -1;
+    }
+    int result = PyObject_RichCompareBool(x, _PyLong_GetOne(), Py_EQ);
+    if (result != 0) {
+        goto done;
+    }
+    for (int64_t r = 0; r < s; r++) {
+        result = PyObject_RichCompareBool(x, n_minus_one, Py_EQ);
+        if (result != 0 || r == s - 1) {
+            goto done;
+        }
+        if (PyErr_CheckSignals() < 0) {
+            result = -1;
+            goto done;
+        }
+        Py_SETREF(x, PyNumber_Multiply(x, x));
+        if (x == NULL) {
+            return -1;
+        }
+        Py_SETREF(x, PyNumber_Remainder(x, n));
+        if (x == NULL) {
+            return -1;
+        }
+        result = PyObject_RichCompareBool(x, _PyLong_GetOne(), Py_EQ);
+        if (result != 0) {
+            /* Reaching 1 before -1 proves that n is composite. */
+            if (result > 0) {
+                result = 0;
+            }
+            goto done;
+        }
+    }
+
+  done:
+    Py_DECREF(x);
+    return result;
+}
+
+/* Probable primality for n >= 2**64. A base-2 test rejects most composites
+   before requesting randomness. Then 64 independent, uniformly sampled
+   bases give a false-positive probability at most 4**-64 = 2**-128 for
+   any fixed composite n. */
+static int
+isprime_long(PyObject *n)
+{
+    assert(PyLong_CheckExact(n));
+    assert(_PyLong_NumBits(n) > 64);
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(small_primes); i++) {
+        PyObject *p = PyLong_FromLong(small_primes[i]);
+        if (p == NULL) {
+            return -1;
+        }
+        PyObject *rem = PyNumber_Remainder(n, p);
+        Py_DECREF(p);
+        if (rem == NULL) {
+            return -1;
+        }
+        int divisible = _PyLong_IsZero((PyLongObject *)rem);
+        Py_DECREF(rem);
+        if (divisible) {
+            return 0;
+        }
+    }
+
+    int result = -1;
+    PyObject *n_minus_one = NULL, *d = NULL, *base = NULL, *lowbit = NULL;
+    unsigned char *buffer = NULL;
+    n_minus_one = PyNumber_Subtract(n, _PyLong_GetOne());
+    if (n_minus_one == NULL) {
+        goto done;
+    }
+    /* Extract the largest power of two dividing n - 1. */
+    lowbit = PyNumber_Negative(n_minus_one);
+    if (lowbit == NULL) {
+        goto done;
+    }
+    Py_SETREF(lowbit, PyNumber_And(n_minus_one, lowbit));
+    if (lowbit == NULL) {
+        goto done;
+    }
+    int64_t s = _PyLong_NumBits(lowbit) - 1;
+    Py_CLEAR(lowbit);
+    d = _PyLong_Rshift(n_minus_one, s);
+    if (d == NULL) {
+        goto done;
+    }
+    base = PyLong_FromLong(2);
+    if (base == NULL) {
+        goto done;
+    }
+    int passed = sprp_long(n, base, d, s, n_minus_one);
+    if (passed <= 0) {
+        result = passed;
+        goto done;
+    }
+
+    int64_t bits = _PyLong_NumBits(n);
+    int64_t bytes = (bits - 1) / 8 + 1;
+    if (bytes > PY_SSIZE_T_MAX) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    Py_ssize_t size = (Py_ssize_t)bytes;
+    buffer = PyMem_Malloc(size);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    unsigned char mask = (unsigned char)(0xff >> (7 - (bits - 1) % 8));
+    for (int i = 0; i < 64; i++) {
+        /* Rejection sampling avoids the bias of reduction modulo n. */
+        for (;;) {
+            if (PyErr_CheckSignals() < 0 || _PyOS_URandom(buffer, size) < 0) {
+                goto done;
+            }
+            buffer[size - 1] &= mask;
+            Py_SETREF(base, _PyLong_FromByteArray(buffer, size, 1, 0));
+            if (base == NULL) {
+                goto done;
+            }
+            int above_one = PyObject_RichCompareBool(
+                base, _PyLong_GetOne(), Py_GT);
+            if (above_one < 0) {
+                goto done;
+            }
+            if (!above_one) {
+                continue;
+            }
+            int below_limit = PyObject_RichCompareBool(
+                base, n_minus_one, Py_LT);
+            if (below_limit < 0) {
+                goto done;
+            }
+            if (below_limit) {
+                break;
+            }
+        }
+        passed = sprp_long(n, base, d, s, n_minus_one);
+        if (passed <= 0) {
+            result = passed;
+            goto done;
+        }
+    }
+    result = 1;
+
+  done:
+    Py_XDECREF(n_minus_one);
+    Py_XDECREF(d);
+    Py_XDECREF(base);
+    Py_XDECREF(lowbit);
+    PyMem_Free(buffer);
+    return result;
+}
+
+/*[clinic input]
+math.integer.isprime -> bool
+
+    n: object
+    /
+
+Return True if n is prime or probably prime, False otherwise.
+
+The result is exact for n < 2**64. For larger integers, True means
+probably prime. False always means that n is not prime.
+[clinic start generated code]*/
+
+static int
+math_integer_isprime_impl(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=c808dc14d8d86875 input=e771fc2bdb5e29fb]*/
+{
+    /* The arbitrary-precision path must not call int subclass operators. */
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return -1;
+    }
+    int result;
+    uint64_t m;
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
+        result = 0;
+    }
+    else if (PyLong_AsUInt64(n, &m) < 0) {
+        result = -1;
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Clear();
+            result = isprime_long(n);
+        }
+    }
+    else {
+        result = isprime_u64(m);
+    }
+    Py_DECREF(n);
+    return result;
 }
 
 
@@ -1233,6 +1623,7 @@ static PyMethodDef math_integer_methods[] = {
     MATH_INTEGER_COMB_METHODDEF
     MATH_INTEGER_FACTORIAL_METHODDEF
     MATH_INTEGER_GCD_METHODDEF
+    MATH_INTEGER_ISPRIME_METHODDEF
     MATH_INTEGER_ISQRT_METHODDEF
     MATH_INTEGER_LCM_METHODDEF
     MATH_INTEGER_PERM_METHODDEF

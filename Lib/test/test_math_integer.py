@@ -1,5 +1,6 @@
 from decimal import Decimal
 from fractions import Fraction
+import random
 import unittest
 from test import support
 
@@ -77,6 +78,46 @@ def py_factorial(n):
         inner *= partial_product((n >> i + 1) + 1 | 1, (n >> i) + 1 | 1)
         outer *= inner
     return outer << (n - count_set_bits(n))
+
+# Reference implementations for primality testing.
+
+def primes_below(n):
+    """List of the primes below n, by the sieve of Eratosthenes."""
+    sieve = bytearray([1]) * n
+    sieve[:2] = bytes(2)
+    i = 2
+    while i * i < n:
+        if sieve[i]:
+            sieve[i*i::i] = bytes(len(range(i*i, n, i)))
+        i += 1
+    return [i for i in range(n) if sieve[i]]
+
+# The Miller-Rabin test with the first 13 primes as bases is known to be
+# exact for n < 3.3 * 10**24. These fixed bases provide an independent
+# cross-check within that range; results beyond it are not guaranteed.
+MILLER_RABIN_BASES = primes_below(100)
+
+def py_isprime(n):
+    """Miller-Rabin primality test, for cross-checking."""
+    if n < 2:
+        return False
+    for p in MILLER_RABIN_BASES:
+        if n % p == 0:
+            return n == p
+    d = n - 1
+    s = (d & -d).bit_length() - 1
+    d >>= s
+    for a in MILLER_RABIN_BASES:
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        for _ in range(s - 1):
+            x = x * x % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
 
 
 class IntMathTests(unittest.TestCase):
@@ -406,6 +447,174 @@ class MathTests(IntMathTests):
     import math as module
 
 
+# isprime() exists only in math.integer, not in math, so its tests
+# are not in IntMathTests (which is re-run against math above).
+
+class IsPrimeTests(unittest.TestCase):
+    import math.integer as module
+
+    def test_isprime_small(self):
+        isprime = self.module.isprime
+        sieve = set(primes_below(10**4))
+        for n in range(-10, 10**4):
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), n in sieve)
+
+    def test_isprime_negative(self):
+        isprime = self.module.isprime
+        self.assertIs(isprime(-1), False)
+        self.assertIs(isprime(-2), False)
+        self.assertIs(isprime(-3), False)
+        self.assertIs(isprime(-10**100), False)
+
+    def test_isprime_carmichael(self):
+        # Carmichael numbers are composite (A002997).
+        isprime = self.module.isprime
+        for n in [561, 1105, 1729, 2465, 2821, 6601, 8911, 10585, 15841,
+                  29341, 41041, 46657, 52633, 62745, 63973, 75361]:
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), False)
+
+    def test_isprime_strong_pseudoprimes_base_2(self):
+        # Composites that pass the strong probable prime test to base 2
+        # (A001262); they must be caught by the other bases.
+        isprime = self.module.isprime
+        for n in [2047, 3277, 4033, 4681, 8321, 15841, 29341, 42799, 49141,
+                  52633, 65281, 74665, 80581, 85489, 88357, 90751,
+                  3825123056546413051,
+                  318665857834031151167461,
+                  3317044064679887385961981]:
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), False)
+
+    def test_isprime_strong_lucas_pseudoprimes(self):
+        # Composites that are strong Lucas pseudoprimes (A217255); they
+        # are unrelated to the Miller-Rabin bases and must still fail.
+        isprime = self.module.isprime
+        for n in [5459, 5777, 10877, 16109, 18971, 22499, 24569, 25199,
+                  40309, 58519, 75077, 97439]:
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), False)
+
+    def test_isprime_base_divisors(self):
+        # Divisors of the Miller-Rabin bases exercise the case where a
+        # base is divisible by the tested number.
+        isprime = self.module.isprime
+        for base in [2, 7, 61, 325, 9375, 28178, 450775, 9780504,
+                     1795265022]:
+            d = 1
+            while d * d <= base:
+                if base % d == 0:
+                    for n in [d, base // d]:
+                        with self.subTest(base=base, n=n):
+                            self.assertIs(isprime(n), py_isprime(n))
+                d += 1
+
+    def test_isprime_perfect_squares(self):
+        isprime = self.module.isprime
+        for k in range(1000):
+            with self.subTest(k=k):
+                self.assertIs(isprime(k*k), False)
+        for k in [2**31 - 1, 2**32 - 5, 2**61 - 1, 2**89 - 1]:
+            with self.subTest(k=k):
+                self.assertIs(isprime(k*k), False)
+
+    def test_isprime_word_boundaries(self):
+        # Exercise word boundaries and the boundary between the base sets.
+        isprime = self.module.isprime
+        for boundary in [2**32, 4759123141, 2**63]:
+            for n in range(boundary - 200, boundary + 200):
+                with self.subTest(n=n):
+                    self.assertIs(isprime(n), py_isprime(n))
+        for n in range(2**64 - 200, 2**64 + 200):
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), py_isprime(n))
+        self.assertIs(isprime(2**64 - 59), True)   # largest prime < 2**64
+
+    def test_isprime_many_squarings(self):
+        # Exercise repeated squaring when n - 1 has many factors of two,
+        # including large moduli such as the prime 2**64 - 2**32 + 1.
+        isprime = self.module.isprime
+        for s in range(1, 64):
+            for d in [1, 3, 5, 2**(64 - s) - 1]:
+                n = (d << s) + 1
+                if n < 2**64:
+                    with self.subTest(n=n):
+                        self.assertIs(isprime(n), py_isprime(n))
+
+    def test_isprime_large_values(self):
+        isprime = self.module.isprime
+        self.assertIs(isprime(2**61 - 1), True)    # Mersenne prime
+        self.assertIs(isprime(2**62 - 1), False)
+        self.assertIs(isprime(10**19), False)
+        # Known primes above the exact 64-bit range.
+        for n in [2**64 + 13, 2**89 - 1, 2**107 - 1,
+                  2**127 - 1, 2**521 - 1]:
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), True)
+        for n in [2**64, 2**64 + 1, 2**128 + 1, 10**100,
+                  (2**61 - 1) * (2**89 - 1)]:
+            with self.subTest(n=n):
+                self.assertIs(isprime(n), False)
+
+    def test_isprime_large_small_factors(self):
+        for p in primes_below(67):
+            with self.subTest(p=p):
+                self.assertIs(self.module.isprime(p * (2**127 - 1)), False)
+
+    def test_isprime_large_many_squarings(self):
+        # Stay within the reference test's proven range.
+        for s in [64, 65, 70, 75]:
+            for d in [1, 3, 5, 7]:
+                n = (d << s) + 1
+                with self.subTest(n=n):
+                    self.assertIs(self.module.isprime(n), py_isprime(n))
+
+    def test_isprime_random(self):
+        isprime = self.module.isprime
+        rng = random.Random(1729)
+        for bits in [32, 34, 63, 64]:
+            for _ in range(300):
+                n = rng.getrandbits(bits)
+                with self.subTest(n=n):
+                    self.assertIs(isprime(n), py_isprime(n))
+        for bits in [65, 80]:
+            for _ in range(30):
+                n = rng.getrandbits(bits) | (1 << (bits - 1)) | 1
+                with self.subTest(n=n):
+                    self.assertIs(isprime(n), py_isprime(n))
+
+    def test_isprime_integer_like(self):
+        isprime = self.module.isprime
+        self.assertIs(isprime(False), False)
+        self.assertIs(isprime(True), False)
+        self.assertIs(isprime(IntSubclass(7)), True)
+        self.assertIs(isprime(IntSubclass(8)), False)
+        self.assertIs(isprime(MyIndexable(97)), True)
+        self.assertIs(isprime(MyIndexable(-97)), False)
+        self.assertIs(isprime(IntSubclass(2**89 - 1)), True)
+        self.assertIs(isprime(MyIndexable(2**89 - 1)), True)
+        self.assertIs(isprime(MyIndexable(2**89)), False)
+
+    def test_isprime_int_subclass_operators(self):
+        # Overridden operators of an int subclass must not affect the
+        # result.
+        isprime = self.module.isprime
+        self.assertIs(isprime(BadIntSubclass(97)), True)
+        self.assertIs(isprime(BadIntSubclass(2**61 - 1)), True)
+        self.assertIs(isprime(BadIntSubclass(2**62 - 1)), False)
+        self.assertIs(isprime(BadIntSubclass(2**89 - 1)), True)
+        self.assertIs(isprime(BadIntSubclass(2**89)), False)
+
+    def test_isprime_non_integers(self):
+        isprime = self.module.isprime
+        for value in [7.0, 7.5, Decimal('7'), Fraction(7, 1), '7', 7.5j]:
+            with self.subTest(value=value):
+                self.assertRaises(TypeError, isprime, value)
+        self.assertRaises(TypeError, isprime)
+        self.assertRaises(TypeError, isprime, 7, 11)
+
+
 class MiscTests(unittest.TestCase):
 
     def test_module_name(self):
@@ -415,6 +624,12 @@ class MiscTests(unittest.TestCase):
             if not name.startswith('_'):
                 obj = getattr(math.integer, name)
                 self.assertEqual(obj.__module__, 'math.integer')
+
+    def test_math_namespace(self):
+        # The new function is added only to math.integer, not to math
+        # (PEP 791).
+        import math
+        self.assertFalse(hasattr(math, 'isprime'))
 
 
 if __name__ == '__main__':

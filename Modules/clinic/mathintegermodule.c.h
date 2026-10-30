@@ -67,6 +67,37 @@ PyDoc_STRVAR(math_integer_isqrt__doc__,
 #define MATH_INTEGER_ISQRT_METHODDEF    \
     {"isqrt", (PyCFunction)math_integer_isqrt, METH_O, math_integer_isqrt__doc__},
 
+PyDoc_STRVAR(math_integer_isprime__doc__,
+"isprime($module, n, /)\n"
+"--\n"
+"\n"
+"Return True if n is prime or probably prime, False otherwise.\n"
+"\n"
+"The result is exact for n < 2**64. For larger integers, True means\n"
+"probably prime. False always means that n is not prime.");
+
+#define MATH_INTEGER_ISPRIME_METHODDEF    \
+    {"isprime", (PyCFunction)math_integer_isprime, METH_O, math_integer_isprime__doc__},
+
+static int
+math_integer_isprime_impl(PyObject *module, PyObject *n);
+
+static PyObject *
+math_integer_isprime(PyObject *module, PyObject *n)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = math_integer_isprime_impl(module, n);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_integer_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
@@ -156,4 +187,4 @@ math_integer_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=34697570c923a3af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e47e334e7fe1156 input=a9049054013a1b77]*/

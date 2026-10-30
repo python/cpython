@@ -13,8 +13,9 @@ These functions accept integers and objects that implement the
 :meth:`~object.__index__` method which is used to convert the object to an integer
 number.
 
-The following functions are provided by this module.  All return values are
-computed exactly and are integers.
+The following functions are provided by this module.
+Unless stated otherwise below,
+all return values are computed exactly and are integers.
 
 
 .. function:: comb(n, k, /)
@@ -44,6 +45,23 @@ computed exactly and are integers.
    positive integer that is a divisor of all arguments.  If all arguments
    are zero, then the returned value is ``0``.  ``gcd()`` without arguments
    returns ``0``.
+
+
+.. function:: isprime(n, /)
+
+   Return ``True`` if *n* is prime or probably prime, ``False`` otherwise.
+
+   For ``n < 2**64``, the result is exact. For larger integers, ``True``
+   indicates that *n* is probably prime. However, a composite number may be
+   accepted. A ``False`` result always means that *n* is not prime.
+
+   For large inputs, the implementation uses 64 Miller--Rabin rounds with
+   independently and uniformly chosen random bases. For any fixed composite
+   input, the probability of returning ``True`` is at most ``2**-128``.
+   This bound is over the random choices made by the test, not the probability
+   that an input is composite given a ``True`` result.
+
+   .. versionadded:: next
 
 
 .. function:: isqrt(n, /)
