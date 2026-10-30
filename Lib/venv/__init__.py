@@ -521,6 +521,11 @@ class EnvBuilder:
         def quote_bat(s):
             return s
 
+        def quote_fish(s):
+            # gh-160782: fish reads \\ and \' as escapes inside single quotes
+            s = s.replace('\\', '\\\\').replace("'", "\\'")
+            return f"'{s}'"
+
         # gh-124651: need to quote the template strings properly
         quote = shlex.quote
         script_path = context.script_path
@@ -528,6 +533,8 @@ class EnvBuilder:
             quote = quote_ps1
         elif script_path.endswith('.bat'):
             quote = quote_bat
+        elif script_path.endswith('.fish'):
+            quote = quote_fish
         else:
             # fallbacks to POSIX shell compliant quote
             quote = shlex.quote

@@ -846,6 +846,18 @@ class BasicTest(BaseTest):
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
 
+    def test_fish_quoting(self):
+        """
+        Test that the template strings are quoted properly (fish)
+        """
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        context.script_path = 'activate.fish'
+        context.prompt = r"x\'$(echo PWNED)'\'"
+        self.assertEqual(
+            builder.replace_variables('__VENV_PROMPT__', context),
+            r"'x\\\'$(echo PWNED)\'\\\''")
+
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_special_chars_windows(self):
