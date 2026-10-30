@@ -2,10 +2,12 @@
 #include "pycore_frame.h"         // PyFrameObject
 #include "pycore_genobject.h"     // PyAsyncGenObject
 #include "pycore_import.h"        // _PyImport_GetModules()
+#include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
@@ -255,12 +257,25 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
-static inline void
+static inline int
 warnings_lock(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&st->lock) &&
+        _PyInterpreterState_GetFinalizing(interp) != tstate)
+    {
+        assert(tstate_impl->warnings_lock_guard == NULL);
+        PyInterpreterGuard *guard = PyInterpreterGuard_FromCurrent();
+        if (guard == NULL) {
+            return -1;
+        }
+        tstate_impl->warnings_lock_guard = guard;
+    }
     _PyRecursiveMutex_Lock(&st->lock);
+    return 0;
 }
 
 static inline int
@@ -268,7 +283,21 @@ warnings_unlock(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    return _PyRecursiveMutex_TryUnlock(&st->lock);
+    if (!_PyRecursiveMutex_IsLockedByCurrentThread(&st->lock)) {
+        return -1;
+    }
+    if (st->lock.level > 0) {
+        _PyRecursiveMutex_Unlock(&st->lock);
+        return 0;
+    }
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    PyInterpreterGuard *guard = tstate->warnings_lock_guard;
+    tstate->warnings_lock_guard = NULL;
+    _PyRecursiveMutex_Unlock(&st->lock);
+    if (guard != NULL) {
+        PyInterpreterGuard_Close(guard);
+    }
+    return 0;
 }
 
 static inline bool
@@ -369,7 +398,9 @@ warnings_acquire_lock_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
-    warnings_lock(interp);
+    if (warnings_lock(interp) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1154,10 +1185,14 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
-    warnings_lock(tstate->interp);
-    res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
-                        NULL, source);
-    warnings_unlock(tstate->interp);
+    if (warnings_lock(tstate->interp) < 0) {
+        res = NULL;
+    }
+    else {
+        res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
+                            NULL, source);
+        warnings_unlock(tstate->interp);
+    }
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1335,10 +1370,14 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
-    warnings_lock(tstate->interp);
-    returned = warn_explicit(tstate, category, message, filename, lineno,
-                             mod, registry, source_line, sourceobj);
-    warnings_unlock(tstate->interp);
+    if (warnings_lock(tstate->interp) < 0) {
+        returned = NULL;
+    }
+    else {
+        returned = warn_explicit(tstate, category, message, filename, lineno,
+                                 mod, registry, source_line, sourceobj);
+        warnings_unlock(tstate->interp);
+    }
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1485,7 +1524,9 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
-    warnings_lock(tstate->interp);
+    if (warnings_lock(tstate->interp) < 0) {
+        return -1;
+    }
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
     warnings_unlock(tstate->interp);
@@ -1550,19 +1591,17 @@ PyErr_WarnExplicitFormat(PyObject *category,
     va_start(vargs, format);
     message = PyUnicode_FromFormatV(format, vargs);
     if (message != NULL) {
-        PyObject *res;
         PyThreadState *tstate = get_current_tstate();
-        if (tstate != NULL) {
-            warnings_lock(tstate->interp);
-            res = warn_explicit(tstate, category, message, filename, lineno,
-                                module, registry, NULL, NULL);
+        if (tstate != NULL && warnings_lock(tstate->interp) == 0) {
+            PyObject *res = warn_explicit(tstate, category, message, filename, lineno,
+                                          module, registry, NULL, NULL);
             warnings_unlock(tstate->interp);
-            Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
                 ret = 0;
             }
         }
+        Py_DECREF(message);
     }
     va_end(vargs);
 exit:
