@@ -1376,6 +1376,7 @@ def _unpack_tarfile(filename, extract_dir, *, filter=None):
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
+    'whl':   (['.whl'], _unpack_zipfile, [], "Wheel file"),
 }
 
 if _ZLIB_SUPPORTED:
@@ -1410,9 +1411,9 @@ def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     is unpacked. If not provided, the current working directory is used.
 
     `format` is the archive format: one of "zip", "tar", "gztar", "bztar",
-    "xztar", or "zstdtar".  Or any other registered format.  If not provided,
-    unpack_archive will use the filename extension and see if an unpacker
-    was registered for that extension.
+    "xztar", "zstdtar", or "whl".  Or any other registered format.  If not
+    provided, unpack_archive will use the filename extension and see if an
+    unpacker was registered for that extension.
 
     In case none is found, a ValueError is raised.
 
