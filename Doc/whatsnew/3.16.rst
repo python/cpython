@@ -688,6 +688,10 @@ shutil
 socket
 ------
 
+* Unix domain sockets (:const:`~socket.AF_UNIX`) are now supported on Windows,
+  which requires Windows 10 version 1803 or newer.
+  (Contributed by An Long in :gh:`77589`.)
+
 * The :func:`socket.sethostname` function is now available on Android.
   Calling it without sufficient privileges now raises :exc:`PermissionError`
   instead of the function being unavailable.
