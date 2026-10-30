@@ -317,6 +317,18 @@ class TestQueueOps(TestBase):
         queue.get()
         queue.put(None)
 
+    def test_put_timeout_fractional(self):
+        # A fractional timeout must not be truncated to whole seconds;
+        # put() blocks for (approximately) the full timeout.
+        queue = queues.create(1)
+        queue.put(None)
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, timeout=0.5)
+        elapsed = time.monotonic() - start
+        self.assertGreaterEqual(elapsed, 0.4)
+        self.assertLess(elapsed, 2)
+
     def test_put_nowait(self):
         queue = queues.create(2)
         queue.put_nowait(None)
@@ -359,6 +371,38 @@ class TestQueueOps(TestBase):
             queue.get(timeout=0.1)
         with self.assertRaises(queues.QueueEmpty):
             queue.get(HUGE_TIMEOUT, 0.1)
+
+    def test_get_timeout_fractional(self):
+        # A fractional timeout must not be truncated to whole seconds;
+        # get() blocks for (approximately) the full timeout.
+        queue = queues.create()
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(timeout=0.5)
+        elapsed = time.monotonic() - start
+        self.assertGreaterEqual(elapsed, 0.4)
+        self.assertLess(elapsed, 2)
+
+    def test_timeout_negative(self):
+        # Negative timeouts raise ValueError before waiting, like
+        # queue.Queue, including fractional ones (e.g. -0.5).
+        queue = queues.create(1)
+        with self.assertRaises(ValueError):
+            queue.get(timeout=-0.5)
+        queue.put(None)
+        with self.assertRaises(ValueError):
+            queue.put(None, timeout=-0.5)
+
+    def test_timeout_zero(self):
+        # A zero timeout is a non-blocking poll.
+        queue = queues.create(1)
+        start = time.monotonic()
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(timeout=0)
+        queue.put(None)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, timeout=0)
+        self.assertLess(time.monotonic() - start, 1)
 
     def test_timeout_uses_monotonic_clock(self):
         # gh-153005: the deadline must be computed from the monotonic clock,

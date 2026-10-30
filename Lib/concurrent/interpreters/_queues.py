@@ -217,9 +217,8 @@ class Queue:
         else:
             unboundop, = _serialize_unbound(unbounditems)
         if timeout is not None:
-            timeout = int(timeout)
             if timeout < 0:
-                raise ValueError(f'timeout value must be non-negative')
+                raise ValueError("'timeout' must be a non-negative number")
             end = time.monotonic() + timeout
         while True:
             try:
@@ -252,9 +251,8 @@ class Queue:
         if not block:
             return self.get_nowait()
         if timeout is not None:
-            timeout = int(timeout)
             if timeout < 0:
-                raise ValueError(f'timeout value must be non-negative')
+                raise ValueError("'timeout' must be a non-negative number")
             end = time.monotonic() + timeout
         while True:
             try:

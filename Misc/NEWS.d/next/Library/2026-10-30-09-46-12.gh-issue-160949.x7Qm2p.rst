@@ -1,0 +1,5 @@
+Fixed :mod:`concurrent.interpreters` queue ``put()`` and ``get()``
+truncating fractional timeouts (for example, ``timeout=0.5`` behaved as
+``0``) and silently accepting negative fractional timeouts instead of
+raising :exc:`ValueError`, contrary to the documented
+:class:`queue.Queue`-style semantics.
