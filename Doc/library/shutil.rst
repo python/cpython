@@ -786,7 +786,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.12
       Added the *filter* argument.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added the "whl" format.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
