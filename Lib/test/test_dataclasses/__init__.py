@@ -4543,8 +4543,10 @@ class TestStringAnnotations(unittest.TestCase):
                 self.assertIs(instance.received, value)
                 self.assertEqual(fields(cls), ())
                 self.assertNotIn('value', vars(instance))
-                self.assertIsInstance(cls.__dataclass_fields__['value'].type,
-                                      annotationlib.ForwardRef)
+                field_type = cls.__dataclass_fields__['value'].type
+                self.assertIsInstance(field_type, InitVar)
+                self.assertIsInstance(field_type.type, annotationlib.ForwardRef)
+                self.assertEqual(field_type.type.__forward_arg__, 'A')
 
         with self.subTest(cls=m.DeferredClassVar):
             self.assertEqual(fields(m.DeferredClassVar), ())

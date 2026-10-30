@@ -854,9 +854,6 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     # For the complete discussion, see https://bugs.python.org/issue33453
     if isinstance(a_type, str):
         a_type_annotation = _get_type_from_annotation(a_type, cls)
-    elif isinstance(a_type, annotationlib.ForwardRef):
-        # An unresolved lazy import can defer the whole annotation.
-        a_type_annotation = _get_type_from_annotation(a_type.__forward_arg__, cls)
     else:
         a_type_annotation = a_type
 

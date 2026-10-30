@@ -1,3 +1,4 @@
-Fix :func:`dataclasses.dataclass` handling of :class:`~dataclasses.InitVar` and
-:data:`~typing.ClassVar` annotations when a lazy import cannot yet be resolved
-during a circular import.
+Preserve partially resolved annotations when a lazy import cannot be resolved
+in :mod:`annotationlib`'s :attr:`~annotationlib.Format.FORWARDREF` format. This
+also fixes :class:`~dataclasses.InitVar` and :data:`~typing.ClassVar` handling
+during circular imports.
