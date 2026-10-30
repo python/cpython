@@ -915,9 +915,9 @@ class HandlerTests(unittest.TestCase):
             parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
-            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+            "file://%s:80/%s/%s" % (socket.gethostbyname('localhost'),
                                    os.getcwd(), TESTFN),
-            "file://somerandomhost.ontheinternet.com%s/%s" %
+            "file://somerandomhost.ontheinternet.com/%s/%s" %
             (os.getcwd(), TESTFN),
             ]:
             try:
