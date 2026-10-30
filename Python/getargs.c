@@ -125,18 +125,6 @@ _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 
 
 int
-_PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
-{
-    int retval;
-    va_list va;
-
-    va_start(va, format);
-    retval = vgetargs1_impl(NULL, args, nargs, format, &va, 0);
-    va_end(va);
-    return retval;
-}
-
-int
 PyArg_ParseArray(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     va_list va;
@@ -2421,7 +2409,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         if (i < parser->min) {
             /* Less arguments than required */
             if (i < pos) {
-                Py_ssize_t min = Py_MIN(pos, parser->min);
+                int min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
                              "%.200s%s takes %s %d positional argument%s"
                              " (%zd given)",
@@ -2435,7 +2423,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
             else {
                 keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
                 PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
-                             "argument '%U' (pos %d)",
+                             "argument '%U' (pos %zd)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
@@ -2476,7 +2464,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
                              "argument for %.200s%s given by name ('%U') "
-                             "and position (%d)",
+                             "and position (%zd)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
@@ -2933,6 +2921,7 @@ _PyArg_UnpackStack(PyObject *const *args, Py_ssize_t nargs, const char *name,
 #undef _PyArg_NoKeywords
 #undef _PyArg_NoKwnames
 #undef _PyArg_NoPositional
+#undef _PyArg_NoPositionalStack
 
 /* For type constructors that don't take keyword args
  *
@@ -2967,8 +2956,15 @@ _PyArg_NoPositional(const char *funcname, PyObject *args)
         PyErr_BadInternalCall();
         return 0;
     }
-    if (PyTuple_GET_SIZE(args) == 0)
+    return _PyArg_NoPositionalStack(funcname, PyTuple_GET_SIZE(args));
+}
+
+int
+_PyArg_NoPositionalStack(const char *funcname, Py_ssize_t nargs)
+{
+    if (nargs == 0) {
         return 1;
+    }
 
     PyErr_Format(PyExc_TypeError, "%.200s() takes no positional arguments",
                     funcname);

@@ -231,10 +231,8 @@ calling the Python callback functions from a C callback.  Other uses are also
 imaginable.
 
 Fortunately, the Python interpreter is easily called recursively, and there is a
-standard interface to call a Python function.  (I won't dwell on how to call the
-Python parser with a particular string as input --- if you're interested, have a
-look at the implementation of the :option:`-c` command line option in
-:file:`Modules/main.c` from the Python source code.)
+standard interface to call a Python function.  (If you're interested in how to call the
+Python parser with a particular string as input, see :ref:`veryhigh`.)
 
 Calling a Python function is easy.  First, the Python program must somehow pass
 you the Python function object.  You should provide a function (or some other
@@ -336,6 +334,8 @@ event code, you might use the following code::
    PyObject *arglist;
    ...
    arglist = Py_BuildValue("(l)", eventcode);
+   if (arglist == NULL)
+       return NULL;
    result = PyObject_CallObject(my_callback, arglist);
    Py_DECREF(arglist);
    if (result == NULL)
@@ -344,17 +344,24 @@ event code, you might use the following code::
    Py_DECREF(result);
 
 Note the placement of ``Py_DECREF(arglist)`` immediately after the call, before
-the error check!  Also note that strictly speaking this code is not complete:
-:c:func:`Py_BuildValue` may run out of memory, and this should be checked.
+the error check!
 
 You may also call a function with keyword arguments by using
 :c:func:`PyObject_Call`, which supports arguments and keyword arguments.  As in
 the above example, we use :c:func:`Py_BuildValue` to construct the dictionary. ::
 
-   PyObject *dict;
+   PyObject *arglist, *dict;
    ...
+   arglist = PyTuple_New(0);
+   if (arglist == NULL)
+       return NULL;
    dict = Py_BuildValue("{s:i}", "name", val);
-   result = PyObject_Call(my_callback, NULL, dict);
+   if (dict == NULL) {
+       Py_DECREF(arglist);
+       return NULL;
+   }
+   result = PyObject_Call(my_callback, arglist, dict);
+   Py_DECREF(arglist);
    Py_DECREF(dict);
    if (result == NULL)
        return NULL; /* Pass error back */
@@ -641,7 +648,7 @@ and the object is freed.
 
 An alternative strategy is called :dfn:`automatic garbage collection`.
 (Sometimes, reference counting is also referred to as a garbage collection
-strategy, hence my use of "automatic" to distinguish the two.)  The big
+strategy, hence the use of "automatic" to distinguish the two.)  The big
 advantage of automatic garbage collection is that the user doesn't need to call
 :c:func:`free` explicitly.  (Another claimed advantage is an improvement in speed
 or memory usage --- this is no hard fact however.)  The disadvantage is that for
@@ -1108,7 +1115,7 @@ Finally it should be mentioned that Capsules offer additional functionality,
 which is especially useful for memory allocation and deallocation of the pointer
 stored in a Capsule. The details are described in the Python/C API Reference
 Manual in the section :ref:`capsules` and in the implementation of Capsules (files
-:file:`Include/pycapsule.h` and :file:`Objects/pycapsule.c` in the Python source
+:file:`Include/pycapsule.h` and :file:`Objects/capsule.c` in the Python source
 code distribution).
 
 .. rubric:: Footnotes

@@ -83,7 +83,14 @@ class Template:
     def _compile_pattern(cls):
         import re  # deferred import, for performance
 
+        # `pattern` may be the `_TemplatePattern` sentinel (not yet compiled), an
+        # already-compiled regular expression object (as documented), or a string
+        # regular expression.  An already-compiled object is returned as-is; the
+        # other two are compiled and cached back on the class.
         pattern = cls.__dict__.get('pattern', _TemplatePattern)
+        if isinstance(pattern, re.Pattern):
+            # re.compile() rejects flags on an already-compiled pattern.
+            return pattern
         if pattern is _TemplatePattern:
             delim = re.escape(cls.delimiter)
             id = cls.idpattern

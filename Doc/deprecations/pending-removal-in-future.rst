@@ -35,10 +35,6 @@ although there is currently no date scheduled for their removal.
   * Support for ``__complex__()`` method returning a strict subclass of
     :class:`complex`: these methods will be required to return an instance of
     :class:`complex`.
-  * Passing a complex number as the *real* or *imag* argument in the
-    :func:`complex` constructor is now deprecated; it should only be passed
-    as a single positional argument.
-    (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
   deprecated and replaced by :data:`calendar.JANUARY` and
@@ -47,7 +43,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
 
-* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+* :attr:`!codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.
 
 * :mod:`datetime`:

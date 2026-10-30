@@ -29,12 +29,13 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import StackItem
+    from analyzer import StackItem, analyze_files
     from cwriter import CWriter
     import parser
     from stack import Local, Stack
     import tier1_generator
     import optimizer_generator
+    import record_function_generator
 
 
 def handle_stderr():
@@ -368,8 +369,9 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             res = Py_None;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -391,8 +393,9 @@ class TestGeneratedCases(unittest.TestCase):
             res = Py_None;
             stack_pointer[-1] = res;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
     """
@@ -625,8 +628,9 @@ class TestGeneratedCases(unittest.TestCase):
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
                 op1(left, right);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_StackPointerInvalidate(frame);
             }
             /* Skip 2 cache entries */
             // OP2
@@ -634,9 +638,10 @@ class TestGeneratedCases(unittest.TestCase):
                 arg2 = stack_pointer[-3];
                 uint32_t extra = read_u32(&this_instr[4].cache);
                 (void)extra;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
                 res = op2(arg2, left, right);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_StackPointerInvalidate(frame);
             }
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -661,8 +666,9 @@ class TestGeneratedCases(unittest.TestCase):
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             op1(left, right);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
 
@@ -684,8 +690,9 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             arg2 = stack_pointer[-3];
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             res = op3(arg2, left, right);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -1474,8 +1481,10 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             code();
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1499,6 +1508,10 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1521,13 +1534,13 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            // Explicit stack reload
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackAssertInvalid(frame);
             DISPATCH();
         }
         """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, output)
+        self.run_cases_test(input, output)
 
     def test_stack_save_only(self):
 
@@ -1613,16 +1626,19 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             #ifdef Py_GIL_DISABLED
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             #else
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             another_escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             #endif
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+            _PyFrame_StackPointerValidate(frame);
             yet_another_escaping_call();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
@@ -1734,8 +1750,9 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(my_label)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             if (complex) {
                 JUMP_TO_LABEL(other_label);
             }
@@ -1761,12 +1778,14 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(one)
         {
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(two);
         }
 
         LABEL(two)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             JUMP_TO_LABEL(one);
         }
         """
@@ -1816,16 +1835,18 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(my_label_1)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing1();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(my_label_2);
         }
 
         LABEL(my_label_2)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             do_thing2();
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             JUMP_TO_LABEL(my_label_1);
         }
         """
@@ -1877,19 +1898,566 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef in;
             in = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             temp = use(in);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             in = temp;
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
             PyStackRef_CLOSE(in);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
             DISPATCH();
         }
         """
         self.run_cases_test(input, output)
 
+    def test_recording_after_specializing_with_cache(self):
+        input = """
+        specializing op(SPEC, (counter/1 --)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        op(BODY, (--)) {
+            ham;
+        }
+
+        macro(OP) = SPEC + unused/2 + REC + BODY;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
+            // SPEC
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                spam;
+            }
+            /* Skip 2 cache entries */
+            // BODY
+            {
+                ham;
+            }
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_recording_after_non_specializing(self):
+        input = """
+        op(REGULAR, (--)) {
+            spam;
+        }
+
+        tier2 op(REC, (--)) {
+            RECORD_VALUE(0);
+        }
+
+        macro(OP) = REGULAR + REC;
+        """
+        with self.assertRaisesRegex(SyntaxError, "Recording uop"):
+            self.run_cases_test(input, "")
+
+    def test_multiple_consecutive_recording_uops(self):
+        """Multiple consecutive recording uops at the start of a macro are legal."""
+        input = """
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        op(_DO_STUFF, (a, b -- res)) {
+            res = a;
+            INPUTS_DEAD();
+        }
+        macro(OP) = _RECORD_A + _RECORD_B + _DO_STUFF;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            _PyStackRef res;
+            // _DO_STUFF
+            {
+                a = stack_pointer[-2];
+                res = a;
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_multiple_recording_uops_after_specializing(self):
+        """Multiple recording uops after a specializing uop are legal."""
+        input = """
+        specializing op(_SPECIALIZE_OP, (counter/1, a, b -- a, b)) {
+            SPAM();
+        }
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        op(_DO_STUFF, (a, b -- res)) {
+            res = a;
+            INPUTS_DEAD();
+        }
+        macro(OP) = _SPECIALIZE_OP + _RECORD_A + _RECORD_B + unused/2 + _DO_STUFF;
+        """
+        output = """
+        TARGET(OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef a;
+            _PyStackRef res;
+            // _SPECIALIZE_OP
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                SPAM();
+            }
+            /* Skip 2 cache entries */
+            // _DO_STUFF
+            {
+                a = stack_pointer[-2];
+                res = a;
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_recording_uop_between_real_uops_rejected(self):
+        """A recording uop sandwiched between real uops is rejected."""
+        input = """
+        tier2 op(_RECORD_A, (a, b -- a, b)) {
+            RECORD_VALUE(a);
+        }
+        op(_FIRST, (a, b -- a, b)) {
+            first(a);
+        }
+        tier2 op(_RECORD_B, (a, b -- a, b)) {
+            RECORD_VALUE(b);
+        }
+        macro(OP) = _RECORD_A + _FIRST + _RECORD_B;
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "must precede all "
+                                    "non-recording, non-specializing uops"):
+            self.run_cases_test(input, "")
+
+    def test_escaping_in_loop(self):
+        input = """
+        inst(TEST_LOOP_SPILL, (a -- a)) {
+            int n = (int)oparg;
+            for (int i = 0; i < n; i++) {
+                escaping_inside_loop(a);
+            }
+            escaping_after_loop(a);
+        }
+        """
+        output = """
+        TARGET(TEST_LOOP_SPILL) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = TEST_LOOP_SPILL;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TEST_LOOP_SPILL);
+            _PyStackRef a;
+            a = stack_pointer[-1];
+            int n = (int)oparg;
+            for (int i = 0; i < n; i++) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                escaping_inside_loop(a);
+                _PyFrame_StackPointerInvalidate(frame);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            escaping_after_loop(a);
+            _PyFrame_StackPointerInvalidate(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+class TestRecorderTableGeneration(unittest.TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+
+    def tearDown(self) -> None:
+        try:
+            os.remove(self.temp_input_filename)
+        except FileNotFoundError:
+            pass
+        super().tearDown()
+
+    def analyze_input(self, input: str):
+        with open(self.temp_input_filename, "w+") as f:
+            f.write(parser.BEGIN_MARKER)
+            f.write(input)
+            f.write(parser.END_MARKER)
+        with handle_stderr():
+            return analyze_files([self.temp_input_filename])
+
+    def generate_tables(self, input: str) -> str:
+        import io
+        analysis = self.analyze_input(input)
+        buf = io.StringIO()
+        out = CWriter(buf, 0, False)
+        record_function_generator.generate_recorder_tables(analysis, out)
+        return buf.getvalue()
+
+    def get_slot_map_section(self, output: str) -> str:
+        return output.split(
+            "const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {\n",
+            1,
+        )[1].split("};\n\n", 1)[0]
+
+    def assert_slot_map_lines(self, output: str, *lines: str) -> None:
+        slot_map_section = self.get_slot_map_section(output)
+        for line in lines:
+            self.assertIn(line, slot_map_section)
+
+    def test_single_recording_uop_generates_count(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        """
+        output = self.generate_tables(input)
+        self.assertIn("_RECORD_TOS_INDEX", output)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+
+    def test_three_recording_uops_generate_count_3_in_order(self):
+        input = """
+        tier2 op(_RECORD_X, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_Y, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(b);
+        }
+        tier2 op(_RECORD_Z, (a, b, c -- a, b, c)) {
+            RECORD_VALUE(c);
+        }
+        op(_DO_STUFF, (a, b, c -- res)) {
+            res = a;
+        }
+        macro(OP) = _RECORD_X + _RECORD_Y + _RECORD_Z + _DO_STUFF;
+        """
+        output = self.generate_tables(input)
+        self.assertIn(
+            "[OP] = {3, {_RECORD_X_INDEX, _RECORD_Y_INDEX, _RECORD_Z_INDEX}}",
+            output,
+        )
+
+    def test_four_recording_uops_rejected(self):
+        input = """
+        tier2 op(_RECORD_A, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(a);
+        }
+        tier2 op(_RECORD_B, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(b);
+        }
+        tier2 op(_RECORD_C, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(c);
+        }
+        tier2 op(_RECORD_D, (a, b, c, d -- a, b, c, d)) {
+            RECORD_VALUE(d);
+        }
+        op(_DO_STUFF, (a, b, c, d -- res)) {
+            res = a;
+        }
+        macro(OP) = _RECORD_A + _RECORD_B + _RECORD_C + _RECORD_D + _DO_STUFF;
+        """
+        with self.assertRaisesRegex(ValueError, "exceeds MAX_RECORDED_VALUES"):
+            self.generate_tables(input)
+
+    def test_family_member_needs_transform_only_when_shape_changes(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        tier2 op(_RECORD_TOS_TYPE, (value -- value)) {
+            RECORD_VALUE(Py_TYPE(value));
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP_RAW) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_RAW_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_RAW, INLINE_CACHE_ENTRIES_OP_RAW) = { OP_RAW_SPECIALIZED };
+
+        macro(OP_TYPED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        macro(OP_TYPED_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP_TYPED, INLINE_CACHE_ENTRIES_OP_TYPED) = { OP_TYPED_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP_RAW] = {1, 0, {0}}",
+            "[OP_RAW_SPECIALIZED] = {1, 1, {0}}",
+            "[OP_TYPED] = {1, 0, {0}}",
+            "[OP_TYPED_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_record_transform_generated_from_recording_uop(self):
+        input = """
+        tier2 op(_RECORD_TOS, (tos -- tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(tos));
+        }
+        tier2 op(_RECORD_TOS_TYPE, (tos -- tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
+        }
+        op(_DO_STUFF, (tos -- res)) {
+            res = tos;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("_PyOpcode_RecordTransform_TOS_TYPE", output)
+        self.assertIn("tos = PyStackRef_FromPyObjectBorrow(recorded_value);", output)
+        self.assertIn(
+            "transformed_value = (PyObject *)Py_TYPE(PyStackRef_AsPyObjectBorrow(tos));",
+            output,
+        )
+        self.assertIn("return _PyOpcode_RecordTransform_TOS_TYPE(value);", output)
+        self.assertNotIn("record_trace_transform_to_type", output)
+
+    def test_record_transform_generated_when_only_specialization_records(self):
+        input = """
+        tier2 op(_RECORD_TOS_TYPE, (tos -- tos)) {
+            RECORD_VALUE(Py_TYPE(PyStackRef_AsPyObjectBorrow(tos)));
+        }
+        op(_DO_STUFF, (tos -- res)) {
+            res = tos;
+        }
+        macro(OP) = _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        # Family head must adopt the specialization's recorder.
+        self.assertIn("[OP] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_TYPE_INDEX}}", output)
+        # Specialization consumes the slot directly (mask 0), no transform.
+        self.assert_slot_map_lines(output, "[OP_SPECIALIZED] = {1, 0, {0}}")
+        self.assertNotIn("_PyOpcode_RecordTransform_TOS_TYPE(", output)
+
+    def test_no_record_transform_when_only_base_records(self):
+        input = """
+        tier2 op(_RECORD_TOS, (tos -- tos)) {
+            RECORD_VALUE(PyStackRef_AsPyObjectBorrow(tos));
+        }
+        op(_DO_STUFF, (tos -- res)) {
+            res = tos;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        # Family head records via _RECORD_TOS.
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+        # Specialization has no consumer slot map entry (it doesn't read it).
+        self.assertNotIn(
+            "[OP_SPECIALIZED] = {1,", self.get_slot_map_section(output)
+        )
+        # No transform helpers are generated.
+        self.assertNotIn("_PyOpcode_RecordTransform_TOS(", output)
+        self.assertNotIn("_PyOpcode_RecordTransform_TOS_TYPE", output)
+
+    def test_family_member_maps_positional_recorders_to_family_slots(self):
+        input = """
+        tier2 op(_RECORD_TOS, (sub -- sub)) {
+            RECORD_VALUE(sub);
+        }
+        tier2 op(_RECORD_NOS, (container, sub -- container, sub)) {
+            RECORD_VALUE(container);
+        }
+        op(_DO_STUFF, (container, sub -- res)) {
+            res = container;
+        }
+        macro(OP) = _RECORD_TOS + _RECORD_NOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_NOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {2, 0, {1, 0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
+
+    def test_family_member_maps_non_positional_recorders_by_stack_shape(self):
+        input = """
+        tier2 op(_RECORD_CALLABLE, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        tier2 op(_RECORD_BOUND_METHOD, (callable, self, args[oparg] -- callable, self, args[oparg])) {
+            RECORD_VALUE(callable);
+        }
+        op(_DO_STUFF, (callable, self, args[oparg] -- res)) {
+            res = callable;
+        }
+        macro(OP) = _RECORD_CALLABLE + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_BOUND_METHOD + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {1, 0, {0}}",
+            "[OP_SPECIALIZED] = {1, 1, {0}}",
+        )
+
+    def test_family_head_records_union_of_member_recorders(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        analysis = self.analyze_input(input)
+        output = self.generate_tables(input)
+        self.assertEqual(
+            analysis.families["OP"].get_member_record_names(),
+            ("_RECORD_TOS",),
+        )
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assert_slot_map_lines(output, "[OP_SPECIALIZED] = {1, 0, {0}}")
+
+    def test_family_detects_base_and_specialized_recording_difference(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        tier2 op(_RECORD_TOS_TYPE, (value -- value)) {
+            RECORD_VALUE(Py_TYPE(value));
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_TOS_TYPE + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        analysis = self.analyze_input(input)
+        output = self.generate_tables(input)
+        self.assertEqual(
+            record_function_generator.get_instruction_record_names(
+                analysis.instructions["OP"]
+            ),
+            ["_RECORD_TOS"],
+        )
+        self.assertEqual(
+            record_function_generator.get_instruction_record_names(
+                analysis.instructions["OP_SPECIALIZED"]
+            ),
+            ["_RECORD_TOS_TYPE"],
+        )
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {1, 0, {0}}",
+            "[OP_SPECIALIZED] = {1, 1, {0}}",
+        )
+
+    def test_family_head_falls_back_for_missing_member_slots(self):
+        input = """
+        tier2 op(_RECORD_TOS, (value -- value)) {
+            RECORD_VALUE(value);
+        }
+        op(_DO_STUFF, (value -- res)) {
+            res = value;
+        }
+        macro(OP) = _RECORD_TOS + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {1, {_RECORD_TOS_INDEX}}", output)
+        self.assertIn("[OP_SPECIALIZED] = {1, {_RECORD_TOS_INDEX}}", output)
+
+    def test_family_mixed_slots_only_transform_changed_recorders(self):
+        input = """
+        tier2 op(_RECORD_TOS_TYPE, (left, right -- left, right)) {
+            RECORD_VALUE(Py_TYPE(right));
+        }
+        tier2 op(_RECORD_NOS_TYPE, (left, right -- left, right)) {
+            RECORD_VALUE(Py_TYPE(left));
+        }
+        tier2 op(_RECORD_NOS, (left, right -- left, right)) {
+            RECORD_VALUE(left);
+        }
+        op(_DO_STUFF, (left, right -- res)) {
+            res = left;
+        }
+        macro(OP) = _RECORD_TOS_TYPE + _RECORD_NOS_TYPE + _DO_STUFF;
+        macro(OP_SPECIALIZED) = _RECORD_NOS + _DO_STUFF;
+        family(OP, INLINE_CACHE_ENTRIES_OP) = { OP_SPECIALIZED };
+        """
+        output = self.generate_tables(input)
+        self.assertIn("[OP] = {2, {_RECORD_NOS_INDEX, _RECORD_TOS_TYPE_INDEX}}", output)
+        self.assert_slot_map_lines(
+            output,
+            "[OP] = {2, 2, {1, 0}}",
+            "[OP_SPECIALIZED] = {1, 0, {0}}",
+        )
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
@@ -2637,6 +3205,31 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError,
                                     "Pure evaluation cannot take array-like inputs"):
             self.run_cases_test(input, input2, output)
+
+    def test_overridden_abstract_with_multiple_caches(self):
+        input = """
+        op(OP, (version/1, unused/1, index/1, value -- res)) {
+            res = SPAM(version, index, value);
+        }
+        """
+        input2 = """
+        op(OP, (value -- res)) {
+            res = eggs(version, index, value);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef value;
+            JitOptRef res;
+            value = stack_pointer[-1];
+            uint16_t version = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand1;
+            res = eggs(version, index, value);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()

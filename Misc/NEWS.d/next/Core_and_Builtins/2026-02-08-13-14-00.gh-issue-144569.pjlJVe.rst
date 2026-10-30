@@ -1,1 +1,0 @@
-Optimize ``BINARY_SLICE`` for list, tuple, and unicode by avoiding temporary ``slice`` object creation.

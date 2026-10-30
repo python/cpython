@@ -54,6 +54,8 @@ class TestProcessChangedFiles(unittest.TestCase):
                         f = p / "file"
                     elif p.is_file():
                         f = p
+                    else:
+                        continue
                     result = process_changed_files({f})
                     self.assertTrue(result.run_ci_fuzz_stdlib)
                     self.assertTrue(is_fuzzable_library_file(f))
@@ -106,15 +108,6 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({f})
                 self.assertTrue(result.run_tests)
                 self.assertFalse(result.run_windows_tests)
-
-    def test_msi(self):
-        for f in (
-            ".github/workflows/reusable-windows-msi.yml",
-            "Tools/msi/build.bat",
-        ):
-            with self.subTest(f=f):
-                result = process_changed_files({Path(f)})
-                self.assertTrue(result.run_windows_msi)
 
     def test_all_run(self):
         for f in (

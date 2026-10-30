@@ -21,7 +21,7 @@ thread) and calling a function in that execution context.
 For concurrency, interpreters themselves (and this module) don't
 provide much more than isolation, which on its own isn't useful.
 Actual concurrency is available separately through
-:mod:`threads <threading>`  See `below <interp-concurrency_>`_
+:mod:`threads <threading>` -- see `below <interp-concurrency_>`_.
 
 .. seealso::
 
@@ -191,7 +191,7 @@ objects are either directly shared or copied efficiently.  For example:
 * :class:`float`
 * :class:`tuple` (of similarly supported objects)
 
-There is a small number of Python types that actually share mutable
+There are a small number of Python types that actually share mutable
 data between interpreters:
 
 * :class:`memoryview`
@@ -224,25 +224,21 @@ This module defines the following functions:
    Initialize a new (idle) Python interpreter
    and return a :class:`Interpreter` object for it.
 
-.. function:: create_queue(maxsize=0, *, unbounditems=UNBOUND)
+.. function:: create_queue(maxsize=0)
 
    Initialize a new cross-interpreter queue and return a :class:`Queue`
    object for it.
 
-   *maxsize* sets the upper bound on the number of items that can be placed
-   in the queue.  If *maxsize* is less than or equal to zero, the queue
-   size is infinite.
-
-   *unbounditems* sets the default behavior when getting an item from the
-   queue whose original interpreter has been destroyed.
-   See :meth:`Queue.put` for supported values.
+   *maxsize* is an integer that sets the upperbound limit on the number of
+   items that can be placed in the queue. Insertion will be blocked once this
+   size has been reached, until queue items are consumed. If *maxsize* is
+   less than or equal to zero, the queue size is infinite.
 
 .. function:: is_shareable(obj)
 
    Return ``True`` if the object can be sent to another interpreter
    without using :mod:`pickle`, and ``False`` otherwise.
    See :ref:`interp-object-sharing`.
-
 
 Interpreter objects
 ^^^^^^^^^^^^^^^^^^^
@@ -253,6 +249,16 @@ Interpreter objects
 
    Generally, :class:`Interpreter` shouldn't be called directly.
    Instead, use :func:`create` or one of the other module functions.
+
+   :class:`!Interpreter` objects support the :term:`context manager`
+   protocol. Exiting the :keyword:`with` block calls :meth:`close`::
+
+      with interpreters.create() as interp:
+          interp.exec('print("hello")')
+
+   .. versionchanged:: next
+      Added support for using :class:`!Interpreter` objects in
+      a :term:`context manager`.
 
    .. attribute:: id
 
@@ -376,10 +382,11 @@ Communicating Between Interpreters
 
 .. class:: Queue(id)
 
-   A cross-interpreter queue that can be used to pass data safely
-   between interpreters.  It provides the same interface as
-   :class:`queue.Queue`.  The underlying queue can only be created
-   through :func:`create_queue`.
+   A wrapper around a low-level, cross-interpreter queue, which
+   implements all the methods of :class:`queue.Queue` except for
+   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`
+   and :meth:`~queue.Queue.shutdown`.  The underlying queue
+   can only be created through :func:`create_queue`.
 
    When an object is placed in the queue, it is prepared for use in
    another interpreter.  Some objects are actually shared and some are
@@ -403,6 +410,10 @@ Communicating Between Interpreters
       The maximum number of items allowed in the queue.  A value of zero
       means the queue size is infinite.
 
+   .. method:: qsize()
+
+      Return the number of items in the queue.
+
    .. method:: empty()
 
       Return ``True`` if the queue is empty, ``False`` otherwise.
@@ -411,62 +422,47 @@ Communicating Between Interpreters
 
       Return ``True`` if the queue is full, ``False`` otherwise.
 
-   .. method:: qsize()
+   .. method:: put(obj, block=True, timeout=None)
 
-      Return the number of items in the queue.
+      Put *obj* into the queue.  If optional args *block* is true and
+      *timeout* is ``None`` (the default), block if necessary until a free
+      slot is available.  If *timeout* is a positive number, it blocks at
+      most *timeout* seconds and raises the :exc:`QueueFull` exception if
+      no free slot was available within that time.  Otherwise (*block* is
+      false), put an object on the queue if a free slot is immediately
+      available, else raise the :exc:`QueueFull` exception (*timeout* is
+      ignored in that case).
 
-   .. method:: put(obj, block=True, timeout=None, *, unbounditems=None)
-
-      Put *obj* into the queue.  If *block* is true (the default),
-      block if necessary until a free slot is available.  If *timeout*
-      is a positive number, block at most *timeout* seconds and raise
-      :exc:`QueueFullError` if no free slot is available within that time.
-
-      If *block* is false, put *obj* in the queue if a free slot is
-      immediately available, otherwise raise :exc:`QueueFullError`.
-
-      *unbounditems* controls what happens when the item is retrieved
-      via :meth:`get` after the interpreter that called :meth:`put` has
-      been destroyed.  If ``None`` (the default), the queue's default
-      (set via :func:`create_queue`) is used.  Supported values:
-
-      * ``UNBOUND`` -- :meth:`get` returns the ``UNBOUND``
-        sentinel in place of the original object.
-      * ``UNBOUND_ERROR`` -- :meth:`get` raises
-        ``ItemInterpreterDestroyed``.
-      * ``UNBOUND_REMOVE`` -- the item is silently removed from
-        the queue when the original interpreter is destroyed.
-
-   .. method:: put_nowait(obj, *, unbounditems=None)
+   .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, block=False)``.
 
    .. method:: get(block=True, timeout=None)
 
-      Remove and return an item from the queue.  If *block* is true
-      (the default), block if necessary until an item is available.
-      If *timeout* is a positive number, block at most *timeout* seconds
-      and raise :exc:`QueueEmptyError` if no item is available within
-      that time.
-
-      If *block* is false, return an item if one is immediately
-      available, otherwise raise :exc:`QueueEmptyError`.
+      Remove and return an object from the queue.  If optional args *block*
+      is true and *timeout* is ``None`` (the default), block if necessary
+      until an object is available.  If *timeout* is a positive number, it
+      blocks at most *timeout* seconds and raises the :exc:`QueueEmpty`
+      exception if no object was available within that time.  Otherwise
+      (*block* is false), return an object if one is immediately available,
+      else raise the :exc:`QueueEmpty` exception (*timeout* is ignored in
+      that case).
 
    .. method:: get_nowait()
 
       Equivalent to ``get(block=False)``.
 
 
-.. exception:: QueueEmptyError
+.. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
-   :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
+   :meth:`Queue.get` and :meth:`Queue.get_nowait` when the queue
    is empty.
 
-.. exception:: QueueFullError
+.. exception:: QueueFull
 
    This exception, a subclass of :exc:`queue.Full`, is raised from
-   :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
+   :meth:`Queue.put` and :meth:`Queue.put_nowait` when the queue
    is full.
 
 
@@ -509,24 +505,6 @@ Passing data with :meth:`~Interpreter.prepare_main`::
     interp.prepare_main(config)
     interp.exec('print(f"Connecting to {host}:{port}")')
 
-Using queues to communicate between interpreters::
-
-    interp = interpreters.create()
-
-    # Create a queue and share it with the subinterpreter.
-    queue = interpreters.create_queue()
-    interp.prepare_main(queue=queue)
-
-    # The subinterpreter puts results into the queue.
-    interp.exec("""
-    import math
-    queue.put(math.factorial(10))
-    """)
-
-    # The main interpreter reads from the same queue.
-    result = queue.get()
-    print(result)  # 3628800
-
 Running CPU-bound work in parallel using threads and interpreters::
 
     import time
@@ -551,3 +529,17 @@ Running CPU-bound work in parallel using threads and interpreters::
    For many use cases, :class:`~concurrent.futures.InterpreterPoolExecutor`
    provides a higher-level interface that combines threads with
    interpreters automatically.
+
+Communicating between interpreters with a queue::
+
+    from concurrent import interpreters
+
+    interp = interpreters.create()
+    queue = interpreters.create_queue()
+
+    def worker(queue):
+        queue.put('spam!')
+
+    t = interp.call_in_thread(worker, queue)
+    print(queue.get())
+    t.join()

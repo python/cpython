@@ -9,22 +9,6 @@
 
 #include "multiprocessing.h"
 
-/*[python input]
-class HANDLE_converter(CConverter):
-    type = "HANDLE"
-    format_unit = '"F_HANDLE"'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsVoidPtr({argname});
-            if (!{paramname} && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3cf0318efc6a8772]*/
 
 /*[clinic input]
 module _multiprocessing
@@ -274,6 +258,7 @@ multiprocessing_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot multiprocessing_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, multiprocessing_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

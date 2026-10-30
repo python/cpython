@@ -29,9 +29,9 @@ PyAPI_FUNC(void) PyStructSequence_SetItem(PyObject*, Py_ssize_t, PyObject*);
 PyAPI_FUNC(PyObject*) PyStructSequence_GetItem(PyObject*, Py_ssize_t);
 
 #ifndef Py_LIMITED_API
-#  define Py_CPYTHON_STRUCTSEQ_H
+#  define _Py_CPYTHON_STRUCTSEQ_H
 #  include "cpython/structseq.h"
-#  undef Py_CPYTHON_STRUCTSEQ_H
+#  undef _Py_CPYTHON_STRUCTSEQ_H
 #endif
 
 #ifdef __cplusplus

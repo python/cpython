@@ -93,7 +93,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     mod_ty res = _PyPegen_run_parser_from_string(the_string, Py_file_input, filename_ob,
-                                        &flags, arena, NULL);
+                                        &flags, arena, NULL, NULL);
     if (res == NULL) {
         goto error;
     }

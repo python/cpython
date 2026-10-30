@@ -2768,8 +2768,8 @@ Fix the "Invalid error handling" exception in
 .. nonce: Gpr2GB
 .. section: Library
 
-+Accept leading zeros in precision and width fields for
-+:class:`~decimal.Decimal` formatting, for example ``format(Decimal(1.25),
+Accept leading zeros in precision and width fields for
+:class:`~decimal.Decimal` formatting, for example ``format(Decimal(1.25),
 '.016f')``.
 
 ..
@@ -5914,8 +5914,8 @@ Exception text when trying to delete attributes of types was clarified.
 .. nonce: ALByCb
 .. section: C API
 
-Function watchers can now receive a PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME
-event when a watched functions qualname is changed.
+Function watchers can now receive a PyFunction_EVENT_MODIFY_QUALNAME
+event when a watched function's qualname is changed.
 
 ..
 
@@ -6395,7 +6395,7 @@ Add support for configuring compiler flags for the JIT with ``CFLAGS_JIT``
 .. section: Build
 
 Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
-Now this should be explicitly enabled via :option:`--with-system-libmpdec`
+Now this should be explicitly enabled via :option:`!--with-system-libmpdec`
 set to ``no`` or :option:`!--without-system-libmpdec`.  Patch by Sergey B
 Kirpichev.
 

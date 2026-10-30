@@ -47,6 +47,14 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('e\N{COMBINING ACUTE ACCENT}'), 1)
         self.assertEqual(wlen('a\N{ZERO WIDTH JOINER}b'), 2)
 
+    def test_wlen_with_osc_sequence(self):
+        prompt = ">>> "
+        self.assertEqual(wlen("\x1b]633;A\x07" + prompt), len(prompt))
+
+    def test_wlen_with_unterminated_osc_sequence_as_individual_characters(self):
+        # \x1b is treated as a single character (ESC)
+        self.assertEqual(wlen("\x1b]633;A"), len("\x1b]633;A"))
+
     def test_prev_next_window(self):
         def gen_normal():
             yield 1
@@ -125,11 +133,61 @@ class TestUtils(TestCase):
                     ("import", "keyword"),
                 ],
             ),
+            (
+                "case +1",
+                [
+                    ("case", "soft_keyword"),
+                    ("+", "op"),
+                    ("1", "number"),
+                ],
+            ),
+            (
+                "match +1",
+                [
+                    ("match", "soft_keyword"),
+                    ("+", "op"),
+                    ("1", "number"),
+                ],
+            ),
+            (
+                "match -1",
+                [
+                    ("match", "soft_keyword"),
+                    ("-", "op"),
+                    ("1", "number"),
+                ],
+            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
                 colors = list(gen_colors(code))
                 # Extract (text, tag) pairs for comparison
+                actual_highlights = []
+                for color in colors:
+                    span_text = code[color.span.start:color.span.end + 1]
+                    actual_highlights.append((span_text, color.tag))
+                self.assertEqual(actual_highlights, expected_highlights)
+
+    def test_gen_colors_command_highlighting(self):
+        cases = [
+            # highlights bare command names (after stripping whitespaces)
+            ("exit", [("exit", "command")]),
+            ("quit", [("quit", "command")]),
+            ("copyright", [("copyright", "command")]),
+            ("help", [("help", "command")]),
+            ("clear", [("clear", "command")]),
+            ("  clear ", [("clear", "command")]),
+            # no highlight when not the only token on the line
+            ("x = exit", [("=", "op"), ("exit", "builtin")]),
+            ("obj.exit", [(".", "op")]),
+            # falls through to builtin when called as function or used in expression
+            ("exit()", [("exit", "builtin"), ("(", "op"), (")", "op")]),
+            ("quit(0)", [("quit", "builtin"), ("(", "op"), ("0", "number"), (")", "op")]),
+            ("print(exit)", [("print", "builtin"), ("(", "op"), ("exit", "builtin"), (")", "op")]),
+        ]
+        for code, expected_highlights in cases:
+            with self.subTest(code=code):
+                colors = list(gen_colors(code))
                 actual_highlights = []
                 for color in colors:
                     span_text = code[color.span.start:color.span.end + 1]

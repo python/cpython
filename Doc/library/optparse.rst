@@ -16,15 +16,12 @@ Choosing an argument parsing library
 The standard library includes three argument parsing libraries:
 
 * :mod:`getopt`: a module that closely mirrors the procedural C ``getopt`` API.
-  Included in the standard library since before the initial Python 1.0 release.
 * :mod:`!optparse`: a declarative replacement for ``getopt`` that
   provides equivalent functionality without requiring each application
-  to implement its own procedural option parsing logic. Included
-  in the standard library since the Python 2.3 release.
+  to implement its own procedural option parsing logic.
 * :mod:`argparse`: a more opinionated alternative to ``optparse`` that
   provides more functionality by default, at the expense of reduced application
-  flexibility in controlling exactly how arguments are processed. Included in
-  the standard library since the Python 2.7 and Python 3.2 releases.
+  flexibility in controlling exactly how arguments are processed.
 
 In the absence of more specific argument parsing design constraints, :mod:`argparse`
 is the recommended choice for implementing command line applications, as it offers
@@ -1073,6 +1070,12 @@ As you can see, most actions involve storing or updating a value somewhere.
    and can be overridden by a custom subclass passed to the *values* argument of
    :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
 
+   :class:`!Values` objects support :func:`copy.replace`,
+   which returns a copy of the object with the specified attributes replaced.
+
+   .. versionchanged:: 3.16
+      Added support for :func:`copy.replace`.
+
 Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
@@ -2037,10 +2040,10 @@ Finally, the Option subclass::
        TYPE_CHECKER = copy(Option.TYPE_CHECKER)
        TYPE_CHECKER["complex"] = check_complex
 
-(If we didn't make a :func:`copy` of :attr:`Option.TYPE_CHECKER`, we would end
-up modifying the :attr:`~Option.TYPE_CHECKER` attribute of :mod:`!optparse`'s
-Option class.  This being Python, nothing stops you from doing that except good
-manners and common sense.)
+(If we didn't make a :func:`~copy.copy` of :attr:`Option.TYPE_CHECKER`, we would
+end up modifying the :attr:`~Option.TYPE_CHECKER` attribute of
+:mod:`!optparse`'s Option class.  This being Python, nothing stops you from
+doing that except good manners and common sense.)
 
 That's it!  Now you can write a script that uses the new option type just like
 any other :mod:`!optparse`\ -based script, except you have to instruct your

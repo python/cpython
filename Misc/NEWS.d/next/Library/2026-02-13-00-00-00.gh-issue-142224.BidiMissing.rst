@@ -1,2 +1,0 @@
-:func:`unicodedata.bidirectional` now return the correct default bidi class
-for unassigned code points.

@@ -1,5 +1,6 @@
 import socket
 import asyncio
+import select
 import sys
 import unittest
 
@@ -15,7 +16,7 @@ if socket_helper.tcp_blackhole():
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -257,6 +258,38 @@ class BaseSockTestsMixin:
 
         self.skipTest(skip_reason)
 
+    async def _basetest_sock_accept_racing(self, listener, sock):
+        # gh-153761: cancelling sock_accept() must not let a scheduled
+        # _sock_accept run on the cancelled future.
+        listener.setblocking(False)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        addr = listener.getsockname()
+
+        errors = []
+        self.loop.set_exception_handler(lambda loop, ctx: errors.append(ctx))
+        task = asyncio.create_task(self.loop.sock_accept(listener))
+        await asyncio.sleep(0)
+
+        sock.connect(addr)
+        select.select([listener], [], [], support.SHORT_TIMEOUT)
+
+        self.loop.call_soon(task.cancel)
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertEqual(errors, [])
+
+        # The pending connection must survive
+        conn, conn_addr = await self.loop.sock_accept(listener)
+        with conn:
+            self.assertEqual(conn_addr, sock.getsockname())
+            sock.setblocking(False)
+            await self.loop.sock_sendall(conn, b'ping')
+            self.assertEqual(await self.loop.sock_recv(sock, 4), b'ping')
+
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
@@ -279,6 +312,16 @@ class BaseSockTestsMixin:
         with listener, sock:
             self.loop.run_until_complete(asyncio.wait_for(
                 self._basetest_sock_connect_racing(listener, sock), 10))
+
+    def test_sock_accept_racing(self):
+        if sys.platform == 'win32':
+            if isinstance(self.loop, asyncio.ProactorEventLoop):
+                raise unittest.SkipTest('Not relevant to ProactorEventLoop')
+        listener = socket.socket()
+        sock = socket.socket()
+        with listener, sock:
+            self.loop.run_until_complete(asyncio.wait_for(
+                self._basetest_sock_accept_racing(listener, sock), 10))
 
     async def _basetest_huge_content(self, address):
         sock = socket.socket()
@@ -427,6 +470,27 @@ class BaseSockTestsMixin:
             self.loop.run_until_complete(
                 self._basetest_datagram_recvfrom_into(server_address))
 
+    async def _basetest_datagram_recvfrom_into_wrong_size(self, server_address):
+        # Call sock_sendto() with a size larger than the buffer
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+
+            buf = bytearray(5000)
+            data = b'\x01' * 4096
+            wrong_size = len(buf) + 1
+            await self.loop.sock_sendto(sock, data, server_address)
+            with self.assertRaises(ValueError):
+                await self.loop.sock_recvfrom_into(
+                    sock, buf, wrong_size)
+
+            size, addr = await self.loop.sock_recvfrom_into(sock, buf)
+            self.assertEqual(buf[:size], data)
+
+    def test_recvfrom_into_wrong_size(self):
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_recvfrom_into_wrong_size(server_address))
+
     async def _basetest_datagram_sendto_blocking(self, server_address):
         # Sad path, sock.sendto() raises BlockingIOError
         # This involves patching sock.sendto() to raise BlockingIOError but
@@ -549,19 +613,10 @@ class BaseSockTestsMixin:
 
 if sys.platform == 'win32':
 
-    class SelectEventLoopTests(BaseSockTestsMixin,
-                               test_utils.TestCase):
-
-        def create_event_loop(self):
-            return asyncio.SelectorEventLoop()
-
-
-    class ProactorEventLoopTests(BaseSockTestsMixin,
-                                 test_utils.TestCase):
-
-        def create_event_loop(self):
-            return asyncio.ProactorEventLoop()
-
+    class _DatagramSendToNonListeningAddressMixin:
+        # Shared by SelectEventLoopTests and ProactorEventLoopTests so that
+        # sock_recvfrom()/sock_recvfrom_into() behave identically on both
+        # event loop implementations.
 
         async def _basetest_datagram_send_to_non_listening_address(self,
                                                                    recvfrom):
@@ -570,8 +625,9 @@ if sys.platform == 'win32':
             #   https://github.com/python/cpython/issues/88906
             #   https://bugs.python.org/issue47071
             #   https://bugs.python.org/issue44743
-            # The Proactor event loop would fail to receive datagram messages
-            # after sending a message to an address that wasn't listening.
+            # Sending a datagram to an address that isn't listening can
+            # surface as a ConnectionResetError on a later receive; the
+            # socket must still be usable afterwards.
 
             def create_socket():
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -606,7 +662,8 @@ if sys.platform == 'win32':
 
             # this should send to an address that isn't listening
             await self.loop.sock_sendto(socket_1, b'c', addr_3)
-            self.assertEqual(await socket_1_recv_task, b'')
+            with self.assertRaises(ConnectionResetError):
+                await socket_1_recv_task
             socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
             await asyncio.sleep(0)
 
@@ -641,6 +698,22 @@ if sys.platform == 'win32':
             self.loop.run_until_complete(
                 self._basetest_datagram_send_to_non_listening_address(
                     recvfrom_into))
+
+
+    class SelectEventLoopTests(_DatagramSendToNonListeningAddressMixin,
+                               BaseSockTestsMixin,
+                               test_utils.TestCase):
+
+        def create_event_loop(self):
+            return asyncio.SelectorEventLoop()
+
+
+    class ProactorEventLoopTests(_DatagramSendToNonListeningAddressMixin,
+                                 BaseSockTestsMixin,
+                                 test_utils.TestCase):
+
+        def create_event_loop(self):
+            return asyncio.ProactorEventLoop()
 
 else:
     import selectors

@@ -1,7 +1,9 @@
 import collections
 import types
 import unittest
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
+from test.support import (skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, run_with_limited_c_stack,
+                          exceeds_recursion_limit, nomemtest)
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -128,6 +130,15 @@ class InstanceCreation(unittest.TestCase):
             type(MyBEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
             MyBEG)
 
+    @nomemtest
+    def test_no_memory(self):
+        import _testcapi
+        # A tuple of exceptions is not copied, so the first allocation
+        # is the one of the exception group itself.
+        excs = (ValueError(1),)
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, ExceptionGroup, "eg", excs)
+
 
 class StrAndReprTests(unittest.TestCase):
     def test_ExceptionGroup(self):
@@ -233,6 +244,18 @@ class StrAndReprTests(unittest.TestCase):
             repr(eg),
             "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
         )
+
+    def test_repr_small_size_args(self):
+        eg = ExceptionGroup("msg", [ValueError()])
+        eg.args = ()
+        # repr of the ExceptionGroup with empty args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+        eg.args = (1,)
+        # repr of the ExceptionGroup with 1-size args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+
 
     def test_repr_raises(self):
         class MySeq(collections.abc.Sequence):
@@ -535,6 +558,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
             e = ExceptionGroup('eg', [e])
         return e
 
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_split(self):
@@ -542,6 +566,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):
