@@ -1,0 +1,2 @@
+Fix :func:`os.closerange` closing unrelated file descriptors for empty or
+negative-only ranges on platforms using ``close_range()``.

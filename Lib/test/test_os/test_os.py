@@ -225,6 +225,34 @@ class FileTests(unittest.TestCase):
         os.closerange(first, first + 2)
         self.assertRaises(OSError, os.write, first, b"a")
 
+    @support.requires_subprocess()
+    def test_closerange_empty(self):
+        # Run in a subprocess: a regression could close the standard streams
+        # and the test runner's own file descriptors.
+        code = textwrap.dedent("""\
+            import os
+            import sys
+
+            fd = os.open(os.devnull, os.O_RDONLY)
+            try:
+                result = os.closerange(int(sys.argv[1]), int(sys.argv[2]))
+                os.fstat(fd)
+            except BaseException:
+                os._exit(1)
+            os._exit(0 if result is None else 2)
+        """)
+        int_min = -(1 << (struct.calcsize('i') * 8 - 1))
+        int_max = -int_min - 1
+        for low, high in ((0, 0), (1, 0), (10, 5), (-1, 0), (-2, -1),
+                          (-1, -1), (int_min, int_min), (0, int_min),
+                          (int_max, int_max)):
+            with self.subTest(low=low, high=high):
+                proc = subprocess.run(
+                    [sys.executable, '-I', '-c', code, str(low), str(high)],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(proc.returncode, 0)
+
     @support.cpython_only
     def test_rename(self):
         path = os_helper.TESTFN
