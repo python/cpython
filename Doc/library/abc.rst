@@ -223,6 +223,16 @@ The :mod:`!abc` module also provides the following decorator:
               return any(getattr(f, '__isabstractmethod__', False) for
                          f in (self._fget, self._fset, self._fdel))
 
+   :class:`ABCMeta` only inspects the object that a subclass finally binds to
+   an abstract name: if that object does not report itself as abstract, the
+   name counts as implemented.  Nothing checks that a descriptor replacing an
+   abstract one still provides the same components.  Overriding the read-write
+   ``my_abstract_property`` above with a read-only :deco:`property`, for
+   example, does not prevent the subclass from being instantiated, and the
+   missing setter is reported only as an :exc:`AttributeError` when the
+   attribute is assigned to.  A :term:`static type checker` can flag such an
+   override; the abstract base class machinery does not.
+
    .. note::
 
       Unlike Java abstract methods, these abstract
@@ -317,6 +327,12 @@ The :mod:`!abc` module also supports the following legacy decorators:
           @C.x.setter
           def x(self, val):
               ...
+
+   This borrows the remaining components from ``C.x``, but it is not the only
+   way to override an abstract property.  As described for
+   :deco:`abstractmethod` above, binding the name to a new, non-abstract
+   :deco:`property` also makes the attribute concrete, even if every component
+   of the original was abstract and the replacement provides fewer of them.
 
 
 The :mod:`!abc` module also provides the following functions:
