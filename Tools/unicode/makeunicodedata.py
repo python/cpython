@@ -27,6 +27,7 @@
 #
 
 import dataclasses
+import itertools
 import os
 import subprocess
 import sys
@@ -54,6 +55,7 @@ DATA_DIR = os.path.join('Tools', 'unicode', 'data')
 #   * Lib/re/_properties.py (three occurrences)
 UNIDATA_VERSION = "18.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
+PROP_LIST = "PropList%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
 UNIHAN = "Unihan%s.zip"
@@ -541,7 +543,7 @@ def makeunicodetype(unicode, trace):
             if 'Line_Break' in properties or bidirectional == "B":
                 flags |= LINEBREAK_MASK
                 linebreaks.append(char)
-            if category == "Zs" or bidirectional in ("WS", "B", "S"):
+            if 'White_Space' in properties:
                 flags |= SPACE_MASK
                 spaces.append(char)
             if category == "Lt":
@@ -686,8 +688,7 @@ def makeunicodetype(unicode, trace):
         fprint()
 
         # Generate code for _PyUnicode_IsWhitespace()
-        fprint("/* Returns 1 for Unicode characters having the bidirectional")
-        fprint(" * type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.")
+        fprint("/* Returns 1 for Unicode characters with property White_Space.")
         fprint(" */")
         fprint('int _PyUnicode_IsWhitespace(const Py_UCS4 ch)')
         fprint('{')
@@ -1048,6 +1049,7 @@ class UcdRecord:
 
     # Binary properties, as a set of those that are true.
     # Taken from multiple files:
+    #   https://www.unicode.org/reports/tr44/#PropList.txt
     #   https://www.unicode.org/reports/tr44/#DerivedCoreProperties.txt
     #   https://www.unicode.org/reports/tr44/#LineBreak.txt
     binary_properties: Set[str]
@@ -1202,7 +1204,10 @@ class UnicodeData:
                 bidi_classes[char] = bidi
         self.bidi_classes = bidi_classes
 
-        for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+        for char, (propname, *propinfo) in itertools.chain(
+                UcdFile(PROP_LIST, version).expanded(),
+                UcdFile(DERIVED_CORE_PROPERTIES, version).expanded(),
+        ):
             if not propinfo:
                 # binary property
                 if table[char]:
