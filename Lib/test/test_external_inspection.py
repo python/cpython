@@ -8,6 +8,7 @@ import sys
 import socket
 import threading
 import time
+import types
 from contextlib import contextmanager
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
@@ -475,6 +476,17 @@ sock.connect(('localhost', {port}))
 
 @requires_remote_subprocess_debugging()
 class TestSelfStackTrace(RemoteInspectionTestBase):
+    def _extract_coroutine_funcnames(self, trace):
+        return {
+            task.task_name: [
+                frame.funcname.rpartition(".")[2]
+                for coro in task.coroutine_stack
+                for frame in coro.call_stack
+            ]
+            for info in trace
+            for task in info.awaited_by
+        }
+
     @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
         # gh-157788
@@ -507,6 +519,149 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             ]
 
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
+
+    @skip_if_not_supported
+    def test_async_generator_stack_is_not_truncated(self):
+        # gh-159620
+        async def agen():
+            await asyncio.sleep(10_000)
+            yield
+
+        async def agen_with_cleanup():
+            try:
+                yield
+            finally:
+                await asyncio.sleep(10_000)
+
+        async def outer_agen():
+            async for _ in agen():
+                yield
+
+        async def consumer(gen):
+            async for _ in gen:
+                pass
+
+        async def main():
+            g = agen_with_cleanup()
+            await anext(g)
+            async_for_task = asyncio.create_task(consumer(agen()), name="async for")
+            nested_task = asyncio.create_task(
+                consumer(outer_agen()), name="nested async for")
+            anext_task = asyncio.create_task(anext(agen()), name="anext")
+            aclose_task = asyncio.create_task(g.aclose(), name="aclose")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["async for"], ["sleep", "agen", "consumer"])
+        self.assertEqual(stacks["nested async for"],
+                         ["sleep", "agen", "outer_agen", "consumer"])
+        self.assertEqual(stacks["anext"], ["sleep", "agen"])
+        self.assertEqual(stacks["aclose"], ["sleep", "agen_with_cleanup"])
+
+    @skip_if_not_supported
+    def test_async_generator_waiter_in_async_stack_trace(self):
+        # gh-159620
+        async def agen(task):
+            await task
+            yield
+
+        async def main():
+            waiter_task = asyncio.create_task(
+                anext(agen(asyncio.current_task())), name="anext")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_async_stack_trace()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_async_generator_running_task_stack(self):
+        # gh-159620
+        async def agen():
+            yield RemoteUnwinder(os.getpid()).get_async_stack_trace()
+
+        async def main():
+            return await asyncio.create_task(anext(agen()), name="anext")
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["anext"], ["agen"])
+
+    @skip_if_not_supported
+    def test_generator_awaitable_stack_is_not_truncated(self):
+        def wait():
+            yield from asyncio.get_running_loop().create_future()
+
+        class Awaitable:
+            def __await__(self):
+                return (yield from wait())
+
+        async def inner():
+            await asyncio.sleep(10_000)
+
+        @types.coroutine
+        def legacy():
+            yield from inner()
+
+        async def consumer(aw):
+            await aw
+
+        async def main():
+            await_task = asyncio.create_task(
+                consumer(Awaitable()), name="__await__")
+            legacy_task = asyncio.create_task(
+                consumer(legacy()), name="types.coroutine")
+            await asyncio.sleep(0)
+            return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["__await__"], ["wait", "__await__", "consumer"])
+        self.assertEqual(stacks["types.coroutine"],
+                         ["sleep", "inner", "legacy", "consumer"])
+
+    @skip_if_not_supported
+    def test_generator_awaitable_running_task_stack(self):
+        class Awaitable:
+            def __await__(self):
+                return RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                yield
+
+        async def consumer():
+            return await Awaitable()
+
+        async def main():
+            return await asyncio.create_task(consumer(), name="consumer")
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["consumer"], ["__await__", "consumer"])
+
+    @skip_if_not_supported
+    def test_class_named_like_async_generator_wrapper_is_not_walked(self):
+        # gh-159620
+        async def decoy():
+            await asyncio.sleep(10_000)
+
+        class async_generator_asend:
+            __slots__ = ("gen",)
+            def __init__(self, gen):
+                self.gen = gen
+            def __await__(self):
+                return self
+            def __next__(self):
+                return None
+
+        async def consumer(aw):
+            await aw
+
+        async def main():
+            with contextlib.closing(decoy()) as gen:
+                consumer_task = asyncio.create_task(
+                    consumer(async_generator_asend(gen)), name="consumer")
+                await asyncio.sleep(0)
+                return RemoteUnwinder(os.getpid()).get_all_awaited_by()
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["consumer"], ["consumer"])
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -745,6 +900,35 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 f"{[(f.filename, f.funcname) for f in frames]}",
             )
             self.assertEqual(target.filename, script_name)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_remote_stack_trace_invalid_unicode_name(self):
+        import_module("_testinternalcapi")
+
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+            import _testinternalcapi
+
+            def func():
+                return _remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()
+
+            name = _testinternalcapi.new_invalid_str()
+            func.__code__ = func.__code__.replace(co_qualname=name)
+            print(func())
+            """)
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(result.returncode, 0, result)
+        self.assertIn("<unknown function>", result.stdout)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -4419,6 +4603,19 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
         )
         self.assertIsNotNone(frame)
         self.assertEqual(frame.funcname, "f" * 1024)
+
+    def test_long_qualname_truncated_to_narrower_kind(self):
+        name = "a" * 1024 + "\U00010300"
+        src = f"def {name}(sample):\n    return sample()\n"
+        ns = {}
+        exec(src, ns)
+
+        trace = ns[name](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname.startswith("aaa")
+        )
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.funcname, "a" * 1024)
 
     def test_long_filename_truncated(self):
         """A filename longer than 1024 chars is truncated instead of

@@ -25,8 +25,8 @@ import sys
 from urllib.error import URLError
 import urllib.request
 from test import support
-from test.support import os_helper
-from test.support import findfile, check__all__
+from test.support import (check__all__, cpython_only, findfile,
+                          import_helper, os_helper)
 from test.support.os_helper import FakePath, TESTFN
 
 
@@ -1597,6 +1597,12 @@ class TestModule(unittest.TestCase):
                 support.check_deprecated_module_attributes(
                     self, module, "version", remove=(3, 20),
                 )
+
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports(
+            "xml.sax.saxutils", {"urllib.parse", "urllib.request"}
+        )
 
 
 if __name__ == "__main__":

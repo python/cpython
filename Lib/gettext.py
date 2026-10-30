@@ -362,6 +362,8 @@ class GNUTranslations(NullTranslations):
         self.plural = lambda n: int(n != 1) # germanic plural by default
         buf = fp.read()
         buflen = len(buf)
+        if buflen < 20:
+            raise OSError(0, 'File is corrupt', filename)
         # Are we big endian or little endian?
         magic = unpack('<I', buf[:4])[0]
         if magic == self.LE_MAGIC:
@@ -377,6 +379,11 @@ class GNUTranslations(NullTranslations):
 
         if major_version not in self.VERSIONS:
             raise OSError(0, 'Bad version number ' + str(major_version), filename)
+
+        # The seek tables must lie within the file.
+        if (masteridx + 8 * msgcount > buflen
+                or transidx + 8 * msgcount > buflen):
+            raise OSError(0, 'File is corrupt', filename)
 
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.

@@ -190,7 +190,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_GETHOSTBYNAME_R
 # if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
-# elif defined(__sun) || defined(__sgi)
+# elif defined(__sun)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(__linux__)
 /* Rely on the configure script */
@@ -215,29 +215,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <netbt/hci.h>
 #  include <netbt/sco.h>
 #endif
-
-#if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
-/* make sure that the reentrant (gethostbyaddr_r etc)
-   functions are declared correctly if compiling with
-   MIPSPro 7.x in ANSI C mode (default) */
-
-/* XXX Using _SGIAPI is the wrong thing,
-   but I don't know what the right thing is. */
-#undef _SGIAPI /* to avoid warning */
-#define _SGIAPI 1
-
-#undef _XOPEN_SOURCE
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#ifdef _SS_ALIGNSIZE
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#endif
-
-#define HAVE_INET_PTON
-#include <netdb.h>
-#endif // __sgi
 
 /* Solaris fails to define this variable at all. */
 #if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
@@ -418,16 +395,10 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 /* include Python's addrinfo.h unless it causes trouble */
-#if defined(__sgi) && _COMPILER_VERSION>700 && defined(_SS_ALIGNSIZE)
-  /* Do not include addinfo.h on some newer IRIX versions.
-   * _SS_ALIGNSIZE is defined in sys/socket.h by 6.5.21,
-   * for example, but not by 6.5.10.
-   */
-#elif defined(_MSC_VER) && _MSC_VER>1201
-  /* Do not include addrinfo.h for MSVC7 or greater. 'addrinfo' and
-   * EAI_* constants are defined in (the already included) ws2tcpip.h.
-   */
-#else
+/* Do not include addrinfo.h for MSVC. 'addrinfo' and
+ * EAI_* constants are defined in (the already included) ws2tcpip.h.
+ */
+#if !defined(_MSC_VER)
 #  include "addrinfo.h"
 #endif
 
@@ -832,7 +803,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     int delay_flag, new_delay_flag;
 #endif
 
-    Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
@@ -859,8 +829,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     result = 0;
 
   done:
-    Py_END_ALLOW_THREADS
-
     if (result) {
 #ifndef MS_WINDOWS
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1786,6 +1754,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
         res = RpcStringFreeW(&guidStr);
         assert(res == RPC_S_OK);
+        if (vmId == NULL) {
+            return 0;
+        }
 
         res = UuidToStringW(&a->ServiceId, &guidStr);
         if (res != RPC_S_OK) {
@@ -3420,11 +3391,6 @@ sock_setsockopt(PyObject *self, PyObject *args)
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
-        if (!PyIndex_Check(optval)) {
-            PyErr_Format(PyExc_TypeError,
-                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
-                         optval);
-        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
@@ -3919,9 +3885,7 @@ _socket_socket_getsockname_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getsockname(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -3954,9 +3918,7 @@ _socket_socket_getpeername_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getpeername(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -5972,9 +5934,7 @@ _socket_gethostname_impl(PyObject *module)
 #else
     char buf[1024];
     int res;
-    Py_BEGIN_ALLOW_THREADS
     res = gethostname(buf, (int) sizeof buf - 1);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return set_error();
     buf[sizeof buf - 1] = '\0';
@@ -7058,6 +7018,7 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
     struct addrinfo *res0 = NULL;
     PyObject *pstr = NULL;
     const char *hptr, *pptr;
+    Py_ssize_t hlen = 0, plen = 0;
     int error;
     PyObject *all = (PyObject *)NULL;
     PyObject *idna = NULL;
@@ -7070,12 +7031,19 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
             return NULL;
         assert(PyBytes_Check(idna));
         hptr = PyBytes_AS_STRING(idna);
+        hlen = PyBytes_GET_SIZE(idna);
     } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
+        hptr = PyBytes_AS_STRING(hobj);
+        hlen = PyBytes_GET_SIZE(hobj);
     } else {
         PyErr_SetString(PyExc_TypeError,
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
+    }
+    if (hptr != NULL && strlen(hptr) != (size_t)hlen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() host must not contain null characters");
+        goto err;
     }
     if (PyIndex_Check(pobj)) {
         pstr = PyNumber_Index(pobj);
@@ -7086,19 +7054,25 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
-        pptr = PyUnicode_AsUTF8(pstr);
+        pptr = PyUnicode_AsUTF8AndSize(pstr, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = PyUnicode_AsUTF8(pobj);
+        pptr = PyUnicode_AsUTF8AndSize(pobj, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
+        plen = PyBytes_GET_SIZE(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");
+        goto err;
+    }
+    if (pptr != NULL && strlen(pptr) != (size_t)plen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() port must not contain null characters");
         goto err;
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
