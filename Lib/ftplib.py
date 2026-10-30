@@ -436,9 +436,8 @@ class FTP:
         with self.transfercmd(cmd, rest) as conn:
             while data := conn.recv(blocksize):
                 callback(data)
-            # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
-                conn.unwrap()
+                _shutdown_data_channel(conn)
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
@@ -471,9 +470,8 @@ class FTP:
                 elif line[-1:] == '\n':
                     line = line[:-1]
                 callback(line)
-            # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
-                conn.unwrap()
+                _shutdown_data_channel(conn)
         return self.voidresp()
 
     def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
@@ -497,9 +495,8 @@ class FTP:
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
-            # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
-                conn.unwrap()
+                _shutdown_data_channel(conn)
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
@@ -528,9 +525,8 @@ class FTP:
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
-            # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
-                conn.unwrap()
+                _shutdown_data_channel(conn)
         return self.voidresp()
 
     def acct(self, password):
@@ -673,6 +669,33 @@ except ImportError:
     _SSLSocket = None
 else:
     _SSLSocket = ssl.SSLSocket
+
+    _DATA_SHUTDOWN_TIMEOUT = 5.0
+
+    def _shutdown_data_channel(conn, timeout=None):
+        """Perform a best-effort TLS shutdown of a data connection.
+
+        The data connection of an FTP transfer is ephemeral: it is created
+        by transfercmd() for one transfer and closed right afterwards.
+        Servers are not required to complete a TLS shutdown handshake on it
+        and many do not send close_notify at all (gh-77303, gh-78738,
+        gh-103443, gh-124850), which makes an unconditional unwrap() either
+        raise or block forever *after* the whole payload has already been
+        sent, turning a completed transfer into an apparent failure.  The
+        handshake is still attempted (well-behaved peers get a clean
+        close_notify), but it is time-limited and never propagates an
+        error.
+        """
+        if timeout is None:
+            timeout = _DATA_SHUTDOWN_TIMEOUT
+        try:
+            conn.settimeout(timeout)
+            conn.unwrap()
+        except (OSError, ValueError):
+            # ConnectionResetError, SSLEOFError, TimeoutError and
+            # ssl.SSLError are all OSError subclasses; ValueError covers
+            # "No SSL wrapper around ...".
+            pass
 
     class FTP_TLS(FTP):
         '''A FTP subclass which adds TLS support to FTP as described
