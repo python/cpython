@@ -5490,7 +5490,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *self = dict_new(_PyType_CAST(type), NULL, NULL);
+    assert(type == (PyObject *)&PyDict_Type);
+    PyObject *self = PyDict_New();
     if (self == NULL) {
         return NULL;
     }
