@@ -1389,7 +1389,9 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_brc_merge_refcounts(tstate);
     }
     /* Process deferred memory frees held by QSBR */
-    if (_Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr)) {
+    if ((breaker & _PY_EVAL_PROCESS_DELAYED_BIT) != 0 ||
+        _Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr))
+    {
         _PyMem_ProcessDelayed(tstate);
     }
 #endif
