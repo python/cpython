@@ -3923,6 +3923,20 @@ long_sub_method(PyObject *a, PyObject *b)
     return (PyObject*)long_sub((PyLongObject*)a, (PyLongObject*)b);
 }
 
+PyObject *
+_PyLong_Add(PyObject *a, PyObject *b)
+{
+    assert(PyLong_Check(a) && PyLong_Check(b));
+    return (PyObject *)long_add((PyLongObject *)a, (PyLongObject *)b);
+}
+
+PyObject *
+_PyLong_Subtract(PyObject *a, PyObject *b)
+{
+    assert(PyLong_Check(a) && PyLong_Check(b));
+    return (PyObject *)long_sub((PyLongObject *)a, (PyLongObject *)b);
+}
+
 
 /* Grade school multiplication, ignoring the signs.
  * Returns the absolute value of the product, or NULL if error.
