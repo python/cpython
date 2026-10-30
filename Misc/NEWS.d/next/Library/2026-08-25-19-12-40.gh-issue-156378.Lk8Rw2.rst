@@ -1,0 +1,3 @@
+Fix :func:`logging.config.listen` looping forever and consuming a CPU core
+when a client announces a configuration length and then closes the connection
+without sending the data.
