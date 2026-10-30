@@ -1,0 +1,2 @@
+The :class:`functools.singledispatchmethod` exposes members 'registry' and
+'dispatch'. Patch by Weipeng Hong.
