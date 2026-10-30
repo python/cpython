@@ -1705,6 +1705,18 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    if (kwds != NULL && PyDict_Check(kwds)) {
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(kwds, &pos, &key, &value)) {
+            if (!PyUnicode_Check(key)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "keywords must be strings");
+                return NULL;
+            }
+        }
+    }
+
     _operator_state *state = _PyType_GetModuleState(type);
     /* create methodcallerobject structure */
     mc = PyObject_GC_New(methodcallerobject, (PyTypeObject *)state->methodcaller_type);
