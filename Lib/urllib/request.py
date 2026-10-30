@@ -1093,7 +1093,11 @@ class AbstractDigestAuthHandler:
             # prompting for the information. Crap. This isn't great
             # but it's better than the current 'repeat until recursion
             # depth exceeded' approach <wink>
-            raise HTTPError(req.full_url, 401, "digest auth failed",
+            if auth_header.lower() == 'proxy-authenticate':
+                code = 407
+            else:
+                code = 401
+            raise HTTPError(req.full_url, code, "digest auth failed",
                             headers, None)
         else:
             self.retried += 1
@@ -1144,7 +1148,13 @@ class AbstractDigestAuthHandler:
         if H is None:
             return None
 
-        user, pw = self.passwd.find_user_password(realm, req.full_url)
+        # proxy auth is looked up by the proxy's authority
+        # req.host, set by Request.set_proxy()
+        if self.auth_header == 'Proxy-Authorization':
+            authority = req.host
+        else:
+            authority = req.full_url
+        user, pw = self.passwd.find_user_password(realm, authority)
         if user is None:
             return None
 

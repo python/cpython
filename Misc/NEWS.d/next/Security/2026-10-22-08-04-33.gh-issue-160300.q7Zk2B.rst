@@ -1,0 +1,3 @@
+Fix :class:`http.cookiejar.DefaultCookiePolicy` accepting and returning
+cookies with a negative ``Version`` attribute without checking their domain
+against the request host. Such cookies are now ignored.

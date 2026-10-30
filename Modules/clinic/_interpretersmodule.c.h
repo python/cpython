@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_interpreters_new_config__doc__,
 "new_config($module, name=\'isolated\', /, **overrides)\n"
@@ -44,13 +45,8 @@ _interpreters_new_config(PyObject *module, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("new_config", "argument 1", "str", PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(PyTuple_GET_ITEM(args, 0), &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(PyTuple_GET_ITEM(args, 0));
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional:
@@ -1264,4 +1260,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=38892db3b955efbb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa37872d6ee729ef input=a9049054013a1b77]*/

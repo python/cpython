@@ -46,14 +46,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.15, compared to 3.14.
-
+Python 3.15 was released on 9 October 2026.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+.. seealso::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.15 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+   :pep:`790` -- Python 3.15 release schedule
 
 
 Summary -- Release highlights
@@ -62,7 +60,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
-Python 3.15 will be the latest stable release of the Python programming
+Python 3.15 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation,
 and the standard library.
 The biggest changes include
@@ -147,6 +145,7 @@ Release changes:
 
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* The official macOS binaries now install free-threading support by default
 
 
 New features
@@ -188,10 +187,10 @@ name:
    lazy import json
    lazy from pathlib import Path
 
-   print("Starting up...")  # json and pathlib not loaded yet
+   print("Starting up...")  # json and pathlib are not fully imported yet
 
-   data = json.loads('{"key": "value"}')  # json loads here
-   p = Path(".")  # pathlib loads here
+   data = json.loads('{"key": "value"}')  # json gets fully imported here
+   p = Path(".")  # pathlib gets fully imported here
 
 This mechanism is particularly useful for applications that import many
 modules at the top level but may only use a subset of them in any given run.
@@ -572,16 +571,19 @@ the existing Stable ABI (``abi3``) and the version-specific ABI for
 free-threading (``cp315t``) separately.
 
 Stable ABI for Free-Threaded Builds should typically
-be selected in a build tool (such as, for example, Setuptools, meson-python,
-scikit-build-core, or Maturin).
-At the time of writing, these tools do **not** support ``abi3t``.
-If this is the case for your tool, compile for ``cp315t`` separately.
+be selected in a build tool. Tools with ``abi3t`` support include
+meson-python, scikit-build-core, and Maturin; see
+:ref:`abi3t-migration-build` for links to their documentation on ``abi3t`` builds.
+If your build tool does not support ``abi3t``, compile for ``cp315t`` separately.
 If not using a build tool -- or when writing such a tool -- you can select
 ``abi3t`` by setting the macro :c:macro:`!Py_TARGET_ABI3T` as discussed
 in :ref:`abi3-compiling`.
 
 A practical :ref:`migration guide <abi3t-migration-howto>` for switching to
 ``abi3t`` is available.
+The community-maintained `Python Free-Threading Guide
+<https://py-free-threading.github.io/abi3t/>`__ provides examples of building
+and testing ``abi3t`` wheels.
 
 .. seealso:: :pep:`803` for further details.
 

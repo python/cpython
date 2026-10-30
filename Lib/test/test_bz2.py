@@ -1249,6 +1249,13 @@ class MiscTests(unittest.TestCase):
         self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, bz2, "__author__", remove=(3, 20),
+        )
+
+
 def tearDownModule():
     support.reap_children()
 

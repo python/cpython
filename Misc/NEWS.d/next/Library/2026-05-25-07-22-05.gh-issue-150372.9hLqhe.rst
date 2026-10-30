@@ -1,2 +1,0 @@
-:mod:`readline`: Fix a potential crash during tab completion caused by an
-out-of-memory error during module initialization.

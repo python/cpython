@@ -110,7 +110,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
@@ -354,6 +354,10 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
+   It can also be ``'func_type'`` if *source* consists of a
+   function type signature, for example ``(int) -> str``; see
+   :func:`ast.parse` for more information. This mode requires passing
+   :data:`ast.PyCF_ONLY_AST` in *flags*.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
@@ -426,6 +430,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
+
+   .. versionchanged:: 3.8
+      Added support for ``mode='func_type'``.
 
    .. versionchanged:: 3.12
       :exc:`SyntaxError` is raised instead of :exc:`ValueError` when null bytes
@@ -1241,7 +1248,7 @@ are always available.  They are listed here in alphabetical order.
       for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
           process_item(item)
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_exception* parameter
       and allowed passing *stop_value* by keyword.
 
@@ -1846,8 +1853,6 @@ are always available.  They are listed here in alphabetical order.
    including the name and address of the object.  A class can control what this
    function returns for its instances
    by defining a :meth:`~object.__repr__` method.
-   If :func:`sys.displayhook` is not accessible, this function will raise
-   :exc:`RuntimeError`.
 
    This class has a custom representation that can be evaluated::
 

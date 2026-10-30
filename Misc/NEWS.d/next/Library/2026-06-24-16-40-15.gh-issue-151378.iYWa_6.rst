@@ -1,3 +1,0 @@
-Fix a bug in the binary collector in Tachyon that caused unbounded memory
-growth while profiling a thread that stayed asleep. Patch by Maurycy
-Pawłowski-Wieroński.
