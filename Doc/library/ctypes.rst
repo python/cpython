@@ -1582,6 +1582,14 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    If *name* does not contain a path separator, the library is found
    in a platform-specific way.
 
+   On macOS, depending on how Python was built, the dynamic loader may not
+   search directories such as :file:`/usr/local/lib` or
+   :file:`/Library/Frameworks`, so a library installed there is only found
+   by its full path.
+   Alternatively, set the :envvar:`!DYLD_LIBRARY_PATH` or
+   :envvar:`!DYLD_FRAMEWORK_PATH` environment variable before starting Python.
+   See the :manpage:`dlopen(3)` and :manpage:`dyld(1)` man pages for details.
+
    On Windows, the ``.DLL`` suffix may be missing. (For details, see
    `LoadLibraryExW`_ documentation.)
    Other platform-specific prefixes and suffixes (for example, ``lib``,
