@@ -31,16 +31,20 @@
 
 typedef struct _memo {
     int type;
-    void *node;
     int mark;
+    void *node;
     struct _memo *next;
 } Memo;
 
 typedef struct {
     int type;
+    // Text required by grammar actions or helpers; otherwise NULL.
+    // Unfinished f-string and t-string middle tokens retain their text so
+    // their grammar action can check escapes before requesting more input.
     PyObject *bytes;
     int level;
-    int is_raw;
+    unsigned char is_raw;
+    unsigned char is_incomplete;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
     // Filter over the rule types present in `memo` (bit `type & 63` is set
@@ -85,7 +89,8 @@ typedef struct {
     int n_keyword_lists;
     int start_rule;
     int *errcode;
-    int parsing_started;
+    unsigned char parsing_started;
+    unsigned char input_exhausted;
     PyObject* normalize;
     int starting_lineno;
     int starting_col_offset;
@@ -189,6 +194,9 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p);
 expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
+// Return -1 on failure, leaving the buffer and capacity unchanged.
+int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
+int _PyPegen_atom_fast_path(Parser *p, void *result);
 expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
@@ -196,15 +204,19 @@ Py_ssize_t _PyPegen_byte_offset_to_character_offset_line(PyObject *line, Py_ssiz
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
 
-// Error handling functions and APIs
 typedef enum {
     STAR_TARGETS,
     DEL_TARGETS,
-    FOR_TARGETS
+    FOR_TARGETS,
+    SINGLE_TARGETS,
+    ATTRIBUTE_OR_SUBSCRIPT_TARGETS
 } TARGETS_TYPE;
 
+// Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
+int _Pypegen_raise_decode_error_known_location(Parser *p, expr_ty a);
 int _Pypegen_tokenizer_error(Parser *p);
+void *_PyPegen_raise_incomplete_input(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -355,6 +367,7 @@ CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
+expr_ty _PyPegen_make_target(Parser *, expr_ty, TARGETS_TYPE);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
@@ -416,7 +429,7 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
                                     const char *, const char *, PyCompilerFlags *, int *, PyObject **,
                                     PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *);
+mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *, PyObject *, PyObject **);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // Generated function in parse.c - function definition in python.gram

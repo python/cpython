@@ -1,2 +1,0 @@
-:meth:`xml.etree.ElementTree.ElementTree.write` now treats the ``utf-8-sig``
-encoding as ``utf-8`` in the XML declaration.

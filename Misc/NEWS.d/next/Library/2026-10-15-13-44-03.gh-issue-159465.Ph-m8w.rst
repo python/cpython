@@ -1,0 +1,2 @@
+Improve incomplete input detection in :mod:`codeop` without an extra parser
+pass, and preserve syntax and compiler errors.

@@ -104,10 +104,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # no memory. Check also that the fix does not break the interactive
         # loop when an exception is raised.
         user_input = """
-            import sys, _testcapi
+            import sys
+            from test import support
             1/0
             print('After the exception.')
-            _testcapi.set_nomemory(0)
+            support.inject_memory_error()
             sys.exit(0)
         """
         user_input = dedent(user_input)
@@ -184,19 +185,21 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
     def test_lexer_buffer_realloc_with_null_start(self):
-        # gh-144759: NULL pointer arithmetic in the lexer when start and
-        # multi_line_start are NULL (uninitialized in tok_mode_stack[0])
-        # and the lexer buffer is reallocated while parsing long input.
-        long_value = "a" * 2000
+        # gh-144759: NULL pointer arithmetic when the lexer buffer grows
+        # while parsing long input.
+        long_value = "é漢" * 2000
         user_input = dedent(f"""\
         x = f'{{{long_value!r}}}'
         print(x)
         """)
-        p = spawn_repl()
-        p.stdin.write(user_input)
-        output = kill_python(p)
-        self.assertEqual(p.returncode, 0)
-        self.assertIn(long_value, output)
+        for newline in ("\n", "\r\n"):
+            with self.subTest(newline=newline):
+                p = spawn_repl(encoding="utf-8")
+                # Bypass Windows text-mode translation of CRLF to CRCRLF.
+                p.stdin.buffer.write(user_input.replace("\n", newline).encode("utf-8"))
+                output = kill_python(p)
+                self.assertEqual(p.returncode, 0)
+                self.assertIn(long_value, output)
 
     @cpython_only
     def test_multiline_fstring_source_reallocation(self):

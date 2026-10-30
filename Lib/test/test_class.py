@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from test.support import cpython_only, import_helper, isolation
+from test.support import cpython_only, import_helper
 
 testmeths = [
 
@@ -1014,7 +1014,6 @@ class TestInlineValues(unittest.TestCase):
         C.a = X()
 
     @support.nomemtest
-    @isolation.runInSubprocess()
     def test_detach_materialized_dict_no_memory(self):
         import _testcapi
 
@@ -1026,31 +1025,27 @@ class TestInlineValues(unittest.TestCase):
         # The failing allocation should be the one which detaches the
         # dictionary from the object, but other allocations can happen
         # first, so try to fail every one of the first allocations.
-        raised = False
+        # Drop the last reference from C, so that nothing else (such as
+        # GC) runs between arming the failure and the deallocation.
+        seen = []
         for n in range(20):
-            a = A()
-            d = a.__dict__
-            try:
-                with support.catch_unraisable_exception() as ex:
-                    _testcapi.set_nomemory(n, n + 1)
-                    try:
-                        del a
-                    finally:
-                        _testcapi.remove_mem_hooks()
-                    exc_type = ex.unraisable and ex.unraisable.exc_type
-            except MemoryError:
-                # The failing allocation was not in the deallocation code.
-                continue
-            if exc_type is not MemoryError:
-                continue
-            raised = True
-            if "a" not in d:
-                # The dictionary was cleared, as expected.
+            lst = [A()]
+            d = lst[0].__dict__
+            with support.catch_unraisable_exception() as ex:
+                _testcapi.call_with_nomemory(n, n + 1, lst.clear)
+                if ex.unraisable is None:
+                    continue
+                exc_type = ex.unraisable.exc_type
+                err_msg = ex.unraisable.err_msg
+            seen.append((n, exc_type, err_msg))
+            if (exc_type is MemoryError and err_msg ==
+                    'Exception ignored while clearing an object managed dict'):
+                # The dictionary should have been cleared.
+                self.assertNotIn("a", d)
                 break
         else:
-            if not raised:
-                self.fail("MemoryError was not raised during deallocation")
-            self.fail("the dictionary was not cleared")
+            self.fail("MemoryError was not raised while detaching "
+                      f"the dictionary: {seen}")
 
 class DefinitionOrderTests(unittest.TestCase):
     # PEP 520: Preserving Class Attribute Definition Order

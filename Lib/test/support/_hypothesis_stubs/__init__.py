@@ -8,13 +8,14 @@ __all__ = [
     "assume",
     "reject",
     "register_random",
+    "stateful",
     "strategies",
     "HealthCheck",
     "settings",
     "Verbosity",
 ]
 
-from . import strategies
+from . import stateful, strategies
 
 
 def given(*_args, **_kwargs):

@@ -1,1 +1,0 @@
-Updated macOS installer to include SQLite version 3.53.2.

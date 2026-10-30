@@ -1096,7 +1096,7 @@ Prefixing the name with ``iconv:`` forces the use of the ``iconv``-based codec
 even when a built-in codec of the same name exists (for example ``iconv:latin1``),
 which is mostly useful for testing.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Added support for encodings provided by the C library's ``iconv``.
 
 .. impl-detail::
@@ -1683,10 +1683,30 @@ international domain names, and to unify similar characters. The nameprep
 functions can be used directly if desired.
 
 
-.. function:: nameprep(label)
+.. function:: nameprep(label, *, limit=None)
 
    Return the nameprepped version of *label*. The implementation currently assumes
    query strings, so ``AllowUnassigned`` is true.
+
+   Raise :exc:`UnicodeEncodeError` if the nameprep algorithm emits an error.
+
+   If the *limit* argument is given, it should be set to the maximum size
+   of an encoded A-label (that is, 63 for IDNA).
+   :func:`!nameprep` will raise :exc:`UnicodeEncodeError` if the label is
+   **much** larger than *limit*.
+   Note that this is only a rough check meant to skip expensive processing
+   of extremely large input; the caller should check any exact
+   limits separately.
+
+   .. warning::
+
+      For backwards compatibility, label size is unlimited by default.
+      This may cause issues when processing the result with the
+      ``punycode`` encoding, whose algorithms scale poorly.
+
+   .. versionchanged:: 3.16
+
+      Added the *limit* parameter.
 
 
 .. function:: ToASCII(label)
