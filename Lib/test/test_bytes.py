@@ -1687,6 +1687,26 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
 
+    @support.nomemtest
+    def test_remove_prefix_error(self):
+        # If the storage cannot be shrunk after removing a prefix
+        # (MemoryError), the bytearray must be left unchanged.
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                ba = bytearray(b'0123456789' * 4)
+                if logical_offset:
+                    del ba[:3]
+                expected = ba.copy()
+                with inject_memory_error(self):
+                    del ba[:30]
+                self.assertEqual(ba, expected)
+                with inject_memory_error(self):
+                    ba[:30] = b'xy'
+                self.assertEqual(ba, expected)
+                # The bytearray is still usable
+                del ba[:30]
+                self.assertEqual(ba, expected[30:])
+
     def test_take_bytes(self):
         ba = bytearray(b'ab')
         self.assertEqual(ba.take_bytes(), b'ab')
