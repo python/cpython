@@ -5047,8 +5047,8 @@ load_unaligned(const unsigned char *p, size_t size)
  * significant bit set). If all characters in the range are ASCII, it returns
  * `end - start`.
  */
-static Py_ssize_t
-find_first_nonascii(const unsigned char *start, const unsigned char *end)
+Py_ssize_t
+_Py_find_first_nonascii(const unsigned char *start, const unsigned char *end)
 {
     // The search is done in `size_t` chunks.
     // The start and end might not be aligned at `size_t` boundaries,
@@ -5188,8 +5188,8 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         return p - start;
     }
 #endif
-    Py_ssize_t pos = find_first_nonascii((const unsigned char*)start,
-                                         (const unsigned char*)end);
+    Py_ssize_t pos = _Py_find_first_nonascii((const unsigned char*)start,
+                                             (const unsigned char*)end);
     memcpy(dest, start, pos);
     return pos;
 }
@@ -5348,7 +5348,8 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     const char *starts = s;
     const char *end = s + size;
 
-    Py_ssize_t pos = find_first_nonascii((const unsigned char*)starts, (const unsigned char*)end);
+    Py_ssize_t pos = _Py_find_first_nonascii((const unsigned char*)starts,
+                                             (const unsigned char*)end);
     if (pos == size) {  // fast path: ASCII string.
         PyObject *u = PyUnicode_New(size, 127);
         if (u == NULL) {

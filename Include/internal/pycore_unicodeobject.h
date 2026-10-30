@@ -234,6 +234,13 @@ extern PyObject* _PyUnicode_FromASCII(
     const char *buffer,
     Py_ssize_t size);
 
+/* Return the index of the first byte in [start, end) with the high bit set,
+   or end - start if there is none. */
+// Export for test_peg_generator.
+PyAPI_FUNC(Py_ssize_t) _Py_find_first_nonascii(
+    const unsigned char *start,
+    const unsigned char *end);
+
 /* Compute the maximum character of the substring unicode[start:end].
    Return 127 for an empty string. */
 extern Py_UCS4 _PyUnicode_FindMaxChar (
