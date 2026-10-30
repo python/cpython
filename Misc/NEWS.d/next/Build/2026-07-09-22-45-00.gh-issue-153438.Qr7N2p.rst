@@ -1,2 +1,0 @@
-Update Windows build and installer tooling and documentation to use the
-current download URL for ``nuget.exe``.

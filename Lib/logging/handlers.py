@@ -459,16 +459,20 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
-            dstNow = time.localtime(currentTime)[-1]
-            dstThen = timeTuple[-1]
-            if dstNow != dstThen:
-                if dstNow:
-                    addend = 3600
-                else:
-                    addend = -3600
-                timeTuple = time.localtime(t + addend)
+            # DST affects calendar-based intervals, not fixed-duration ones.
+            if self.when == 'MIDNIGHT' or self.when.startswith('W'):
+                # A record can arrive well after the scheduled rollover.
+                dstAtRollover = time.localtime(self.rolloverAt)[-1]
+                dstThen = timeTuple[-1]
+                if dstAtRollover != dstThen:
+                    if dstAtRollover:
+                        addend = 3600
+                    else:
+                        addend = -3600
+                    timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
+        self.rolloverAt = self.computeRollover(currentTime)
         if os.path.exists(dfn):
             # Already rolled over.
             return
@@ -482,7 +486,6 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
@@ -563,8 +566,13 @@ class WatchedFileHandler(logging.FileHandler):
         If underlying file has changed, reopen the file before emitting the
         record to it.
         """
-        self.reopenIfNeeded()
-        logging.FileHandler.emit(self, record)
+        # Report an error while reopening the file, like emit errors.
+        try:
+            self.reopenIfNeeded()
+        except Exception:
+            self.handleError(record)
+        else:
+            logging.FileHandler.emit(self, record)
 
 
 class SocketHandler(logging.Handler):
@@ -902,7 +910,11 @@ class SysLogHandler(logging.Handler):
         self.socktype = socktype
         self.timeout = timeout
         self.socket = None
-        self.createSocket()
+        # The address is resolved again when emitting an event.
+        try:
+            self.createSocket()
+        except socket.gaierror:
+            pass
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype

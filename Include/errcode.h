@@ -38,6 +38,7 @@ extern "C" {
 #define E_BADSINGLE      27      /* Ill-formed single statement input */
 #define E_INTERACT_STOP  28      /* Interactive mode stopped tokenization */
 #define E_COLUMNOVERFLOW 29      /* Column offset overflow */
+#define E_INCOMPLETE     30      /* An unfinished token in partial input */
 
 #ifdef __cplusplus
 }
