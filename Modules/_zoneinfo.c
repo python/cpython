@@ -103,6 +103,8 @@ typedef struct {
     PyObject *TIMEDELTA_CACHE;
     PyObject *ZONEINFO_WEAK_CACHE;
     StrongCacheNode *ZONEINFO_STRONG_CACHE;
+    // Bumped on every strong-cache mutation (gh-142782).
+    size_t strong_cache_version;
 
     _ttinfo NO_TTINFO;
 } zoneinfo_state;
@@ -2434,22 +2436,37 @@ remove_from_strong_cache(zoneinfo_state *state, StrongCacheNode *node)
  * root may be NULL, indicating an empty cache.
  */
 static StrongCacheNode *
-find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
+find_in_strong_cache(zoneinfo_state *state, PyObject *const key)
 {
-    const StrongCacheNode *node = root;
-    while (node != NULL) {
-        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
-        if (rv < 0) {
+    // A key's __eq__ can re-enter and mutate the strong cache during the
+    // comparison, freeing nodes.  If that happens, restart the scan so the
+    // result reflects the mutated cache: a key that is still cached is found
+    // rather than reported as a miss (which would re-insert a duplicate
+    // entry), and a miss is reported only after a full scan with no concurrent
+    // mutation (gh-142782).
+    while (1) {
+        size_t version = state->strong_cache_version;
+        const StrongCacheNode *node = state->ZONEINFO_STRONG_CACHE;
+        while (node != NULL) {
+            PyObject *node_key = Py_NewRef(node->key);
+            const StrongCacheNode *next = node->next;
+            int rv = PyObject_RichCompareBool(key, node_key, Py_EQ);
+            Py_DECREF(node_key);
+            if (rv < 0) {
+                return NULL;
+            }
+            if (state->strong_cache_version != version) {
+                break;
+            }
+            if (rv) {
+                return (StrongCacheNode *)node;
+            }
+            node = next;
+        }
+        if (state->strong_cache_version == version) {
             return NULL;
         }
-        if (rv) {
-            return (StrongCacheNode *)node;
-        }
-
-        node = node->next;
     }
-
-    return NULL;
 }
 
 /* Ejects a given key from the class's strong cache, if applicable.
@@ -2465,12 +2482,12 @@ eject_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
-    StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
-    StrongCacheNode *node = find_in_strong_cache(cache, key);
+    StrongCacheNode *node = find_in_strong_cache(state, key);
     if (node != NULL) {
         remove_from_strong_cache(state, node);
 
         strong_cache_node_free(node);
+        state->strong_cache_version++;
     }
     else if (PyErr_Occurred()) {
         return -1;
@@ -2522,8 +2539,7 @@ zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(state->ZoneInfoType);
-    StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
-    StrongCacheNode *node = find_in_strong_cache(cache, key);
+    StrongCacheNode *node = find_in_strong_cache(state, key);
 
     if (node != NULL) {
         StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
@@ -2555,6 +2571,7 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
     StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
     move_strong_cache_node_to_front(state, root, new_node);
+    state->strong_cache_version++;
 
     StrongCacheNode *node = new_node->next;
     for (size_t i = 1; i < ZONEINFO_STRONG_CACHE_MAX_SIZE; ++i) {
@@ -2587,6 +2604,7 @@ clear_strong_cache(zoneinfo_state *state, const PyTypeObject *const type)
 
     strong_cache_free(state->ZONEINFO_STRONG_CACHE);
     state->ZONEINFO_STRONG_CACHE = NULL;
+    state->strong_cache_version++;
 }
 
 static PyObject *
