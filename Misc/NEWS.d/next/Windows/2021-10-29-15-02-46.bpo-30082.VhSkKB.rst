@@ -1,0 +1,3 @@
+Adds new ``force_hide`` argument to :mod:`subprocess` functions.
+This passes ``SW_HIDE`` to the new process, which most applications
+will use to not display any window even if they normally would.
