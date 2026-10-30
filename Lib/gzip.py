@@ -11,6 +11,7 @@ import os
 import struct
 import sys
 import time
+import warnings  # must stay eager to support finalization
 import weakref
 import zlib
 from compression._common import _streams
@@ -229,7 +230,6 @@ class GzipFile(_streams.BaseStream):
 
             elif mode.startswith(('w', 'a', 'x')):
                 if origmode is None:
-                    import warnings
                     warnings.warn(
                         "GzipFile was opened for writing, but this will "
                         "change in future Python releases.  "
@@ -466,13 +466,15 @@ class GzipFile(_streams.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
-    def __del__(self):
-        if self.mode == WRITE and not self.closed:
-            import warnings
-            warnings.warn("unclosed GzipFile",
-                          ResourceWarning, source=self, stacklevel=2)
-
-        super().__del__()
+    def __del__(self, _warn=warnings.warn):
+        try:
+            # Wrap within a try to ensure the file is closed even if the
+            # warning raises, e.g. when ResourceWarning is made an error.
+            if self.mode == WRITE and not self.closed:
+                _warn("unclosed GzipFile",
+                      ResourceWarning, source=self, stacklevel=2)
+        finally:
+            super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`
