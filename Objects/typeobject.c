@@ -7891,7 +7891,17 @@ object_getstate_default(PyObject *obj, int required)
         for (i = 0; i < slotnames_size; i++) {
             PyObject *name, *value;
 
-            name = Py_NewRef(PyList_GET_ITEM(slotnames, i));
+            /* The cached list may be resized or have its elements replaced
+               by another thread.  Get a strong reference with bounds checking
+               before calling Python code. */
+            name = PyList_GetItemRef(slotnames, i);
+            if (name == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "__slotnames__ changed size during iteration");
+                }
+                goto error;
+            }
             if (PyObject_GetOptionalAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;

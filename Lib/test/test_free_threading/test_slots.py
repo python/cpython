@@ -62,6 +62,42 @@ class TestSlots(TestCase):
             threading_helper.run_concurrently(deleter, nthreads=4, args=(spam, successes))
             self.assertEqual(sum(successes), 1)
 
+    def test_getstate_concurrent_slotnames_mutation(self):
+        # The cached list is user-accessible and can change between the
+        # size check and the acquisition of an individual slot name.
+        class C:
+            __slotnames__ = []
+
+        obj = C()
+        obj.value = 42
+        names = C.__slotnames__
+        stopped = threading.Event()
+        started = threading.Event()
+
+        def writer():
+            started.set()
+            while not stopped.is_set():
+                names[:] = ["value"]
+                names.clear()
+
+        thread = threading.Thread(target=writer)
+        thread.start()
+        try:
+            self.assertTrue(started.wait(10))
+            for i in range(20_000):
+                try:
+                    if i % 2:
+                        obj.__getstate__()
+                    else:
+                        obj.__reduce_ex__(2 + (i // 2) % 4)
+                except RuntimeError as exc:
+                    self.assertEqual(str(exc),
+                                     "__slotnames__ changed size during iteration")
+        finally:
+            stopped.set()
+            thread.join(10)
+        self.assertFalse(thread.is_alive())
+
     def test_T_BOOL(self):
         spam_old = _testcapi._test_structmembersType_OldAPI()
         spam_new = _testcapi._test_structmembersType_NewAPI()
