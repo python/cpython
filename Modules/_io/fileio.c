@@ -82,6 +82,8 @@ typedef struct {
     struct _Py_stat_struct *stat_atopen;
     PyObject *weakreflist;
     PyObject *dict;
+    /* if true, we are wrapped by buffer, don't close until buffer is closed */
+    bool defer_close;
 } fileio;
 
 #define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
@@ -95,6 +97,13 @@ _PyFileIO_closed(PyObject *self)
 {
     return (PyFileIO_CAST(self)->fd < 0);
 }
+
+void
+_PyFileIO_set_defer_close(PyObject *self, bool defer_close)
+{
+    PyFileIO_CAST(self)->defer_close = defer_close;
+}
+
 
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
@@ -128,6 +137,9 @@ _io_FileIO__dealloc_warn_impl(fileio *self, PyObject *source)
 static int
 internal_close(fileio *self)
 {
+    if (self->defer_close) {
+        return 0;
+    }
     int err = 0;
     int save_errno = 0;
     if (self->fd >= 0) {
@@ -221,6 +233,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->stat_atopen = NULL;
     self->closefd = 1;
     self->weakreflist = NULL;
+    self->defer_close = false;
     return (PyObject *) self;
 }
 
