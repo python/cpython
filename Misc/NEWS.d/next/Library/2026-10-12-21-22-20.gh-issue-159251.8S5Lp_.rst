@@ -1,0 +1,3 @@
+Speed up :meth:`str.isalnum` and Unicode word matching in :mod:`re` (``\w``,
+``\W``, ``\b`` and ``\B``) by reducing Unicode lookups and adding an ASCII fast
+path. Patch by Maurycy Pawłowski-Wieroński.
