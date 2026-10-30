@@ -498,6 +498,12 @@ usage patterns to be encapsulated for convenient reuse.
    with_stmt_contents: `with_item` ("," `with_item`)*
    with_item: `expression` ["as" `target`]
 
+The target after :keyword:`as` follows the same rules as an
+:ref:`assignment <assignment>` target. In particular, a starred target must be
+part of a list or tuple target, as in ``with manager as [*items]:`` or
+``with manager as (*items,):``. A bare starred target, such as
+``with manager as *items:``, is invalid.
+
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
 #. The context expression (the expression given in the
