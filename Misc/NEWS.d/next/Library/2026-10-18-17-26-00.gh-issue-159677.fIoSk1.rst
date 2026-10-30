@@ -1,0 +1,2 @@
+Fix :class:`io.FileIO` ``seekable`` being cached as false because of an invalid
+argument to :meth:`!io.FileIO.seek`
