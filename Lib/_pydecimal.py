@@ -1775,8 +1775,7 @@ class Decimal(object):
                     exp_min += 1
 
             with context._defer_traps():
-                # check whether the rounding pushed the exponent out
-                # of range
+                # check if rounding pushed the exponent out of range
                 if exp_min > Etop:
                     ans = context._raise_error(Overflow, 'above Emax',
                                                self._sign)
@@ -4002,9 +4001,8 @@ class Context(object):
         else:
             self._ignored_flags = _ignored_flags
 
-        # State for _defer_traps: the nesting level of deferral blocks
-        # and the first trapped exception waiting to be raised by the
-        # outermost block.  Transient: not copied or pickled.
+        # _defer_traps state: nesting level and the deferred exception.
+        # Transient: not copied or pickled.
         self._deferred_traps = 0
         self._deferred_error = None
 
@@ -4155,12 +4153,9 @@ class Context(object):
             return condition().handle(self, *args)
 
         if self._deferred_traps:
-            # A _defer_traps block is recording the signals of a
-            # multi-signal operation: remember the first trapped
-            # exception instead of raising it now, so that the
-            # remaining signals can still set their flags.  The block
-            # raises it on exit.  Return the default response, exactly
-            # as if the signal had not been trapped.
+            # Inside a _defer_traps block: record the first trapped
+            # exception instead of raising it, and return the default
+            # response as if the signal had not been trapped.
             if self._deferred_error is None:
                 self._deferred_error = error(explanation)
             return condition().handle(self, *args)
@@ -4173,17 +4168,9 @@ class Context(object):
     def _defer_traps(self):
         """Defer trapped signals until the end of the with block.
 
-        Some operations signal several conditions at once (for
-        example, Overflow together with Inexact and Rounded).  The
-        specification requires the flag of every condition encountered
-        to be set, and the C implementation records the full set of
-        flags before raising a trapped exception.  Within this block,
-        _raise_error does the same: it sets the flag of each signal
-        and returns its default response, and the first trapped
-        exception (in the order the signals are raised, which is the
-        precedence order of the specification) is raised when the
-        outermost block exits.  If the block raises another exception,
-        any deferred exception is discarded.
+        _raise_error sets the flag of every signal in the block and
+        raises the first trapped exception on exit, so that a
+        multi-signal operation sets the same flags as _decimal.
         """
         self._deferred_traps += 1
         try:
