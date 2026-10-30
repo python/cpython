@@ -999,8 +999,9 @@ clear_weakrefs(PyGC_Head *unreachable)
 static char *
 debug_cycle(const char *msg, PyObject *op)
 {
+    const char fmt[] = "gc: %s <%s %p>\n";
     const char *name = Py_TYPE(op)->tp_name;
-    int len = PyOS_snprintf(NULL, 0, "gc: %s <%s %p>\n",
+    int len = PyOS_snprintf(NULL, 0, fmt,
                             msg, name, (void *)op);
     if (len < 0) {
         return NULL;
@@ -1009,7 +1010,7 @@ debug_cycle(const char *msg, PyObject *op)
     if (line == NULL) {
         return NULL;
     }
-    PyOS_snprintf(line, (size_t)len + 1, "gc: %s <%s %p>\n",
+    PyOS_snprintf(line, (size_t)len + 1, fmt,
                   msg, name, (void *)op);
     return line;
 }
