@@ -1773,11 +1773,10 @@ class Decimal(object):
                     coeff = coeff[:-1]
                     exp_min += 1
 
+            # check if rounding pushed the exponent out of range
             with context._defer_traps():
-                # check if rounding pushed the exponent out of range
                 if exp_min > Etop:
-                    ans = context._raise_error(Overflow, 'above Emax',
-                                               self._sign)
+                    ans = context._raise_error(Overflow, 'above Emax', self._sign)
                 else:
                     ans = _dec_from_triple(self._sign, coeff, exp_min)
 
@@ -2564,8 +2563,7 @@ class Decimal(object):
             with context._defer_traps():
                 if newcontext.flags[Overflow]:
                     context._raise_error(Overflow, 'above Emax', ans._sign)
-                for exception in (Underflow, Subnormal, Inexact, Rounded,
-                                  Clamped):
+                for exception in Underflow, Subnormal, Inexact, Rounded, Clamped:
                     if newcontext.flags[exception]:
                         context._raise_error(exception)
 
