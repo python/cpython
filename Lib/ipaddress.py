@@ -2430,6 +2430,42 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         return (self.network_address.is_site_local and
                 self.broadcast_address.is_site_local)
 
+    def _ipv4_mapped_network(self):
+        # Subnets of ::ffff:0:0/96 follow the embedded IPv4 network
+        # (gh-107205). The /96 itself stays an IPv6 special-purpose block.
+        if self._prefixlen <= 96:
+            return None
+        start = self.network_address.ipv4_mapped
+        end = self.broadcast_address.ipv4_mapped
+        if start is None or end is None:
+            return None
+        return IPv4Network((start, self._prefixlen - 96))
+
+    @property
+    def is_private(self):
+        """Test if this network belongs to a private range.
+
+        Subnets of the IPv4-mapped range follow the embedded IPv4 network
+        (gh-107205). ``::ffff:0:0/96`` itself stays private.
+        """
+        mapped = self._ipv4_mapped_network()
+        if mapped is not None:
+            return mapped.is_private
+        return super().is_private
+
+    @property
+    def is_global(self):
+        """Test if this network is allocated for public networks.
+
+        Subnets of the IPv4-mapped range follow the embedded IPv4 network,
+        so shared address space (``100.64.0.0/10``) is neither private nor
+        global (gh-107205).
+        """
+        mapped = self._ipv4_mapped_network()
+        if mapped is not None:
+            return mapped.is_global
+        return super().is_global
+
 
 class _IPv6Constants:
 
