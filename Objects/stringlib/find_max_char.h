@@ -10,8 +10,8 @@
 #define MAX_CHAR_UCS2  0xffff
 #define MAX_CHAR_UCS4  0x10ffff
 
-/* Mask to quickly check whether a C 'size_t' contains a
-   non-ASCII, UTF8-encoded char. */
+/* Masks selecting the bits that are set in a C 'size_t' holding several
+   characters when at least one of them is wider than ASCII, UCS1 or UCS2. */
 #if STRINGLIB_SIZEOF_CHAR == 1
 # if SIZEOF_SIZE_T == 8
 #  define MASK_ASCII 0x8080808080808080ULL
@@ -88,7 +88,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 
     while (p + SIZEOF_SIZE_T * 32 <= _end) {
         const size_t *pp = (const size_t *)p;
-        for(int i = 0; i < 32; i++) {
+        for (int i = 0; i < 32; i++) {
             value |= pp[i];
         }
         if (value & MASK_MAX_CHAR) {
