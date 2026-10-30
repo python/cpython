@@ -789,6 +789,9 @@ _PyJit_translate_single_bytecode_to_trace(
         {
             _PyUOpInstruction *curr = uop_buffer_last(trace);
             while (curr->opcode != _SET_IP && uop_buffer_length(trace) > 2) {
+                if (_PyUop_Flags[curr->opcode] & HAS_RECORDS_VALUE_FLAG) {
+                    Py_XDECREF((PyObject *)(uintptr_t)curr->operand0);
+                }
                 trace->next--;
                 curr = uop_buffer_last(trace);
             }
