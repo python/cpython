@@ -1,0 +1,3 @@
+Speed up :meth:`http.cookiejar.CookieJar.add_cookie_header` by about 2.5x by
+parsing the request URL with :func:`urllib.parse.urlsplit` instead of
+:func:`urllib.parse.urlparse` when checking each stored domain.
