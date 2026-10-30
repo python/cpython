@@ -6,6 +6,7 @@ import enum
 import keyword
 import sys
 import types
+lazy import typing
 
 __all__ = [
     "Format",
@@ -410,6 +411,48 @@ class _Stringifier:
                 elts.append(new_elt)
             ast_class = {list: ast.List, tuple: ast.Tuple, set: ast.Set}[type(other)]
             return ast_class(elts), extra_names
+        elif type(other) is types.GenericAlias or _is_annotated_alias(other):
+            if _is_annotated_alias(other):
+                annotated_alias = True
+                origin = typing.get_origin(other)
+                args = typing.get_args(other)
+            else:
+                annotated_alias = False
+                origin = other.__origin__
+                args = other.__args__
+
+            extra_names = {}
+            elts = []
+
+            origin_ast, origin_names = self.__convert_to_ast(origin)
+            if origin_names is not None:
+                extra_names |= origin_names
+
+            for elt in args:
+                new_elt, new_extra_names = self.__convert_to_ast(elt)
+                if new_extra_names is not None:
+                    extra_names |= new_extra_names
+                elts.append(new_elt)
+
+            if len(elts) == 1:
+                elts = elts[0]
+            else:
+                elts = ast.Tuple(elts=elts)
+
+            if annotated_alias:
+                new_ast = ast.Subscript(
+                    value=origin_ast,
+                    slice=elts,
+                )
+            else:
+                # Generic Alias is not guaranteed to be from subscript
+                alias_ast, alias_names = self.__convert_to_ast(types.GenericAlias)
+                extra_names |= alias_names
+                new_ast = ast.Call(
+                    func=alias_ast,
+                    args=[origin_ast, elts],
+                )
+            return new_ast, extra_names
         else:
             name = self.__stringifier_dict__.create_unique_name()
             return ast.Name(id=name), {name: other}
@@ -1191,7 +1234,30 @@ class _ExtraNameFixer(ast.NodeTransformer):
     def __init__(self, extra_names):
         self.extra_names = extra_names
 
+    def visit_Call(self, node: ast.Call):
+        # Convert calls to `GenericAlias` to their string representation
+        if (
+            isinstance((func := node.func), ast.Name)
+            and self.extra_names.get(func.id) is types.GenericAlias
+        ):
+            new_node = ast.Subscript(
+                value=node.args[0],
+                slice=node.args[1],
+            )
+            self.generic_visit(new_node)
+            return new_node
+
+        self.generic_visit(node)
+        return node
+
     def visit_Name(self, node: ast.Name):
         if (new_name := self.extra_names.get(node.id, _sentinel)) is not _sentinel:
             node = ast.Name(id=type_repr(new_name))
         return node
+
+
+def _is_annotated_alias(obj):
+    return (
+        (typing := sys.modules.get("typing"))
+        and typing.get_origin(obj) is typing.Annotated
+    )
