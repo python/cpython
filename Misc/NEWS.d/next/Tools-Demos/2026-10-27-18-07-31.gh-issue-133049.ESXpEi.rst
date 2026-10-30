@@ -1,0 +1,2 @@
+:program:`pygettext` now exits with an error if no input file is given,
+like :program:`xgettext`.
