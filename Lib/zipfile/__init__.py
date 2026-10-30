@@ -683,6 +683,14 @@ class ZipInfo:
         else:
             self.date_time = time.localtime(time.time())[:6]
 
+        # gh-152445: Clamp date_time when strict_timestamps=False,
+        # mirroring the behaviour of ZipInfo.from_file().
+        if not archive._strict_timestamps:
+            if self.date_time[0] < 1980:
+                self.date_time = (1980, 1, 1, 0, 0, 0)
+            elif self.date_time[0] > 2107:
+                self.date_time = (2107, 12, 31, 23, 59, 59)
+
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
         if self.filename.endswith('/'):  # pragma: no cover
