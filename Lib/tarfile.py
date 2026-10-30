@@ -1393,6 +1393,13 @@ class TarInfo(object):
                     numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
+
+                if offset < 0:
+                    raise InvalidHeaderError("invalid sparse header: negative offset")
+
+                if numbytes < 0:
+                    raise InvalidHeaderError("invalid sparse header: negative numbytes")
+
                 structs.append((offset, numbytes))
                 pos += 24
             isextended = bool(buf[482])
@@ -1515,6 +1522,13 @@ class TarInfo(object):
                     numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
+
+                if offset < 0:
+                    raise InvalidHeaderError("invalid sparse header: negative offset")
+
+                if numbytes < 0:
+                    raise InvalidHeaderError("invalid sparse header: negative numbytes")
+
                 if offset and numbytes:
                     structs.append((offset, numbytes))
                 pos += 24
