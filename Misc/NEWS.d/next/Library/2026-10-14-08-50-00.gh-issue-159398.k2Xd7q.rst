@@ -1,0 +1,2 @@
+Fix the sampling profiler crashing when a string read from the target process
+contains code points above ``U+10FFFF``.
