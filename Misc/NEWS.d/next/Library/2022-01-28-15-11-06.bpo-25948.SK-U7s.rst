@@ -1,0 +1,1 @@
+Let EmailText respect RFC2822 on max line length.
