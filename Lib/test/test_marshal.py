@@ -1341,5 +1341,131 @@ class ReferenceTestCase(unittest.TestCase):
         self.assertEqual(set(results), {expected})
 
 
+class MyStr(str):
+    pass
+
+
+class MyTuple(tuple):
+    pass
+
+
+def bad_type_msg(cls):
+    return fr"cannot marshal \S*{cls.__name__} objects"
+
+
+class ErrorNotesTestCase(unittest.TestCase):
+    # The exception raised for an unsupported object carries notes.
+    # There is one note per enclosing container item or code object field,
+    # innermost first.
+
+    bad_str = MyStr('x')
+
+    def test_tuple(self):
+        with self.assertRaisesRegex(ValueError, bad_type_msg(MyStr)) as cm:
+            marshal.dumps((1, self.bad_str, 3))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when marshalling tuple item 1"])
+
+    def test_list(self):
+        notes = ["when marshalling list item 1"]
+        with self.assertRaisesRegex(ValueError, bad_type_msg(MyStr)) as cm:
+            marshal.dumps([1, self.bad_str])
+        self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_dict(self):
+        cases = [
+            # label, object, expected notes
+            ("dict item", {'a': self.bad_str},
+             ["when marshalling dict item 'a'"]),
+            ("dict key", {self.bad_str: 1},
+             ["when marshalling dict key 'x'"]),
+            ("frozendict item", frozendict({'a': self.bad_str}),
+             ["when marshalling frozendict item 'a'"]),
+            ("frozendict key", frozendict({self.bad_str: 1}),
+             ["when marshalling frozendict key 'x'"]),
+        ]
+        for keyword, obj, notes in cases:
+            with self.subTest(keyword):
+                with self.assertRaisesRegex(ValueError,
+                                            bad_type_msg(MyStr)) as cm:
+                    marshal.dumps(obj)
+                self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_sets(self):
+        cases = [
+            # label, object, expected notes
+            ("set element", {self.bad_str},
+             ["when marshalling set element"]),
+            ("frozenset element", frozenset({self.bad_str}),
+             ["when marshalling frozenset element"]),
+        ]
+        for keyword, obj, notes in cases:
+            with self.subTest(keyword):
+                with self.assertRaisesRegex(ValueError,
+                                            bad_type_msg(MyStr)) as cm:
+                    marshal.dumps(obj)
+                self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_slices(self):
+        cases = [
+            # label, object, expected notes
+            ("slice start", slice(self.bad_str, 2, 3),
+             ["when marshalling slice start"]),
+            ("slice stop", slice(1, self.bad_str, 3),
+             ["when marshalling slice stop"]),
+            ("slice step", slice(1, 2, self.bad_str),
+             ["when marshalling slice step"]),
+        ]
+        for keyword, obj, notes in cases:
+            with self.subTest(keyword):
+                with self.assertRaisesRegex(ValueError,
+                                            bad_type_msg(MyStr)) as cm:
+                    marshal.dumps(obj)
+                self.assertEqual(cm.exception.__notes__, notes)
+
+    def test_nested_code_filename(self):
+        source_code = "def my_function(var1): pass"
+        module_code = compile(source_code, self.bad_str, "exec")
+        notes = [
+            "when marshalling co_filename of code object my_function (x, line 1)",
+            "when marshalling tuple item 0",
+            "when marshalling co_consts of code object <module> (x, line 1)"
+        ]
+        with self.assertRaisesRegex(ValueError, bad_type_msg(MyStr)) as cm:
+            marshal.dumps(module_code)
+        self.assertEqual(cm.exception.__notes__, notes)
+
+
+    def test_code_fields(self):
+        source_code = "def my_function(var1): pass"
+        module_code = compile(source_code, "foo.py", "exec")
+        namespace = {}
+        exec(module_code, namespace)
+        func_code = namespace["my_function"].__code__
+
+        bad_tuple = MyTuple(('x',))
+        cases = [
+            # keyword, bad value, expected class, expected notes
+            ("co_filename", self.bad_str, MyStr,
+             ["when marshalling co_filename of code object my_function (x, line 1)"]),
+            ("co_name", self.bad_str, MyStr,
+             ["when marshalling co_name of code object my_function (foo.py, line 1)"]),
+            ("co_qualname", self.bad_str, MyStr,
+             ["when marshalling co_qualname of code object x (foo.py, line 1)"]),
+            ("co_consts", (self.bad_str,), MyStr,
+             ["when marshalling tuple item 0",
+              "when marshalling co_consts of code object my_function (foo.py, line 1)"]),
+            ("co_names", bad_tuple, MyTuple,
+             ["when marshalling co_names of code object my_function (foo.py, line 1)"]),
+        ]
+        for keyword, bad_value, cls, notes in cases:
+            with self.subTest(keyword):
+                code = func_code.replace(**{keyword: bad_value})
+                with self.assertRaisesRegex(ValueError,
+                                            bad_type_msg(cls)) as cm:
+                    marshal.dumps(code)
+                self.assertEqual(cm.exception.__notes__, notes)
+
+
 if __name__ == "__main__":
     unittest.main()
