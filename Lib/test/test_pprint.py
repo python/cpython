@@ -148,6 +148,18 @@ class QueryTestCase(unittest.TestCase):
         self.b = list(range(200))
         self.a[-12] = self.b
 
+    def assert_pprint(self, object, expected, **options):
+        # Check pformat() and pprint() with the same options and the same
+        # expected output, so that an option which one of them forgets to
+        # honour cannot go unnoticed (see gh-89722).  Options which the caller
+        # leaves out are not passed on either, so that the default values of
+        # both functions are exercised as well.  pprint() writes to a stream
+        # and terminates the output with a newline.
+        self.assertEqual(pprint.pformat(object, **options), expected)
+        stream = io.StringIO()
+        pprint.pprint(object, stream=stream, **options)
+        self.assertEqual(stream.getvalue(), expected + '\n')
+
     @cpython_only
     def test_lazy_import(self):
         ensure_lazy_imports("pprint", {"dataclasses", "re"})
@@ -189,6 +201,44 @@ class QueryTestCase(unittest.TestCase):
             value = 'this should not fail'
             pprint.pprint(value)
             pprint.PrettyPrinter().pprint(value)
+
+    def test_default_stream_is_stdout(self):
+        for print_func in (pprint.pprint, pprint.pp):
+            with self.subTest(print_func=print_func.__name__):
+                stream = io.StringIO()
+                with contextlib.redirect_stdout(stream):
+                    print_func('spam')
+                self.assertEqual(stream.getvalue(), "'spam'\n")
+
+    def test_pp(self):
+        # pp() only differs from pprint() in the default value of sort_dicts.
+        d = dict.fromkeys('cba')
+        stream = io.StringIO()
+        pprint.pp(d, stream=stream)
+        self.assertEqual(stream.getvalue(),
+                         "{'c': None, 'b': None, 'a': None}\n")
+        stream = io.StringIO()
+        pprint.pprint(d, stream=stream)
+        self.assertEqual(stream.getvalue(),
+                         "{'a': None, 'b': None, 'c': None}\n")
+        stream = io.StringIO()
+        pprint.pp(d, stream=stream, sort_dicts=True)
+        self.assertEqual(stream.getvalue(),
+                         "{'a': None, 'b': None, 'c': None}\n")
+
+        # The other arguments are passed on to pprint(), by keyword...
+        expected = "[   [   1,\n        2],\n    3]\n"
+        stream = io.StringIO()
+        pprint.pp([[1, 2], 3], stream=stream, indent=4, width=10)
+        self.assertEqual(stream.getvalue(), expected)
+        # ... and positionally.
+        stream = io.StringIO()
+        pprint.pp([[1, 2], 3], stream, 4, 10)
+        self.assertEqual(stream.getvalue(), expected)
+
+        stream = io.StringIO()
+        pprint.pp(1234567, stream=stream, underscore_numbers=True)
+        self.assertEqual(stream.getvalue(), '1_234_567\n')
 
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
@@ -440,13 +490,13 @@ frozendict2({'RPM_cal': 0,
         expected = """\
 [   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     {'first': 1, 'second': 2, 'third': 3}]"""
-        self.assertEqual(pprint.pformat(o, indent=4, width=42), expected)
+        self.assert_pprint(o, expected, indent=4, width=42)
         expected = """\
 [   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     {   'first': 1,
         'second': 2,
         'third': 3}]"""
-        self.assertEqual(pprint.pformat(o, indent=4, width=41), expected)
+        self.assert_pprint(o, expected, indent=4, width=41)
 
     def test_width(self):
         expected = """\
@@ -487,8 +537,8 @@ frozendict2({'RPM_cal': 0,
      '2']]]]]""")
 
     def test_integer(self):
-        self.assertEqual(pprint.pformat(1234567), '1234567')
-        self.assertEqual(pprint.pformat(1234567, underscore_numbers=True), '1_234_567')
+        self.assert_pprint(1234567, '1234567')
+        self.assert_pprint(1234567, '1_234_567', underscore_numbers=True)
 
         class Temperature(int):
             def __new__(cls, celsius_degrees):
@@ -518,9 +568,11 @@ frozendict2({'RPM_cal': 0,
 
     def test_sort_dict(self):
         d = dict.fromkeys('cba')
-        self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
-        self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
-            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
+        self.assert_pprint(d, "{'c': None, 'b': None, 'a': None}",
+                           sort_dicts=False)
+        self.assert_pprint([d, d],
+            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]",
+            sort_dicts=False)
 
     def test_ordered_dict(self):
         d = collections.OrderedDict()
@@ -1035,9 +1087,9 @@ frozenset2({0,
         lv1_tuple = '(1, (...))'
         lv1_dict = '{1: {...}}'
         lv1_list = '[1, [...]]'
-        self.assertEqual(pprint.pformat(nested_tuple, depth=1), lv1_tuple)
-        self.assertEqual(pprint.pformat(nested_dict, depth=1), lv1_dict)
-        self.assertEqual(pprint.pformat(nested_list, depth=1), lv1_list)
+        self.assert_pprint(nested_tuple, lv1_tuple, depth=1)
+        self.assert_pprint(nested_dict, lv1_dict, depth=1)
+        self.assert_pprint(nested_list, lv1_list, depth=1)
 
     def test_sort_unorderable_values(self):
         # Issue 3976:  sorted pprints fail for unorderable values.
@@ -1157,7 +1209,7 @@ frozenset2({0,
   14, 15],
  [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
  [0, 1, 2, 3, 4]]"""
-        self.assertEqual(pprint.pformat(o, width=47, compact=True), expected)
+        self.assert_pprint(o, expected, width=47, compact=True)
 
     def test_compact_width(self):
         levels = 20
@@ -1690,15 +1742,14 @@ OrderedDict([
             "baz",
             "qux",
         ]
-        self.assertEqual(pprint.pformat(dummy_list, width=20, indent=4,
-                                        expand=True),
+        self.assert_pprint(dummy_list,
 """\
 [
     'foo',
     'bar',
     'baz',
     'qux',
-]""")
+]""", width=20, indent=4, expand=True)
 
     def test_expand_tuple(self):
         dummy_tuple = (
