@@ -1,0 +1,2 @@
+Fix a memory leak when re-importing :mod:`readline` after removing it from
+:data:`sys.modules`. Patch by Shamil Abdulaev.
