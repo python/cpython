@@ -1,0 +1,4 @@
+Fix :exc:`NameError` when a type parameter default (PEP 696/PEP 749)
+refers to a name defined later in the module. Now three call sites in
+:mod:`typing` fall back to :func:`annotationlib.call_evaluate_function`
+with :data:`~annotationlib.Format.FORWARDREF` when eager evaluation fails.
