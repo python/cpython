@@ -1,0 +1,3 @@
+Speed up ``set >= set``, ``set > set``, :meth:`set.issuperset`, :meth:`set.discard`
+and :meth:`set.remove` on the free-threaded build by not re-entering a critical
+section already held on the set.
