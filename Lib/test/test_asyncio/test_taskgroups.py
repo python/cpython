@@ -32,11 +32,7 @@ def get_error_types(eg):
 
 def no_other_refs():
     # due to gh-124392 coroutines now refer to their locals
-    coro = asyncio.current_task().get_coro()
-    frame = sys._getframe(1)
-    while coro.cr_frame != frame:
-        coro = coro.cr_await
-    return [coro]
+    return [sys._getframe(1).f_generator]
 
 
 def set_gc_state(enabled):
