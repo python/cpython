@@ -854,14 +854,14 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
         *outbuf = tmp;
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
         _Py_BEGIN_SUPPRESS_IPH
         buflen = format_time(*outbuf, *bufsize, format, tm);
         _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        /* VisualStudio .NET 2005 does this properly */
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
+        /* The secure CRT reports invalid format strings with EINVAL. */
         if (buflen == 0 && errno == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             return NULL;
@@ -1007,6 +1007,40 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
+    _PyTime_StrptimeFields fields;
+    if (PyTuple_GET_SIZE(args) == 2 &&
+        _PyTime_Strptime(PyTuple_GET_ITEM(args, 0),
+                         PyTuple_GET_ITEM(args, 1), &fields)) {
+        time_module_state *state = get_time_state(self);
+        PyObject *result = PyStructSequence_New(state->struct_time_type);
+        if (result == NULL) {
+            return NULL;
+        }
+        const int values[] = {
+            fields.year, fields.month, fields.day,
+            fields.hour, fields.minute, fields.second,
+            _PyTime_Weekday(fields.year, fields.yday), fields.yday, -1
+        };
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
+            PyObject *value = PyLong_FromLong(values[i]);
+            if (value == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyStructSequence_SET_ITEM(result, i, value);
+        }
+        /* Numeric offsets don't supply a timezone name or DST information. */
+        PyStructSequence_SET_ITEM(result, 9, Py_NewRef(Py_None));
+        PyObject *offset = fields.gmtoff == INT_MIN
+                          ? Py_NewRef(Py_None)
+                          : PyLong_FromLong(fields.gmtoff);
+        if (offset == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyStructSequence_SET_ITEM(result, 10, offset);
+        return result;
+    }
     PyObject *func, *result;
 
     func = PyImport_ImportModuleAttrString("_strptime", "_strptime_time");

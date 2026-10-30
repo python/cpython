@@ -1492,6 +1492,30 @@ py_w_stopcode(PyObject *self, PyObject *args)
 
 
 static PyObject *
+sequence_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_Repeat(sequence, count);
+}
+
+static PyObject *
+sequence_inplace_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_InPlaceRepeat(sequence, count);
+}
+
+static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
 {
     Py_tss_t tss_key = Py_tss_NEEDS_INIT;
@@ -2949,6 +2973,8 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"sequence_repeat", sequence_repeat, METH_VARARGS},
+    {"sequence_inplace_repeat", sequence_inplace_repeat, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"bad_get", bad_get, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
