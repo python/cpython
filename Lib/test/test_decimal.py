@@ -4014,6 +4014,59 @@ class ContextFlags:
                                   "operation raises different flags depending on flags set: " +
                                   "expected %s, got %s" % (expected_flags, new_flags))
 
+    def test_trapped_signal_sets_companion_flags(self):
+        # If an operation signals several conditions and one of them is
+        # trapped, the exception is raised, but the flags of all the
+        # other conditions encountered must be set as well.
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        Clamped = self.decimal.Clamped
+        DivisionByZero = self.decimal.DivisionByZero
+        Inexact = self.decimal.Inexact
+        InvalidOperation = self.decimal.InvalidOperation
+        Overflow = self.decimal.Overflow
+        Rounded = self.decimal.Rounded
+        Subnormal = self.decimal.Subnormal
+        Underflow = self.decimal.Underflow
+
+        def check(trap, operation, expected_flags):
+            context = Context(prec=9, Emin=-999, Emax=999, traps=[])
+            context.traps[trap] = 1
+            with self.assertRaises(trap):
+                operation(context)
+            flags = {signal for signal, v in context.flags.items() if v}
+            self.assertEqual(flags, expected_flags)
+
+        # overflow from _fix: Inexact and Rounded are also signaled
+        check(Overflow,
+              lambda c: c.multiply(Decimal('1E+800'), Decimal('1E+800')),
+              {Inexact, Overflow, Rounded})
+
+        # 1/3 is rounded: Rounded accompanies the trapped Inexact
+        check(Inexact,
+              lambda c: c.divide(Decimal(1), Decimal(3)),
+              {Inexact, Rounded})
+
+        # underflow to zero signals the full set of conditions; a trap
+        # on any of them must not suppress the flags of the others
+        check(Underflow,
+              lambda c: c.divide(Decimal('1E-999'), Decimal('1E+10')),
+              {Clamped, Inexact, Rounded, Subnormal, Underflow})
+        check(Subnormal,
+              lambda c: c.divide(Decimal('1E-999'), Decimal('1E+10')),
+              {Clamped, Inexact, Rounded, Subnormal, Underflow})
+
+        # divmod by zero signals DivisionByZero (for the quotient) and
+        # InvalidOperation (for the remainder)
+        check(DivisionByZero,
+              lambda c: c.divmod(Decimal(5), Decimal(0)),
+              {DivisionByZero, InvalidOperation})
+
+        # to_integral_exact signals Inexact and Rounded together
+        check(Inexact,
+              lambda c: c.to_integral_exact(Decimal('2.5')),
+              {Inexact, Rounded})
+
     def test_flag_comparisons(self):
         Context = self.decimal.Context
         Inexact = self.decimal.Inexact
