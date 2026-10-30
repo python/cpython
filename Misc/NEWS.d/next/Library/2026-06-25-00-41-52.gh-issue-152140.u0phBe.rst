@@ -1,0 +1,2 @@
+Improve performance and internal pipelines of :mod:`zipfile` through
+reworking :class:`!_Extra`.
