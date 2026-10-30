@@ -1,0 +1,3 @@
+Improve :func:`faulthandler.dump_traceback_later` when another thread
+concurrently frees code metadata. The traceback walker now detects common
+freed-memory states instead of dereferencing them.
