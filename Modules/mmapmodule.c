@@ -752,7 +752,7 @@ mmap_mmap_write_impl(mmap_object *self, Py_buffer *data)
 
     CHECK_VALID(NULL);
     PyObject *result;
-    if (safe_memcpy(self->data + self->pos, data->buf, data->len) < 0) {
+    if (safe_memmove(self->data + self->pos, data->buf, data->len) < 0) {
         result = NULL;
     }
     else {
@@ -1722,15 +1722,26 @@ mmap_ass_subscript_impl(mmap_object *self, PyObject *item, PyObject *value)
         if (slicelen == 0) {
         }
         else if (step == 1) {
-            if (safe_memcpy(self->data + start, vbuf.buf, slicelen) < 0) {
+            if (safe_memmove(self->data + start, vbuf.buf, slicelen) < 0) {
                 result = -1;
             }
         }
         else {
-            if (safe_copy_from_slice(self->data, (char *)vbuf.buf, start, step,
-                                     slicelen) < 0)
-            {
+            /* The source may overlap the destination, so copy it before
+               assigning to the extended slice. */
+            char *source = PyMem_Malloc(slicelen);
+            if (source == NULL) {
+                PyErr_NoMemory();
                 result = -1;
+            }
+            else {
+                if (safe_memcpy(source, vbuf.buf, slicelen) < 0 ||
+                    safe_copy_from_slice(self->data, source, start, step,
+                                         slicelen) < 0)
+                {
+                    result = -1;
+                }
+                PyMem_Free(source);
             }
         }
         PyBuffer_Release(&vbuf);
