@@ -1521,6 +1521,21 @@ ghi\0jkl
         self.assertEqual(sniffer.sniff(sample).delimiter, "|")
         self.assertNotEqual(sniffer.sniff(sample).delimiter, "\r")
 
+    def test_guess_delimiter_at_minimum_consistency(self):
+        # gh-111487: the consistency counter was stepped down by repeatedly
+        # subtracting 0.01 from a float, so it stopped at 0.9099999999999999
+        # and the pass at the documented 0.9 threshold never ran.  Here ";" is
+        # modal on 19 of the 20 rows, which scores (19 - 1) / 20 == 90% once
+        # the non-matching row is subtracted -- exactly the threshold.
+        # Every row uses a different letter so nothing else is consistent, and
+        # the odd row sits in the first chunk, which keeps that chunk below the
+        # threshold and defers the decision to the full 20-row chunk.
+        rows = [(chr(ord('a') + i) + ';') * 3 + chr(ord('a') + i)
+                for i in range(20)]
+        rows[4] = 'e;e;e'
+        sniffer = csv.Sniffer()
+        self.assertEqual(sniffer.sniff('\n'.join(rows)).delimiter, ';')
+
     def test_zero_mode_tie_order_independence(self):
         sniffer = csv.Sniffer()
         # ":" appears in half the rows (1, 0, 1, 0) - a tie between
