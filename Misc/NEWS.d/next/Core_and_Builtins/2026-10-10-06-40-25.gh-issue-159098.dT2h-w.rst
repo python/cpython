@@ -1,0 +1,2 @@
+Fix a crash in attribute and method lookup when hashing or comparing a
+:class:`str` subclass changes the object's class.
