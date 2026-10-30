@@ -3,6 +3,7 @@
 # The tests are centralised in this fashion to make it easy to drop them
 # if a platform doesn't support zipimport
 import test.support
+import importlib
 import os
 import os.path
 import sys
@@ -95,6 +96,35 @@ class ZipSupportTests(unittest.TestCase):
                 self.assertEqual(inspect.getsource(zip_pkg.foo), test_src)
             finally:
                 del sys.modules["zip_pkg"]
+
+    def test_inspect_fresh_namespace_uses_module_loader(self):
+        # gh-92041: a frame exec'd in a plain namespace resolves to the
+        # zipimported module owning its filename, so getsource() can use
+        # the module's loader.
+        test_src = textwrap.dedent("""\
+            import inspect
+
+            def capture():
+                return inspect.currentframe()
+
+            frame = capture()
+        """)
+        with os_helper.temp_dir() as d:
+            script_name = make_script(d, "zipped_mod", test_src)
+            zip_name, _ = make_zip_script(d, "test_zip", script_name)
+            os.remove(script_name)
+            sys.path.insert(0, zip_name)
+            module = importlib.import_module("zipped_mod")
+            try:
+                namespace = {}
+                exec(compile(test_src, module.__file__, "exec"), namespace)
+                frame = namespace["frame"]
+                self.assertIs(inspect.getmodule(frame), module)
+                self.assertEqual(inspect.getsource(frame),
+                                 "def capture():\n"
+                                 "    return inspect.currentframe()\n")
+            finally:
+                del sys.modules["zipped_mod"]
 
     def test_doctest_issue4197(self):
         # To avoid having to keep two copies of the doctest module's
