@@ -1,0 +1,6 @@
+Deprecate, and schedule for removal in Python 3.20, the ``__author__``,
+``__credits__``, ``__copyright__`` and ``__date__`` attributes of :mod:`bz2`,
+:mod:`concurrent.futures`,
+:mod:`inspect`, :mod:`io`, :mod:`json`, :mod:`logging`, :mod:`optparse`,
+:mod:`platform`, :mod:`pydoc`, :mod:`tarfile`, :mod:`tkinter.ttk`,
+:mod:`tokenize` and :mod:`uuid`.
