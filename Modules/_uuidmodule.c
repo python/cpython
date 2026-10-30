@@ -628,6 +628,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, PyObject *bytes,
         self->bytes[6] |= (uint8_t)(version_num << 4);
     }
 
+    self->cached_hash = -1;
     Py_XSETREF(self->is_safe, Py_XNewRef(is_safe));
 
     return 0;
@@ -1655,6 +1656,7 @@ _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
     if (result < 0) {
         return NULL;
     }
+    self->cached_hash = -1;
 
     int has_is_safe = PySequence_Contains(state, &_Py_ID(is_safe));
     if (has_is_safe < 0) {
