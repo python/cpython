@@ -1,0 +1,1 @@
+Fix :func:`copy.replace` on :class:`csv.Dialect` subclasses losing slot-backed attributes.
