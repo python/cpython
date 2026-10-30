@@ -1,0 +1,3 @@
+Fix OpenSSL API checks in configure when static OpenSSL libraries depend on
+libraries supplied through ``LIBS``. Place the OpenSSL libraries before their
+dependencies in the link command.
