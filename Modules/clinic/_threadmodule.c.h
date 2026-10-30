@@ -49,6 +49,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_thread__ThreadHandle__set_started__doc__,
+"_set_started($self, /)\n"
+"--\n"
+"\n");
+
+#define _THREAD__THREADHANDLE__SET_STARTED_METHODDEF    \
+    {"_set_started", (PyCFunction)_thread__ThreadHandle__set_started, METH_NOARGS, _thread__ThreadHandle__set_started__doc__},
+
+static PyObject *
+_thread__ThreadHandle__set_started_impl(PyObject *self);
+
+static PyObject *
+_thread__ThreadHandle__set_started(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__ThreadHandle__set_started_impl(self);
+}
+
+PyDoc_STRVAR(_thread__ThreadHandle__wait_for_started__doc__,
+"_wait_for_started($self, /)\n"
+"--\n"
+"\n");
+
+#define _THREAD__THREADHANDLE__WAIT_FOR_STARTED_METHODDEF    \
+    {"_wait_for_started", (PyCFunction)_thread__ThreadHandle__wait_for_started, METH_NOARGS, _thread__ThreadHandle__wait_for_started__doc__},
+
+static PyObject *
+_thread__ThreadHandle__wait_for_started_impl(PyObject *self);
+
+static PyObject *
+_thread__ThreadHandle__wait_for_started(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _thread__ThreadHandle__wait_for_started_impl(self);
+}
+
 PyDoc_STRVAR(_thread__ThreadHandle_is_done__doc__,
 "is_done($self, /)\n"
 "--\n"
@@ -1272,4 +1306,4 @@ exit:
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
 #define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=3bfc76a318c6579d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=329aa895a56f500d input=a9049054013a1b77]*/

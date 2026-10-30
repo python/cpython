@@ -1,0 +1,5 @@
+Fix :meth:`threading.Thread.start` hanging forever when the new thread dies
+before signalling that it has started, for instance when a
+:exc:`MemoryError` is raised during the thread's bootstrap under memory
+pressure. :meth:`!Thread.start` now raises :exc:`RuntimeError` in that case
+and the dead thread no longer lingers in :func:`threading.enumerate`.
