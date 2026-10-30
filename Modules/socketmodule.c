@@ -6746,6 +6746,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *pobj = (PyObject *)NULL;
     PyObject *pstr = NULL;
     const char *hptr, *pptr;
+    Py_ssize_t hlen = 0, plen = 0;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;
@@ -6766,31 +6767,44 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
             return NULL;
         assert(PyBytes_Check(idna));
         hptr = PyBytes_AS_STRING(idna);
+        hlen = PyBytes_GET_SIZE(idna);
     } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
+        hptr = PyBytes_AS_STRING(hobj);
+        hlen = PyBytes_GET_SIZE(hobj);
     } else {
         PyErr_SetString(PyExc_TypeError,
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
+    }
+    if (hptr != NULL && strlen(hptr) != (size_t)hlen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() host must not contain null characters");
+        goto err;
     }
     if (PyLong_CheckExact(pobj)) {
         pstr = PyObject_Str(pobj);
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
-        pptr = PyUnicode_AsUTF8(pstr);
+        pptr = PyUnicode_AsUTF8AndSize(pstr, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = PyUnicode_AsUTF8(pobj);
+        pptr = PyUnicode_AsUTF8AndSize(pobj, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
+        plen = PyBytes_GET_SIZE(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");
+        goto err;
+    }
+    if (pptr != NULL && strlen(pptr) != (size_t)plen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() port must not contain null characters");
         goto err;
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
