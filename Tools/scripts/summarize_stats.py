@@ -45,6 +45,7 @@ SOURCE_DIR = Path(__file__).parents[2]
 
 
 TOTAL = "specialization.hit", "specialization.miss", "execution_count"
+UOPS_EXECUTED_LABEL = "Uops executed"
 
 
 def pretty(name: str) -> str:
@@ -450,7 +451,7 @@ class Stats:
             gc_stats[gen_n][name] = value
         return gc_stats
 
-    def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
+    def get_optimization_stats(self) -> dict[Doc, tuple[int, int | None]]:
         if "Optimization attempts" not in self._data:
             return {}
 
@@ -520,7 +521,7 @@ class Stats:
                 None,
             ),
             Doc(
-                "Uops executed",
+                UOPS_EXECUTED_LABEL,
                 "The total number of uops (micro-operations) that were executed",
             ): (
                 uops,
@@ -1194,11 +1195,11 @@ def optimization_section() -> Section:
 
         return [
             (
-                label,
+                doc,
                 Count(value),
-                Ratio(value, den, percentage=label != "Uops executed"),
+                Ratio(value, den, percentage=doc.text != UOPS_EXECUTED_LABEL),
             )
-            for label, (value, den) in optimization_stats.items()
+            for doc, (value, den) in optimization_stats.items()
         ]
 
     def calc_optimizer_table(stats: Stats) -> Rows:
