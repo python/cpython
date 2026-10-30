@@ -1,0 +1,1 @@
+Speed up :meth:`logging.Logger.setLevel` and :func:`logging.disable` when there are many loggers: only loggers that have cached results are now cleared, instead of every logger.
