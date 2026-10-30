@@ -560,22 +560,22 @@ set_tp_bases(PyTypeObject *self, PyObject *bases)
     self->tp_bases = bases;
 }
 
-// Replace tp_bases and tp_base of a type with the world stopped.  Returns 1
-// on success and 0 if tp_bases is no longer 'expected'.  In the latter case
+// Replace tp_bases and tp_base of a type with the world stopped.  Returns true
+// on success and false if tp_bases is no longer 'expected'.  In the latter case
 // the caller still owns 'bases' and 'base'.
-static int
+static bool
 try_set_tp_bases(PyTypeObject *self, PyObject *expected,
                 PyObject *bases, PyTypeObject *base)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(PyTuple_Check(bases));
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    int res = 0;
+    bool res = false;
     types_stop_world();
     if (self->tp_bases == expected) {
         self->tp_bases = bases;
         self->tp_base = base;
-        res = 1;
+        res = true;
     }
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
@@ -628,23 +628,23 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
     self->tp_mro = mro;
 }
 
-// Replace tp_mro of a type with the world stopped.  Returns 1 on success and
-// 0 if tp_mro is no longer 'expected'.  In the latter case the caller still
+// Replace tp_mro of a type with the world stopped.  Returns true on success and
+// false if tp_mro is no longer 'expected'.  In the latter case the caller still
 // owns 'mro'.
-static int
+static bool
 try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro)
 {
     ASSERT_TYPE_LOCK_HELD();
     assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     assert(mro == NULL || PyTuple_CheckExact(mro));
-    int res = 0;
+    bool res = false;
     types_stop_world();
     if (self->tp_mro == expected) {
         if (mro != NULL) {
             PyUnstable_Object_EnableDeferredRefcount(mro);
         }
         self->tp_mro = mro;
-        res = 1;
+        res = true;
     }
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
@@ -1768,7 +1768,7 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
 
     if (res < 0) {
         // Roll back, unless tp_mro has already been replaced again.
-        if (try_set_tp_mro(type, new_mro, old_mro) == 1) {
+        if (try_set_tp_mro(type, new_mro, old_mro)) {
             Py_DECREF(new_mro);
         }
         else {
@@ -2014,7 +2014,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases)
                           "", 2, 3, &cls, &new_mro, &old_mro);
         /* Do not rollback if cls has a newer version of MRO.  */
         old_mro = Py_XNewRef(old_mro);
-        if (try_set_tp_mro(cls, new_mro, old_mro) == 1) {
+        if (try_set_tp_mro(cls, new_mro, old_mro)) {
             Py_DECREF(new_mro);
         }
         else {
@@ -2025,8 +2025,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases)
 
   bail:
     /* Restore the old bases, unless tp_bases has been replaced again. */
-    if (try_set_tp_bases(type, new_bases, old_bases, old_base) == 1)
-    {
+    if (try_set_tp_bases(type, new_bases, old_bases, old_base)) {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
     }
@@ -2051,12 +2050,9 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
     // tp_bases was replaced again while TYPE_LOCK was released or due to
     // re-entrancy from the mro() call.
     Py_ssize_t n = PyTuple_GET_SIZE(new_bases);
-    PyObject *bases = PyTuple_New(n);
+    PyObject *bases = PyTuple_FromArray(((PyTupleObject *)new_bases)->ob_item, n);
     if (bases == NULL) {
         return -1;
-    }
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyTuple_SET_ITEM(bases, i, Py_NewRef(PyTuple_GET_ITEM(new_bases, i)));
     }
     BEGIN_TYPE_LOCK();
     res = type_set_bases_unlocked(type, bases);
