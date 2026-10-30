@@ -468,6 +468,8 @@ class ZipInfo:
 
         if date_time[0] < 1980:
             raise ValueError('ZIP does not support timestamps before 1980')
+        if date_time[0] > 2107:
+            raise ValueError('ZIP does not support timestamps after 2107')
 
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
@@ -643,12 +645,21 @@ class ZipInfo:
             filename = os.fspath(filename)
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
-        mtime = time.localtime(st.st_mtime)
-        date_time = mtime[0:6]
-        if not strict_timestamps and date_time[0] < 1980:
-            date_time = (1980, 1, 1, 0, 0, 0)
-        elif not strict_timestamps and date_time[0] > 2107:
-            date_time = (2107, 12, 31, 23, 59, 59)
+        try:
+            mtime = time.localtime(st.st_mtime)
+        except (OverflowError, OSError):
+            if strict_timestamps:
+                raise
+            if st.st_mtime < 0:
+                date_time = (1980, 1, 1, 0, 0, 0)
+            else:
+                date_time = (2107, 12, 31, 23, 59, 58)
+        else:
+            date_time = mtime[0:6]
+            if not strict_timestamps and date_time[0] < 1980:
+                date_time = (1980, 1, 1, 0, 0, 0)
+            elif not strict_timestamps and date_time[0] > 2107:
+                date_time = (2107, 12, 31, 23, 59, 58)
         # Create ZipInfo instance to store file information
         if arcname is None:
             arcname = filename
