@@ -1,0 +1,1 @@
+Make pure-Python ElementTree ParseError first argument always a str.
