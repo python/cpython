@@ -1865,6 +1865,9 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
     }
 
     Py_ssize_t n = raw_allocated_blocks;
+    for (uint i = 0; i < NB_SMALL_SIZE_CLASSES; i++) {
+        n -= (state->block_cache[i] != NULL);
+    }
     /* add up allocated blocks for used pools */
     for (uint i = 0; i < maxarenas; ++i) {
         /* Skip arenas which are not allocated. */
@@ -1897,6 +1900,7 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
     }
 #endif
     if (has_own_state(interp) && interp->obmalloc != NULL) {
+        _PyMem_ClearBlockCaches(interp);
         Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
         assert(has_own_state(interp) || leaked == 0);
         interp->runtime->obmalloc.interpreter_leaks += leaked;
@@ -2519,6 +2523,11 @@ pymalloc_alloc(OMState *state, void *Py_UNUSED(ctx), size_t nbytes)
     }
 
     uint size = (uint)(nbytes - 1) >> ALIGNMENT_SHIFT;
+    pymem_block *cached = state->block_cache[size];
+    if (cached != NULL) {
+        state->block_cache[size] = NULL;
+        return cached;
+    }
     poolp pool = usedpools[size + size];
     pymem_block *bp;
 
@@ -2768,6 +2777,62 @@ insert_to_freepool(OMState *state, poolp pool)
            || ao->prevarena->nextarena == ao);
 }
 
+/* Return the cached block to its pool, which was kept off usedpools. */
+static void
+pymalloc_flush_block_cache(OMState *state, uint size)
+{
+    pymem_block *block = state->block_cache[size];
+    if (block == NULL) {
+        return;
+    }
+    poolp pool = POOL_ADDR(block);
+    assert(pool->freeblock == NULL);
+    assert(pool->ref.count == NUMBLOCKS(size));
+    assert(pool->ref.count > 1);
+    state->block_cache[size] = NULL;
+    *(pymem_block **)block = NULL;
+    pool->freeblock = block;
+    pool->ref.count--;
+    insert_to_usedpool(state, pool);
+}
+
+void
+_PyMem_ClearBlockCaches(PyInterpreterState *interp)
+{
+    OMState *state = interp->obmalloc;
+    if (state == NULL) {
+        return;
+    }
+    for (uint i = 0; i < NB_SMALL_SIZE_CLASSES; i++) {
+        pymalloc_flush_block_cache(state, i);
+    }
+}
+/* Keep the common free path small enough to inline into allocator wrappers. */
+Py_NO_INLINE static void
+pymalloc_free_full_pool(OMState *state, poolp pool, pymem_block *p)
+{
+    uint size = pool->szidx;
+    pymem_block *cached = state->block_cache[size];
+    if (cached == NULL) {
+        /* Keep the pool full so reuse avoids count and list updates. */
+        state->block_cache[size] = p;
+        return;
+    }
+    if (POOL_ADDR(cached) == pool) {
+        pymalloc_flush_block_cache(state, size);
+    }
+    else {
+        /* Another full pool owns the cache.  Link this pool normally. */
+        insert_to_usedpool(state, pool);
+    }
+    *(pymem_block **)p = pool->freeblock;
+    pool->freeblock = p;
+    pool->ref.count--;
+    if (pool->ref.count == 0) {
+        insert_to_freepool(state, pool);
+    }
+}
+
 /* Free a memory block allocated by pymalloc_alloc().
    Return 1 if it was freed.
    Return 0 if the block was not allocated by pymalloc_alloc(). */
@@ -2796,24 +2861,16 @@ pymalloc_free(OMState *state, void *Py_UNUSED(ctx), void *p)
      */
     assert(pool->ref.count > 0);            /* else it was empty */
     pymem_block *lastfree = pool->freeblock;
+    if (UNLIKELY(lastfree == NULL)) {
+        pymalloc_free_full_pool(state, pool, p);
+        return 1;
+    }
+
+    /* The pool is in usedpools and already has a free block. */
     *(pymem_block **)p = lastfree;
     pool->freeblock = (pymem_block *)p;
     pool->ref.count--;
 
-    if (UNLIKELY(lastfree == NULL)) {
-        /* Pool was full, so doesn't currently live in any list:
-         * link it to the front of the appropriate usedpools[] list.
-         * This mimics LRU pool usage for new allocations and
-         * targets optimal filling when several pools contain
-         * blocks of the same size class.
-         */
-        insert_to_usedpool(state, pool);
-        return 1;
-    }
-
-    /* freeblock wasn't NULL, so the pool wasn't full,
-     * and the pool is in a usedpools[] list.
-     */
     if (LIKELY(pool->ref.count != 0)) {
         /* pool isn't empty:  leave it in usedpools */
         return 1;
@@ -2935,6 +2992,12 @@ _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
 }
 
 #else   /* ! WITH_PYMALLOC */
+
+void
+_PyMem_ClearBlockCaches(PyInterpreterState *Py_UNUSED(interp))
+{
+}
+
 
 /*==========================================================================*/
 /* pymalloc not enabled:  Redirect the entry points to malloc.  These will
@@ -3790,8 +3853,10 @@ pymalloc_print_stats(FILE *out)
 
     for (i = 0; i < numclasses; ++i) {
         size_t p = numpools[i];
-        size_t b = numblocks[i];
-        size_t f = numfreeblocks[i];
+        /* The pool counts include blocks reserved for the cache. */
+        uint cached = (state->block_cache[i] != NULL);
+        size_t b = numblocks[i] - cached;
+        size_t f = numfreeblocks[i] + cached;
         uint size = INDEX2SIZE(i);
         if (p == 0) {
             assert(b == 0 && f == 0);
