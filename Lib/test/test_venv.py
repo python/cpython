@@ -302,6 +302,28 @@ class BasicTest(BaseTest):
             self.assertEqual(pathlib.Path(out.strip().decode()),
                              pathlib.Path(expected), prefix)
 
+    # gh-157917: the "\\?\" extended-length prefix must not leak into the prefix
+    @requireVenvCreate
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_prefixes_extended_length_path(self):
+        """
+        Test that invoking a venv through a "\\?\" extended-length path does
+        not leave that prefix behind in the prefixes.  Windows does not
+        resolve relative components (such as ".." or "/") in such paths, so
+        they break tools that join them onto sysconfig-derived paths.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join('\\\\?\\' + self.env_dir, self.bindir, self.exe)
+        for prefix in ('prefix', 'exec_prefix'):
+            with self.subTest(prefix):
+                out, err = check_output(
+                    [envpy, '-c', 'import sys; print(sys.%s)' % prefix],
+                    encoding='utf-8')
+                self.assertFalse(out.strip().startswith('\\\\?\\'), out)
+                self.assertEqual(pathlib.Path(out.strip()),
+                                 pathlib.Path(self.env_dir), prefix)
+
     @requireVenvCreate
     def test_sysconfig(self):
         """

@@ -1,0 +1,9 @@
+Fix :attr:`sys.prefix`, :attr:`sys.exec_prefix` and :attr:`sys.executable`
+retaining the ``\\?\`` extended-length path prefix in a virtual environment
+when the interpreter is invoked through such a path on Windows.  The venv
+launcher reports its own path through ``GetModuleFileNameW``, which preserves
+the prefix, and that value was used verbatim.  Windows does not resolve
+relative path components in extended-length paths, so the leaked prefix made
+tools that join ``..`` components onto :mod:`sysconfig` paths fail with
+``OSError: [Errno 22]``.  The prefix is now stripped again, except for paths
+that are still too long to be used without it.
