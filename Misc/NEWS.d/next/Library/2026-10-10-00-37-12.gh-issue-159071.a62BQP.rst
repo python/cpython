@@ -1,0 +1,2 @@
+Fixed :exc:`UnicodeDecodeError` offsets in the :mod:`encodings.utf_8_sig`
+codec when input starts with a BOM.
