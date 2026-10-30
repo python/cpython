@@ -1,0 +1,1 @@
+:deco:`functools.cache` and :deco:`functools.cached_property` now guarantee an idempotent result on threaded access. This does not guarantee that the underlying function will be called exactly once, but once a value is cached, concurrent accesses will not overwrite it.
