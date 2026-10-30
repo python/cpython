@@ -1,5 +1,9 @@
 r"""HTTP/1.1 client library
 
+This module implements the client side of the HTTP and HTTPS protocols.
+HTTPConnection and HTTPSConnection manage a single connection to a server;
+HTTPResponse wraps the reply.
+
 HTTPConnection goes through a number of "states", which define when a client
 may legally make another request or fetch the response for a particular
 request. This diagram details these state transitions:
