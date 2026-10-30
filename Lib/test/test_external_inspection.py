@@ -2033,14 +2033,31 @@ while True:
         leaf(300)
 """
         with _managed_subprocess([sys.executable, "-c", script]) as process:
-            for _ in busy_retry(SHORT_TIMEOUT):
+            # RemoteUnwinder can attach during interpreter startup. Wait
+            # until leaf() is on the stack so the sample window observes it.
+            unwinder = None
+            for _ in busy_retry(
+                SHORT_TIMEOUT,
+                "child did not reach leaf() before sampling",
+            ):
+                if unwinder is None:
+                    try:
+                        unwinder = RemoteUnwinder(
+                            process.pid,
+                            native=True,
+                            gc=False,
+                            cache_frames=False,
+                        )
+                    except RuntimeError:
+                        continue
                 try:
-                    unwinder = RemoteUnwinder(
-                        process.pid, native=True, gc=False, cache_frames=False,
-                    )
-                except RuntimeError:
+                    threads = unwinder.get_stack_trace()[0].threads
+                except TRANSIENT_ERRORS:
                     continue
-                break
+                if threads and any(
+                    frame.funcname == "leaf" for frame in threads[0].frame_info
+                ):
+                    break
             samples = 0
             for _ in range(10_000):
                 try:

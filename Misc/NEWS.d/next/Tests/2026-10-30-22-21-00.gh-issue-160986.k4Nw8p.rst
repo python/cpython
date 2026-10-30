@@ -1,0 +1,3 @@
+Fix a race in ``test_external_inspection`` where
+``test_popping_python_frame_is_not_native`` could spend its whole sample
+window during interpreter startup, before the child reached ``leaf()``.
