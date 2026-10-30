@@ -1,0 +1,3 @@
+Fix :exc:`AssertionError` in :meth:`http.client.HTTPConnection.putrequest`
+when an absolute-URL request's netloc contains RFC 3986 percent-encoding
+outside of an IPv6 zone identifier, such as percent-encoded userinfo.
