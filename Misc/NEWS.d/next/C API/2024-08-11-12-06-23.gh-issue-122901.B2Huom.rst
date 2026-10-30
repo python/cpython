@@ -1,1 +1,0 @@
-Improve performance of ``find_max_char``.
