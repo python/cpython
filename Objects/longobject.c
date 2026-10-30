@@ -3325,7 +3325,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
     int d;
     digit wm1, wm2, carry, q, r, vtop, *v0, *vk, *w0, *ak;
     twodigits vv;
-    stwodigits zhi;
+    sdigit zhi;
     stwodigits z;
 
     /* We follow Knuth [The Art of Computer Programming, Vol. 2 (3rd
@@ -3416,10 +3416,11 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         for (i = 0; i < size_w; ++i) {
             /* invariants: -PyLong_BASE <= -q <= zhi <= 0;
                -PyLong_BASE * q <= z < PyLong_BASE */
-            z = (stwodigits)(sdigit)vk[i] + zhi -
+            z = (sdigit)vk[i] + zhi -
                 (stwodigits)q * (stwodigits)w0[i];
             vk[i] = (digit)z & PyLong_MASK;
-            zhi = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, z, PyLong_SHIFT);
+            zhi = (sdigit)Py_ARITHMETIC_RIGHT_SHIFT(stwodigits,
+                                                    z, PyLong_SHIFT);
         }
 
         /* add w back if q was too large (this branch taken rarely) */
