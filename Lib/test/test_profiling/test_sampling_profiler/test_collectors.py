@@ -820,11 +820,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(resolved_file_b, file_b)
         self.assertEqual(line_b, 20)
 
-        # Ensure the filename indices in funcTable are distinct
+        # Ensure the filename indices and resolved paths in funcTable are distinct
         self.assertNotEqual(file_idx_a, file_idx_b)
-
-        # Ensure the basename is not interned in place of the path
-        self.assertNotIn("__init__.py", string_array)
+        self.assertNotEqual(resolved_file_a, resolved_file_b)
+        self.assertNotEqual(resolved_file_a, os.path.basename(file_a))
+        self.assertNotEqual(resolved_file_b, os.path.basename(file_b))
 
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)
