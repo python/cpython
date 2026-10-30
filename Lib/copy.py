@@ -51,7 +51,7 @@ __getstate__() and __setstate__().  See the documentation for module
 
 import types
 import weakref
-from copyreg import dispatch_table
+from copyreg import dispatch_table, Proxy
 
 class Error(Exception):
     pass
@@ -71,6 +71,8 @@ def copy(x):
         return x
     if cls in _copy_builtin_containers:
         return cls.copy(x)
+    if cls is Proxy:
+        return x.obj
 
 
     if issubclass(cls, type):
@@ -220,6 +222,10 @@ d[frozendict] = _deepcopy_frozendict
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
 d[types.MethodType] = _deepcopy_method
+
+def _deepcopy_proxy(x, memo, deepcopy=deepcopy):
+    return deepcopy(x.obj, memo)
+d[Proxy] = _deepcopy_proxy
 
 del d
 
