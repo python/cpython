@@ -282,7 +282,9 @@ calliter_iternext(PyObject *op)
         if (it->it_sentinel == NULL) {
             return result; /* Common case, fast path */
         }
-        int ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
+        PyObject *sentinel = Py_NewRef(it->it_sentinel);
+        int ok = PyObject_RichCompareBool(sentinel, result, Py_EQ);
+        Py_DECREF(sentinel);
         if (ok == 0) {
             return result; /* Common case, fast path */
         }
