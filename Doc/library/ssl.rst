@@ -479,7 +479,7 @@ Certificate handling
 
    The function returns a list of (cert_bytes, encoding_type, trust) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data. Trust specifies the purpose of the certificate as a set
    of OIDS or exactly ``True`` if the certificate is trustworthy for all
    purposes.
@@ -500,9 +500,9 @@ Certificate handling
    one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
    stores, too.
 
-   The function returns a list of (cert_bytes, encoding_type, trust) tuples.
+   The function returns a list of (cert_bytes, encoding_type) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data.
 
    .. availability:: Windows.

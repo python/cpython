@@ -127,7 +127,7 @@ rules:
 
 .. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
 
-   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Resize an object allocated by :c:macro:`PyObject_GC_NewVar`.
    Returns the resized object of type ``TYPE*`` (refers to any C type)
    or ``NULL`` on failure.
 

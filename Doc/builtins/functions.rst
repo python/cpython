@@ -1853,8 +1853,6 @@ are always available.  They are listed here in alphabetical order.
    including the name and address of the object.  A class can control what this
    function returns for its instances
    by defining a :meth:`~object.__repr__` method.
-   If :func:`sys.displayhook` is not accessible, this function will raise
-   :exc:`RuntimeError`.
 
    This class has a custom representation that can be evaluated::
 
