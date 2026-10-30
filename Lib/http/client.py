@@ -172,7 +172,7 @@ _is_legal_chunk_size = re.compile(rb'[0-9a-fA-F]+').fullmatch
 
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
-_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
+_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT', 'QUERY'}
 
 
 def _encode(data, name='data'):
