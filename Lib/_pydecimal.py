@@ -4165,7 +4165,7 @@ class Context(object):
     def _defer_traps(self):
         """Defer trapped signals until the end of the with block.
 
-        _raise_error sets the flag of every signal in the block and
+        _raise_error() sets the flag of every signal in the block and
         raises the first trapped exception on exit, so that a
         multi-signal operation sets the same flags as _decimal.
         """
@@ -4173,8 +4173,10 @@ class Context(object):
         try:
             yield
         except BaseException:
-            if self._deferred_traps == 1:
-                self._deferred_error = None
+            # The block is aborted, so the deferred error is
+            # discarded: the propagating exception wins, and the
+            # context does not retain an exception object.
+            self._deferred_error = None
             raise
         finally:
             self._deferred_traps -= 1

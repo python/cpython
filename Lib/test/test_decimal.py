@@ -4311,6 +4311,32 @@ class PyContextFlags(ContextFlags, unittest.TestCase):
         self.assertEqual(context._deferred_traps, 0)
         self.assertIsNone(context._deferred_error)
 
+    def test_deferred_traps_exception_discards_error(self):
+        # If an exception propagates through a _defer_traps block, the
+        # deferred error is discarded at every nesting level and the
+        # state is reset, so the propagating exception wins and the
+        # context stays usable.
+        Context = self.decimal.Context
+        Decimal = self.decimal.Decimal
+        Overflow = self.decimal.Overflow
+        context = Context(prec=9, Emin=-999, Emax=999, traps=[Overflow])
+        with self.assertRaises(RuntimeError):
+            with context._defer_traps():
+                with context._defer_traps():
+                    context._raise_error(Overflow, 'test', 1)
+                    raise RuntimeError('boom')
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+
+        # The flag was still set, and a later trapped operation
+        # raises its own error rather than the discarded one.
+        self.assertTrue(context.flags[Overflow])
+        context.clear_flags()
+        with self.assertRaises(Overflow):
+            context.multiply(Decimal('1E+800'), Decimal('1E+800'))
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+
 class SpecialContexts:
     """Test the context templates."""
 
