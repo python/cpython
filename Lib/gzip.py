@@ -456,11 +456,10 @@ class GzipFile(_streams.BaseStream):
             for i in range(count // self._buffer_size):
                 self.write(chunk)
             self.write(b'\0' * (count % self._buffer_size))
+            return offset
         elif self.mode == READ:
             self._check_not_closed()
             return self._buffer.seek(offset, whence)
-
-        return self.offset
 
     def readline(self, size=-1):
         self._check_not_closed()
