@@ -38,6 +38,16 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+class SomethingAsync(object):
+    async def meth(self, a, b, c, d=None): pass
+
+    @classmethod
+    async def cmeth(cls, a, b, c, d=None): pass
+
+    @staticmethod
+    async def smeth(a, b, c, d=None): pass
+
+
 class SomethingElse(object):
     def __init__(self):
         self._instance = None
@@ -2200,9 +2210,9 @@ class MockTest(unittest.TestCase):
             manager.attach_mock(mocked, 'attach_meth')
             obj = Something()
             obj.meth(1, 2, 3, d=4)
-            manager.assert_has_calls([call.attach_meth(mock.ANY, 1, 2, 3, d=4)])
-            obj.meth.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
-            mocked.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+            manager.assert_has_calls([call.attach_meth(1, 2, 3, d=4)])
+            obj.meth.assert_has_calls([call(1, 2, 3, d=4)])
+            mocked.assert_has_calls([call(1, 2, 3, d=4)])
 
         with mock.patch(f'{__name__}.something', autospec=True) as mocked:
             manager = Mock()
