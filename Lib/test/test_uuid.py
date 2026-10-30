@@ -897,6 +897,21 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
+    @contextlib.contextmanager
+    def _uuid6_hooks(self, nanoseconds, *, random_func=None, node_func=None):
+        time_func = nanoseconds if callable(nanoseconds) else lambda: nanoseconds
+        self.uuid._install_py_hooks(random_func=random_func,
+                                    time_func=time_func, node_func=node_func)
+        if self.is_c_uuid:
+            self.uuid._install_c_hooks(random_func=random_func,
+                                       time_func=time_func, node_func=node_func)
+        try:
+            yield
+        finally:
+            self.uuid._install_py_hooks(random_func=None, time_func=None)
+            if self.is_c_uuid:
+                self.uuid._install_c_hooks(random_func=None, time_func=None)
+
     def test_uuid6(self):
         equal = self.assertEqual
         u = self.uuid.uuid6()
@@ -906,12 +921,14 @@ class BaseTestUUID:
         fake_nanoseconds = 0x1571_20a1_de1a_c533
         fake_node_value = 0x54e1_acf6_da7f
         fake_clock_seq = 0x14c5
-        with (
-            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
-            mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
-            mock.patch('time.time_ns', return_value=fake_nanoseconds),
-            mock.patch('random.getrandbits', return_value=fake_clock_seq)
-        ):
+
+        def random_func(size):
+            # The top two entropy bits must be discarded from the clock sequence.
+            data = (fake_clock_seq | 0xc000).to_bytes(2, 'big')
+            return (data * ((size + 1) // 2))[:size]
+
+        with self._uuid6_hooks(fake_nanoseconds, random_func=random_func,
+                              node_func=lambda: fake_node_value):
             u = self.uuid.uuid6()
             equal(u.variant, self.uuid.RFC_4122)
             equal(u.version, 6)
@@ -945,20 +962,19 @@ class BaseTestUUID:
         timestamp = 0x1ec9414c_232a_b00
         fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
 
-        with mock.patch('time.time_ns', return_value=fake_nanoseconds):
-            def gen():
-                with mock.patch.object(self.uuid, '_last_timestamp_v6', None):
-                    return self.uuid.uuid6(node=0, clock_seq=None)
+        def gen():
+            with self._uuid6_hooks(fake_nanoseconds):
+                return self.uuid.uuid6(node=0, clock_seq=None)
 
-            # By the birthday paradox, sampling N = 1024 UUIDs with identical
-            # node IDs and timestamps results in duplicates with probability
-            # close to 1 (not having a duplicate happens with probability of
-            # order 1E-15) since only the 14-bit clock sequence is randomized.
-            N = 1024
-            uuids = {gen() for _ in range(N)}
-            self.assertSetEqual({u.node for u in uuids}, {0})
-            self.assertSetEqual({u.time for u in uuids}, {timestamp})
-            self.assertLess(len(uuids), N, 'collision property does not hold')
+        # By the birthday paradox, sampling N = 1024 UUIDs with identical
+        # node IDs and timestamps results in duplicates with probability
+        # close to 1 (not having a duplicate happens with probability of
+        # order 1E-15) since only the 14-bit clock sequence is randomized.
+        N = 1024
+        uuids = {gen() for _ in range(N)}
+        self.assertSetEqual({u.node for u in uuids}, {0})
+        self.assertSetEqual({u.time for u in uuids}, {timestamp})
+        self.assertLess(len(uuids), N, 'collision property does not hold')
 
     def test_uuid6_node(self):
         # Make sure the given node ID appears in the UUID.
@@ -1016,6 +1032,56 @@ class BaseTestUUID:
                     u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
                     self.assertEqual(get_clock_seq(u), clock_seq & 0x3fff)
 
+    def test_uuid6_argument_masking(self):
+        # Both fields retain their low bits, including for negative and large
+        # integers. Custom bitwise operations must still be called.
+        class Maskable:
+            def __and__(self, mask):
+                return 0x123456789abcdef & mask
+
+        for value in (-1, -(1 << 100), 1 << 100, True, Maskable()):
+            with self.subTest(value=value):
+                u = self.uuid.uuid6(node=value, clock_seq=value)
+                self.assertEqual(u.node, value & 0xffffffffffff)
+                self.assertEqual(u.clock_seq, value & 0x3fff)
+
+        class Indexable:
+            def __index__(self):
+                return 1
+
+        for value in (1.5, '1', Indexable()):
+            for field in ('node', 'clock_seq'):
+                with self.subTest(value=value, field=field):
+                    with self.assertRaises(TypeError):
+                        self.uuid.uuid6(**{field: value})
+
+    def test_uuid6_callback_errors(self):
+        # Entropy and node lookup errors must propagate unchanged.
+        error = RuntimeError('UUIDv6 callback failed')
+
+        def random_func(size):
+            raise error
+
+        with self._uuid6_hooks(0, random_func=random_func):
+            with self.assertRaises(RuntimeError) as cm:
+                self.uuid.uuid6(node=0)
+            self.assertIs(cm.exception, error)
+        def node_func():
+            raise error
+
+        with self._uuid6_hooks(0, node_func=node_func):
+            with self.assertRaises(RuntimeError) as cm:
+                self.uuid.uuid6(clock_seq=0)
+            self.assertIs(cm.exception, error)
+
+    def test_uuid6_monotonicity(self):
+        # Repeated and backward clock readings must still advance the timestamp.
+        readings = iter((1000, 1000, -1))
+        with self._uuid6_hooks(lambda: next(readings)):
+            values = [self.uuid.uuid6(node=0, clock_seq=0) for _ in range(3)]
+        self.assertEqual(values[1].time, values[0].time + 1)
+        self.assertEqual(values[2].time, values[1].time + 1)
+
     def test_uuid6_test_vectors(self):
         equal = self.assertEqual
         # https://www.rfc-editor.org/rfc/rfc9562#name-test-vectors
@@ -1026,10 +1092,7 @@ class BaseTestUUID:
         node = 0x9f6bdeced846
         clock_seq = (3 << 12) | 0x3c8
 
-        with (
-            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
-            mock.patch('time.time_ns', return_value=fake_nanoseconds)
-        ):
+        with self._uuid6_hooks(fake_nanoseconds):
             u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
             equal(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
             #   32          16      4      12       2      14         48
@@ -1854,22 +1917,214 @@ class TestCImplementationCompat(unittest.TestCase):
         self.assertEqual(len(all_ps), len(all_us))
         self.assertEqual(len(all_ps), len(uuids))
 
-    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0):
+    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0,
+                       node_func=None):
         py_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
         uuid_mod._install_py_hooks(
             random_func=py_hooks.random_func,
-            time_func=py_hooks.time_func
+            time_func=py_hooks.time_func,
+            node_func=node_func,
         )
 
         c_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
         uuid_mod._install_c_hooks(
             random_func=c_hooks.random_func,
-            time_func=c_hooks.time_func
+            time_func=c_hooks.time_func,
+            node_func=node_func,
         )
 
     def _reset_hooks(self, uuid_mod):
         uuid_mod._install_c_hooks(random_func=None, time_func=None)
         uuid_mod._install_py_hooks(random_func=None, time_func=None)
+
+    def test_exact_same_algo_uuid6(self):
+        # Compare every bit with the Python algorithm across repeated, forward,
+        # backward, and negative clocks, and masked/default node/sequence values.
+        # Generate enough values to cross the C entropy cache's refill boundary.
+        import uuid
+
+        values = (None, 0, -1, (1 << 100) | 0x123456789abc)
+        try:
+            for start_at in (-1001, 0, 1672533296123456789):
+                for inc_by in (-101, 0, 101, 1000000):
+                    for node, clock_seq in product(values, repeat=2):
+                        self._install_hooks(uuid, start_at=start_at,
+                                            inc_by=inc_by,
+                                            node_func=lambda: 0x123456789abc)
+                        with self.subTest(start=start_at, inc=inc_by,
+                                          node=node, clock_seq=clock_seq):
+                            for _ in range(200):
+                                self.assertEqual(
+                                    uuid._py_uuid6(node, clock_seq).bytes,
+                                    uuid._c_uuid6(node, clock_seq).bytes,
+                                )
+        finally:
+            self._reset_hooks(uuid)
+
+    def test_exact_same_algo_mixed_generators(self):
+        # UUIDv4/v6/v7 share the C entropy cache. Interleaving their differently
+        # sized reads must consume the same byte stream as the Python versions,
+        # including reads that straddle a cache refill.
+        import uuid
+
+        generators = (
+            (uuid._py_uuid4, uuid._c_uuid4, {}),
+            (uuid._py_uuid6, uuid._c_uuid6, {'node': 0}),
+            (uuid._py_uuid7, uuid._c_uuid7, {}),
+        )
+        self._install_hooks(uuid, start_at=1672533296123456789, inc_by=101)
+        try:
+            for sequence in range(200):
+                for python_func, c_func, kwargs in generators:
+                    with self.subTest(sequence=sequence, generator=c_func.__name__):
+                        self.assertEqual(python_func(**kwargs).bytes,
+                                         c_func(**kwargs).bytes)
+        finally:
+            self._reset_hooks(uuid)
+
+    def test_uuid6_node_cache(self):
+        # Cache the masked default node, including zero. Explicit node arguments
+        # bypass the cache, and resetting the testing hooks invalidates it.
+        import uuid
+
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+        for node in (0, -1):
+            with self.subTest(node=node):
+                getnode = mock.Mock(return_value=node)
+                uuid._install_c_hooks(random_func=None, time_func=None,
+                                      node_func=getnode)
+                self.assertEqual(uuid.uuid6(clock_seq=0).node,
+                                 node & 0xffffffffffff)
+                self.assertEqual(uuid.uuid6(node=42, clock_seq=0).node, 42)
+                self.assertEqual(uuid.uuid6(clock_seq=0).node,
+                                 node & 0xffffffffffff)
+                getnode.assert_called_once_with()
+
+    def test_uuid6_node_cache_error(self):
+        # A failed lookup must leave the cache empty so the next call can retry.
+        import uuid
+
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+        error = RuntimeError('node lookup failed')
+        getnode = mock.Mock(side_effect=[error, 42])
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
+        with self.assertRaises(RuntimeError) as cm:
+            uuid.uuid6(clock_seq=0)
+        self.assertIs(cm.exception, error)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 42)
+        self.assertEqual(getnode.call_count, 2)
+
+    def test_uuid6_node_cache_reentrant(self):
+        # getnode() can reenter uuid6(). The recursive call initializes the cache;
+        # the outer call must reuse that value without deadlocking or replacing it.
+        import uuid
+
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+        recursive = False
+
+        def getnode():
+            nonlocal recursive
+            if not recursive:
+                recursive = True
+                self.assertEqual(uuid.uuid6(clock_seq=0).node, 11)
+                return 22
+            return 11
+
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
+        self.assertEqual(uuid.uuid6(clock_seq=0).node, 11)
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_uuid6_node_cache(self):
+        # Pause one lookup while a second thread fills the cache. Both calls
+        # must use the value published first, even if their lookups disagree.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        entered = threading.Event()
+        resume = threading.Event()
+        local = threading.local()
+        local.id = 2
+
+        def getnode():
+            if local.id == 1:
+                entered.set()
+                if not resume.wait(support.SHORT_TIMEOUT):
+                    raise TimeoutError('node lookup was not resumed')
+            return local.id
+
+        def generate():
+            local.id = 1
+            return uuid.uuid6(clock_seq=0)
+
+        uuid._install_c_hooks(random_func=None, time_func=None,
+                              node_func=getnode)
+        self.addCleanup(uuid._install_c_hooks, random_func=None, time_func=None)
+        with ThreadPoolExecutor(1) as pool:
+            pending = pool.submit(generate)
+            try:
+                self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                other = uuid.uuid6(clock_seq=0)
+            finally:
+                resume.set()
+            first = pending.result(timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(first.node, 2)
+        self.assertEqual(other.node, 2)
+
+    @threading_helper.requires_working_threading()
+    @threading_helper.reap_threads
+    def test_concurrent_uuid6_state(self):
+        # Pause a call in argument conversion or entropy fetching while another
+        # call completes.
+        # With fixed time, node, and sequence, only the shared timestamp can
+        # distinguish them; the resumed call must advance from the newer state.
+        from concurrent.futures import ThreadPoolExecutor
+        import threading
+        import uuid
+
+        for field in ('node', 'clock_seq', 'entropy'):
+            with self.subTest(field=field):
+                entered = threading.Event()
+                resume = threading.Event()
+
+                class Paused:
+                    def __and__(self, mask):
+                        pause()
+                        return 0
+
+                def pause():
+                    entered.set()
+                    if not resume.wait(support.SHORT_TIMEOUT):
+                        raise TimeoutError('UUIDv6 callback was not resumed')
+
+                def random_func(size):
+                    pause()
+                    return bytes(size)
+
+                uuid._install_c_hooks(
+                    random_func=random_func if field == 'entropy' else None,
+                    time_func=lambda: 0)
+                try:
+                    kwargs = dict(node=0, clock_seq=0)
+                    if field == 'entropy':
+                        kwargs['clock_seq'] = None
+                    else:
+                        kwargs[field] = Paused()
+                    with ThreadPoolExecutor(1) as pool:
+                        pending = pool.submit(uuid.uuid6, **kwargs)
+                        try:
+                            self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                            other = uuid.uuid6(node=0, clock_seq=0)
+                        finally:
+                            resume.set()
+                        first = pending.result(timeout=support.SHORT_TIMEOUT)
+                    self.assertEqual(first.time, other.time + 1)
+                finally:
+                    uuid._install_c_hooks(random_func=None, time_func=None)
 
     def test_invalid_time_hook_result(self):
         import uuid
