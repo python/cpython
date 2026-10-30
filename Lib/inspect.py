@@ -929,12 +929,93 @@ def getabsfile(object, _filename=None):
 modulesbyfile = {}
 _filesbymodname = {}
 
+def _getframemodule(frame, explicit_filename):
+    """Return a matching globals owner and a reusable fallback filename.
+
+    The filename is only returned if the owner does not match and the
+    filename-based lookup can reuse the normalized frame filename.
+    """
+    namespace = frame.f_globals
+    name = dict.get(namespace, '__name__')
+    if type(name) is not str:
+        return None, None
+    module = sys.modules.get(name)
+    # Leave subclasses and dynamic filenames to the existing lookup.
+    if (type(module) is not types.ModuleType
+            or module.__dict__ is not namespace):
+        return None, None
+    module_filename = namespace.get('__file__')
+    filename = frame.f_code.co_filename
+    # Avoid invoking user-defined comparisons when matching filenames.
+    if type(module_filename) is not str or type(filename) is not str:
+        return None, None
+    if explicit_filename is not None and explicit_filename != filename:
+        return None, None
+    # Equal filenames need no normalization. An explicit bytecode
+    # filename must retain the source/bytecode distinction.
+    if module_filename == filename and (
+            explicit_filename is None or not filename.endswith(
+                tuple(importlib.machinery.BYTECODE_SUFFIXES))):
+        return module, None
+    bytecode_suffixes = tuple(importlib.machinery.BYTECODE_SUFFIXES)
+    is_bytecode = filename.endswith(bytecode_suffixes)
+    try:
+        # Resolve bytecode aliases using the owner's loader to avoid
+        # looking up the frame recursively through getsourcefile().
+        if explicit_filename is None and is_bytecode:
+            source = (os.path.splitext(filename)[0]
+                      + importlib.machinery.SOURCE_SUFFIXES[0])
+            if (source in linecache.cache or os.path.exists(source)
+                    or getattr(module, '__loader__', None) is not None
+                    or getattr(getattr(module, '__spec__', None),
+                               'loader', None) is not None):
+                filename = source
+        if module_filename.endswith(bytecode_suffixes):
+            source = (os.path.splitext(module_filename)[0]
+                      + importlib.machinery.SOURCE_SUFFIXES[0])
+            if source == filename and namespace.get('__loader__') is not None:
+                return module, None
+            origin = getabsfile(module)
+        else:
+            origin = getabsfile(module, module_filename)
+        file = getabsfile(frame, filename)
+        if origin == file:
+            return module, None
+        # Reuse the path only if it preserves explicit-filename
+        # precedence and bytecode source resolution.
+        if explicit_filename is None and not is_bytecode:
+            return None, file
+    except (FileNotFoundError, TypeError):
+        pass
+    return None, None
+
+
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
-    if ismodule(object):
-        return object
-    if hasattr(object, '__module__'):
-        return sys.modules.get(object.__module__)
+    object_type = type(object)
+    if object_type is types.FrameType:
+        frame = object
+    elif object_type is types.TracebackType:
+        frame = object.tb_frame
+    else:
+        if isinstance(object, types.ModuleType):
+            return object
+        if hasattr(object, '__module__'):
+            return sys.modules.get(object.__module__)
+        frame = None
+    if frame is not None:
+        # A module with these exact globals is the only possible globals
+        # owner. Otherwise verify ownership before using a cached result.
+        if _filename is not None and _filename in modulesbyfile:
+            module = sys.modules.get(modulesbyfile[_filename])
+            if (type(module) is types.ModuleType
+                    and module.__dict__ is frame.f_globals):
+                return module
+        module, fallback_filename = _getframemodule(frame, _filename)
+        if module is not None:
+            return module
+        if fallback_filename is not None:
+            _filename = fallback_filename
 
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:

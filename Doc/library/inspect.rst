@@ -771,6 +771,12 @@ Retrieving source code
    Try to guess which module an object was defined in. Return ``None``
    if the module cannot be determined.
 
+   .. versionchanged:: 3.16
+      Frames and tracebacks are first matched to a module in :data:`sys.modules`
+      using the frame's global namespace and normalized filename.
+      Code objects still use filename-based lookup, which can identify a
+      different module when multiple modules share a filename.
+
 
 .. function:: getsourcefile(object)
 
