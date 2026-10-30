@@ -996,38 +996,53 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
-static void
+static char *
 debug_cycle(const char *msg, PyObject *op)
 {
-    PySys_FormatStderr("gc: %s <%s %p>\n",
-                       msg, Py_TYPE(op)->tp_name, op);
+    const char *name = Py_TYPE(op)->tp_name;
+    int len = PyOS_snprintf(NULL, 0, "gc: %s <%s %p>\n",
+                            msg, name, (void *)op);
+    if (len < 0) {
+        return NULL;
+    }
+    char *line = PyMem_RawMalloc((size_t)len + 1);
+    if (line == NULL) {
+        return NULL;
+    }
+    PyOS_snprintf(line, (size_t)len + 1, "gc: %s <%s %p>\n",
+                  msg, name, (void *)op);
+    return line;
 }
 
-/* Call debug_cycle() on each object in `list`.  sys.stderr.write() can run
- * Python code that frees any object in the list, including the one just
- * printed, so always take the first object and move it to a temporary
- * `seen` list, as finalize_garbage() does. Return the number of seen
- * items.
+/* Format a line for each object in `list`, then print them.
+ * sys.stderr.write(). Stores into buffers so can iterate
+ * to avoid calling into Python whilst we iterate the objects
  */
 static Py_ssize_t
 debug_cycles(const char *msg, PyGC_Head *list)
 {
-    PyGC_Head seen;
-    Py_ssize_t n = 0;
-    /* Always take the next object from the head of `list` rather than from
-     * the current one, which may be freed (along with others) by debug_cycle().
-     */
-    gc_list_init(&seen);
-    while (!gc_list_is_empty(list)) {
-        PyGC_Head *gc = GC_NEXT(list);
-        PyObject *op = FROM_GC(gc);
-        gc_list_move(gc, &seen);
-        n++;
-        Py_INCREF(op);
-        debug_cycle(msg, op);
-        Py_DECREF(op);
+    Py_ssize_t n = gc_list_size(list);
+    if (n == 0) {
+        return n;
     }
-    gc_list_merge(&seen, list);
+
+    char **lines = PyMem_RawCalloc(n, sizeof(char *));
+    if (lines == NULL) {
+        return n;
+    }
+
+    Py_ssize_t i = 0;
+    for (PyGC_Head *gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc), i++) {
+        lines[i] = debug_cycle(msg, FROM_GC(gc));
+    }
+
+    for (i = 0; i < n; i++) {
+        if (lines[i] != NULL) {
+            PySys_FormatStderr("%s", lines[i]);
+        }
+        PyMem_RawFree(lines[i]);
+    }
+    PyMem_RawFree(lines);
     return n;
 }
 
