@@ -996,14 +996,14 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
-/* "gc: " + msg (at most "uncollectable") + " <" + " " + %p + ">\n" + NUL */
-#define DEBUG_LINE_FIXED_LEN 64
+/* "gc: " + " <" + " " + %p + ">\n" + NUL, excluding msg and tp_name */
+#define DEBUG_LINE_FIXED_LEN 32
 
 static char *
 debug_cycle(const char *msg, PyObject *op)
 {
     const char *name = Py_TYPE(op)->tp_name;
-    size_t size = strlen(name) + DEBUG_LINE_FIXED_LEN;
+    size_t size = strlen(msg) + strlen(name) + DEBUG_LINE_FIXED_LEN;
     char *line = PyMem_RawMalloc(size);
     if (line == NULL) {
         return NULL;
