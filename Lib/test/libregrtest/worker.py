@@ -21,11 +21,10 @@ NEED_TTY = {
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
+                          worker_config: StrPath,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
-    worker_json = runtests.as_json()
-
     cmd = runtests.create_python_cmd()
-    cmd.extend(['-m', 'test.libregrtest.worker', worker_json])
+    cmd.extend(['-m', 'test.libregrtest.worker', worker_config])
 
     env = dict(os.environ)
     if tmp_dir is not None:
@@ -122,9 +121,13 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
 def main() -> NoReturn:
     if len(sys.argv) != 2:
-        print("usage: python -m test.libregrtest.worker JSON")
+        print("usage: python -m test.libregrtest.worker CONFIG_FILE")
         sys.exit(1)
-    worker_json = sys.argv[1]
+    config_path = sys.argv[1]
+    if not os.path.isabs(config_path):
+        config_path = os.path.join(os.path.dirname(__file__), config_path)
+    with open(config_path, encoding='utf-8') as file:
+        worker_json = file.read()
 
     tmp_dir = get_temp_dir()
     # get_temp_dir() can be different in the worker and the parent process.
