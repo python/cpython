@@ -476,8 +476,12 @@ The :mod:`!functools` module defines the following functions:
               value = next(it)
           else:
               value = initial
-          for element in it:
-              value = function(value, element)
+          while(True):
+              try:
+                  element = next(it)
+              except StopIteration:
+                  break
+          value = function(value, element)
           return value
 
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
