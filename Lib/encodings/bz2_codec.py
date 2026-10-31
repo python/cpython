@@ -52,7 +52,7 @@ class IncrementalDecoder(codecs.IncrementalDecoder):
         try:
             return self.decompressobj.decompress(input)
         except EOFError:
-            return ''
+            return b''
 
     def reset(self):
         self.decompressobj = bz2.BZ2Decompressor()

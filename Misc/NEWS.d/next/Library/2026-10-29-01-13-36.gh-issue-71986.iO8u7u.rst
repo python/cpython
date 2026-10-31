@@ -1,0 +1,5 @@
+Fix the incremental decoders of the ``base64_codec`` and ``bz2_codec``
+codecs. The ``base64_codec`` decoder now accepts input split in the middle
+of a group of four characters, and the ``bz2_codec`` decoder now returns
+:class:`bytes` instead of :class:`str` when called after the end of the
+compressed data.
