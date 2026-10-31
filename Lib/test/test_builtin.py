@@ -1385,9 +1385,18 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 return -10
         self.assertRaises(ValueError, len, NegativeLen())
         class HugeLen:
+            def __init__(self):
+                self.calls = 0
+
             def __len__(self):
+                self.calls += 1
                 return sys.maxsize + 1
-        self.assertRaises(OverflowError, len, HugeLen())
+        huge_len = HugeLen()
+        self.assertEqual(len(huge_len), sys.maxsize + 1)
+        self.assertEqual(huge_len.calls, 1)
+        huge_len.__len__ = lambda: 0
+        self.assertEqual(len(huge_len), sys.maxsize + 1)
+        self.assertEqual(huge_len.calls, 2)
         class HugeNegativeLen:
             def __len__(self):
                 return -sys.maxsize-10
