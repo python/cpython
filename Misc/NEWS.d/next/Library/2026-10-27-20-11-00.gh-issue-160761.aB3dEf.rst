@@ -1,0 +1,1 @@
+Fix :exc:`TypeError` when pickling directly instantiated :mod:`urllib.parse` result objects.
