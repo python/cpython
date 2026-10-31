@@ -1,0 +1,4 @@
+:mod:`ctypes` :exc:`TypeError` messages for mismatched callback function
+types now include the expected and actual signatures (``restype`` and
+``argtypes``). Previously both types often appeared only as
+``CFunctionType`` or ``WinFunctionType``.

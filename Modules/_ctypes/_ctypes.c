@@ -1123,6 +1123,32 @@ CDataType_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         _Py_LeaveRecursiveCall();
         return value;
     }
+    /* Callback function pointer types often share the same tp_name
+       ("CFunctionType" / "WinFunctionType"), so include signatures when
+       both the expected type and the value are callback types (#125788). */
+    if (PyCFuncPtrTypeObject_Check(st, type) &&
+        PyCFuncPtrObject_Check(st, value)) {
+        StgInfo *expected_info;
+        StgInfo *actual_info;
+        if (PyStgInfo_FromType(st, type, &expected_info) < 0) {
+            return NULL;
+        }
+        if (PyStgInfo_FromType(st, (PyObject *)Py_TYPE(value), &actual_info) < 0) {
+            return NULL;
+        }
+        if (expected_info != NULL && actual_info != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "expected %s with signature (restype=%R, argtypes=%R) "
+                         "but received %s with signature (restype=%R, argtypes=%R)",
+                         ((PyTypeObject *)type)->tp_name,
+                         expected_info->restype ? expected_info->restype : Py_None,
+                         expected_info->argtypes ? expected_info->argtypes : Py_None,
+                         Py_TYPE(value)->tp_name,
+                         actual_info->restype ? actual_info->restype : Py_None,
+                         actual_info->argtypes ? actual_info->argtypes : Py_None);
+            return NULL;
+        }
+    }
     PyErr_Format(PyExc_TypeError,
                  "expected %s instance instead of %s",
                  ((PyTypeObject *)type)->tp_name,

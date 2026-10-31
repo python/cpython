@@ -559,6 +559,27 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
         self.assertEqual(_testfunc_callback_int_to_longlong(cb), -1)
 
+    def test_mismatched_callback_type_error_includes_signature(self):
+        # gh-125788: mismatched callback types used to say
+        # "expected CFunctionType instance instead of CFunctionType".
+        Expected = CFUNCTYPE(c_int, c_void_p, c_void_p)
+        Actual = CFUNCTYPE(c_int, c_int, c_int)
+
+        def callback(a, b):
+            return 0
+
+        actual = Actual(callback)
+        with self.assertRaises(TypeError) as cm:
+            Expected.from_param(actual)
+        msg = str(cm.exception)
+        self.assertIn("signature", msg)
+        self.assertIn("restype", msg)
+        self.assertIn("argtypes", msg)
+        self.assertNotEqual(
+            msg,
+            f"expected {Expected.__name__} instance instead of {type(actual).__name__}",
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
