@@ -1,0 +1,3 @@
+Fix a crash or garbage data when an :class:`io.StringIO` object is used again
+after one of its methods failed with :exc:`MemoryError`.  The object now keeps
+its contents.
