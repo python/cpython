@@ -349,6 +349,10 @@ class Cmd:
             self.print_topics(self.undoc_header, cmds_undoc, 15,80)
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
+        """Columnize an iterable of strings; add a header; write to stdout.
+
+        Used for each section of `.do_help`.
+        """
         if cmds:
             self.stdout.write("%s\n"%str(header))
             if self.ruler:
