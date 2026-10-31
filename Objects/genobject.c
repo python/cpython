@@ -168,7 +168,6 @@ gen_clear_frame(PyGenObject *gen)
 {
     assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    _PyThreadState_UpdateLastProfiledFrame(_PyThreadState_GET(), frame, frame->previous);
     frame->previous = NULL;
     Py_BEGIN_CRITICAL_SECTION(gen);
     _PyFrame_ClearExceptCode(frame);
@@ -310,8 +309,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
-        if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
+        if (result == Py_None && !arg) {
             /* Return NULL if called by gen_iternext() */
             Py_CLEAR(result);
         }
@@ -383,12 +381,19 @@ PyGen_am_send(PyObject *self, PyObject *arg, PyObject **result)
     return gen_send_ex(gen, arg, result);
 }
 
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value);
+
 static PyObject *
 gen_set_stop_iteration(PyGenObject *gen, PyObject *result)
 {
     if (PyAsyncGen_CheckExact(gen)) {
-        assert(result == Py_None);
-        PyErr_SetNone(PyExc_StopAsyncIteration);
+        if (result == Py_None) {
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+        }
+        else {
+            _PyAsyncGen_SetStopIterationValue(result);
+        }
     }
     else if (result == Py_None) {
         PyErr_SetNone(PyExc_StopIteration);
@@ -781,9 +786,12 @@ gen_iternext(PyObject *self)
  *
  * Returns 0 if StopIteration is set and -1 if any other exception is set.
  */
-int
-_PyGen_SetStopIterationValue(PyObject *value)
+static int
+set_stop_iteration_value(PyObject *exc_class, PyObject *value)
 {
+    assert(exc_class != NULL);
+    assert(PyType_Check(exc_class));
+    assert(value != NULL);
     assert(!PyErr_Occurred());
     // Construct an exception instance manually with PyObject_CallOneArg()
     // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
@@ -791,13 +799,25 @@ _PyGen_SetStopIterationValue(PyObject *value)
     // is a tuple, where the value of the StopIteration exception would be
     // set to 'value[0]' instead of 'value'.
     PyObject *exc = value == NULL
-        ? PyObject_CallNoArgs(PyExc_StopIteration)
-        : PyObject_CallOneArg(PyExc_StopIteration, value);
+        ? PyObject_CallNoArgs(exc_class)
+        : PyObject_CallOneArg(exc_class, value);
     if (exc == NULL) {
         return -1;
     }
     PyErr_SetRaisedException(exc /* stolen */);
     return 0;
+}
+
+int
+_PyGen_SetStopIterationValue(PyObject *value)
+{
+    return set_stop_iteration_value(PyExc_StopIteration, value);
+}
+
+int
+_PyAsyncGen_SetStopIterationValue(PyObject *value)
+{
+    return set_stop_iteration_value(PyExc_StopAsyncIteration, value);
 }
 
 /*
