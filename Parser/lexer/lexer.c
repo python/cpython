@@ -1326,7 +1326,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
-                current_tok->in_format_spec = 0;
+                current_tok->in_format_spec = INSIDE_FSTRING_EXPR(current_tok);
                 current_tok->in_debug = 0;
             }
         }
@@ -1367,11 +1367,15 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     if (start_char == '{') {
         int peek1 = tok_nextc(tok);
         tok_backup(tok, peek1);
-        if (peek1 != '{') {
+        // Inside a format specifier, '{{' is not an escape: it starts a
+        // nested replacement field.
+        int starts_expr = peek1 != '{' || (
+            current_tok->in_format_spec && INSIDE_FSTRING_EXPR(current_tok));
+        if (starts_expr) {
             current_tok->last_expr_start = tok->cur;
         }
         tok_backup(tok, start_char);
-        if (peek1 != '{') {
+        if (starts_expr) {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
