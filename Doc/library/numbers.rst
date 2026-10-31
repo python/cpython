@@ -93,7 +93,7 @@ them to the same values. This may be subtle if there are two different
 extensions of the real numbers. See also :ref:`numeric-hash`.
 
 
-Adding More Numeric ABCs
+Adding more numeric ABCs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are, of course, more possible ABCs for numbers, and this would
