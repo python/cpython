@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 
+from . import constants
 from . import format_helpers
 
 
@@ -271,8 +272,9 @@ class EventLoopSettings:
             raise ValueError("eager_max_callbacks must be non-negative")
 
 
-EventLoopSettings.DEFAULT = EventLoopSettings(eager_max_time=1e-4,
-                                              eager_max_callbacks=100)
+EventLoopSettings.DEFAULT = EventLoopSettings(
+    eager_max_time=constants.EAGER_MAX_TIME,
+    eager_max_callbacks=constants.EAGER_MAX_CALLBACKS)
 
 
 class AbstractEventLoop:
