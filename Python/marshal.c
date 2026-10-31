@@ -728,10 +728,16 @@ w_tie_set_items(w_set_item *items, Py_ssize_t count, size_t first, WFILE *p)
     for (Py_ssize_t i = 0; i < count; i++) {
         _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(
                 p->hashtable, items[i].value);
-        assert(entry != NULL);
-        assert(((uintptr_t)entry->value >> W_ENTRY_SHIFT) - first
-               < (size_t)count);
-        assert(!((uintptr_t)entry->value & (W_ENTRY_ACTIVE | W_ENTRY_TIED)));
+        if (entry == NULL) {
+            /* The element was removed from the set (and another one added)
+               by code run while a later element was dumped, so it was only
+               referenced by items when it was written: w_ref() has not
+               remembered it, and it cannot be written again. */
+            continue;
+        }
+        uintptr_t w = (uintptr_t)entry->value;
+        assert(!(w & (W_ENTRY_ACTIVE | W_ENTRY_TIED)));
+        assert((w >> W_ENTRY_SHIFT) - first < (size_t)count);
         entry->value = (void *)value;
     }
 }

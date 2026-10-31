@@ -1380,6 +1380,59 @@ class ReferenceTestCase(unittest.TestCase):
                                      dumps[name, int(version)],
                                      (name, version))
 
+    def test_nan_in_set_changed(self):
+        # An element which is removed from the set, and another one added,
+        # while a later element is dumped (here by its __buffer__() method)
+        # is still written, since it was seen; but it is then referenced
+        # only by the writer.  A NaN in that situation must not be assumed
+        # to have been remembered for later references.
+        class Item:
+            def __init__(self, action, h):
+                self.action = action
+                self.h = h
+            def __hash__(self):
+                return self.h
+            def __buffer__(self, flags):
+                # Called twice: to dump the element, then to write it.
+                action, self.action = self.action, None
+                if action is not None:
+                    action()
+                return memoryview(b'abc')
+
+        def layout(nans, extra):
+            # A hash for the item and a replacement element such that the
+            # NaNs are iterated before the item, and the replacement lands
+            # in a slot which has been iterated already: the writer sees
+            # as many elements as the set has, and does not notice.
+            for h in range(128):
+                for k in range(128, 256):
+                    s = set(nans) | set(extra)
+                    item = Item(None, h)
+                    s.add(item)
+                    seen = []
+                    for x in s:
+                        seen.append(x)
+                        if x is item:
+                            s.discard(nans[0])
+                            s.add(k)
+                    if (len(seen) == len(s) and seen[-1] is item
+                            and all(any(n is x for x in seen) for n in nans)):
+                        return h, k
+            self.skipTest('no suitable set layout found')
+
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                nans = [float('nan') for i in range(3)]
+                h, k = layout(nans, [1.5])
+                s = set(nans) | {1.5}
+                def remove_one():
+                    s.discard(nans.pop(0))
+                    s.add(k)
+                s.add(Item(remove_one, h))
+                new = marshal.loads(marshal.dumps(s, version))
+                self.assertEqual(sorted(map(repr, new)),
+                                 ['1.5', "b'abc'", 'nan', 'nan', 'nan'])
+
     def check_same_structure(self, new, sample, shared):
         # Both object graphs have the same values and, if shared is true,
         # share the same objects.  Elements of sets are matched in any
