@@ -121,6 +121,32 @@ class UserStringTest(
         self._assert_cmp(a, 'a', 1)
         self._assert_cmp(a, 'ac', -1)
 
+    @support.subTests('str_class', (UserString, UserStringSubclass))
+    def test_startswith_userstring(self, str_class):
+        s = UserString('hello world')
+        self.assertTrue(s.startswith(str_class('hello')))
+        self.assertFalse(s.startswith(str_class('world')))
+        self.assertTrue(s.startswith(str_class('')))
+        self.assertFalse(s.startswith(str_class('hello world!')))
+        self.assertTrue(s.startswith(str_class('world'), 6))
+        self.assertTrue(s.startswith(str_class('world'), 6, 11))
+        self.assertFalse(s.startswith(str_class('world'), 6, 10))
+        self.assertTrue(s.startswith(str_class('world'), -5))
+        self.assertTrue(s.startswith(str_class('world'), start=6, end=11))
+
+    @support.subTests('str_class', (UserString, UserStringSubclass))
+    def test_endswith_userstring(self, str_class):
+        s = UserString('hello world')
+        self.assertTrue(s.endswith(str_class('world')))
+        self.assertFalse(s.endswith(str_class('hello')))
+        self.assertTrue(s.endswith(str_class('')))
+        self.assertFalse(s.endswith(str_class('hello world!')))
+        self.assertTrue(s.endswith(str_class('world'), 6))
+        self.assertTrue(s.endswith(str_class('hello'), 0, 5))
+        self.assertFalse(s.endswith(str_class('hello'), 1, 5))
+        self.assertTrue(s.endswith(str_class('hello'), -11, -6))
+        self.assertTrue(s.endswith(str_class('hello'), start=0, end=5))
+
     def test_rmod(self):
         class ustr2(UserString):
             pass

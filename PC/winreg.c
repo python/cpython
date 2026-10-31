@@ -238,9 +238,6 @@ class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
 class REGSAM_converter(int_converter):
     type = 'REGSAM'
 
-class DWORD_converter(unsigned_long_converter):
-    type = 'DWORD'
-
 class HKEY_converter(CConverter):
     type = 'HKEY'
     converter = 'clinic_HKEY_converter'
@@ -265,7 +262,7 @@ class HKEY_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=b34c8217647f5fef]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e345501438d93fa2]*/
 
 #include "clinic/winreg.c.h"
 
@@ -903,6 +900,7 @@ winreg_CreateKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;
@@ -955,6 +953,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;
@@ -1401,6 +1400,7 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
+        RegCloseKey(retKey);
         return NULL;
     }
     return retKey;

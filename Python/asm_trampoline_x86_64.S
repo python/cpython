@@ -1,4 +1,9 @@
+/* CPython copies this template into executable memory. */
+#if defined(__ELF__)
+    .section .rodata
+#else
     .text
+#endif
 #ifdef __x86_64__
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start

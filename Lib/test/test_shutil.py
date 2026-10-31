@@ -32,6 +32,7 @@ except ImportError:
 from test import support
 from test.support import os_helper, socket_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support.import_helper import ensure_lazy_imports
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -494,6 +495,37 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertTrue(isinstance(exc, OSError))
             self.errorState = 3
 
+    @os_helper.skip_if_dac_override
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based implementation of rmtree()')
+    def test_on_exc_kwargs(self):
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+
+        child_dir_path = os.path.join(TESTFN, 'b')
+        child_file_path = os.path.join(child_dir_path, 'a')
+        os.mkdir(child_dir_path)
+        os_helper.create_empty_file(child_file_path)
+        old_child_dir_mode = os.stat(child_dir_path).st_mode
+        # Make unwritable.
+        new_mode = stat.S_IREAD|stat.S_IEXEC
+        os.chmod(child_dir_path, new_mode)
+
+        self.addCleanup(os.chmod, child_dir_path, old_child_dir_mode)
+
+        calls = []
+        def onexc(func, path, err, direntry=None, dir_fd=None):
+            calls.append((func, path, err))
+            if func is os.unlink:
+                self.assertEqual(direntry.name, os.path.basename(path))
+                self.assertTrue(os.path.samestat(
+                    os.stat(path), os.stat(direntry.name, dir_fd=dir_fd)))
+
+        shutil.rmtree(TESTFN, onexc=onexc, _onexc_kwargs=True)
+        self.assertIn((os.unlink, child_file_path),
+                      [(func, path) for func, path, err in calls])
+
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
@@ -551,11 +583,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
             os.lstat = orig_lstat
 
     def test_rmtree_uses_safe_fd_version_if_available(self):
-        _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
-                             os.supports_dir_fd and
-                             os.listdir in os.supports_fd and
-                             os.stat in os.supports_follow_symlinks)
-        if _use_fd_functions:
+        if shutil._use_fd_functions:
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
@@ -959,6 +987,47 @@ class TestCopyTree(BaseTest, unittest.TestCase):
                                               os.path.split(restrictive_subdir)[1])
         self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
+
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        sub_dir = os.path.join(src_dir, 'sub')
+        os.makedirs(sub_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+        old_time = 1_000_000_000  # 2001-09-09, far from "now"
+        for path in (sub_dir, src_dir):
+            os.utime(path, (old_time, old_time))
+            os.chmod(path, 0o555)
+            self.addCleanup(os.chmod, path, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        for src_path, dst_path in ((src_dir, dst_dir),
+                                   (sub_dir, os.path.join(dst_dir, 'sub'))):
+            mode = stat.S_IMODE(os.stat(dst_path).st_mode)
+            self.assertNotEqual(mode, 0o555)
+            self.assertTrue(mode & stat.S_IWUSR, oct(mode))
+            self.assertNotEqual(os.stat(src_path).st_mtime,
+                                os.stat(dst_path).st_mtime)
+
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat_keeps_file_metadata(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        os.mkdir(src_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+
+        create_file((src_dir, 'restricted.txt'), '123')
+        os.chmod(os.path.join(src_dir, 'restricted.txt'), 0o600)
+        os.chmod(src_dir, 0o555)
+        self.addCleanup(os.chmod, src_dir, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        self.assertNotEqual(stat.S_IMODE(os.stat(dst_dir).st_mode), 0o555)
+        self.assertEqual(os.stat(os.path.join(src_dir, 'restricted.txt')).st_mode,
+                          os.stat(os.path.join(dst_dir, 'restricted.txt')).st_mode)
 
     @unittest.mock.patch('os.chmod')
     def test_copytree_winerror(self, mock_patch):
@@ -1574,6 +1643,47 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
                                shutil.copyfile, __file__, sock_path)
 
+    def _check_copyfile_symlink_to_special_file(self, target):
+        tmp_dir = self.mkdtemp()
+        src = os.path.join(tmp_dir, 'src')
+        dst = os.path.join(tmp_dir, 'dst')
+        os.symlink(target, src)
+
+        shutil.copyfile(src, dst, follow_symlinks=False)
+
+        self.assertTrue(os.path.islink(dst))
+        self.assertEqual(os.readlink(dst), target)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
+    def test_copyfile_symlink_to_character_device(self):
+        self._check_copyfile_symlink_to_special_file('/dev/null')
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_copyfile_symlink_to_named_pipe(self):
+        fifo_path = os.path.join(self.mkdtemp(), 'fifo')
+        try:
+            os.mkfifo(fifo_path)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+        self._check_copyfile_symlink_to_special_file(fifo_path)
+
+    @os_helper.skip_unless_symlink
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_copyfile_symlink_to_socket(self):
+        sock_path = os.path.join(self.mkdtemp(), 'sock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
+        self.addCleanup(os_helper.unlink, sock_path)
+        self._check_copyfile_symlink_to_special_file(sock_path)
+
     @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
     def test_copyfile_character_device(self):
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
@@ -1958,8 +2068,8 @@ class TestArchives(BaseTest, unittest.TestCase):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
         if UID_GID_SUPPORT:
-            group = grp.getgrgid(0)[0]
-            owner = pwd.getpwuid(0)[0]
+            group = grp.getgrgid(0).gr_name
+            owner = pwd.getpwuid(0).pw_name
         else:
             group = owner = 'root'
 
@@ -1986,8 +2096,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        group = grp.getgrgid(0)[0]
-        owner = pwd.getpwuid(0)[0]
+        group = grp.getgrgid(0).gr_name
+        owner = pwd.getpwuid(0).pw_name
         with os_helper.change_cwd(root_dir), no_chdir:
             archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
                                         owner=owner, group=group)
@@ -2177,12 +2287,18 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
+        make_format = kwargs.pop("make_format", format)
+        extension = kwargs.pop("extension", None)
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
 
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        filename = make_archive(base_name, format, root_dir, base_dir)
+        filename = make_archive(base_name, make_format, root_dir, base_dir)
+        if extension is not None:
+            new_filename = os.path.splitext(filename)[0] + extension
+            os.rename(filename, new_filename)
+            filename = new_filename
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
@@ -2229,6 +2345,13 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    @support.requires_zlib()
+    def test_unpack_archive_whl(self):
+        self.check_unpack_archive('whl', make_format='zip', extension='.whl')
+        with self.assertRaises(TypeError):
+            self.check_unpack_archive('whl', filter='data', make_format='zip',
+                                      extension='.whl')
 
     def test_unpack_archive_zip_badpaths(self):
         srcdir = self.mkdtemp()
@@ -2321,6 +2444,14 @@ class TestArchives(BaseTest, unittest.TestCase):
         unregister_unpack_format('Boo2')
         self.assertEqual(get_unpack_formats(), formats)
 
+    def test_compression_wrappers_not_imported_by_shutil(self):
+        # gh-154904: Importing shutil must not pull in the compression
+        # wrappers: they are only needed once an archive is actually created
+        # or extracted, and importing them measurably slows down every
+        # process that uses shutil.
+        ensure_lazy_imports("shutil",
+                            {"bz2", "lzma", "compression", "compression.zstd"})
+
 
 class TestMisc(BaseTest, unittest.TestCase):
 
@@ -2392,8 +2523,8 @@ class TestMisc(BaseTest, unittest.TestCase):
         check_chown(dirname, gid=gid)
 
         try:
-            user = pwd.getpwuid(uid)[0]
-            group = grp.getgrgid(gid)[0]
+            user = pwd.getpwuid(uid).pw_name
+            group = grp.getgrgid(gid).gr_name
         except KeyError:
             # On some systems uid/gid cannot be resolved.
             pass

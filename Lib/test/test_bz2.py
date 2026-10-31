@@ -156,6 +156,22 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertEqual(bz2f.read(), self.TEXT * 5)
 
+    def testReadMultiStreamDamagedStream(self):
+        # A damaged bzip2 stream following a valid one is not trailing junk,
+        # whatever the size of the reads.
+        for pos in 4, 100, -3:
+            with self.subTest(pos=pos):
+                damaged = bytearray(self.DATA)
+                damaged[pos] ^= 1
+                self.createTempFile(suffix=damaged)
+                with BZ2File(self.filename) as bz2f:
+                    self.assertRaises(OSError, bz2f.read)
+                with BZ2File(self.filename) as bz2f:
+                    self.assertEqual(bz2f.read(len(self.TEXT)), self.TEXT)
+                    with self.assertRaises(OSError):
+                        while bz2f.read(10):
+                            pass
+
     def testRead0(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
@@ -1100,6 +1116,18 @@ class CompressDecompressTest(BaseTest):
         text = bz2.decompress(self.DATA * 5 + self.BAD_DATA)
         self.assertEqual(text, self.TEXT * 5)
 
+    def testDecompressMultiStreamDamagedStream(self):
+        # A damaged bzip2 stream following a valid one is not trailing junk.
+        for pos in 4, 100, -3:
+            with self.subTest(pos=pos):
+                damaged = bytearray(self.DATA)
+                damaged[pos] ^= 1
+                self.assertRaises(OSError, bz2.decompress,
+                                  self.DATA + damaged)
+        # Not a bzip2 header: the block size digit must be 1 to 9.
+        text = bz2.decompress(self.DATA + b"BZh0" + self.BAD_DATA)
+        self.assertEqual(text, self.TEXT)
+
 
 class OpenTest(BaseTest):
     "Test the open function."
@@ -1220,6 +1248,40 @@ class OpenTest(BaseTest):
             f.write(text)
         with self.open(self.filename, "rt", encoding="utf-8", newline="\r") as f:
             self.assertEqual(f.readlines(), [text])
+
+
+class MiscTests(unittest.TestCase):
+
+    def test_bzlib_version(self):
+        if support.verbose:
+            print(f'bzlib_version = {bz2.bzlib_version}', flush=True)
+            print(f'bzlib_version_info = {bz2.bzlib_version_info}', flush=True)
+        v = bz2.bzlib_version_info
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+        # The version string can have a suffix, e.g. "1.0.8, 13-Jul-2019"
+        # for bzip2 or "1.1.0-libbz2-rs-sys-0.2.5" for libbz2-rs.
+        self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, bz2, "__author__", remove=(3, 20),
+        )
 
 
 def tearDownModule():

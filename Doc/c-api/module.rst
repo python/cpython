@@ -128,9 +128,8 @@ Module Objects
    The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
    is reassigned or the module is destroyed.
 
-   .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
-      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
+   :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
+   unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
 .. _c_module_slots:
@@ -853,7 +852,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
 
@@ -877,7 +876,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyModule_FromSlotsAndSpec` in new code.
 
@@ -887,7 +886,7 @@ struct:
 
    .. versionadded:: 3.5
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       To run a module's own execution slots, prefer :c:func:`PyModule_Exec`,
       which works on modules that were not created from a

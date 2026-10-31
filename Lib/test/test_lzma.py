@@ -524,6 +524,16 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
         ddata = lzma.decompress(COMPRESSED_XZ * 3 + COMPRESSED_BOGUS)
         self.assertEqual(ddata, INPUT * 3)
 
+    def test_decompress_multistream_damaged_stream(self):
+        # A damaged .xz stream following a valid one is not trailing junk.
+        for pos in 6, 100, -20, -1:
+            damaged = bytearray(COMPRESSED_XZ)
+            damaged[pos] ^= 1
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                with self.subTest(pos=pos, format=format):
+                    self.assertRaises(LZMAError, lzma.decompress,
+                                      COMPRESSED_XZ + damaged, format)
+
 
 class TempFile:
     """Context manager - creates a file, and deletes it on __exit__."""
@@ -884,6 +894,25 @@ class FileTestCase(unittest.TestCase):
     def test_read_multistream_trailing_junk(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5 + COMPRESSED_BOGUS)) as f:
             self.assertEqual(f.read(), INPUT * 5)
+
+    def test_read_multistream_damaged_stream(self):
+        # A damaged .xz stream following a valid one is not trailing junk,
+        # whatever the size of the reads.
+        for pos in 6, 100, -20, -1:
+            damaged = bytearray(COMPRESSED_XZ)
+            damaged[pos] ^= 1
+            cdata = COMPRESSED_XZ + damaged
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                with self.subTest(pos=pos, format=format):
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertRaises(LZMAError, f.read)
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertEqual(f.read(len(INPUT)), INPUT)
+                        with self.assertRaises(LZMAError):
+                            while f.read(10):
+                                pass
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertRaises(LZMAError, f.seek, 0, 2)
 
     def test_read_from_file(self):
         with TempFile(TESTFN, COMPRESSED_XZ):
@@ -1512,6 +1541,41 @@ class OpenTestCase(unittest.TestCase):
 
 
 class MiscellaneousTestCase(unittest.TestCase):
+
+    def _test_lzma_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 4)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v[3], str)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertIsInstance(v.stability, str)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertEqual(v[3], v.stability)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+        self.assertIn(v.stability, {'alpha', 'beta', 'stable'})
+
+        if v.stability == 'stable':
+            self.assertEqual(string, '%d.%d.%d' % v[:3])
+        else:
+            self.assertStartsWith(string, '%d.%d.%d%s' % v)
+
+    def test_lzma_version(self):
+        if support.verbose:
+            print(f'LZMA_VERSION = {lzma.LZMA_VERSION}', flush=True)
+            print(f'lzma_version = {lzma.lzma_version}', flush=True)
+            print(f'LZMA_VERSION_INFO = {lzma.LZMA_VERSION_INFO}', flush=True)
+            print(f'lzma_version_info = {lzma.lzma_version_info}', flush=True)
+        self._test_lzma_version(lzma.LZMA_VERSION_INFO, lzma.LZMA_VERSION)
+        self._test_lzma_version(lzma.lzma_version_info, lzma.lzma_version)
+        self.assertEqual(lzma.LZMA_VERSION_INFO[0], lzma.lzma_version_info[0])
 
     def test_is_check_supported(self):
         # CHECK_NONE and CHECK_CRC32 should always be supported,

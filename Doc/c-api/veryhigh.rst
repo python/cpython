@@ -151,6 +151,8 @@ the same library that the Python runtime is using.
    event loops, as done in :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   The function is called without an :term:`attached thread state`.
+
    .. versionchanged:: 3.12
       This function is only called from the
       :ref:`main interpreter <sub-interpreter-support>`.
@@ -159,16 +161,27 @@ the same library that the Python runtime is using.
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
    Can be set to point to a function with the prototype
-   ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,
+   ``char *func(FILE *stdin, FILE *stdout, const char *prompt)``,
    overriding the default function used to read a single line of input
    at the interpreter's prompt.  The function is expected to output
    the string *prompt* if it's not ``NULL``, and then read a line of
    input from the provided standard input file, returning the
-   resulting string.  For example, The :mod:`readline` module sets
+   resulting string.  For example, the :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
 
-   The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
-   :c:func:`PyMem_RawRealloc`, or ``NULL`` if an error occurred.
+   The function is called without an :term:`attached thread state`.
+
+   If this pointer is ``NULL``, :c:func:`PyOS_Readline` sets it to the
+   default implementation, :c:func:`PyOS_Readline`,
+   before reading input.
+
+   The returned string must be null-terminated and include the trailing
+   newline, if one was read. Return an empty string if the end of the file
+   is reached before any characters are read. Return ``NULL`` on failure
+   or interruption; a Python exception may be set.
+
+   A non-``NULL`` result must be a string allocated by :c:func:`PyMem_RawMalloc` or
+   :c:func:`PyMem_RawRealloc`.
 
    .. versionchanged:: 3.4
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
@@ -178,6 +191,23 @@ the same library that the Python runtime is using.
    .. versionchanged:: 3.12
       This function is only called from the
       :ref:`main interpreter <sub-interpreter-support>`.
+
+
+.. c:function:: char *PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
+
+   Display *prompt*, if it is not ``NULL``, and read a line from *sys_stdin*.
+   If both streams are terminals and the call is made from the
+   :ref:`main interpreter <sub-interpreter-support>`, use
+   :c:var:`PyOS_ReadlineFunctionPointer`. Otherwise, use the default
+   implementation, which flushes *sys_stdout* and writes *prompt* to the C
+   standard error stream.
+
+   The returned string follows the contract of
+   :c:var:`PyOS_ReadlineFunctionPointer`, but the caller must free it with
+   :c:func:`PyMem_Free`. Return ``NULL`` on failure or interruption; a Python
+   exception may be set.
+
+
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
@@ -343,10 +373,124 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
+   .. rubric:: Low-level flags
+
+   The following flags and masks serve narrow needs of the standard
+   library and interactive interpreters.  Code outside the standard
+   library rarely has a reason to use them.  They are considered
+   implementation details and may change at any time.
+
+   .. c:macro:: PyCF_ALLOW_INCOMPLETE_INPUT
+
+      This flag is a private interface between the compiler and the
+      :mod:`codeop` module.  Do not use it; its behavior is unsupported
+      and may change without warning.
+
+      With this flag set, when compilation fails because the source text
+      ends where more input is expected, for example in the middle of an
+      indented block or an unterminated string literal, the error raised
+      is the undocumented ``_IncompleteInputError``, a subclass of
+      :exc:`SyntaxError`.  The :mod:`codeop` module sets this flag,
+      together with :c:macro:`PyCF_DONT_IMPLY_DEDENT`, to tell input
+      that is incomplete apart from input with a real syntax error, so
+      that interactive interpreters know when to prompt for another
+      line instead of reporting an error.
+
+      .. versionadded:: 3.11
+
+   .. c:macro:: PyCF_DONT_IMPLY_DEDENT
+
+      By default, when compiling with the :c:var:`Py_single_input` start
+      symbol, reaching the end of the source text implicitly closes any
+      open indented blocks.  With this flag set, open blocks are only
+      closed if the last line of the source ends with a newline; otherwise,
+      compilation fails with a :exc:`SyntaxError`:
+
+      .. code-block:: c
+
+         PyCompilerFlags flags = {
+             .cf_flags = 0,
+             .cf_feature_version = PY_MINOR_VERSION,
+         };
+         const char *source = "if a:\n    pass";
+
+         /* The "if" block is closed implicitly;
+            this returns a code object: */
+         Py_CompileStringFlags(source, "<input>", Py_single_input, &flags);
+
+         /* With the flag, this fails with a SyntaxError,
+            because the last line does not end with a newline: */
+         flags.cf_flags = PyCF_DONT_IMPLY_DEDENT;
+         Py_CompileStringFlags(source, "<input>", Py_single_input, &flags);
+
+      The :mod:`codeop` module uses this flag to detect incomplete
+      interactive input.  While the user is still typing inside an
+      indented block, the source does not yet end with a newline, so it
+      fails to compile and the user is prompted for another line.
+
+   .. c:macro:: PyCF_IGNORE_COOKIE
+
+      Read the source text as UTF-8, ignoring its :pep:`263` encoding
+      declaration ("coding cookie"), if any:
+
+      .. code-block:: c
+
+         PyCompilerFlags flags = {
+             .cf_flags = 0,
+             .cf_feature_version = PY_MINOR_VERSION,
+         };
+         const char *source = "# coding: latin-1\ns = '\xe9'\n";
+
+         /* The coding cookie is honored: byte 0xE9 is decoded as
+            Latin-1, and this returns a code object that sets s to "é": */
+         Py_CompileStringFlags(source, "<input>", Py_file_input, &flags);
+
+         /* With the flag, the cookie is ignored and compilation fails
+            with a SyntaxError, because 0xE9 is not valid UTF-8: */
+         flags.cf_flags = PyCF_IGNORE_COOKIE;
+         Py_CompileStringFlags(source, "<input>", Py_file_input, &flags);
+
+      The :func:`compile`, :func:`eval` and :func:`exec` built-in functions
+      set this flag when the source is a :class:`str` object, because they
+      pass the text to the parser encoded as UTF-8.
+
+   .. c:macro:: PyCF_SOURCE_IS_UTF8
+
+      Mark the source text as known to be UTF-8 encoded.
+      The :func:`compile`, :func:`eval` and :func:`exec` built-in functions
+      set this flag, but it currently has no effect.
+
    The "``PyCF``" flags above can be combined with "``CO_FUTURE``" flags such
    as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
    selectable using :ref:`future statements <future>`.
    See :ref:`c_codeobject_flags` for a complete list.
+
+   The following masks combine several flags:
+
+   .. c:macro:: PyCF_MASK
+
+      Bitmask of all ``CO_FUTURE`` flags (see :ref:`c_codeobject_flags`),
+      which select features normally enabled by
+      :ref:`future statements <future>`.
+      When code compiled with a ``PyCompilerFlags *flags`` argument
+      contains a ``from __future__ import`` statement, the flag for the
+      imported feature is added to *flags*, so that code executed later
+      in the same context inherits it.
+
+   .. c:macro:: PyCF_MASK_OBSOLETE
+
+      Do not use this mask in new code.  It is kept only so that old
+      code passing its flags to :func:`compile` keeps working.
+
+      Bitmask of flags for obsolete future features that no longer
+      have any effect.
+
+   .. c:macro:: PyCF_COMPILE_MASK
+
+      Bitmask of all ``PyCF`` flags that change how the source is
+      compiled, such as :c:macro:`PyCF_ONLY_AST`.
+      The :func:`compile` built-in function uses this mask to validate
+      its *flags* argument.
 
 
 .. _start-symbols:

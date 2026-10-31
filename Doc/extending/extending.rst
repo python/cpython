@@ -334,6 +334,8 @@ event code, you might use the following code::
    PyObject *arglist;
    ...
    arglist = Py_BuildValue("(l)", eventcode);
+   if (arglist == NULL)
+       return NULL;
    result = PyObject_CallObject(my_callback, arglist);
    Py_DECREF(arglist);
    if (result == NULL)
@@ -342,17 +344,24 @@ event code, you might use the following code::
    Py_DECREF(result);
 
 Note the placement of ``Py_DECREF(arglist)`` immediately after the call, before
-the error check!  Also note that strictly speaking this code is not complete:
-:c:func:`Py_BuildValue` may run out of memory, and this should be checked.
+the error check!
 
 You may also call a function with keyword arguments by using
 :c:func:`PyObject_Call`, which supports arguments and keyword arguments.  As in
 the above example, we use :c:func:`Py_BuildValue` to construct the dictionary. ::
 
-   PyObject *dict;
+   PyObject *arglist, *dict;
    ...
+   arglist = PyTuple_New(0);
+   if (arglist == NULL)
+       return NULL;
    dict = Py_BuildValue("{s:i}", "name", val);
-   result = PyObject_Call(my_callback, NULL, dict);
+   if (dict == NULL) {
+       Py_DECREF(arglist);
+       return NULL;
+   }
+   result = PyObject_Call(my_callback, arglist, dict);
+   Py_DECREF(arglist);
    Py_DECREF(dict);
    if (result == NULL)
        return NULL; /* Pass error back */
@@ -1106,7 +1115,7 @@ Finally it should be mentioned that Capsules offer additional functionality,
 which is especially useful for memory allocation and deallocation of the pointer
 stored in a Capsule. The details are described in the Python/C API Reference
 Manual in the section :ref:`capsules` and in the implementation of Capsules (files
-:file:`Include/pycapsule.h` and :file:`Objects/pycapsule.c` in the Python source
+:file:`Include/pycapsule.h` and :file:`Objects/capsule.c` in the Python source
 code distribution).
 
 .. rubric:: Footnotes

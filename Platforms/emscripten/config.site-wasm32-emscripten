@@ -21,9 +21,6 @@ ac_cv_func_eventfd=no
 ac_cv_func_memfd_create=no
 ac_cv_func_prlimit=no
 
-# unsupported syscall, https://github.com/emscripten-core/emscripten/issues/13393
-ac_cv_func_shutdown=no
-
 # The rest is based on pyodide
 # https://github.com/pyodide/pyodide/blob/main/cpython/pyconfig.undefs.h
 
