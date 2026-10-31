@@ -772,6 +772,44 @@ class ConditionTests(BaseTestCase):
             self.assertRaises(ValueError, cond.wait_for, lambda: False, nan)
             self.assertEqual(len(cond._waiters), 0)
 
+    def test_notify_after_timeout(self):
+        # gh-160414: check that notify() still wakes a waiter when the one
+        # it picks has just timed out.
+        cond = self.condtype()
+        waiting = threading.Event()
+        notified = threading.Event()
+        results = []
+        acquire_restore = cond._acquire_restore
+        def hold_t1(state):
+            if threading.current_thread() is t1:
+                waiting.set()
+                notified.wait(support.SHORT_TIMEOUT)
+            acquire_restore(state)
+        cond._acquire_restore = hold_t1
+        def short():
+            with cond:
+                results.append(("short", cond.wait(0.01)))
+        def long():
+            waiting.wait()
+            with cond:
+                results.append(("long", cond.wait(support.SHORT_TIMEOUT)))
+        t1 = threading.Thread(target=short)
+        t2 = threading.Thread(target=long)
+        t1.start()
+        t2.start()
+        try:
+            waiting.wait()
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                with cond:
+                    if len(cond._waiters) == 2:
+                        cond.notify()
+                        break
+        finally:
+            notified.set()
+            t1.join()
+            t2.join()
+        self.assertEqual(sorted(results), [("long", True), ("short", False)])
+
     def test_waitfor(self):
         cond = self.condtype()
         state = 0
