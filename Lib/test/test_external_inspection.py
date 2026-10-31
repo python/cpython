@@ -686,7 +686,7 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         asyncio.run(main(), loop_factory=Loop)
         stacks = [list(self._extract_coroutine_funcnames(trace).values())
                   for trace in traces]
-        self.assertIn([["sleep", "child"], ["main"]], stacks)
+        self.assertIn([["__sleep0", "sleep", "child"], ["main"]], stacks)
         self.assertIn([[], ["main"]], stacks)
 
     @skip_if_not_supported
