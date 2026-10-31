@@ -2500,7 +2500,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyCodeObject *co, *cp;
     int eq;
-    PyObject *consts1, *consts2;
+    PyObject *key1, *key2;
     PyObject *res;
 
     if ((op != Py_EQ && op != Py_NE) ||
@@ -2537,19 +2537,25 @@ code_richcompare(PyObject *self, PyObject *other, int op)
         i += _PyOpcode_Caches[co_instr.op.code];
     }
 
-    /* compare constants */
-    consts1 = _PyCode_ConstantKey(co->co_consts);
-    if (!consts1)
-        return NULL;
-    consts2 = _PyCode_ConstantKey(cp->co_consts);
-    if (!consts2) {
-        Py_DECREF(consts1);
-        return NULL;
+    /* compare constants one by one: the key of the whole tuple also holds
+       the tuple itself, so comparing it would compare nested code objects
+       twice, which takes exponential time in the nesting depth */
+    eq = PyTuple_GET_SIZE(co->co_consts) == PyTuple_GET_SIZE(cp->co_consts);
+    if (!eq) goto unequal;
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(co->co_consts); i++) {
+        key1 = _PyCode_ConstantKey(PyTuple_GET_ITEM(co->co_consts, i));
+        if (!key1)
+            return NULL;
+        key2 = _PyCode_ConstantKey(PyTuple_GET_ITEM(cp->co_consts, i));
+        if (!key2) {
+            Py_DECREF(key1);
+            return NULL;
+        }
+        eq = PyObject_RichCompareBool(key1, key2, Py_EQ);
+        Py_DECREF(key1);
+        Py_DECREF(key2);
+        if (eq <= 0) goto unequal;
     }
-    eq = PyObject_RichCompareBool(consts1, consts2, Py_EQ);
-    Py_DECREF(consts1);
-    Py_DECREF(consts2);
-    if (eq <= 0) goto unequal;
 
     eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
     if (eq <= 0) goto unequal;
