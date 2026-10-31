@@ -2812,6 +2812,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
 
+        Py_ssize_t nbytes = PyBytes_GET_SIZE(input_chunk);
         snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
         if (snapshot == NULL) {
             goto fail;
@@ -2824,7 +2825,14 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         if (check_decoded(decoded) < 0)
             goto fail;
 
+        Py_ssize_t nchars = PyUnicode_GET_LENGTH(decoded);
         textiowrapper_set_decoded_chars(self, decoded);
+        if (nchars > 0) {
+            self->b2cratio = (double) nbytes / nchars;
+        }
+        else {
+            self->b2cratio = 0.0;
+        }
 
         /* Skip chars_to_skip of the decoded characters. */
         if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
