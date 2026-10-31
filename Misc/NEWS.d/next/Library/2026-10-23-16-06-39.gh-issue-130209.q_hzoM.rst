@@ -1,0 +1,10 @@
+Added retry loops to functions in :mod:`os` that interact with the
+filesystem, such as :func:`~os.stat`, :func:`~os.rename`, :func:`~os.utime`,
+:func:`~os.unlink`, :func:`~os.listdir` and :func:`~os.scandir`. On POSIX,
+if a system call fails and ``errno`` is set to ``EINTR``, it means a signal
+was delivered to the process and interrupted the call; the recommended
+course of action is to handle the signal and retry.  :pep:`475` added retry
+loops for a number of functions in the :mod:`os` module, but skipped most of
+the functions that take a *path* argument, because those don't normally
+result in ``EINTR``.  However, they *can* (and do!) on network filesystems
+(e.g. NFS) and userspace filesystems (e.g. FUSE).
