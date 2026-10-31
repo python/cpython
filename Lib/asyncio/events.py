@@ -7,6 +7,7 @@
 __all__ = (
     "AbstractEventLoop",
     "AbstractServer",
+    "EventLoopSettings",
     "Handle",
     "TimerHandle",
     "get_event_loop",
@@ -18,6 +19,7 @@ __all__ = (
 )
 
 import contextvars
+import dataclasses
 import os
 import signal
 import socket
@@ -246,6 +248,31 @@ class AbstractServer:
     async def __aexit__(self, *exc):
         self.close()
         await self.wait_closed()
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventLoopSettings:
+    eager_max_time: float
+    eager_max_callbacks: int
+
+    def __post_init__(self):
+        if (not isinstance(self.eager_max_time, (int, float))
+                or isinstance(self.eager_max_time, bool)):
+            raise TypeError(f"eager_max_time must be an int or float, "
+                            f"got {self.eager_max_time!r}")
+        if (not isinstance(self.eager_max_callbacks, int)
+                or isinstance(self.eager_max_callbacks, bool)):
+            raise TypeError(f"eager_max_callbacks must be an int, "
+                            f"got {self.eager_max_callbacks!r}")
+        if not 0 <= self.eager_max_time <= sys.float_info.max:
+            raise ValueError("eager_max_time must be a non-negative "
+                             "finite number")
+        if self.eager_max_callbacks < 0:
+            raise ValueError("eager_max_callbacks must be non-negative")
+
+
+EventLoopSettings.DEFAULT = EventLoopSettings(eager_max_time=1e-4,
+                                              eager_max_callbacks=100)
 
 
 class AbstractEventLoop:
@@ -663,6 +690,14 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def set_debug(self, enabled):
+        raise NotImplementedError
+
+    # Settings management.
+
+    def get_settings(self):
+        raise NotImplementedError
+
+    def set_settings(self, settings):
         raise NotImplementedError
 
 
