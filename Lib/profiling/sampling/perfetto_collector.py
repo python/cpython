@@ -59,10 +59,10 @@ _F_TP_SEQ_ID = 10
 _F_TP_TRACK_EVENT = 11
 _F_TP_INTERNED = 12
 _F_TP_SEQUENCE_FLAGS = 13
-_F_TP_INCREMENTAL_STATE_CLEARED = 41
 _F_TP_DEFAULTS = 59
 _F_TP_TRACK_DESCRIPTOR = 60
 _F_TP_STACK_SAMPLE = 135
+_SEQUENCE_INCREMENTAL_STATE_CLEARED = 1
 _SEQUENCE_NEEDS_INCREMENTAL_STATE = 2
 
 # InternedData
@@ -233,6 +233,9 @@ class PerfettoCollector(Collector):
 
     # ------------------------- emit -------------------------
     def _start_packet(self, timestamp=None):
+        if not self._started:
+            self._started = True
+            self._emit_sequence_start()
         self._packet.clear()
         _append_varint_field(self._packet, _F_TP_SEQ_ID, 1)
         if timestamp is not None:
@@ -251,28 +254,33 @@ class PerfettoCollector(Collector):
             self._task_contexts[tid] = context
         return context
 
+    def _emit_sequence_start(self):
+        # Must precede every other packet: the trace processor drops packets
+        # flagged SEQ_NEEDS_INCREMENTAL_STATE until the state has been cleared.
+        counter = bytearray()
+        _append_string_field(counter, _F_CD_NAME, "wall-time")
+        _append_varint_field(counter, _F_CD_UNIT, _COUNTER_UNIT_NANOSECONDS)
+
+        sample_defaults = bytearray()
+        _append_string_field(sample_defaults, _F_SSD_SOURCE, "python.wall")
+        _append_bytes_field(sample_defaults, _F_SSD_PRIMARY, counter)
+
+        packet_defaults = bytearray()
+        _append_bytes_field(
+            packet_defaults, _F_TPD_STACK_SAMPLE_DEFAULTS, sample_defaults)
+
+        self._packet.clear()
+        _append_varint_field(self._packet, _F_TP_SEQ_ID, 1)
+        _append_varint_field(
+            self._packet,
+            _F_TP_SEQUENCE_FLAGS,
+            _SEQUENCE_INCREMENTAL_STATE_CLEARED,
+        )
+        _append_bytes_field(self._packet, _F_TP_DEFAULTS, packet_defaults)
+        self._finish_packet()
+
     def _emit_sample(self, ts_ns, tid, cs_iid, weight_ns):
         packet = self._start_packet(ts_ns)
-        if not self._started:
-            self._started = True
-            _append_varint_field(packet, _F_TP_INCREMENTAL_STATE_CLEARED, 1)
-
-            counter = bytearray()
-            _append_string_field(counter, _F_CD_NAME, "wall-time")
-            _append_varint_field(
-                counter, _F_CD_UNIT, _COUNTER_UNIT_NANOSECONDS)
-
-            sample_defaults = bytearray()
-            _append_string_field(sample_defaults, _F_SSD_SOURCE, "python.wall")
-            _append_bytes_field(sample_defaults, _F_SSD_PRIMARY, counter)
-
-            packet_defaults = bytearray()
-            _append_bytes_field(
-                packet_defaults,
-                _F_TPD_STACK_SAMPLE_DEFAULTS,
-                sample_defaults,
-            )
-            _append_bytes_field(packet, _F_TP_DEFAULTS, packet_defaults)
         if self._pending_interned:
             _append_bytes_field(packet, _F_TP_INTERNED,
                                 self._pending_interned)

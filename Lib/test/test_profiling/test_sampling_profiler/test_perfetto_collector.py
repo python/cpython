@@ -126,6 +126,21 @@ class TestPerfettoCollector(unittest.TestCase):
         self.assertEqual(len(collector._source_path_ids), 2)
 
 
+    def test_incremental_state_cleared_before_thread_state_slices(self):
+        collector = PerfettoCollector(sample_interval_usec=1000)
+        # A thread with no frames emits state slices but no sample.
+        collector.collect([MockInterpreterInfo(0, [
+            MockThreadInfo(1, [], status=THREAD_STATUS_HAS_GIL),
+            MockThreadInfo(2, [MockFrameInfo("a.py", 1, "f")],
+                           status=THREAD_STATUS_HAS_GIL),
+        ])], timestamps_us=[0])
+
+        packets = _field_values(collector._trace, 1)
+        self.assertEqual(_field_values(packets[0], 13), [1])
+        for packet in packets:
+            self.assertEqual(_field_values(packet, 41), [])
+        self.assertTrue(any(_field_values(p, 11) for p in packets))
+
     def test_opcode_slice_ends_when_leaf_has_no_opcode(self):
         collector = PerfettoCollector(sample_interval_usec=1000, opcodes=True)
         def collect(ts_us, frames):
