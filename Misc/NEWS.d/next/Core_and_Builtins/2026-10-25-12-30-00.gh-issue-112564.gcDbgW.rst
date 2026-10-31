@@ -1,0 +1,3 @@
+Fix a crash in the garbage collector when :data:`gc.DEBUG_COLLECTABLE` or
+:data:`gc.DEBUG_UNCOLLECTABLE` is set and writing the debug output to
+:data:`sys.stderr` frees one of the objects being reported.
