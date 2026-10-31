@@ -34,7 +34,8 @@ Standard Annex #44, `"Unicode Character Database"
 
 **Numeric values**
 -------------------------------------------------------------------------------------------------------------------------
-:func:`decimal(chr) <decimal>`                                Decimal value of a character
+:func:`decimal(chr) <unicodedata.decimal>`                    Decimal value of a
+                                                              character
 :func:`digit(chr) <digit>`                                    Digit value of a character
 :func:`numeric(chr) <numeric>`                                Numeric value of a character
 
