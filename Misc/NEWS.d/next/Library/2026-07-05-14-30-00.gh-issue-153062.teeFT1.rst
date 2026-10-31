@@ -1,2 +1,0 @@
-Fix a crash when concurrently iterating an :func:`itertools.tee` iterator on
-the free-threaded build.

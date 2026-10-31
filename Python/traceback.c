@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallMethodFormat()
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // PyFrameObject
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -174,19 +174,13 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
 /*[clinic input]
 @critical_section
 @setter
-@deleter
 traceback.tb_next
 [clinic start generated code]*/
 
 static int
 traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
-/*[clinic end generated code: output=d4868cbc48f2adac input=936201ff689c5700]*/
+/*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
 {
-    if (!value) {
-        PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
-        return -1;
-    }
-
     /* We accept None or a traceback object, and map None -> NULL (inverse of
        tb_next_get) */
     if (value == Py_None) {
@@ -403,7 +397,6 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     if (PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
         PyErr_Clear();
         goto error;
@@ -443,7 +436,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
+        binary = PyObject_CallFunction(open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;

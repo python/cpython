@@ -1,0 +1,4 @@
+Fix HZ encoding of a tilde at an output buffer boundary and ISO-2022 decoding
+of split escape sequences. Reset ISO-2022 incremental codecs to their initial
+state. Keep multibyte codec tables and custom encoder error policies alive
+when Python code replaces them during use.

@@ -31,7 +31,7 @@ available:
    themed :mod:`tkinter.ttk` widgets;
    the default is the classic :mod:`tkinter` widgets.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *use_ttk* parameter.
 
 
