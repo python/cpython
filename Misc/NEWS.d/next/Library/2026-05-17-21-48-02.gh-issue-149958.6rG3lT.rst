@@ -1,0 +1,3 @@
+The Tachyon module now supports runtime control over a unix socket, via
+``--control unix:<path>``. Supported commands are ``enable``, ``disable``,
+``ping``, ``status`` and ``quit``. Patch by Maurycy Pawłowski-Wieroński.
