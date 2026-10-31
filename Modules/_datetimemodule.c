@@ -1861,6 +1861,42 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
+/* The documented numeric format codes for which the %- flag (no zero
+ * padding) is emulated on all platforms, so behavior is consistent.
+ * Some libcs lack the flag (Windows, Android, OpenBSD), others ignore
+ * it for %-y (Apple, FreeBSD, NetBSD).  Their output is digits only,
+ * so it needs no escaping before being stuffed into the format.
+ */
+static int
+is_dash_emulated(Py_UCS4 ch)
+{
+    switch (ch) {
+        case 'd': case 'm': case 'H': case 'I': case 'M': case 'S':
+        case 'j': case 'U': case 'W': case 'V': case 'y':
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+static PyObject *
+make_dash_replacement(PyObject *strftime, Py_UCS4 ch, PyObject *timetuple)
+{
+    assert(is_dash_emulated(ch));
+    char fmt[3] = {'%', (char)ch, '\0'};
+    PyObject *res = PyObject_CallFunction(strftime, "sO", fmt, timetuple);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    PyObject *stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
+    Py_DECREF(res);
+    if (stripped != NULL && PyUnicode_GET_LENGTH(stripped) == 0) {
+        Py_SETREF(stripped, PyUnicode_FromString("0"));
+    }
+    return stripped;
+}
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z, %:z, %Z and %f format codes via a
@@ -1878,6 +1914,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
+    PyObject *dash_replacement = NULL;  /* py string, replacement for %- */
 
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
@@ -2032,6 +2069,21 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
+        else if (ch == '-' && i < flen
+                 && is_dash_emulated(PyUnicode_READ_CHAR(format, i)))
+        {
+            /* %-d etc. -> no zero padding, emulated on all platforms */
+            Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            i++;
+
+            Py_XDECREF(dash_replacement);
+            dash_replacement = make_dash_replacement(strftime, next_ch,
+                                                     timetuple);
+            if (dash_replacement == NULL) {
+                goto Error;
+            }
+            replacement = dash_replacement;
+        }
         else {
             /* percent followed by something else */
             continue;
@@ -2070,6 +2122,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
+    Py_XDECREF(dash_replacement);
     RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 
