@@ -619,6 +619,46 @@ class TestPartialC(TestPartial, unittest.TestCase):
         module = c_functools
         partial = c_functools.partial
 
+    def test_call_snapshot_reentrancy(self):
+        PH = self.module.Placeholder
+        p = self.partial(capture, PH, 2, k=0)
+
+        class EvilKey(str):
+            armed = True
+            __hash__ = str.__hash__
+
+            def __eq__(self, other):
+                if self.armed:
+                    self.armed = False
+                    p.__setstate__((capture, (PH, PH, 3), {}, None))
+                return str.__eq__(self, other)
+
+        key = EvilKey("k")
+        # The slot wrapper exercises tp_call, including its keyword merge.
+        self.assertEqual(p.__call__(1, **{key: 1}), ((1, 2), {"k": 1}))
+        self.assertFalse(key.armed)
+        self.assertEqual(p(10, 20), ((10, 20, 3), {}))
+
+    def test_setstate_finalizer_reentrancy(self):
+        p = self.partial(capture)
+        seen = []
+
+        class OldCallable:
+            def __call__(self, *args, **kw):
+                pass
+
+            def __del__(self):
+                seen.append((p.func, p.args, p.keywords.copy(),
+                             p.__dict__.copy()))
+                p.__setstate__((capture, (3,), {"a": 3}, {"tag": 3}))
+
+        p.__setstate__((OldCallable(), (1,), {"a": 1}, {"tag": 1}))
+        p.__setstate__((capture, (2,), {"a": 2}, {"tag": 2}))
+        gc.collect()
+        self.assertEqual(seen, [(capture, (2,), {"a": 2}, {"tag": 2})])
+        self.assertEqual(p(), ((3,), {"a": 3}))
+        self.assertEqual(p.tag, 3)
+
     def test_attributes_unwritable(self):
         # attributes should not be writable
         p = self.partial(capture, 1, 2, a=10, b=20)
