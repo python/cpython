@@ -116,7 +116,9 @@ maybe_small_long(PyLongObject *v)
 /* Check for signals on every 32nd iteration `i` of a loop. */
 #define SIGCHECK(i, PyTryBlock)                                     \
     do {                                                            \
-        if ((((i) & 31) == 31) && PyErr_CheckSignals()) PyTryBlock  \
+        if ((((i) & 31) == 31) && PyErr_CheckSignals()) {           \
+            PyTryBlock                                              \
+        }                                                           \
     } while(0)
 
 /* Normalize (remove leading zeros from) an int object.
