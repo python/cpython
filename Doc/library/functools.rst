@@ -339,7 +339,7 @@ The :mod:`!functools` module defines the following functions:
 
    .. versionadded:: 3.14
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       ``Placeholder`` is now a :class:`sentinel`.
 
 .. function:: partial(func, /, *args, **keywords)
