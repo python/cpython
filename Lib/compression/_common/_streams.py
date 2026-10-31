@@ -36,7 +36,8 @@ class DecompressReader(io.RawIOBase):
     def readable(self):
         return True
 
-    def __init__(self, fp, decomp_factory, trailing_error=(), **decomp_args):
+    def __init__(self, fp, decomp_factory, trailing_error=(), *,
+                 stream_magic=(), **decomp_args):
         self._fp = fp
         self._eof = False
         self._pos = 0  # Current offset in decompressed stream
@@ -55,6 +56,11 @@ class DecompressReader(io.RawIOBase):
         # Exception class to catch from decompressor signifying invalid
         # trailing data to ignore
         self._trailing_error = trailing_error
+
+        # Prefix (or tuple of prefixes) that every compressed stream starts
+        # with, if the format has one.  Data starting with it is a damaged
+        # stream rather than trailing data, so its error is not ignored.
+        self._stream_magic = stream_magic
 
     def close(self):
         self._decompressor = None
@@ -90,6 +96,9 @@ class DecompressReader(io.RawIOBase):
                 try:
                     data = self._decompressor.decompress(rawblock, size)
                 except self._trailing_error:
+                    if (self._stream_magic
+                            and rawblock.startswith(self._stream_magic)):
+                        raise  # Damaged stream, not trailing data.
                     # Trailing data isn't a valid compressed stream; ignore it.
                     break
             else:
