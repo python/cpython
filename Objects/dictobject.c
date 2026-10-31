@@ -2631,6 +2631,81 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
     return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
+static inline int
+compare_generic_exact_unicode(PyDictObject *mp, PyDictKeysObject *dk,
+                              void *ep0, Py_ssize_t ix, PyObject *key,
+                              Py_hash_t hash)
+{
+    PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
+    assert(ep->me_key != NULL);
+    if (ep->me_key == key) {
+        return 1;
+    }
+    return (ep->me_hash == hash && PyUnicode_CheckExact(ep->me_key) &&
+            unicode_eq(ep->me_key, key));
+}
+
+// Look up an exact str key, without comparing it to keys that are not exact
+// str: those are skipped, so no user code can run.  Returns a borrowed
+// reference, or NULL (without an exception) if the key is not found.  The
+// caller must hold the dict lock or have the world stopped.
+PyObject *
+_PyDict_GetItem_ExactUnicode(PyDictObject *mp, PyObject *key)
+{
+    assert(PyUnicode_CheckExact(key));
+    Py_hash_t hash = hash_unicode_key(key);
+    PyDictKeysObject *dk = mp->ma_keys;
+    Py_ssize_t ix;
+    if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        ix = do_lookup(mp, dk, key, hash, compare_generic_exact_unicode);
+    }
+    else {
+        ix = unicodekeys_lookup_unicode(dk, key, hash);
+    }
+    if (ix < 0) {
+        return NULL;
+    }
+    if (dk->dk_kind == DICT_KEYS_SPLIT) {
+        return mp->ma_values->values[ix];
+    }
+    if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        return DK_ENTRIES(dk)[ix].me_value;
+    }
+    return DK_UNICODE_ENTRIES(dk)[ix].me_value;
+}
+
+// Like _PyDict_GetItem_ExactUnicode() but safe to call without holding the
+// dict lock.  Stores a new reference (or NULL) in *value_addr.  Returns 1 if
+// the key was found and 0 if not.
+int
+_PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp, PyObject *key,
+                                     _PyStackRef *value_addr)
+{
+    assert(PyUnicode_CheckExact(key));
+    PyObject *value;
+#ifdef Py_GIL_DISABLED
+    ensure_shared_on_read(mp);
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
+    if (dk->dk_kind == DICT_KEYS_UNICODE) {
+        // All keys are exact str, so the lock-free lookup cannot run user
+        // code.
+        Py_hash_t hash = hash_unicode_key(key);
+        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
+        if (ix != DKIX_KEY_CHANGED) {
+            return !PyStackRef_IsNull(*value_addr);
+        }
+    }
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    value = _PyDict_GetItem_ExactUnicode(mp, key);
+    *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
+    Py_END_CRITICAL_SECTION();
+#else
+    value = _PyDict_GetItem_ExactUnicode(mp, key);
+    *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
+#endif
+    return value != NULL;
+}
+
 int
 _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)
 {
