@@ -147,4 +147,19 @@ longrange_iterator___setstate__(PyObject *r, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=719c0e4c81fe0f4a input=a9049054013a1b77]*/
+
+static PyObject *
+longrangeiter_next_impl(longrangeiterobject *self);
+
+static PyObject *
+longrangeiter_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = longrangeiter_next_impl((longrangeiterobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=e31cc65008f9db4f input=a9049054013a1b77]*/

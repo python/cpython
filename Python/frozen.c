@@ -44,6 +44,7 @@
 #include "frozen_modules/importlib._bootstrap.h"
 #include "frozen_modules/importlib._bootstrap_external.h"
 #include "frozen_modules/zipimport.h"
+#include "frozen_modules/builtins.h"
 #include "frozen_modules/abc.h"
 #include "frozen_modules/codecs.h"
 #include "frozen_modules/io.h"
@@ -71,6 +72,7 @@ static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), false},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), false},
     {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport), false},
+    {"_pybuiltins", _Py_M__builtins, (int)sizeof(_Py_M__builtins), false},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {
@@ -119,6 +121,7 @@ const struct _frozen *_PyImport_FrozenTest = test_modules;
 static const struct _module_alias aliases[] = {
     {"_frozen_importlib", "importlib._bootstrap"},
     {"_frozen_importlib_external", "importlib._bootstrap_external"},
+    {"_pybuiltins", "builtins"},
     {"__hello_alias__", "__hello__"},
     {"__phello_alias__", "__hello__"},
     {"__phello_alias__.spam", "__hello__"},

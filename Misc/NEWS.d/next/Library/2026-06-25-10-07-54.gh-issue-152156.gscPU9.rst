@@ -1,2 +1,0 @@
-Fix a possible crash in :func:`concurrent.interpreters.create` under limited
-memory conditions.

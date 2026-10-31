@@ -34,7 +34,12 @@ from idlelib.help import _get_dochome
 TK_TABWIDTH_DEFAULT = 8
 darwin = sys.platform == 'darwin'
 
+# A letter keysym in a key sequence, such as "s" in "<Control-Key-s>".
+_letter_key_re = re.compile(r'(?<=-Key-)[a-zA-Z](?=>)')
+
+
 class EditorWindow:
+    is_shell = False  # PyShell overrides.
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -80,7 +85,6 @@ class EditorWindow:
         self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
-        self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
@@ -1116,18 +1120,49 @@ class EditorWindow:
 
     def last_mtime(self):
         file = self.io.filename
-        return os.path.getmtime(file) if file else 0
+        if not file:
+            return None
+        try:
+            return os.path.getmtime(file)
+        except OSError:
+            # File is gone or cannot be stat'ed.
+            return None
 
     def focus_in_event(self, event):
         mtime = self.last_mtime()
-        if self.mtime != mtime:
+        if mtime == self.mtime:
+            return
+        if self.mtime is not None and mtime is None:
+            # The file was there and is now gone; reloading cannot work.
+            self.deleted_file_event(event)
+        else:
             self.mtime = mtime
-            if self. askyesno(
+            if self.askyesno(
               'Reload', '"%s"\n\nThis script has been modified by another program.'
               '\nDo you want to reload it?' % self.io.filename, parent=self.text):
                 self.io.loadfile(self.io.filename)
             else:
                 self.set_saved(False)
+
+    def deleted_file_event(self, event):
+        # The file was deleted or renamed while open; ask what to do with the
+        # buffer instead of offering a reload that could only fail.  Forget the
+        # old mtime before showing the dialog so a FocusIn delivered while this
+        # dialog (or a Close/Save As sub-dialog) is open does not reopen it; a
+        # successful Save As restores it via set_saved(True).
+        self.mtime = None
+        dialog = simpledialog.SimpleDialog(
+            self.text,
+            title='File Deleted',
+            text='"%s"\n\nThis file no longer exists.' % self.io.filename,
+            buttons=('Close', 'Save As', 'Ignore'),
+            default=1,
+            cancel=2)
+        choice = dialog.go()
+        if choice == 0:
+            self.close()
+        elif choice == 1:
+            self.io.save_as(event)
 
     def load_extensions(self):
         self.extensions = {}
@@ -1186,6 +1221,12 @@ class EditorWindow:
         for event, keylist in keydefs.items():
             if keylist:
                 text.event_add(event, *keylist)
+                # Caps Lock changes the case of letter keysyms, so bind
+                # the sequences with the other case too (gh-56596).
+                for keys in keylist:
+                    other = _letter_key_re.sub(lambda m: m[0].swapcase(), keys)
+                    if other not in keylist:
+                        text.event_add(event, other)
 
     def fill_menus(self, menudefs=None, keydefs=None):
         """Fill in dropdown menus used by this window.
@@ -1434,7 +1475,7 @@ class EditorWindow:
             # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
+            if not self.is_shell:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"

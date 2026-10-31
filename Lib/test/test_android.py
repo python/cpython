@@ -1,4 +1,5 @@
 import io
+import platform
 import queue
 import re
 import subprocess
@@ -15,6 +16,11 @@ from unittest.mock import patch
 
 if sys.platform != "android":
     raise unittest.SkipTest("Android-specific")
+
+# Some API levels filter out consecutive identical lines and replace them with a
+# "chatty" marker.
+api_level = platform.android_ver().api_level
+chatty_issue = (26 <= api_level <= 30)
 
 # (name, level, fileno)
 STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
@@ -179,15 +185,13 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\u0000b", [r"\xc0\x80b"])
                     write("a\u0000b", [r"a\xc0\x80b"])
 
-                # Multi-line messages. Avoid identical consecutive lines, as
-                # they may activate "chatty" filtering and break the tests.
-                #
-                # Additional spaces will appear in the output where necessary to
-                # protect leading newlines.
+                # Multi-line messages. Additional spaces will appear in the output where
+                # necessary to protect leading newlines.
                 write("\nx", [" "])
                 write("\na\n", ["x", "a"])
                 write("\n", [" "])
-                write("\n\n", [" ", " "])
+                if not chatty_issue:
+                    write("\n\n", [" ", " "])
                 write("b\n", ["b"])
                 write("c\n\n", ["c", " "])
                 write("d\ne", ["d"])
@@ -206,7 +210,8 @@ class TestAndroidOutput(unittest.TestCase):
                     write("\nx", [" ", "x"])
                     write("\na\n", [" ", "a"])
                     write("\n", [" "])
-                    write("\n\n", [" ", " "])
+                    if not chatty_issue:
+                        write("\n\n", [" ", " "])
                     write("b\n", ["b"])
                     write("c\n\n", ["c", " "])
                     write("d\ne", ["d", "e"])

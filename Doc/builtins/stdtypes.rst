@@ -2157,7 +2157,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -2398,7 +2398,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-4/#G91002>`__.
    For example:
 
    .. doctest::
@@ -2664,7 +2664,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -3176,7 +3176,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is `described in section 3.13.2 'Default Case
    Conversion' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
+   <https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.zfill(width, /)
@@ -3780,8 +3780,8 @@ objects.
 
       If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
 
-      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
-      will be set to null bytes.
+      If the :class:`bytearray` needs to grow, all new bytes will be set to null
+      bytes.
 
 
       This is equivalent to:
@@ -5254,7 +5254,7 @@ copying.
       .. versionchanged:: 3.5
          The source format is no longer restricted when casting to a byte view.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Casting a multi-dimensional F-contiguous view to a one-dimensional
          view is now supported.
 
@@ -5331,7 +5331,7 @@ copying.
 
       .. versionadded:: 3.3
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *order* parameter.
 
    .. attribute:: readonly
@@ -5616,9 +5616,8 @@ Note, the non-operator versions of the :meth:`~set.update`,
 argument.
 
 Note, the *elem* argument to the :meth:`~object.__contains__`,
-:meth:`~set.remove`, and
-:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
-frozenset, a temporary one is created from *elem*.
+:meth:`~set.remove`, and :meth:`~set.discard` methods may be a set.  In this case,
+an equivalent frozenset is searched for.
 
 Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
@@ -5668,7 +5667,7 @@ can be used interchangeably to index the same dictionary entry.
 
    * Use a comma-separated list of ``key: value`` pairs within braces:
      ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
-   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use a dict comprehension: ``{x: x ** 2 for x in range(10)}``
    * Use the type constructor: ``dict()``,
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
@@ -5879,9 +5878,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
-      An equality comparison between one ``dict.values()`` view and another
-      will always return ``False``. This also applies when comparing
-      ``dict.values()`` to itself::
+      An equality comparison between two distinct ``dict.values()`` views
+      will always return ``False``, even for views of the same dictionary::
 
          >>> d = {'a': 1}
          >>> d.values() == d.values()

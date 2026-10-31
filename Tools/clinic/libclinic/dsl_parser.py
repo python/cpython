@@ -15,28 +15,31 @@ from libclinic import (
     ClinicError, VersionTuple,
     fail, warn, unspecified, unknown, NULL)
 from libclinic.function import (
-    Module, Class, Function, Parameter,
+    Module, Class, Property, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    GETTER, SETTER, SETTER_AND_DELETER, SLOT,
     ACCESSORS, SETTERS)
 from libclinic.converter import (
     converters, legacy_converters)
 from libclinic.converters import (
-    self_converter, defining_class_converter,
+    self_converter, defining_class_converter, object_converter,
     correct_name_for_self)
 from libclinic.return_converters import (
     CReturnConverter, return_converters,
     int_return_converter)
+from libclinic.slots import SlotSpec, SLOTS
 from libclinic.parser import create_parser_namespace
 if TYPE_CHECKING:
     from libclinic.block_parser import Block
     from libclinic.app import Clinic
 
 
+# Special methods which Argument Clinic cannot convert.  The type slots
+# which it supports are listed in libclinic.slots.
 unsupported_special_methods: set[str] = set("""
 
 __abs__
-__add__
 __and__
 __call__
 __delitem__
@@ -47,16 +50,12 @@ __floordiv__
 __ge__
 __getattr__
 __getattribute__
-__getitem__
 __gt__
-__hash__
-__iadd__
 __iand__
 __ifloordiv__
 __ilshift__
 __imatmul__
 __imod__
-__imul__
 __index__
 __int__
 __invert__
@@ -68,21 +67,17 @@ __iter__
 __itruediv__
 __ixor__
 __le__
-__len__
 __lshift__
 __lt__
 __matmul__
 __mod__
-__mul__
 __neg__
-__next__
 __or__
 __pos__
 __pow__
 __radd__
 __rand__
 __rdivmod__
-__repr__
 __rfloordiv__
 __rlshift__
 __rmatmul__
@@ -96,8 +91,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__setitem__
-__str__
 __sub__
 __truediv__
 __xor__
@@ -264,6 +257,7 @@ class DSLParser:
     critical_section: bool
     target_critical_section: list[str]
     disable_fastcall: bool
+    slot: SlotSpec | None
     # Line of the file which is being parsed.
     line_number: int | None
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
@@ -311,6 +305,7 @@ class DSLParser:
         self.target_critical_section = []
         self.disable_fastcall = False
         self.vectorcall: bool = False
+        self.slot = None
         self.permit_long_summary = False
         self.permit_long_docstring_body = False
 
@@ -418,6 +413,8 @@ class DSLParser:
         fd[command_or_name] = d
 
     def directive_dump(self, name: str) -> None:
+        # The entries of attributes are composed before they are dumped.
+        self.clinic.language.render_properties(self.clinic)
         self.block.output.append(self.clinic.get_destination(name).dump())
 
     def directive_printout(self, *args: str) -> None:
@@ -600,6 +597,9 @@ class DSLParser:
             fields = full_name.split(".")
             if fields[-1] == '__new__':
                 fields.pop()
+            elif fields[-1] in SLOTS and not self.coexist:
+                # list.__repr__ -> list_repr
+                fields[-1] = fields[-1].strip('_')
             c_basename = "_".join(fields)
         if not libclinic.is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
@@ -624,32 +624,41 @@ class DSLParser:
             fail("'__new__' must be a class method!")
         if self.kind in ACCESSORS and not cls:
             fail("@getter and @setter must be methods")
+        # A @coexist method named like a slot is a method which coexists
+        # with the slot (e.g. dict.__contains__), not the slot itself.
+        slot = None if self.coexist else SLOTS.get(name)
+        if slot is not None:
+            if self.kind is not CALLABLE:
+                fail(f"{name!r} must be a normal method; got '{self.kind}'!")
+            if not cls:
+                fail(f"{name!r} must be a method!")
 
         # Normalise self.kind.
         if name == '__new__':
             self.kind = METHOD_NEW
         elif name == '__init__':
             self.kind = METHOD_INIT
+        elif slot is not None:
+            self.kind = SLOT
+            self.slot = slot
 
         # Validate @vectorcall usage.
         if self.vectorcall:
             if not self.kind.new_or_init:
                 fail("@vectorcall can only be used with __init__ and __new__ "
                      "methods currently")
-            # Guaranteed by the __new__ / __init__ checks above.
-            assert cls is not None
-            if not cls.type_object:
-                fail(f"@vectorcall requires the type object of {cls.name!r}, "
-                     f"which was declared without one")
 
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
     ) -> CReturnConverter:
         if forced_converter:
-            if self.kind in ACCESSORS:
-                fail("@getter and @setter methods cannot define a return type")
+            if self.kind in SETTERS:
+                fail("@setter methods cannot define a return type")
             if self.kind is METHOD_INIT:
                 fail("__init__ methods cannot define a return type")
+            if self.kind is SLOT:
+                fail(f"{full_name!r} cannot define a return type; "
+                     "its type slot defines it")
             ast_input = f"def x() -> {forced_converter}: pass"
             try:
                 module_node = ast.parse(ast_input)
@@ -669,6 +678,9 @@ class DSLParser:
 
         if self.kind in {METHOD_INIT} | SETTERS:
             return int_return_converter()
+        if self.kind is SLOT:
+            assert self.slot is not None
+            return self.slot.make_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -700,6 +712,8 @@ class DSLParser:
             "docstring_line_number": None,
             "line_number": self.line_number,
         }
+        if existing_function.kind is SLOT or self.slot is not None:
+            fail("Type slot methods cannot be cloned")
         if not (existing_function.kind is self.kind and
                 existing_function.coexist == self.coexist):
             # Allow __new__ or __init__ methods.
@@ -711,6 +725,9 @@ class DSLParser:
                 fail("'kind' of function and cloned function don't match! "
                      "(@classmethod/@staticmethod/@coexist)")
         function = existing_function.copy(**overrides)
+        function.condition = self.clinic.language.cpp.condition()
+        if function.kind in ACCESSORS:
+            self.add_accessor(function)
         self.function = function
         self.block.signatures.append(function)
         (cls or module).functions.append(function)
@@ -771,27 +788,16 @@ class DSLParser:
             forced_text_signature=self.forced_text_signature,
             line_number=self.line_number,
             vectorcall=self.vectorcall,
+            slot=self.slot,
         )
         self.add_function(func)
 
         self.next(self.state_parameters_start)
 
     def add_function(self, func: Function) -> None:
+        func.condition = self.clinic.language.cpp.condition()
         if func.kind in ACCESSORS:
-            # The accessors of the same attribute are rendered into a single
-            # PyGetSetDef entry, which is identified by the C basename, so
-            # they must share it.
-            for other in (func.cls or func.module).functions:
-                if (other.kind in ACCESSORS
-                        and other.full_name == func.full_name):
-                    if (other.kind is func.kind
-                            or {other.kind, func.kind} <= SETTERS):
-                        kind = 'setter' if func.kind in SETTERS else 'getter'
-                        fail(f"Cannot apply @{kind} to "
-                             f"{func.full_name!r} twice")
-                    if other.c_basename != func.c_basename:
-                        fail(f"The accessors of {func.full_name!r} "
-                             f"must have the same C basename")
+            self.add_accessor(func)
 
         # Insert a self converter automatically.
         tp, name = correct_name_for_self(func)
@@ -810,6 +816,28 @@ class DSLParser:
         self.block.signatures.append(func)
         self.function = func
         (func.cls or func.module).functions.append(func)
+
+    def add_accessor(self, func: Function) -> None:
+        """Add an accessor to the attribute which it implements."""
+        assert func.cls is not None
+        prop = func.cls.properties.get(func.name)
+        if prop is not None and prop.rendered:
+            fail(f"All accessors of {func.full_name!r} must be defined "
+                 f"before its PyGetSetDef entry is dumped")
+        if prop is None:
+            prop = Property(func.name, func.full_name, func.cls)
+            func.cls.properties[func.name] = prop
+            self.clinic.properties.append(prop)
+        func.property = prop
+        slot = prop.getter if func.kind is GETTER else prop.setter
+        # Several implementations of the same accessor can share the slot if
+        # each of them is compiled under its own preprocessor condition.
+        if slot and (not func.condition
+                     or any(not other.condition for other in slot)):
+            if func.kind is GETTER:
+                fail(f"Cannot apply @getter to {func.full_name!r} twice")
+            fail(f"The setter of {func.full_name!r} is already defined")
+        slot.append(func)
 
     # Now entering the parameters section.  The rules, formally stated:
     #
@@ -875,9 +903,8 @@ class DSLParser:
             return self.next(self.state_function_docstring, line)
 
         assert self.function is not None
-        if self.function.kind in ACCESSORS:
-            fail("@getter and @setter methods cannot define parameters")
-
+        if self.function.kind is GETTER:
+            fail("@getter methods cannot define parameters")
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
 
@@ -898,6 +925,10 @@ class DSLParser:
 
         if not self.valid_line(line):
             return
+
+        if self.function.kind in SETTERS and len(self.function.parameters) > 1:
+            # The only parameter of a setter is the new value.
+            fail("@setter methods must define exactly one parameter")
 
         if self.parameter_continuation:
             line = self.parameter_continuation + ' ' + line.lstrip()
@@ -931,6 +962,9 @@ class DSLParser:
             self.deprecated_until = self.parse_version(match[1], 'until')
             line = match[2]
 
+        if not self.expecting_parameters:
+            fail(f'parameters cannot follow var-keyword parameter: {line!r}')
+
         func = self.function
         match line:
             case '*':
@@ -946,10 +980,6 @@ class DSLParser:
 
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
-
-        if not self.expecting_parameters:
-            fail('Encountered parameter line when not expecting '
-                 f'parameters: {line}')
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -1001,8 +1031,9 @@ class DSLParser:
                 for p in self.function.parameters.values()
             )
             if has_non_positional_param:
-                fail(f"Function {self.function.name!r} has an "
-                     f"invalid parameter declaration (**kwargs?): {line!r}")
+                fail(f'Function {self.function.name!r} cannot use a var-keyword '
+                     f'parameter with pos-or-keyword or keyword-only '
+                     f'parameters.')
             is_var_keyword = True
             parameter = function_args.kwarg
         else:
@@ -1141,8 +1172,20 @@ class DSLParser:
 
         kind: inspect._ParameterKind
         if is_vararg:
+            if self.group_stack:
+                fail("A var-positional parameter cannot be in an optional "
+                     "group.")
+            if any(p.group for p in self.function.parameters.values()):
+                # With "foo([a, b], *args)" the number of arguments does not
+                # tell whether the group is passed or all arguments belong
+                # to the var-positional parameter.
+                fail(f"Function {self.function.name!r} cannot use optional "
+                     f"groups with a var-positional parameter.")
             kind = inspect.Parameter.VAR_POSITIONAL
         elif is_var_keyword:
+            if self.group_stack:
+                fail("A var-keyword parameter cannot be in an optional "
+                     "group.")
             kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
@@ -1261,9 +1304,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '*' when not expecting parameters")
-
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1283,6 +1323,9 @@ class DSLParser:
 
     def parse_opening_square_bracket(self, function: Function) -> None:
         """Parse opening parameter group symbol '['."""
+        if any(p.is_vararg() for p in function.parameters.values()):
+            fail(f"Function {function.name!r} cannot use optional groups "
+                 f"with a var-positional parameter.")
         # A group can only be nested in a group which does not contain
         # parameters yet, but two groups on the same nesting level can
         # follow each other.
@@ -1327,9 +1370,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '/' when not expecting parameters")
-
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
@@ -1469,6 +1509,12 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         # For the following special cases, it does not make sense to render a docstring.
+        if f.kind is SLOT:
+            # A slot function has no docstring (there is no PyMethodDef).
+            if f.docstring:
+                fail(f"{f.name!r} methods cannot have a docstring",
+                     line_number=f.docstring_line_number)
+            return f.docstring
         if f.kind in {METHOD_INIT, METHOD_NEW} | ACCESSORS and not f.docstring:
             return f.docstring
 
@@ -1610,12 +1656,50 @@ class DSLParser:
                      f"parse_arg(); parameter {p.name!r} does not",
                      line_number=lineno)
 
+    def check_slot_parameters(self, func: Function) -> None:
+        """Check that the parameters of a slot method fit a C signature."""
+        for p in list(func.parameters.values())[1:]:
+            if not p.is_positional_only():
+                fail(f"The parameters of {func.name!r} must be positional-only")
+            if p.default is not unspecified:
+                fail(f"The parameters of {func.name!r} cannot have a default value")
+
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """
         Called when processing the block is done.
         """
         if not self.function:
             return
+
+        func = self.function
+        if func.kind is SLOT:
+            self.check_slot_parameters(func)
+        if func.kind in (SETTER, SETTER_AND_DELETER):
+            # The new value is the only parameter of a setter.  The setter
+            # of a deletable attribute is also called with NULL to delete it,
+            # hence the default value.
+            optional = func.kind is SETTER_AND_DELETER
+            if len(func.parameters) == 1:
+                # It is optional to declare the value, which is usually
+                # a plain object.
+                default = NULL if optional else unspecified
+                converter = object_converter('value', 'value', func, default)
+                func.parameters['value'] = Parameter(
+                    'value', inspect.Parameter.POSITIONAL_ONLY,
+                    function=func, converter=converter, default=default)
+            else:
+                p = list(func.parameters.values())[1]
+                if p.is_keyword_only() or p.is_variable_length():
+                    fail("the value of @setter must be a positional parameter")
+                if p.is_optional() != optional:
+                    if optional:
+                        fail("the value of @setter with @deleter must have "
+                             "a default value, used to delete the attribute")
+                    else:
+                        fail("the value of @setter cannot have a default value")
+                if optional and p.default is not NULL:
+                    fail("the value of @setter with @deleter can only have "
+                         "NULL as a default value")
 
         self.check_remaining_star(lineno)
         self.check_vectorcall_parameters(lineno)
@@ -1645,7 +1729,7 @@ def render_text_signature(
     if f.forced_text_signature:
         lines.append(f.forced_text_signature)
     elif f.kind in ACCESSORS:
-        # @getter and @setter do not need signatures like a method or a function.
+        # Accessors do not need signatures like a method or a function.
         return ''
     else:
         lines.append('(')

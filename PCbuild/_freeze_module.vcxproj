@@ -175,6 +175,7 @@
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\parser.c" />
+    <ClCompile Include="..\Parser\parser_invalid.c" />
     <ClCompile Include="..\Parser\peg_api.c" />
     <ClCompile Include="..\Parser\pegen.c" />
     <ClCompile Include="..\Parser\pegen_errors.c" />
@@ -183,6 +184,7 @@
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\lexer\state.c" />
     <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\lexer\layout.c" />
     <ClCompile Include="..\Parser\lexer\number.c" />
     <ClCompile Include="..\Parser\lexer\string.c" />
     <ClCompile Include="..\Parser\tokenizer\decoder.c" />
@@ -193,6 +195,7 @@
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
+    <ClCompile Include="..\Python\_strptime.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
     <ClCompile Include="..\Python\assemble.c" />
@@ -305,6 +308,11 @@
       <ModName>zipimport</ModName>
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
       <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\zipimport.h</OutFile>
+    </None>
+    <None Include="..\Lib\_pybuiltins.py">
+      <ModName>builtins</ModName>
+      <IntFile>$(IntDir)builtins.g.h</IntFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\builtins.h</OutFile>
     </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>

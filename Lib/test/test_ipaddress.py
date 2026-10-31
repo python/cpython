@@ -13,6 +13,7 @@ import pickle
 import ipaddress
 import weakref
 from collections.abc import Iterator
+from test import support
 from test.support import LARGEST, SMALLEST
 
 
@@ -2535,6 +2536,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_address('2001::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::1').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::2').is_global)
+        # gh-151049: RFC 9665 anycast address (IANA 2024-04 registration)
+        self.assertTrue(ipaddress.ip_address('2001:1::3').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:1::3').is_private)
+        self.assertFalse(ipaddress.ip_address('2001:1::4').is_global)
         self.assertFalse(ipaddress.ip_address('2001:2::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:3::').is_global)
         self.assertFalse(ipaddress.ip_address('2001:4::').is_global)
@@ -2909,13 +2914,10 @@ class IpaddrUnitTest(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(ipaddress, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, ipaddress, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == '__main__':
