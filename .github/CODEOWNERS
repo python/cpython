@@ -302,6 +302,7 @@ Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
+Grammar/invalid.gram          @pablogsal @lysnikolaou
 Lib/test/test_peg_generator/  @pablogsal @lysnikolaou
 Lib/test/test_tokenize.py     @pablogsal @lysnikolaou
 Lib/tokenize.py               @pablogsal @lysnikolaou
@@ -431,6 +432,7 @@ Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
 Modules/*time*                   @pganssle @StanFromIreland
 Python/pytime.c                  @pganssle @StanFromIreland
+Python/_strptime.c               @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka

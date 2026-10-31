@@ -8,12 +8,13 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
            "open", "compress", "decompress",
            "bzlib_version", "bzlib_version_info"]
 
-__author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
+# Original author: Nadeem Vawda <nadeem.vawda@gmail.com>
 
 from builtins import open as _builtin_open
 from compression._common import _streams
 import io
 import os
+lazy import warnings
 
 from _bz2 import (BZ2Compressor, BZ2Decompressor,
                   bzlib_version, bzlib_version_info)
@@ -23,6 +24,9 @@ from _bz2 import (BZ2Compressor, BZ2Decompressor,
 _MODE_READ     = 1
 # Value 2 no longer used
 _MODE_WRITE    = 3
+
+# Every bzip2 stream starts with one of these, "BZh" and the block size.
+_STREAM_MAGIC = (b'BZh1', b'BZh2', b'BZh3', b'BZh4', b'BZh5', b'BZh6', b'BZh7', b'BZh8', b'BZh9')
 
 
 class BZ2File(_streams.BaseStream):
@@ -91,7 +95,8 @@ class BZ2File(_streams.BaseStream):
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(self._fp,
-                BZ2Decompressor, trailing_error=OSError)
+                BZ2Decompressor, trailing_error=OSError,
+                stream_magic=_STREAM_MAGIC)
             self._buffer = io.BufferedReader(raw)
         else:
             self._pos = 0
@@ -348,6 +353,7 @@ def decompress(data):
         chunk_size = len(data)
         while True:
             decomp = BZ2Decompressor()
+            start = pos
             res = []
             try:
                 # Feed the stream in chunks of increasing size, so that what
@@ -360,11 +366,13 @@ def decompress(data):
                         pos += len(chunk)
                     chunk_size *= 2
             except OSError:
-                if results:
-                    # Leftover data is not a valid bzip2 stream; ignore it.
-                    break
-                else:
+                if not results:
                     raise  # Error on the first iteration; bail out.
+                with data[start:start + 4] as head:
+                    if head.tobytes().startswith(_STREAM_MAGIC):
+                        # Leftover data is a damaged bzip2 stream; bail out.
+                        raise
+                break  # Leftover data is not a valid bzip2 stream; ignore it.
             results.extend(res)
             if not decomp.eof:
                 raise ValueError("Compressed data ended before the "
@@ -376,3 +384,10 @@ def decompress(data):
             # past the end of a short stream, a smaller one needs more calls.
             chunk_size = 1024
     return b"".join(results)
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return "Nadeem Vawda <nadeem.vawda@gmail.com>"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

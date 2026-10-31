@@ -48,7 +48,7 @@ methods.
 FeedParser API
 ^^^^^^^^^^^^^^
 
-The :class:`BytesFeedParser`, imported from the :mod:`email.feedparser` module,
+The :class:`BytesFeedParser`, imported from the :mod:`!email.feedparser` module,
 provides an API that is conducive to incremental parsing of email messages,
 such as would be necessary when reading the text of an email message from a
 source that can block (such as a socket).  The :class:`BytesFeedParser` can of
@@ -86,7 +86,7 @@ Here is the API for the :class:`BytesFeedParser`:
    more information on what else *policy* controls, see the
    :mod:`~email.policy` documentation.
 
-   Note: **The policy keyword should always be specified**; The default will
+   Note: **The policy keyword should always be specified**. The default will
    change to :data:`email.policy.default` in a future version of Python.
 
    .. versionadded:: 3.2
@@ -142,7 +142,7 @@ message body, instead setting the payload to the raw body.
    arguments have the same meaning and semantics as the *_factory*
    and *policy* arguments of :class:`BytesFeedParser`.
 
-   Note: **The policy keyword should always be specified**; The default will
+   Note: **The policy keyword should always be specified**. The default will
    change to :data:`email.policy.default` in a future version of Python.
 
    .. versionchanged:: 3.3

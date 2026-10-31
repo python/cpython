@@ -50,4 +50,5 @@ SLOTS: Final[dict[str, SlotSpec]] = {
     '__next__': SlotSpec(return_converter='object'),
     '__repr__': SlotSpec(return_converter='object'),
     '__setitem__': SlotSpec(return_converter='int'),
+    '__str__': SlotSpec(return_converter='object'),
 }

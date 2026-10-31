@@ -41,6 +41,8 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     ALIAS_PREFIX = "python"
     ALIAS_WPREFIX = "pythonw"
     FILE_PREFIX = "python-"
+    # Notice that FILE_SUFFIX may have more bits added to it below, and these
+    # are sensitive to ordering (for compatibility), so don't change the order!
     FILE_SUFFIX = f"-{ns.arch}"
     DISPLAY_TAGS = [{
         "win32": "32-bit",
@@ -52,7 +54,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         # Packages with the test suite come under a different Company
         COMPANY = "PythonTest"
         DISPLAY_TAGS.append("with tests")
-        FILE_SUFFIX = f"-test-{ns.arch}"
+        FILE_SUFFIX = f"-test{FILE_SUFFIX}"
     if for_embed:
         # Embeddable distro comes under a different Company
         COMPANY = "PythonEmbed"
@@ -62,15 +64,15 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         DISPLAY_TAGS.append("embeddable")
         # Deliberately name the file differently from the existing distro
         # so we can republish old versions without replacing files.
-        FILE_SUFFIX = f"-embeddable-{ns.arch}"
+        FILE_SUFFIX = f"-embeddable{FILE_SUFFIX}"
     if ns.include_freethreaded:
         # Free-threaded distro comes with a tag suffix
         TAG_SUFFIX = "t"
         if not ns.include_alias:
             TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
-            TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
+            TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe" if TARGETW else None
         DISPLAY_TAGS.append("free-threaded")
-        FILE_SUFFIX = f"t-{ns.arch}"
+        FILE_SUFFIX = f"t{FILE_SUFFIX}"
 
     FULL_TAG = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}{TAG_SUFFIX}"
     FULL_ARCH_TAG = f"{FULL_TAG}{TAG_ARCH}"
