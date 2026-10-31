@@ -25,6 +25,14 @@
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
+
+    <!--
+    AddressSanitizer may be enabled with the EnableASAN property or through the
+    _CL_ and _LINK_ environment variables, so check all of them.
+    -->
+    <PyUsingAsan Condition="'$(PyUsingAsan)' == '' and '$(EnableASAN)' == 'true'">true</PyUsingAsan>
+    <PyUsingAsan Condition="'$(PyUsingAsan)' == '' and $(_CL_.ToLowerInvariant().Contains('fsanitize=address'))">true</PyUsingAsan>
+    <PyUsingAsan Condition="'$(PyUsingAsan)' == '' and $(_LINK_.ToLowerInvariant().Contains('inferasanlibs'))">true</PyUsingAsan>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetExt) != ''">
