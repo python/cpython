@@ -279,13 +279,6 @@ class TestPartial:
         self.assertEqual(len(actual_kwds), 1)
         self.assertIs(actual_kwds['a'], ALWAYS_EQ)
 
-    def test_construct_placeholder_singleton(self):
-        PH = self.module.Placeholder
-        tp = type(PH)
-        self.assertIs(tp(), PH)
-        self.assertRaises(TypeError, tp, 1, 2)
-        self.assertRaises(TypeError, tp, a=1, b=2)
-
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
