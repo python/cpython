@@ -1,0 +1,2 @@
+:func:`asyncio.print_call_graph` no longer truncates the call stack of a
+task suspended inside an asynchronous generator.
