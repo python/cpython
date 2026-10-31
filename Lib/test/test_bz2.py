@@ -967,6 +967,29 @@ class BZ2DecompressorTest(BaseTest):
         self.assertEqual(out, self.BIG_TEXT)
         self.assertEqual(bzd.unused_data, b"")
 
+    def test_decompressor_max_length_zero(self):
+        # max_length=0 buffers the input and never produces output,
+        # however many times it is repeated.
+        bzd = BZ2Decompressor()
+        for _ in range(20):
+            self.assertEqual(bzd.decompress(b'', max_length=0), b'')
+        self.assertEqual(bzd.decompress(self.DATA, max_length=0), b'')
+        for _ in range(20):
+            self.assertEqual(bzd.decompress(b'', max_length=0), b'')
+        self.assertFalse(bzd.needs_input)
+        self.assertFalse(bzd.eof)
+        self.assertEqual(bzd.decompress(b''), self.TEXT)
+        self.assertTrue(bzd.eof)
+
+        # Output pending from an earlier call is kept for later.
+        bzd = BZ2Decompressor()
+        out = bzd.decompress(self.DATA, max_length=1)
+        for _ in range(20):
+            self.assertEqual(bzd.decompress(b'', max_length=0), b'')
+        self.assertFalse(bzd.needs_input)
+        self.assertEqual(out + bzd.decompress(b''), self.TEXT)
+        self.assertTrue(bzd.eof)
+
     def test_decompressor_inputbuf_1(self):
         # Test reusing input buffer after moving existing
         # contents to beginning
