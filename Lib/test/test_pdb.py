@@ -7,6 +7,7 @@ import io
 import os
 import pdb
 import re
+import signal
 import sys
 import types
 import codecs
@@ -2973,6 +2974,118 @@ def test_pdb_with_inline_breakpoint():
     (Pdb) c
     """
 
+def test_pdb_sigint_continue():
+    """SIGINT interrupts continue with a breakpoint set.
+
+    >>> def callee():
+    ...     signal.raise_signal(signal.SIGINT)
+    ...     return 42
+    >>> def caller():
+    ...     result = callee()
+    ...     return result
+
+    With a breakpoint after the call, tracing remains active. The signal
+    stops in the callee, and continuing then reaches the breakpoint.
+
+    >>> with PdbTestInput(['break 3', 'continue', 'continue', 'continue']):
+    ...     try:
+    ...         pdb.Pdb(readrc=False).runcall(caller)
+    ...     except KeyboardInterrupt:
+    ...         raise AssertionError('SIGINT unwound the debuggee')
+    > <doctest test.test_pdb.test_pdb_sigint_continue[1]>(2)caller()
+    -> result = callee()
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_sigint_continue[1]>:3
+    (Pdb) continue
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint_continue[0]>(2)callee()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_sigint_continue[1]>(3)caller()
+    -> return result
+    (Pdb) continue
+    42
+    """
+
+
+def test_pdb_sigint_step():
+    """SIGINT during step stops in the debuggee, not in Pdb's handler.
+
+    >>> def test_function():
+    ...     signal.raise_signal(signal.SIGINT)
+    ...     return 42
+
+    >>> with PdbTestInput(['step', 'continue']):
+    ...     try:
+    ...         pdb.Pdb(readrc=False).runcall(test_function)
+    ...     except KeyboardInterrupt:
+    ...         raise AssertionError('SIGINT unwound the debuggee')
+    > <doctest test.test_pdb.test_pdb_sigint_step[0]>(2)test_function()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) step
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint_step[0]>(2)test_function()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) continue
+    42
+    """
+
+
+def test_pdb_sigint_next():
+    """SIGINT during next stops inside a previously untraced callee.
+
+    >>> def callee():
+    ...     signal.raise_signal(signal.SIGINT)
+    ...     return 42
+    >>> def caller():
+    ...     result = callee()
+    ...     return result
+
+    >>> with PdbTestInput(['next', 'continue']):
+    ...     try:
+    ...         pdb.Pdb(readrc=False).runcall(caller)
+    ...     except KeyboardInterrupt:
+    ...         raise AssertionError('SIGINT unwound the debuggee')
+    > <doctest test.test_pdb.test_pdb_sigint_next[1]>(2)caller()
+    -> result = callee()
+    (Pdb) next
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint_next[0]>(2)callee()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) continue
+    42
+    """
+
+
+def test_pdb_sigint_until():
+    """SIGINT during until stops inside a previously untraced callee.
+
+    >>> def callee():
+    ...     signal.raise_signal(signal.SIGINT)
+    ...     return 42
+    >>> def caller():
+    ...     result = callee()
+    ...     return result
+
+    >>> with PdbTestInput(['until 3', 'continue']):
+    ...     try:
+    ...         pdb.Pdb(readrc=False).runcall(caller)
+    ...     except KeyboardInterrupt:
+    ...         raise AssertionError('SIGINT unwound the debuggee')
+    > <doctest test.test_pdb.test_pdb_sigint_until[1]>(2)caller()
+    -> result = callee()
+    (Pdb) until 3
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint_until[0]>(2)callee()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) continue
+    42
+    """
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -5432,9 +5545,15 @@ def load_tests(loader, tests, pattern):
         def setUp(test):
             import pdb
             pdb.set_default_backend(backend)
+            test.original_sigint_handler = signal.getsignal(signal.SIGINT)
+            test.previous_sigint_handler = pdb.Pdb._previous_sigint_handler
         return setUp
 
     def tearDown(test):
+        # Restore signal state even if a SIGINT doctest fails.
+        signal.signal(signal.SIGINT, test.original_sigint_handler)
+        pdb.Pdb._previous_sigint_handler = test.previous_sigint_handler
+
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.

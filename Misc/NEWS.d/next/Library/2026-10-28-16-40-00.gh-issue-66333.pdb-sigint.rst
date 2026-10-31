@@ -1,0 +1,3 @@
+Allow Ctrl-C to interrupt execution resumed with the :mod:`pdb`
+``step``, ``next``, and ``until`` commands without unwinding the debugged
+program, as with ``continue``.
