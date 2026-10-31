@@ -156,6 +156,22 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertEqual(bz2f.read(), self.TEXT * 5)
 
+    def testReadMultiStreamDamagedStream(self):
+        # A damaged bzip2 stream following a valid one is not trailing junk,
+        # whatever the size of the reads.
+        for pos in 4, 100, -3:
+            with self.subTest(pos=pos):
+                damaged = bytearray(self.DATA)
+                damaged[pos] ^= 1
+                self.createTempFile(suffix=damaged)
+                with BZ2File(self.filename) as bz2f:
+                    self.assertRaises(OSError, bz2f.read)
+                with BZ2File(self.filename) as bz2f:
+                    self.assertEqual(bz2f.read(len(self.TEXT)), self.TEXT)
+                    with self.assertRaises(OSError):
+                        while bz2f.read(10):
+                            pass
+
     def testRead0(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
@@ -1099,6 +1115,18 @@ class CompressDecompressTest(BaseTest):
     def testDecompressMultiStreamTrailingJunk(self):
         text = bz2.decompress(self.DATA * 5 + self.BAD_DATA)
         self.assertEqual(text, self.TEXT * 5)
+
+    def testDecompressMultiStreamDamagedStream(self):
+        # A damaged bzip2 stream following a valid one is not trailing junk.
+        for pos in 4, 100, -3:
+            with self.subTest(pos=pos):
+                damaged = bytearray(self.DATA)
+                damaged[pos] ^= 1
+                self.assertRaises(OSError, bz2.decompress,
+                                  self.DATA + damaged)
+        # Not a bzip2 header: the block size digit must be 1 to 9.
+        text = bz2.decompress(self.DATA + b"BZh0" + self.BAD_DATA)
+        self.assertEqual(text, self.TEXT)
 
 
 class OpenTest(BaseTest):
