@@ -770,20 +770,6 @@ get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *f
         return 0;
     }
 
-    int8_t frame_state;
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(
-            &unwinder->handle,
-            running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_frame_state,
-            sizeof(frame_state),
-            &frame_state) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Running task coro frame state read failed");
-        return -1;
-    }
-    if (frame_state != FRAME_EXECUTING) {
-        *frame_addr = 0;
-        return 0;
-    }
-
     *frame_addr = running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
     return 0;
 }
@@ -799,6 +785,7 @@ parse_async_frame_chain(
     uintptr_t address_of_thread,
     uintptr_t running_task_frame
 ) {
+    Py_ssize_t coro_chain_size = PyList_GET_SIZE(calls);
     uintptr_t address_of_current_frame;
     if (find_running_frame(unwinder, address_of_thread, &address_of_current_frame) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Running frame search failed in async chain");
@@ -844,11 +831,12 @@ parse_async_frame_chain(
         // Stop at the task's own frame. Code objects are shared by
         // recursive calls, so they cannot identify it.
         if (this_frame == running_task_frame) {
-            break;
+            return PyList_SetSlice(calls, 0, coro_chain_size, NULL);
         }
     }
 
-    return 0;
+    // gh-159645: keep the coroutine chain if the task's frame was not found.
+    return PyList_SetSlice(calls, coro_chain_size, PY_SSIZE_T_MAX, NULL);
 }
 
 /* ============================================================================
@@ -990,7 +978,7 @@ process_running_task_chain(
         return -1;
     }
 
-    // gh-159645: the coroutine isn't running, so keep its await chain.
+    // gh-159645: non-native coroutines have no frame to look for.
     if (running_task_frame == 0) {
         return process_task_waiters(unwinder, result);
     }
@@ -1009,12 +997,6 @@ process_running_task_chain(
     assert(coro_info != NULL);
     PyObject *frame_chain = PyStructSequence_GET_ITEM(coro_info, 0);
     assert(frame_chain != NULL);
-
-    // Clear the coro_chain
-    if (PyList_Clear(frame_chain) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to clear coroutine chain");
-        return -1;
-    }
 
     // Add the chain from the current frame to this task
     if (parse_async_frame_chain(unwinder, frame_chain, thread_state_addr, running_task_frame) < 0) {

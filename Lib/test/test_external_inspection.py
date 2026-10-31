@@ -14,6 +14,7 @@ from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
 from test.support import (
     os_helper,
+    threading_helper,
     SHORT_TIMEOUT,
     busy_retry,
     requires_gil_enabled,
@@ -638,6 +639,36 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
                   for trace in traces]
         self.assertIn([["sleep", "child"], ["main"]], stacks)
         self.assertIn([[], ["main"]], stacks)
+
+    @skip_if_not_supported
+    def test_running_task_frame_not_in_thread_stack(self):
+        # gh-159645
+        ready = threading.Event()
+        release = threading.Event()
+
+        async def child():
+            ready.set()
+            release.wait()
+            await asyncio.sleep(0)
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            coro = child()
+            task = asyncio.create_task(coro, name="child")
+            thread = threading.Thread(target=coro.send, args=(None,))
+            with threading_helper.start_threads([thread], unlock=release.set):
+                self.assertTrue(ready.wait(SHORT_TIMEOUT))
+                self.assertTrue(coro.cr_running)
+                previous = tasks._swap_current_task(loop, task)
+                try:
+                    trace = RemoteUnwinder(os.getpid()).get_async_stack_trace()
+                finally:
+                    tasks._swap_current_task(loop, previous)
+            await task
+            return trace
+
+        stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
+        self.assertEqual(stacks["child"], ["child"])
 
     @skip_if_not_supported
     def test_running_task_with_non_native_coroutine(self):
