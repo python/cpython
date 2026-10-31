@@ -1,0 +1,5 @@
+:c:func:`PyStructSequence_NewType` and :c:func:`PyStructSequence_InitType2`
+now raise :exc:`SystemError` when the :c:type:`PyStructSequence_Desc` places an
+unnamed field outside the visible sequence fields, or sets a negative
+``n_in_sequence`` or one larger than the total number of fields.
+Patch by Xuehai Pan.
