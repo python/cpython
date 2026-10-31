@@ -1356,6 +1356,8 @@ class Manager(object):
         self.disable = 0
         self.emittedNoHandlerWarning = False
         self.loggerDict = {}
+        # Loggers whose isEnabledFor cache may be populated; see _clear_cache.
+        self._cached_loggers = weakref.WeakSet()
         self.loggerClass = None
         self.logRecordFactory = None
 
@@ -1471,9 +1473,12 @@ class Manager(object):
         """
 
         with _lock:
-            for logger in self.loggerDict.values():
-                if isinstance(logger, Logger):
+            # Only loggers that have populated a cache are visited, so
+            # setLevel() costs O(loggers with cached results), not O(loggers).
+            for logger in list(self._cached_loggers):
+                if self.loggerDict.get(logger.name) is logger:
                     logger._cache.clear()
+                    self._cached_loggers.discard(logger)
             self.root._cache.clear()
 
 #---------------------------------------------------------------------------
@@ -1799,6 +1804,7 @@ class Logger(Filterer):
             return self._cache[level]
         except KeyError:
             with _lock:
+                self.manager._cached_loggers.add(self)
                 if self.manager.disable >= level:
                     is_enabled = self._cache[level] = False
                 else:
