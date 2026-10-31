@@ -1,8 +1,12 @@
 """Tests for the Perfetto sampling collector."""
 
+import opcode
 import unittest
 
+from profiling.sampling.constants import THREAD_STATUS_HAS_GIL
 from profiling.sampling.perfetto_collector import PerfettoCollector
+
+from .mocks import MockFrameInfo, MockInterpreterInfo, MockThreadInfo
 
 
 def _read_varint(data, offset):
@@ -120,6 +124,22 @@ class TestPerfettoCollector(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertEqual(len(collector._func_ids), 1)
         self.assertEqual(len(collector._source_path_ids), 2)
+
+
+    def test_opcode_slice_ends_when_leaf_has_no_opcode(self):
+        collector = PerfettoCollector(sample_interval_usec=1000, opcodes=True)
+        def collect(ts_us, frames):
+            collector.collect([MockInterpreterInfo(0, [
+                MockThreadInfo(1, frames, status=THREAD_STATUS_HAS_GIL),
+            ])], timestamps_us=[ts_us])
+
+        collect(0, [MockFrameInfo("a.py", 1, "f", opcode.opmap["NOP"])])
+        self.assertIn((1, "opcode"), collector._open)
+        collect(10, [MockFrameInfo("a.py", 1, "f")])
+        self.assertNotIn((1, "opcode"), collector._open)
+        collect(20, [MockFrameInfo("a.py", 1, "f", opcode.opmap["NOP"])])
+        collect(30, [])
+        self.assertNotIn((1, "opcode"), collector._open)
 
 
 if __name__ == "__main__":

@@ -381,10 +381,12 @@ class PerfettoCollector(Collector):
         self._transition(ts_ns, tid, "gc",
                          "GC Collecting"
                          if any(f[2] == "<GC>" for f in frames) else None)
-        if self.opcodes_enabled and frames:
-            leaf = frames[0]
-            opcode = leaf[3] if len(leaf) > 3 else None
-            if opcode is not None:
+        if self.opcodes_enabled:
+            leaf = frames[0] if frames else None
+            opcode = leaf[3] if leaf is not None and len(leaf) > 3 else None
+            if opcode is None:
+                self._transition(ts_ns, tid, "opcode", None)
+            else:
                 self._transition(ts_ns, tid, "opcode", format_opcode(opcode),
                                  (opcode, extract_lineno(leaf[1]), leaf[2],
                                   leaf[0]))
