@@ -524,6 +524,10 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
         self.assertEqual(lzma.decompress(memoryview(cdata)), expected)
         self.assertEqual(lzma.decompress(cdata + COMPRESSED_BOGUS), expected)
         self.assertRaises(LZMAError, lzma.decompress, cdata[:-50_000])
+        # The damage is past the first chunk fed for the second stream.
+        damaged = bytearray(lzma.compress(big))
+        damaged[-1] ^= 1
+        self.assertRaises(LZMAError, lzma.decompress, COMPRESSED_XZ + damaged)
 
     def test_decompress_error_releases_buffer(self):
         # The argument can be resized while the exception is handled.
@@ -562,6 +566,9 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
 
     def test_decompress_trailing_junk(self):
         ddata = lzma.decompress(COMPRESSED_XZ + COMPRESSED_BOGUS)
+        self.assertEqual(ddata, INPUT)
+        ddata = lzma.decompress(COMPRESSED_ALONE + COMPRESSED_BOGUS,
+                                lzma.FORMAT_ALONE)
         self.assertEqual(ddata, INPUT)
 
     def test_decompress_multistream_trailing_junk(self):

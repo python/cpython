@@ -33,6 +33,7 @@ import enum
 from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdDict, ZstdError,
                    get_frame_size, zstd_version, ZSTD_VERSION,
                    zstd_version_info, ZSTD_VERSION_INFO)
+from compression._common import _streams
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
 
@@ -160,35 +161,9 @@ def decompress(data, zstd_dict=None, options=None):
 
     For incremental decompression, use a ZstdDecompressor instead.
     """
-    results = []
-    # The views are released on exit, so that the caller can resize a
-    # bytearray argument again, also while handling an exception.
-    with memoryview(data) as view, view.cast('B') as data:
-        pos = 0
-        # There is usually a single frame: the first chunk is all of the
-        # data, to decompress it in one go.
-        chunk_size = len(data)
-        while True:
-            decomp = ZstdDecompressor(options=options, zstd_dict=zstd_dict)
-            # Feed the frame in chunks of increasing size, so that what is
-            # read past its end (and copied into unused_data) is bounded by
-            # the size of the frame, not by the size of all the frames that
-            # follow it.
-            while not decomp.eof and pos < len(data):
-                with data[pos:pos + chunk_size] as chunk:
-                    results.append(decomp.decompress(chunk))
-                    pos += len(chunk)
-                chunk_size *= 2
-            if not decomp.eof:
-                raise ZstdError('Compressed data ended before the '
-                                'end-of-stream marker was reached')
-            pos -= len(decomp.unused_data)
-            if pos == len(data):
-                break
-            # Later frames start small: a larger first chunk reads further
-            # past the end of a short frame, a smaller one needs more calls.
-            chunk_size = 1024
-    return b''.join(results)
+    return _streams._decompress_all(data, ZstdDecompressor,
+                                    truncated_error=ZstdError,
+                                    options=options, zstd_dict=zstd_dict)
 
 
 class CompressionParameter(enum.IntEnum):

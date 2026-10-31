@@ -1126,6 +1126,10 @@ class CompressDecompressTest(BaseTest):
         self.assertEqual(bz2.decompress(memoryview(data)), expected)
         self.assertEqual(bz2.decompress(data + self.BAD_DATA), expected)
         self.assertRaises(ValueError, bz2.decompress, data[:-50_000])
+        # The damage is past the first chunk fed for the second stream.
+        damaged = bytearray(bz2.compress(big))
+        damaged[-3] ^= 1
+        self.assertRaises(OSError, bz2.decompress, self.DATA + damaged)
 
     def testDecompressErrorReleasesBuffer(self):
         # The argument can be resized while the exception is handled.
