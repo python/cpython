@@ -85,12 +85,14 @@ def _readline_with_timeout(file_obj, timeout):
     return result[0]
 
 
-def _wait_for_process_exec(proc, name, timeout):
+def _wait_for_process_exec(proc, timeout):
     # Wait until a child process calls exec() to replace the forked process
-    # executable. Raise AssertionError on timeout.
+    # executable. Don't check the executable name: it can be a multicall
+    # binary such as /bin/busybox. Raise AssertionError on timeout.
+    parent_exe = os.readlink("/proc/self/exe")
     for _ in sleeping_retry(timeout, max_delay=0.1):
         exe = os.readlink(f"/proc/{proc.pid}/exe")
-        if os.path.basename(exe) == name:
+        if exe != parent_exe:
             break
 
 
@@ -625,7 +627,7 @@ class TestIsPythonProcess(unittest.TestCase):
         )
 
         try:
-            _wait_for_process_exec(proc, "sleep", SHORT_TIMEOUT)
+            _wait_for_process_exec(proc, SHORT_TIMEOUT)
 
             self.assertFalse(
                 is_python_process(proc.pid),
