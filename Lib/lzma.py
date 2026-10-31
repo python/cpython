@@ -352,23 +352,8 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
 
     For incremental decompression, use an LZMADecompressor instead.
     """
-    results = []
-    magic = _stream_magic(format)
-    while True:
-        decomp = LZMADecompressor(format, memlimit, filters)
-        try:
-            res = decomp.decompress(data)
-        except LZMAError:
-            if not results:
-                raise  # Error on the first iteration; bail out.
-            if magic and data.startswith(magic):
-                raise  # Leftover data is a damaged XZ stream; bail out.
-            break  # Leftover data is not a valid LZMA/XZ stream; ignore it.
-        results.append(res)
-        if not decomp.eof:
-            raise LZMAError("Compressed data ended before the "
-                            "end-of-stream marker was reached")
-        data = decomp.unused_data
-        if not data:
-            break
-    return b"".join(results)
+    return _streams._decompress_all(data, LZMADecompressor, LZMAError,
+                                    stream_magic=_stream_magic(format),
+                                    truncated_error=LZMAError,
+                                    format=format, memlimit=memlimit,
+                                    filters=filters)

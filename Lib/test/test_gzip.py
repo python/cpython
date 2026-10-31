@@ -816,6 +816,50 @@ class TestGzip(BaseTest):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
 
+    def test_decompress_multi_member(self):
+        big = os.urandom(100_000)
+        members = [data1, b'', big, data2, big]
+        expected = b''.join(members)
+        for padding in b'', b'\0', b'\0' * 5000:
+            with self.subTest(padding=len(padding)):
+                datac = b''.join(gzip.compress(data) + padding
+                                 for data in members)
+                self.assertEqual(gzip.decompress(datac), expected)
+        datac = b''.join(map(gzip.compress, members))
+        self.assertEqual(gzip.decompress(bytearray(datac)), expected)
+        self.assertEqual(gzip.decompress(memoryview(datac)), expected)
+        self.assertRaises(EOFError, gzip.decompress, datac[:-4])
+        self.assertRaises(EOFError, gzip.decompress, datac[:-50_000])
+        self.assertRaises(gzip.BadGzipFile, gzip.decompress, datac + b'junk')
+        # Damage the CRC in the trailer of the third member.
+        parts = [gzip.compress(data) for data in members]
+        corrupted = bytearray(b''.join(parts))
+        corrupted[len(b''.join(parts[:3])) - 8] ^= 1
+        with self.assertRaisesRegex(gzip.BadGzipFile, 'CRC check failed'):
+            gzip.decompress(corrupted)
+
+    def test_decompress_many_members(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of members.
+        decompressobj = zlib.decompressobj
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = decompressobj(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        datac = gzip.compress(b'')
+        with mock.patch.object(zlib, 'decompressobj', Decompressor):
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 1000), b'')
+            fed1 = fed
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 2000), b'')
+        self.assertLess(fed, fed1 * 3)
+
     def test_truncated_header(self):
         truncated_headers = [
             b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte
