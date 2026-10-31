@@ -1,0 +1,3 @@
+:func:`reprlib.repr` and :class:`reprlib.Repr` now abbreviate
+:class:`frozendict` instances by item, like :class:`dict`, using the
+:attr:`~reprlib.Repr.maxdict` limit.
