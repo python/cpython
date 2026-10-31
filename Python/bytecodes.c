@@ -4197,6 +4197,15 @@ dummy_func(
             DEAD(exc);
         }
 
+        /* Slots are created even if not assigend to */
+        op(_GUARD_SHADOWING_SLOT_EMPTY, (slot_offset/1, owner -- owner)) {
+            if (slot_offset != 0) {
+                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+                PyObject **value_ptr = (PyObject **)(((char *)owner_o) + slot_offset);
+                EXIT_IF(FT_ATOMIC_LOAD_PTR_RELAXED(*value_ptr) != NULL);
+            }
+        }
+
         op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
@@ -4213,7 +4222,8 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            unused/2 +
+            _GUARD_SHADOWING_SLOT_EMPTY +
+            unused/1 +
             _LOAD_ATTR_METHOD_WITH_VALUES;
 
         op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
@@ -4247,7 +4257,8 @@ dummy_func(
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
-            unused/2 +
+            _GUARD_SHADOWING_SLOT_EMPTY +
+            unused/1 +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
         op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
