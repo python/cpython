@@ -191,10 +191,6 @@ The :mod:`!bz2` module contains:
       readers or writers, just like its equivalent classes in :mod:`gzip` and
       :mod:`lzma` have always been.
 
-   .. versionchanged:: next
-      A damaged bzip2 stream that follows another stream now raises
-      :exc:`OSError` instead of being ignored as trailing data.
-
 
 Incremental (de)compression
 ---------------------------
@@ -310,10 +306,6 @@ One-shot (de)compression
 
    .. versionchanged:: 3.3
       Support for multi-stream inputs was added.
-
-   .. versionchanged:: next
-      A damaged bzip2 stream that follows another stream now raises
-      :exc:`OSError` instead of being ignored as trailing data.
 
 
 Miscellaneous
