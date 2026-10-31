@@ -3,7 +3,15 @@
 This module only exists to provide OS-specific code
 for urllib.requests, thus do not use directly.
 """
-# Testing is done through test_urllib.
+# Testing is done through test_nturl2path.
+
+import warnings
+
+
+warnings._deprecated(
+    __name__,
+    message=f"{warnings._DEPRECATED_MSG}; use 'urllib.request' instead",
+    remove=(3, 19))
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
@@ -14,7 +22,10 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import string, urllib.parse
+    import sys
+    import urllib.parse
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
     if url[:3] == '///':
         # URL has an empty authority section, so the path begins on the third
         # character.
@@ -25,19 +36,15 @@ def url2pathname(url):
     if url[:3] == '///':
         # Skip past extra slash before UNC drive in URL path.
         url = url[1:]
-    # Windows itself uses ":" even in URLs.
-    url = url.replace(':', '|')
-    if not '|' in url:
-        # No drive specifier, just convert slashes
-        # make sure not to convert quoted slashes :-)
-        return urllib.parse.unquote(url.replace('/', '\\'))
-    comp = url.split('|')
-    if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
-        error = 'Bad URL: ' + url
-        raise OSError(error)
-    drive = comp[0][-1]
-    tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
-    return drive + ':' + tail
+    else:
+        if url[:1] == '/' and url[2:3] in (':', '|'):
+            # Skip past extra slash before DOS drive in URL path.
+            url = url[1:]
+        if url[1:2] == '|':
+            # Older URLs use a pipe after a drive letter
+            url = url[:1] + ':' + url[2:]
+    return urllib.parse.unquote(url.replace('/', '\\'),
+                                encoding=encoding, errors=errors)
 
 def pathname2url(p):
     """OS-specific conversion from a file system path to a relative URL
@@ -47,7 +54,10 @@ def pathname2url(p):
     # becomes
     #   ///C:/foo/bar/spam.foo
     import ntpath
+    import sys
     import urllib.parse
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
     p = p.replace('\\', '/')
@@ -62,10 +72,11 @@ def pathname2url(p):
             # an authority section with a zero-length authority, and a path
             # section starting with a single slash.
             drive = f'///{drive}'
-        drive = urllib.parse.quote(drive, safe='/:')
+        drive = urllib.parse.quote(drive, encoding=encoding, errors=errors,
+                                   safe='/:')
     elif root:
         # Add explicitly empty authority to path beginning with one slash.
         root = f'//{root}'
 
-    tail = urllib.parse.quote(tail)
+    tail = urllib.parse.quote(tail, encoding=encoding, errors=errors)
     return drive + root + tail

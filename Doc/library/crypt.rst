@@ -13,7 +13,7 @@ being deprecated in Python 3.11.  The removal was decided in :pep:`594`.
 
 Applications can use the :mod:`hashlib` module from the standard library.
 Other possible replacements are third-party libraries from PyPI:
-:pypi:`legacycrypt`, :pypi:`bcrypt`, :pypi:`argon2-cffi`, or :pypi:`passlib`.
+:pypi:`legacycrypt`, :pypi:`bcrypt`, or :pypi:`argon2-cffi`.
 These are not supported or maintained by the Python core team.
 
 The last version of Python that provided the :mod:`!crypt` module was

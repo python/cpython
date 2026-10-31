@@ -39,6 +39,13 @@ class Mailbox:
         self._path = os.path.abspath(os.path.expanduser(path))
         self._factory = factory
 
+    def __enter__(self):
+        self.lock()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def add(self, message):
         """Add message and return assigned key."""
         raise NotImplementedError('Method must be implemented by subclass')
@@ -1488,6 +1495,7 @@ class Babyl(_singlefileMailbox):
                 vis_buffer = io.BytesIO()
                 vis_generator = email.generator.BytesGenerator(vis_buffer, False, 0)
                 vis_generator.flatten(message.get_visible())
+                vis_buffer.seek(0)
                 while True:
                     line = vis_buffer.readline()
                     self._file.write(line.replace(b'\n', linesep))
@@ -2090,8 +2098,6 @@ class _ProxyFile:
             return False
         return self._file.closed
 
-    __class_getitem__ = classmethod(GenericAlias)
-
 
 class _PartialFile(_ProxyFile):
     """A read-only wrapper of part of a file."""
@@ -2183,11 +2189,7 @@ def _unlock_file(f):
 
 def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
-    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o666)
-    try:
-        return open(path, 'rb+')
-    finally:
-        os.close(fd)
+    return open(path, 'xb+')
 
 def _create_temporary(path):
     """Create a temp file based on path and open for reading and writing."""

@@ -72,6 +72,32 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(input=None), None)
 
+    def test_invalid_paramflags(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        with self.assertRaises(ValueError):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (1, "arg1")))
+
+    def test_invalid_setattr_argtypes(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"),))
+
+        with self.assertRaisesRegex(TypeError, "_argtypes_ must be a sequence of types"):
+            func.argtypes = 123
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+        with self.assertRaisesRegex(ValueError, "paramflags must have the same length as argtypes"):
+            func.argtypes = (c_char_p, c_int)
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+    def test_paramflags_outarg(self):
+        proto = CFUNCTYPE(c_int, c_char_p, c_int)
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+
+        proto = CFUNCTYPE(c_int, c_char_p, c_void_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func.argtypes = (c_char_p, c_int)
 
     def test_int_pointer_arg(self):
         func = testdll._testfunc_p_p

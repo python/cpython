@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,7 +28,12 @@
   static const char which_dbm[] = "GNU gdbm";
 #elif defined(USE_NDBM)
   #include <ndbm.h>
+  #ifdef _GDBM_H_
+  /* ndbm.h is the GDBM compatibility interface. */
   static const char which_dbm[] = "GNU gdbm";
+  #else
+  static const char which_dbm[] = "ndbm";
+  #endif
 #elif defined(USE_BERKDB)
   #ifndef DB_DBM_HSEARCH
     #define DB_DBM_HSEARCH 1
@@ -69,6 +75,7 @@ typedef struct {
 #include "clinic/_dbmmodule.c.h"
 
 #define check_dbmobject_open(v, err)                                \
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((v))                  \
     if ((v)->di_dbm == NULL) {                                      \
         PyErr_SetString(err, "DBM object has already been closed"); \
         return NULL;                                                \
@@ -95,12 +102,6 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-static int
-dbm_traverse(PyObject *dp, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(dp));
-    return 0;
-}
 
 static void
 dbm_dealloc(PyObject *self)
@@ -115,10 +116,16 @@ dbm_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__len__ as dbm_length
+[clinic start generated code]*/
+
 static Py_ssize_t
-dbm_length(PyObject *self)
+dbm_length_impl(dbmobject *self)
+/*[clinic end generated code: output=d7ea9510562e5f86 input=f912d65e9b06fef5]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (dp->di_dbm == NULL) {
@@ -138,10 +145,16 @@ dbm_length(PyObject *self)
     return dp->di_size;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__bool__ as dbm_bool
+[clinic start generated code]*/
+
 static int
-dbm_bool(PyObject *self)
+dbm_bool_impl(dbmobject *self)
+/*[clinic end generated code: output=b550ce1ae52d6ad1 input=212af765b6e60719]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
 
@@ -170,12 +183,20 @@ dbm_bool(PyObject *self)
     return 1;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__getitem__ as dbm_subscript
+    key: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-dbm_subscript(PyObject *self, PyObject *key)
+dbm_subscript_impl(dbmobject *self, PyObject *key)
+/*[clinic end generated code: output=6278465f3ff37eaa input=e748b684a0870527]*/
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
@@ -197,12 +218,22 @@ dbm_subscript(PyObject *self, PyObject *key)
     return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__setitem__ as dbm_ass_sub
+
+    v: object
+    w: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w)
+/*[clinic end generated code: output=33e861810d1fd44a input=4f10cc93a02142ee]*/
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
         PyErr_SetString(PyExc_TypeError,
@@ -253,6 +284,7 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.close
 
 Close the database.
@@ -260,7 +292,7 @@ Close the database.
 
 static PyObject *
 _dbm_dbm_close_impl(dbmobject *self)
-/*[clinic end generated code: output=c8dc5b6709600b86 input=046db72377d51be8]*/
+/*[clinic end generated code: output=c8dc5b6709600b86 input=4a94f79facbc28ca]*/
 {
     if (self->di_dbm) {
         dbm_close(self->di_dbm);
@@ -270,6 +302,7 @@ _dbm_dbm_close_impl(dbmobject *self)
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.keys
 
     cls: defining_class
@@ -279,7 +312,7 @@ Return a list of all keys in the database.
 
 static PyObject *
 _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=f2a593b3038e5996 input=d3706a28fc051097]*/
+/*[clinic end generated code: output=f2a593b3038e5996 input=6ddefeadf2a80156]*/
 {
     PyObject *v, *item;
     datum key;
@@ -309,10 +342,18 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
     return v;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__contains__ as dbm_contains
+    arg: object
+    /
+[clinic start generated code]*/
+
 static int
-dbm_contains(PyObject *self, PyObject *arg)
+dbm_contains_impl(dbmobject *self, PyObject *arg)
+/*[clinic end generated code: output=6c42b797ada528bc input=94134e7abf3eeb6e]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     datum key, val;
     Py_ssize_t size;
 
@@ -344,6 +385,7 @@ dbm_contains(PyObject *self, PyObject *arg)
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.get
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
@@ -356,7 +398,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                   Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b4e55f8b6d482bc4 input=66b993b8349fa8c1]*/
+/*[clinic end generated code: output=b4e55f8b6d482bc4 input=1d88a22bb5e55202]*/
 {
     datum dbm_key, val;
     _dbm_state *state = PyType_GetModuleState(cls);
@@ -373,6 +415,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.setdefault
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
@@ -381,13 +424,14 @@ _dbm.dbm.setdefault
 
 Return the value for key if present, otherwise default.
 
-If key is not in the database, it is inserted with default as the value.
+If key is not in the database, it is inserted with default as the
+value.
 [clinic start generated code]*/
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
                          Py_ssize_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=81224965c110f830]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -401,10 +445,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
     if (default_value == NULL) {
-        default_value = PyBytes_FromStringAndSize(NULL, 0);
-        if (default_value == NULL) {
-            return NULL;
-        }
+        default_value = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         val.dptr = NULL;
         val.dsize = 0;
     }
@@ -427,6 +468,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 }
 
 /*[clinic input]
+@critical_section
 _dbm.dbm.clear
     cls: defining_class
     /
@@ -436,7 +478,7 @@ Remove all items from the database.
 
 static PyObject *
 _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=8d126b9e1d01a434 input=43aa6ca1acb7f5f5]*/
+/*[clinic end generated code: output=8d126b9e1d01a434 input=a1aa5d99adfb9656]*/
 {
     _dbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
@@ -464,11 +506,21 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__exit__
+
+    *exc_info: array
+
+Close the database.
+[clinic start generated code]*/
+
 static PyObject *
-dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
+_dbm_dbm___exit___impl(dbmobject *self, PyObject * const *exc_info,
+                       Py_ssize_t exc_info_length)
+/*[clinic end generated code: output=f9549bf513b3285d input=340d8190b6fb0f15]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
-    return _dbm_dbm_close_impl(dp);
+    return _dbm_dbm_close_impl(self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -478,13 +530,13 @@ static PyMethodDef dbm_methods[] = {
     _DBM_DBM_SETDEFAULT_METHODDEF
     _DBM_DBM_CLEAR_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
-    {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
+    _DBM_DBM___EXIT___METHODDEF
     {NULL,  NULL}           /* sentinel */
 };
 
 static PyType_Slot dbmtype_spec_slots[] = {
     {Py_tp_dealloc, dbm_dealloc},
-    {Py_tp_traverse, dbm_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
     {Py_mp_length, dbm_length},
@@ -575,6 +627,136 @@ static PyMethodDef dbmmodule_methods[] = {
     { 0, 0 },
 };
 
+#if defined(GDBM_VERSION_MAJOR) || defined(DB_VERSION_MAJOR)
+static PyStructSequence_Field version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyObject *
+make_version_info(PyTypeObject *type, int major, int minor, int patch)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+#endif
+
+#if defined(GDBM_VERSION_MAJOR)
+PyDoc_STRVAR(gdbm_version_info__doc__,
+"_dbm.gdbm_version_info\n\
+\n\
+GDBM version information as a named tuple.");
+
+static PyStructSequence_Desc gdbm_version_info_desc = {
+    "_dbm.gdbm_version_info",       /* name */
+    gdbm_version_info__doc__,       /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringConstant(module, "gdbm_version", gdbm_version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&gdbm_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "GDBM_VERSION_INFO",
+            make_version_info(version_type, GDBM_VERSION_MAJOR,
+                              GDBM_VERSION_MINOR, GDBM_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "gdbm_version_info",
+            make_version_info(version_type, gdbm_version_number[0],
+                              gdbm_version_number[1],
+                              gdbm_version_number[2])) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#elif defined(DB_VERSION_MAJOR)
+PyDoc_STRVAR(bdb_version_info__doc__,
+"_dbm.bdb_version_info\n\
+\n\
+Berkeley DB version information as a named tuple.");
+
+static PyStructSequence_Desc bdb_version_info_desc = {
+    "_dbm.bdb_version_info",         /* name */
+    bdb_version_info__doc__,         /* doc */
+    version_info_fields,            /* fields */
+    3
+};
+
+static int
+add_version_constants(PyObject *module)
+{
+    int major, minor, patch;
+    const char *version = db_version(&major, &minor, &patch);
+    if (PyModule_AddStringConstant(module, "BDB_VERSION", DB_VERSION_STRING) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "bdb_version", version) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&bdb_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "BDB_VERSION_INFO",
+            make_version_info(version_type, DB_VERSION_MAJOR,
+                              DB_VERSION_MINOR, DB_VERSION_PATCH)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "bdb_version_info",
+            make_version_info(version_type, major, minor, patch)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+#else
+static int
+add_version_constants(PyObject *module)
+{
+    return 0;
+}
+#endif
+
 static int
 _dbm_exec(PyObject *module)
 {
@@ -589,6 +771,9 @@ _dbm_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddStringConstant(module, "library", which_dbm) < 0) {
+        return -1;
+    }
+    if (add_version_constants(module) < 0) {
         return -1;
     }
     if (PyModule_AddType(module, (PyTypeObject *)state->dbm_error) < 0) {
@@ -622,6 +807,7 @@ _dbm_module_free(void *module)
 }
 
 static PyModuleDef_Slot _dbmmodule_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, _dbm_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

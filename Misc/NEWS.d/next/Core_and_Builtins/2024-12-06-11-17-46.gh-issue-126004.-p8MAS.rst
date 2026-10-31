@@ -1,3 +1,0 @@
-Fix handling of :attr:`UnicodeError.start` and :attr:`UnicodeError.end`
-values in the :func:`codecs.xmlcharrefreplace_errors` error handler.
-Patch by Bénédikt Tran.

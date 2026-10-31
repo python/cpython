@@ -166,6 +166,12 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         # CRASHES: add(instance, NULL)
         # CRASHES: add(NULL, NULL)
 
+    def test_add_frozenset(self):
+       add = _testlimitedcapi.set_add
+       frozen_set = frozenset()
+       # test adding an element to a non-uniquely referenced frozenset throws an exception
+       self.assertRaises(SystemError, add, frozen_set, 1)
+
     def test_discard(self):
         discard = _testlimitedcapi.set_discard
         for cls in (set, set_subclass):

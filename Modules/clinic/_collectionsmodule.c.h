@@ -71,7 +71,7 @@ static PyObject *
 deque_append_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-deque_append(dequeobject *deque, PyObject *item)
+deque_append(PyObject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
@@ -95,7 +95,7 @@ static PyObject *
 deque_appendleft_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-deque_appendleft(dequeobject *deque, PyObject *item)
+deque_appendleft(PyObject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
@@ -119,7 +119,7 @@ static PyObject *
 deque_extend_impl(dequeobject *deque, PyObject *iterable);
 
 static PyObject *
-deque_extend(dequeobject *deque, PyObject *iterable)
+deque_extend(PyObject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
@@ -143,7 +143,7 @@ static PyObject *
 deque_extendleft_impl(dequeobject *deque, PyObject *iterable);
 
 static PyObject *
-deque_extendleft(dequeobject *deque, PyObject *iterable)
+deque_extendleft(PyObject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
@@ -202,6 +202,21 @@ deque___copy__(PyObject *deque, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+static PyObject *
+deque_concat_impl(dequeobject *deque, PyObject *other);
+
+static PyObject *
+deque_concat(PyObject *deque, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_concat_impl((dequeobject *)deque, other);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque_clearmethod__doc__,
 "clear($self, /)\n"
 "--\n"
@@ -221,6 +236,21 @@ deque_clearmethod(PyObject *deque, PyObject *Py_UNUSED(ignored))
 
     Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = deque_clearmethod_impl((dequeobject *)deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+deque_inplace_repeat_impl(dequeobject *deque, Py_ssize_t n);
+
+static PyObject *
+deque_inplace_repeat(PyObject *deque, Py_ssize_t n)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_inplace_repeat_impl((dequeobject *)deque, n);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -308,12 +338,27 @@ static PyObject *
 deque_count_impl(dequeobject *deque, PyObject *v);
 
 static PyObject *
-deque_count(dequeobject *deque, PyObject *v)
+deque_count(PyObject *deque, PyObject *v)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = deque_count_impl((dequeobject *)deque, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+deque_contains_impl(dequeobject *deque, PyObject *v);
+
+static int
+deque_contains(PyObject *deque, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_contains_impl((dequeobject *)deque, v);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -340,7 +385,7 @@ deque_index(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *v;
     Py_ssize_t start = 0;
-    Py_ssize_t stop = Py_SIZE(deque);
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
 
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
@@ -410,6 +455,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+deque_item_impl(dequeobject *deque, Py_ssize_t i);
+
+static PyObject *
+deque_item(PyObject *deque, Py_ssize_t i)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_item_impl((dequeobject *)deque, i);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(deque_remove__doc__,
 "remove($self, value, /)\n"
 "--\n"
@@ -423,12 +483,27 @@ static PyObject *
 deque_remove_impl(dequeobject *deque, PyObject *value);
 
 static PyObject *
-deque_remove(dequeobject *deque, PyObject *value)
+deque_remove(PyObject *deque, PyObject *value)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = deque_remove_impl((dequeobject *)deque, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+deque_ass_item_impl(dequeobject *deque, Py_ssize_t i, PyObject *v);
+
+static int
+deque_ass_item(PyObject *deque, Py_ssize_t i, PyObject *v)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = deque_ass_item_impl((dequeobject *)deque, i, v);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -471,9 +546,11 @@ deque_init(PyObject *deque, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(maxlen), },
     };
     #undef NUM_KEYWORDS
@@ -630,4 +707,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d89c39288fc7389 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de400069cf6f11a4 input=a9049054013a1b77]*/
