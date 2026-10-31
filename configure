@@ -15570,6 +15570,11 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
