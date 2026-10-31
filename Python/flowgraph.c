@@ -1557,6 +1557,8 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
     if (const_tuple == NULL) {
         return ERROR;
     }
+    PyObject_GC_UnTrack(const_tuple);
+    bool track_tuple = false;
 
     for (int i = 0; i < seq_size; i++) {
         cfg_instr *inst = const_instrs[i];
@@ -1567,6 +1569,12 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
             return ERROR;
         }
         PyTuple_SET_ITEM(const_tuple, i, element);
+        if (!track_tuple && PyObject_GC_IsTracked(element)) {
+            track_tuple = true;
+        }
+    }
+    if (track_tuple) {
+        _PyObject_GC_TRACK(const_tuple);
     }
 
     nop_out(const_instrs, seq_size);
@@ -1637,6 +1645,8 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
             if (newconst == NULL) {
                 return ERROR;
             }
+            PyObject_GC_UnTrack(newconst);
+            bool track_tuple = false;
 
             int newpos_start = expected_append ? i - 1 : i;
             for (int newpos = newpos_start; newpos >= pos; newpos--) {
@@ -1652,8 +1662,14 @@ fold_constant_seq_into_load_const(basicblock *bb, int i,
                     }
                     assert(consts_found > 0);
                     PyTuple_SET_ITEM(newconst, --consts_found, constant);
+                    if (!track_tuple && PyObject_GC_IsTracked(constant)) {
+                        track_tuple = true;
+                    }
                 }
                 nop_out(&instr, 1);
+            }
+            if (track_tuple) {
+                _PyObject_GC_TRACK(newconst);
             }
             assert(consts_found == 0);
 
@@ -1731,6 +1747,8 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     if (const_result == NULL) {
         return ERROR;
     }
+    PyObject_GC_UnTrack(const_result);
+    bool track_tuple = false;
 
     for (int i = 0; i < seq_size; i++) {
         cfg_instr *inst = const_instrs[i];
@@ -1741,6 +1759,12 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
             return ERROR;
         }
         PyTuple_SET_ITEM(const_result, i, element);
+        if (!track_tuple && PyObject_GC_IsTracked(element)) {
+            track_tuple = true;
+        }
+    }
+    if (track_tuple) {
+        _PyObject_GC_TRACK(const_result);
     }
 
     if (instr->i_opcode == BUILD_SET) {
