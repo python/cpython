@@ -407,6 +407,20 @@ class HeatmapCollector(StackTraceCollector):
         }
         self.stats.update(kwargs)
 
+    def set_replay_stats(self, info):
+        """Restore measured statistics stored in a binary profile."""
+        duration_sec = info.get("duration_sec")
+        sample_rate = info.get("sample_rate")
+        if duration_sec is None or sample_rate is None:
+            return
+        self.set_stats(
+            self.sample_interval_usec,
+            duration_sec,
+            sample_rate,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
+        )
+
     def process_frames(self, frames, thread_id, weight=1):
         """Process stack frames and count samples per line.
 

@@ -7,10 +7,11 @@ import random
 import struct
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 from collections import defaultdict
 
-from test.support import captured_stderr
+from test.support import captured_stderr, captured_stdout, run_with_locale
 
 try:
     import _remote_debugging
@@ -28,6 +29,7 @@ try:
     )
     from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader, convert_binary_to_format
+    from profiling.sampling.cli import _replay_with_reader
     from profiling.sampling.constants import PROFILING_MODE_CPU
     from profiling.sampling.gecko_collector import GeckoCollector
 
@@ -1935,6 +1937,41 @@ class TestBinaryReplayToFlamegraph(BinaryFormatTestBase):
         self.assertEqual(info["sample_rate"], 4.0)
         self.assertIsNone(info["error_rate"])
         self.assertIsNone(info["missed_samples"])
+
+
+class TestBinaryReplayToHeatmap(unittest.TestCase):
+    @run_with_locale("LC_NUMERIC", "C")
+    def test_replay_with_and_without_persisted_stats(self):
+        frame = make_frame(__file__, 1, "hot_func")
+        for with_stats in (True, False):
+            with (
+                self.subTest(with_stats=with_stats),
+                tempfile.TemporaryDirectory() as tmp,
+                captured_stdout(),
+            ):
+                bin_path = os.path.join(tmp, "profile.bin")
+                with BinaryCollector(bin_path, 2000, compression="none") as collector:
+                    collector.collect([
+                        make_interpreter(0, [make_thread(1, [frame])])
+                    ])
+                    if with_stats:
+                        collector.set_stats(
+                            2000, 2.5, 0.4, error_rate=2.0, missed_samples=1.5
+                        )
+                args = SimpleNamespace(
+                    format="heatmap", input_file=bin_path,
+                    outfile=tmp, diff_baseline=None,
+                )
+                with BinaryReader(bin_path) as reader:
+                    _replay_with_reader(args, reader)
+                content = pathlib.Path(tmp, "index.html").read_text(
+                    encoding="utf-8"
+                )
+                if with_stats:
+                    self.assertIn('<span class="stat-value">2.5 sec</span>', content)
+                    self.assertIn('<span class="stat-value">0.4</span>', content)
+                    self.assertIn('<span class="rate-value">2.0%</span>', content)
+                    self.assertIn('<span class="rate-value">1.5%</span>', content)
 
 
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
