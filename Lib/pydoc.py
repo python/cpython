@@ -194,6 +194,11 @@ def isdata(object):
                 inspect.isroutine(object) or inspect.isframe(object) or
                 inspect.istraceback(object) or inspect.iscode(object))
 
+def _is_namespace_package(module):
+    spec = getattr(module, '__spec__', None)
+    return isinstance(getattr(spec, 'loader', None),
+                      importlib.machinery.NamespaceLoader)
+
 def replace(text, *pairs):
     """Do a series of global replacements on a string."""
     while pairs:
@@ -795,7 +800,8 @@ class HTMLDoc(Doc):
             url = urllib.request.pathname2url(path)
             filelink = self.filelink(url, path)
         except TypeError:
-            filelink = '(built-in)'
+            filelink = ('(namespace)' if _is_namespace_package(object)
+                        else '(built-in)')
         info = []
 
         if version := self._get_metadata(object, '__version__'):
@@ -1378,7 +1384,8 @@ location listed above.
         try:
             file = inspect.getabsfile(object)
         except TypeError:
-            file = '(built-in)'
+            file = ('(namespace)' if _is_namespace_package(object)
+                    else '(built-in)')
         result = result + self.section('FILE', file)
         return result
 
