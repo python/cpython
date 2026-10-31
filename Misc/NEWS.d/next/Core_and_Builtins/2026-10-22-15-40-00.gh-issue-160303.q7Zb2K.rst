@@ -1,3 +1,4 @@
 Fix :class:`bytearray` reading and writing memory outside of its buffer
 after ``del b[:n]`` or ``b[:n] = shorter`` failed with :exc:`MemoryError`.
-The bytearray is now left unchanged.
+The bytes are now removed even if shrinking the memory block fails;
+:exc:`MemoryError` is still raised.

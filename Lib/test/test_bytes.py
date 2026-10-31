@@ -1663,6 +1663,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # the bytearray must be left unchanged.
 
         offset = 3
+        front = slice(None, -2)
         for logical_offset in (False, True):
             with self.subTest(logical_offset=logical_offset):
                 # grow bytearray
@@ -1687,25 +1688,28 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
 
-    @support.nomemtest
-    def test_remove_prefix_error(self):
-        # If the storage cannot be shrunk after removing a prefix
-        # (MemoryError), the bytearray must be left unchanged.
-        for logical_offset in (False, True):
-            with self.subTest(logical_offset=logical_offset):
-                ba = bytearray(b'0123456789' * 4)
+                # gh-160303: When bytes are removed at the front, they are
+                # removed even if shrinking the memory block fails.
+                ba = bytearray(b'0123456789')
                 if logical_offset:
-                    del ba[:3]
-                expected = ba.copy()
+                    del ba[:offset]
                 with inject_memory_error(self):
-                    del ba[:30]
-                self.assertEqual(ba, expected)
+                    del ba[front]
+                self.assertEqual(ba, b'89')
+                ba.append(ord('a'))
+                del ba[:1]
+                self.assertEqual(ba, b'9a')
+
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    del ba[:offset]
+                replacement = bytearray(b'xy')
                 with inject_memory_error(self):
-                    ba[:30] = b'xy'
-                self.assertEqual(ba, expected)
-                # The bytearray is still usable
-                del ba[:30]
-                self.assertEqual(ba, expected[30:])
+                    ba[front] = replacement
+                self.assertEqual(ba, b'xy89')
+                ba.append(ord('a'))
+                del ba[:1]
+                self.assertEqual(ba, b'y89a')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
