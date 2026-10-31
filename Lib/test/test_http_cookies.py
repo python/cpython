@@ -320,6 +320,34 @@ class CookieTests(unittest.TestCase):
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
 
+    def test_load_does_not_apply_partial_state_on_error(self):
+        # BaseCookie.load() is all-or-nothing: if the raw string contains an
+        # illegal key or attribute that raises CookieError, none of the
+        # cookies from that string are applied to the jar (gh-154546).
+        for rawdata in (
+            "a=1; b,c=2; d=3",     # illegal key in the middle
+            "good=1; bad,key=2",   # illegal key at the end
+            "a=1; $foo=2",         # unknown $-prefixed attribute
+        ):
+            with self.subTest(rawdata=rawdata):
+                C = cookies.SimpleCookie()
+                with self.assertRaises(cookies.CookieError):
+                    C.load(rawdata)
+                self.assertEqual(dict(C), {})
+                self.assertEqual(C.output(), '')
+
+    def test_load_error_leaves_existing_cookies_untouched(self):
+        # A load() that raises CookieError must not mutate cookies that were
+        # already present in the jar (gh-154546).
+        C = cookies.SimpleCookie()
+        C['existing'] = 'kept'
+        C['existing']['path'] = '/here'
+        with self.assertRaises(cookies.CookieError):
+            C.load("new=1; bad,key=2")
+        self.assertEqual(list(C), ['existing'])
+        self.assertEqual(C['existing'].value, 'kept')
+        self.assertEqual(C['existing']['path'], '/here')
+
     def test_comment_quoting(self):
         c = cookies.SimpleCookie()
         c['foo'] = '\N{COPYRIGHT SIGN}'
