@@ -27,6 +27,7 @@ if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
+from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
@@ -2314,7 +2315,7 @@ class EventLoopTestsMixin:
         # of the clock used by the kernel. Tolerate a few useless calls on
         # these platforms.
         self.assertLessEqual(self.loop._run_once_counter, 20,
-            {'clock_resolution': self.loop._clock_resolution,
+            {'clock_resolution': constants.CLOCK_RESOLUTION,
              'selector': self.loop._selector.__class__.__name__})
 
     def test_remove_fds_after_closing(self):

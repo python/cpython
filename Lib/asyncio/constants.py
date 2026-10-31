@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 import enum
+import time
 
 # After the connection is lost, log warnings after this many write()s.
 LOG_THRESHOLD_FOR_CONNLOST_WRITES = 5
@@ -32,6 +33,9 @@ FLOW_CONTROL_HIGH_WATER_SSL_WRITE = 512  # KiB
 
 # Default timeout for joining the threads in the threadpool
 THREAD_JOIN_TIMEOUT = 300
+
+# Resolution of the clock used by the event loop, in seconds.
+CLOCK_RESOLUTION = time.get_clock_info('monotonic').resolution
 
 # The enum should be here to break circular dependencies between
 # base_events and sslproto
