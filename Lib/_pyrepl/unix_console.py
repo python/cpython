@@ -946,6 +946,14 @@ class UnixConsole(Console):
             self.__write(text)
             self.posxy = update.start_x + update.char_width, update.y
 
+        # When a write reaches the last column, the terminal enters the
+        # "pending wrap" state and the cursor physically stays at width - 1.
+        # Record that position so later relative moves (CUB) don't overshoot
+        # by one cell (gh-145448).
+        x, y = self.posxy
+        if x >= self.width:
+            self.posxy = self.width - 1, y
+
         if update.reset_to_margin:
             # Non-SGR terminal controls can affect the cursor position.
             self.move_cursor(0, update.y)
