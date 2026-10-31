@@ -1,0 +1,2 @@
+Fix use-after-free when :meth:`~object.__del__` changes the base class. Patch by
+Sergey Miryanov.
