@@ -2040,10 +2040,10 @@ Finally, the Option subclass::
        TYPE_CHECKER = copy(Option.TYPE_CHECKER)
        TYPE_CHECKER["complex"] = check_complex
 
-(If we didn't make a :func:`copy` of :attr:`Option.TYPE_CHECKER`, we would end
-up modifying the :attr:`~Option.TYPE_CHECKER` attribute of :mod:`!optparse`'s
-Option class.  This being Python, nothing stops you from doing that except good
-manners and common sense.)
+(If we didn't make a :func:`~copy.copy` of :attr:`Option.TYPE_CHECKER`, we would
+end up modifying the :attr:`~Option.TYPE_CHECKER` attribute of
+:mod:`!optparse`'s Option class.  This being Python, nothing stops you from
+doing that except good manners and common sense.)
 
 That's it!  Now you can write a script that uses the new option type just like
 any other :mod:`!optparse`\ -based script, except you have to instruct your

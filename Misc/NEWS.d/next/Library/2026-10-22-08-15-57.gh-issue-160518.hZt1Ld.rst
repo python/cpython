@@ -1,0 +1,3 @@
+Fix the ``hz`` codec sometimes encoding ``~`` as a single ``~`` instead of
+``~~`` in text that mixes ASCII and Chinese characters, which produced data
+that did not decode back to the original text.

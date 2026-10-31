@@ -4769,6 +4769,16 @@ class Coverage:
             x = self.decimal.Decimal('1')
             y = x // 1  # should be fast
 
+    def test_modulo_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x % 1  # should be fast
+
+    def test_divmod_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = divmod(x, 1)  # should be fast
+
     def test_remainder_near(self):
         L = 1000
         limit = sys.get_int_max_str_digits()
@@ -6089,13 +6099,10 @@ class SignatureTest(unittest.TestCase):
 
 
 class TestModule:
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(self.decimal, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, self.decimal, "__version__", remove=(3, 20),
+        )
 
 
 @requires_cdecimal
