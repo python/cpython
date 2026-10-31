@@ -5332,7 +5332,7 @@ can be used interchangeably to index the same dictionary entry.
 
    * Use a comma-separated list of ``key: value`` pairs within braces:
      ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
-   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use a dict comprehension: ``{x: x ** 2 for x in range(10)}``
    * Use the type constructor: ``dict()``,
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
@@ -5543,9 +5543,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
-      An equality comparison between one ``dict.values()`` view and another
-      will always return ``False``. This also applies when comparing
-      ``dict.values()`` to itself::
+      An equality comparison between two distinct ``dict.values()`` views
+      will always return ``False``, even for views of the same dictionary::
 
          >>> d = {'a': 1}
          >>> d.values() == d.values()
