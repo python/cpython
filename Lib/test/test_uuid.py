@@ -1743,6 +1743,13 @@ class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
         self.check_node(node)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, py_uuid, "__author__", remove=(3, 20),
+        )
+
+
 class UuidHooks:
 
     def __init__(self, *, start_at=0, inc_by=0, seed=0):

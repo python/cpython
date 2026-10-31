@@ -1,0 +1,1 @@
+Fix :func:`os.statx` ignoring the *follow_symlinks* argument.
