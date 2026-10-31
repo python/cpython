@@ -82,6 +82,27 @@ class TrivialTests(unittest.TestCase):
     def test_URLError_reasonstr(self):
         err = urllib.error.URLError('reason')
         self.assertIn(err.reason, str(err))
+        self.assertIsNone(err.errno)
+        self.assertIsNone(err.strerror)
+
+    def test_URLError_OSError_attributes(self):
+        # gh-50720: errno and strerror are copied from a wrapped OSError.
+        socket_error = socket.gaierror(-2, 'Name or service not known')
+
+        class FailingHTTPConnection(MockHTTPClass):
+            def request(self, *args, **kwargs):
+                raise socket_error
+
+        h = urllib.request.AbstractHTTPHandler()
+        req = Request("http://example.com/")
+        req.timeout = None
+
+        with self.assertRaises(urllib.error.URLError) as cm:
+            h.do_open(FailingHTTPConnection(), req)
+        err = cm.exception
+        self.assertIs(err.reason, socket_error)
+        self.assertEqual(err.errno, -2)
+        self.assertEqual(err.strerror, 'Name or service not known')
 
 
 class RequestHdrsTests(unittest.TestCase):

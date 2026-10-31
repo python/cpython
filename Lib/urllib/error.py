@@ -27,6 +27,11 @@ class URLError(OSError):
         self.reason = reason
         if filename is not None:
             self.filename = filename
+        if isinstance(reason, OSError):
+            # OSError.__init__() is not called, so copy the attributes
+            # it would have set from the wrapped error (gh-50720).
+            self.errno = reason.errno
+            self.strerror = reason.strerror
 
     def __str__(self):
         return '<urlopen error %s>' % self.reason
