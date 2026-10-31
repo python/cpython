@@ -996,7 +996,8 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
-/* "gc: " + " <" + " " + %p + ">\n" + NUL, excluding msg and tp_name */
+/* "gc: " + " <" + " 0x" + 16 hex digits + ">\n" + NUL, excluding msg and
+ * tp_name */
 #define DEBUG_LINE_FIXED_LEN 32
 
 static char *
@@ -1008,7 +1009,9 @@ debug_cycle(const char *msg, PyObject *op)
     if (line == NULL) {
         return NULL;
     }
-    PyOS_snprintf(line, size, "gc: %s <%s %p>\n", msg, name, (void *)op);
+    /* Not %p: its output is platform-specific (no "0x" prefix on Windows). */
+    PyOS_snprintf(line, size, "gc: %s <%s 0x%" PRIxPTR ">\n",
+                  msg, name, (uintptr_t)op);
     return line;
 }
 
