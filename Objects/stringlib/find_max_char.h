@@ -13,43 +13,43 @@
 /* Masks selecting the bits that are set in a C 'size_t' holding several
    characters when at least one of them is wider than ASCII, UCS1 or UCS2. */
 #if STRINGLIB_SIZEOF_CHAR == 1
-# if SIZEOF_SIZE_T == 8
-#  define MASK_ASCII 0x8080808080808080ULL
-# elif SIZEOF_SIZE_T == 4
-#  define MASK_ASCII 0x80808080U
-# else
-#  error C 'size_t' size should be either 4 or 8!
-# endif
-# define MASK_MAX_CHAR MASK_ASCII
-# define MAX_CHAR MAX_CHAR_UCS1
+#  if SIZEOF_SIZE_T == 8
+#    define MASK_ASCII 0x8080808080808080ULL
+#  elif SIZEOF_SIZE_T == 4
+#    define MASK_ASCII 0x80808080U
+#  else
+#    error C 'size_t' size should be either 4 or 8!
+#  endif
+#  define MASK_MAX_CHAR MASK_ASCII
+#  define MAX_CHAR MAX_CHAR_UCS1
 #elif STRINGLIB_SIZEOF_CHAR == 2
-# if SIZEOF_SIZE_T == 8
-#  define MASK_ASCII 0xFF80FF80FF80FF80ULL
-#  define MASK_UCS1 0xFF00FF00FF00FF00ULL
-# elif SIZEOF_SIZE_T == 4
-#  define MASK_ASCII 0xFF80FF80U
-#  define MASK_UCS1 0xFF00FF00U
-# else
-#  error C 'size_t' size should be either 4 or 8!
-# endif
-# define MASK_MAX_CHAR MASK_UCS1
-# define MAX_CHAR MAX_CHAR_UCS2
+#  if SIZEOF_SIZE_T == 8
+#    define MASK_ASCII 0xFF80FF80FF80FF80ULL
+#    define MASK_UCS1 0xFF00FF00FF00FF00ULL
+#  elif SIZEOF_SIZE_T == 4
+#    define MASK_ASCII 0xFF80FF80U
+#    define MASK_UCS1 0xFF00FF00U
+#  else
+#    error C 'size_t' size should be either 4 or 8!
+#  endif
+#  define MASK_MAX_CHAR MASK_UCS1
+#  define MAX_CHAR MAX_CHAR_UCS2
 #elif STRINGLIB_SIZEOF_CHAR == 4
-# if SIZEOF_SIZE_T == 8
-#  define MASK_ASCII 0xFFFFFF80FFFFFF80ULL
-#  define MASK_UCS1 0xFFFFFF00FFFFFF00ULL
-#  define MASK_UCS2 0xFFFF0000FFFF0000ULL
-# elif SIZEOF_SIZE_T == 4
-#  define MASK_ASCII 0xFFFFFF80U
-#  define MASK_UCS1 0xFFFFFF00U
-#  define MASK_UCS2 0xFFFF0000U
-# else
-#  error C 'size_t' size should be either 4 or 8!
-# endif
-# define MASK_MAX_CHAR MASK_UCS2
-# define MAX_CHAR MAX_CHAR_UCS4
+#  if SIZEOF_SIZE_T == 8
+#    define MASK_ASCII 0xFFFFFF80FFFFFF80ULL
+#    define MASK_UCS1 0xFFFFFF00FFFFFF00ULL
+#    define MASK_UCS2 0xFFFF0000FFFF0000ULL
+#  elif SIZEOF_SIZE_T == 4
+#    define MASK_ASCII 0xFFFFFF80U
+#    define MASK_UCS1 0xFFFFFF00U
+#    define MASK_UCS2 0xFFFF0000U
+#  else
+#    error C 'size_t' size should be either 4 or 8!
+#  endif
+#  define MASK_MAX_CHAR MASK_UCS2
+#  define MAX_CHAR MAX_CHAR_UCS4
 #else
-#error Invalid STRINGLIB_SIZEOF_CHAR (must be 1, 2 or 4)
+#  error Invalid STRINGLIB_SIZEOF_CHAR (must be 1, 2 or 4)
 #endif
 
 /* OR all characters into a single size_t accumulator and test the high bits
@@ -70,15 +70,15 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
            one register when the compiler does not vectorize it. */
         size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
         for (int i = 0; i < 16 * SIZEOF_SIZE_T; i += 4 * SIZEOF_SIZE_T) {
-            size_t a, b, c, d;
-            memcpy(&a, p + i, SIZEOF_SIZE_T);
-            memcpy(&b, p + i + SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            memcpy(&c, p + i + 2 * SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            memcpy(&d, p + i + 3 * SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            v0 |= a;
-            v1 |= b;
-            v2 |= c;
-            v3 |= d;
+            size_t w0, w1, w2, w3;
+            memcpy(&w0, p + i, SIZEOF_SIZE_T);
+            memcpy(&w1, p + i + SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            memcpy(&w2, p + i + 2*SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            memcpy(&w3, p + i + 3*SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            v0 |= w0;
+            v1 |= w1;
+            v2 |= w2;
+            v3 |= w3;
         }
         value |= v0 | v1 | v2 | v3;
         if (value & MASK_MAX_CHAR) {
