@@ -681,24 +681,47 @@ def decompress(data):
     Return the decompressed string.
     """
     decompressed_members = []
+    fp = io.BytesIO(data)
+    # There is usually a single member: the first chunk is all of the data,
+    # to decompress it in one go.
+    chunk_size = len(data)
     while True:
-        fp = io.BytesIO(data)
         if _read_gzip_header(fp) is None:
             return b"".join(decompressed_members)
         # Use a zlib raw deflate compressor
         do = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
-        # Read all the data except the header
-        decompressed = do.decompress(data[fp.tell():])
-        if not do.eof or len(do.unused_data) < 8:
+        crc = zlib.crc32(b"")
+        length = 0
+        # Feed the member in chunks of increasing size, so that what is read
+        # past its end (and copied into unused_data) is bounded by the size
+        # of the member, not by the size of all the members that follow it.
+        while not do.eof and (chunk := fp.read(chunk_size)):
+            decompressed = do.decompress(chunk)
+            crc = zlib.crc32(decompressed, crc)
+            length += len(decompressed)
+            decompressed_members.append(decompressed)
+            chunk_size *= 2
+        # Later members start small: a larger first chunk reads further past
+        # the end of a short member, a smaller one needs more calls.
+        chunk_size = 1024
+        # Rewind to the end of the deflate stream and read the trailer
+        fp.seek(-len(do.unused_data), io.SEEK_CUR)
+        trailer = fp.read(8)
+        if not do.eof or len(trailer) < 8:
             raise EOFError("Compressed file ended before the end-of-stream "
                            "marker was reached")
-        crc, length = struct.unpack("<II", do.unused_data[:8])
-        if crc != zlib.crc32(decompressed):
+        crc32, isize = struct.unpack("<II", trailer)
+        if crc32 != crc:
             raise BadGzipFile("CRC check failed")
-        if length != (len(decompressed) & 0xffffffff):
+        if isize != (length & 0xffffffff):
             raise BadGzipFile("Incorrect length of data produced")
-        decompressed_members.append(decompressed)
-        data = do.unused_data[8:].lstrip(b"\x00")
+        # Gzip files can be padded with zeroes and still have archives.
+        # Consume all zero bytes and set the file position to the first
+        # non-zero byte.
+        while chunk := fp.read(chunk_size):
+            if chunk := chunk.lstrip(b"\x00"):
+                fp.seek(-len(chunk), io.SEEK_CUR)
+                break
 
 
 def main():
