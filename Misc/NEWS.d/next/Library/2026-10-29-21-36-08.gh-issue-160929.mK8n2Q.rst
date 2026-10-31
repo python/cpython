@@ -1,0 +1,3 @@
+Fix reverse union with :class:`~collections.ChainMap` to preserve its lookup
+semantics for defaulting mappings such as :class:`~collections.Counter` and
+:class:`~collections.defaultdict`.

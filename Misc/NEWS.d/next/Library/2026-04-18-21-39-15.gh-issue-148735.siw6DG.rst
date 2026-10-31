@@ -1,3 +1,0 @@
-:mod:`xml.etree.ElementTree`: Fix a use-after-free in
-:meth:`Element.findtext <xml.etree.ElementTree.Element.findtext>` when the
-element tree is mutated concurrently during the search.

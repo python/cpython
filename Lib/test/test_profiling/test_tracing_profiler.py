@@ -1,5 +1,5 @@
 """Test suite for the cProfile module."""
-
+import multiprocessing
 import sys
 import unittest
 
@@ -85,6 +85,60 @@ class CProfileTest(ProfileTest):
             profiler_with_evil_timer.clear()
             self.assertEqual(cm.unraisable.exc_type, RuntimeError)
 
+    def test_external_timer_result_reentry(self):
+        import _lsprof
+
+        class Ticks:
+            def __index__(self):
+                profiler.clear()
+                return 0
+
+        profiler = _lsprof.Profiler(Ticks, timeunit=1)
+        with support.catch_unraisable_exception() as cm:
+            profiler.enable()
+            try:
+                (lambda: None)()
+            finally:
+                profiler.disable()
+            self.assertIs(cm.unraisable.exc_type, RuntimeError)
+
+    def test_external_timer_reinitializes_profiler(self):
+        import _lsprof
+
+        def timer():
+            profiler.__init__()
+            return 0
+
+        profiler = _lsprof.Profiler(timer)
+        with support.catch_unraisable_exception() as cm:
+            profiler.enable()
+            try:
+                (lambda: None)()
+            finally:
+                profiler.disable()
+            self.assertIs(cm.unraisable.exc_type, RuntimeError)
+
+    def test_enable_in_external_timer(self):
+        # gh-157639: Enabling the profiler from an external timer should not crash
+        import _lsprof
+
+        # the timer re-arms monitoring from inside disable(), so the tool
+        # id stays claimed once the profiler is torn down
+        self.addCleanup(sys.monitoring.free_tool_id, sys.monitoring.PROFILER_ID)
+
+        def timer():
+            try:
+                profiler.enable()
+            except Exception:
+                pass
+            return 0
+
+        profiler = _lsprof.Profiler(timer=timer)
+        profiler.enable()
+        (lambda: None)()
+        profiler.disable()
+        profiler.clear()
+
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.
@@ -118,8 +172,9 @@ class CProfileTest(ProfileTest):
         pr = self.profilerclass()
         pr2 = self.profilerclass()
         pr.enable()
-        self.assertRaises(ValueError, pr2.enable)
-        pr.disable()
+        self.addCleanup(pr.disable)
+        msg = f"tool {sys.monitoring.PROFILER_ID} is already in use"
+        self.assertRaisesRegex(ValueError, msg, pr2.enable)
 
     def test_throw(self):
         """
@@ -191,6 +246,40 @@ class TestCommandLine(unittest.TestCase):
                 """))
             f.close()
             assert_python_ok('-m', "cProfile", f.name)
+
+    def _test_process_run_pickle(self, start_method):
+        val = 10
+        with tempfile.NamedTemporaryFile("w+", delete_on_close=False) as f:
+            f.write(textwrap.dedent(
+                f'''\
+                import multiprocessing
+
+                def worker(x):
+                    print(__name__)
+                    exit(x ** 2)
+
+                if __name__ == "__main__":
+                    multiprocessing.set_start_method('{start_method}')
+                    p = multiprocessing.Process(target=worker, args=({val},))
+                    p.start()
+                    p.join()
+                    print("p.exitcode =", p.exitcode)
+                '''))
+            f.close()
+            _, out, err = assert_python_ok('-m', "cProfile", f.name)
+            self.assertIn(b"__mp_main__", out)
+            self.assertIn(bytes(f"exitcode = {val**2}", encoding='utf8'), out)
+            self.assertNotIn(b"Can't pickle", err)
+
+    def test_process_spawn_pickle(self):
+        # gh-140729: test use Process in cProfile.
+        self._test_process_run_pickle('spawn')
+
+    @unittest.skipUnless("forkserver" in multiprocessing.get_all_start_methods(),
+                         "forkserver start method is not available")
+    def test_process_forkserver_pickle(self):
+        # gh-140729: test use Process in cProfile.
+        self._test_process_run_pickle('forkserver')
 
 
 def main():

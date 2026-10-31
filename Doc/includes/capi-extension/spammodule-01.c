@@ -37,12 +37,12 @@ static PyMethodDef spam_methods[] = {
 
 PyABIInfo_VAR(abi_info);
 
-static PyModuleDef_Slot spam_slots[] = {
-    {Py_mod_abi, &abi_info},
-    {Py_mod_name, "spam"},
-    {Py_mod_doc, "A wonderful module with an example function"},
-    {Py_mod_methods, spam_methods},
-    {0, NULL}
+static PySlot spam_slots[] = {
+    PySlot_STATIC_DATA(Py_mod_abi, &abi_info),
+    PySlot_STATIC_DATA(Py_mod_name, "spam"),
+    PySlot_STATIC_DATA(Py_mod_doc, "A wonderful module with an example function"),
+    PySlot_STATIC_DATA(Py_mod_methods, spam_methods),
+    PySlot_END
 };
 
 /// Export hook prototype

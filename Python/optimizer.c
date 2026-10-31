@@ -500,6 +500,8 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
     [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
     [_LOAD_BYTECODE] = _NOP,
+    [_SEND_VIRTUAL] = _SEND_VIRTUAL_TIER_TWO,
+    [_SEND_ASYNC_GEN] = _SEND_ASYNC_GEN_TIER_TWO,
 };
 
 static const uint8_t
@@ -508,6 +510,7 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
     [_FOR_ITER_TIER_TWO] = 1,
+    [_ITER_NEXT_INLINE] = 1,
 };
 
 static const uint16_t
@@ -833,6 +836,8 @@ _PyJit_translate_single_bytecode_to_trace(
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     trace->end -= 2;
 
+    const _PyOpcodeRecordSlotMap *record_slot_map = &_PyOpcode_RecordSlotMaps[opcode];
+
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     assert(!_PyErr_Occurred(tstate));
 
@@ -951,16 +956,27 @@ _PyJit_translate_single_bytecode_to_trace(
                     case OPARG_REPLACED:
                         uop = _PyUOp_Replacements[uop];
                         assert(uop != 0);
-
                         uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                         if (uop == _TIER2_RESUME_CHECK) {
-                            target = next_inst;
+                            if (this_instr[-1].op.code == LOAD_SPECIAL) {
+                                // Don't check eval breaker immediately after LOAD_SPECIAL
+                                uop = _NOP;
+                            }
+                            else {
+                                target = next_inst;
+                            }
                         }
                         else {
                             int extended_arg = orig_oparg > 255;
                             uint32_t jump_target = next_inst + orig_oparg + extended_arg;
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
-                            assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
+                            /* Jump must be to an "END" either END_FOR or END_SEND */
+                            assert((
+                                    _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR &&
+                                    _Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER
+                                )
+                                ||
+                                _Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_SEND
+                            );
                             if (is_for_iter_test[uop]) {
                                 target = jump_target + 1;
                             }
@@ -1029,8 +1045,15 @@ _PyJit_translate_single_bytecode_to_trace(
                     }
                 }
                 else if (_PyUop_Flags[uop] & HAS_RECORDS_VALUE_FLAG) {
-                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_idx];
-                    tracer->prev_state.recorded_values[record_idx] = NULL;
+                    assert(record_idx < record_slot_map->count);
+                    uint8_t record_slot = record_slot_map->slots[record_idx];
+                    assert(record_slot < tracer->prev_state.recorded_count);
+                    PyObject *recorded_value = tracer->prev_state.recorded_values[record_slot];
+                    tracer->prev_state.recorded_values[record_slot] = NULL;
+                    if ((record_slot_map->transform_mask & (1u << record_idx)) &&
+                        recorded_value != NULL) {
+                        recorded_value = _PyOpcode_RecordTransformValue(uop, recorded_value);
+                    }
                     record_idx++;
                     operand = (uintptr_t)recorded_value;
                 }
@@ -1401,6 +1424,7 @@ allocate_executor(int exit_count, int length)
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
+    res->jit_registration = NULL;
     return res;
 }
 
@@ -1773,6 +1797,11 @@ make_cold_executor(uint16_t opcode)
         Py_FatalError("Cannot allocate core JIT code");
     }
     ((_PyUOpInstruction *)cold->trace)->opcode = opcode;
+    // Cold executors bypass _Py_ExecutorInit().
+    cold->vm_data.valid = true;
+    cold->vm_data.pending_deletion = 0;
+    cold->vm_data.code = NULL;
+
     // This is initialized to false so we can prevent the executor
     // from being immediately detected as cold and invalidated.
     cold->vm_data.cold = false;
@@ -1780,7 +1809,7 @@ make_cold_executor(uint16_t opcode)
     cold->jit_code = NULL;
     cold->jit_size = 0;
     if (_PyJIT_Compile(cold, cold->trace, 1)) {
-        Py_DECREF(cold);
+        _PyExecutor_Free(cold);
         Py_FatalError("Cannot allocate core JIT code");
     }
 #endif

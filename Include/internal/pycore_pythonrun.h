@@ -8,21 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern int _PyRun_SimpleFileObject(
+extern PyObject* _PyRun_SimpleFile(
     FILE *fp,
     PyObject *filename,
     int closeit,
     PyCompilerFlags *flags);
 
-extern int _PyRun_AnyFileObject(
+extern PyObject* _PyRun_AnyFile(
     FILE *fp,
     PyObject *filename,
     int closeit,
-    PyCompilerFlags *flags);
-
-extern int _PyRun_InteractiveLoopObject(
-    FILE *fp,
-    PyObject *filename,
     PyCompilerFlags *flags);
 
 extern int _PyObject_SupportedAsScript(PyObject *);
@@ -33,11 +28,17 @@ extern const char* _Py_SourceAsString(
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 
-extern PyObject * _Py_CompileStringObjectWithModule(
+extern PyObject * _Py_CompileString(
     const char *str,
     PyObject *filename, int start,
     PyCompilerFlags *flags, int optimize,
     PyObject *module);
+
+// Export for special main.c string compiling with source tracebacks
+extern PyObject* _PyRun_SimpleString(
+    const char *command,
+    PyObject* name,
+    PyCompilerFlags *flags);
 
 
 /* Stack size, in "pointers". This must be large enough, so
@@ -46,7 +47,8 @@ extern PyObject * _Py_CompileStringObjectWithModule(
  * stack consumption of PyEval_EvalDefault */
 #if (defined(Py_DEBUG) \
      || defined(_Py_ADDRESS_SANITIZER) \
-     || defined(_Py_THREAD_SANITIZER))
+     || defined(_Py_THREAD_SANITIZER)) \
+     || defined(_Py_UNDEFINED_BEHAVIOR_SANITIZER)
 #  define _PyOS_LOG2_STACK_MARGIN 12
 #else
 #  define _PyOS_LOG2_STACK_MARGIN 11

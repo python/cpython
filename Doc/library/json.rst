@@ -99,6 +99,12 @@ Customizing JSON object decoding::
     >>> import decimal
     >>> json.loads('1.1', parse_float=decimal.Decimal)
     Decimal('1.1')
+    >>> json.loads('{"name": "point", "coords": [[1, 2], [3, 4]]}',
+    ...     array_hook=tuple)  # doctest: +SKIP
+    {'name': 'point', 'coords': ((1, 2), (3, 4))}
+    >>> json.loads('{"name": "point", "coords": [1, 2]}',
+    ...     object_pairs_hook=frozendict, array_hook=tuple)  # doctest: +SKIP
+    frozendict({'name': 'point', 'coords': (1, 2)})
 
 Extending :class:`JSONEncoder`::
 
@@ -211,7 +217,7 @@ Basic Usage
       a string (such as ``"\t"``) is used to indent each level.
       If zero, negative, or ``""`` (the empty string),
       only newlines are inserted.
-      If ``None`` (the default), the most compact representation is used.
+      If ``None`` (the default), no newlines are inserted.
    :type indent: int | str | None
 
    :param separators:
@@ -234,6 +240,16 @@ Basic Usage
       If ``True``, dictionaries will be outputted sorted by key.
       Default ``False``.
 
+   .. note::
+
+      Keys in key/value pairs of JSON are always of the type :class:`str`. When
+      a dictionary is converted into JSON, all the keys of the dictionary are
+      converted to strings. As a result of this, if a dictionary is converted
+      into JSON and then back into a dictionary, the dictionary may not equal
+      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
+      keys. *sort_keys* sorts the keys before they are converted to strings,
+      so numeric keys are sorted by value, not by their string representation.
+
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
 
@@ -252,15 +268,6 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
-
-   .. note::
-
-      Keys in key/value pairs of JSON are always of the type :class:`str`. When
-      a dictionary is converted into JSON, all the keys of the dictionary are
-      coerced to strings. As a result of this, if a dictionary is converted
-      into JSON and then back into a dictionary, the dictionary may not equal
-      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
-      keys.
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
@@ -303,7 +310,7 @@ Basic Usage
 
    :param array_hook:
       If set, a function that is called with the result of
-      any JSON array literal decoded with as a Python list.
+      any JSON array literal decoded as a Python list.
       The return value of this function will be used
       instead of the :class:`list`.
       This feature can be used to implement custom decoders.
@@ -486,7 +493,7 @@ Encoders and Decoders
    +----------------------------------------+---------------+
    | Python                                 | JSON          |
    +========================================+===============+
-   | dict                                   | object        |
+   | dict, frozendict                       | object        |
    +----------------------------------------+---------------+
    | list, tuple                            | array         |
    +----------------------------------------+---------------+
@@ -503,6 +510,9 @@ Encoders and Decoders
 
    .. versionchanged:: 3.4
       Added support for int- and float-derived Enum classes.
+
+   .. versionchanged:: 3.15
+      Added support for :class:`frozendict`.
 
    To extend this to recognize other objects, subclass and implement a
    :meth:`~JSONEncoder.default` method with another method that returns a serializable object

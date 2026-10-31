@@ -2038,7 +2038,7 @@ Remove workarounds for non-IEEE 754 systems in :mod:`cmath`.
 .. nonce: WlygzR
 .. section: Library
 
-Due to the lack of interest for :meth:`symtable.Class.get_methods`, the
+Due to the lack of interest for :meth:`!symtable.Class.get_methods`, the
 method is marked as deprecated and will be removed in Python 3.16. Patch by
 Bénédikt Tran.
 
@@ -2746,7 +2746,7 @@ situations.
 .. nonce: rRrprk
 .. section: Library
 
-Fix :meth:`symtable.Class.get_methods` and document its behaviour. Patch by
+Fix :meth:`!symtable.Class.get_methods` and document its behaviour. Patch by
 Bénédikt Tran.
 
 ..

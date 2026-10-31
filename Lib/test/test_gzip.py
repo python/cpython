@@ -10,6 +10,7 @@ import struct
 import sys
 import unittest
 from subprocess import PIPE, Popen
+from unittest import mock
 from test.support import catch_unraisable_exception
 from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
@@ -349,6 +350,37 @@ class TestGzip(BaseTest):
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
             self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_with_open(self):
+        mtime = 123456789
+        with gzip.open(self.filename, "wb", mtime=mtime) as fWrite:
+            fWrite.write(data1)
+        with gzip.open(self.filename, "rb") as fRead:
+            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertIsNone(fRead.mtime)
+            dataRead = fRead.read()
+            self.assertEqual(dataRead, data1)
+            self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_out_of_range(self):
+        for mtime in (-1, 2**32):
+            with gzip.GzipFile(self.filename, 'w', mtime=mtime) as fWrite:
+                fWrite.write(data1)
+            with gzip.GzipFile(self.filename) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+            datac = gzip.compress(data1, mtime=mtime)
+            with gzip.GzipFile(fileobj=io.BytesIO(datac)) as fRead:
+                fRead.read(1)
+                self.assertEqual(fRead.mtime, 0)
+
+        for mtime in (-1, 2**32):
+            with mock.patch('time.time', return_value=float(mtime)):
+                with gzip.GzipFile(self.filename, 'w') as fWrite:
+                    fWrite.write(data1)
+                with gzip.GzipFile(self.filename) as fRead:
+                    fRead.read(1)
+                    self.assertEqual(fRead.mtime, 0)
 
     def test_metadata(self):
         mtime = 123456789
@@ -794,6 +826,79 @@ class TestGzip(BaseTest):
     def test_decompress_missing_trailer(self):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
+
+    def test_decompress_multi_member(self):
+        big = os.urandom(100_000)
+        members = [data1, b'', big, data2, big]
+        expected = b''.join(members)
+        for padding in b'', b'\0', b'\0' * 5000:
+            with self.subTest(padding=len(padding)):
+                datac = b''.join(gzip.compress(data) + padding
+                                 for data in members)
+                self.assertEqual(gzip.decompress(datac), expected)
+        datac = b''.join(map(gzip.compress, members))
+        self.assertEqual(gzip.decompress(bytearray(datac)), expected)
+        self.assertEqual(gzip.decompress(memoryview(datac)), expected)
+        self.assertRaises(EOFError, gzip.decompress, datac[:-4])
+        self.assertRaises(EOFError, gzip.decompress, datac[:-50_000])
+        self.assertRaises(gzip.BadGzipFile, gzip.decompress, datac + b'junk')
+        # Damage the CRC in the trailer of the third member.
+        parts = [gzip.compress(data) for data in members]
+        corrupted = bytearray(b''.join(parts))
+        corrupted[len(b''.join(parts[:3])) - 8] ^= 1
+        with self.assertRaisesRegex(gzip.BadGzipFile, 'CRC check failed'):
+            gzip.decompress(corrupted)
+
+    def test_decompress_many_members(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of members.
+        decompressobj = zlib.decompressobj
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = decompressobj(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        datac = gzip.compress(b'')
+        with mock.patch.object(zlib, 'decompressobj', Decompressor):
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 1000), b'')
+            fed1 = fed
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 2000), b'')
+        self.assertLess(fed, fed1 * 3)
+
+    def test_truncated_header(self):
+        truncated_headers = [
+            b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte
+            b"\x1f\x8b\x08\x02\x00\x00\x00\x00\x00\xff",         # FHRC, but no checksum
+            b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff",         # FEXTRA, but no xlen
+            b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\xaa\x00", # FEXTRA, xlen, but no data
+            b"\x1f\x8b\x08\x08\x00\x00\x00\x00\x00\xff",         # FNAME but no fname
+            b"\x1f\x8b\x08\x10\x00\x00\x00\x00\x00\xff",         # FCOMMENT, but no fcomment
+        ]
+        for header in truncated_headers:
+            with self.subTest(header=header):
+                with self.assertRaises(EOFError):
+                    gzip.decompress(header)
+
+    def test_corrupted_gzip_header(self):
+        header = (b"\x1f\x8b\x08\x1f\x00\x00\x00\x00\x00\xff"  # All flags set
+                  b"\x05\x00"  # Xlen = 5
+                  b"extra"
+                  b"name\x00"
+                  b"comment\x00")
+        true_crc = zlib.crc32(header) & 0xFFFF
+        corrupted_crc = true_crc ^ 0xFFFF
+        corrupted_header = header + corrupted_crc.to_bytes(2, "little")
+        with self.assertRaises(gzip.BadGzipFile) as err:
+            gzip.decompress(corrupted_header)
+        self.assertEqual(str(err.exception),
+                         f"Corrupted gzip header. Checksums do not "
+                         f"match: {true_crc:04x} != {corrupted_crc:04x}")
 
     def test_read_truncated(self):
         data = data1*50

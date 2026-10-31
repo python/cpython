@@ -4,7 +4,7 @@ import unittest
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 @unittest.skipUnless(decimal.HAVE_CONTEXTVAR, "decimal is built with a thread-local context")

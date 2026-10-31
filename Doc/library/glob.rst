@@ -29,7 +29,7 @@ not by actually invoking a subshell.
    The pathnames are returned in no particular order.  If you need a specific
    order, sort the results.
 
-Files beginning with a dot (``.``) can only be matched by
+By default, files beginning with a dot (``.``) can only be matched by
 patterns that also start with a dot,
 unlike :func:`fnmatch.fnmatch` or :func:`pathlib.Path.glob`.
 For tilde and shell variable expansion, use :func:`os.path.expanduser` and
@@ -70,7 +70,8 @@ The :mod:`!glob` module defines the following functions:
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.
 
-   If *include_hidden* is true, "``**``" pattern will match hidden directories.
+   If *include_hidden* is true, wildcards can match path segments that
+   begin with a dot (``.``).
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
@@ -101,7 +102,7 @@ The :mod:`!glob` module defines the following functions:
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
                     include_hidden=False)
 
-   Return an :term:`iterator` which yields the same values as :func:`glob`
+   Return an :term:`iterator` which yields the same values as :func:`~glob.glob`
    without actually storing them all simultaneously.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
@@ -131,7 +132,7 @@ The :mod:`!glob` module defines the following functions:
    Escape all special characters (``'?'``, ``'*'`` and ``'['``).
    This is useful if you want to match an arbitrary literal string that may
    have special characters in it.  Special characters in drive/UNC
-   sharepoints are not escaped, e.g. on Windows
+   sharepoints are not escaped, for example on Windows
    ``escape('//?/c:/Quo vadis?.txt')`` returns ``'//?/c:/Quo vadis[?].txt'``.
 
    .. versionadded:: 3.4
@@ -181,7 +182,7 @@ Examples
 
 Consider a directory containing the following files:
 :file:`1.gif`, :file:`2.txt`, :file:`card.gif` and a subdirectory :file:`sub`
-which contains only the file :file:`3.txt`.  :func:`glob` will produce
+which contains only the file :file:`3.txt`.  :func:`~glob.glob` will produce
 the following results.  Notice how any leading components of the path are
 preserved. ::
 

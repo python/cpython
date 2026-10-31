@@ -3,7 +3,7 @@
 
 """Execute computations asynchronously using threads or processes."""
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 from concurrent.futures._base import (FIRST_COMPLETED,
                                       FIRST_EXCEPTION,
@@ -16,6 +16,10 @@ from concurrent.futures._base import (FIRST_COMPLETED,
                                       Executor,
                                       wait,
                                       as_completed)
+
+lazy import warnings
+lazy from .process import ProcessPoolExecutor
+lazy from .thread import ThreadPoolExecutor
 
 __all__ = [
     'FIRST_COMPLETED',
@@ -40,26 +44,16 @@ except ImportError:
     _interpreters = None
 
 if _interpreters:
+    lazy from .interpreter import InterpreterPoolExecutor  # noqa: F401
     __all__.append('InterpreterPoolExecutor')
 
 
 def __dir__():
-    return __all__ + ['__author__', '__doc__']
+    return __all__ + ['__doc__']
 
 
 def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
-
-    if name == 'ProcessPoolExecutor':
-        from .process import ProcessPoolExecutor
-        return ProcessPoolExecutor
-
-    if name == 'ThreadPoolExecutor':
-        from .thread import ThreadPoolExecutor
-        return ThreadPoolExecutor
-
-    if _interpreters and name == 'InterpreterPoolExecutor':
-        from .interpreter import InterpreterPoolExecutor
-        return InterpreterPoolExecutor
-
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return 'Brian Quinlan (brian@sweetapp.com)'  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

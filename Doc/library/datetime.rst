@@ -180,18 +180,12 @@ Objects of the :class:`date` type are always naive.
 
 An object of type :class:`.time` or :class:`.datetime` may be aware or naive.
 
-A :class:`.datetime` object ``d`` is aware if both of the following hold:
-
-1. ``d.tzinfo`` is not ``None``
-2. ``d.tzinfo.utcoffset(d)`` does not return ``None``
-
+A :class:`.datetime` object ``d`` is aware if
+:meth:`d.utcoffset() <datetime.utcoffset>` does not return ``None``.
 Otherwise, ``d`` is naive.
 
-A :class:`.time` object ``t`` is aware if both of the following hold:
-
-1. ``t.tzinfo`` is not ``None``
-2. ``t.tzinfo.utcoffset(None)`` does not return ``None``.
-
+A :class:`.time` object ``t`` is aware if
+:meth:`t.utcoffset() <time.utcoffset>` does not return ``None``.
 Otherwise, ``t`` is naive.
 
 The distinction between aware and naive doesn't apply to :class:`timedelta`
@@ -1392,9 +1386,9 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a new :class:`datetime` object with the same attributes, but with
-   specified parameters updated. Note that ``tzinfo=None`` can be specified to
-   create a naive datetime from an aware datetime with no conversion of date
+   Return a new :class:`~datetime.datetime` object with the same attributes, but
+   with specified parameters updated. Note that ``tzinfo=None`` can be specified
+   to create a naive datetime from an aware datetime with no conversion of date
    and time data.
 
    :class:`.datetime` objects are also supported by generic function
@@ -2482,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: next
 
 Class attributes:
 
@@ -2699,6 +2698,10 @@ convenience.
 |           | number, zero-padded to 6       | 999999                 |       |
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
+|  ``%Nf``  | Fraction of a second truncated | 000, 001, ..., 999     | \(5)  |
+|           | to *N* digits, where *N* is    | (``%3f``)              |       |
+|           | from 1 to 6.                   |                        |       |
++-----------+--------------------------------+------------------------+-------+
 | ``%:z``   | UTC offset in the form         | (empty), +00:00,       | \(6)  |
 |           | ``±HH:MM[:SS[.ffffff]]``       | -04:00, +10:30,        |       |
 |           | (empty string if the object is | +06:34:15,             |       |
@@ -2720,6 +2723,9 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.15
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
+
+.. versionadded:: next
+   ``%Nf`` was added.
 
 
 Technical detail
@@ -2744,6 +2750,13 @@ in the format string will be pulled from the default value.
    and :meth:`.date.strptime` will raise when encountering February 29 because
    the default year of 1900 is *not* a leap year.  Always add a default leap
    year to partial date strings before parsing.
+
+.. note::
+   If a :meth:`~.datetime.strptime` format string contains more than
+   one directive for the same field, for example both ``%Y`` and ``%y``,
+   every directive must still match the input, but only the value of the
+   last one is used. For example, parsing ``200099`` with ``%Y%y`` gives
+   the year 1999. Repeating the same directive, like ``%Y%Y``, raises an error.
 
 .. testsetup::
 
@@ -2826,7 +2839,8 @@ Notes:
 
 (5)
    When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
-   accepts from one to six digits and zero pads on the right. ``%f`` is
+   accepts from one to six digits and zero pads on the right, while ``%Nf``
+   accepts exactly *N* digits. ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
    available).

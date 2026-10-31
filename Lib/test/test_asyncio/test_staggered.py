@@ -8,7 +8,7 @@ support.requires_working_socket(module=True)
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class StaggeredTests(unittest.IsolatedAsyncioTestCase):

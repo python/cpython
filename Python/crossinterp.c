@@ -664,6 +664,11 @@ check_missing___main___attr(PyObject *exc)
         }
     }
     const char *err = PyUnicode_AsUTF8(msgobj);
+    if (err == NULL) {
+        PyErr_Clear();
+        Py_DECREF(msgobj);
+        return 0;
+    }
 
     // Check if it's a missing __main__ attr.
     int cmp = strncmp(err, "module '__main__' has no attribute '", 36);
@@ -1689,6 +1694,7 @@ _PyXI_NewExcInfo(PyObject *exc)
     }
     _PyXI_excinfo *info = PyMem_RawCalloc(1, sizeof(_PyXI_excinfo));
     if (info == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     const char *failure;
@@ -1709,6 +1715,7 @@ _PyXI_NewExcInfo(PyObject *exc)
 void
 _PyXI_FreeExcInfo(_PyXI_excinfo *info)
 {
+    assert(info != NULL);
     _PyXI_excinfo_clear(info);
     PyMem_RawFree(info);
 }
@@ -3006,7 +3013,7 @@ _pop_preserved(_PyXI_session *session,
         *p_xidata = NULL;
     }
     else {
-        _PyXI_namespace *xidata = _create_sharedns(session->_preserved);
+        xidata = _create_sharedns(session->_preserved);
         if (xidata == NULL) {
             failure.code = _PyXI_ERR_PRESERVE_FAILURE;
             goto error;

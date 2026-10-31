@@ -133,8 +133,11 @@ The :mod:`!binascii` module defines the following functions:
    should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
    This feature is not supported by the "standard" Ascii85 encoding.
 
-   *adobe* controls whether the input sequence is in Adobe Ascii85 format
-   (i.e. is framed with <~ and ~>).
+   *adobe* controls whether the encoded byte sequence is framed with
+   ``<~`` and ``~>``, as in a PostScript base-85 string literal.  If
+   *adobe* is true, a leading ``<~`` is optionally accepted, while a
+   trailing ``~>`` is *required*, and :exc:`binascii.Error` is raised
+   if it is not found.
 
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
@@ -164,12 +167,16 @@ The :mod:`!binascii` module defines the following functions:
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
-   Note that the ``btoa`` implementation always pads.
+   If *pad* is true, the zero-padding applied to the end of the input
+   is fully retained in the output encoding, as done by ``btoa``,
+   producing an exact multiple of 5 bytes of output. This is not part
+   of the standard encoding used in PDF, as it does not preserve the
+   length of the data.
 
-   *adobe* controls whether the encoded byte sequence is framed with ``<~``
-   and ``~>``, which is used by the Adobe implementation.
+   *adobe* controls whether the encoded byte sequence is framed with
+   ``<~`` and ``~>``, as in a PostScript base-85 string literal.  Note
+   that while ASCII85Decode streams in PDF documents *must* be
+   terminated with ``~>``, they *must not* use a leading ``<~``.
 
    .. versionadded:: 3.15
 
@@ -213,8 +220,10 @@ The :mod:`!binascii` module defines the following functions:
    after at most every *wrapcol* characters.
    If *wrapcol* is zero (default), do not insert any newlines.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
-   multiple of 4 bytes before encoding.
+   If *pad* is true, the zero-padding applied to the end of the input
+   is retained in the output, which will always be a multiple of 5
+   bytes, and thus the length of the data may not be preserved on
+   decoding.
 
    .. versionadded:: 3.15
 
@@ -274,11 +283,16 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
-.. function:: a2b_qp(data, header=False)
+.. function:: a2b_qp(data, header=False, *, strip_ws=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
    data. More than one line may be passed at a time. If the optional argument
    *header* is present and true, underscores will be decoded as spaces.
+   If the optional argument *strip_ws* is true,
+   trailing whitespace is stripped from each line, as required by :rfc:`2045`.
+
+   .. versionchanged:: next
+      Added the *strip_ws* parameter.
 
 
 .. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
@@ -358,9 +372,8 @@ The :mod:`!binascii` module defines the following functions:
    *ignorechars* should be a :term:`bytes-like object` containing characters
    to ignore from the input.
 
-   Similar functionality (accepting only text string arguments, but more
-   liberal towards whitespace) is also accessible using the
-   :meth:`bytes.fromhex` class method.
+   Similar functionality (but more liberal towards whitespace) is also accessible
+   using the :meth:`bytes.fromhex` class method.
 
    .. versionchanged:: 3.15
       Added the *ignorechars* parameter.

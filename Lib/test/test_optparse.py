@@ -434,6 +434,13 @@ class TestOptionValues(BaseTest):
         self.assertNotEqual(values, "")
         self.assertNotEqual(values, [])
 
+    def test_replace(self):
+        values = Values(defaults={"foo": "bar", "baz": 42})
+        new = copy.replace(values, baz=43, spam="eggs")
+        self.assertIsInstance(new, Values)
+        self.assertEqual(vars(new), {"foo": "bar", "baz": 43, "spam": "eggs"})
+        self.assertEqual(vars(values), {"foo": "bar", "baz": 42})
+
 
 class TestTypeAliases(BaseTest):
     def setUp(self):
@@ -1667,13 +1674,10 @@ class TestTranslations(TestTranslationsBase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(optparse, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, optparse, "__version__", "__copyright__", remove=(3, 20),
+        )
 
 
 if __name__ == '__main__':

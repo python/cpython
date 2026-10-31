@@ -92,5 +92,15 @@ class Test_HZ(multibytecodec_support.TestBase, unittest.TestCase):
         (b'~{Dc~\n:C~}', 'strict', None), # ~\n only in ASCII mode
     )
 
+    def test_escape_at_buffer_boundary(self):
+        # '~~' must not be cut in two when the output buffer is enlarged.
+        for pairs in range(40):
+            for letters in range(3):
+                text = 'a\u4e2d' * pairs + 'x' * letters + '~{'
+                with self.subTest(pairs=pairs, letters=letters):
+                    encoded = text.encode('hz')
+                    self.assertEndsWith(encoded, b'~~{')
+                    self.assertEqual(encoded.decode('hz'), text)
+
 if __name__ == "__main__":
     unittest.main()

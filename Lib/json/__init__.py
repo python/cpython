@@ -100,11 +100,12 @@ __all__ = [
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
 ]
 
-__author__ = 'Bob Ippolito <bob@redivi.com>'
+# Original author: Bob Ippolito <bob@redivi.com>
 
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+lazy import warnings
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -142,8 +143,8 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``indent`` is a non-negative integer, then JSON array elements and
     object members will be pretty-printed with that indent level. An indent
-    level of 0 will only insert newlines. ``None`` is the most compact
-    representation.
+    level of 0 will only insert newlines. ``None`` is the default and gives
+    a representation with no newlines inserted.
 
     If specified, ``separators`` should be an ``(item_separator,
     key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
@@ -206,8 +207,8 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``indent`` is a non-negative integer, then JSON array elements and
     object members will be pretty-printed with that indent level. An indent
-    level of 0 will only insert newlines. ``None`` is the most compact
-    representation.
+    level of 0 will only insert newlines. ``None`` is the default and gives
+    a representation with no newlines inserted.
 
     If specified, ``separators`` should be an ``(item_separator,
     key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
@@ -292,12 +293,13 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` is also defined, the ``object_pairs_hook`` takes
     priority.
 
-    ``array_hook`` is an optional function that will be called with the result
-    of any literal array decode (a ``list``). The return value of this function will
-    be used instead of the ``list``. This feature can be used along
-    ``object_pairs_hook`` to customize the resulting data structure - for example,
-    by setting that to ``frozendict`` and ``array_hook`` to ``tuple``, one can get
-    a deep immutable data structute from any JSON data.
+    ``array_hook`` is an optional function that will be called with the
+    result of any literal array decode (a ``list``).  The return value of
+    this function will be used instead of the ``list``.  This feature can
+    be used along ``object_pairs_hook`` to customize the resulting data
+    structure - for example, by setting that to ``frozendict`` and
+    ``array_hook`` to ``tuple``, one can get a deep immutable data structure
+    from any JSON data.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
@@ -306,7 +308,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook,
-        array_hook=None, **kw)
+        array_hook=array_hook, **kw)
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
@@ -327,12 +329,13 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` is also defined, the ``object_pairs_hook`` takes
     priority.
 
-    ``array_hook`` is an optional function that will be called with the result
-    of any literal array decode (a ``list``). The return value of this function will
-    be used instead of the ``list``. This feature can be used along
-    ``object_pairs_hook`` to customize the resulting data structure - for example,
-    by setting that to ``frozendict`` and ``array_hook`` to ``tuple``, one can get
-    a deep immutable data structute from any JSON data.
+    ``array_hook`` is an optional function that will be called with the
+    result of any literal array decode (a ``list``).  The return value of
+    this function will be used instead of the ``list``.  This feature can
+    be used along ``object_pairs_hook`` to customize the resulting data
+    structure - for example, by setting that to ``frozendict`` and
+    ``array_hook`` to ``tuple``, one can get a deep immutable data structure
+    from any JSON data.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
@@ -385,9 +388,10 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
-        return "2.0.9"  # Do not change
+    if name in ("__version__", "__author__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "2.0.9",
+            "__author__": "Bob Ippolito <bob@redivi.com>",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
