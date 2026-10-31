@@ -5055,8 +5055,8 @@ fi
 case $host in #(
   wasm64-*-emscripten) :
 
-    as_fn_append CFLAGS " -sMEMORY64=1"
-    as_fn_append LDFLAGS " -sMEMORY64=1"
+    as_fn_append CFLAGS " -m64"
+    as_fn_append LDFLAGS " -m64"
    ;; #(
   *) :
      ;;
@@ -10229,7 +10229,7 @@ fi
 then :
 
       as_fn_append CFLAGS_NODIST " -pthread"
-      as_fn_append LDFLAGS_NODIST " -sUSE_PTHREADS"
+      as_fn_append LDFLAGS_NODIST " -pthread"
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
