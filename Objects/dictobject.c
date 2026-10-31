@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -4113,7 +4113,7 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         return -1;
 
     for (i = 0; ; ++i) {
-        PyObject *key, *value;
+        PyObject *key = NULL, *value = NULL;
         Py_ssize_t n;
 
         fast = NULL;
@@ -4135,7 +4135,13 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
             }
             goto Fail;
         }
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(item);
         n = PySequence_Fast_GET_SIZE(fast);
+        if (n == 2) {
+            key = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 0));
+            value = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 1));
+        }
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         if (n != 2) {
             PyErr_Format(PyExc_ValueError,
                          "dictionary update sequence element #%zd "
@@ -4145,10 +4151,6 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         }
 
         /* Update/merge with this (key, value) pair. */
-        key = PySequence_Fast_GET_ITEM(fast, 0);
-        value = PySequence_Fast_GET_ITEM(fast, 1);
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override) {
             if (setitem_lock_held((PyDictObject *)d, key, value) < 0) {
                 Py_DECREF(key);
@@ -5413,7 +5415,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *self = dict_new(_PyType_CAST(type), NULL, NULL);
+    assert(type == (PyObject *)&PyDict_Type);
+    PyObject *self = PyDict_New();
     if (self == NULL) {
         return NULL;
     }
@@ -7302,6 +7305,11 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
                 PyObject *key = PyTuple_GET_ITEM(attrs, i);
                 Py_hash_t hash;
                 if (PyUnicode_CheckExact(key) && (hash = unicode_get_hash(key)) != -1) {
+                    /* An attribute stored in a slot never uses the dict. */
+                    PyObject *descr = _PyType_Lookup((PyTypeObject *)cls, key);
+                    if (descr != NULL && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
+                        continue;
+                    }
                     if (insert_split_key(keys, key, hash) == DKIX_EMPTY) {
                         break;
                     }
@@ -7802,7 +7810,11 @@ clear_inline_values(PyDictValues *values)
     if (values->valid) {
         FT_ATOMIC_STORE_UINT8(values->valid, 0);
         for (Py_ssize_t i = 0; i < values->capacity; i++) {
-            Py_CLEAR(values->values[i]);
+            PyObject *value = values->values[i];
+            // The attribute read fast-path may read these without holding the
+            // per-object lock.
+            FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
+            Py_XDECREF(value);
         }
     }
 }
@@ -8024,7 +8036,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify

@@ -3898,5 +3898,12 @@ class StringPrefixTest(unittest.TestCase):
         self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, tokenize, "__author__", "__credits__", remove=(3, 20),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -311,13 +311,6 @@
 #endif
 
 
-#if !defined(_MSC_VER) && defined(__sgi) && _COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char *ctermid_r(char *);
-#endif
-
-
 #if defined(__VXWORKS__)
 #  include <vxCpuLib.h>
 #  include <rtpLib.h>
@@ -3679,6 +3672,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
         PyErr_Format(PyExc_ValueError,
                      "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
         return NULL;
+    }
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
     }
 
     /* Future bits may refer to members beyond the current size of struct

@@ -314,6 +314,7 @@ Modules/cmathmodule.c	-	sinh_special_values	-
 Modules/cmathmodule.c	-	sqrt_special_values	-
 Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
+Modules/config_bootstrap.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
 Modules/hmacmodule.c	-	py_hmac_static_hinfo	-

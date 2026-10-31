@@ -535,17 +535,24 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. c:namespace:: NULL
 
-   ============================================= ======
-   Flag                                          Value
-   ============================================= ======
-   .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
-   .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
-   .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
-   .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
-   .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
-   .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
-   .. c:macro:: Py_ASNATIVEBYTES_ALLOW_INDEX     ``16``
-   ============================================= ======
+   .. stable-abi-note::
+
+      These values are available when compiling for the
+      :ref:`Stable ABI <stable>` since version 3.14.
+
+   .. omit-stable-abi-notes::
+
+      ============================================= ======
+      Flag                                          Value
+      ============================================= ======
+      .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
+      .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
+      .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
+      .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
+      .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
+      .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
+      .. c:macro:: Py_ASNATIVEBYTES_ALLOW_INDEX     ``16``
+      ============================================= ======
 
    Specifying ``Py_ASNATIVEBYTES_NATIVE_ENDIAN`` will override any other endian
    flags. Passing ``2`` is reserved.
