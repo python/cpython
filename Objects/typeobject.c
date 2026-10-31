@@ -11865,7 +11865,7 @@ collect_slot_descrs(PyTypeObject *type, PyObject **descrs)
         PyObject *base = PyTuple_GET_ITEM(mro, m);
         assert(PyType_Check(base));
         PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
-        assert(dict != NULL && PyDict_CheckExact(dict));
+        assert(dict != NULL && PyDict_Check(dict));
 #ifdef Py_GIL_DISABLED
         /* _PyDict_Next() needs the dict mutex, but we must not block for it:
            blocking detaches the thread, which releases TYPE_LOCK and lets
