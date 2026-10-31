@@ -801,6 +801,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *inbuf = NULL;
     Py_ssize_t inpos, datalen;
     PyObject *origpending = NULL;
+    MultibyteCodec_State origstate;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -816,6 +817,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         }
     }
 
+    origstate = ctx->state;
     if (ctx->pending) {
         PyObject *inbuf_tmp;
 
@@ -873,6 +875,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     return r;
 
 errorexit:
+    /* recover the original codec state: the discarded output may have
+     * included an escape sequence for a state change */
+    ctx->state = origstate;
     Py_XDECREF(r);
     Py_XDECREF(ucvt);
     Py_XDECREF(origpending);
