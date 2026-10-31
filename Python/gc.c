@@ -996,22 +996,19 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
+/* "gc: " + msg (at most "uncollectable") + " <" + " " + %p + ">\n" + NUL */
+#define DEBUG_LINE_FIXED_LEN 64
+
 static char *
 debug_cycle(const char *msg, PyObject *op)
 {
-    const char fmt[] = "gc: %s <%s %p>\n";
     const char *name = Py_TYPE(op)->tp_name;
-    int len = PyOS_snprintf(NULL, 0, fmt,
-                            msg, name, (void *)op);
-    if (len < 0) {
-        return NULL;
-    }
-    char *line = PyMem_RawMalloc((size_t)len + 1);
+    size_t size = strlen(name) + DEBUG_LINE_FIXED_LEN;
+    char *line = PyMem_RawMalloc(size);
     if (line == NULL) {
         return NULL;
     }
-    PyOS_snprintf(line, (size_t)len + 1, fmt,
-                  msg, name, (void *)op);
+    PyOS_snprintf(line, size, "gc: %s <%s %p>\n", msg, name, (void *)op);
     return line;
 }
 
