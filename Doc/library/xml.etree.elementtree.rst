@@ -561,13 +561,13 @@ Functions
 
    - *with_comments*: set to true to include comments (default: false)
    - *strip_text*: set to true to strip whitespace before and after text content
-                   (default: false)
+     (default: false)
    - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
-                         (default: false)
+     (default: false)
    - *qname_aware_tags*: a set of qname aware tag names in which prefixes
-                         should be replaced in text content (default: empty)
+     should be replaced in text content (default: empty)
    - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
-                          should be replaced in text content (default: empty)
+     should be replaced in text content (default: empty)
    - *exclude_attrs*: a set of attribute names that should not be serialised
    - *exclude_tags*: a set of tag names that should not be serialised
 
@@ -637,7 +637,7 @@ Functions
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Whitespace is no longer added inside an element with mixed content
       or marked with ``xml:space="preserve"``.
 
@@ -707,7 +707,7 @@ Functions
       A :exc:`ResourceWarning` is now emitted if the iterator opened a file
       and is not explicitly closed.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *target* parameter.
 
 
@@ -783,7 +783,7 @@ Functions
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *standalone* parameter.
 
 
@@ -814,7 +814,7 @@ Functions
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *standalone* parameter.
 
 
@@ -1290,7 +1290,7 @@ ElementTree Objects
          The :meth:`write` method now preserves the attribute order specified
          by the user.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added the *standalone* parameter.
 
 
@@ -1565,7 +1565,7 @@ XMLPullParser Objects
    if they are not implemented, a ``(prefix, uri)`` tuple and ``None``
    are reported for the ``"start-ns"`` and ``"end-ns"`` events.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *target* parameter.
 
    .. method:: feed(data)

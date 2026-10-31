@@ -51,9 +51,9 @@ typedef enum ext_module_kind {
 } _Py_ext_module_kind;
 
 typedef enum ext_module_origin {
-    _Py_ext_module_origin_CORE = 1,
-    _Py_ext_module_origin_BUILTIN = 2,
-    _Py_ext_module_origin_DYNAMIC = 3,
+    _Py_ext_module_origin_CORE = 1,  // 'sys' & 'builtins'
+    _Py_ext_module_origin_BUILTIN = 2,  // inittab or PyImport_CreateModuleFromInitfunc
+    _Py_ext_module_origin_DYNAMIC = 3,  // loaded dynamically
 } _Py_ext_module_origin;
 
 struct hook_prefixes {
@@ -79,21 +79,10 @@ struct _Py_ext_module_loader_info {
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
 extern int _Py_ext_module_loader_info_init(
-    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_info *p_info,
     PyObject *name,
-    PyObject *filename,
+    PyObject *spec,
     _Py_ext_module_origin origin);
-extern int _Py_ext_module_loader_info_init_for_core(
-    struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
-extern int _Py_ext_module_loader_info_init_for_builtin(
-    struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
-#ifdef HAVE_DYNAMIC_LOADING
-extern int _Py_ext_module_loader_info_init_from_spec(
-    struct _Py_ext_module_loader_info *info,
-    PyObject *spec);
-#endif
 
 /* The result from running an extension module's init function.
  * Not used for modules defined via PyModExport (slots array).

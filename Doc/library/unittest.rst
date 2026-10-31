@@ -297,7 +297,7 @@ The ``discover`` sub-command has the following options:
    Verbose output.  May be repeated: ``-vv`` reports also the individual
    examples of a :mod:`doctest`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The option can be repeated.
 
 .. option:: -s, --start-directory directory
@@ -1001,7 +1001,7 @@ Test cases
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
-   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
+   | <TestCase.assertNoLogs>`                                | *logger* with minimum *level*        |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -2163,7 +2163,7 @@ Loading and running tests
       individual examples of a :mod:`doctest`.  A test runner is expected to
       set it to its own verbosity.
 
-      .. versionadded:: next
+      .. versionadded:: 3.16
 
    .. method:: wasSuccessful()
 

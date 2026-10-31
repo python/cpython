@@ -855,6 +855,31 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             y = x + x
         self.assertInBytecode(f, 'LOAD_FAST_BORROW_LOAD_FAST_BORROW')
 
+    def test_store_fast_load_fast_borrow(self):
+        # gh-159493: a LOAD_FAST that can borrow must not be fused into
+        # STORE_FAST_LOAD_FAST, regardless of how the source is laid out.
+        def f(shared, n):
+            for i in range(n): shared
+
+        def g(shared, n):
+            for i in range(n):
+                shared
+
+        for func in (f, g):
+            with self.subTest(func=func.__name__):
+                self.assertNotInBytecode(func, 'STORE_FAST_LOAD_FAST')
+                self.assertInBytecode(func, 'LOAD_FAST_BORROW', 'shared')
+        self.assertEqual([i.opname for i in dis.get_instructions(f)],
+                         [i.opname for i in dis.get_instructions(g)])
+
+    def test_store_fast_load_fast_not_borrowable(self):
+        def f(x):
+            y = x; z = y
+            return z
+        # The load of y is stored into z, so it needs a strong reference and
+        # can still be fused.
+        self.assertInBytecode(f, 'STORE_FAST_LOAD_FAST', ('y', 'y'))
+
     def test_load_fast_unknown_simple(self):
         def f():
             if condition():

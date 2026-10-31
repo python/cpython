@@ -786,63 +786,124 @@ class PyTypesDeclareVisitor(PickleVisitor):
 
 class AnnotationsVisitor(PickleVisitor):
     def visitModule(self, mod):
+        self.nodes = []
+        for dfn in mod.dfns:
+            self.visit(dfn)
+        builtins = list(dict.fromkeys(builtin_type_to_c_type.values()))
         self.file.write(textwrap.dedent('''
             static int
             add_ast_annotations(struct ast_state *state)
             {
-                bool cond;
+                enum {
+                    FIELD_OPTIONAL = 1,
+                    FIELD_SEQUENCE = 2,
+                    FIELD_BUILTIN = 4,
+                };
+                PyTypeObject *const builtin_types[] = {
         '''))
-        for dfn in mod.dfns:
-            self.visit(dfn)
-        self.file.write(textwrap.dedent('''
+        for c_type in builtins:
+            self.emit(f"&{c_type},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            // Offsets refer to this interpreter's AST state, not global types.
+            static_assert(sizeof(struct ast_state) <= UINT16_MAX,
+                          "ast_state offsets must fit in uint16_t");
+            static const struct {
+                uint16_t name_offset;
+                uint16_t type_offset;  // An index into builtin_types for builtins.
+                uint8_t flags;
+            } fields[] = {
+        #''').removesuffix('#'))  # Use d-string if it accepted.
+        for name, fields in self.nodes:
+            for field in fields:
+                flags = []
+                if field.opt:
+                    flags.append("FIELD_OPTIONAL")
+                elif field.seq:
+                    flags.append("FIELD_SEQUENCE")
+                if field.type in builtin_type_to_c_type:
+                    c_type = builtin_type_to_c_type[field.type]
+                    type_offset = str(builtins.index(c_type))
+                    flags.append("FIELD_BUILTIN")
+                else:
+                    type_offset = f"offsetof(struct ast_state, {field.type}_type)"
+                flags = " | ".join(flags) or "0"
+                self.emit(f"{{offsetof(struct ast_state, {field.name}),", 2)
+                self.emit(f" {type_offset}, {flags}}},", 2)
+        self.file.write(textwrap.dedent('''\
+            };
+            static const struct {
+                uint16_t type_offset;
+                uint16_t first_field;
+                uint16_t nfields;
+            } nodes[] = {
+        #''').removesuffix('#'))
+        start = 0
+        for name, fields in self.nodes:
+            self.emit(f"{{offsetof(struct ast_state, {name}_type), "
+                      f"{start}, {len(fields)}}},", 2)
+            start += len(fields)
+        self.file.write(textwrap.dedent('''\
+                };
+                char *base = (char *)state;
+                PyObject *annotations = NULL;
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(nodes); i++) {
+                    annotations = PyDict_New();
+                    if (annotations == NULL) {
+                        goto error;
+                    }
+                    size_t end = nodes[i].first_field + nodes[i].nfields;
+                    for (size_t j = nodes[i].first_field; j < end; j++) {
+                        PyObject *name = *(PyObject **)(base + fields[j].name_offset);
+                        PyObject *type;
+                        if (fields[j].flags & FIELD_BUILTIN) {
+                            type = (PyObject *)builtin_types[fields[j].type_offset];
+                        }
+                        else {
+                            type = *(PyObject **)(base + fields[j].type_offset);
+                        }
+                        if (fields[j].flags & FIELD_OPTIONAL) {
+                            type = _Py_union_type_or(type, Py_None);
+                        }
+                        else if (fields[j].flags & FIELD_SEQUENCE) {
+                            type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+                        }
+                        else {
+                            Py_INCREF(type);
+                        }
+                        if (type == NULL) {
+                            goto error;
+                        }
+                        int res = PyDict_SetItem(annotations, name, type);
+                        Py_DECREF(type);
+                        if (res < 0) {
+                            goto error;
+                        }
+                    }
+                    PyObject *node = *(PyObject **)(base + nodes[i].type_offset);
+                    if (PyObject_SetAttrString(node, "_field_types", annotations) < 0 ||
+                        PyObject_SetAttrString(node, "__annotations__", annotations) < 0)
+                    {
+                        goto error;
+                    }
+                    Py_CLEAR(annotations);
+                }
                 return 1;
+            error:
+                Py_XDECREF(annotations);
+                return 0;
             }
         '''))
 
     def visitProduct(self, prod, name):
-        self.emit_annotations(name, prod.fields)
+        self.nodes.append((name, prod.fields))
 
     def visitSum(self, sum, name):
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
-        self.emit_annotations(cons.name, cons.fields)
-
-    def emit_annotations(self, name, fields):
-        self.emit(f"PyObject *{name}_annotations = PyDict_New();", 1)
-        self.emit(f"if (!{name}_annotations) return 0;", 1)
-        for field in fields:
-            self.emit("{", 1)
-            if field.type in builtin_type_to_c_type:
-                self.emit(f"PyObject *type = (PyObject *)&{builtin_type_to_c_type[field.type]};", 2)
-            else:
-                self.emit(f"PyObject *type = state->{field.type}_type;", 2)
-            if field.opt:
-                self.emit("type = _Py_union_type_or(type, Py_None);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            elif field.seq:
-                self.emit("type = Py_GenericAlias((PyObject *)&PyList_Type, type);", 2)
-                self.emit("cond = type != NULL;", 2)
-                self.emit_annotations_error(name, 2)
-            else:
-                self.emit("Py_INCREF(type);", 2)
-            self.emit(f"cond = PyDict_SetItemString({name}_annotations, \"{field.name}\", type) == 0;", 2)
-            self.emit("Py_DECREF(type);", 2)
-            self.emit_annotations_error(name, 2)
-            self.emit("}", 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "_field_types", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f'cond = PyObject_SetAttrString(state->{name}_type, "__annotations__", {name}_annotations) == 0;', 1)
-        self.emit_annotations_error(name, 1)
-        self.emit(f"Py_DECREF({name}_annotations);", 1)
-
-    def emit_annotations_error(self, name, depth):
-        self.emit("if (!cond) {", depth)
-        self.emit(f"Py_DECREF({name}_annotations);", depth + 1)
-        self.emit("return 0;", depth + 1)
-        self.emit("}", depth)
+        self.nodes.append((cons.name, cons.fields))
 
 
 class PyTypesVisitor(PickleVisitor):
@@ -852,7 +913,6 @@ class PyTypesVisitor(PickleVisitor):
 
 typedef struct {
     PyObject_HEAD
-    PyObject *dict;
 } AST_object;
 
 static void
@@ -862,7 +922,7 @@ ast_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
     assert(free_func != NULL);
     free_func(self);
@@ -874,15 +934,13 @@ ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
     AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 ast_clear(PyObject *op)
 {
-    AST_object *self = (AST_object*)op;
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1358,11 +1416,6 @@ cleanup:
     return result;
 }
 
-static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
-    {NULL}  /* Sentinel */
-};
-
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(ast_type_replace), METH_VARARGS | METH_KEYWORDS,
@@ -1607,7 +1660,6 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
     {Py_tp_clear, ast_clear},
-    {Py_tp_members, ast_type_members},
     {Py_tp_methods, ast_type_methods},
     {Py_tp_getset, ast_type_getsets},
     {Py_tp_init, ast_type_init},
@@ -1621,7 +1673,8 @@ static PyType_Spec AST_type_spec = {
     "ast.AST",
     sizeof(AST_object),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_MANAGED_DICT,
     AST_type_slots
 };
 
@@ -2212,9 +2265,15 @@ def generate_ast_fini(module_state, f):
                 struct ast_state *state = &interp->ast;
 
     """))
+    f.write("    static const size_t offsets[] = {\n")
     for s in module_state:
-        f.write("    Py_CLEAR(state->" + s + ');\n')
+        f.write("        offsetof(struct ast_state, " + s + "),\n")
+    f.write("    };\n")
     f.write(textwrap.dedent("""
+                for (size_t i = 0; i < Py_ARRAY_LENGTH(offsets); i++) {
+                    PyObject **field = (PyObject **)((char *)state + offsets[i]);
+                    Py_CLEAR(*field);
+                }
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
