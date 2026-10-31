@@ -1,0 +1,1 @@
+Fix :mod:`annotationlib` forward references inside a :class:`types.GenericAlias` or :class:`typing.Annotated` inside an outer :class:`annotationlib.ForwardRef` no longer evade evaluation.
