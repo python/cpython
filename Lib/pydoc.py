@@ -723,12 +723,15 @@ class HTMLDoc(Doc):
         pattern = re.compile(r'\b((http|https|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
-                                r'(self\.)?(\w+))')
+                                r'(self\.)?(\w+))|'
+                                r'\n*^(?P<indent>[ ]*)>>>(?:[ ].*)?$'
+                                r'(?:\n(?P=indent)(?=.*\S).*)*\n*',
+                             re.MULTILINE)
         while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
-            all, scheme, rfc, pep, selfdot, name = match.groups()
+            all, scheme, rfc, pep, selfdot, name, indent = match.groups()
             if scheme:
                 url = escape(all).replace('"', '&quot;')
                 results.append('<a href="%s">%s</a>' % (url, url))
@@ -738,6 +741,20 @@ class HTMLDoc(Doc):
             elif pep:
                 url = 'https://peps.python.org/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
+            elif indent is not None:
+                lines = []
+                for line in match.group().strip('\n').split('\n'):
+                    line = line.removeprefix(indent)
+                    if prompt := re.match(r'(>>>|\.\.\.)(?: |$)', line):
+                        line = ('<span class="prompt">%s</span>'
+                                % escape(prompt.group())
+                                + self.markup(line[prompt.end():], escape,
+                                              funcs, classes, methods))
+                    else:
+                        line = self.markup(line, escape,
+                                           funcs, classes, methods)
+                    lines.append(line)
+                results.append('<pre class="repl">%s</pre>' % '\n'.join(lines))
             elif selfdot:
                 # Create a link for methods like 'self.method(...)'
                 # and use <strong> for attributes like 'self.attr'
