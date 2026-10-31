@@ -259,7 +259,12 @@ def reduce(function, sequence, /, initial=_initial_missing):
     else:
         value = initial
 
-    for element in it:
+    while(True):
+        try:
+           element = next(it)
+        except StopIteration:
+            # Stop when no elements are left
+            break
         value = function(value, element)
 
     return value

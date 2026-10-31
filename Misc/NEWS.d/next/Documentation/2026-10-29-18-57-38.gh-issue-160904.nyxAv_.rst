@@ -1,0 +1,1 @@
+FiX: In Function os.path.normcase in Lib/posixpath.py docstring states path remains unchanged on POSIX Systems which is not true. Updated Docstring and documentation
