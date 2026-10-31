@@ -1225,8 +1225,16 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
@@ -1240,8 +1248,16 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
@@ -2226,14 +2242,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
-    for (size_t i = 0; i < argcount; i++) {
+    for (size_t i = 0; i < total_args; i++) {
         arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
-    }
-    if (kwnames) {
-        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
-        for (Py_ssize_t i = 0; i < kwcount; i++) {
-            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
-        }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,
