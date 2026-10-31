@@ -167,11 +167,41 @@ typedef struct page_cache_entry {
 
 #define MAX_PAGES 1024
 
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+// Read-only aliases of remote pages mapped into this process with
+// mach_vm_remap(copy=FALSE). Reads served from an alias see the live
+// remote memory without a syscall.
+#define MAX_ALIAS_PAGES 256
+#define ALIAS_PROBE_DEFAULT_MASK 0x3ff
+#define ALIAS_PROBE_MIN_MASK 0x3f
+#define ALIAS_PROBE_MAX_MASK 0x3fff
+
+typedef struct {
+    uintptr_t remote_page_base;
+    mach_vm_address_t local_page_base;
+    uint64_t access_seq;
+    int valid;
+    uint64_t map_objid;
+    uint64_t map_offset;
+} alias_page_entry_t;
+
+typedef struct {
+    alias_page_entry_t pages[MAX_ALIAS_PAGES];
+    mach_vm_address_t region_base;
+    uint64_t access_seq;
+    uint32_t probe_counter;
+    uint32_t probe_mask;
+    int initialized;
+    int disabled;
+} alias_read_cache_t;
+#endif
+
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     mach_port_t task;
+    alias_read_cache_t alias;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
 #elif defined(__linux__)
@@ -241,6 +271,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = 0;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     handle->task = 0;
+    memset(&handle->alias, 0, sizeof(handle->alias));
 #elif defined(MS_WINDOWS)
     handle->hProcess = NULL;
 #elif defined(__linux__)
@@ -274,10 +305,17 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     return 0;
 }
 
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+static void
+_Py_RemoteDebug_AliasCacheClear(proc_handle_t *handle);
+#endif
+
 // Clean up the process handle
 UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
-#ifdef MS_WINDOWS
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    _Py_RemoteDebug_AliasCacheClear(handle);
+#elif defined(MS_WINDOWS)
     if (handle->hProcess != NULL) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
@@ -1553,6 +1591,332 @@ _Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_addres
 #endif
 }
 
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+
+#ifndef VM_FLAGS_RETURN_DATA_ADDR
+#  define VM_FLAGS_RETURN_DATA_ADDR 0
+#endif
+
+static int
+alias_query_region(task_t task,
+                   mach_vm_address_t addr,
+                   uint64_t *objid,
+                   uint64_t *offset)
+{
+    mach_vm_address_t region_addr = addr;
+    mach_vm_size_t region_size = 0;
+    natural_t depth = 0;
+    vm_region_submap_info_data_64_t info = {0};
+    mach_msg_type_number_t count = VM_REGION_SUBMAP_INFO_COUNT_64;
+
+    kern_return_t kr = mach_vm_region_recurse(
+        task, &region_addr, &region_size, &depth,
+        (vm_region_recurse_info_t)&info, &count);
+    if (kr == MACH_SEND_INVALID_DEST || kr == KERN_INVALID_ARGUMENT) {
+        return -1;
+    }
+    if (kr != KERN_SUCCESS || addr < region_addr ||
+        (mach_vm_size_t)(addr - region_addr) >= region_size ||
+        info.is_submap)
+    {
+        return 1;
+    }
+
+    *objid = info.object_id_full;
+    *offset = info.offset + (uint64_t)(addr - region_addr);
+    return 0;
+}
+
+static void
+alias_invalidate_entry(alias_page_entry_t *entry)
+{
+    memset(entry, 0, sizeof(*entry));
+}
+
+static alias_page_entry_t *
+alias_find_entry(proc_handle_t *handle, uintptr_t page_base)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    for (int i = 0; i < MAX_ALIAS_PAGES; i++) {
+        alias_page_entry_t *entry = &cache->pages[i];
+        if (entry->valid && entry->remote_page_base == page_base) {
+            return entry;
+        }
+    }
+    return NULL;
+}
+
+static void
+_Py_RemoteDebug_AliasCacheClear(proc_handle_t *handle)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    for (int i = 0; i < MAX_ALIAS_PAGES; i++) {
+        alias_invalidate_entry(&cache->pages[i]);
+    }
+    if (cache->region_base != 0) {
+        mach_vm_size_t region_size =
+            (mach_vm_size_t)MAX_ALIAS_PAGES *
+            (mach_vm_size_t)handle->page_size;
+        (void)mach_vm_deallocate(mach_task_self(), cache->region_base,
+                                 region_size);
+        cache->region_base = 0;
+    }
+}
+
+static void
+alias_disable_runtime(proc_handle_t *handle)
+{
+    handle->alias.disabled = 1;
+    _Py_RemoteDebug_AliasCacheClear(handle);
+}
+
+// Reserve the local window the aliases are mapped into. Runs on the first
+// aliased read so handles that never read through the page cache (for
+// example sys.remote_exec) pay nothing.
+static void
+alias_cache_init(proc_handle_t *handle)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    cache->initialized = 1;
+    cache->probe_mask = ALIAS_PROBE_DEFAULT_MASK;
+
+    task_vm_info_data_t vm_info;
+    mach_msg_type_number_t vm_count = TASK_VM_INFO_COUNT;
+    if (task_info(handle->task, TASK_VM_INFO,
+                  (task_info_t)&vm_info, &vm_count) == KERN_SUCCESS
+        && vm_info.page_size > 0
+        && (vm_info.page_size & (vm_info.page_size - 1)) == 0
+        && (size_t)vm_info.page_size != (size_t)handle->page_size)
+    {
+        cache->disabled = 1;
+        return;
+    }
+
+    mach_vm_size_t region_size =
+        (mach_vm_size_t)MAX_ALIAS_PAGES *
+        (mach_vm_size_t)handle->page_size;
+    kern_return_t kr = mach_vm_allocate(mach_task_self(),
+                                        &cache->region_base,
+                                        region_size,
+                                        VM_FLAGS_ANYWHERE);
+    if (kr != KERN_SUCCESS) {
+        cache->disabled = 1;
+        return;
+    }
+    kr = mach_vm_protect(mach_task_self(), cache->region_base, region_size,
+                         FALSE, VM_PROT_NONE);
+    if (kr != KERN_SUCCESS) {
+        (void)mach_vm_deallocate(mach_task_self(), cache->region_base,
+                                 region_size);
+        cache->region_base = 0;
+        cache->disabled = 1;
+        return;
+    }
+}
+
+static int
+alias_maybe_probe_entry(proc_handle_t *handle, alias_page_entry_t *entry)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    if ((++cache->probe_counter & cache->probe_mask) != 0) {
+        return 1;
+    }
+
+    uint64_t objid = 0;
+    uint64_t offset = 0;
+    int rc = alias_query_region(handle->task, entry->remote_page_base,
+                                &objid, &offset);
+    if (rc < 0) {
+        alias_invalidate_entry(entry);
+        return -1;
+    }
+    if (rc == 0 && objid == entry->map_objid &&
+        offset == entry->map_offset)
+    {
+        if (cache->probe_mask < ALIAS_PROBE_MAX_MASK) {
+            cache->probe_mask = (cache->probe_mask << 1) | 1;
+        }
+        return 1;
+    }
+    if (cache->probe_mask > ALIAS_PROBE_MIN_MASK) {
+        cache->probe_mask >>= 1;
+    }
+    alias_invalidate_entry(entry);
+    return 0;
+}
+
+static alias_page_entry_t *
+alias_alloc_entry(proc_handle_t *handle)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    alias_page_entry_t *oldest = NULL;
+
+    for (int i = 0; i < MAX_ALIAS_PAGES; i++) {
+        alias_page_entry_t *entry = &cache->pages[i];
+        if (!entry->valid) {
+            return entry;
+        }
+        if (oldest == NULL || entry->access_seq < oldest->access_seq) {
+            oldest = entry;
+        }
+    }
+
+    assert(oldest != NULL);
+    alias_invalidate_entry(oldest);
+    return oldest;
+}
+
+static kern_return_t
+alias_map_readonly_page(proc_handle_t *handle,
+                        uintptr_t page_base,
+                        alias_page_entry_t *entry)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    mach_vm_size_t page_size = (mach_vm_size_t)handle->page_size;
+    mach_vm_address_t local_addr =
+        cache->region_base + (entry - cache->pages) * page_size;
+    vm_prot_t cur_protection = VM_PROT_NONE;
+    vm_prot_t max_protection = VM_PROT_NONE;
+
+    kern_return_t kr = mach_vm_remap(
+        mach_task_self(),
+        &local_addr,
+        page_size,
+        0,
+        VM_FLAGS_FIXED | VM_FLAGS_OVERWRITE | VM_FLAGS_RETURN_DATA_ADDR,
+        handle->task,
+        (mach_vm_address_t)page_base,
+        FALSE,
+        &cur_protection,
+        &max_protection,
+        VM_INHERIT_NONE);
+    if (kr != KERN_SUCCESS) {
+        return kr;
+    }
+    if ((cur_protection & VM_PROT_READ) == 0) {
+        return KERN_PROTECTION_FAILURE;
+    }
+    kr = mach_vm_protect(mach_task_self(), local_addr, page_size, FALSE,
+                         VM_PROT_READ);
+    if (kr != KERN_SUCCESS) {
+        return kr;
+    }
+    entry->local_page_base = local_addr;
+    return KERN_SUCCESS;
+}
+
+static int
+alias_remap_page(proc_handle_t *handle,
+                 uintptr_t page_base,
+                 alias_page_entry_t **entry_out)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    alias_page_entry_t *entry = alias_alloc_entry(handle);
+    kern_return_t kr = alias_map_readonly_page(handle, page_base, entry);
+    if (kr != KERN_SUCCESS) {
+        alias_invalidate_entry(entry);
+        if (kr == MACH_SEND_INVALID_DEST || kr == KERN_TERMINATED
+                || kr == KERN_NOT_SUPPORTED) {
+            alias_disable_runtime(handle);
+        }
+        return -1;
+    }
+
+    entry->remote_page_base = page_base;
+    entry->access_seq = ++cache->access_seq;
+    entry->valid = 1;
+
+    if (alias_query_region(mach_task_self(), entry->local_page_base,
+                           &entry->map_objid, &entry->map_offset) != 0)
+    {
+        alias_invalidate_entry(entry);
+        return -1;
+    }
+
+    *entry_out = entry;
+    return 0;
+}
+
+// Returns 0 with *entry_out set to a probed alias of page_base, 1 when the
+// page has to be read with a syscall, -1 with an exception set when the
+// alias was recycled under the caller.
+static int
+alias_lookup_page(proc_handle_t *handle,
+                  uintptr_t page_base,
+                  alias_page_entry_t **entry_out)
+{
+    alias_read_cache_t *cache = &handle->alias;
+    if (!cache->initialized) {
+        alias_cache_init(handle);
+    }
+    if (cache->disabled) {
+        return 1;
+    }
+
+    alias_page_entry_t *entry = alias_find_entry(handle, page_base);
+    if (entry != NULL) {
+        int probe = alias_maybe_probe_entry(handle, entry);
+        if (probe < 0) {
+            return 1;
+        }
+        if (probe == 0) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "alias page recycled under sample");
+            return -1;
+        }
+        entry->access_seq = ++cache->access_seq;
+        *entry_out = entry;
+        return 0;
+    }
+
+    if (alias_remap_page(handle, page_base, &entry) < 0) {
+        return 1;
+    }
+    *entry_out = entry;
+    return 0;
+}
+
+#endif /* defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX */
+
+// Optional fast path: serve the read from a mapping of the remote pages when
+// the platform supports it. Returns 0 on success, 1 when the read must be
+// done another way and -1 with an exception set when a mapped page was
+// recycled under the sample. Only for memory whose mapping is stable for the
+// lifetime of the target structure; data stack chunks are not.
+UNUSED static int
+_Py_RemoteDebug_AliasedReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
+{
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    size_t page_size = handle->page_size;
+    if (len == 0 || len > 2 * page_size) {
+        return 1;
+    }
+    uintptr_t addr = remote_address;
+    size_t remaining = len;
+    char *out = dst;
+    while (remaining > 0) {
+        uintptr_t page_base = addr & ~(page_size - 1);
+        size_t offset_in_page = addr - page_base;
+        size_t span = page_size - offset_in_page;
+        if (span > remaining) {
+            span = remaining;
+        }
+        alias_page_entry_t *alias = NULL;
+        int rc = alias_lookup_page(handle, page_base, &alias);
+        if (rc != 0) {
+            return rc;
+        }
+        memcpy(out, (const char *)alias->local_page_base + offset_in_page, span);
+        addr += span;
+        out += span;
+        remaining -= span;
+    }
+    return 0;
+#else
+    return 1;
+#endif
+}
+
 UNUSED static int
 _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
                                       uintptr_t addr,
@@ -1565,6 +1929,13 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
 
     if (offset_in_page + size > page_size) {
         return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
+    }
+
+    // Aliases copy only the requested bytes, with no page snapshot, so
+    // repeated reads of one page within a sample may differ.
+    int aliased = _Py_RemoteDebug_AliasedReadRemoteMemory(handle, addr, size, out);
+    if (aliased <= 0) {
+        return aliased;
     }
 
     // Search only the pages used since the last clear. The cache is cleared
