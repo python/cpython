@@ -241,8 +241,8 @@ parse_task_name(
  * ============================================================================ */
 
 // gh-159620
-/* Return in *coro_addr the coroutine or async generator to walk for the
-   awaitable at addr, or 0 if it is neither (for example, a future). */
+/* Return in *coro_addr the coroutine, generator or async generator to walk
+   for the awaitable at addr, or 0 if it is none (for example, a future). */
 static int
 get_coro_like_address(
     RemoteUnwinderObject *unwinder,
@@ -279,7 +279,7 @@ get_coro_like_address(
         return -1;
     }
 
-    if (strcmp(name, "coroutine") == 0) {
+    if (strcmp(name, "coroutine") == 0 || strcmp(name, "generator") == 0) {
         *coro_addr = addr;
     }
     else if (strcmp(name, "async_generator_asend") == 0

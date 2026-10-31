@@ -22,8 +22,9 @@ module instead.
 /*[clinic input]
 module _csv
 class _csv.Dialect "DialectObj *" "clinic_state()->dialect_type"
+class _csv.Reader "ReaderObj *" "clinic_state()->reader_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=042fcc14c7d541cc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bdf66dc7d68ed90]*/
 #define NOT_SET ((Py_UCS4)-1)
 #define EOL ((Py_UCS4)-2)
 
@@ -124,8 +125,6 @@ typedef struct {
     bool nonascii_special;
 } DialectObj;
 
-#include "clinic/_csv.c.h"
-
 typedef struct {
     PyObject_HEAD
 
@@ -160,6 +159,8 @@ typedef struct {
 #define _DialectObj_CAST(op)    ((DialectObj *)(op))
 #define _ReaderObj_CAST(op)     ((ReaderObj *)(op))
 #define _WriterObj_CAST(op)     ((WriterObj *)(op))
+
+#include "clinic/_csv.c.h"
 
 /*
  * DIALECT class
@@ -1020,11 +1021,15 @@ parse_reset(ReaderObj *self)
     return 0;
 }
 
-static PyObject *
-Reader_iternext_lock_held(PyObject *op)
-{
-    ReaderObj *self = _ReaderObj_CAST(op);
+/*[clinic input]
+@critical_section
+_csv.Reader.__next__ as Reader_iternext
+[clinic start generated code]*/
 
+static PyObject *
+Reader_iternext_impl(ReaderObj *self)
+/*[clinic end generated code: output=3a02b0254a76e1fc input=97c70a4e2fe621e4]*/
+{
     PyObject *fields = NULL;
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
@@ -1092,16 +1097,6 @@ Reader_iternext_lock_held(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
-}
-
-static PyObject *
-Reader_iternext(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = Reader_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static void

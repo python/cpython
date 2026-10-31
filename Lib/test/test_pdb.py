@@ -22,7 +22,7 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
-from test.support.import_helper import import_module
+from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
 from unittest.mock import patch
@@ -511,6 +511,36 @@ def test_pdb_breakpoint_with_filename():
     (Pdb) continue
     > ...inspect_fodder2.py(115)func114()
     -> return 115
+    (Pdb) continue
+    """
+
+def test_pdb_breakpoint_in_package():
+    """Breakpoints for package.module.function should work even if the module is not yet imported.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     import multiprocessing.util  # Now import the module
+    ...     multiprocessing.util.is_abstract_socket_namespace(None)  # We should break here
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    ...     'multiprocessing.util.is_abstract_socket_namespace',  # Make sure the module is not imported yet
+    ...     'break multiprocessing.util.is_abstract_socket_namespace',  # We can still set a bp on it
+    ...     'continue',  # will stop at the function call
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_in_package[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) multiprocessing.util.is_abstract_socket_namespace
+    *** NameError: name 'multiprocessing' is not defined. Did you forget to import 'multiprocessing'?
+    (Pdb) break multiprocessing.util.is_abstract_socket_namespace
+    Breakpoint 1 at ...util.py:...
+    (Pdb) continue
+    > ...util.py(...)is_abstract_socket_namespace()
+    -> if not address:
+    (Pdb) clear 1
+    Deleted breakpoint 1 at ...util.py:...
     (Pdb) continue
     """
 
@@ -3264,6 +3294,35 @@ def test_pdb_issue_gh_136057():
     """
 
 
+def test_pdb_until_skip_comprehension():
+    """See GH-152373
+    "until" should get over a list comprehension with a breakpoint set on it
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'continue',
+    ...     'until',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>:3
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) until
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3528,6 +3587,32 @@ def test_pdb_commands_last_breakpoint():
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
+
+    @support.cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports(
+            "pdb",
+            {
+                "_colorize",
+                "argparse",
+                "asyncio",
+                "glob",
+                "json",
+                "pprint",
+                "re",
+                "runpy",
+                "selectors",
+                "shlex",
+                "signal",
+                "socket",
+                "tempfile",
+                "textwrap",
+                "threading",
+                "tokenize",
+                "traceback",
+                "weakref",
+            },
+        )
 
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
@@ -4949,6 +5034,18 @@ class PdbTestInline(unittest.TestCase):
         """
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
+
+    def test_nested_set_trace(self):
+        # Calling breakpoint() in pdb prompt should just be ignored.
+        script = "breakpoint()"
+        commands = """
+            breakpoint()
+            p 40 + 2
+            c
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn('42', stdout)
+        self.assertEqual(stderr, '')
 
     def test_readline_not_imported(self):
         """GH-138860

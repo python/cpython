@@ -8,12 +8,13 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
            "open", "compress", "decompress",
            "bzlib_version", "bzlib_version_info"]
 
-__author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
+# Original author: Nadeem Vawda <nadeem.vawda@gmail.com>
 
 from builtins import open as _builtin_open
 from compression._common import _streams
 import io
 import os
+lazy import warnings
 
 from _bz2 import (BZ2Compressor, BZ2Decompressor,
                   bzlib_version, bzlib_version_info)
@@ -352,3 +353,10 @@ def decompress(data):
                              "end-of-stream marker was reached")
         data = decomp.unused_data
     return b"".join(results)
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return "Nadeem Vawda <nadeem.vawda@gmail.com>"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

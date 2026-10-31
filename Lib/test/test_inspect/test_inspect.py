@@ -36,6 +36,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
+from test import support
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn, EqualToForwardRef
@@ -43,7 +44,6 @@ from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support
-from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
@@ -594,6 +594,90 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(locals, {'x': 11, 'p': 11, 'y': 14})
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
                          '(x=11, y=14)')
+
+        def return_current_frame(x):
+            return inspect.currentframe()
+
+        self.assertEqual(inspect.formatargvalues(
+            *inspect.getargvalues(return_current_frame(5))), '(x=5)')
+        self.assertEqual(inspect.formatargvalues(
+            *inspect.getargvalues(return_current_frame(9))), '(x=9)')
+
+    # See issue-61448
+    def test_formatargvalues_deleted_args(self):
+        def fun(a, b, x, y):
+            del b, y
+            return inspect.currentframe()
+
+        args = inspect.getargvalues(fun(2, 4, 8, 16))
+        self.assertEqual(inspect.formatargvalues(*args),
+                         '(a=2, b=<deleted>, x=8, y=<deleted>)')
+
+    def test_formatargvalues_deleted_argument_kinds(self):
+        cases = (
+            ((), "(x=None, a=2, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('x',),
+             "(x=<deleted>, a=2, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('a',),
+             "(x=None, a=<deleted>, k=4, *args=(3,), **kwargs={'z': 5})"),
+            (('k',),
+             "(x=None, a=2, k=<deleted>, *args=(3,), **kwargs={'z': 5})"),
+            (('args',),
+             "(x=None, a=2, k=4, *args=<deleted>, **kwargs={'z': 5})"),
+            (('kwargs',),
+             '(x=None, a=2, k=4, *args=(3,), **kwargs=<deleted>)'),
+            (('x', 'a', 'k', 'args', 'kwargs'),
+             '(x=<deleted>, a=<deleted>, k=<deleted>, '
+             '*args=<deleted>, **kwargs=<deleted>)'),
+        )
+        for deleted, expected in cases:
+            with self.subTest(deleted=deleted):
+                def fun(x, /, a, *args, k, **kwargs):
+                    if 'x' in deleted:
+                        del x
+                    if 'a' in deleted:
+                        del a
+                    if 'k' in deleted:
+                        del k
+                    if 'args' in deleted:
+                        del args
+                    if 'kwargs' in deleted:
+                        del kwargs
+                    return inspect.currentframe()
+
+                frame = fun(None, 2, 3, k=4, z=5)
+                try:
+                    self.assertEqual(inspect.formatargvalues(
+                        *inspect.getargvalues(frame)), expected)
+                finally:
+                    frame.clear()
+
+    def test_formatargvalues_mapping_lookup(self):
+        class LookupDict(dict):
+            def __getitem__(self, name):
+                return super().__getitem__(name) + 1
+
+        for args, varargs, varkw, name in (
+            (['x'], None, None, 'x'),
+            ([], 'args', None, '*args'),
+            ([], None, 'kwargs', '**kwargs'),
+        ):
+            with self.subTest(name=name):
+                values = collections.defaultdict(lambda: 42)
+                self.assertEqual(inspect.formatargvalues(
+                    args, varargs, varkw, values), f'({name}=42)')
+                values = LookupDict({name.lstrip('*'): 5})
+                self.assertEqual(inspect.formatargvalues(
+                    args, varargs, varkw, values), f'({name}=6)')
+
+    def test_formatargvalues_deleted_custom_formatters(self):
+        self.assertEqual(inspect.formatargvalues(
+            ['x'], 'args', 'kwargs', {},
+            formatarg=lambda name: name.upper(),
+            formatvarargs=lambda name: '*' + name.upper(),
+            formatvarkw=lambda name: '**' + name.upper(),
+            formatvalue=lambda value: ':' + repr(value)),
+            '(X:<deleted>, *ARGS:<deleted>, **KWARGS:<deleted>)')
 
     def test_previous_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
@@ -6229,7 +6313,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "getattr", "next"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"aiter", "iter", "dir", "vars"}
+        unsupported_signature = {"iter", "dir", "vars"}
         # These need *args support in Argument Clinic
         needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
@@ -6463,8 +6547,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_weakref_module_has_signatures(self):
         import weakref
-        no_signature = {'ReferenceType', 'ref'}
-        self._test_module_has_signatures(weakref, no_signature)
+        self._test_module_has_signatures(weakref)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):
@@ -6971,6 +7054,13 @@ class TestRepl(unittest.TestCase):
 
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, inspect, "__author__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":
