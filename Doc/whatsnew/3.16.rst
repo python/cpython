@@ -461,6 +461,8 @@ gzip
 * :func:`gzip.open` now accepts an optional argument ``mtime``
   which is passed on to the constructor of the :class:`~gzip.GzipFile` class.
   (Contributed by Marin Misur in :gh:`91372`.)
+* The write-only property :attr:`gzip.GzipFile.mtime` now returns the
+  constructor value for :class:`~gzip.GzipFile` files in write mode.
 
 
 imaplib
