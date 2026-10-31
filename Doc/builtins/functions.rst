@@ -772,7 +772,7 @@ are always available.  They are listed here in alphabetical order.
    still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing
+   It's only valid when *source* is a code object containing
    :term:`free (closure) variables <closure variable>`.
    The length of the tuple must exactly match the length of the code object's
    :attr:`~codeobject.co_freevars` attribute.
@@ -2166,10 +2166,10 @@ are always available.  They are listed here in alphabetical order.
 
    When called directly within an ordinary method of a class, both arguments may
    be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
-   enclosing class, and *obj* will be the first argument of the immediately
-   enclosing function (typically ``self``). (This means that zero-argument
+   enclosing class, and *object_or_type* will be the first argument of the
+   immediately enclosing function (typically ``self``). Zero-argument
    :func:`!super` will not work as expected within nested functions, including
-   generator expressions, which implicitly create nested functions.)
+   generator expressions, which implicitly create nested functions.
 
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without
@@ -2428,10 +2428,9 @@ are always available.  They are listed here in alphabetical order.
    determine the package context of the :keyword:`import` statement.
 
    *level* specifies whether to use absolute or relative imports. ``0`` (the
-   default) means only perform absolute imports.  Positive values for
-   *level* indicate the number of parent directories to search relative to the
-   directory of the module calling :func:`__import__` (see :pep:`328` for the
-   details).
+   default) means only perform absolute imports.  For relative imports,
+   ``1`` refers to the current package, ``2`` to its parent package, and so on
+   (see :pep:`328` for details).
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the
