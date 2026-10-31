@@ -126,6 +126,7 @@ class CRule:
     fastpath: str | None
     disable_invalid_rules: bool
     prefixes: tuple[CPrefix, ...] = ()
+    first_set_dispatch: tuple[frozenset[int] | None, ...] | None = None
     source: pathlib.Path | None = None
     shared: bool = False
 
