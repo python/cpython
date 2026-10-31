@@ -54,48 +54,31 @@
 
 /* OR all characters into a single size_t accumulator and test the high bits
    at the end, instead of comparing each character. The accumulation loop has
-   no branches, so compilers vectorize it, and the result does not depend on
-   where each byte sits in the word, so unaligned ends can be read in smaller
-   pieces. Every 16 words, check whether the widest kind is already known and
-   exit early. */
+   no branches, so compilers vectorize it. The words are loaded with memcpy,
+   so the data does not need to be aligned, and the tail re-reads the last
+   word of the buffer, which may overlap data already seen. Every 16 words,
+   check whether the widest kind is already known and exit early. */
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *)begin;
     const unsigned char *_end = (const unsigned char *)end;
-
     size_t value = 0;
 
-    if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-#if STRINGLIB_SIZEOF_CHAR <= 1
-        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + 1 <= _end) {
-            value |= *p++;
-        }
-#endif
-#if STRINGLIB_SIZEOF_CHAR <= 2
-        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint16_t) <= _end) {
-            value |= *(const uint16_t*)p;
-            p += sizeof(uint16_t);
-        }
-#endif
-#if SIZEOF_SIZE_T == 8
-        if (!_Py_IS_ALIGNED(p, SIZEOF_SIZE_T) && p + sizeof(uint32_t) <= _end) {
-            value |= *(const uint32_t*)p;
-            p += sizeof(uint32_t);
-        }
-#endif
-    }
-
     while (p + SIZEOF_SIZE_T * 16 <= _end) {
-        const size_t *pp = (const size_t *)p;
         /* Four independent accumulators so the loop does not serialize on
            one register when the compiler does not vectorize it. */
         size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
-        for (int i = 0; i < 16; i += 4) {
-            v0 |= pp[i];
-            v1 |= pp[i + 1];
-            v2 |= pp[i + 2];
-            v3 |= pp[i + 3];
+        for (int i = 0; i < 16 * SIZEOF_SIZE_T; i += 4 * SIZEOF_SIZE_T) {
+            size_t a, b, c, d;
+            memcpy(&a, p + i, SIZEOF_SIZE_T);
+            memcpy(&b, p + i + SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            memcpy(&c, p + i + 2 * SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            memcpy(&d, p + i + 3 * SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            v0 |= a;
+            v1 |= b;
+            v2 |= c;
+            v3 |= d;
         }
         value |= v0 | v1 | v2 | v3;
         if (value & MASK_MAX_CHAR) {
@@ -105,26 +88,41 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     }
 
     while (p + SIZEOF_SIZE_T <= _end) {
-        value |= *(const size_t *)p;
+        size_t a;
+        memcpy(&a, p, SIZEOF_SIZE_T);
+        value |= a;
         p += SIZEOF_SIZE_T;
     }
+
+    if (p < _end) {
+        size_t n = (size_t)(_end - (const unsigned char *)begin);
+        if (n >= SIZEOF_SIZE_T) {
+            size_t a;
+            memcpy(&a, _end - SIZEOF_SIZE_T, SIZEOF_SIZE_T);
+            value |= a;
+        }
 #if SIZEOF_SIZE_T == 8
-    if (p + sizeof(uint32_t) <= _end) {
-        value |= *(const uint32_t*)p;
-        p += sizeof(uint32_t);
-    }
+        else if (n >= 4) {
+            uint32_t a, b;
+            memcpy(&a, p, 4);
+            memcpy(&b, _end - 4, 4);
+            value |= a | b;
+        }
 #endif
 #if STRINGLIB_SIZEOF_CHAR <= 2
-    if (p + sizeof(uint16_t) <= _end) {
-        value |= *(const uint16_t*)p;
-        p += sizeof(uint16_t);
-    }
+        else if (n >= 2) {
+            uint16_t a, b;
+            memcpy(&a, p, 2);
+            memcpy(&b, _end - 2, 2);
+            value |= a | b;
+        }
 #endif
-#if STRINGLIB_SIZEOF_CHAR <= 1
-    if (p + 1 <= _end) {
-        value |= *p++;
-    }
+#if STRINGLIB_SIZEOF_CHAR == 1
+        else {
+            value |= *p;
+        }
 #endif
+    }
 
 #ifdef MASK_UCS2
     if (value & MASK_UCS2) {
