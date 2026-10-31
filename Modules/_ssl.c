@@ -1129,6 +1129,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     /* XXX If SSL_do_handshake() returns 0, it's also a failure. */
     do {
         Py_BEGIN_ALLOW_THREADS
+        ERR_clear_error();
         ret = SSL_do_handshake(self->ssl);
         err = _PySSL_errno(ret < 1, self->ssl, ret);
         Py_END_ALLOW_THREADS;
@@ -2846,6 +2847,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        ERR_clear_error();
         retval = SSL_sendfile(self->ssl, fd, (off_t)offset, size, flags);
         err = _PySSL_errno(retval < 0, self->ssl, (int)retval);
         Py_END_ALLOW_THREADS;
@@ -2977,6 +2979,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     do {
         Py_BEGIN_ALLOW_THREADS;
+        ERR_clear_error();
         retval = SSL_write_ex(self->ssl, b->buf, (size_t)b->len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         Py_END_ALLOW_THREADS;
@@ -3134,6 +3137,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
     do {
         Py_BEGIN_ALLOW_THREADS;
+        ERR_clear_error();
         retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         Py_END_ALLOW_THREADS;
@@ -3245,6 +3249,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
          */
         if (self->shutdown_seen_zero)
             SSL_set_read_ahead(self->ssl, 0);
+        ERR_clear_error();
         ret = SSL_shutdown(self->ssl);
         err = _PySSL_errno(ret < 0, self->ssl, ret);
         Py_END_ALLOW_THREADS;
