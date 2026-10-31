@@ -116,6 +116,72 @@ class TestFreeThreading:
         support.gc_collect()
         self.assertIsNone(wr())
 
+    def test_lingering_task_different_thread_finalized(self) -> None:
+        # When a thread exits with pending tasks, PyThreadState_Clear() moves
+        # them onto interp->asyncio_tasks_head. Unregistering those tasks from
+        # later threads (which may reuse the exited thread's OS thread ID) or
+        # during PyThreadState_Clear() while all_tasks() walks the task lists
+        # must not corrupt the shared list.
+        tls = threading.local()
+
+        async def never_finishes():
+            await asyncio.Future()
+
+        def make_pending_tasks(loop, count):
+            tasks = []
+            for _ in range(count):
+                task = loop.create_task(never_finishes())
+                task._log_destroy_pending = False
+                tasks.append(task)
+            return tasks
+
+        def worker(batches):
+            loop = asyncio.new_event_loop()
+            loop.set_task_factory(self.factory)
+            # Tasks held in thread-local storage are cleared by PyThreadState_Clear
+            # after llist_concat moves tstate->asyncio_tasks_head to interp.
+            tls_tasks = make_pending_tasks(loop, 8)
+            for task in tls_tasks:
+                task.get_coro().close()
+            tls.tasks = tls_tasks
+            # Tasks returned in batches stay alive until a subsequent worker
+            # thread (often reusing this thread's OS thread ID) unregisters them.
+            batches.append((loop, make_pending_tasks(loop, 8)))
+
+        stop = threading.Event()
+
+        def inspector():
+            loop = asyncio.new_event_loop()
+            try:
+                while not stop.is_set():
+                    asyncio.all_tasks(loop)
+            finally:
+                loop.close()
+
+        inspectors = [Thread(target=inspector) for _ in range(2)]
+        with threading_helper.start_threads(inspectors):
+            try:
+                for _ in range(15):
+                    batches = []
+                    workers = [Thread(target=worker, args=(batches,)) for _ in range(4)]
+                    with threading_helper.start_threads(workers):
+                        pass
+
+                    def cleanup(batch):
+                        loop, tasks = batch
+                        for task in tasks:
+                            task.cancel()
+                            task.get_coro().close()
+                        tasks.clear()
+                        loop.close()
+
+                    cleaners = [Thread(target=cleanup, args=(b,)) for b in batches]
+                    with threading_helper.start_threads(cleaners):
+                        pass
+                support.gc_collect()
+            finally:
+                stop.set()
+
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
 
