@@ -1,4 +1,5 @@
-Fixed :meth:`annotationlib.ForwardRef.evaluate` silently ignoring
-explicitly passed *globals* and *locals* when the reference holds a
-single closure cell. Explicit namespaces now take precedence, as on the
-other resolution paths, and the cell value is used as a fallback.
+Fixed :meth:`annotationlib.ForwardRef.evaluate` silently ignoring an
+explicitly passed *locals* when the reference holds a single closure
+cell. An explicit *locals* now takes precedence over the cell, as on
+the other resolution paths; the cell still takes precedence over
+*globals*, since it holds a nonlocal binding.

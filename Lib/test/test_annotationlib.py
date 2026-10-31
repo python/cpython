@@ -2537,12 +2537,19 @@ class TestForwardRefClass(unittest.TestCase):
         # With no explicit namespaces, the value from the enclosing
         # scope, held in the cell, is used.
         self.assertEqual(fwdref.evaluate(), 1)
-        # Explicitly passed namespaces take precedence over the cell.
+        # An explicitly passed locals takes precedence over the cell,
+        # but globals does not: the cell holds a nonlocal binding, which
+        # sits between locals and globals in the lookup order (as in
+        # the dict-of-cells path, where the cells are merged into the
+        # locals with setdefault).
         self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
-        self.assertEqual(fwdref.evaluate(globals={"x": 3}), 3)
+        self.assertEqual(fwdref.evaluate(globals={"x": 3}), 1)
         self.assertEqual(fwdref.evaluate(globals={"x": 3}, locals={"x": 2}), 2)
         self.assertEqual(
             fwdref.evaluate(locals={"x": 2}, format=Format.FORWARDREF), 2
+        )
+        self.assertEqual(
+            fwdref.evaluate(globals={"x": 3}, format=Format.FORWARDREF), 1
         )
         # If the name is not in the explicit namespaces, the cell
         # value is used as a fallback.
@@ -2568,11 +2575,12 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
         self.assertEqual(fwdref.evaluate(globals={"x": 3}), 3)
 
-        # Refilling the cell restores it as the fallback, but explicit
-        # namespaces still take precedence over it.
+        # Refilling the cell restores it: an explicitly passed locals
+        # still takes precedence over it, but globals does not.
         x = 7
         self.assertEqual(fwdref.evaluate(), 7)
         self.assertEqual(fwdref.evaluate(locals={"x": 2}), 2)
+        self.assertEqual(fwdref.evaluate(globals={"x": 3}), 7)
 
     def test_fwdref_final_class(self):
         with self.assertRaises(TypeError):
