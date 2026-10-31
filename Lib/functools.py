@@ -418,7 +418,7 @@ class partial:
 
 
 try:
-    from _functools import partial, Placeholder, _PlaceholderType
+    from _functools import partial, Placeholder
 except ImportError:
     pass
 
