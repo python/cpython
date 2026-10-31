@@ -434,17 +434,18 @@ Functions and classes provided:
       The bit in the middle
       Finishing
 
-   This change is just syntactic sugar for any construct of the following form::
-
-      def f():
-          with cm():
-              # Do stuff
-
-   ``ContextDecorator`` lets you instead write::
+   The decorator form is::
 
       @cm()
       def f():
           # Do stuff
+
+   By default, this reuses a single context manager instance, as in::
+
+      context = cm()
+      def f():
+          with context:
+              # Do stuff
 
    It makes it clear that the ``cm`` applies to the whole function, rather than
    just a piece of it (and saving an indentation level is nice, too).
@@ -465,7 +466,12 @@ Functions and classes provided:
       As the decorated function must be able to be called multiple times, the
       underlying context manager must support use in multiple :keyword:`with`
       statements. If this is not the case, then the original construct with the
-      explicit :keyword:`!with` statement inside the function should be used.
+      explicit :keyword:`!with` statement and a new context manager inside the
+      function should be used.
+
+      Recursive calls require the context manager to support nested use, and
+      concurrent calls require it to be thread-safe. Context managers created
+      by :deco:`contextmanager` are recreated for each call, as described above.
 
    When the decorated callable is a generator function, coroutine function, or
    asynchronous generator function, the returned wrapper is of the same kind
