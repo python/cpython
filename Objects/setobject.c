@@ -3223,3 +3223,203 @@ static PyTypeObject _PySetDummy_Type = {
 };
 
 static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);
+
+
+// --- PyFrozenSetWriter API ------------------------------------------------
+
+#ifndef NDEBUG
+static int
+frozensetwriter_check_consistency(PyFrozenSetWriter *writer)
+{
+    assert(writer != NULL);
+    PyObject *frozenset = _PyObject_CAST(writer);
+    assert(PyFrozenSet_CheckExact(frozenset));
+    // Don't test _PyObject_IsUniquelyReferenced() since a frozenset writer
+    // can be shared between multiple threads with external locking.
+    assert(Py_REFCNT(frozenset) == 1);
+    assert(!_PyObject_GC_IS_TRACKED(frozenset));
+    return 1;
+}
+#endif
+
+
+PyFrozenSetWriter*
+PyFrozenSetWriter_Create(Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return NULL;
+    }
+
+    PyObject *frozenset_obj = make_new_set_untracked(&PyFrozenSet_Type, NULL);
+    if (frozenset_obj == NULL) {
+        return NULL;
+    }
+    PySetObject *frozenset = _PySet_CAST(frozenset_obj);
+
+    if (size > 0 && size * 5 >= frozenset->mask * 3) {
+        if (set_table_resize(frozenset, size * 2) != 0) {
+            Py_DECREF(frozenset);
+            return NULL;
+        }
+    }
+
+    PyFrozenSetWriter *writer = (PyFrozenSetWriter*)frozenset;
+    assert(frozensetwriter_check_consistency(writer));
+    return writer;
+}
+
+
+void
+PyFrozenSetWriter_Discard(PyFrozenSetWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    assert(frozensetwriter_check_consistency(writer));
+    PyObject *frozenset = _PyObject_CAST(writer);
+    Py_DECREF(frozenset);
+}
+
+
+PyObject*
+PyFrozenSetWriter_Finish(PyFrozenSetWriter *writer)
+{
+    assert(frozensetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+
+    // If the frozenset table is too big (waste memory), make the table
+    // smaller. For example, PyFrozenSetWriter_Create() argument was way too
+    // big.
+    Py_ssize_t table_size = frozenset->mask + 1;
+    // set_add_entry_takeref() allocates a table of used*4 for table smaller
+    // than 50,000 items. So check for table_size / 8.
+    if (frozenset->used < table_size / 8
+        && frozenset->table != frozenset->smalltable)
+    {
+        if (set_table_resize(frozenset, frozenset->used * 2) != 0) {
+            PyFrozenSetWriter_Discard(writer);
+            return NULL;
+        }
+        assert((frozenset->mask + 1) != table_size);
+    }
+
+    // Now that the frozenset is fully initialized, it's safe to track it in
+    // the GC. Track the frozenset if at least one item is tracked by the GC.
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next(frozenset, &pos, &entry)) {
+        PyObject *item = entry->key;
+        if (_PyObject_GC_MAY_BE_TRACKED(item)) {
+            _PyObject_GC_TRACK(frozenset);
+            break;
+        }
+    }
+
+    return _PyObject_CAST(frozenset);
+}
+
+
+int
+PyFrozenSetWriter_AddSteal(PyFrozenSetWriter *writer, PyObject *item)
+{
+    assert(frozensetwriter_check_consistency(writer));
+
+    Py_hash_t hash = PyObject_Hash(item);
+    if (hash == -1) {
+        set_unhashable_type(item);
+        Py_DECREF(item);
+        return -1;
+    }
+
+    PySetObject *frozenset = _PySet_CAST(writer);
+    return set_add_entry_takeref(frozenset, item, hash);
+}
+
+
+int
+PyFrozenSetWriter_Add(PyFrozenSetWriter *writer, PyObject *item)
+{
+    return PyFrozenSetWriter_AddSteal(writer, Py_NewRef(item));
+}
+
+
+int
+PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
+{
+    assert(frozensetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+    return set_update_local(frozenset, iterable);
+}
+
+
+static inline int
+frozensetwriter_update_array(PyFrozenSetWriter *writer,
+                             PyObject *const *items, Py_ssize_t nitem,
+                             int steal)
+{
+    if (nitem < 0) {
+        PyErr_SetString(PyExc_ValueError, "nitem must be >= 0");
+        return -1;
+    }
+
+#define CLEANUP(START) \
+        if (steal) { \
+            for (Py_ssize_t j = (START); j < nitem; j++) { \
+                Py_DECREF(items[j]); \
+            } \
+        }
+
+    assert(frozensetwriter_check_consistency(writer));
+    PySetObject *frozenset = _PySet_CAST(writer);
+
+    /* Do one big resize at the start, rather than
+     * incrementally resizing as we insert new keys.
+     */
+    if ((frozenset->fill + nitem) * 5 >= frozenset->mask * 3) {
+        if (set_table_resize(frozenset, (frozenset->used + nitem) * 2) != 0) {
+            CLEANUP(0);
+            return -1;
+        }
+    }
+
+    for (Py_ssize_t i = 0; i < nitem; i++) {
+        PyObject *item = items[i];
+
+        Py_hash_t hash = PyObject_Hash(item);
+        if (hash == -1) {
+            set_unhashable_type(item);
+            // CLEANUP() calls Py_DECREF(item)
+            CLEANUP(i);
+            return -1;
+        }
+
+        if (!steal) {
+            item = Py_NewRef(item);
+        }
+        if (set_add_entry_takeref(frozenset, item, hash) < 0) {
+            CLEANUP(i);
+            return -1;
+        }
+    }
+    return 0;
+
+#undef CLEANUP
+}
+
+
+int
+PyFrozenSetWriter_UpdateArray(PyFrozenSetWriter *writer,
+                              PyObject *const *items, Py_ssize_t nitem)
+{
+    return frozensetwriter_update_array(writer, items, nitem, 0);
+}
+
+
+int
+PyFrozenSetWriter_UpdateArraySteal(PyFrozenSetWriter *writer,
+                                   PyObject *const *items, Py_ssize_t nitem)
+{
+    return frozensetwriter_update_array(writer, items, nitem, 1);
+}
