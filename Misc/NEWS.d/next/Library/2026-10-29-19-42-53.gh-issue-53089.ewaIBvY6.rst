@@ -1,0 +1,5 @@
+:class:`urllib.request.HTTPDigestAuthHandler` now sends ``uri="/"`` in the
+Digest ``Authorization`` header for URLs with an empty path, such as
+``http://example.com``, matching the request-target sent by :mod:`http.client`.
+Previously it sent ``uri=""``, which servers could reject.
+Patch by Senthil Kumaran.

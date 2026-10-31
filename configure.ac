@@ -4466,6 +4466,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
