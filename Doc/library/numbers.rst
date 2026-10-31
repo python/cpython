@@ -143,12 +143,12 @@ defined as::
 
 
 There are 5 different cases for a mixed-type operation on subclasses
-of :class:`Complex`. I'll refer to all of the above code that doesn't
-refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as "boilerplate".
+of :class:`Complex`. All of the above code that doesn't refer to
+``MyIntegral`` and ``OtherTypeIKnowAbout`` is referred to as "boilerplate".
 
 In this description, ``a`` is an instance of ``A`` and ``b`` is an
 instance of ``B``, where ``A`` and ``B`` are both subtypes of :class:`Complex`.
-I'll consider ``a + b``:
+Consider ``a + b``:
 
 1. If ``A`` defines an :meth:`~object.__add__` which accepts ``b``, all is
    well.
