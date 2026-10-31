@@ -4221,6 +4221,62 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('parent/evil')
 
     @symlink_test
+    def test_parent_symlink3(self):
+        # Test a dangling symlink reached through a symlink to a directory
+
+        with ArchiveMaker() as arc:
+
+            # `current` links to `.` which is both the destination directory
+            # and `current` itself
+            arc.add('current', symlink_to='.')
+
+            # `current/link` is also available as `./link`, and points
+            # to a file outside the destination which does not exist yet
+            arc.add('current/link', symlink_to='../evil')
+
+            # Writing through the link creates `../evil`
+            arc.add('current/link', content='evil')
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            if os_helper.can_symlink():
+                self.expect_file('current', symlink_to='.')
+                self.expect_file('link', symlink_to='../evil')
+                self.expect_file('../evil', content='evil')
+            else:
+                self.expect_file('current/link', content='evil')
+
+        with self.check_context(arc.open(), 'tar'):
+            if os_helper.can_symlink():
+                # Fail when extracting a file outside destination
+                self.expect_exception(
+                        tarfile.OutsideDestinationError,
+                        "'current/link' would be extracted to "
+                        + """['"].*evil['"], which is outside """
+                        + "the destination")
+            else:
+                self.expect_file('current/link', content='evil')
+
+        with self.check_context(arc.open(), 'data'):
+            if os_helper.can_symlink():
+                if self.dotdot_resolves_early:
+                    # 'current/../evil' normalises to 'evil', so the link is
+                    # created; fail when extracting a file through it
+                    self.expect_exception(
+                            tarfile.OutsideDestinationError,
+                            "'current/link' would be extracted to "
+                            + """['"].*evil['"], which is outside """
+                            + "the destination")
+                else:
+                    # Fail as soon as we have a symlink outside the destination
+                    self.expect_exception(
+                            tarfile.LinkOutsideDestinationError,
+                            "'current/link' would link to "
+                            + """['"].*evil['"], which is outside """
+                            + "the destination")
+            else:
+                self.expect_file('current/link', content='evil')
+
+    @symlink_test
     def test_absolute_symlink(self):
         # Test symlink to an absolute path
         # Inspired by 'dirsymlink' in jwilk/traversal-archives
