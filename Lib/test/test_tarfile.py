@@ -4671,8 +4671,10 @@ class TestExtractionFilters(unittest.TestCase):
                 t.linkname = '.'
                 arc.tar_w.addfile(t)
 
-            with self.check_context(arc.open(), 'data'):
-                self.expect_exception(tarfile.OutsideDestinationError)
+            for filter in 'tar', 'data':
+                with self.subTest(name=name, filter=filter):
+                    with self.check_context(arc.open(), filter):
+                        self.expect_exception(tarfile.OutsideDestinationError)
 
     @symlink_test
     @os_helper.skip_unless_symlink
@@ -5577,13 +5579,11 @@ class OffsetValidationTests(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated_version(self):
-        with self.assertWarnsRegex(
-                DeprecationWarning,
-                "'version' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(tarfile, "version")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, tarfile, "version", "__author__", "__credits__",
+            remove=(3, 20),
+        )
 
 
 def setUpModule():

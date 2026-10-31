@@ -250,6 +250,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_asyncio_future_blocking), "_asyncio_future_blocking", 24);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_blksize), "_blksize", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_bootstrap), "_bootstrap", 10);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_bootstrap_external), "_bootstrap_external", 19);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_check_retval_), "_check_retval_", 14);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_dealloc_warn), "_dealloc_warn", 13);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(_feature_version), "_feature_version", 16);
@@ -501,6 +502,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(fold), "fold", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(foldspaces), "foldspaces", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(follow_symlinks), "follow_symlinks", 15);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(for_retry), "for_retry", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(format), "format", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(format_spec), "format_spec", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(frame_buffer), "frame_buffer", 12);
@@ -841,6 +843,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strict), "strict", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strict_mode), "strict_mode", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(string), "string", 6);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(strip_ws), "strip_ws", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(sub_key), "sub_key", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(subcalls), "subcalls", 8);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(symmetric_difference_update), "symmetric_difference_update", 27);

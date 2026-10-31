@@ -400,16 +400,17 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
         }
     }
 
-    // visit blocks in the per-interpreter abandoned pool (from dead threads)
-    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    // visit blocks in abandoned segments (from dead threads) of the
+    // per-interpreter mimalloc sub-process.
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
     arg->offset = offset_base;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC, true,
-                                         visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC, true,
+                                   visitor, arg)) {
         return -1;
     }
     arg->offset = offset_pre;
-    if (!_mi_abandoned_pool_visit_blocks(pool, _Py_MIMALLOC_HEAP_GC_PRE, true,
-                                         visitor, arg)) {
+    if (!mi_abandoned_visit_blocks(subproc, _Py_MIMALLOC_HEAP_GC_PRE, true,
+                                   visitor, arg)) {
         return -1;
     }
     return 0;
@@ -469,6 +470,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
                 continue;
             }
 
+            gc_visit_stackref(f->f_funcobj);
             gc_visit_stackref(f->f_executable);
             while (top != f->localsplus) {
                 --top;
@@ -865,6 +867,10 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
             }
 
             _PyStackRef *top = f->stackpointer;
+            if (gc_visit_stackref_mark_alive(args, f->f_funcobj) < 0) {
+                err = -1;
+                goto exit;
+            }
             if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
                 err = -1;
                 goto exit;

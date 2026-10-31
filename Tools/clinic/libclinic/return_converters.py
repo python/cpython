@@ -152,6 +152,12 @@ class Py_ssize_t_return_converter(long_return_converter):
     conversion_fn = 'PyLong_FromSsize_t'
 
 
+class Py_hash_t_return_converter(long_return_converter):
+    type = 'Py_hash_t'
+    conversion_fn = 'PyLong_FromSsize_t'
+    cast = '(Py_ssize_t)'
+
+
 class size_t_return_converter(long_return_converter):
     type = 'size_t'
     conversion_fn = 'PyLong_FromSize_t'
