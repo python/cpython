@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "pycore_fileutils.h"     // _Py_strerror()
 
 #ifndef MS_WINDOWS
 #include <unistd.h>
@@ -96,7 +97,7 @@ pid_array_contains(pid_array_t *arr, pid_t pid)
 /* Find child PIDs using BFS traversal of the pid->ppid mapping.
  * all_pids and ppids must have the same count (parallel arrays).
  * Returns 0 on success, -1 on error. */
-static int
+UNUSED static int
 find_children_bfs(pid_t target_pid, int recursive,
                   pid_t *all_pids, pid_t *ppids, size_t pid_count,
                   pid_array_t *result)
@@ -229,9 +230,13 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         if (entry == NULL) {
             if (errno != 0) {
                 int err = errno;
-                _set_debug_oserror_from_errno_with_filename(err, "/proc",
-                    "Failed to read process directory '/proc': %s",
-                    strerror(err));
+                PyObject *message = _Py_strerror(err);
+                if (message != NULL) {
+                    _set_debug_oserror_from_errno_with_filename(err, "/proc",
+                        "Failed to read process directory '/proc': %S",
+                        message);
+                    Py_DECREF(message);
+                }
                 goto done;
             }
             break;
@@ -259,9 +264,13 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     if (closedir(proc_dir) != 0) {
         int err = errno;
         proc_dir = NULL;
-        _set_debug_oserror_from_errno_with_filename(err, "/proc",
-            "Failed to close process directory '/proc': %s",
-            strerror(err));
+        PyObject *message = _Py_strerror(err);
+        if (message != NULL) {
+            _set_debug_oserror_from_errno_with_filename(err, "/proc",
+                "Failed to close process directory '/proc': %S",
+                message);
+            Py_DECREF(message);
+        }
         goto done;
     }
     proc_dir = NULL;
@@ -307,6 +316,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         PyErr_SetString(PyExc_OSError, "Failed to get process count");
         goto done;
     }
+    n_pids /= sizeof(pid_t);
 
     /* Allocate buffer for PIDs (add some slack for new processes) */
     int buffer_size = n_pids + 64;
@@ -322,6 +332,7 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         PyErr_SetString(PyExc_OSError, "Failed to list PIDs");
         goto done;
     }
+    actual /= sizeof(pid_t);
 
     /* Build pid -> ppid mapping */
     ppids = (pid_t *)PyMem_Malloc(actual * sizeof(pid_t));

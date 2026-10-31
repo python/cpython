@@ -10,7 +10,7 @@ and now maintained as an independent project.
 .. _reStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Sphinx: https://www.sphinx-doc.org/
 
-.. In the online version of these documents, you can submit comments and suggest
+.. In the online version of this documentation, you can submit comments and suggest
    changes directly on the documentation pages.
 
 Development of the documentation and its toolchain is an entirely volunteer

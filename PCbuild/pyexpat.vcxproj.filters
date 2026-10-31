@@ -15,7 +15,13 @@
     <ClInclude Include="..\Modules\expat\fallthrough.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\expat\hash_table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\expat\memory_sanitizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\expat\xcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\expat\xmlrole.h">
@@ -27,6 +33,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\pyexpat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\expat\xcs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\expat\xmlparse.c">

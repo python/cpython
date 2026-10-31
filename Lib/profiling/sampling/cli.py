@@ -639,9 +639,21 @@ def _sort_to_mode(sort_choice):
     }
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
+
+def _capture_config_from_args(args):
+    return {
+        "all_threads": args.all_threads,
+        "native": args.native,
+        "gc": args.gc,
+        "opcodes": args.opcodes,
+        "blocking": args.blocking,
+    }
+
+
 def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
                       mode=None, output_file=None, compression='auto',
-                      diff_baseline=None, target_pid=None):
+                      diff_baseline=None, capture_config=None,
+                      target_pid=None):
     """Create the appropriate collector based on format type.
 
     Args:
@@ -655,6 +667,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         output_file: Output file path (required for binary format)
         compression: Compression type for binary format ('auto', 'zstd', 'none')
         diff_baseline: Path to baseline binary file for differential flamegraph
+        capture_config: Capture feature mapping for binary profiles and diffs
         target_pid: PID of the process being profiled
 
     Returns:
@@ -672,7 +685,9 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         return collector_class(
             sample_interval_usec,
             baseline_binary_path=diff_baseline,
-            skip_idle=skip_idle
+            skip_idle=skip_idle,
+            mode=mode,
+            capture_config=capture_config,
         )
 
     # Binary format requires output file and compression
@@ -680,7 +695,8 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
         if output_file is None:
             raise ValueError("Binary format requires an output file")
         return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
-                              compression=compression)
+                              compression=compression, mode=mode,
+                              capture_config=capture_config)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
     # and is the only format that uses opcodes for interval markers
@@ -778,7 +794,9 @@ def _replay_with_reader(args, reader):
 
     collector = _create_collector(
         args.format, interval, skip_idle=False,
-        diff_baseline=args.diff_baseline
+        mode=info.get("mode"),
+        diff_baseline=args.diff_baseline,
+        capture_config=info.get("capture_config"),
     )
 
     def progress_callback(current, total):
@@ -794,6 +812,10 @@ def _replay_with_reader(args, reader):
             )
 
     count = reader.replay_samples(collector, progress_callback)
+    if hasattr(collector, "set_replay_stats"):
+        collector.set_replay_stats(info)
+    if hasattr(collector, "set_mode"):
+        collector.set_mode(info.get("mode"))
     print()
 
     if args.format == "pstats":
@@ -807,7 +829,8 @@ def _replay_with_reader(args, reader):
             sort_mode = _sort_to_mode(sort_choice)
             collector.print_stats(
                 sort_mode, limit, not args.no_summary,
-                PROFILING_MODE_WALL
+                info.get("mode") if info.get("mode") is not None
+                else PROFILING_MODE_WALL
             )
     else:
         filename = (
@@ -1196,6 +1219,7 @@ def _handle_attach(args):
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline,
+        capture_config=_capture_config_from_args(args),
         target_pid=args.pid,
     )
 
@@ -1304,6 +1328,7 @@ def _handle_run(args):
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto'),
         diff_baseline=args.diff_baseline,
+        capture_config=_capture_config_from_args(args),
         target_pid=process.pid,
     )
 

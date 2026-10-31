@@ -43,7 +43,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
 
 import threading
 
-__author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
+# Original author: Vinay Sajip <vinay_sajip@red-dove.com>
 __status__  = "production"
 
 #---------------------------------------------------------------------------
@@ -1263,7 +1263,12 @@ class FileHandler(StreamHandler):
         """
         if self.stream is None:
             if self.mode != 'w' or not self._closed:
-                self.stream = self._open()
+                # Report an error while opening the file, like emit errors.
+                try:
+                    self.stream = self._open()
+                except Exception:
+                    self.handleError(record)
+                    return
         if self.stream:
             StreamHandler.emit(self, record)
 
@@ -1675,6 +1680,8 @@ class Logger(Filterer):
                 exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
             elif not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
+        else:  # Normalize any falsy value to None, for type precision
+            exc_info = None
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
                                  exc_info, func, extra, sinfo)
         self.handle(record)
@@ -1709,7 +1716,11 @@ class Logger(Filterer):
         """
         with _lock:
             if hdlr in self.handlers:
-                self.handlers.remove(hdlr)
+                # Replace the list instead of mutating it in place, so that
+                # callHandlers() can iterate it without a lock (gh-79366).
+                handlers = self.handlers.copy()
+                handlers.remove(hdlr)
+                self.handlers = handlers
 
     def hasHandlers(self):
         """
@@ -2360,13 +2371,12 @@ def captureWarnings(capture):
 
 
 def __getattr__(name):
-    if name in ("__version__", "__date__"):
-        from warnings import _deprecated
-
-        _deprecated(name, remove=(3, 20))
+    if name in ("__version__", "__date__", "__author__"):
+        warnings._deprecated(name, remove=(3, 20))
         return {  # Do not change
             "__version__": "0.5.1.2",
             "__date__": "07 February 2010",
+            "__author__": "Vinay Sajip <vinay_sajip@red-dove.com>",
         }[name]
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

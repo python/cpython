@@ -2,6 +2,7 @@ import collections.abc
 import unittest
 import tkinter
 from tkinter import font
+from test import support
 from test.support import requires, gc_collect, ALWAYS_EQ
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
@@ -23,6 +24,16 @@ class FontTest(AbstractTkTest, unittest.TestCase):
     def actual_size(self, desc):
         # The requested size is not always available (e.g. bitmap fonts).
         return self.root.tk.call('font', 'actual', desc, '-size')
+
+    def tcl_font_object(self, desc):
+        # Return a font name or description as a Tcl object representing a
+        # font, as Tk returns for example from ttk.Style().lookup().
+        tk = self.root.tk
+        tk.call('set', '_font', desc)
+        tk.eval('font measure $_font x')  # convert the Tcl object to a font
+        obj = tk.call('set', '_font')
+        tk.call('unset', '_font')
+        return obj
 
     def test_configure(self):
         self.assertEqual(self.font.config, self.font.configure)
@@ -149,6 +160,36 @@ class FontTest(AbstractTkTest, unittest.TestCase):
                           font=('Times', 20), exists=True, weight='bold')
         # A name or a description is required.
         self.assertRaises(TypeError, font.Font, root=self.root, exists=True)
+
+    def test_tcl_object(self):
+        # Tk can return a font as a Tcl object (gh-156961).
+        if not self.wantobjects:
+            self.skipTest('Tcl objects are converted to strings')
+        obj = self.tcl_font_object(fontname)
+        self.assertEqual(obj.typename, 'font')
+
+        # It can be used as the name of an existing named font.
+        for f in (font.Font(root=self.root, name=obj, exists=True),
+                  font.nametofont(obj, root=self.root)):
+            # The Tcl object is kept as is, so that it is passed back to Tk.
+            self.assertIs(f.name, obj)
+            self.assertEqual(str(f), fontname)
+            self.assertEqual(f.actual(), self.font.actual())
+            self.assertEqual(f, self.font)
+            self.assertEqual(self.font, f)
+        # Referring to a non-existent named font still fails.
+        self.assertRaisesRegex(tkinter.TclError, 'named font nosuchfont',
+                               font.Font, root=self.root, exists=True,
+                               name=self.tcl_font_object('nosuchfont'))
+
+        # It can also be wrapped as a font description.
+        obj = self.tcl_font_object(('Times', 20, 'bold'))
+        f = font.Font(root=self.root, font=obj, exists=True)
+        self.assertIs(f.name, obj)
+        self.assertEqual(str(f), 'Times 20 bold')
+        self.assertNotIn(f.name, font.names(self.root))
+        self.assertEqual(f.actual('weight'), 'bold')
+        self.assertEqual(f.actual('size'), self.actual_size(('Times', 20, 'bold')))
 
     def test_copy(self):
         # size=-20 (pixels): copy() copies the configured options, so the
@@ -324,13 +365,10 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(font, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, font, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":
