@@ -30,7 +30,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    If specified, *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
    command.  Otherwise, the local hostname is found using
-   :func:`socket.getfqdn`.  If the :meth:`connect` call returns anything other
+   :func:`socket.getfqdn`. If it is not fully qualified, the connected socket's
+   local address is used as an address literal instead. If the :meth:`connect`
+   call returns anything other
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
