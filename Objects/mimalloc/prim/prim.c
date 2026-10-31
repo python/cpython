@@ -1,9 +1,13 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2023, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2026, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
+
+#include "mimalloc/heap/init.h"
+#include "mimalloc/prim.h"
+
 
 // Select the implementation of the primitives
 // depending on the OS.
@@ -18,8 +22,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_USE_SBRK
 #include "wasi/prim.c"     // memory-grow or sbrk (Wasm)
 
-// CPython: use the unix prim on Emscripten (emmalloc is not linked)
-#elif defined(__EMSCRIPTEN__) && 0
+#elif defined(__EMSCRIPTEN__)
 #include "emscripten/prim.c" // emmalloc_*, + pthread support
 
 #else
@@ -28,11 +31,10 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 // Generic process initialization
-#ifndef MI_PRIM_HAS_PROCESS_ATTACH
+#if !defined(MI_PRIM_HAS_PROCESS_ATTACH)
 #if defined(__GNUC__) || defined(__clang__)
-  // gcc,clang: use the constructor/destructor attribute
-  // which for both seem to run before regular constructors/destructors
-  #if defined(__clang__)
+  // gcc,clang: use the constructor/destructor attribute with the highest user priority (<=100 is reserved for the compiler itself)
+  #if defined(__clang__) || (__GNUC__ >= 5 && !defined(__APPLE__))  // gcc has support since 4.2 but not on macOS (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=119435)
     #define mi_attr_constructor __attribute__((constructor(101)))
     #define mi_attr_destructor  __attribute__((destructor(101)))
   #else
