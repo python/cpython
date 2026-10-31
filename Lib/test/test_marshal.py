@@ -1384,8 +1384,9 @@ class ReferenceTestCase(unittest.TestCase):
         # An element which is removed from the set, and another one added,
         # while a later element is dumped (here by its __buffer__() method)
         # is still written, since it was seen; but it is then referenced
-        # only by the writer.  A NaN in that situation must not be assumed
-        # to have been remembered for later references.
+        # only by the writer, which only keeps track of objects that have
+        # several references.  The set code must cope with a NaN which is
+        # written but not tracked.
         class Item:
             def __init__(self, action, h):
                 self.action = action

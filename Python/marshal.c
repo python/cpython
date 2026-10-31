@@ -675,7 +675,9 @@ typedef struct {
     size_t order;       /* Order among the elements with the same dump. */
 } w_set_item;
 
-/* Minimal order of an element which has not been written yet. */
+/* Order of the elements which have not been written yet (plus their index
+   in the set): it sorts them after the elements written before, whose order
+   is their index in WFILE.refs. */
 #define W_SET_ITEM_NEW ((size_t)1 << (8 * SIZEOF_SIZE_T - 1))
 
 static int
