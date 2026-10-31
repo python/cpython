@@ -1299,6 +1299,87 @@ class ReferenceTestCase(unittest.TestCase):
                         new = marshal.loads(expected)
                         self.check_same_structure(new, sample, True)
 
+    @support.cpython_only
+    def test_nan_constants_in_code(self):
+        # Python has no literal for NaN, but constant folding produces one
+        # from arithmetic on 1e999 (inf).  Such NaNs end up as a constant
+        # of the code object, in a tuple constant, or in a frozenset
+        # constant (the only kind of set the compiler creates, from a set
+        # display used as the right operand of "in").  Every fold creates
+        # a new object, so the compiler cannot produce a NaN which is an
+        # element of a set and is also referenced elsewhere; the ordering
+        # of such elements (test_nan_in_set_order) is not observable here.
+        # What is observable is that the code can be marshalled, and that
+        # the output, so the .pyc file, is the same in every process.
+        sources = {
+            'const': 'x = 1e999 - 1e999',
+            'tuple': 'x = (1e999 - 1e999, 2.0)',
+            'repeat': 'x = (1e999 - 1e999,) * 2',
+            'set': 'x in {1e999 - 1e999, 1e999 - 1e999, 2.0}',
+            'complex': 'x in {(1e999 - 1e999) * 1j, (1e999 - 1e999) * 2j}',
+            'tuples': 'x in {(1e999 - 1e999,) * 2, (1e999 - 1e999,) * 2}',
+            'nested': 'def f(x):\n    return x in {1e999 - 1e999, 2j}',
+        }
+        def nan_places(code):
+            # Where the NaN constants of a code object are, with the
+            # elements of sets in any order.
+            places = []
+            def visit(x, where):
+                if isinstance(x, (float, complex)):
+                    if x != x:
+                        places.append((where, repr(x)))
+                elif isinstance(x, (tuple, frozenset)):
+                    for y in sorted(x, key=repr):
+                        visit(y, type(x).__name__)
+                elif isinstance(x, types.CodeType):
+                    for y in x.co_consts:
+                        visit(y, 'consts')
+            visit(code, None)
+            return places
+        expected = {
+            'const': [('consts', 'nan')],
+            'tuple': [('tuple', 'nan')],
+            'repeat': [('tuple', 'nan'), ('tuple', 'nan')],
+            'set': [('frozenset', 'nan'), ('frozenset', 'nan')],
+            'complex': [('frozenset', '(nan+nanj)'),
+                        ('frozenset', '(nan+nanj)')],
+            'tuples': [('tuple', 'nan')] * 4,
+            'nested': [('frozenset', 'nan')],
+        }
+        dumps = {}
+        for name, source in sources.items():
+            code = compile(source, '<marshal test>', 'exec')
+            self.assertEqual(nan_places(code), expected[name], name)
+            for version in range(marshal.version + 1):
+                data = marshal.dumps(code, version)
+                dumps[name, version] = data
+                new = marshal.loads(data)
+                self.assertEqual(nan_places(new), expected[name], name)
+                self.assertEqual(new.co_code, code.co_code)
+                # Compiling again gives other NaN objects at other
+                # addresses, and the same bytes.
+                code2 = compile(source, '<marshal test>', 'exec')
+                self.assertEqual(marshal.dumps(code2, version), data)
+
+        # The same bytes in other processes.
+        script = textwrap.dedent("""
+            import marshal, sys
+            sources = %r
+            for name, source in sources.items():
+                code = compile(source, '<marshal test>', 'exec')
+                for version in range(marshal.version + 1):
+                    print(name, version, marshal.dumps(code, version).hex())
+            """) % sources
+        for seed in '1', '2', 'random':
+            with self.subTest(hashseed=seed):
+                rc, out, err = assert_python_ok('-c', script,
+                                                PYTHONHASHSEED=seed)
+                for line in out.decode().splitlines():
+                    name, version, data = line.split()
+                    self.assertEqual(bytes.fromhex(data),
+                                     dumps[name, int(version)],
+                                     (name, version))
+
     def check_same_structure(self, new, sample, shared):
         # Both object graphs have the same values and, if shared is true,
         # share the same objects.  Elements of sets are matched in any
