@@ -25,7 +25,7 @@ _MODE_READ     = 1
 _MODE_WRITE    = 3
 
 # Every bzip2 stream starts with one of these, "BZh" and the block size.
-_STREAM_MAGIC = tuple(b"BZh%d" % level for level in range(1, 10))
+_STREAM_MAGIC = (b'BZh1', b'BZh2', b'BZh3', b'BZh4', b'BZh5', b'BZh6', b'BZh7', b'BZh8', b'BZh9')
 
 
 class BZ2File(_streams.BaseStream):
