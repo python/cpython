@@ -4014,6 +4014,59 @@ class ContextFlags:
                                   "operation raises different flags depending on flags set: " +
                                   "expected %s, got %s" % (expected_flags, new_flags))
 
+    def test_trapped_signal_sets_companion_flags(self):
+        # If an operation signals several conditions and one of them is
+        # trapped, the exception is raised, but the flags of all the
+        # other conditions encountered must be set as well.
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        Clamped = self.decimal.Clamped
+        DivisionByZero = self.decimal.DivisionByZero
+        Inexact = self.decimal.Inexact
+        InvalidOperation = self.decimal.InvalidOperation
+        Overflow = self.decimal.Overflow
+        Rounded = self.decimal.Rounded
+        Subnormal = self.decimal.Subnormal
+        Underflow = self.decimal.Underflow
+
+        def check(trap, operation, expected_flags):
+            context = Context(prec=9, Emin=-999, Emax=999, traps=[])
+            context.traps[trap] = 1
+            with self.assertRaises(trap):
+                operation(context)
+            flags = {signal for signal, v in context.flags.items() if v}
+            self.assertEqual(flags, expected_flags)
+
+        # overflow from _fix: Inexact and Rounded are also signaled
+        check(Overflow,
+              lambda c: c.multiply(Decimal('1E+800'), Decimal('1E+800')),
+              {Inexact, Overflow, Rounded})
+
+        # 1/3 is rounded: Rounded accompanies the trapped Inexact
+        check(Inexact,
+              lambda c: c.divide(Decimal(1), Decimal(3)),
+              {Inexact, Rounded})
+
+        # underflow to zero signals the full set of conditions; a trap
+        # on any of them must not suppress the flags of the others
+        check(Underflow,
+              lambda c: c.divide(Decimal('1E-999'), Decimal('1E+10')),
+              {Clamped, Inexact, Rounded, Subnormal, Underflow})
+        check(Subnormal,
+              lambda c: c.divide(Decimal('1E-999'), Decimal('1E+10')),
+              {Clamped, Inexact, Rounded, Subnormal, Underflow})
+
+        # divmod by zero signals DivisionByZero (for the quotient) and
+        # InvalidOperation (for the remainder)
+        check(DivisionByZero,
+              lambda c: c.divmod(Decimal(5), Decimal(0)),
+              {DivisionByZero, InvalidOperation})
+
+        # to_integral_exact signals Inexact and Rounded together
+        check(Inexact,
+              lambda c: c.to_integral_exact(Decimal('2.5')),
+              {Inexact, Rounded})
+
     def test_flag_comparisons(self):
         Context = self.decimal.Context
         Inexact = self.decimal.Inexact
@@ -4233,6 +4286,56 @@ class CContextFlags(ContextFlags, unittest.TestCase):
 
 class PyContextFlags(ContextFlags, unittest.TestCase):
     decimal = P
+
+    def test_deferred_traps_attributes(self):
+        # The _defer_traps state lives in the _deferred_traps and
+        # _deferred_error attributes, which __setattr__ must accept.
+        Context = self.decimal.Context
+        Decimal = self.decimal.Decimal
+        Overflow = self.decimal.Overflow
+        context = Context(prec=9, Emin=-999, Emax=999, traps=[])
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+        context._deferred_traps = 1
+        context._deferred_traps = 0
+        context._deferred_error = Overflow('test')
+        context._deferred_error = None
+        with self.assertRaises(AttributeError):
+            context._no_such_attribute = 1
+
+        # A trapped operation resets the state, so the context
+        # remains usable afterwards.
+        context.traps[Overflow] = 1
+        with self.assertRaises(Overflow):
+            context.multiply(Decimal('1E+800'), Decimal('1E+800'))
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+
+    def test_deferred_traps_exception_discards_error(self):
+        # If an exception propagates through a _defer_traps block, the
+        # deferred error is discarded at every nesting level and the
+        # state is reset, so the propagating exception wins and the
+        # context stays usable.
+        Context = self.decimal.Context
+        Decimal = self.decimal.Decimal
+        Overflow = self.decimal.Overflow
+        context = Context(prec=9, Emin=-999, Emax=999, traps=[Overflow])
+        with self.assertRaises(RuntimeError):
+            with context._defer_traps():
+                with context._defer_traps():
+                    context._raise_error(Overflow, 'test', 1)
+                    raise RuntimeError('boom')
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
+
+        # The flag was still set, and a later trapped operation
+        # raises its own error rather than the discarded one.
+        self.assertTrue(context.flags[Overflow])
+        context.clear_flags()
+        with self.assertRaises(Overflow):
+            context.multiply(Decimal('1E+800'), Decimal('1E+800'))
+        self.assertEqual(context._deferred_traps, 0)
+        self.assertIsNone(context._deferred_error)
 
 class SpecialContexts:
     """Test the context templates."""
