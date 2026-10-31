@@ -333,6 +333,9 @@ Write-only Transports
    This method does not block; it buffers the data and arranges for it
    to be sent out asynchronously.
 
+   The transport keeps a reference to *data* rather than copying. *data*
+   must not be mutated while being sent.
+
 .. method:: WriteTransport.writelines(list_of_data)
 
    Write a list (or any iterable) of data bytes to the transport.
