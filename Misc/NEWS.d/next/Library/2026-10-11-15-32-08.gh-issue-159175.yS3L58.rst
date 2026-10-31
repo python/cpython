@@ -1,0 +1,2 @@
+Fix over 100% stack presence for recursive functions in the
+:mod:`profiling.sampling` summary. Patch by Timofei Ivankov
