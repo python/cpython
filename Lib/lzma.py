@@ -35,6 +35,13 @@ _MODE_READ     = 1
 _MODE_WRITE    = 3
 
 
+def _stream_magic(format):
+    # Every stream of an .xz file starts with these bytes.  The other
+    # formats, including an .lzma stream read with FORMAT_AUTO, have
+    # nothing that tells a damaged stream from trailing data.
+    return b"\xfd7zXZ\x00" if format in (FORMAT_AUTO, FORMAT_XZ) else b""
+
+
 class LZMAFile(_streams.BaseStream):
 
     """A file object providing transparent LZMA (de)compression.
@@ -128,7 +135,8 @@ class LZMAFile(_streams.BaseStream):
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(self._fp, LZMADecompressor,
-                trailing_error=LZMAError, format=format, filters=filters)
+                trailing_error=LZMAError, stream_magic=_stream_magic(format),
+                format=format, filters=filters)
             self._buffer = io.BufferedReader(raw)
 
     def close(self):
@@ -345,15 +353,17 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
     For incremental decompression, use an LZMADecompressor instead.
     """
     results = []
+    magic = _stream_magic(format)
     while True:
         decomp = LZMADecompressor(format, memlimit, filters)
         try:
             res = decomp.decompress(data)
         except LZMAError:
-            if results:
-                break  # Leftover data is not a valid LZMA/XZ stream; ignore it.
-            else:
+            if not results:
                 raise  # Error on the first iteration; bail out.
+            if magic and data.startswith(magic):
+                raise  # Leftover data is a damaged XZ stream; bail out.
+            break  # Leftover data is not a valid LZMA/XZ stream; ignore it.
         results.append(res)
         if not decomp.eof:
             raise LZMAError("Compressed data ended before the "
