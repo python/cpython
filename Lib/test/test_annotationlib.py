@@ -2334,6 +2334,85 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "always fails to import"):
             annos["b"].evaluate(format=Format.VALUE)
 
+    def test_get_annotations_subscripted_lazy_import(self):
+        module = types.ModuleType("annotationlib_lazy_import_test")
+        ns = vars(module)
+        exec(textwrap.dedent("""
+            lazy from test.test_lazy_import.data.basic2 import x
+            lazy from test.test_lazy_import.data.broken_module import y
+
+            a: list[y]
+            b: dict[str, list[y]]
+            c: list[x]
+            d: list[undefined]
+
+            class C:
+                a: list[y]
+                b: dict[str, list[y]]
+                c: list[x]
+                d: list[undefined]
+
+            def f(a: list[y], b: dict[str, list[y]], c: list[x],
+                  d: list[undefined]):
+                pass
+        """), ns)
+        self.addCleanup(import_helper.unload,
+                        "test.test_lazy_import.data.basic2")
+        self.addCleanup(import_helper.unload,
+                        "test.test_lazy_import.data.broken_module")
+        for owner in (module, ns["C"], ns["f"]):
+            with self.subTest(owner=owner):
+                annos = get_annotations(owner, format=Format.FORWARDREF)
+                self.assertIsInstance(annos["a"], types.GenericAlias)
+                self.assertIs(annos["a"].__origin__, list)
+                ref, = annos["a"].__args__
+                self.assertIsInstance(ref, ForwardRef)
+                self.assertEqual(ref.__forward_arg__, "y")
+                self.assertEqual(annos["b"], dict[str, list[ref]])
+                self.assertEqual(annos["c"], list[42])
+                unknown, = annos["d"].__args__
+                self.assertIsInstance(unknown, ForwardRef)
+                self.assertEqual(unknown.__forward_arg__, "undefined")
+                self.assertEqual(get_annotations(owner, format=Format.STRING), {
+                    "a": "list[y]", "b": "dict[str, list[y]]",
+                    "c": "list[x]", "d": "list[undefined]",
+                })
+                with self.assertRaisesRegex(ValueError, "always fails to import"):
+                    get_annotations(owner, format=Format.VALUE)
+
+    def test_evaluate_subscripted_lazy_import(self):
+        ns = {}
+        exec("lazy from test.test_lazy_import.data.broken_module import y", ns)
+        self.addCleanup(import_helper.unload,
+                        "test.test_lazy_import.data.broken_module")
+        for scope in ("globals", "locals"):
+            with self.subTest(scope=scope):
+                ref = ForwardRef("list[y]")
+                value = ref.evaluate(**{scope: ns}, format=Format.FORWARDREF)
+                self.assertIsInstance(value, types.GenericAlias)
+                self.assertIs(value.__origin__, list)
+                inner, = value.__args__
+                self.assertIsInstance(inner, ForwardRef)
+                self.assertEqual(inner.__forward_arg__, "y")
+                with self.assertRaisesRegex(ValueError, "always fails to import"):
+                    ref.evaluate(**{scope: ns}, format=Format.VALUE)
+
+    def test_unreferenced_lazy_import(self):
+        name = "test.test_lazy_import.data.basic2"
+        with import_helper.CleanImport(name):
+            ns = {}
+            exec(textwrap.dedent("""
+                lazy from test.test_lazy_import.data.basic2 import x
+                class C:
+                    a: undefined
+                    b: int
+            """), ns)
+            self.assertNotIn(name, sys.modules)
+            annos = get_annotations(ns["C"], format=Format.FORWARDREF)
+            self.assertEqual(annos["b"], int)
+            self.assertEqual(annos["a"].__forward_arg__, "undefined")
+            self.assertNotIn(name, sys.modules)
+
     def test_evaluate_notimplemented_format(self):
         class C:
             x: alias

@@ -672,6 +672,17 @@ class _StringifierDict(dict):
         self.next_id = 1
         self.format = format
 
+    def __getitem__(self, key):
+        value = super().__getitem__(key)
+        if isinstance(value, types.LazyImportType):
+            try:
+                return value.resolve()
+            except Exception:
+                # Treat an unresolved lazy import like an undefined name,
+                # so the rest of the annotation can still be evaluated.
+                return self.__missing__(key)
+        return value
+
     def __missing__(self, key):
         fwdref = _Stringifier(
             key,
