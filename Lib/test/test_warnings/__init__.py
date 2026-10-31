@@ -244,6 +244,15 @@ class FilterTests(BaseTest):
                                     42)
             self.assertEqual(len(w), 0)
 
+    def test_once_across_modules(self):
+        with self.module.catch_warnings(record=True) as w:
+            self.module.simplefilter("once", UserWarning)
+            for name in ("module_a", "module_b"):
+                namespace = {"__name__": name, "warnings": self.module}
+                exec("warnings.warn('once across modules')\n"
+                     "warnings.warn('once across modules')", namespace)
+                self.assertEqual(len(w), 1)
+
     def test_filter_module(self):
         MS_WINDOWS = (sys.platform == 'win32')
         with self.module.catch_warnings(record=True) as w:
