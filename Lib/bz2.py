@@ -338,20 +338,8 @@ def decompress(data):
 
     For incremental decompression, use a BZ2Decompressor object instead.
     """
-    results = []
-    while data:
-        decomp = BZ2Decompressor()
-        try:
-            res = decomp.decompress(data)
-        except OSError:
-            if not results:
-                raise  # Error on the first iteration; bail out.
-            if data.startswith(_STREAM_MAGIC):
-                raise  # Leftover data is a damaged bzip2 stream; bail out.
-            break  # Leftover data is not a valid bzip2 stream; ignore it.
-        results.append(res)
-        if not decomp.eof:
-            raise ValueError("Compressed data ended before the "
-                             "end-of-stream marker was reached")
-        data = decomp.unused_data
-    return b"".join(results)
+    if not data:
+        return b""
+    return _streams._decompress_all(data, BZ2Decompressor, OSError,
+                                    stream_magic=_STREAM_MAGIC,
+                                    truncated_error=ValueError)
