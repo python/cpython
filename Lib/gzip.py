@@ -685,8 +685,7 @@ def decompress(data):
     fp = io.BytesIO(data)
     # There is usually a single member: the first chunk is all of the data,
     # to decompress it in one go.
-    chunk_size = fp.seek(0, io.SEEK_END)
-    fp.seek(0)
+    chunk_size = len(data)
     while True:
         if _read_gzip_header(fp) is None:
             return b"".join(decompressed_members)
