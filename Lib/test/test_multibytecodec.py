@@ -416,6 +416,23 @@ class Test_StreamWriter(unittest.TestCase):
         self.assertEqual(s.getvalue(), b'abcd')
 
 class Test_ISO2022(unittest.TestCase):
+    def test_jisx0213_plane2_mapping(self):
+        encoded = b'\x1b$(P};\x1b(B'
+        for encoding, char in (('iso2022_jp_3', '\u9b1d'),
+                               ('iso2022_jp_2004', '\u9b1c')):
+            with self.subTest(encoding=encoding):
+                self.assertEqual(char.encode(encoding), encoded)
+                self.assertEqual(encoded.decode(encoding), char)
+                self.assertEqual(char.encode(encoding).decode(encoding), char)
+                for split in range(len(encoded) + 1):
+                    with self.subTest(split=split):
+                        decoder = codecs.getincrementaldecoder(encoding)()
+                        decoded = decoder.decode(encoded[:split])
+                        decoded += decoder.decode(encoded[split:], final=True)
+                        self.assertEqual(decoded, char)
+                reader = codecs.getreader(encoding)(io.BytesIO(encoded))
+                self.assertEqual(reader.read(), char)
+
     def test_g2(self):
         iso2022jp2 = b'\x1b(B:hu4:unit\x1b.A\x1bNi de famille'
         uni = ':hu4:unit\xe9 de famille'
