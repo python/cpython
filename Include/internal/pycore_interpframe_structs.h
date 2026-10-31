@@ -52,6 +52,27 @@ struct _PyInterpreterFrame {
     _PyStackRef localsplus[1];
 };
 
+/* Header for externally-pushed frames.
+ *
+ * When a frame's `external` bit is set, a `_PyInterpreterFrameExternal`
+ * header lives immediately before the `_PyInterpreterFrame` in memory.
+ * It holds a strong reference to a `_PyExternalFrameIntrospector` which
+ * knows how to visit external references for the garbage collector.
+ *
+ * Layout in memory:
+ *
+ *   +-------------------------------+----------------------+
+ *   | _PyInterpreterFrameExternal   | _PyInterpreterFrame  |
+ *   +-------------------------------+----------------------+
+ *   ^                               ^
+ *   external                        frame
+ *
+ * Use `_PyInterpreterFrame_GetExternal()` to convert from frame to header.
+ */
+struct _PyInterpreterFrameExternal {
+    _PyStackRef introspector; /* Strong reference to _PyExternalFrameIntrospector */
+};
+
 
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
