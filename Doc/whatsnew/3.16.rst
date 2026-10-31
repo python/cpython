@@ -690,6 +690,9 @@ shutil
   :func:`shutil.copystat`, e.g. when copying a read-only tree.
   (Contributed by Łukasz Langa in :gh:`89721`.)
 
+* :func:`shutil.unpack_archive` can now unpack wheel files using the ``whl`` format.
+  (Contributed by Emma Harper Smith and Stan Ulbrych in :gh:`84027`.)
+
 
 socket
 ------
@@ -1197,6 +1200,29 @@ New deprecations
   * The ``dims`` property of ``ast.Tuple`` objects, deprecated since Python
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
+
+* ``__author__``, ``__credits__``, ``__copyright__`` and ``__date__``:
+
+  * The ``__author__``, ``__credits__``, ``__copyright__`` and ``__date__``
+    attributes have been deprecated in these standard library modules and will
+    be removed in Python 3.20. Attribution is preserved in the source code
+    and the version control history.
+
+    - :mod:`bz2`
+    - :mod:`concurrent.futures`
+    - :mod:`inspect`
+    - :mod:`io`
+    - :mod:`json`
+    - :mod:`logging`
+    - :mod:`optparse`
+    - :mod:`platform`
+    - :mod:`pydoc`
+    - :mod:`tarfile`
+    - :mod:`tkinter.ttk`
+    - :mod:`tokenize`
+    - :mod:`uuid`
+
+    (Contributed by Stan Ulbrych in :gh:`159240`.)
 
 * :mod:`functools`:
 
