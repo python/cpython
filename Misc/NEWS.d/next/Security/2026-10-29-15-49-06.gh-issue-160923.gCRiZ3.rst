@@ -1,0 +1,5 @@
+.. cve: CVE-2026-119170
+
+Fix fetching with ``-fips`` property for ``usedforsecurity=True``
+in :mod:`hashlib`. This issue only affects Python 3.14.10, and
+all other Python versions are unaffected.
