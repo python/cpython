@@ -2,7 +2,7 @@
  * Python Remote Debugging Module - Binary Writer Implementation
  *
  * High-performance binary file writer for profiling data with optional zstd
- * streaming compression.
+ * compression.
  ******************************************************************************/
 
 #ifndef Py_BUILD_CORE_MODULE
@@ -11,6 +11,7 @@
 
 #include "binary_io.h"
 #include "_remote_debugging.h"
+#include "pycore_bitutils.h"      // _Py_bit_length(), _Py_popcount32()
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include <math.h>
 #include <string.h>
@@ -27,16 +28,69 @@
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
 
-/* Sample header sizes */
-#define SAMPLE_HEADER_MAX_SIZE 26        /* fixed + max_varint(10) + status(1) + margin */
 #define MAX_VARINT_SIZE 10               /* Maximum bytes for a varint64 */
 #define MAX_VARINT_SIZE_U32 5            /* Maximum bytes for a varint32 */
-/* Frame buffer: depth varint (max 2 bytes for 256) + 256 frames * 5 bytes/varint + margin */
-#define MAX_FRAME_BUFFER_SIZE ((MAX_STACK_DEPTH * MAX_VARINT_SIZE_U32) + MAX_VARINT_SIZE_U32 + 16)
 
-/* RLE pending buffer (per thread): one entry is a u64 delta varint + status byte */
-#define MAX_RLE_BUF_SIZE        (16 * 1024)
-#define MAX_RLE_ENTRY_SIZE      (MAX_VARINT_SIZE + sizeof(uint8_t))
+#define MAX_BLOCK_HEADER_SIZE \
+    (BLOCK_MAGIC_SIZE + MAX_VARINT_SIZE_U32 + MAX_VARINT_SIZE + \
+     3 * sizeof(uint8_t) + \
+     COLUMN_COUNT * (2 * MAX_VARINT_SIZE_U32 + sizeof(uint8_t)))
+
+#define ZSTD_MIN_SIZE 32
+#define STACK_REUSE_MIN_FRAMES 3
+
+#define MAX_SAMPLE_SIZE \
+    (STREAM_ENTRY_SIZE + 5 * MAX_VARINT_SIZE + sizeof(uint8_t) + \
+     MAX_STACK_DEPTH * sizeof(uint32_t) + sizeof(Repeat))
+#define MAX_BITMAP_PADDING (CHAR_BIT - 1)
+#define BLOCK_FLUSH_SIZE \
+    (MAX_BLOCK_SIZE - MAX_SAMPLE_SIZE - MAX_BITMAP_PADDING)
+
+static int
+buffer_append(ByteBuffer *buffer, const void *data, size_t size)
+{
+    if (buffer->size > MAX_BLOCK_SIZE ||
+        size > MAX_BLOCK_SIZE - buffer->size) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "sample block buffer exceeds the writer safety limit");
+        return -1;
+    }
+    if (buffer_reserve(buffer, buffer->size + size) < 0) {
+        return -1;
+    }
+    if (size != 0) {
+        memcpy(buffer->data + buffer->size, data, size);
+    }
+    buffer->size += size;
+    return 0;
+}
+
+static int
+buffer_append_varint(ByteBuffer *buffer, uint64_t value)
+{
+    uint8_t bytes[MAX_VARINT_SIZE];
+    size_t size = encode_varint_u64(bytes, value);
+    return buffer_append(buffer, bytes, size);
+}
+
+static int
+column_write(SampleBlock *block, unsigned column, const void *data,
+             size_t size)
+{
+    if (buffer_append(&block->columns[column], data, size) < 0) {
+        return -1;
+    }
+    block->size += size;
+    return 0;
+}
+
+static int
+column_write_varint(SampleBlock *block, unsigned column, uint64_t value)
+{
+    uint8_t bytes[MAX_VARINT_SIZE];
+    size_t size = encode_varint_u64(bytes, value);
+    return column_write(block, column, bytes, size);
+}
 
 /* Helper macro: convert PyLong to int32, using default_val if conversion fails */
 #define PYLONG_TO_INT32_OR_DEFAULT(obj, var, default_val) \
@@ -131,19 +185,6 @@ fwrite_checked_allow_threads(const void *data, size_t size, FILE *fp)
     return 0;
 }
 
-/* Forward declaration for writer_write_bytes */
-static inline int writer_write_bytes(BinaryWriter *writer, const void *data, size_t size);
-
-/* Encode and write a varint u32 - returns 0 on success, -1 on error */
-static inline int
-writer_write_varint_u32(BinaryWriter *writer, uint32_t value)
-{
-    uint8_t buf[MAX_VARINT_SIZE];
-    size_t len = encode_varint_u32(buf, value);
-    return writer_write_bytes(writer, buf, len);
-}
-
-
 /* ============================================================================
  * UTILITY FUNCTIONS
  * ============================================================================ */
@@ -182,9 +223,9 @@ writer_init_zstd(BinaryWriter *writer)
         return -1;
     }
 
-    /* Compression level 5: better ratio for repetitive profiling data */
+    /* Compression level 3: good ratio without slowing down each block flush */
     size_t result = ZSTD_CCtx_setParameter(writer->zstd.cctx,
-                                           ZSTD_c_compressionLevel, 5);
+                                           ZSTD_c_compressionLevel, 3);
     if (ZSTD_isError(result)) {
         PyErr_Format(PyExc_RuntimeError, "Failed to set zstd compression level: %s",
                      ZSTD_getErrorName(result));
@@ -193,95 +234,12 @@ writer_init_zstd(BinaryWriter *writer)
         return -1;
     }
 
-    /* Use large buffer (512KB) for fewer I/O syscalls */
-    writer->zstd.compressed_buffer = PyMem_Malloc(COMPRESSED_BUFFER_SIZE);
-    if (!writer->zstd.compressed_buffer) {
-        ZSTD_freeCCtx(writer->zstd.cctx);
-        writer->zstd.cctx = NULL;
-        PyErr_NoMemory();
-        return -1;
-    }
-    writer->zstd.compressed_buffer_size = COMPRESSED_BUFFER_SIZE;
-
     return 0;
 #else
     PyErr_SetString(PyExc_RuntimeError,
         "zstd compression requested but not available (HAVE_ZSTD not defined)");
     return -1;
 #endif
-}
-
-static int
-writer_flush_buffer(BinaryWriter *writer)
-{
-    if (writer->buffer_pos == 0) {
-        return 0;
-    }
-
-#ifdef HAVE_ZSTD
-    if (writer->compression_type == COMPRESSION_ZSTD) {
-        ZSTD_inBuffer input = { writer->write_buffer, writer->buffer_pos, 0 };
-
-        while (input.pos < input.size) {
-            ZSTD_outBuffer output = {
-                writer->zstd.compressed_buffer,
-                writer->zstd.compressed_buffer_size,
-                0
-            };
-
-            size_t result = ZSTD_compressStream2(
-                writer->zstd.cctx, &output, &input, ZSTD_e_continue
-            );
-
-            if (ZSTD_isError(result)) {
-                PyErr_Format(PyExc_IOError, "zstd compression error: %s",
-                             ZSTD_getErrorName(result));
-                return -1;
-            }
-
-            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
-            if (output.pos > 0) {
-                if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
-                    return -1;
-                }
-            }
-        }
-    } else
-#endif
-    {
-        if (fwrite_checked_allow_threads(writer->write_buffer, writer->buffer_pos, writer->fp) < 0) {
-            return -1;
-        }
-    }
-
-    writer->buffer_pos = 0;
-    return 0;
-}
-
-static inline int
-writer_write_bytes(BinaryWriter *writer, const void *data, size_t size)
-{
-    const uint8_t *src = (const uint8_t *)data;
-    size_t original_size = size;
-
-    while (size > 0) {
-        size_t space = writer->buffer_size - writer->buffer_pos;
-        size_t to_copy = (size < space) ? size : space;
-
-        memcpy(writer->write_buffer + writer->buffer_pos, src, to_copy);
-        writer->buffer_pos += to_copy;
-        src += to_copy;
-        size -= to_copy;
-
-        if (writer->buffer_pos == writer->buffer_size) {
-            if (writer_flush_buffer(writer) < 0) {
-                return -1;
-            }
-        }
-    }
-
-    writer->stats.bytes_written += original_size;
-    return 0;
 }
 
 /* ============================================================================
@@ -523,14 +481,7 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     memset(entry, 0, sizeof(ThreadEntry));
     entry->thread_id = thread_id;
     entry->interpreter_id = interpreter_id;
-    entry->prev_timestamp = writer->start_time_us;
-    entry->prev_stack_capacity = MAX_STACK_DEPTH;
-
-    entry->prev_stack = PyMem_Calloc(entry->prev_stack_capacity, sizeof(uint32_t));
-    if (!entry->prev_stack) {
-        PyErr_NoMemory();
-        return NULL;
-    }
+    entry->block_stream_index = UINT32_MAX;
 
     writer->thread_count++;
     if (is_new) {
@@ -539,209 +490,599 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     return entry;
 }
 
-/* Compare two stacks and return the encoding type and parameters.
- * Sets:
- *   - shared_count: number of frames matching from bottom of stack
- *   - pop_count: frames to remove from prev stack
- *   - push_count: new frames to add
- *
- * Returns the best encoding type to use. */
 static int
-compare_stacks(const uint32_t *prev_stack, size_t prev_depth,
-               const uint32_t *curr_stack, size_t curr_depth,
-               size_t *shared_count, size_t *pop_count, size_t *push_count)
+encode_column(BinaryWriter *writer, ByteBuffer *decoded,
+              ColumnDescriptor *descriptor)
 {
-    if (prev_depth == curr_depth) {
-        int identical = 1;
-        for (size_t i = 0; i < prev_depth; i++) {
-            if (prev_stack[i] != curr_stack[i]) {
-                identical = 0;
-                break;
-            }
+    SampleBlock *block = writer->block;
+    const uint8_t *data = decoded->data;
+    size_t size = decoded->size;
+    uint8_t encoding = COMPRESSION_NONE;
+    if (size > 1 && memcmp(data, data + 1, size - 1) == 0) {
+        encoding = COLUMN_CONSTANT;
+        size = 1;
+    }
+#ifdef HAVE_ZSTD
+    if (encoding == COMPRESSION_NONE && size >= ZSTD_MIN_SIZE &&
+        writer->compression_type == COMPRESSION_ZSTD) {
+        size_t compress_bound = ZSTD_compressBound(size);
+        if (buffer_reserve(&block->compressed, compress_bound) < 0) {
+            return -1;
         }
-        if (identical) {
-            *shared_count = prev_depth;
-            *pop_count = 0;
-            *push_count = 0;
-            return STACK_REPEAT;
+        size_t compressed_size = ZSTD_compress2(
+            writer->zstd.cctx, block->compressed.data, compress_bound,
+            data, size);
+        if (ZSTD_isError(compressed_size)) {
+            PyErr_Format(PyExc_IOError, "zstd compression error: %s",
+                         ZSTD_getErrorName(compressed_size));
+            return -1;
+        }
+        _Py_MSAN_UNPOISON(block->compressed.data, compressed_size);
+        uint8_t stored_size[MAX_VARINT_SIZE];
+        if (compressed_size + encode_varint_u64(stored_size, compressed_size)
+                < size) {
+            data = block->compressed.data;
+            size = compressed_size;
+            encoding = COMPRESSION_ZSTD;
         }
     }
-
-    /* Find longest common suffix (frames at the bottom/outer part of stack).
-     * Stacks are stored innermost-first, so suffix is at the end. */
-    size_t suffix_len = 0;
-    size_t min_depth = (prev_depth < curr_depth) ? prev_depth : curr_depth;
-
-    for (size_t i = 0; i < min_depth; i++) {
-        size_t prev_idx = prev_depth - 1 - i;
-        size_t curr_idx = curr_depth - 1 - i;
-        if (prev_stack[prev_idx] == curr_stack[curr_idx]) {
-            suffix_len++;
-        } else {
-            break;
-        }
+#endif
+    descriptor->decoded_size = (uint32_t)decoded->size;
+    descriptor->stored_size = (uint32_t)size;
+    descriptor->encoding = encoding;
+    if (buffer_reserve(&block->output, block->output.size + size) < 0) {
+        return -1;
     }
-
-    *shared_count = suffix_len;
-    *pop_count = prev_depth - suffix_len;
-    *push_count = curr_depth - suffix_len;
-
-    /* Choose best encoding based on byte cost */
-    /* STACK_FULL: 1 (type) + 1-2 (depth) + sum(frame varints) */
-    /* STACK_SUFFIX: 1 (type) + 1-2 (shared) + 1-2 (new_count) + sum(new frame varints) */
-    /* STACK_POP_PUSH: 1 (type) + 1-2 (pop) + 1-2 (push) + sum(new frame varints) */
-
-    /* If no common suffix, use full stack */
-    if (suffix_len == 0) {
-        return STACK_FULL;
+    if (size != 0) {
+        memcpy(block->output.data + block->output.size, data, size);
     }
-
-    /* If only adding frames (suffix == prev_depth), use SUFFIX */
-    if (*pop_count == 0 && *push_count > 0) {
-        return STACK_SUFFIX;
-    }
-
-    /* If popping and/or pushing, use POP_PUSH if it saves bytes */
-    /* Heuristic: POP_PUSH is better when we're modifying top frames */
-    if (*pop_count > 0 || *push_count > 0) {
-        /* Use full stack if sharing less than half the frames */
-        if (suffix_len < curr_depth / 2) {
-            return STACK_FULL;
-        }
-        return STACK_POP_PUSH;
-    }
-
-    return STACK_FULL;
+    block->output.size += size;
+    return 0;
 }
 
-/* Write common sample header: thread_id(8) + interpreter_id(4) + encoding(1).
- * Returns 0 on success, -1 on failure. */
-static inline int
-write_sample_header(BinaryWriter *writer, ThreadEntry *entry, uint8_t encoding)
+static int
+transform_statuses(SampleBlock *block, uint8_t bitmap_flags,
+                   ByteBuffer **decoded)
 {
-    uint8_t header[SAMPLE_HEADER_FIXED_SIZE];
-    memcpy(header + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
-    memcpy(header + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
-    header[SMP_OFF_ENCODING] = encoding;
-    return writer_write_bytes(writer, header, SAMPLE_HEADER_FIXED_SIZE);
+    size_t plane_size = status_bitmap_size(block->sample_count);
+    unsigned plane_count = (unsigned)_Py_popcount32(bitmap_flags);
+    if (buffer_reserve(&block->transformed,
+                       plane_size * plane_count) < 0) {
+        return -1;
+    }
+    const uint8_t *statuses =
+        block->columns[COLUMN_STATUS_BITMAPS].data;
+    block->transformed.size = 0;
+    for (unsigned bit = 0; bit < CHAR_BIT; bit++) {
+        if (!(bitmap_flags & (1U << bit))) {
+            continue;
+        }
+        uint8_t *plane = block->transformed.data + block->transformed.size;
+        memset(plane, 0, plane_size);
+        for (uint32_t sample = 0; sample < block->sample_count; sample++) {
+            plane[sample / CHAR_BIT] |= ((statuses[sample] >> bit) & 1U)
+                                        << (sample % CHAR_BIT);
+        }
+        block->transformed.size += plane_size;
+    }
+    *decoded = &block->transformed;
+    return 0;
 }
 
-/* Flush pending RLE samples for a thread.
- * Writes the RLE record to the output buffer.
- * Returns 0 on success, -1 on failure. */
 static int
-flush_pending_rle(BinaryWriter *writer, ThreadEntry *entry)
+transform_frame_ids(SampleBlock *block, uint32_t frame_count,
+                    unsigned width, ByteBuffer **decoded)
 {
-    if (entry->pending_rle_samples == 0) {
+    ByteBuffer *frames = &block->columns[COLUMN_FRAME_IDS];
+    if (buffer_reserve(&block->transformed,
+                       (size_t)frame_count * width) < 0) {
+        return -1;
+    }
+    const uint32_t *frame_ids = (const uint32_t *)frames->data;
+    for (unsigned byte = 0; frame_count && byte < width; byte++) {
+        uint8_t *plane =
+            block->transformed.data + (size_t)byte * frame_count;
+        for (uint32_t frame = 0; frame < frame_count; frame++) {
+            plane[frame] =
+                (uint8_t)(frame_ids[frame] >> (byte * CHAR_BIT));
+        }
+    }
+    block->transformed.size = (size_t)frame_count * width;
+    *decoded = &block->transformed;
+    return 0;
+}
+
+static int
+transform_stack_instructions(SampleBlock *block, ByteBuffer **decoded)
+{
+    size_t repeat_count = block->repeats.size / sizeof(Repeat);
+    if (repeat_count == 0) {
         return 0;
     }
-
-    /* Write RLE record:
-     * [thread_id: 8] [interpreter_id: 4] [STACK_REPEAT: 1] [count: varint]
-     * [timestamp_delta_1: varint] [status_1: 1] ... [timestamp_delta_N: varint] [status_N: 1]
-     */
-
-    if (write_sample_header(writer, entry, STACK_REPEAT) < 0) {
+    ByteBuffer *instructions =
+        &block->columns[COLUMN_STACK_INSTRUCTIONS];
+    const Repeat *repeats = (const Repeat *)block->repeats.data;
+    size_t copied_offset = 0;
+    block->transformed.size = 0;
+    for (size_t i = 0; i < repeat_count; i++) {
+        if (buffer_append(&block->transformed,
+                          instructions->data + copied_offset,
+                          repeats[i].offset - copied_offset) < 0 ||
+            buffer_append_varint(
+                &block->transformed, STACK_REPEAT) < 0 ||
+            buffer_append_varint(
+                &block->transformed, repeats[i].count) < 0) {
+            return -1;
+        }
+        copied_offset = repeats[i].offset;
+    }
+    if (buffer_append(&block->transformed,
+                      instructions->data + copied_offset,
+                      instructions->size - copied_offset) < 0) {
         return -1;
     }
-
-    if (writer_write_varint_u32(writer, (uint32_t)entry->pending_rle_samples) < 0) {
-        return -1;
-    }
-
-    if (writer_write_bytes(writer, entry->pending_rle, entry->pending_rle_bytes) < 0) {
-        return -1;
-    }
-
-    writer->stats.repeat_records++;
-    writer->stats.repeat_samples += entry->pending_rle_samples;
-    /* Each RLE sample saves writing the entire stack */
-    writer->stats.frames_saved += entry->pending_rle_samples * entry->prev_stack_depth;
-
-    entry->pending_rle_bytes = 0;
-    entry->pending_rle_samples = 0;
-
+    *decoded = &block->transformed;
     return 0;
 }
 
-/* Write a single sample with the specified encoding.
- * Returns 0 on success, -1 on failure. */
-static int
-write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
-                           uint64_t timestamp_delta, uint8_t status,
-                           int encoding_type,
-                           const uint32_t *frame_indices, size_t stack_depth,
-                           size_t shared_count, size_t pop_count, size_t push_count)
+static void
+block_reset(BinaryWriter *writer)
 {
-    /* Header: thread_id(8) + interpreter_id(4) + encoding(1) + delta(varint) + status(1) */
-    uint8_t header_buf[SAMPLE_HEADER_MAX_SIZE];
-    memcpy(header_buf + SMP_OFF_THREAD_ID, &entry->thread_id, SMP_SIZE_THREAD_ID);
-    memcpy(header_buf + SMP_OFF_INTERPRETER_ID, &entry->interpreter_id, SMP_SIZE_INTERPRETER_ID);
-    header_buf[SMP_OFF_ENCODING] = (uint8_t)encoding_type;
-    size_t varint_len = encode_varint_u64(
-        header_buf + SAMPLE_HEADER_FIXED_SIZE,
-        timestamp_delta);
-    header_buf[SAMPLE_HEADER_FIXED_SIZE + varint_len] = status;
+    SampleBlock *block = writer->block;
+    /* Only threads with a stream in this block need resetting */
+    for (uint32_t i = 0; i < block->stream_count; i++) {
+        size_t thread = block->streams[i].thread_index;
+        writer->thread_entries[thread].block_stream_index = UINT32_MAX;
+    }
+    for (unsigned column = 0; column < COLUMN_COUNT; column++) {
+        block->columns[column].size = 0;
+    }
+    block->sample_count = 0;
+    block->stream_count = 0;
+    block->repeats.size = 0;
+    block->max_frame = 0;
+    block->size = 0;
+    memset(block->cache, 0, sizeof(block->cache));
+}
 
-    if (writer_write_bytes(writer, header_buf,
-                           SAMPLE_HEADER_FIXED_SIZE + varint_len + 1) < 0) {
+static unsigned
+block_frame_width(const SampleBlock *block)
+{
+    if (block->max_frame == 0) {
+        return 1;
+    }
+    return (unsigned)(_Py_bit_length(block->max_frame) + CHAR_BIT - 1)
+           / CHAR_BIT;
+}
+
+static void
+block_status_flags(const SampleBlock *block, uint8_t *common_flags,
+                   uint8_t *bitmap_flags)
+{
+    uint8_t common_status = UINT8_MAX;
+    uint8_t any_status = 0;
+    const uint8_t *statuses = block->columns[COLUMN_STATUS_BITMAPS].data;
+    for (uint32_t sample = 0; sample < block->sample_count; sample++) {
+        common_status &= statuses[sample];
+        any_status |= statuses[sample];
+    }
+    *common_flags = common_status;
+    *bitmap_flags = any_status ^ common_status;
+}
+
+static size_t
+write_block_header(const BlockHeader *header, uint8_t *bytes)
+{
+    /* Magic "TBLK", sample count and base timestamp (varints), then frame
+     * ID width and the two status flag masks (1 byte each) */
+    size_t size = BLOCK_MAGIC_SIZE;
+    memcpy(bytes, BLOCK_MAGIC, BLOCK_MAGIC_SIZE);
+    size += encode_varint_u32(bytes + size, header->sample_count);
+    size += encode_varint_u64(bytes + size, header->base_timestamp);
+    bytes[size++] = header->frame_width;
+    bytes[size++] = header->common_status_flags;
+    bytes[size++] = header->status_bitmap_flags;
+
+    /* Each column: decoded size (varint), encoding (1 byte), and the stored
+     * size (varint) for zstd only */
+    for (unsigned column = 0; column < COLUMN_COUNT; column++) {
+        const ColumnDescriptor *descriptor = &header->columns[column];
+        size += encode_varint_u32(bytes + size, descriptor->decoded_size);
+        bytes[size++] = descriptor->encoding;
+        if (descriptor->encoding == COMPRESSION_ZSTD) {
+            size += encode_varint_u32(bytes + size, descriptor->stored_size);
+        }
+    }
+    return size;
+}
+
+static int
+block_flush(BinaryWriter *writer)
+{
+    SampleBlock *block = writer->block;
+    if (block->sample_count == 0) {
+        return 0;
+    }
+    uint32_t frame_count = (uint32_t)(
+        block->columns[COLUMN_FRAME_IDS].size / sizeof(uint32_t));
+    BlockHeader header = {0};
+    header.sample_count = block->sample_count;
+    header.base_timestamp = block->base_timestamp;
+    header.frame_width = (uint8_t)block_frame_width(block);
+    block_status_flags(block, &header.common_status_flags,
+                       &header.status_bitmap_flags);
+
+    /* Convert each column to its file form, then encode it */
+    /* Leave room for the header, which is written once its size is known */
+    if (buffer_reserve(&block->output, MAX_BLOCK_HEADER_SIZE) < 0) {
         return -1;
     }
-
-    uint8_t frame_buf[MAX_FRAME_BUFFER_SIZE];
-    size_t frame_buf_pos = 0;
-    size_t frames_written = 0;
-
-    switch (encoding_type) {
-    case STACK_FULL:
-        /* [depth: varint] [frame_idx: varint]... */
-        frame_buf_pos += encode_varint_u32(frame_buf, (uint32_t)stack_depth);
-        for (size_t i = 0; i < stack_depth; i++) {
-            frame_buf_pos += encode_varint_u32(frame_buf + frame_buf_pos, frame_indices[i]);
+    block->output.size = MAX_BLOCK_HEADER_SIZE;
+    size_t decoded_payload_size = 0;
+    for (unsigned column = 0; column < COLUMN_COUNT; column++) {
+        ByteBuffer *decoded = &block->columns[column];
+        int result = 0;
+        switch (column) {
+        case COLUMN_STATUS_BITMAPS:
+            result = transform_statuses(block, header.status_bitmap_flags,
+                                        &decoded);
+            break;
+        case COLUMN_STACK_INSTRUCTIONS:
+            result = transform_stack_instructions(block, &decoded);
+            break;
+        case COLUMN_FRAME_IDS:
+            result = transform_frame_ids(
+                block, frame_count, header.frame_width, &decoded);
+            break;
         }
-        frames_written = stack_depth;
-        writer->stats.full_records++;
-        break;
-
-    case STACK_SUFFIX:
-        /* [shared_count: varint] [new_count: varint] [new_frame_idx: varint]... */
-        frame_buf_pos += encode_varint_u32(frame_buf, (uint32_t)shared_count);
-        frame_buf_pos += encode_varint_u32(frame_buf + frame_buf_pos, (uint32_t)push_count);
-        /* New frames are at the top (beginning) of current stack */
-        for (size_t i = 0; i < push_count; i++) {
-            frame_buf_pos += encode_varint_u32(frame_buf + frame_buf_pos, frame_indices[i]);
+        if (result < 0) {
+            return -1;
         }
-        frames_written = push_count;
-        writer->stats.suffix_records++;
-        /* Saved writing shared_count frames */
-        writer->stats.frames_saved += shared_count;
-        break;
-
-    case STACK_POP_PUSH:
-        /* [pop_count: varint] [push_count: varint] [new_frame_idx: varint]... */
-        frame_buf_pos += encode_varint_u32(frame_buf, (uint32_t)pop_count);
-        frame_buf_pos += encode_varint_u32(frame_buf + frame_buf_pos, (uint32_t)push_count);
-        /* New frames are at the top (beginning) of current stack */
-        for (size_t i = 0; i < push_count; i++) {
-            frame_buf_pos += encode_varint_u32(frame_buf + frame_buf_pos, frame_indices[i]);
+        if (decoded->size >
+                MAX_BLOCK_SIZE - decoded_payload_size) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "sample block exceeds the decoded size limit");
+            return -1;
         }
-        frames_written = push_count;
-        writer->stats.pop_push_records++;
-        /* Saved writing shared_count frames (stack_depth - push_count if we had written full) */
-        writer->stats.frames_saved += shared_count;
-        break;
-
-    default:
-        PyErr_SetString(PyExc_RuntimeError, "Invalid stack encoding type");
+        decoded_payload_size += decoded->size;
+        if (encode_column(writer, decoded, &header.columns[column]) < 0) {
+            return -1;
+        }
+    }
+    /* Put the header right before the columns and write the block */
+    uint8_t header_bytes[MAX_BLOCK_HEADER_SIZE];
+    size_t header_size = write_block_header(&header, header_bytes);
+    size_t unused = MAX_BLOCK_HEADER_SIZE - header_size;
+    uint8_t *header_start = block->output.data + unused;
+    memcpy(header_start, header_bytes, header_size);
+    if (fwrite_checked_allow_threads(header_start,
+                                     block->output.size - unused,
+                                     writer->fp) < 0) {
         return -1;
     }
-
-    if (writer_write_bytes(writer, frame_buf, frame_buf_pos) < 0) {
-        return -1;
-    }
-
-    writer->stats.total_frames_written += frames_written;
+    writer->stats.bytes_written += decoded_payload_size;
+    block_reset(writer);
     return 0;
+}
+
+/* FNV-1a over the frame indices, the same in every process */
+static Py_uhash_t
+stack_hash(const uint32_t *stack, size_t depth)
+{
+    uint64_t hash = 0xcbf29ce484222325;
+    for (size_t i = 0; i < depth; i++) {
+        hash = (hash ^ stack[i]) * 0x100000001b3;
+    }
+    /* Mix the high bits into the low bits that select the cache bucket */
+    hash ^= hash >> 33;
+    hash *= 0xff51afd7ed558ccd;
+    hash ^= hash >> 33;
+    return (Py_uhash_t)hash;
+}
+
+static size_t
+common_outer_frames(const BlockStream *stream, const uint32_t *stack,
+                    size_t depth)
+{
+    size_t shared = 0;
+    while (shared < depth && shared < stream->prev_stack_depth &&
+           stack[depth - 1 - shared] ==
+               stream->prev_stack[stream->prev_stack_depth - 1 - shared]) {
+        shared++;
+    }
+    return shared;
+}
+
+static int
+cached_stack_matches(const StackCacheEntry *cached,
+                     const ByteBuffer *frames, Py_uhash_t hash,
+                     const uint32_t *stack, size_t depth)
+{
+    if (cached->hash != hash || cached->depth != depth) {
+        return 0;
+    }
+    const uint32_t *frame_ids = (const uint32_t *)frames->data;
+    for (size_t frame = 0; frame < depth; frame++) {
+        if (stack[frame] !=
+                frame_ids[cached->offset + depth - 1 - frame]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static StackCacheEntry *
+stack_cache_lookup(StackCacheEntry *bucket, const ByteBuffer *frames,
+                   Py_uhash_t hash, const uint32_t *stack, size_t depth)
+{
+    for (size_t i = 0; i < STACK_CACHE_BUCKET_SIZE; i++) {
+        if (cached_stack_matches(&bucket[i], frames, hash, stack, depth)) {
+            return &bucket[i];
+        }
+    }
+    return NULL;
+}
+
+static void
+stack_cache_insert(StackCacheEntry *bucket, StackCacheEntry entry)
+{
+    memmove(&bucket[1], &bucket[0],
+            (STACK_CACHE_BUCKET_SIZE - 1) * sizeof(*bucket));
+    bucket[0] = entry;
+}
+
+static int
+write_stack_repeat(BinaryWriter *writer, BlockStream *stream, size_t depth)
+{
+    SampleBlock *block = writer->block;
+    if (stream->current_repeat == UINT32_MAX) {
+        Repeat repeat = {
+            (uint32_t)block->columns[COLUMN_STACK_INSTRUCTIONS].size, 1};
+        if (buffer_append(&block->repeats,
+                          &repeat, sizeof(repeat)) < 0) {
+            return -1;
+        }
+        block->size += sizeof(repeat);
+        stream->current_repeat =
+            (uint32_t)(block->repeats.size / sizeof(repeat) - 1);
+        writer->stats.repeat_records++;
+    }
+    else {
+        Repeat *repeats = (Repeat *)block->repeats.data;
+        repeats[stream->current_repeat].count++;
+    }
+    writer->stats.repeat_samples++;
+    writer->stats.frames_saved += depth;
+    return 0;
+}
+
+static int
+write_stack_reuse(BinaryWriter *writer,
+                  const StackCacheEntry *cached, size_t depth)
+{
+    SampleBlock *block = writer->block;
+    if (column_write_varint(block, COLUMN_STACK_INSTRUCTIONS,
+                            STACK_REUSE) < 0 ||
+        column_write_varint(block, COLUMN_STACK_INSTRUCTIONS,
+                            cached->offset) < 0 ||
+        column_write_varint(block, COLUMN_STACK_INSTRUCTIONS, depth) < 0) {
+        return -1;
+    }
+    writer->stats.reuse_records++;
+    writer->stats.frames_saved += depth;
+    return 0;
+}
+
+static int
+write_stack_replace_suffix(BinaryWriter *writer, StackCacheEntry *bucket,
+                           Py_uhash_t hash, const uint32_t *stack,
+                           size_t depth, size_t shared)
+{
+    SampleBlock *block = writer->block;
+    ByteBuffer *frames = &block->columns[COLUMN_FRAME_IDS];
+    size_t new_frames = depth - shared;
+    if (column_write_varint(block, COLUMN_STACK_INSTRUCTIONS,
+                            STACK_REPLACE_SUFFIX) < 0 ||
+        column_write_varint(block, COLUMN_STACK_INSTRUCTIONS, shared) < 0 ||
+        column_write_varint(block, COLUMN_STACK_INSTRUCTIONS,
+                            new_frames) < 0) {
+        return -1;
+    }
+
+    /* Append the new inner frames, outermost first */
+    size_t stack_offset = frames->size / sizeof(uint32_t);
+    if (new_frames != 0) {
+        if (buffer_reserve(
+                frames, frames->size + new_frames * sizeof(uint32_t)) < 0) {
+            return -1;
+        }
+        uint32_t *new_frame_ids = (uint32_t *)(frames->data + frames->size);
+        for (size_t i = 0; i < new_frames; i++) {
+            uint32_t frame = stack[new_frames - 1 - i];
+            new_frame_ids[i] = frame;
+            if (frame > block->max_frame) {
+                block->max_frame = frame;
+            }
+        }
+        frames->size += new_frames * sizeof(uint32_t);
+        block->size += new_frames * sizeof(uint32_t);
+    }
+    /* Complete stacks are cached so later samples can REUSE them */
+    if (shared == 0) {
+        if (bucket != NULL) {
+            stack_cache_insert(bucket, (StackCacheEntry){
+                hash, (uint32_t)stack_offset, (uint32_t)depth});
+        }
+        writer->stats.full_records++;
+    }
+    else {
+        writer->stats.suffix_records++;
+    }
+    writer->stats.total_frames_written += new_frames;
+    writer->stats.frames_saved += shared;
+    return 0;
+}
+
+static int
+write_stack(BinaryWriter *writer, BlockStream *stream, int new_stream,
+            const uint32_t *stack, size_t depth)
+{
+    SampleBlock *block = writer->block;
+    size_t shared = common_outer_frames(stream, stack, depth);
+    /* Same stack as this stream's previous sample: extend its REPEAT */
+    if (!new_stream && shared == depth &&
+        shared == stream->prev_stack_depth) {
+        return write_stack_repeat(writer, stream, depth);
+    }
+
+    /* Enough new frames to be worth looking up an earlier complete stack */
+    Py_uhash_t hash = 0;
+    StackCacheEntry *bucket = NULL;
+    StackCacheEntry *cached = NULL;
+    if (depth - shared >= STACK_REUSE_MIN_FRAMES) {
+        hash = stack_hash(stack, depth);
+        bucket = block->cache[hash % STACK_CACHE_BUCKET_COUNT];
+        cached = stack_cache_lookup(bucket, &block->columns[COLUMN_FRAME_IDS],
+                                    hash, stack, depth);
+    }
+
+    int result;
+    if (cached != NULL) {
+        /* Stack already stored in this block: point to its frames */
+        result = write_stack_reuse(writer, cached, depth);
+    }
+    else {
+        /* Keep the shared outer frames and write only the new inner ones */
+        result = write_stack_replace_suffix(writer, bucket, hash, stack,
+                                            depth, shared);
+    }
+    if (result < 0) {
+        return -1;
+    }
+    stream->current_repeat = UINT32_MAX;
+    memcpy(stream->prev_stack, stack, depth * sizeof(uint32_t));
+    stream->prev_stack_depth = depth;
+    return 0;
+}
+
+size_t
+binary_writer_buffered_size(BinaryWriter *writer)
+{
+    SampleBlock *block = writer->block;
+    if (block == NULL || block->sample_count == 0) {
+        return 0;
+    }
+    size_t size = block->columns[COLUMN_STREAM_TABLE].size
+                  + block->columns[COLUMN_SAMPLE_STREAM_IDS].size
+                  + block->columns[COLUMN_TIMESTAMP_RESIDUALS].size
+                  + block->columns[COLUMN_STACK_INSTRUCTIONS].size;
+    const Repeat *repeats = (const Repeat *)block->repeats.data;
+    size_t repeat_count = block->repeats.size / sizeof(Repeat);
+    uint8_t bytes[MAX_VARINT_SIZE];
+    for (size_t i = 0; i < repeat_count; i++) {
+        size += encode_varint_u64(bytes, STACK_REPEAT)
+                + encode_varint_u64(bytes, repeats[i].count);
+    }
+    uint8_t common_flags, bitmap_flags;
+    block_status_flags(block, &common_flags, &bitmap_flags);
+    size += (size_t)_Py_popcount32(bitmap_flags)
+            * status_bitmap_size(block->sample_count);
+    size += block->columns[COLUMN_FRAME_IDS].size / sizeof(uint32_t)
+            * block_frame_width(block);
+    return size;
+}
+
+static int
+block_add_stream(BinaryWriter *writer, ThreadEntry *entry)
+{
+    SampleBlock *block = writer->block;
+    if (GROW_ARRAY(block->streams, block->stream_count,
+                   block->stream_capacity, BlockStream) < 0) {
+        return -1;
+    }
+    /* Stream table entry: thread_id (8 bytes) + interpreter_id (4 bytes) */
+    uint8_t stream_entry[STREAM_ENTRY_SIZE];
+    memcpy(stream_entry + STM_OFF_THREAD_ID,
+           &entry->thread_id, sizeof(entry->thread_id));
+    memcpy(stream_entry + STM_OFF_INTERPRETER_ID,
+           &entry->interpreter_id, sizeof(entry->interpreter_id));
+    if (column_write(block, COLUMN_STREAM_TABLE,
+                     stream_entry, sizeof(stream_entry)) < 0) {
+        return -1;
+    }
+    BlockStream *stream = &block->streams[block->stream_count];
+    stream->thread_index = (size_t)(entry - writer->thread_entries);
+    stream->prev_timestamp = block->base_timestamp - writer->sample_interval_us;
+    stream->current_repeat = UINT32_MAX;
+    stream->prev_stack_depth = 0;
+    entry->block_stream_index = block->stream_count++;
+    return 0;
+}
+
+static int
+block_add_sample(BinaryWriter *writer, ThreadEntry *entry,
+                 uint64_t timestamp, uint8_t status,
+                 const uint32_t *stack, size_t depth)
+{
+    static_assert(BLOCK_FLUSH_SIZE + MAX_SAMPLE_SIZE + MAX_BITMAP_PADDING ==
+                      MAX_BLOCK_SIZE,
+                  "block flush size needs headroom for one complete sample");
+
+    SampleBlock *block = writer->block;
+    /* Start a new block if this sample might not fit */
+    if (block->size >= BLOCK_FLUSH_SIZE ||
+        (entry->block_stream_index == UINT32_MAX &&
+         block->stream_count == MAX_BLOCK_STREAMS)) {
+        if (block_flush(writer) < 0) {
+            return -1;
+        }
+    }
+    if (block->sample_count == 0) {
+        block->base_timestamp = timestamp;
+    }
+    int new_stream = entry->block_stream_index == UINT32_MAX;
+    if (new_stream && block_add_stream(writer, entry) < 0) {
+        return -1;
+    }
+    BlockStream *stream = &block->streams[entry->block_stream_index];
+    /* Store the difference from the expected timestamp */
+    uint64_t residual =
+        timestamp - stream->prev_timestamp - writer->sample_interval_us;
+    uint8_t residual_bytes[MAX_VARINT_SIZE];
+    size_t residual_size =
+        encode_varint_i64(residual_bytes, (int64_t)residual);
+    if (column_write_varint(block, COLUMN_SAMPLE_STREAM_IDS,
+                            entry->block_stream_index) < 0 ||
+        column_write(block, COLUMN_TIMESTAMP_RESIDUALS,
+                     residual_bytes, residual_size) < 0 ||
+        column_write(block, COLUMN_STATUS_BITMAPS,
+                     &status, sizeof(status)) < 0) {
+        return -1;
+    }
+    if (write_stack(writer, stream, new_stream, stack, depth) < 0) {
+        return -1;
+    }
+    stream->prev_timestamp = timestamp;
+    block->sample_count++;
+    writer->total_samples++;
+    return 0;
+}
+
+static void
+block_destroy(SampleBlock *block)
+{
+    if (block == NULL) {
+        return;
+    }
+    for (unsigned i = 0; i < COLUMN_COUNT; i++) {
+        buffer_clear(&block->columns[i]);
+    }
+    buffer_clear(&block->repeats);
+    buffer_clear(&block->transformed);
+    buffer_clear(&block->compressed);
+    buffer_clear(&block->output);
+    PyMem_Free(block->streams);
+    PyMem_Free(block);
 }
 
 BinaryWriter *
@@ -749,6 +1090,11 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
                      uint64_t start_time_us, int profiling_mode,
                      int capture_features)
 {
+    if (compression_type != COMPRESSION_NONE &&
+        compression_type != COMPRESSION_ZSTD) {
+        PyErr_SetString(PyExc_ValueError, "invalid compression type");
+        return NULL;
+    }
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
     if (!writer) {
         PyErr_NoMemory();
@@ -761,12 +1107,18 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
     writer->profiling_mode = profiling_mode;
     writer->capture_features = capture_features;
 
-    writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
-    if (!writer->write_buffer) {
+    writer->block = PyMem_Calloc(1, sizeof(SampleBlock));
+    if (writer->block == NULL) {
         PyErr_NoMemory();
         goto error;
     }
-    writer->buffer_size = WRITE_BUFFER_SIZE;
+    writer->block->streams = PyMem_Malloc(
+        INITIAL_BLOCK_STREAM_CAPACITY * sizeof(BlockStream));
+    if (writer->block->streams == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    writer->block->stream_capacity = INITIAL_BLOCK_STREAM_CAPACITY;
 
     writer->string_hash = _Py_hashtable_new_full(
         string_hash_func,
@@ -964,6 +1316,13 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
     if (status_long == -1 && PyErr_Occurred()) {
         return -1;
     }
+    if (status_long < 0 || status_long > UINT8_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
+        PyErr_Format(PyExc_OverflowError,
+                     "thread status %ld exceeds the binary format range",
+                     status_long);
+        return -1;
+    }
     uint8_t status = (uint8_t)status_long;
 
     ThreadEntry *entry = writer_get_or_create_thread_entry(
@@ -972,66 +1331,14 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         return -1;
     }
 
-    /* Calculate timestamp delta */
-    uint64_t delta = timestamp_us - entry->prev_timestamp;
-
     /* Process frames and build current stack */
     uint32_t curr_stack[MAX_STACK_DEPTH];
     size_t curr_depth;
     if (build_frame_stack(writer, frame_list, curr_stack, &curr_depth) < 0) {
         return -1;
     }
-
-    /* Compare with previous stack to determine encoding */
-    size_t shared_count, pop_count, push_count;
-    int encoding = compare_stacks(
-        entry->prev_stack, entry->prev_stack_depth,
-        curr_stack, curr_depth,
-        &shared_count, &pop_count, &push_count);
-
-    if (encoding == STACK_REPEAT) {
-        /* Buffer this sample for RLE.
-         *
-         * STACK_REPEAT also covers the "first sample for a fresh thread,
-         * empty stack" case: a new ThreadEntry has prev_stack_depth == 0
-         * and a zero-initialized prev_stack, so compare_stacks() returns
-         * STACK_REPEAT against an empty curr_stack (depth 0). Buffering
-         * it here is correct; the RLE flush path emits it as a normal
-         * STACK_REPEAT record. */
-        if (entry->pending_rle == NULL) {
-            entry->pending_rle = PyMem_Malloc(MAX_RLE_BUF_SIZE);
-            if (!entry->pending_rle) {
-                PyErr_NoMemory();
-                return -1;
-            }
-        }
-        if (entry->pending_rle_bytes + MAX_RLE_ENTRY_SIZE > MAX_RLE_BUF_SIZE
-                && flush_pending_rle(writer, entry) < 0) {
-            return -1;
-        }
-        entry->pending_rle_bytes += encode_varint_u64(
-            entry->pending_rle + entry->pending_rle_bytes, delta);
-        entry->pending_rle[entry->pending_rle_bytes++] = status;
-        entry->pending_rle_samples++;
-    } else {
-        /* Stack changed - flush any pending RLE first */
-        if (flush_pending_rle(writer, entry) < 0) {
-            return -1;
-        }
-
-        if (write_sample_with_encoding(writer, entry, delta, status, encoding,
-                                       curr_stack, curr_depth,
-                                       shared_count, pop_count, push_count) < 0) {
-            return -1;
-        }
-
-        memcpy(entry->prev_stack, curr_stack, curr_depth * sizeof(uint32_t));
-        entry->prev_stack_depth = curr_depth;
-    }
-
-    entry->prev_timestamp = timestamp_us;
-    writer->total_samples++;
-    return 0;
+    return block_add_sample(
+        writer, entry, timestamp_us, status, curr_stack, curr_depth);
 }
 
 int
@@ -1078,46 +1385,9 @@ binary_writer_write_sample(BinaryWriter *writer, PyObject *stack_frames, uint64_
 int
 binary_writer_finalize(BinaryWriter *writer)
 {
-    for (size_t i = 0; i < writer->thread_count; i++) {
-        if (flush_pending_rle(writer, &writer->thread_entries[i]) < 0) {
-            return -1;
-        }
-    }
-
-    if (writer_flush_buffer(writer) < 0) {
+    if (block_flush(writer) < 0) {
         return -1;
     }
-
-#ifdef HAVE_ZSTD
-    /* Finalize compression stream */
-    if (writer->compression_type == COMPRESSION_ZSTD && writer->zstd.cctx) {
-        ZSTD_inBuffer input = { NULL, 0, 0 };
-        size_t remaining;
-
-        do {
-            ZSTD_outBuffer output = {
-                writer->zstd.compressed_buffer,
-                writer->zstd.compressed_buffer_size,
-                0
-            };
-
-            remaining = ZSTD_compressStream2(writer->zstd.cctx, &output, &input, ZSTD_e_end);
-
-            if (ZSTD_isError(remaining)) {
-                PyErr_Format(PyExc_IOError, "zstd finalization error: %s",
-                             ZSTD_getErrorName(remaining));
-                return -1;
-            }
-
-            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
-            if (output.pos > 0) {
-                if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
-                    return -1;
-                }
-            }
-        } while (remaining > 0);
-    }
-#endif
 
     /* Use 64-bit file position for >2GB files */
     file_offset_t string_table_offset = FTELL64(writer->fp);
@@ -1314,13 +1584,12 @@ binary_writer_destroy(BinaryWriter *writer)
         Py_fclose(writer->fp);
     }
 
-    PyMem_Free(writer->write_buffer);
+    block_destroy(writer->block);
 
 #ifdef HAVE_ZSTD
     if (writer->zstd.cctx) {
         ZSTD_freeCCtx(writer->zstd.cctx);
     }
-    PyMem_Free(writer->zstd.compressed_buffer);
 #endif
 
     if (writer->string_hash) {
@@ -1339,13 +1608,7 @@ binary_writer_destroy(BinaryWriter *writer)
     }
     PyMem_Free(writer->frame_entries);
 
-    if (writer->thread_entries) {
-        for (size_t i = 0; i < writer->thread_count; i++) {
-            PyMem_Free(writer->thread_entries[i].prev_stack);
-            PyMem_Free(writer->thread_entries[i].pending_rle);
-        }
-        PyMem_Free(writer->thread_entries);
-    }
+    PyMem_Free(writer->thread_entries);
 
     PyMem_Free(writer);
 }
