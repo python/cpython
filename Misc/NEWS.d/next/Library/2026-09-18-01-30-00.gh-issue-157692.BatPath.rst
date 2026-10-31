@@ -1,0 +1,4 @@
+Use separate saved ``PATH`` state for the Windows batch activation
+scripts in :mod:`venv`. This prevents a POSIX shell started from an
+activated command prompt from restoring a Windows-format ``PATH``
+when it activates a virtual environment.
