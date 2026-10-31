@@ -1,0 +1,6 @@
+The new interactive shell can now strip ``>>>`` and ``...`` prompts and
+output from pasted sessions using paste mode (:kbd:`F3`).
+Selections starting with ``...`` continuation prompts are supported.  When an
+error skips later statements in an input block, a message reports that they
+were not executed.
+Patch by Bartosz Sławecki.

@@ -67,6 +67,17 @@ Summary -- Release highlights
 New features
 ============
 
+Pasting interactive sessions
+----------------------------
+
+The :ref:`interactive shell <tut-interac>` can now strip ``>>>`` and ``...``
+prompts and output from pasted Python sessions, including selections that
+start with a ``...`` continuation prompt.  Press :kbd:`F3` to strip a
+session already in the input buffer or enable stripping for subsequent
+pastes.  This requires a terminal that supports bracketed paste.  If an error
+stops execution before later statements in an input block, a message reports
+that those statements were not executed.
+(Contributed by Bartosz Sławecki in :gh:`157612`.)
 
 
 Other language changes

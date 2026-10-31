@@ -214,6 +214,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
     ) -> None:
         super().__init__(locals=locals, filename=filename, local_exit=local_exit)
         self.can_colorize = _colorize.can_colorize()
+        self.unexecuted_statements = False
 
     def showsyntaxerror(self, filename=None, **kwargs):
         super().showsyntaxerror(filename=filename, **kwargs)
@@ -237,6 +238,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         return None
 
     def runsource(self, source, filename="<input>", symbol="single"):
+        self.unexecuted_statements = False
         try:
             tree = self.compile.compiler(
                 source,
@@ -269,16 +271,14 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             try:
                 code = self.compile.compiler(item, filename, the_symbol)
                 linecache._register_code(code, source, filename)
-            except SyntaxError as e:
-                if e.args[0] == "'await' outside function":
+            except Exception as e:
+                if isinstance(e, SyntaxError) and e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
                     e.add_note(
                         f"Try the asyncio REPL ({python} -m asyncio) to use"
                         f" top-level 'await' and run background asyncio tasks."
                     )
-                self.showsyntaxerror(filename, source=source)
-                return False
-            except Exception:
+                self.unexecuted_statements = stmt is not last_stmt
                 self.showsyntaxerror(filename, source=source)
                 return False
 
@@ -287,5 +287,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
             result = self.runcode(code)
             if result is self.STATEMENT_FAILED:
+                self.unexecuted_statements = stmt is not last_stmt
                 break
         return False
