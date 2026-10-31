@@ -346,7 +346,7 @@ class Future(object):
     def __repr__(self):
         with self._condition:
             if self._state == FINISHED:
-                if self._exception:
+                if self._exception is not None:
                     return '<%s at %#x state=%s raised %s>' % (
                         self.__class__.__name__,
                         id(self),
