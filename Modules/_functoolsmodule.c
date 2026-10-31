@@ -1855,7 +1855,7 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *placeholder = PySentinel_New("Placeholder", "functools");
+    PyObject *placeholder = PySentinel_New("Placeholder", "functools", NULL);
     if (placeholder == NULL) {
         return -1;
     }
