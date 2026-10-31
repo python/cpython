@@ -50,7 +50,7 @@ slice_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *stop = NULL;
     PyObject *step = NULL;
 
-    assert(Py_Is(_PyType_CAST(type), &PySlice_Type));
+    assert(_PyType_CAST(type)->tp_new == slice_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -75,4 +75,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3547c23a3ee3cd86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=62159046029c6bdf input=a9049054013a1b77]*/
