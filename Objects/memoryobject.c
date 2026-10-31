@@ -1257,7 +1257,7 @@ memoryview_release_impl(PyMemoryViewObject *self)
     Py_ssize_t exports = get_exports(self);
     if (exports == 0) {
         _memory_release(self);
-        result = Py_NewRef(Py_None);
+        result = Py_None;
     }
     else if (exports > 0) {
         PyErr_Format(PyExc_BufferError,
