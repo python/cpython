@@ -259,11 +259,11 @@ class EventLoopSettings:
         if (not isinstance(self.eager_max_time, (int, float))
                 or isinstance(self.eager_max_time, bool)):
             raise TypeError(f"eager_max_time must be an int or float, "
-                            f"got {self.eager_max_time!r}")
+                            f"not {type(self.eager_max_time).__name__}")
         if (not isinstance(self.eager_max_callbacks, int)
                 or isinstance(self.eager_max_callbacks, bool)):
             raise TypeError(f"eager_max_callbacks must be an int, "
-                            f"got {self.eager_max_callbacks!r}")
+                            f"not {type(self.eager_max_callbacks).__name__}")
         if not 0 <= self.eager_max_time <= sys.float_info.max:
             raise ValueError("eager_max_time must be a non-negative "
                              "finite number")
