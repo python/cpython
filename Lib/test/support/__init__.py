@@ -11,6 +11,7 @@ import logging
 import _opcode
 import os
 import re
+import shlex
 import stat
 import sys
 import sysconfig
@@ -19,6 +20,7 @@ import time
 import types
 import unittest
 import warnings
+lazy import platform
 
 
 __all__ = [
@@ -33,6 +35,7 @@ __all__ = [
     "is_resource_enabled", "get_resource_value", "requires", "requires_resource",
     "requires_freebsd_version",
     "requires_gil_enabled", "requires_linux_version", "requires_mac_ver",
+    "requires_ios_ver",
     "check_syntax_error",
     "requires_gzip", "requires_bz2", "requires_lzma", "requires_zstd",
     "bigmemtest", "nomemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
@@ -74,7 +77,7 @@ __all__ = [
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     "reset_code", "on_github_actions",
     "requires_root_user", "requires_non_root_user",
-    "skip_if_double_rounding",
+    "skip_if_double_rounding", "built_with_c_assertions",
     ]
 
 
@@ -229,7 +232,6 @@ def _force_run(path, func, *args):
 def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
-    import platform
     reason = None
     if sys.platform.startswith('win') and platform.win32_is_iot():
         reason = "gui is not available on Windows IoT Core"
@@ -347,17 +349,17 @@ def requires(resource, msg=None):
     if resource == 'gui' and not _is_gui_available():
         raise ResourceDenied(_is_gui_available.reason)
 
-def _requires_unix_version(sysname, min_version):
-    """Decorator raising SkipTest if the OS is `sysname` and the version is less
+
+def _requires_platform_version(name, sys_platform, get_version_text, min_version):
+    """
+    Decorator raising SkipTest if the OS is `sysname` and the version is less
     than `min_version`.
 
-    For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
-    the FreeBSD version is less than 7.2.
+    For example, @_requires_platform_version('FreeBSD', 'freebsd', (7, 2))
+    raises SkipTest if the FreeBSD version is less than 7.2.
     """
-    import platform
-    min_version_txt = '.'.join(map(str, min_version))
-    version_txt = platform.release().split('-', 1)[0]
-    if platform.system() == sysname:
+    version_txt = get_version_text()
+    if sys.platform == sys_platform:
         try:
             version = tuple(map(int, version_txt.split('.')))
         except ValueError:
@@ -367,11 +369,17 @@ def _requires_unix_version(sysname, min_version):
     else:
         skip = False
 
+    min_version_txt = '.'.join(map(str, min_version))
     return unittest.skipIf(
         skip,
-        f"{sysname} version {min_version_txt} or higher required, not "
+        f"{name} version {min_version_txt} or higher required, not "
         f"{version_txt}"
     )
+
+
+def _get_platform_release():
+    # Replace '7.2.8-200.fc44.x86_64' with '7.2.8'
+    return platform.release().partition('-')[0]
 
 
 def requires_freebsd_version(*min_version):
@@ -381,7 +389,11 @@ def requires_freebsd_version(*min_version):
     For example, @requires_freebsd_version(7, 2) raises SkipTest if the FreeBSD
     version is less than 7.2.
     """
-    return _requires_unix_version('FreeBSD', min_version)
+    return _requires_platform_version(
+        'FreeBSD', 'freebsd',
+        get_version_text=_get_platform_release,
+        min_version=min_version)
+
 
 def requires_linux_version(*min_version):
     """Decorator raising SkipTest if the OS is Linux and the Linux version is
@@ -390,7 +402,11 @@ def requires_linux_version(*min_version):
     For example, @requires_linux_version(2, 6, 32) raises SkipTest if the Linux
     version is less than 2.6.32.
     """
-    return _requires_unix_version('Linux', min_version)
+    return _requires_platform_version(
+        "Linux", "linux",
+        get_version_text=_get_platform_release,
+        min_version=min_version)
+
 
 def requires_mac_ver(*min_version):
     """Decorator raising SkipTest if the OS is Mac OS X and the OS X
@@ -399,26 +415,23 @@ def requires_mac_ver(*min_version):
     For example, @requires_mac_ver(10, 5) raises SkipTest if the OS X version
     is lesser than 10.5.
     """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kw):
-            if sys.platform == 'darwin':
-                import platform
-                version_txt = platform.mac_ver()[0]
-                try:
-                    version = tuple(map(int, version_txt.split('.')))
-                except ValueError:
-                    pass
-                else:
-                    if version < min_version:
-                        min_version_txt = '.'.join(map(str, min_version))
-                        raise unittest.SkipTest(
-                            "Mac OS X %s or higher required, not %s"
-                            % (min_version_txt, version_txt))
-            return func(*args, **kw)
-        wrapper.min_version = min_version
-        return wrapper
-    return decorator
+    return _requires_platform_version(
+        "macOS", "darwin",
+        get_version_text=lambda: platform.mac_ver()[0],
+        min_version=min_version)
+
+
+def requires_ios_ver(*min_version):
+    """Decorator raising SkipTest if the OS is iOS and the OS version
+    version if less than min_version.
+
+    For example, requires_ios_ver(16, 0) raises SkipTest if the iOS version
+    is lesser than 16.0.
+    """
+    return _requires_platform_version(
+        "iOS", "ios",
+        get_version_text=lambda: platform.ios_ver().release,
+        min_version=min_version)
 
 
 def thread_unsafe(reason):
@@ -448,30 +461,48 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
-                    function=True):
+def check_sanitizer(*, address=False, hwaddress=False, memory=False, ub=False,
+                    thread=False, function=True):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub or thread):
-        raise ValueError('At least one of address, memory, ub or thread must be True')
+    if not (address or hwaddress or memory or ub or thread):
+        raise ValueError('At least one of address, hwaddress, memory, ub or '
+                         'thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+
+    def configured_with_sanitizer(name):
+        with_option = f'--with-{name}-sanitizer'
+        without_option = f'--without-{name}-sanitizer'
+        enabled = False
+        for arg in config_args:
+            if arg == without_option or arg == f'{with_option}=no':
+                enabled = False
+            elif arg == with_option or arg.startswith(f'{with_option}='):
+                enabled = True
+        return enabled
+
     memory_sanitizer = (
         '-fsanitize=memory' in cflags or
-        '--with-memory-sanitizer' in config_args
+        configured_with_sanitizer('memory')
+    )
+    hwaddress_sanitizer = (
+        '-fsanitize=hwaddress' in cflags or
+        configured_with_sanitizer('hwaddress')
     )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
-        '--with-address-sanitizer' in config_args
+        configured_with_sanitizer('address') or
+        hwaddress_sanitizer
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in cflags or
-        '--with-undefined-behavior-sanitizer' in config_args
+        configured_with_sanitizer('undefined-behavior')
     )
     thread_sanitizer = (
         '-fsanitize=thread' in cflags or
-        '--with-thread-sanitizer' in config_args
+        configured_with_sanitizer('thread')
     )
     function_sanitizer = (
         '-fsanitize=function' in cflags
@@ -479,6 +510,7 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
+        (hwaddress and hwaddress_sanitizer) or
         (ub and ub_sanitizer) or
         (thread and thread_sanitizer) or
         (function and function_sanitizer)
@@ -609,7 +641,7 @@ def skip_android_selinux(name):
         sys.platform == "android", f"Android blocks {name} with SELinux"
     )
 
-if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
+if sys.platform not in {"win32", "vxworks", "ios", "tvos", "visionos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -628,7 +660,7 @@ def skip_emscripten_stack_overflow():
 def skip_wasi_stack_overflow():
     return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
 
-is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
+is_apple_mobile = sys.platform in {"ios", "tvos", "visionos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
 
 has_fork_support = hasattr(os, "fork") and not (
@@ -868,7 +900,7 @@ def open_urlresource(url, *args, **kw):
 
     check = kw.pop('check', None)
 
-    filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+    filename = urllib.parse.urlparse(url).path.split('/')[-1] # '/': it's URL!
 
     fn = os.path.join(TEST_DATA_DIR, filename)
 
@@ -1364,21 +1396,16 @@ def bigmemtest(size, memuse, dry_run=True):
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -1600,10 +1627,10 @@ def set_environment_altered(reason):
 
 
 def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
     """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
@@ -1941,6 +1968,24 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     test_case.assertCountEqual(module.__all__, expected)
 
 
+def check_deprecated_module_attributes(test_case, module, *names, remove):
+    """Assert that accessing each of 'names' on 'module' emits a
+    DeprecationWarning naming the attribute and the Python version 'remove',
+    given as a (major, minor) tuple, in which it will be removed.
+    """
+    major, minor = remove
+    for name in names:
+        with test_case.subTest(name=name):
+            with test_case.assertWarns(DeprecationWarning) as cm:
+                getattr(module, name)
+            test_case.assertEqual(
+                str(cm.warning),
+                f"{name!r} is deprecated and slated for removal "
+                f"in Python {major}.{minor}",
+            )
+            test_case.assertEqual(cm.filename, __file__)
+
+
 def suppress_msvcrt_asserts(verbose=False):
     try:
         import msvcrt
@@ -2221,7 +2266,6 @@ def setswitchinterval(interval):
     if is_android and interval < minimum_interval:
         global _old_android_emulator
         if _old_android_emulator is None:
-            import platform
             av = platform.android_ver()
             _old_android_emulator = av.is_emulator and av.api_level < 24
         if _old_android_emulator:
@@ -3478,7 +3522,6 @@ def linked_to_musl():
 
     # On linux, we'll depend on the platform module to do the check, so new
     # musl platforms should add support in that module if possible.
-    import platform
     lib, version = platform.libc_ver()
     if lib != 'musl':
         _linked_to_musl = False
@@ -3526,3 +3569,48 @@ def check_immutable_type(testcase, type):
     else:
         flags = type_getflags(type)
         testcase.assertTrue(flags & Py_TPFLAGS_IMMUTABLETYPE)
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()

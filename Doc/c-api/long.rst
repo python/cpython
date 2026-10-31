@@ -535,17 +535,24 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. c:namespace:: NULL
 
-   ============================================= ======
-   Flag                                          Value
-   ============================================= ======
-   .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
-   .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
-   .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
-   .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
-   .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
-   .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
-   .. c:macro:: Py_ASNATIVEBYTES_ALLOW_INDEX     ``16``
-   ============================================= ======
+   .. stable-abi-note::
+
+      These values are available when compiling for the
+      :ref:`Stable ABI <stable>` since version 3.14.
+
+   .. omit-stable-abi-notes::
+
+      ============================================= ======
+      Flag                                          Value
+      ============================================= ======
+      .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
+      .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
+      .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
+      .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
+      .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
+      .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
+      .. c:macro:: Py_ASNATIVEBYTES_ALLOW_INDEX     ``16``
+      ============================================= ======
 
    Specifying ``Py_ASNATIVEBYTES_NATIVE_ENDIAN`` will override any other endian
    flags. Passing ``2`` is reserved.
@@ -678,6 +685,21 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Otherwise, the return value is undefined.
 
    .. versionadded:: 3.12
+
+
+Build configuration
+^^^^^^^^^^^^^^^^^^^
+
+.. c:macro:: PYLONG_BITS_IN_DIGIT
+
+   The number of bits in each digit of CPython's native representation of
+   integers.
+   The value can currently be either ``30`` (the default) or ``15``,
+   selected with :option:`--enable-big-digits` when building Python.
+
+   To access the native representation of integers, use
+   :c:func:`PyLong_GetNativeLayout` and its
+   :c:member:`~PyLongLayout.bits_per_digit` member instead.
 
 
 Export API

@@ -931,6 +931,24 @@ class OtherTest(unittest.TestCase):
         gc.collect()
         self.assertIsNone(wr())
 
+    def test_overflows_in_floats(self):
+        half_data = array.array('e', [0.0])
+        float_data = array.array('f', [0.0])
+        complex_data = array.array('Zf', [123+321j])
+        half_view = memoryview(half_data)
+        float_view = memoryview(float_data)
+        complex_view = memoryview(complex_data)
+        with self.assertRaises(ValueError):
+            half_view[0] = 123456.0
+        with self.assertRaises(ValueError):
+            float_view[0] = 1e300
+        with self.assertRaises(ValueError):
+            complex_view[0] = 1e300
+        self.assertEqual(complex_view[0], 123+321j)
+        with self.assertRaises(ValueError):
+            complex_view[0] = 1e300j
+        self.assertEqual(complex_view[0], 123+321j)
+
 
 @threading_helper.requires_working_threading()
 @support.requires_resource("cpu")

@@ -65,6 +65,14 @@ def _build_graph_for_future(
             # A native async generator or duck-type compatible iterator
             st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
+        elif hasattr(coro, 'gi_yieldfrom'):
+            # A generator, e.g. returned by __await__ or @types.coroutine
+            if coro.gi_frame is not None:
+                st.append(FrameCallGraphEntry(coro.gi_frame))
+            coro = coro.gi_yieldfrom
+        elif hasattr(coro, 'aga_gen'):
+            # An asend()/athrow() awaitable: step over it to its generator
+            coro = coro.aga_gen
         else:
             break
 
@@ -155,7 +163,9 @@ def capture_call_graph(
     f = sys._getframe(depth) if limit != 0 else None
     try:
         while f is not None:
-            is_async = f.f_generator is not None
+            # gh-156988: sync gen should not clear the call chain
+            is_async = isinstance(
+                f.f_generator, (types.CoroutineType, types.AsyncGeneratorType))
             call_stack.append(FrameCallGraphEntry(f))
 
             if is_async:

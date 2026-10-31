@@ -28,8 +28,8 @@
 """Read from and write to tar format archives.
 """
 
-__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
+# Original author: Lars Gustäbel (lars@gustaebel.de)
+# Credits: Gustavo Niemeyer, Niels Gustäbel, Richard Townsend.
 
 #---------
 # Imports
@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+lazy import warnings
 
 try:
     import pwd
@@ -453,8 +454,12 @@ class _Stream:
                                          self.zlib.DEF_MEM_LEVEL,
                                          0)
         if mtime is None:
-            mtime = int(time.time())
-        timestamp = struct.pack("<L", mtime)
+            mtime = time.time()
+        # gh-133998: substitute 0 for an out-of-range mtime and coerce to int,
+        # mirroring gzip (RFC 1952), so struct.pack cannot raise struct.error.
+        if not 0 <= mtime < 2**32:
+            mtime = 0
+        timestamp = struct.pack("<L", int(mtime))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
@@ -661,13 +666,15 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, name, blockinfo=None):
+    def __init__(self, fileobj, offset, size, name, blockinfo=None,
+            exception=OSError):
         self.fileobj = fileobj
         self.offset = offset
         self.size = size
         self.position = 0
         self.name = name
         self.closed = False
+        self.exception = exception
 
         if blockinfo is None:
             blockinfo = [(0, size)]
@@ -744,7 +751,10 @@ class _FileInFile(object):
             length = min(size, stop - self.position)
             if data:
                 self.fileobj.seek(offset + (self.position - start))
-                b = self.fileobj.read(length)
+                try:
+                    b = self.fileobj.read(length)
+                except self.exception as e:
+                    raise ReadError(f"invalid compressed data: {e}") from e
                 if len(b) != length:
                     raise ReadError("unexpected end of data")
                 buf += b
@@ -767,7 +777,8 @@ class ExFileObject(io.BufferedReader):
 
     def __init__(self, tarfile, tarinfo):
         fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
-                tarinfo.size, tarinfo.name, tarinfo.sparse)
+                tarinfo.size, tarinfo.name, tarinfo.sparse,
+                exception=tarfile.exception)
         super().__init__(fileobj)
 #class ExFileObject
 
@@ -844,6 +855,12 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
         raise OutsideDestinationError(member, target_path)
+    # A link member named after the destination directory itself
+    # would replace it with a (sym)link, redirecting the destination
+    # for all subsequent members.
+    if ((member.islnk() or member.issym())
+            and os.path.normpath(name) == os.curdir):
+        raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
     if mode is not None:
@@ -879,11 +896,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            # A link member that resolves to the destination directory itself
-            # would replace it with a (sym)link, redirecting the destination
-            # for all subsequent members.
-            if target_path == dest_path:
-                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
@@ -1129,7 +1141,7 @@ class TarInfo(object):
         # be represented in ASCII encoding.
         for name, hname, length in (
                 ("name", "path", LENGTH_NAME), ("linkname", "linkpath", LENGTH_LINK),
-                ("uname", "uname", 32), ("gname", "gname", 32)):
+                ("uname", "uname", 31), ("gname", "gname", 31)):
 
             if hname in pax_headers:
                 # The pax header has priority.
@@ -1173,6 +1185,9 @@ class TarInfo(object):
         else:
             buf = b""
 
+        # The owner names in the base header must be NUL-terminated.
+        info["uname"] = info["uname"][:31]
+        info["gname"] = info["gname"][:31]
         return buf + self._create_header(info, USTAR_FORMAT, "ascii", "replace")
 
     @classmethod
@@ -1601,6 +1616,14 @@ class TarInfo(object):
         # Fetch the next header.
         try:
             next = self._fromtarfile(tarfile, dircheck=False)
+        except EOFHeaderError:
+            if self.type == XGLTYPE:
+                # If this is a global header at the end of the archive
+                # (no regular members follow), let the EOFHeaderError
+                # propagate so the caller handles end-of-archive normally.
+                tarfile.offset = tarfile.fileobj.tell() - BLOCKSIZE
+                raise
+            raise SubsequentHeaderError("end of file header") from None
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
@@ -1788,6 +1811,12 @@ class TarFile(object):
     tarinfo = TarInfo           # The default TarInfo class to use.
 
     fileobject = ExFileObject   # The file-object for extractfile().
+
+    exception = OSError         # The exception raised by the underlying
+                                 # fileobj.read() on corrupt compressed
+                                 # data past the header (see gzopen() etc.
+                                 # for the more specific exception types
+                                 # used by each compression format).
 
     extraction_filter = None    # The default filter for extraction.
 
@@ -2034,6 +2063,7 @@ class TarFile(object):
 
         try:
             from gzip import GzipFile
+            import zlib
         except ImportError:
             raise CompressionError("gzip module is not available") from None
 
@@ -2056,6 +2086,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = zlib.error
         return t
 
     @classmethod
@@ -2112,6 +2143,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = LZMAError
         return t
 
     @classmethod
@@ -2147,6 +2179,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = ZstdError
         return t
 
     # All *open() methods are registered here.
@@ -2188,7 +2221,9 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name.rstrip('/'))
+        tarinfo = self._getmember(name)
+        if tarinfo is None and name.endswith('/'):
+            tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo
@@ -2423,11 +2458,14 @@ class TarFile(object):
             raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
-
+        # get current offset
+        tarinfo.offset = self.offset
         buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
         self.offset += len(buf)
+        # add original offset to block size
         bufsize=self.copybufsize
+        tarinfo.offset_data = self.offset
         # If there's data to follow, append it.
         if fileobj is not None:
             copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
@@ -2805,7 +2843,11 @@ class TarFile(object):
                     if os.path.lexists(targetpath):
                         # Avoid FileExistsError on following os.link.
                         os.unlink(targetpath)
-                    os.link(tarinfo._link_target, targetpath)
+                    # Resolve the target so the hard link points to the file
+                    # itself. Otherwise os.link() may duplicate a symlink to a
+                    # shallower location, where its relative target escapes the
+                    # destination directory. (CVE-2026-82049)
+                    os.link(os.path.realpath(tarinfo._link_target), targetpath)
                     return
         except symlink_exception:
             keyerror_to_extracterror = True
@@ -2827,9 +2869,11 @@ class TarFile(object):
                     "makelink_with_filter: if filter_function is not None, "
                     + "extraction_root must also not be None")
             try:
-                filter_function(
+                filtered = filter_function(
                     unfiltered.replace(name=tarinfo.name, deep=False),
                     extraction_root)
+                if filtered is None:
+                    return
                 filtered = filter_function(unfiltered, extraction_root)
             except _FILTER_ERRORS as cause:
                 raise LinkFallbackError(tarinfo, unfiltered.name) from cause
@@ -3216,11 +3260,13 @@ def main():
 
 
 def __getattr__(name):
-    if name == "version":
-        from warnings import _deprecated
-
-        _deprecated("version", remove=(3, 20))
-        return "0.9.0"  # Do not change
+    if name in ("version", "__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "version": "0.9.0",
+            "__author__": "Lars Gust\u00e4bel (lars@gustaebel.de)",
+            "__credits__": "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend.",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

@@ -1247,6 +1247,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_sre_SRE_Match_group__doc__,
+"group($self, /, *args)\n"
+"--\n"
+"\n"
+"Return subgroup(s) of the match by indices or names.\n"
+"\n"
+"For 0 returns the entire match.");
+
+#define _SRE_SRE_MATCH_GROUP_METHODDEF    \
+    {"group", _PyCFunction_CAST(_sre_SRE_Match_group), METH_FASTCALL, _sre_SRE_Match_group__doc__},
+
+static PyObject *
+_sre_SRE_Match_group_impl(MatchObject *self, PyObject * const *args,
+                          Py_ssize_t args_length);
+
+static PyObject *
+_sre_SRE_Match_group(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *__clinic_args;
+    Py_ssize_t args_length;
+
+    __clinic_args = args;
+    args_length = nargs;
+    return_value = _sre_SRE_Match_group_impl((MatchObject *)self, __clinic_args, args_length);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Match_groups__doc__,
 "groups($self, /, default=None)\n"
 "--\n"
@@ -1568,4 +1597,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=0c867efb64e020aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e6c222a2eb0875e input=a9049054013a1b77]*/
