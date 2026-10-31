@@ -1,0 +1,5 @@
+:meth:`datetime.time.fromisoformat` and
+:meth:`datetime.datetime.fromisoformat` now reject digits after the seconds
+of a time in the basic format when there is no decimal mark, such as
+``"12304512"``. The C implementation previously read them as a fractional
+second, while the pure-Python implementation rejected them.

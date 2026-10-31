@@ -1045,6 +1045,9 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             continue;
         }
         else if (!has_separator) {
+            if (i == 2) {
+                return -4;  // Malformed microsecond separator
+            }
             --p;
         }
         else {
