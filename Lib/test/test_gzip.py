@@ -870,6 +870,25 @@ class TestGzip(BaseTest):
             with gzip.GzipFile(fileobj=io.BytesIO(truncated[:i])) as f:
                 self.assertRaises(EOFError, f.read, 1)
 
+    def test_read_short_reads(self):
+        # gh-159999: The decompressor can consume all input and fill the
+        # output buffer at the same time. This must not be reported as
+        # EOF before more input has been read.
+        class ShortReadIO(io.BytesIO):
+            # Return one byte per call after the 10-byte header.
+            def read(self, size=-1):
+                return super().read(size if self.tell() < 10 else 1)
+
+        data = data1*50
+        compressed = gzip.compress(data)
+        for size in (1, 2, 3, 100):
+            with self.subTest(size=size):
+                reader = gzip._GzipReader(ShortReadIO(compressed))
+                out = []
+                while chunk := reader.read(size):
+                    out.append(chunk)
+                self.assertEqual(b"".join(out), data)
+
     def test_read_with_extra(self):
         # Gzip data with an extra field
         gzdata = (b'\x1f\x8b\x08\x04\xb2\x17cQ\x02\xff'

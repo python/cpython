@@ -1231,6 +1231,30 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertEqual(out, self.BIG_TEXT)
         self.assertEqual(zlibd.unused_data, b"")
 
+    def test_decompressor_needs_input_with_buffered_output(self):
+        # gh-159999: needs_input must be false if all input was consumed
+        # but max_length prevented returning all output.
+        zlibd = zlib._ZlibDecompressor()
+        self.assertEqual(zlibd.decompress(zlib.compress(b"\x00")[:4],
+                                          max_length=0), b"")
+        self.assertFalse(zlibd.needs_input)
+        self.assertEqual(zlibd.decompress(b""), b"\x00")
+
+        data = bytes(100_000)
+        compressed = zlib.compress(data)
+        for max_length in (-1, 1000):
+            with self.subTest(max_length=max_length):
+                zlibd = zlib._ZlibDecompressor()
+                out = []
+                for i in range(len(compressed)):
+                    out.append(zlibd.decompress(compressed[i:i+1], max_length))
+                    while not zlibd.needs_input and not zlibd.eof:
+                        out.append(zlibd.decompress(b"", max_length))
+                    if not zlibd.eof:
+                        self.assertEqual(zlibd.decompress(b""), b"")
+                self.assertTrue(zlibd.eof)
+                self.assertEqual(b"".join(out), data)
+
     def test_decompressor_inputbuf_1(self):
         # Test reusing input buffer after moving existing
         # contents to beginning
