@@ -553,6 +553,16 @@ class StreamReader:
         finally:
             self._waiter = None
 
+    def _readuntil_fast(self, separator):
+        # Fast linear search inside already buffered data.
+        if type(separator) is bytes and separator and self._exception is None:
+            isep = self._buffer.find(separator)
+            if 0 <= isep <= self._limit:
+                chunk = self._buffer.take_bytes(isep + len(separator))
+                self._maybe_resume_transport()
+                return chunk
+        return None
+
     async def readline(self):
         r"""Read chunk of data from the stream until newline (b'\n') is found.
 
@@ -570,19 +580,18 @@ class StreamReader:
         needed.
         """
         sep = b'\n'
-        seplen = len(sep)
+        if (line := self._readuntil_fast(sep)) is not None:
+            return line
         try:
-            line = await self.readuntil(sep)
+            return await self.readuntil(sep)
         except exceptions.IncompleteReadError as e:
             return e.partial
         except exceptions.LimitOverrunError as e:
-            if self._buffer.startswith(sep, e.consumed):
-                del self._buffer[:e.consumed + seplen]
-            else:
-                self._buffer.clear()
+            # e.consumed is the newline's index, or len(self._buffer) if
+            # there is none: drop the line, or everything.
+            del self._buffer[:e.consumed + 1]
             self._maybe_resume_transport()
             raise ValueError(e.args[0])
-        return line
 
     async def readuntil(self, separator=b'\n'):
         """Read data from the stream until ``separator`` is found.
@@ -610,6 +619,8 @@ class StreamReader:
         the shortest possible separator is considered to be the one that
         matched.
         """
+        if (chunk := self._readuntil_fast(separator)) is not None:
+            return chunk
         if isinstance(separator, tuple):
             # Makes sure shortest matches wins
             separator = sorted(separator, key=len)
@@ -617,10 +628,9 @@ class StreamReader:
             separator = [separator]
         if not separator:
             raise ValueError('Separator should contain at least one element')
-        min_seplen = len(separator[0])
-        max_seplen = len(separator[-1])
-        if min_seplen == 0:
+        if len(separator[0]) == 0:
             raise ValueError('Separator should be at least one-byte string')
+        max_seplen = len(separator[-1])
 
         if self._exception is not None:
             raise self._exception
@@ -650,32 +660,23 @@ class StreamReader:
         # or an EOF has happened.
         while True:
             buflen = len(self._buffer)
+            match_end = buflen + 1
+            for sep in separator:
+                # Only a match that ends before the best one so far wins,
+                # so don't search past it.
+                isep = self._buffer.find(sep, offset, match_end - 1)
+                if isep != -1:
+                    match_start = isep
+                    match_end = isep + len(sep)
+            if match_end <= buflen:
+                break
 
-            # Check if we now have enough data in the buffer for shortest
-            # separator to fit.
-            if buflen - offset >= min_seplen:
-                match_start = None
-                match_end = None
-                for sep in separator:
-                    isep = self._buffer.find(sep, offset)
-
-                    if isep != -1:
-                        # `separator` is in the buffer. `match_start` and
-                        # `match_end` will be used later to retrieve the
-                        # data.
-                        end = isep + len(sep)
-                        if match_end is None or end < match_end:
-                            match_end = end
-                            match_start = isep
-                if match_end is not None:
-                    break
-
-                # see upper comment for explanation.
-                offset = max(0, buflen + 1 - max_seplen)
-                if offset > self._limit:
-                    raise exceptions.LimitOverrunError(
-                        'Separator is not found, and chunk exceed the limit',
-                        offset)
+            # see upper comment for explanation.
+            offset = max(0, buflen + 1 - max_seplen)
+            if offset > self._limit:
+                raise exceptions.LimitOverrunError(
+                    'Separator is not found, and chunk exceed the limit',
+                    offset)
 
             # Complete message (with full separator) may be present in buffer
             # even when EOF flag is set. This may happen when the last chunk
