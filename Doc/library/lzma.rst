@@ -143,10 +143,6 @@ Reading and writing compressed files
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
-      A damaged ``.xz`` stream that follows another stream now raises
-      :exc:`LZMAError` instead of being ignored as trailing data.
-
 
 Compressing and decompressing data in memory
 --------------------------------------------
@@ -306,10 +302,6 @@ Compressing and decompressing data in memory
 
    See :class:`LZMADecompressor` above for a description of the *format*,
    *memlimit* and *filters* arguments.
-
-   .. versionchanged:: next
-      A damaged ``.xz`` stream that follows another stream now raises
-      :exc:`LZMAError` instead of being ignored as trailing data.
 
 
 Miscellaneous
