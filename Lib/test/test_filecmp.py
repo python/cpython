@@ -84,8 +84,9 @@ class FileCompareTestCase(unittest.TestCase):
         filecmp.clear_cache()
         s1 = filecmp._sig(os.stat(self.name))
         s2 = filecmp._sig(os.stat(self.name_same))
+        base_dir = os.path.dirname(self.name)
         for i in range(105):
-            fake_path2 = f"fake_path_{i}"
+            fake_path2 = os.path.join(base_dir, f"fake_path_{i}")
             filecmp._cache[self.name, fake_path2, s1, s2] = True
 
         self.assertGreater(len(filecmp._cache), 100)
@@ -434,16 +435,20 @@ class DirCmpImplementationTests(unittest.TestCase):
         for d in (self.dir, self.dir_same):
             Path(d, trigger_file).write_text('trigger', encoding='utf-8')
 
+        expected_path1 = os.path.normcase(os.path.abspath(os.path.join(self.dir, trigger_file)))
+        expected_path2 = os.path.normcase(os.path.abspath(os.path.join(self.dir_same, trigger_file)))
+
         original_stat = os.stat
 
         def fake_stat(path, *args, **kwargs):
-            if trigger_file in str(path):
+            current_path = os.path.normcase(os.path.abspath(os.fspath(path)))
+            if current_path == expected_path1 or current_path == expected_path2:
                 raise OSError
             return original_stat(path, *args, **kwargs)
 
         with patch("os.stat", side_effect=fake_stat):
             dc = filecmp.dircmp(self.dir, self.dir_same)
-        self.assertIn(trigger_file, dc.common_funny)
+            self.assertIn(trigger_file, dc.common_funny)
 
     # Test common_funny layout with regular files, directories, and sockets.
     # 'diff_type.txt' is a directory in one path and a regular file in another.
@@ -456,19 +461,24 @@ class DirCmpImplementationTests(unittest.TestCase):
             for f in (file_diff_type, file_funny_type):
                 Path(d, f).write_text("data")
 
+        diff_path1 = os.path.normcase(os.path.abspath(os.path.join(self.dir, file_diff_type)))
+        diff_path2 = os.path.normcase(os.path.abspath(os.path.join(self.dir_same, file_diff_type)))
+        funny_path1 = os.path.normcase(os.path.abspath(os.path.join(self.dir, file_funny_type)))
+        funny_path2 = os.path.normcase(os.path.abspath(os.path.join(self.dir_same, file_funny_type)))
+
         original_stat = os.stat
 
         def fake_stat_types(path, *args, **kwargs):
             st = original_stat(path, *args, **kwargs)
-            path_str = str(path)
+            current_path = os.path.normcase(os.path.abspath(os.fspath(path)))
 
-            if file_diff_type in path_str:
-                is_dir_same = "dir-same" in path_str
+            if current_path == diff_path1 or current_path == diff_path2:
+                is_dir_same = (current_path == diff_path2)
                 target_type = stat.S_IFREG if is_dir_same else stat.S_IFDIR
                 new_mode = (st.st_mode & ~stat.S_IFREG) | target_type
                 return os.stat_result((new_mode,) + st[1:])
 
-            if file_funny_type in path_str:
+            if current_path == funny_path1 or current_path == funny_path2:
                 new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
                 return os.stat_result((new_mode,) + st[1:])
 
@@ -495,18 +505,26 @@ class DirCmpImplementationTests(unittest.TestCase):
             for f in (funny_trigger, funny_file_trigger):
                 Path(d, f).write_text('data', encoding='utf-8')
 
+        trigger_path1 = os.path.normcase(os.path.abspath(os.path.join(self.dir, funny_trigger)))
+        trigger_path2 = os.path.normcase(os.path.abspath(os.path.join(self.dir_same, funny_trigger)))
+        cmp_path1 = os.path.normcase(os.path.abspath(os.path.join(self.dir, funny_file_trigger)))
+        cmp_path2 = os.path.normcase(os.path.abspath(os.path.join(self.dir_same, funny_file_trigger)))
+
         original_stat = os.stat
         original_cmp = filecmp._cmp
 
         def fake_stat_for_report(path, *args, **kwargs):
-            if funny_trigger in str(path):
+            current_path = os.path.normcase(os.path.abspath(os.fspath(path)))
+            if current_path == trigger_path1 or current_path == trigger_path2:
                 st = original_stat(path, *args, **kwargs)
                 new_mode = (st.st_mode & ~stat.S_IFREG) | stat.S_IFSOCK
                 return os.stat_result((new_mode,) + st[1:])
             return original_stat(path, *args, **kwargs)
 
         def fake_private_cmp(a, b, sh):
-            if funny_file_trigger in str(a) or funny_file_trigger in str(b):
+            norm_a = os.path.normcase(os.path.abspath(os.fspath(a)))
+            norm_b = os.path.normcase(os.path.abspath(os.fspath(b)))
+            if norm_a in (cmp_path1, cmp_path2) or norm_b in (cmp_path1, cmp_path2):
                 return 2
             return original_cmp(a, b, sh)
 
