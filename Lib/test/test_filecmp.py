@@ -415,7 +415,7 @@ class DirCmpImplementationTests(unittest.TestCase):
         Path(dir_file_path).write_text(data, encoding="utf-8")
 
         for d in (self.dir_same, self.dir_same_shallow,
-                self.dir_diff, self.dir_diff_file):
+                  self.dir_diff, self.dir_diff_file):
             Path(d, 'subdir').mkdir(parents=True, exist_ok=True)
             fn = 'FiLe' if (self.caseinsensitive and d == self.dir_same) else 'file'
             file_path = os.path.join(d, fn)
