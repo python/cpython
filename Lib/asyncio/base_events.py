@@ -275,6 +275,28 @@ class _SendfileFallbackProtocol(protocols.Protocol):
             self._proto.resume_writing()
 
 
+def _get_exception_context(context):
+    """Return the Context of the task/future/handle in an error context.
+
+    Return None if there is no such object or it has no usable context.
+    """
+    thing = context.get("task")
+    if thing is None:
+        # Even though Futures don't have a context,
+        # Task is a subclass of Future,
+        # and sometimes the 'future' key holds a Task.
+        thing = context.get("future")
+    if thing is None:
+        # Handles also have a context.
+        thing = context.get("handle")
+    if thing is None or not hasattr(thing, "get_context"):
+        return None
+    ctx = thing.get_context()
+    if ctx is None or not hasattr(ctx, "run"):
+        return None
+    return ctx
+
+
 class Server(events.AbstractServer):
 
     def __init__(self, loop, sockets, protocol_factory, ssl_context, backlog,
@@ -1943,7 +1965,14 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if self._exception_handler is None:
             try:
-                self.default_exception_handler(context)
+                ctx = _get_exception_context(context)
+                if ctx is not None:
+                    # Run in a copy: the context may already be entered
+                    # (e.g. when reporting from inside the task itself),
+                    # and Context.run() does not allow re-entering.
+                    ctx.copy().run(self.default_exception_handler, context)
+                else:
+                    self.default_exception_handler(context)
             except (SystemExit, KeyboardInterrupt):
                 raise
             except BaseException:
@@ -1954,20 +1983,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                              exc_info=True)
         else:
             try:
-                ctx = None
-                thing = context.get("task")
-                if thing is None:
-                    # Even though Futures don't have a context,
-                    # Task is a subclass of Future,
-                    # and sometimes the 'future' key holds a Task.
-                    thing = context.get("future")
-                if thing is None:
-                    # Handles also have a context.
-                    thing = context.get("handle")
-                if thing is not None and hasattr(thing, "get_context"):
-                    ctx = thing.get_context()
-                if ctx is not None and hasattr(ctx, "run"):
-                    ctx.run(self._exception_handler, self, context)
+                ctx = _get_exception_context(context)
+                if ctx is not None:
+                    ctx.copy().run(self._exception_handler, self, context)
                 else:
                     self._exception_handler(self, context)
             except (SystemExit, KeyboardInterrupt):
