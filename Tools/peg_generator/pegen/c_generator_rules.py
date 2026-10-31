@@ -224,7 +224,7 @@ class CRuleEmitter:
             if rule.uses_locations:
                 self._emit_token_start_metadata()
             alt, = rule.alternatives
-            with self._alternative(alt):
+            with self._alternative(alt, loop_returns=buffer.error_returns):
                 self._emit_loop_alt(alt, buffer)
             result = buffer.finish(require_one=signature.kind is RuleKind.LOOP1)
             if rule.memoize:
@@ -232,7 +232,9 @@ class CRuleEmitter:
             self._returns.emit(result)
 
     @contextmanager
-    def _alternative(self, alt: CAlternative) -> Iterator[None]:
+    def _alternative(
+        self, alt: CAlternative, loop_returns: _CReturnEmitter | None = None
+    ) -> Iterator[None]:
         rulename = self._rule.signature.name
         if alt.requires_invalid_rules:
             self._print(f"if (p->call_invalid_rules) {{ // {alt.text}")
@@ -260,6 +262,11 @@ class CRuleEmitter:
                 f"D(fprintf(stderr, \"%*c%s {rulename}[%d-%d]: %s failed!\\n\", p->level, ' ',\n"
                 f'                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "{node_str}"));'
             )
+            if loop_returns is not None:
+                self._print("if (p->error_indicator) {")
+                with self._indent():
+                    loop_returns.emit("NULL")
+                self._print("}")
             if alt.cut_variable is not None:
                 self._print(f"if ({alt.cut_variable}) {{")
                 with self._indent():
