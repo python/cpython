@@ -386,9 +386,9 @@ class Symbol:
 
 
 _flags = [('USE', USE)]
-_flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+_flags.extend(kv for kv in vars(_symtable).items() if kv[0].startswith('DEF_'))
 _scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
-_scopes_value_to_name = frozendict({globals()[n]: n for n in _scopes_names})
+_scopes_value_to_name = frozendict({getattr(_symtable, n): n for n in _scopes_names})
 
 
 def main(args):
