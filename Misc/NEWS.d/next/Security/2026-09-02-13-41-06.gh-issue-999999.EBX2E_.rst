@@ -1,0 +1,4 @@
+:class:`urllib.request.HTTPRedirectHandler` no longer forwards the
+``Proxy-Authorization`` headers when following a redirect. This
+header must be re-added by :class:`urllib.request.ProxyHandler` if
+applicable for the redirected request.
