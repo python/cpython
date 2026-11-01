@@ -2440,7 +2440,16 @@ Lambdas
    single: : (colon); lambda expression
 
 .. productionlist:: python-grammar
-   lambda_expr: "lambda" [`parameter_list`] ":" `expression`
+   lambda_expr: "lambda" [`lambda_parameter_list`] ":" `expression`
+   lambda_parameter_list: `lambda_defparameter` ("," `lambda_defparameter`)* "," "/" ["," [`lambda_parameter_list_no_posonly`]]
+                        : | `lambda_parameter_list_no_posonly`
+   lambda_parameter_list_no_posonly: `lambda_defparameter` ("," `lambda_defparameter`)* ["," [`lambda_parameter_list_starargs`]]
+                                   : | `lambda_parameter_list_starargs`
+   lambda_parameter_list_starargs: "*" `identifier` ("," `lambda_defparameter`)* ["," [`lambda_parameter_star_kwargs`]]
+                                 : | "*" ("," `lambda_defparameter`)+ ["," [`lambda_parameter_star_kwargs`]]
+                                 : | `lambda_parameter_star_kwargs`
+   lambda_parameter_star_kwargs: "**" `identifier` [","]
+   lambda_defparameter: `identifier` ["=" `expression`]
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda parameters: expression`` yields a function
@@ -2451,9 +2460,9 @@ object.  The unnamed object behaves like a function object defined with:
    def <lambda>(parameters):
        return expression
 
-See section :ref:`function` for the syntax of parameter lists.  Note that
-functions created with lambda expressions cannot contain statements or
-annotations.
+The rules for parameter lists are the same as for :ref:`function definitions
+<function>`, except that annotations are not allowed.  Functions created with
+lambda expressions cannot contain statements or annotations.
 
 
 .. index::
