@@ -125,6 +125,15 @@ class Dialect:
                             f'argument {min(unexpected)!r}')
         new = object.__new__(self.__class__)
         new.__dict__.update(self.__dict__)
+        # Copy slot-backed dialect attributes from the instance's MRO,
+        # since __dict__ only captures attributes stored in __dict__.
+        for cls in type(self).__mro__:
+            for attr in getattr(cls, '__slots__', ()):
+                if attr in _dialect_attributes and attr not in new.__dict__:
+                    try:
+                        new.__dict__[attr] = getattr(self, attr)
+                    except AttributeError:
+                        pass
         new.__dict__.update(changes)
         new._validate()
         return new
