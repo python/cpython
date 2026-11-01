@@ -20,27 +20,6 @@
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"              // _Py_strhex()
 
-/*
- * Taken from blake2module.c. In the future, detection of SIMD support
- * should be delegated to https://github.com/python/cpython/pull/125011.
- */
-#if defined(__x86_64__) && defined(__GNUC__)
-#  include <cpuid.h>
-#elif defined(_M_X64)
-#  include <intrin.h>
-#endif
-
-#if defined(__APPLE__) && defined(__arm64__)
-#  undef _Py_HACL_CAN_COMPILE_VEC128
-#  undef _Py_HACL_CAN_COMPILE_VEC256
-#endif
-
-// HACL* expects HACL_CAN_COMPILE_VEC* macros to be set in order to enable
-// the corresponding SIMD instructions so we need to "forward" the values
-// we just deduced above.
-#define HACL_CAN_COMPILE_VEC128 _Py_HACL_CAN_COMPILE_VEC128
-#define HACL_CAN_COMPILE_VEC256 _Py_HACL_CAN_COMPILE_VEC256
-
 #include "_hacl/Hacl_HMAC.h"
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
 #include "_hacl/Hacl_Streaming_Types.h" // Hacl_Streaming_Types_error_code
@@ -173,9 +152,6 @@ typedef enum HMAC_Hash_Kind {
     /* Blake family */
     DECL_HACL_HMAC_HASH_KIND(blake2s_32, Blake2S_32)
     DECL_HACL_HMAC_HASH_KIND(blake2b_32, Blake2B_32)
-    /* Blake runtime family (should not be used statically) */
-    DECL_HACL_HMAC_HASH_KIND(vectorized_blake2s_32, Blake2S_128)
-    DECL_HACL_HMAC_HASH_KIND(vectorized_blake2b_32, Blake2B_256)
 #undef DECL_HACL_HMAC_HASH_KIND
 } HMAC_Hash_Kind;
 
@@ -258,9 +234,6 @@ typedef struct hmacmodule_state {
     PyTypeObject *hmac_type;
     /* interned strings */
     PyObject *str_lower;
-
-    bool can_run_simd128;
-    bool can_run_simd256;
 } hmacmodule_state;
 
 static inline hmacmodule_state *
@@ -316,63 +289,20 @@ class _hmac.HMAC "HMACObject *" "clinic_state()->hmac_type"
 /*
  * Assert that a HMAC hash kind is a static kind.
  *
- * A "static" kind is specified in the 'py_hmac_static_hinfo'
- * table and is always independent of the host CPUID features.
+ * A "static" kind is specified in the 'py_hmac_static_hinfo' table.
  */
 #ifndef NDEBUG
 static void
 assert_is_static_hmac_hash_kind(HMAC_Hash_Kind kind)
 {
-    switch (kind) {
-        case Py_hmac_kind_hash_unknown: {
-            Py_FatalError("HMAC hash kind must be a known kind");
-            return;
-        }
-        case Py_hmac_kind_hmac_vectorized_blake2s_32:
-        case Py_hmac_kind_hmac_vectorized_blake2b_32: {
-            Py_FatalError("HMAC hash kind must not be a vectorized kind");
-            return;
-        }
-        default:
-            return;
+    if (kind == Py_hmac_kind_hash_unknown) {
+        Py_FatalError("HMAC hash kind must be a known kind");
     }
 }
 #else
 static inline void
 assert_is_static_hmac_hash_kind(HMAC_Hash_Kind Py_UNUSED(kind)) {}
 #endif
-
-/*
- * Convert a HMAC hash static kind into a runtime kind.
- *
- * A "runtime" kind is derived from a static kind and depends
- * on the host CPUID features. In particular, this is the kind
- * that a HMAC object internally stores.
- */
-static HMAC_Hash_Kind
-narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
-{
-    switch (kind) {
-        case Py_hmac_kind_hmac_blake2s_32: {
-#if _Py_HACL_CAN_COMPILE_VEC128
-            if (state->can_run_simd128) {
-                return Py_hmac_kind_hmac_vectorized_blake2s_32;
-            }
-#endif
-            return kind;
-        }
-        case Py_hmac_kind_hmac_blake2b_32: {
-#if _Py_HACL_CAN_COMPILE_VEC256
-            if (state->can_run_simd256) {
-                return Py_hmac_kind_hmac_vectorized_blake2b_32;
-            }
-#endif
-            return kind;
-        }
-        default:
-            return kind;
-    }
-}
 
 /*
  * Handle the HACL* exit code.
@@ -682,18 +612,14 @@ hmac_new_object(PyTypeObject *tp)
 
 /*
  * Use the HMAC information 'info' to populate the corresponding fields.
- *
- * The real 'kind' for BLAKE-2 is obtained once and depends on both static
- * capabilities (supported compiler flags) and runtime CPUID features.
  */
 static void
-hmac_set_hinfo(hmacmodule_state *state,
-               HMACObject *self, const py_hmac_hinfo *info)
+hmac_set_hinfo(HMACObject *self, const py_hmac_hinfo *info)
 {
     assert(info->display_name != NULL);
     Py_XSETREF(self->name, Py_NewRef(info->display_name));
     assert_is_static_hmac_hash_kind(info->kind);
-    self->kind = narrow_hmac_hash_kind(state, info->kind);
+    self->kind = info->kind;
     assert(info->block_size <= Py_hmac_hash_max_block_size);
     self->block_size = info->block_size;
     assert(info->digest_size <= Py_hmac_hash_max_digest_size);
@@ -764,7 +690,7 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
     if (self == NULL) {
         return NULL;
     }
-    hmac_set_hinfo(state, self, info);
+    hmac_set_hinfo(self, info);
     int rc;
     // Create the HACL* internal state with the given key.
     Py_buffer key;
@@ -1432,9 +1358,6 @@ py_hmac_hinfo_ht_new(void)
          * The real kind of a HMAC object is obtained only once and is
          * derived from the kind of the 'py_hmac_hinfo' that could be
          * found by its name.
-         *
-         * Since 'vectorized_blake2{s,b}_32' depend on the runtime CPUID
-         * features, we should not create 'py_hmac_hinfo' entries for them.
          */
         assert_is_static_hmac_hash_kind(e->kind);
 
@@ -1557,80 +1480,6 @@ hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
     return 0;
 }
 
-static void
-hmacmodule_init_cpu_features(hmacmodule_state *state)
-{
-    int eax1 = 0, ebx1 = 0, ecx1 = 0, edx1 = 0;
-    int eax7 = 0, ebx7 = 0, ecx7 = 0, edx7 = 0;
-#if defined(__x86_64__) && defined(__GNUC__)
-    __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
-    __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
-#elif defined(_M_X64)
-    int info1[4] = {0};
-    __cpuidex(info1, 1, 0);
-    eax1 = info1[0], ebx1 = info1[1], ecx1 = info1[2], edx1 = info1[3];
-
-    int info7[4] = {0};
-    __cpuidex(info7, 7, 0);
-    eax7 = info7[0], ebx7 = info7[1], ecx7 = info7[2], edx7 = info7[3];
-#endif
-    // fmt: off
-    (void)eax1; (void)ebx1; (void)ecx1; (void)edx1;
-    (void)eax7; (void)ebx7; (void)ecx7; (void)edx7;
-    // fmt: on
-
-#define EBX_AVX2 (1 << 5)
-#define ECX_SSE3 (1 << 0)
-#define ECX_SSSE3 (1 << 9)
-#define ECX_SSE4_1 (1 << 19)
-#define ECX_SSE4_2 (1 << 20)
-#define ECX_AVX (1 << 28)
-#define EDX_SSE (1 << 25)
-#define EDX_SSE2 (1 << 26)
-#define EDX_CMOV (1 << 15)
-
-    bool avx = (ecx1 & ECX_AVX) != 0;
-    bool avx2 = (ebx7 & EBX_AVX2) != 0;
-
-    bool sse = (edx1 & EDX_SSE) != 0;
-    bool sse2 = (edx1 & EDX_SSE2) != 0;
-    bool cmov = (edx1 & EDX_CMOV) != 0;
-
-    bool sse3 = (ecx1 & ECX_SSE3) != 0;
-    bool sse41 = (ecx1 & ECX_SSE4_1) != 0;
-    bool sse42 = (ecx1 & ECX_SSE4_2) != 0;
-
-#undef EDX_CMOV
-#undef EDX_SSE2
-#undef EDX_SSE
-#undef ECX_AVX
-#undef ECX_SSE4_2
-#undef ECX_SSE4_1
-#undef ECX_SSSE3
-#undef ECX_SSE3
-#undef EBX_AVX2
-
-#if _Py_HACL_CAN_COMPILE_VEC128
-    // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
-    state->can_run_simd128 = sse && sse2 && sse3 && sse41 && sse42 && cmov;
-#else
-    // fmt: off
-    (void)sse; (void)sse2; (void)sse3; (void)sse41; (void)sse42; (void)cmov;
-    // fmt: on
-    state->can_run_simd128 = false;
-#endif
-
-#if _Py_HACL_CAN_COMPILE_VEC256
-    // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
-    state->can_run_simd256 = state->can_run_simd128 && avx && avx2;
-#else
-    // fmt: off
-    (void)avx; (void)avx2;
-    // fmt: on
-    state->can_run_simd256 = false;
-#endif
-}
-
 static int
 hmacmodule_exec(PyObject *module)
 {
@@ -1650,7 +1499,6 @@ hmacmodule_exec(PyObject *module)
     if (hmacmodule_init_globals(module, state) < 0) {
         return -1;
     }
-    hmacmodule_init_cpu_features(state);
     return 0;
 }
 
