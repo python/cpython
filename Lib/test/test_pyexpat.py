@@ -836,9 +836,10 @@ class sf1296433Test(unittest.TestCase):
 
 
 class DefaultHandlerExceptionTest(unittest.TestCase):
-    # Expat delivers a token that needs encoding conversion to the default
-    # handler in pieces of at most 1024 bytes, re-reading the handler in
-    # between.  Removing the handler from within the callback must not crash.
+    # In a document that is not UTF-8, Expat passes a long piece of text such
+    # as this comment to the default handler in chunks of at most 1024 bytes,
+    # re-reading the handler between chunks.  Clearing the handler from within
+    # the callback, by raising or by setting it to None, must not crash.
     xml = ("<?xml version='1.0' encoding='iso8859'?><s><!--%s--></s>"
            % ('a' * 2000)).encode('iso8859')
 
@@ -872,8 +873,10 @@ class DefaultHandlerExceptionTest(unittest.TestCase):
         self.assertTrue(calls[-1].startswith('<!--'), calls)
 
     def test_CharacterDataHandler_with_buffer_text(self):
-        # An exception in the CharacterDataHandler while the default
-        # handler trampoline flushes the text buffer.
+        # With buffer_text, buffered character data is passed to the
+        # CharacterDataHandler just before the default handler is called;
+        # an exception there clears the handlers while Expat is still
+        # passing the comment to the default handler.
         def handler(text):
             raise self.SpecificException
 
