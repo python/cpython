@@ -62,6 +62,7 @@ __libmpdec_version__ = "2.4.2" # compatible libmpdec version
 import math as _math
 import numbers as _numbers
 import sys
+from contextlib import contextmanager as _contextmanager
 
 try:
     from collections import namedtuple as _namedtuple
@@ -1499,8 +1500,9 @@ class Decimal(object):
                 ans = context._raise_error(DivisionUndefined, 'divmod(0, 0)')
                 return ans, ans
             else:
-                return (context._raise_error(DivisionByZero, 'x // 0', sign),
-                        context._raise_error(InvalidOperation, 'x % 0'))
+                with context._defer_traps():
+                    return (context._raise_error(DivisionByZero, 'x // 0', sign),
+                            context._raise_error(InvalidOperation, 'x % 0'))
 
         quotient, remainder = self._divide(other, context)
         remainder = remainder._fix(context)
@@ -1746,9 +1748,10 @@ class Decimal(object):
         exp_min = len(self._int) + self._exp - context.prec
         if exp_min > Etop:
             # overflow: exp_min > Etop iff self.adjusted() > Emax
-            ans = context._raise_error(Overflow, 'above Emax', self._sign)
-            context._raise_error(Inexact)
-            context._raise_error(Rounded)
+            with context._defer_traps():
+                ans = context._raise_error(Overflow, 'above Emax', self._sign)
+                context._raise_error(Inexact)
+                context._raise_error(Rounded)
             return ans
 
         self_is_subnormal = exp_min < Etiny
@@ -1770,34 +1773,36 @@ class Decimal(object):
                     coeff = coeff[:-1]
                     exp_min += 1
 
-            # check whether the rounding pushed the exponent out of range
-            if exp_min > Etop:
-                ans = context._raise_error(Overflow, 'above Emax', self._sign)
-            else:
-                ans = _dec_from_triple(self._sign, coeff, exp_min)
+            # check if rounding pushed the exponent out of range
+            with context._defer_traps():
+                if exp_min > Etop:
+                    ans = context._raise_error(Overflow, 'above Emax', self._sign)
+                else:
+                    ans = _dec_from_triple(self._sign, coeff, exp_min)
 
-            # raise the appropriate signals, taking care to respect
-            # the precedence described in the specification
-            if changed and self_is_subnormal:
-                context._raise_error(Underflow)
-            if self_is_subnormal:
-                context._raise_error(Subnormal)
-            if changed:
-                context._raise_error(Inexact)
-            context._raise_error(Rounded)
-            if not ans:
-                # raise Clamped on underflow to 0
-                context._raise_error(Clamped)
+                # raise the appropriate signals, taking care to respect
+                # the precedence described in the specification
+                if changed and self_is_subnormal:
+                    context._raise_error(Underflow)
+                if self_is_subnormal:
+                    context._raise_error(Subnormal)
+                if changed:
+                    context._raise_error(Inexact)
+                context._raise_error(Rounded)
+                if not ans:
+                    # raise Clamped on underflow to 0
+                    context._raise_error(Clamped)
             return ans
 
-        if self_is_subnormal:
-            context._raise_error(Subnormal)
+        with context._defer_traps():
+            if self_is_subnormal:
+                context._raise_error(Subnormal)
 
-        # fold down if clamp == 1 and self has too few digits
-        if context.clamp == 1 and self._exp > Etop:
-            context._raise_error(Clamped)
-            self_padded = self._int + '0'*(self._exp - Etop)
-            return _dec_from_triple(self._sign, self_padded, Etop)
+            # fold down if clamp == 1 and self has too few digits
+            if context.clamp == 1 and self._exp > Etop:
+                context._raise_error(Clamped)
+                self_padded = self._int + '0'*(self._exp - Etop)
+                return _dec_from_triple(self._sign, self_padded, Etop)
 
         # here self was representable to begin with; return unchanged
         return Decimal(self)
@@ -2445,8 +2450,9 @@ class Decimal(object):
                     exp = 1-context.prec
                     context._raise_error(Rounded)
             else:
-                context._raise_error(Inexact)
-                context._raise_error(Rounded)
+                with context._defer_traps():
+                    context._raise_error(Inexact)
+                    context._raise_error(Rounded)
                 exp = 1-context.prec
 
             return _dec_from_triple(result_sign, '1'+'0'*-exp, exp)
@@ -2554,11 +2560,12 @@ class Decimal(object):
             # Inexact, Rounded, Clamped.  Overflow needs the correct
             # arguments.  Note that the order of the exceptions is
             # important here.
-            if newcontext.flags[Overflow]:
-                context._raise_error(Overflow, 'above Emax', ans._sign)
-            for exception in Underflow, Subnormal, Inexact, Rounded, Clamped:
-                if newcontext.flags[exception]:
-                    context._raise_error(exception)
+            with context._defer_traps():
+                if newcontext.flags[Overflow]:
+                    context._raise_error(Overflow, 'above Emax', ans._sign)
+                for exception in Underflow, Subnormal, Inexact, Rounded, Clamped:
+                    if newcontext.flags[exception]:
+                        context._raise_error(exception)
 
         else:
             ans = ans._fix(context)
@@ -2645,17 +2652,18 @@ class Decimal(object):
             return context._raise_error(InvalidOperation,
                                         'quantize result has too many digits for current context')
 
-        # raise appropriate flags
-        if ans and ans.adjusted() < context.Emin:
-            context._raise_error(Subnormal)
-        if ans._exp > self._exp:
-            if ans != self:
-                context._raise_error(Inexact)
-            context._raise_error(Rounded)
+        with context._defer_traps():
+            # raise appropriate flags
+            if ans and ans.adjusted() < context.Emin:
+                context._raise_error(Subnormal)
+            if ans._exp > self._exp:
+                if ans != self:
+                    context._raise_error(Inexact)
+                context._raise_error(Rounded)
 
-        # call to fix takes care of any necessary folddown, and
-        # signals Clamped if necessary
-        ans = ans._fix(context)
+            # call to fix takes care of any necessary folddown, and
+            # signals Clamped if necessary
+            ans = ans._fix(context)
         return ans
 
     def same_quantum(self, other, context=None):
@@ -2754,9 +2762,10 @@ class Decimal(object):
         if rounding is None:
             rounding = context.rounding
         ans = self._rescale(0, rounding)
-        if ans != self:
-            context._raise_error(Inexact)
-        context._raise_error(Rounded)
+        with context._defer_traps():
+            if ans != self:
+                context._raise_error(Inexact)
+            context._raise_error(Rounded)
         return ans
 
     def to_integral_value(self, rounding=None, context=None):
@@ -3646,21 +3655,22 @@ class Decimal(object):
             ans = self.next_minus(context)
 
         # decide which flags to raise using value of ans
-        if ans._isinfinity():
-            context._raise_error(Overflow,
-                                 'Infinite result from next_toward',
-                                 ans._sign)
-            context._raise_error(Inexact)
-            context._raise_error(Rounded)
-        elif ans.adjusted() < context.Emin:
-            context._raise_error(Underflow)
-            context._raise_error(Subnormal)
-            context._raise_error(Inexact)
-            context._raise_error(Rounded)
-            # if precision == 1 then we don't raise Clamped for a
-            # result 0E-Etiny.
-            if not ans:
-                context._raise_error(Clamped)
+        with context._defer_traps():
+            if ans._isinfinity():
+                context._raise_error(Overflow,
+                                     'Infinite result from next_toward',
+                                     ans._sign)
+                context._raise_error(Inexact)
+                context._raise_error(Rounded)
+            elif ans.adjusted() < context.Emin:
+                context._raise_error(Underflow)
+                context._raise_error(Subnormal)
+                context._raise_error(Inexact)
+                context._raise_error(Rounded)
+                # if precision == 1 then we don't raise Clamped for a
+                # result 0E-Etiny.
+                if not ans:
+                    context._raise_error(Clamped)
 
         return ans
 
@@ -3988,6 +3998,11 @@ class Context(object):
         else:
             self._ignored_flags = _ignored_flags
 
+        # _defer_traps state: nesting level and the deferred exception.
+        # Transient: not copied or pickled.
+        self._deferred_traps = 0
+        self._deferred_error = None
+
         if traps is None:
             self.traps = dc.traps.copy()
         elif not isinstance(traps, dict):
@@ -4046,7 +4061,7 @@ class Context(object):
             return object.__setattr__(self, name, value)
         elif name == 'flags' or name == 'traps':
             return self._set_signal_dict(name, value)
-        elif name == '_ignored_flags':
+        elif name in {'_ignored_flags', '_deferred_traps', '_deferred_error'}:
             return object.__setattr__(self, name, value)
         else:
             raise AttributeError(
@@ -4134,9 +4149,41 @@ class Context(object):
             # The errors define how to handle themselves.
             return condition().handle(self, *args)
 
+        if self._deferred_traps:
+            # Inside a _defer_traps block: record the first trapped
+            # exception instead of raising it, and return the default
+            # response as if the signal had not been trapped.
+            if self._deferred_error is None:
+                self._deferred_error = error(explanation)
+            return condition().handle(self, *args)
+
         # Errors should only be risked on copies of the context
         # self._ignored_flags = []
         raise error(explanation)
+
+    @_contextmanager
+    def _defer_traps(self):
+        """Defer trapped signals until the end of the with block.
+
+        _raise_error() sets the flag of every signal in the block and
+        raises the first trapped exception on exit, so that a
+        multi-signal operation sets the same flags as _decimal.
+        """
+        self._deferred_traps += 1
+        try:
+            yield
+        except BaseException:
+            # The block is aborted, so the deferred error is
+            # discarded: the propagating exception wins, and the
+            # context does not retain an exception object.
+            self._deferred_error = None
+            raise
+        finally:
+            self._deferred_traps -= 1
+        if self._deferred_traps == 0 and self._deferred_error is not None:
+            error = self._deferred_error
+            self._deferred_error = None
+            raise error
 
     def _ignore_all_flags(self):
         """Ignore all flags, if they are raised"""
