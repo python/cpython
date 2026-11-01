@@ -834,6 +834,58 @@ class sf1296433Test(unittest.TestCase):
 
         self.assertRaises(SpecificException, parser.Parse, xml.encode('iso8859'))
 
+
+class DefaultHandlerExceptionTest(unittest.TestCase):
+    # Expat delivers a token that needs encoding conversion to the default
+    # handler in pieces of at most 1024 bytes, re-reading the handler in
+    # between.  Removing the handler from within the callback must not crash.
+    xml = ("<?xml version='1.0' encoding='iso8859'?><s><!--%s--></s>"
+           % ('a' * 2000)).encode('iso8859')
+
+    class SpecificException(Exception):
+        pass
+
+    def check(self, name):
+        def handler(text):
+            if text.startswith('<!--'):
+                raise self.SpecificException
+
+        parser = expat.ParserCreate()
+        setattr(parser, name, handler)
+        self.assertRaises(self.SpecificException, parser.Parse, self.xml, True)
+
+    def test_DefaultHandler(self):
+        self.check('DefaultHandler')
+
+    def test_DefaultHandlerExpand(self):
+        self.check('DefaultHandlerExpand')
+
+    def test_unset_DefaultHandler_in_callback(self):
+        parser = expat.ParserCreate()
+        calls = []
+        def handler(text):
+            calls.append(text)
+            if text.startswith('<!--'):
+                parser.DefaultHandler = None
+        parser.DefaultHandler = handler
+        parser.Parse(self.xml, True)
+        self.assertTrue(calls[-1].startswith('<!--'), calls)
+
+    def test_CharacterDataHandler_with_buffer_text(self):
+        # An exception in the CharacterDataHandler while the default
+        # handler trampoline flushes the text buffer.
+        def handler(text):
+            raise self.SpecificException
+
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        parser.CharacterDataHandler = handler
+        parser.DefaultHandler = lambda text: None
+        xml = ("<?xml version='1.0' encoding='iso8859'?><s>a<!--%s--></s>"
+               % ('a' * 2000)).encode('iso8859')
+        self.assertRaises(self.SpecificException, parser.Parse, xml, True)
+
+
 class ChardataBufferTest(unittest.TestCase):
     """
     test setting of chardata buffer size

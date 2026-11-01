@@ -295,8 +295,10 @@ error_external_entity_ref_handler(XML_Parser parser,
    been detected, and the actual parsing can be terminated early.
    This is needed since character data handler can't be safely removed
    from within the character data handler, but can be replaced.  It is
-   used only from the character data handler trampoline, and must be
-   used right after `flag_error()` is called. */
+   used from the character data handler trampoline, and must be
+   used right after `flag_error()` is called.  It is also installed as
+   the default handler (same signature) by clear_handlers(), since Expat
+   can't cope with that one being removed from within a callback either. */
 static void
 noop_character_data_handler(void *userData, const XML_Char *data, int len)
 {
@@ -1838,8 +1840,13 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
            active, so Expat does a little more work than it
            otherwise would, but that's really an odd case.  A more
            elaborate system of handlers and state could remove the
-           C handler more effectively. */
-        if (handlernum == CharacterData && self->in_callback) {
+           C handler more effectively.  The same applies to the
+           default handler, which Expat calls repeatedly for a single
+           token that needs encoding conversion. */
+        if (self->in_callback
+            && (handlernum == CharacterData
+                || handlernum == Default
+                || handlernum == DefaultHandlerExpand)) {
             c_handler = (xmlhandler)noop_character_data_handler;
         }
         v = NULL;
@@ -2786,7 +2793,15 @@ clear_handlers(xmlparseobject *self, int initial)
         }
         else {
             Py_CLEAR(self->handlers[i]);
-            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, NULL);
+            xmlhandler c_handler = NULL;
+            if (i == Default || i == DefaultHandlerExpand) {
+                /* Like the character data handler, the default handler
+                   can't be safely removed from within a callback: Expat's
+                   reportDefault() re-reads it between the pieces of a
+                   converted token.  Replace it with a no-op instead. */
+                c_handler = (xmlhandler)noop_character_data_handler;
+            }
+            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, c_handler);
         }
     }
 }
