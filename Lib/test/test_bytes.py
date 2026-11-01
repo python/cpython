@@ -1663,6 +1663,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # the bytearray must be left unchanged.
 
         offset = 3
+        front = slice(None, -2)
         for logical_offset in (False, True):
             with self.subTest(logical_offset=logical_offset):
                 # grow bytearray
@@ -1686,6 +1687,29 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 with inject_memory_error(self):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
+
+                # gh-160303: When bytes are removed at the front, they are
+                # removed even if shrinking the memory block fails.
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    del ba[:offset]
+                with inject_memory_error(self):
+                    del ba[front]
+                self.assertEqual(ba, b'89')
+                ba.append(ord('a'))
+                del ba[:1]
+                self.assertEqual(ba, b'9a')
+
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    del ba[:offset]
+                replacement = bytearray(b'xy')
+                with inject_memory_error(self):
+                    ba[front] = replacement
+                self.assertEqual(ba, b'xy89')
+                ba.append(ord('a'))
+                del ba[:1]
+                self.assertEqual(ba, b'y89a')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
