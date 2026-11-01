@@ -1164,10 +1164,15 @@ class AbstractDigestAuthHandler:
         else:
             entdig = None
 
+        # The digest-uri is the request-target as sent on the request line:
+        # the path, or the absolute URL when the request goes through an
+        # HTTP proxy.  RFC 7616, Section 3.4 allows both.  An empty path is
+        # sent as '/' by http.client, so use the same here.
+
+        uri = req.selector or '/'
+
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.get_method(),
-                        # XXX selector: what about proxies and full urls
-                        req.selector)
+        A2 = "%s:%s" % (req.get_method(), uri)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
         if qop is None:
@@ -1189,8 +1194,7 @@ class AbstractDigestAuthHandler:
         # XXX should the partial digests be encoded too?
 
         base = 'username="%s", realm="%s", nonce="%s", uri="%s", ' \
-               'response="%s"' % (user, realm, nonce, req.selector,
-                                  respdig)
+               'response="%s"' % (user, realm, nonce, uri, respdig)
         if opaque:
             base += ', opaque="%s"' % opaque
         if entdig:
