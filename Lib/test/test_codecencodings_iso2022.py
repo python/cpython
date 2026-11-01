@@ -26,7 +26,8 @@ class Test_ISO2022_JP2(multibytecodec_support.TestBase, unittest.TestCase):
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
     codectests = COMMON_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'abdef'),
-        # a charset can only be designated to its own plane
+        # a charset can only be designated to the G set (G0, G1 or G2)
+        # that RFC 1554 assigns it
         (b'\x1B.A\x1BNi', 'strict', '\xe9'),
         (b'\x1B$(C\x30\x21\x1B(B', 'strict', '\uac00'),
         (b'ab\x1B(Adef', 'strict', None),
