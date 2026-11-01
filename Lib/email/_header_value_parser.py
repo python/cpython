@@ -155,7 +155,7 @@ class TokenList(list):
         return sum((x.all_defects for x in self), self.defects)
 
     def startswith_fws(self):
-        return self[0].startswith_fws()
+        return self and self[0].startswith_fws()
 
     as_ew_allowed = True
 
