@@ -1950,7 +1950,7 @@ r_object(RFILE *p)
             Py_CLEAR(v);
         }
         if (type == TYPE_FROZENDICT && v != NULL) {
-            Py_SETREF(v, PyFrozenDict_New(v));
+            Py_SETREF(v, PyDict_AsFrozenDictAndClear(v));
             v = r_ref_insert(v, idx, flag, p);
         }
         retval = v;

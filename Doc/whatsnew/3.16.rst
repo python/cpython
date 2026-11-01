@@ -1377,6 +1377,10 @@ C API changes
 New features
 ------------
 
+* Add a new way to efficiently create a :class:`frozendict` instance by building
+  a :class:`dict` and "freezing" it: :c:func:`PyDict_AsFrozenDictAndClear`.
+  (Contributed by Nikita Sobolev in :gh:`153413`.)
+
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 

@@ -609,6 +609,37 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_as_frozendict_and_clear(self):
+        # Test PyDict_AsFrozenDictAndClear()
+        as_frozendict = _testcapi.dict_as_frozendict_and_clear
+        d = dict(x=1, y=2)
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict(x=1, y=2))
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        d = {}
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict())
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        class DictSubtype(dict): ...
+
+        d = DictSubtype({'x': 123})
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict({'x': 123}))
+        self.assertIs(type(d), DictSubtype)
+        self.assertEqual(d, DictSubtype({}))
+
+        for wrong_input in (frozendict(), [], None):
+            with self.subTest(wrong_input=wrong_input):
+                with self.assertRaises(SystemError):
+                    as_frozendict(wrong_input)
+
     def test_frozendict_check(self):
         # Test PyFrozenDict_Check()
         check = _testcapi.frozendict_check
