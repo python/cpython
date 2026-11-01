@@ -82,6 +82,27 @@ class TrivialTests(unittest.TestCase):
     def test_URLError_reasonstr(self):
         err = urllib.error.URLError('reason')
         self.assertIn(err.reason, str(err))
+        self.assertIsNone(err.errno)
+        self.assertIsNone(err.strerror)
+
+    def test_URLError_OSError_attributes(self):
+        # gh-50720: errno and strerror are copied from a wrapped OSError.
+        socket_error = socket.gaierror(-2, 'Name or service not known')
+
+        class FailingHTTPConnection(MockHTTPClass):
+            def request(self, *args, **kwargs):
+                raise socket_error
+
+        h = urllib.request.AbstractHTTPHandler()
+        req = Request("http://example.com/")
+        req.timeout = None
+
+        with self.assertRaises(urllib.error.URLError) as cm:
+            h.do_open(FailingHTTPConnection(), req)
+        err = cm.exception
+        self.assertIs(err.reason, socket_error)
+        self.assertEqual(err.errno, -2)
+        self.assertEqual(err.strerror, 'Name or service not known')
 
 
 class RequestHdrsTests(unittest.TestCase):
@@ -1789,6 +1810,31 @@ class HandlerTests(unittest.TestCase):
             http_handler.requests[1]
             .get_header("Proxy-authorization").startswith("Digest "))
 
+    def test_proxy_digest_auth_uri(self):
+        # The digest-uri of a request sent through an HTTP proxy is the
+        # absolute URL, matching the absolute-form request line
+        opener = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
+        opener.add_handler(ph)
+        password_manager = urllib.request.HTTPPasswordMgr()
+        digest_handler = urllib.request.ProxyDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        http_handler = MockHTTPHandlerRedirect(
+            407,
+            'Proxy-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'algorithm="SHA-256"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        request_url = "http://acme.example.com/protected"
+        digest_handler.add_password(realm, "proxy.example.com:3128",
+                                    "wile", "coyote")
+        opener.open(request_url)
+
+        self.assertEqual(len(http_handler.requests), 2)
+        auth = http_handler.requests[1].get_header("Proxy-authorization")
+        self.assertIn('uri="%s"' % request_url, auth)
+
     def test_digest_auth_uses_full_url(self):
         # The non-proxy case must keep using the full request URL (not
         # just the host) for the password lookup, so that sub-URI realm
@@ -1810,6 +1856,26 @@ class HandlerTests(unittest.TestCase):
 
         self.assertEqual(password_manager.target_realm, realm)
         self.assertEqual(password_manager.target_url, request_url)
+
+    def test_digest_auth_empty_path(self):
+        # gh-53089: the digest-uri must match the Request-URI, which is
+        # '/' for a URL with an empty path
+        password_manager = urllib.request.HTTPPasswordMgr()
+        digest_handler = urllib.request.HTTPDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        digest_handler.add_password(realm, "http://acme.example.com",
+                                    "wile", "coyote")
+        req = Request("http://acme.example.com")
+        chal = {"realm": realm, "nonce": "abcdef0123456789",
+                "algorithm": "SHA-256"}
+
+        auth = digest_handler.get_authorization(req, chal)
+
+        H, KD = digest_handler.get_algorithm_impls("SHA-256")
+        respdig = KD(H("wile:%s:coyote" % realm),
+                     "abcdef0123456789:%s" % H("GET:/"))
+        self.assertIn('uri="/"', auth)
+        self.assertIn('response="%s"' % respdig, auth)
 
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
