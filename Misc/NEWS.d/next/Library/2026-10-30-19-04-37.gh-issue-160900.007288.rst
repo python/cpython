@@ -1,0 +1,1 @@
+Allow :func:`fnmatch.filter` and :func:`fnmatch.filterfalse` to accept path-like objects on POSIX platforms.
