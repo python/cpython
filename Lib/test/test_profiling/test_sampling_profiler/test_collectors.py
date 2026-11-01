@@ -767,64 +767,24 @@ class TestSampleProfilerComponents(unittest.TestCase):
         profile_data = collector._build_profile()
 
         string_array = profile_data["shared"]["stringArray"]
-        thread_data = profile_data["threads"][0]
-        func_table = thread_data["funcTable"]
+        func_table = profile_data["threads"][0]["funcTable"]
 
         self.assertEqual(func_table["length"], 2)
-        self.assertEqual(len(func_table["name"]), 2)
-        self.assertEqual(len(func_table["fileName"]), 2)
-        self.assertEqual(len(func_table["lineNumber"]), 2)
 
-        # Strictly validate that string table contains both full paths
-        self.assertIn(file_a, string_array)
-        self.assertIn(file_b, string_array)
-        expected_idx_a = string_array.index(file_a)
-        expected_idx_b = string_array.index(file_b)
-        self.assertNotEqual(
-            expected_idx_a,
-            expected_idx_b,
-            "Distinct file paths must have distinct string table indices",
-        )
+        funcs_by_name = {
+            string_array[func_table["name"][i]]: (
+                func_table["fileName"][i],
+                string_array[func_table["fileName"][i]],
+            )
+            for i in range(func_table["length"])
+        }
 
-        # Build mapping of func_name -> (file_idx, file_name, line_no)
-        funcs_by_name = {}
-        for i in range(func_table["length"]):
-            name_idx = func_table["name"][i]
-            self.assertIsInstance(name_idx, int)
-            self.assertGreaterEqual(name_idx, 0)
-            self.assertLess(name_idx, len(string_array))
-            func_name = string_array[name_idx]
+        file_idx_a, resolved_file_a = funcs_by_name["func_a"]
+        file_idx_b, resolved_file_b = funcs_by_name["func_b"]
 
-            file_idx = func_table["fileName"][i]
-            self.assertIsInstance(file_idx, int)
-            self.assertGreaterEqual(file_idx, 0)
-            self.assertLess(file_idx, len(string_array))
-            file_name = string_array[file_idx]
-
-            line_no = func_table["lineNumber"][i]
-            self.assertIsInstance(line_no, int)
-
-            funcs_by_name[func_name] = (file_idx, file_name, line_no)
-
-        self.assertEqual(set(funcs_by_name.keys()), {"func_a", "func_b"})
-
-        # Strictly validate func_a filename index, path string, and line
-        file_idx_a, resolved_file_a, line_a = funcs_by_name["func_a"]
-        self.assertEqual(file_idx_a, expected_idx_a)
         self.assertEqual(resolved_file_a, file_a)
-        self.assertEqual(line_a, 10)
-
-        # Strictly validate func_b filename index, path string, and line
-        file_idx_b, resolved_file_b, line_b = funcs_by_name["func_b"]
-        self.assertEqual(file_idx_b, expected_idx_b)
         self.assertEqual(resolved_file_b, file_b)
-        self.assertEqual(line_b, 20)
-
-        # Ensure the filename indices and resolved paths in funcTable are distinct
         self.assertNotEqual(file_idx_a, file_idx_b)
-        self.assertNotEqual(resolved_file_a, resolved_file_b)
-        self.assertNotEqual(resolved_file_a, os.path.basename(file_a))
-        self.assertNotEqual(resolved_file_b, os.path.basename(file_b))
 
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)

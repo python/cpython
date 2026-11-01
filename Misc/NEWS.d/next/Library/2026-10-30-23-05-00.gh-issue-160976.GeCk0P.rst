@@ -1,2 +1,1 @@
-Fixed an issue in :mod:`profiling.sampling` where the Gecko exporter (``--gecko``)
-only recorded source file basenames instead of preserving the source file path.
+The Gecko reporter (``--gecko``) in ``profiling.sampling`` now records full source file paths instead of only basenames.
