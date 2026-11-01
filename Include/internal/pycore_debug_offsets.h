@@ -116,7 +116,7 @@ typedef struct _Py_DebugOffsets {
     } thread_state;
 
     // Exception stack item offset
-    struct {
+    struct _err_stack_item {
         uint64_t exc_value;
     } err_stackitem;
 
