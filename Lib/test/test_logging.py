@@ -6398,6 +6398,25 @@ class LoggerTest(BaseTest, AssertErrorMessage):
                 unpickled = pickle.loads(s)
                 self.assertIs(unpickled, logger)
 
+    def test_caching_unregistered_logger(self):
+        # A logger that is not in loggerDict must not keep a stale cache.
+        logger = logging.Logger("unregistered")
+        logger.setLevel(logging.DEBUG)
+        self.assertTrue(logger.isEnabledFor(logging.DEBUG))
+        logger.setLevel(logging.ERROR)
+        self.assertEqual(logger._cache, {})
+        self.assertFalse(logger.isEnabledFor(logging.DEBUG))
+
+    def test_clear_cache_empties_cached_loggers(self):
+        manager = logging.root.manager
+        registered = logging.getLogger("cached.registered")
+        unregistered = logging.Logger("cached.unregistered")
+        for logger in (registered, unregistered):
+            logger.isEnabledFor(logging.DEBUG)
+            self.assertIn(logger, manager._cached_loggers)
+        registered.setLevel(logging.INFO)
+        self.assertEqual(len(manager._cached_loggers), 0)
+
     def test_caching(self):
         root = self.root_logger
         logger1 = logging.getLogger("abc")

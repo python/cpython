@@ -1475,10 +1475,9 @@ class Manager(object):
         with _lock:
             # Only loggers that have populated a cache are visited, so
             # setLevel() costs O(loggers with cached results), not O(loggers).
-            for logger in list(self._cached_loggers):
-                if self.loggerDict.get(logger.name) is logger:
-                    logger._cache.clear()
-                    self._cached_loggers.discard(logger)
+            for logger in self._cached_loggers:
+                logger._cache.clear()
+            self._cached_loggers.clear()
             self.root._cache.clear()
 
 #---------------------------------------------------------------------------
