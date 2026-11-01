@@ -1,0 +1,3 @@
+Specialize :class:`int` addition and subtraction where an operand is not a
+compact integer, using ``BINARY_OP_EXTEND``. This skips the generic binary
+operator dispatch for these cases.

@@ -2256,6 +2256,16 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_INPLACE_AND, compactlongs_guard, compactlongs_and, &PyLong_Type, 1, NULL, NULL},
     {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor, &PyLong_Type, 1, NULL, NULL},
 
+    /* long-long add/subtract for exact ints that are not both compact (those
+       take BINARY_OP_ADD_INT and friends). Calling the long implementation
+       directly skips the generic binary_op1 slot dispatch. The guard is a
+       pure type check: the result may be non-compact, so it is typed as int
+       without compactness and follow-up int guards stay. */
+    {NB_ADD, NULL, _PyLong_Add, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_SUBTRACT, NULL, _PyLong_Subtract, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_INPLACE_ADD, NULL, _PyLong_Add, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+    {NB_INPLACE_SUBTRACT, NULL, _PyLong_Subtract, &PyLong_Type, 1, &PyLong_Type, &PyLong_Type},
+
     /* float-long arithmetic: guards also check NaN and compactness. */
     {NB_ADD, float_compactlong_guard, float_compactlong_add, &PyFloat_Type, 1, NULL, NULL},
     {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract, &PyFloat_Type, 1, NULL, NULL},
