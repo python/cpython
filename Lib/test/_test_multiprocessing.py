@@ -3277,6 +3277,27 @@ class _TestPool(BaseTestCase):
         self.assertIsNone(next(res, None))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_with_buffersize_releases_semaphores(self):
+        if self.TYPE == 'manager':
+            self.skipTest('test requires access to the pool')
+
+        p = self.Pool(1)
+        try:
+            for method_name in ('imap', 'imap_unordered'):
+                for chunksize in (1, 2):
+                    for values in ([], [1, 2, 3]):
+                        with self.subTest(method=method_name,
+                                          chunksize=chunksize, values=values):
+                            method = getattr(p, method_name)
+                            result = method(str, values, chunksize=chunksize,
+                                            buffersize=1)
+                            self.assertCountEqual(result, map(str, values))
+                            self.assertFalse(p._taskqueue_buffersize_semaphores)
+        finally:
+            p.terminate()
+            p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_imap_with_buffersize_on_infinite_iterable(self):
         if self.TYPE != "threads":
             self.skipTest("test not appropriate for {}".format(self.TYPE))

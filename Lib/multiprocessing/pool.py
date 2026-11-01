@@ -711,8 +711,9 @@ class Pool(object):
         change_notifier.put(None)
 
         task_handler._state = TERMINATE
-        # Release all semaphores to wake up task_handler to stop.
-        for buffersize_sema in tuple(taskqueue_buffersize_semaphores):
+        # Snapshot the set before releasing semaphores: the result handler can
+        # remove completed ones concurrently.
+        for buffersize_sema in list(taskqueue_buffersize_semaphores):
             buffersize_sema.release()
             taskqueue_buffersize_semaphores.discard(buffersize_sema)
 
@@ -935,11 +936,13 @@ class IMapIterator(object):
             return value
         raise value
 
-    def _stop_iterator(self):
+    def _release_pool(self):
         if self._pool is not None:
-            # `self._pool` could be set to `None` in previous `.next()` calls
             self._pool._taskqueue_buffersize_semaphores.discard(self._buffersize_sema)
         self._pool = None
+
+    def _stop_iterator(self):
+        self._release_pool()
         raise StopIteration from None
 
     __next__ = next                    # XXX
@@ -959,7 +962,7 @@ class IMapIterator(object):
 
             if self._index == self._length:
                 del self._cache[self._job]
-                self._pool = None
+                self._release_pool()
 
     def _set_length(self, length):
         with self._cond:
@@ -967,7 +970,7 @@ class IMapIterator(object):
             if self._index == self._length:
                 self._cond.notify()
                 del self._cache[self._job]
-                self._pool = None
+                self._release_pool()
 
 #
 # Class whose instances are returned by `Pool.imap_unordered()`
@@ -982,7 +985,7 @@ class IMapUnorderedIterator(IMapIterator):
             self._cond.notify()
             if self._index == self._length:
                 del self._cache[self._job]
-                self._pool = None
+                self._release_pool()
 
 #
 #
