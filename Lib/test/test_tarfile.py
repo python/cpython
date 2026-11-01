@@ -4527,6 +4527,33 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
 
     @symlink_test
+    def test_sneaky_hardlink_fallback_attrs(self):
+        # Test that when a hardlink is extracted as a copy of a symlink
+        # member, the hardlink's attributes are not applied to the file
+        # the symlink points to.
+        with ArchiveMaker() as arc:
+            arc.add("a/s", symlink_to=os.path.join("..", "flag"))
+            arc.add("s", hardlink_to=os.path.join("a", "s"),
+                    mode='-rwxr-xr-x', mtime=86400, uid=1337, gid=1337)
+
+        for filter in 'tar', 'fully_trusted':
+            with (
+                self.subTest(filter),
+                unittest.mock.patch("os.chown", create=True) as mock_chown,
+                self.check_context(arc.open(), filter) as cc,
+            ):
+                if not os_helper.can_symlink():
+                    self.expect_file("a/")
+                else:
+                    self.expect_file("a/s", symlink_to=os.path.join('..', 'flag'))
+                    self.expect_file("s", symlink_to=os.path.join('..', 'flag'))
+                st = (cc.outerdir / 'flag').stat()
+                self.assertNotEqual(st.st_mtime, 86400)
+                if sys.platform != "win32":
+                    self.assertNotEqual(st.st_mode & 0o777, 0o755)
+                mock_chown.assert_not_called()
+
+    @symlink_test
     @os_helper.skip_unless_hardlink
     def test_sneaky_hardlink_relocation(self):
         with ArchiveMaker() as arc:
