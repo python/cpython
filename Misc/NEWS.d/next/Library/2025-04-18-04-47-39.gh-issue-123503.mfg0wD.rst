@@ -1,0 +1,6 @@
+Replace usages of deprecated attributes :attr:`addinfourl.code
+<urllib.response.addinfourl.code>` and :meth:`HTTPResponse.info
+<http.client.HTTPResponse.info>` with their recommended equivalents
+(:attr:`addinfourl.status <urllib.response.addinfourl.status>` and
+:attr:`HTTPResponse.headers <http.client.HTTPResponse.headers>`),
+while retaining backwards compatibility.
