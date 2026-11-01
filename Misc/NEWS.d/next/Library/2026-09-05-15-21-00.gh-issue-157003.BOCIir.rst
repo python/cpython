@@ -1,0 +1,3 @@
+Add ``HTMLParser.flush()`` to process all buffered data that consists of
+complete elements.  This method will be useful now that
+``HTMLParser.feed()``  utilizes more extensive buffering.
