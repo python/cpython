@@ -1,0 +1,3 @@
+Fix the :mod:`gzip` command-line interface writing through a symbolic link
+at the output file name.  Like :program:`gzip`, it now replaces an existing
+output file with a new one that has the permission bits of the input file.
