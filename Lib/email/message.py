@@ -1211,6 +1211,11 @@ class MIMEPart(Message):
 
 class EmailMessage(MIMEPart):
 
+    def _make_multipart(self, subtype, disallowed_subtypes, boundary):
+        super()._make_multipart(subtype, disallowed_subtypes, boundary)
+        if 'MIME-Version' not in self:
+            self['MIME-Version'] = '1.0'
+
     def set_content(self, *args, **kw):
         super().set_content(*args, **kw)
         if 'MIME-Version' not in self:

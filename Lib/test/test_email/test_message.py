@@ -610,6 +610,8 @@ class TestEmailMessageBase:
             if not name.lower().startswith('content-'):
                 self.assertEqual(m[name], value)
                 count += 1
+        if isinstance(m, EmailMessage):
+            count += 1  # MIME-Version added when making multipart.
         self.assertEqual(len(m), count+1) # +1 for new Content-Type
         part = next(m.iter_parts())
         count = 0
@@ -631,9 +633,11 @@ class TestEmailMessageBase:
         self.assertEqual(m.get_content_subtype(), method)
         if subtype == 'no_content':
             self.assertEqual(len(m.get_payload()), 0)
-            self.assertEqual(m.items(),
-                             msg_headers + [('Content-Type',
-                                             'multipart/'+method)])
+            expected_headers = msg_headers + [('Content-Type',
+                                               'multipart/'+method)]
+            if isinstance(m, EmailMessage):
+                expected_headers.append(('MIME-Version', '1.0'))
+            self.assertEqual(m.items(), expected_headers)
         else:
             self.assertEqual(len(m.get_payload()), 1)
             self._check_make_multipart(m, msg_headers, payload)
@@ -780,6 +784,22 @@ class TestEmailMessageBase:
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
     message = EmailMessage
+
+    def test_make_multipart_MIME_Version(self):
+        for subtype in ('related', 'alternative', 'mixed'):
+            for version in (None, '1.0'):
+                with self.subTest(subtype=subtype, version=version):
+                    m = self.message()
+                    if version is not None:
+                        m['MIME-Version'] = version
+                    getattr(m, 'make_' + subtype)()
+                    self.assertEqual(m.get_all('MIME-Version'), ['1.0'])
+
+    def test_add_related_adds_MIME_Version(self):
+        m = self.message()
+        m.add_related(b'image', 'image', 'png', cid='image')
+        self.assertEqual(m.get_all('MIME-Version'), ['1.0'])
+        self.assertEqual(m.get_content_type(), 'multipart/related')
 
     def test_set_content_adds_MIME_Version(self):
         m = self._str_msg('')
@@ -1115,6 +1135,13 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # classes are almost identical.  But what if they drift apart?  So we do
     # the full tests so that any future drift doesn't introduce bugs.
     message = MIMEPart
+
+    def test_make_multipart_does_not_add_MIME_Version(self):
+        for subtype in ('related', 'alternative', 'mixed'):
+            with self.subTest(subtype=subtype):
+                m = self.message()
+                getattr(m, 'make_' + subtype)()
+                self.assertNotIn('MIME-Version', m)
 
     def test_set_content_does_not_add_MIME_Version(self):
         m = self._str_msg('')
