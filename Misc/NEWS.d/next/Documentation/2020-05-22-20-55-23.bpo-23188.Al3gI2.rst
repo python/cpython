@@ -1,0 +1,2 @@
+Mention that :c:func:`PyErr_SetString`, :c:func:`PyErr_SetObject`, and
+friends implicitly chain exceptions.
