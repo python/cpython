@@ -5218,6 +5218,23 @@ class _TestSharedMemory(BaseTestCase):
         finally:
             empty_sl.shm.unlink()
 
+    def test_shared_memory_ShareableList_unpackable_value(self):
+        # Values of a supported type that cannot be packed must not leave
+        # the newly created shared memory block behind.
+        name = self._new_shm_name('test03_unpackable')
+        for value, exc in (
+            (2**63, struct.error),
+            (-2**63 - 1, struct.error),
+        ):
+            with self.subTest(value=value):
+                with self.assertRaises(exc):
+                    shared_memory.ShareableList(['abc', value], name=name)
+                if sys.platform != "win32":
+                    with self.assertRaises(FileNotFoundError):
+                        # Should not be there to be attached to.
+                        leftover = shared_memory.SharedMemory(name)
+                        leftover.unlink()  # Error should occur on prior line.
+
     def test_shared_memory_ShareableList_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):

@@ -349,31 +349,40 @@ class ShareableList:
 
         if sequence is not None:
             _enc = _encoding
-            struct.pack_into(
-                "q" + self._format_size_metainfo,
-                self.shm.buf,
-                0,
-                self._list_len,
-                *(self._allocated_offsets)
-            )
-            struct.pack_into(
-                "".join(_formats),
-                self.shm.buf,
-                self._offset_data_start,
-                *(self._encode_value(v) for v in sequence)
-            )
-            struct.pack_into(
-                self._format_packing_metainfo,
-                self.shm.buf,
-                self._offset_packing_formats,
-                *(v.encode(_enc) for v in _formats)
-            )
-            struct.pack_into(
-                self._format_back_transform_codes,
-                self.shm.buf,
-                self._offset_back_transform_codes,
-                *(_recreation_codes)
-            )
+            try:
+                struct.pack_into(
+                    "q" + self._format_size_metainfo,
+                    self.shm.buf,
+                    0,
+                    self._list_len,
+                    *(self._allocated_offsets)
+                )
+                struct.pack_into(
+                    "".join(_formats),
+                    self.shm.buf,
+                    self._offset_data_start,
+                    *(self._encode_value(v) for v in sequence)
+                )
+                struct.pack_into(
+                    self._format_packing_metainfo,
+                    self.shm.buf,
+                    self._offset_packing_formats,
+                    *(v.encode(_enc) for v in _formats)
+                )
+                struct.pack_into(
+                    self._format_back_transform_codes,
+                    self.shm.buf,
+                    self._offset_back_transform_codes,
+                    *(_recreation_codes)
+                )
+            except BaseException:
+                # A value of a supported type may still be unpackable, such as
+                # an int outside the signed 64-bit range.  The block was created
+                # above and the caller gets no object to release it with, so
+                # destroy it here.
+                self.shm.close()
+                self.shm.unlink()
+                raise
 
         else:
             self._list_len = len(self)  # Obtains size from offset 0 in buffer.
