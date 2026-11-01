@@ -1,0 +1,3 @@
+Speed up :mod:`profiling.sampling` on macOS by mapping the target process's
+memory pages into the profiler with ``mach_vm_remap`` instead of copying
+them on every sample.

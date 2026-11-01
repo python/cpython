@@ -304,6 +304,11 @@ read_thread_state_and_maybe_frame(
     int *frame_read)
 {
     *frame_read = 0;
+    int aliased = _Py_RemoteDebug_AliasedReadRemoteMemory(
+        &unwinder->handle, tstate_addr, tstate_size, tstate_buffer);
+    if (aliased <= 0) {
+        return aliased;
+    }
     if (predicted_frame_addr != 0) {
         _Py_RemoteReadSegment segments[2] = {
             {tstate_addr, tstate_buffer, tstate_size},
@@ -380,11 +385,15 @@ unwind_stack_for_thread(
         }
     }
     else {
-        int rc = _Py_RemoteDebug_ReadRemoteMemory(
-            &unwinder->handle,
+        int unused_frame_read = 0;
+        int rc = read_thread_state_and_maybe_frame(
+            unwinder,
             *current_tstate,
             (size_t)unwinder->debug_offsets.thread_state.size,
-            local_ts);
+            local_ts,
+            0,
+            NULL,
+            &unused_frame_read);
         if (rc < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
             goto error;
