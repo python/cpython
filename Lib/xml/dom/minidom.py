@@ -2030,8 +2030,9 @@ class Document(Node, DocumentLS):
         result = None
         while stack:
             node = stack.pop()
-            # add child elements to stack for continued searching
-            stack.extend([child for child in node.childNodes
+            # add child elements to stack for continued searching,
+            # last child first so that they are visited in document order
+            stack.extend([child for child in reversed(node.childNodes)
                           if child.nodeType in _nodeTypes_with_children])
             # check this node
             info = self._get_elem_info(node)
@@ -2042,19 +2043,19 @@ class Document(Node, DocumentLS):
                 for attr in node.attributes.values():
                     if attr.namespaceURI:
                         if info.isIdNS(attr.namespaceURI, attr.localName):
-                            self._id_cache[attr.value] = node
+                            self._id_cache.setdefault(attr.value, node)
                             if attr.value == id:
                                 result = node
                             elif not node._magic_id_nodes:
                                 break
                     elif info.isId(attr.name):
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif not node._magic_id_nodes:
                             break
                     elif attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif node._magic_id_nodes == 1:
@@ -2062,7 +2063,7 @@ class Document(Node, DocumentLS):
             elif node._magic_id_nodes:
                 for attr in node.attributes.values():
                     if attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
             if result is not None:
