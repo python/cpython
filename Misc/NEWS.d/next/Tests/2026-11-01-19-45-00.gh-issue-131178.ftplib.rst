@@ -1,0 +1,1 @@
+Add tests for ``ftplib`` command-line interface.
