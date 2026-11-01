@@ -1,0 +1,1 @@
+Fix the :mod:`pydoc` pager not detecting ``less`` 706 and newer.
