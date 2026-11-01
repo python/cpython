@@ -1403,24 +1403,25 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         result = PyTuple_New(size);
         if (!result)
             return NULL;
+        if (Py_EnterRecursiveCall(" while converting a Tcl list")) {
+            Py_DECREF(result);
+            return NULL;
+        }
         for (i = 0; i < size; i++) {
             status = Tcl_ListObjIndex(interp, value, i, &tcl_elem);
             if (status == TCL_ERROR) {
-                Py_DECREF(result);
-                return Tkinter_Error(tkapp);
-            }
-            if (Py_EnterRecursiveCall(" while converting a Tcl list")) {
-                Py_DECREF(result);
-                return NULL;
+                Tkinter_Error(tkapp);
+                Py_CLEAR(result);
+                break;
             }
             elem = FromObj(tkapp, tcl_elem);
-            Py_LeaveRecursiveCall();
             if (!elem) {
-                Py_DECREF(result);
-                return NULL;
+                Py_CLEAR(result);
+                break;
             }
             PyTuple_SET_ITEM(result, i, elem);
         }
+        Py_LeaveRecursiveCall();
         return result;
     }
 
