@@ -597,6 +597,29 @@ class TextIOWrapperTest:
         self.assertEqual(f.tell(), p2)
         f.close()
 
+    def test_tell_after_next_and_flush(self):
+        # next() stops updating the decoder snapshot, and flush() must not
+        # re-enable tell() with that stale snapshot.
+        data = b"a\n" + b"b" * 10000 + b"\nc\n"
+        for prepare in ["none", "readline", "seek"]:
+            with self.subTest(prepare=prepare):
+                f = self.TextIOWrapper(self.BytesIO(data), encoding="ascii")
+                if prepare != "none":
+                    self.assertEqual(f.readline(), "a\n")
+                if prepare == "seek":
+                    f.seek(f.tell())
+                next(f)
+                f.flush()
+                self.assertRaises(OSError, f.tell)
+                self.assertEqual(list(f)[-1], "c\n")
+                self.assertEqual(f.tell(), len(data))
+                f.seek(0)
+                next(f)
+                self.assertRaises(OSError, f.tell)
+                f.seek(2)
+                self.assertEqual(f.tell(), 2)
+                self.assertEqual(f.read(3), "bbb")
+
     def test_seeking(self):
         chunk_size = _default_chunk_size()
         prefix_size = chunk_size - 2
