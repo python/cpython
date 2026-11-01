@@ -1,1 +1,0 @@
-Fix detection of ``less >= 706`` in :func:`_pyrepl.pager.get_pager`.
