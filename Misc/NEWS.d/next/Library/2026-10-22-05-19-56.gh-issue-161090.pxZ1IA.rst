@@ -1,0 +1,3 @@
+Fix the ``punycode`` codec accepting a delimiter (``-``) that is not preceded
+by any basic code point. Such input, for example ``b'-80a1acny'``, now raises
+:exc:`UnicodeDecodeError`, as required by :rfc:`3492`.
