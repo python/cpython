@@ -131,6 +131,21 @@ PAX_FIELDS = ("path", "linkpath", "size", "mtime",
 # Fields from a pax header that are affected by hdrcharset.
 PAX_NAME_FIELDS = {"path", "linkpath", "uname", "gname"}
 
+# Fields from a pax header and the TarInfo attribute they override.
+_PAX_ATTRIBUTES = {
+    "path": "name",
+    "linkpath": "linkname",
+    "size": "size",
+    "mtime": "mtime",
+    "uid": "uid",
+    "gid": "gid",
+    "uname": "uname",
+    "gname": "gname",
+    "GNU.sparse.name": "name",
+    "GNU.sparse.size": "size",
+    "GNU.sparse.realsize": "size",
+}
+
 # Fields in a pax header that are numbers, all other fields
 # are treated as strings.
 PAX_NUMBER_FIELDS = {
@@ -980,6 +995,7 @@ class TarInfo(object):
         sparse = 'Sparse member information.',
         _sparse_structs = None,
         _link_target = None,
+        _pax_applied = None,
         )
 
     def __init__(self, name=""):
@@ -1005,6 +1021,7 @@ class TarInfo(object):
 
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
+        self._pax_applied = {}  # pax header fields applied when read
 
     @property
     def path(self):
@@ -1136,6 +1153,16 @@ class TarInfo(object):
         """
         info["magic"] = POSIX_MAGIC
         pax_headers = self.pax_headers.copy()
+
+        # A field that was read from an archive loses its priority if the
+        # attribute it was applied to has been changed since, e.g. by
+        # replace(). Otherwise the change would be undone by the field.
+        # (TarInfo objects pickled by older versions lack _pax_applied.)
+        pax_applied = getattr(self, "_pax_applied", {})
+        for keyword, (attr, record, value) in pax_applied.items():
+            if (pax_headers.get(keyword) == record
+                    and getattr(self, attr) != value):
+                del pax_headers[keyword]
 
         # Test string fields for values that exceed the field length or cannot
         # be represented in ASCII encoding.
@@ -1725,6 +1752,12 @@ class TarInfo(object):
                 setattr(self, keyword, value)
 
         self.pax_headers = pax_headers.copy()
+        # Remember the applied fields and the resulting attribute values, so
+        # that create_pax_header() is able to detect later changes.
+        self._pax_applied = {
+            keyword: (attr, pax_headers[keyword], getattr(self, attr))
+            for keyword, attr in _PAX_ATTRIBUTES.items()
+            if keyword in pax_headers}
 
     def _decode_pax_field(self, value, encoding, fallback_encoding, fallback_errors):
         """Decode a single field from a pax record.

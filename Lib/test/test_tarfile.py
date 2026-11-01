@@ -2730,6 +2730,148 @@ class PaxWriteTest(GNUWriteTest):
         finally:
             tar.close()
 
+    def _roundtrip_pax_member(self, tarinfo):
+        # Write the member in PAX format and return it as it is read back.
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT) as tar:
+            tar.addfile(tarinfo)
+        with tarfile.open(tmpname) as tar:
+            return tar.getmembers()[0]
+
+    def _read_pax_member(self, pax_headers, type=tarfile.REGTYPE):
+        # Return a member that was read from an archive with the given
+        # pax extended header.
+        t = tarfile.TarInfo("ustar")
+        t.type = type
+        with open(tmpname, "wb") as fobj:
+            fobj.write(t._create_pax_generic_header(
+                pax_headers, tarfile.XHDTYPE, "utf-8"))
+            fobj.write(t.tobuf(tarfile.USTAR_FORMAT))
+            fobj.write(bytes(tarfile.RECORDSIZE))
+        with tarfile.open(tmpname) as tar:
+            return tar.getmembers()[0]
+
+    def test_pax_extended_header_changed_attributes(self):
+        # The fields from a pax header that was read from an archive
+        # must not undo later changes to the TarInfo.
+        pax_headers = {"path": "../foo", "linkpath": "../bar",
+                       "mtime": "1000.5", "uid": "123", "gid": "124",
+                       "uname": "spam", "gname": "eggs", "comment": "ham"}
+        changes = {"name": "foo", "linkname": "bar", "mtime": 2000,
+                   "uid": 1, "gid": 2, "uname": "tarfile", "gname": "tarfile"}
+
+        def check(t):
+            t = self._roundtrip_pax_member(t)
+            for attr, value in changes.items():
+                self.assertEqual(getattr(t, attr), value)
+            self.assertEqual(t.pax_headers, {"comment": "ham"})
+
+        with self.subTest("replace"):
+            t = self._read_pax_member(pax_headers, tarfile.SYMTYPE)
+            self.assertEqual(t.pax_headers, pax_headers)
+            check(t.replace(**changes))
+        with self.subTest("replace shallow"):
+            t = self._read_pax_member(pax_headers, tarfile.SYMTYPE)
+            check(t.replace(**changes, deep=False))
+            self.assertEqual(t.pax_headers, pax_headers)
+        with self.subTest("setattr"):
+            t = self._read_pax_member(pax_headers, tarfile.SYMTYPE)
+            for attr, value in changes.items():
+                setattr(t, attr, value)
+            check(t)
+
+        for attr, value in changes.items():
+            with self.subTest(attr=attr):
+                t = self._read_pax_member(pax_headers, tarfile.SYMTYPE)
+                t2 = self._roundtrip_pax_member(t.replace(**{attr: value}))
+                self.assertEqual(getattr(t2, attr), value)
+                for other in changes.keys() - {attr}:
+                    self.assertEqual(getattr(t2, other), getattr(t, other))
+
+    def test_pax_extended_header_renamed_copy(self):
+        # Members with a name that needs a pax header can be renamed
+        # when they are copied to another archive.
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT) as tar:
+            tar.addfile(tarfile.TarInfo("\xe4\xf6\xfc"))
+            tar.addfile(tarfile.TarInfo("foo"))
+        with tarfile.open(tmpname) as tar:
+            members = tar.getmembers()
+        self.assertEqual(members[0].pax_headers, {"path": "\xe4\xf6\xfc"})
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT) as tar:
+            for t in members:
+                t.name = "bar/" + t.name
+                tar.addfile(t)
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.getnames(), ["bar/\xe4\xf6\xfc", "bar/foo"])
+
+    def test_pax_extended_header_without_applied_fields(self):
+        # A TarInfo object that was pickled by an older version
+        # has no record of the applied fields.
+        t = self._read_pax_member({"path": "foo"})
+        del t._pax_applied
+        t.name = "bar"
+        self.assertEqual(self._roundtrip_pax_member(t).name, "foo")
+
+    def test_pax_extended_header_changed_size(self):
+        t = self._read_pax_member({"size": "0"})
+        t.size = 3
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT) as tar:
+            tar.addfile(t, io.BytesIO(b"foo"))
+            tar.addfile(tarfile.TarInfo("bar"))
+        with tarfile.open(tmpname) as tar:
+            self.assertEqual(tar.getnames(), ["ustar", "bar"])
+            self.assertEqual(tar.extractfile("ustar").read(), b"foo")
+
+    def test_pax_extended_header_changed_sparse_name(self):
+        t = self._read_pax_member({"path": "foo", "GNU.sparse.name": "bar"})
+        self.assertEqual(t.name, "bar")
+        self.assertEqual(self._roundtrip_pax_member(t).name, "bar")
+        t = self._roundtrip_pax_member(t.replace(name="baz"))
+        self.assertEqual(t.name, "baz")
+        self.assertEqual(t.pax_headers, {})
+
+        t = self._read_pax_member({"GNU.sparse.name": "bar"})
+        t.name = "baz"
+        self.assertEqual(self._roundtrip_pax_member(t).name, "baz")
+
+    def test_pax_extended_header_unchanged_attributes(self):
+        # The fields from a pax header are preserved if the
+        # corresponding attributes are not changed.
+        pax_headers = {"path": "foo", "mtime": "1000.123456789",
+                       "uid": "123", "comment": "ham"}
+        t = self._read_pax_member(pax_headers)
+        t = self._roundtrip_pax_member(t.replace(uname="tarfile"))
+        self.assertEqual(t.pax_headers, pax_headers)
+        self.assertEqual(t.name, "foo")
+        self.assertEqual(t.uid, 123)
+        self.assertEqual(t.uname, "tarfile")
+
+    def test_pax_extended_header_changed_pax_headers(self):
+        # The fields that are set after the pax header was read
+        # still have priority over the TarInfo.
+        t = self._read_pax_member({"path": "foo", "uid": "123"})
+        t.name = "bar"
+        t.uid = 124
+        t.pax_headers["path"] = "baz"
+        t = self._roundtrip_pax_member(t)
+        self.assertEqual(t.pax_headers, {"path": "baz"})
+        self.assertEqual(t.name, "baz")
+        self.assertEqual(t.uid, 124)
+
+    def test_pax_extended_header_gnu_longname(self):
+        # A GNU longname header that precedes the pax header overrides
+        # its path field.
+        t = tarfile.TarInfo("ustar")
+        t.pax_headers = {"path": "foo"}
+        with open(tmpname, "wb") as fobj:
+            fobj.write(t._create_gnu_long_header(
+                "bar", tarfile.GNUTYPE_LONGNAME, "utf-8", "strict"))
+            fobj.write(t.tobuf(tarfile.PAX_FORMAT))
+            fobj.write(bytes(tarfile.RECORDSIZE))
+        with tarfile.open(tmpname) as tar:
+            t = tar.getmembers()[0]
+        self.assertEqual(t.name, "bar")
+        self.assertEqual(self._roundtrip_pax_member(t).name, "bar")
+
     def test_create_pax_header(self):
         # The ustar header should contain values that can be
         # represented reasonably, even if a better (e.g. higher
