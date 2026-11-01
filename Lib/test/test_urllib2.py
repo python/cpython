@@ -104,6 +104,16 @@ class TrivialTests(unittest.TestCase):
         self.assertEqual(err.errno, -2)
         self.assertEqual(err.strerror, 'Name or service not known')
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_URLError_OSError_attributes_winerror(self):
+        # gh-50720: OSError(errno, strerror, filename, winerror):
+        # on Windows the constructor derives errno from winerror.
+        os_error = OSError(0, "The system cannot find the path specified", None, 3)
+
+        err = urllib.error.URLError(os_error)
+        self.assertEqual(err.winerror, 3)
+        self.assertEqual(err.strerror, os_error.strerror)
+
 
 class RequestHdrsTests(unittest.TestCase):
 

@@ -11,6 +11,7 @@ an application may want to handle an exception like a regular
 response.
 """
 import io
+import sys
 import urllib.response
 
 __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']
@@ -32,6 +33,8 @@ class URLError(OSError):
             # it would have set from the wrapped error (gh-50720).
             self.errno = reason.errno
             self.strerror = reason.strerror
+            if sys.platform == 'win32':
+                self.winerror = reason.winerror
 
     def __str__(self):
         return '<urlopen error %s>' % self.reason
