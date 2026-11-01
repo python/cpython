@@ -1,0 +1,5 @@
+Fix exponential matching time in :func:`glob.translate`,
+:meth:`pathlib.PurePath.match`, :meth:`~pathlib.PurePath.full_match` and
+:meth:`pathlib.Path.glob` for patterns with several ``*`` wildcards in one
+segment. Interior ``*`` wildcards are now translated to atomic groups where
+this cannot change which names match, as :func:`fnmatch.translate` does.
