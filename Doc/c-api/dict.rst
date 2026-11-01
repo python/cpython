@@ -517,6 +517,12 @@ Dictionary objects
    Clears the input *dict* on success.
    Returns ``NULL`` with the exception set on error.
 
+   This function is intended for building a :class:`!frozendict` instance via
+   a temporary *dict* that is not exposed to user code.
+   To "freeze" an arbitrary dictionary, for example one received from the user
+   as an argument, prefer :c:func:`PyFrozenDict_New` to leave the source
+   intact.
+
    .. impl-detail::
 
       Works with O(1) complexity.
