@@ -795,6 +795,34 @@ class WeirdZoneTest(ZoneInfoTestBase):
         with self.assertRaises(ValueError):
             self.klass.from_file(f)
 
+    def test_invalid_charcnt(self):
+        # 128 local time types whose abbreviations are the suffixes of a
+        # single long abbreviation spanning the entire block: every index
+        # would get its own copy of most of the block.
+        types = b"".join(struct.pack(">lbb", 3600, 0, i) for i in range(128))
+        chars = b"A" * 65535 + b"\x00"
+
+        # With a negative charcnt the block would be the rest of the file
+        for charcnt in (len(chars), -1):
+            with self.subTest(charcnt=charcnt):
+                header = b"TZif" + b"\x00" * 16
+                header += struct.pack(">6l", 0, 0, 0, 0, 128, charcnt)
+                f = io.BytesIO(header + types + chars)
+
+                with self.assertRaises(ValueError):
+                    self.klass.from_file(f)
+
+    def test_abbreviation_index_above_127(self):
+        chars = b"X" * 129 + b"\x00" + b"ABC\x00"
+        header = b"TZif" + b"\x00" * 16
+        header += struct.pack(">6l", 0, 0, 0, 0, 1, len(chars))
+        types = struct.pack(">lbB", 3600, 0, 130)
+        zi = self.klass.from_file(io.BytesIO(header + types + chars))
+
+        dt = datetime(2026, 1, 1, tzinfo=zi)
+        self.assertEqual(dt.tzname(), "ABC")
+        self.assertEqual(dt.utcoffset(), ONE_H)
+
     def test_transition_lookahead_out_of_bounds(self):
         STD = ZoneOffset("STD", ZERO)
         DST = ZoneOffset("DST", ONE_H, ONE_H)
