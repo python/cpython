@@ -1191,6 +1191,74 @@ class MiscTestCase(TestCase):
         support.check__all__(self, ftplib, not_exported=not_exported)
 
 
+class CommandLineTest(TestCase):
+    """Tests for the ftplib command-line interface."""
+
+    def test_main_no_arguments_prints_usage(self):
+        with mock.patch('sys.argv', ['ftplib']), \
+             support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit) as cm:
+                ftplib.test()
+            self.assertEqual(cm.exception.code, 0)
+        output = stdout.getvalue()
+        self.assertIn('Usage:', output)
+        self.assertIn('Options:', output)
+        self.assertIn('Commands:', output)
+
+    @requires_subprocess()
+    def test_subprocess_invocation_no_args(self):
+        from test.support.script_helper import assert_python_ok
+        rc, out, err = assert_python_ok('-m', 'ftplib')
+        self.assertEqual(rc, 0)
+        self.assertIn(b'Usage:', out)
+        self.assertIn(b'Options:', out)
+        self.assertIn(b'Commands:', out)
+        self.assertEqual(err, b'')
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_host_and_debugging(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', '-d', '-d', 'example.com']):
+            ftplib.test()
+        mock_ftp_cls.assert_called_once_with('example.com')
+        mock_ftp.set_debuglevel.assert_called_once_with(2)
+        mock_ftp.login.assert_called_once_with('', '', '')
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_commands(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', 'example.com', '-l/pub', '-d/incoming', '-p']):
+            ftplib.test()
+        mock_ftp_cls.assert_called_once_with('example.com')
+        mock_ftp.dir.assert_called_once_with('/pub')
+        mock_ftp.sendcmd.assert_called_once_with('CWD /incoming')
+        mock_ftp.set_pasv.assert_called_once()
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_retrieve_file(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', 'example.com', 'testfile.txt']):
+            ftplib.test()
+        mock_ftp.retrbinary.assert_called_once()
+        args, kwargs = mock_ftp.retrbinary.call_args
+        self.assertEqual(args[0], 'RETR testfile.txt')
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError('file not found'))
+    def test_cli_custom_rcfile_error(self, mock_netrc, mock_ftp_cls):
+        with mock.patch('sys.argv', ['ftplib', '-rnonexistent.netrc', 'example.com']), \
+             support.captured_stderr() as stderr:
+            ftplib.test()
+        self.assertIn("Could not open account file -- using anonymous login.",
+                      stderr.getvalue())
+
+
 def setUpModule():
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
