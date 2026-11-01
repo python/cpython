@@ -2164,18 +2164,27 @@ PyObject_GC_IsFinalized(PyObject *obj)
 static int
 visit_generation(gcvisitobjects_t callback, void *arg, struct gc_generation *gen)
 {
-    PyGC_Head *gc_list, *gc;
-    gc_list = &gen->head;
-    for (gc = GC_NEXT(gc_list); gc != gc_list; gc = GC_NEXT(gc)) {
+    PyGC_Head *gc_list = &gen->head;
+    PyGC_Head seen;
+    int res = 1;
+
+    /* Iterate directly on the gc head to ensure the iteration is safe
+     * from a callback freeing its object (which can also cause
+     * a cascading free).  Visited objects are moved to `seen` and
+     * merged back at the end. */
+    gc_list_init(&seen);
+    while (res && !gc_list_is_empty(gc_list)) {
+        PyGC_Head *gc = GC_NEXT(gc_list);
         PyObject *op = FROM_GC(gc);
+        gc_list_move(gc, &seen);
         Py_INCREF(op);
-        int res = callback(op, arg);
+        res = callback(op, arg);
         Py_DECREF(op);
-        if (!res) {
-            return -1;
-        }
     }
-    return 0;
+    /* Put the visited objects back in front of the unvisited ones. */
+    gc_list_merge(gc_list, &seen);
+    gc_list_merge(&seen, gc_list);
+    return res ? 0 : -1;
 }
 
 void
