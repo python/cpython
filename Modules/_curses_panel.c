@@ -19,6 +19,7 @@ static const char PyCursesVersion[] = "2.1";
 
 #define CURSES_PANEL_MODULE
 #include "py_curses.h"
+#include "pycore_curses.h"
 
 #if defined(HAVE_NCURSESW_PANEL_H)
 #  include <ncursesw/panel.h>
