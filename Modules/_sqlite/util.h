@@ -66,7 +66,10 @@ pysqlite_set_ref(PyObject *owner, PyObject **field, PyObject *value)
  * never block on the connection mutex while holding the GIL: enter the mutex
  * with these helpers around SQLite API calls that take it and are made with
  * the GIL held.  The mutex is recursive, and it is NULL unless SQLite is in
- * serialized threading mode.
+ * serialized threading mode.  Newer SQLite versions take the mutex in more
+ * calls, including getters such as sqlite3_get_autocommit() and
+ * sqlite3_limit(), so assume that any call on a connection or a statement
+ * takes it unless the SQLite documentation says otherwise.
  *
  * Do not call back into Python code while holding the mutex: it could wait
  * for another thread that is blocked on the same mutex. */
@@ -107,6 +110,24 @@ static inline void
 pysqlite_db_mutex_leave(sqlite3 *db)
 {
     pysqlite_mutex_leave(sqlite3_db_mutex(db));
+}
+
+static inline int
+pysqlite_get_autocommit(sqlite3 *db)
+{
+    pysqlite_db_mutex_enter(db);
+    int autocommit = sqlite3_get_autocommit(db);
+    pysqlite_db_mutex_leave(db);
+    return autocommit;
+}
+
+static inline int
+pysqlite_limit(sqlite3 *db, int id, int new_value)
+{
+    pysqlite_db_mutex_enter(db);
+    int old_value = sqlite3_limit(db, id, new_value);
+    pysqlite_db_mutex_leave(db);
+    return old_value;
 }
 
 #endif

@@ -1833,6 +1833,9 @@ class ThreadTests(unittest.TestCase):
                 lambda cx: cx.set_trace_callback(None))
             run("setconfig", sql, function,
                 lambda cx: cx.setconfig(sqlite3.SQLITE_DBCONFIG_ENABLE_FKEY))
+            run("getters", sql, function,
+                lambda cx: (cx.in_transaction, cx.total_changes,
+                            cx.getlimit(sqlite3.SQLITE_LIMIT_LENGTH)))
             print("done")
         """)
         try:

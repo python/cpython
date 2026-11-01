@@ -454,7 +454,7 @@ connection_close(pysqlite_Connection *self)
 
     int rc = 0;
     if (self->autocommit == AUTOCOMMIT_DISABLED &&
-        !sqlite3_get_autocommit(self->db))
+        !pysqlite_get_autocommit(self->db))
     {
         if (connection_exec_stmt(self, "ROLLBACK") < 0) {
             rc = -1;
@@ -759,7 +759,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
     }
 
     if (self->autocommit == AUTOCOMMIT_LEGACY) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return NULL;
             }
@@ -793,7 +793,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     }
 
     if (self->autocommit == AUTOCOMMIT_LEGACY) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
                 return NULL;
             }
@@ -1184,7 +1184,7 @@ destructor_callback(void *ctx)
 static int
 check_num_params(pysqlite_Connection *self, const int n, const char *name)
 {
-    int limit = sqlite3_limit(self->db, SQLITE_LIMIT_FUNCTION_ARG, -1);
+    int limit = pysqlite_limit(self->db, SQLITE_LIMIT_FUNCTION_ARG, -1);
     assert(limit >= 0);
     if (n < -1 || n > limit) {
         PyErr_Format(self->ProgrammingError,
@@ -1838,7 +1838,10 @@ pysqlite_connection_get_total_changes(PyObject *op, void *Py_UNUSED(closure))
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    return PyLong_FromLong(sqlite3_total_changes(self->db));
+    pysqlite_db_mutex_enter(self->db);
+    int changes = sqlite3_total_changes(self->db);
+    pysqlite_db_mutex_leave(self->db);
+    return PyLong_FromLong(changes);
 }
 
 static PyObject *
@@ -1848,7 +1851,7 @@ pysqlite_connection_get_in_transaction(PyObject *op, void *Py_UNUSED(closure))
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    if (!sqlite3_get_autocommit(self->db)) {
+    if (!pysqlite_get_autocommit(self->db)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2508,7 +2511,7 @@ setlimit_impl(pysqlite_Connection *self, int category, int limit)
         return NULL;
     }
 
-    int old_limit = sqlite3_limit(self->db, category, limit);
+    int old_limit = pysqlite_limit(self->db, category, limit);
     if (old_limit < 0) {
         PyErr_SetString(self->ProgrammingError, "'category' is out of bounds");
         return NULL;
@@ -2679,14 +2682,14 @@ set_autocommit(PyObject *op, PyObject *val, void *Py_UNUSED(closure))
         return -1;
     }
     if (self->autocommit == AUTOCOMMIT_ENABLED) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return -1;
             }
         }
     }
     else if (self->autocommit == AUTOCOMMIT_DISABLED) {
-        if (sqlite3_get_autocommit(self->db)) {
+        if (pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "BEGIN") < 0) {
                 return -1;
             }

@@ -937,7 +937,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     if (self->connection->autocommit == AUTOCOMMIT_LEGACY
         && self->connection->isolation_level
         && self->statement->is_dml
-        && sqlite3_get_autocommit(self->connection->db))
+        && pysqlite_get_autocommit(self->connection->db))
     {
         if (begin_transaction(self->connection) < 0) {
             goto error;
@@ -1025,7 +1025,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
         if (rc == SQLITE_DONE) {
             if (self->statement->is_dml) {
-                self->rowcount += (long)sqlite3_changes(self->connection->db);
+                pysqlite_db_mutex_enter(db);
+                self->rowcount += (long)sqlite3_changes(db);
+                pysqlite_db_mutex_leave(db);
             }
             if (stmt_reset(self->statement) != SQLITE_OK) {
                 goto reset_failure;
@@ -1059,7 +1061,9 @@ error:
     if (PyErr_Occurred()) {
         if (self->statement) {
             sqlite3 *db = sqlite3_db_handle(self->statement->st);
+            pysqlite_db_mutex_enter(db);
             int sqlite3_state = sqlite3_errcode(db);
+            pysqlite_db_mutex_leave(db);
             // stmt_reset() may return a previously set exception,
             // either triggered because of Python or sqlite3.
             rc = stmt_reset(self->statement);
@@ -1146,8 +1150,8 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
     }
 
     size_t sql_len = strlen(sql_script);
-    int max_length = sqlite3_limit(self->connection->db,
-                                   SQLITE_LIMIT_SQL_LENGTH, -1);
+    int max_length = pysqlite_limit(self->connection->db,
+                                    SQLITE_LIMIT_SQL_LENGTH, -1);
     if (sql_len > (unsigned)max_length) {
         PyErr_SetString(self->connection->DataError,
                         "query string is too large");
@@ -1157,7 +1161,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
     // Commit if needed
     sqlite3 *db = self->connection->db;
     if (self->connection->autocommit == AUTOCOMMIT_LEGACY
-        && !sqlite3_get_autocommit(db))
+        && !pysqlite_get_autocommit(db))
     {
         int rc = SQLITE_OK;
 
@@ -1229,7 +1233,10 @@ pysqlite_cursor_iternext(PyObject *op)
     int rc = stmt_step(stmt);
     if (rc == SQLITE_DONE) {
         if (self->statement->is_dml) {
-            self->rowcount = (long)sqlite3_changes(self->connection->db);
+            sqlite3 *db = self->connection->db;
+            pysqlite_db_mutex_enter(db);
+            self->rowcount = (long)sqlite3_changes(db);
+            pysqlite_db_mutex_leave(db);
         }
         rc = stmt_reset(self->statement);
         Py_CLEAR(self->statement);

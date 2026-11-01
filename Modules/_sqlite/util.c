@@ -141,17 +141,18 @@ set_error_from_code(pysqlite_state *state, int code)
 int
 set_error_from_db(pysqlite_state *state, sqlite3 *db)
 {
+    pysqlite_db_mutex_enter(db);
     int errorcode = sqlite3_errcode(db);
     PyObject *exc_class = get_exception_class(state, errorcode);
     if (exc_class == NULL) {
         // No new exception need be raised.
+        pysqlite_db_mutex_leave(db);
         return SQLITE_OK;
     }
 
     /* Create and set the exception. */
     int extended_errcode = sqlite3_extended_errcode(db);
     // sqlite3_errmsg() always returns an UTF-8 encoded message
-    pysqlite_db_mutex_enter(db);
     PyObject *errmsg = PyUnicode_FromString(sqlite3_errmsg(db));
     pysqlite_db_mutex_leave(db);
     raise_exception(exc_class, extended_errcode, errmsg);
