@@ -243,3 +243,21 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLocal(struct _PyInterpreterFrame *frame, Py_ssize_t index, PyObject **result)
+
+   Retrieve the local variable at *index*.
+   To determine the index of a particular variable, use
+   :c:func:`PyUnstable_InterpreterFrame_GetCode` and
+   :c:func:`PyUnstable_Code_GetLocalPlusNames`.
+
+   Cell and free variables are unboxed to their contents.  Free variables are
+   resolved from the function closure, so this also works on a frame that has
+   not started executing.
+
+   * On success, store a new :term:`strong reference` in *result* and return ``1``.
+   * If the slot is unset or hidden, store ``NULL`` in *result* and return ``0``.
+   * On error, raise an exception, store ``NULL`` in *result* and return ``-1``.
+
+   .. versionadded:: next
