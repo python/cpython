@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 import unittest
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, requires_resource
 
 _winapi = import_helper.import_module('_winapi', required_on=['win'])
 
@@ -165,6 +165,39 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
+
+    def test_console_mode_non_console_handle(self):
+        rfd, wfd = _winapi.CreatePipe(None, 0)
+        self.addCleanup(_winapi.CloseHandle, rfd)
+        self.addCleanup(_winapi.CloseHandle, wfd)
+
+        with self.assertRaises(OSError):
+            _winapi.GetConsoleMode(rfd)
+        with self.assertRaises(OSError):
+            _winapi.SetConsoleMode(rfd, 0)
+        with self.assertRaises(OSError):
+            _winapi.FlushConsoleInputBuffer(rfd)
+
+    @requires_resource('console')
+    def test_console_mode(self):
+        try:
+            handle = _winapi.CreateFile(
+                "CONIN$",
+                _winapi.GENERIC_READ | _winapi.GENERIC_WRITE,
+                3,  # 3=FILE_SHARE_READ|FILE_SHARE_WRITE
+                _winapi.NULL,
+                _winapi.OPEN_EXISTING,
+                0,
+                _winapi.NULL)
+        except OSError:
+            self.skipTest("requires a console")
+        self.addCleanup(_winapi.CloseHandle, handle)
+
+        mode = _winapi.GetConsoleMode(handle)
+        self.assertIsInstance(mode, int)
+        self.assertIsNone(_winapi.SetConsoleMode(handle, mode))
+        self.assertEqual(_winapi.GetConsoleMode(handle), mode)
+        self.assertIsNone(_winapi.FlushConsoleInputBuffer(handle))
 
     def test_event_source_registration(self):
         source_name = "PythonTestEventSource"
