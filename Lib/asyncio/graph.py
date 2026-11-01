@@ -2,6 +2,7 @@
 
 import dataclasses
 import io
+import operator
 import sys
 import types
 
@@ -160,7 +161,8 @@ def capture_call_graph(
 
     call_stack: list[FrameCallGraphEntry] = []
 
-    f = sys._getframe(depth) if limit != 0 else None
+    # gh-161124: find the task boundary before skipping frames
+    f = sys._getframe(0) if limit != 0 else None
     try:
         while f is not None:
             # gh-156988: sync gen should not clear the call chain
@@ -177,6 +179,9 @@ def capture_call_graph(
             f = f.f_back
     finally:
         del f
+
+    if call_stack:
+        call_stack = call_stack[max(0, operator.index(depth)):]
 
     awaited_by = []
     if future._asyncio_awaited_by:

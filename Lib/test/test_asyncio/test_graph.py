@@ -785,6 +785,11 @@ class CallStackTestBase:
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
 
+    async def test_call_graph_depth_beyond_task(self):
+        # gh-161124
+        graph = asyncio.capture_call_graph(depth=2)
+        self.assertEqual(graph.call_stack, ())
+
     async def test_capture_call_graph_positive_limit(self):
         captured = None
 
