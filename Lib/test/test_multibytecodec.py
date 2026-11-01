@@ -39,6 +39,10 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertEqual(str(b'', enc), '')
             self.assertEqual(''.encode(enc), b'')
 
+    def test_hz_tilde_at_buffer_boundary(self):
+        text = 'a' + '中a' * 6 + '~'
+        self.assertEqual(text.encode('hz').decode('hz'), text)
+
     def test_str_decode(self):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual('abcd'.encode(enc), b'abcd')
@@ -90,6 +94,12 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertRaises(TypeError, codecs.getdecoder(enc), "")
 
 class Test_IncrementalEncoder(unittest.TestCase):
+
+    def test_iso2022_kr_reset(self):
+        encoder = codecs.getincrementalencoder('iso2022_kr')()
+        encoder.encode('가')
+        encoder.reset()
+        self.assertEqual(encoder.encode('가', final=True), '가'.encode('iso2022_kr'))
 
     def test_stateless(self):
         # cp949 encoder isn't stateful at all.
@@ -242,6 +252,19 @@ class Test_IncrementalEncoder(unittest.TestCase):
 
 class Test_IncrementalDecoder(unittest.TestCase):
 
+    def test_iso2022_split_escape(self):
+        raw = b'\x1b$0000000B'
+        decoder = codecs.getincrementaldecoder('iso2022_jp')('replace')
+        decoded = decoder.decode(raw[:-1]) + decoder.decode(raw[-1:], final=True)
+        self.assertEqual(decoded, raw.decode('iso2022_jp', 'replace'))
+
+    def test_iso2022_reset(self):
+        decoder = codecs.getincrementaldecoder('iso2022_jp')()
+        decoder.decode(b'\x1b%')
+        decoder.reset()
+        with self.assertRaises(UnicodeDecodeError):
+            decoder.decode(b'\xff', final=True)
+
     def test_dbcs(self):
         # cp949 decoder is simple with only 1 or 2 bytes sequences.
         decoder = codecs.getincrementaldecoder('cp949')()
@@ -325,7 +348,7 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, 123)
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
-        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
+        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"0" * 17, 0))
 
     def test_setstate_invalid_designation(self):
         # gh-153603: an unknown charset designation in the state must not crash
