@@ -1242,11 +1242,14 @@ class CommandLineTest(TestCase):
     @mock.patch('netrc.netrc', side_effect=OSError)
     def test_cli_retrieve_file(self, mock_netrc, mock_ftp_cls):
         mock_ftp = mock_ftp_cls.return_value
-        with mock.patch('sys.argv', ['ftplib', 'example.com', 'testfile.txt']):
+        with mock.patch('sys.argv', ['ftplib', 'example.com', 'testfile.txt']), \
+             mock.patch('sys.stdout') as mock_stdout:
             ftplib.test()
-        mock_ftp.retrbinary.assert_called_once()
-        args, kwargs = mock_ftp.retrbinary.call_args
-        self.assertEqual(args[0], 'RETR testfile.txt')
+        mock_ftp.retrbinary.assert_called_once_with(
+            'RETR testfile.txt', mock_stdout.buffer.write, 1024
+        )
+        mock_stdout.buffer.flush.assert_called_once()
+        mock_stdout.flush.assert_called_once()
         mock_ftp.quit.assert_called_once()
 
     @mock.patch('ftplib.FTP')
