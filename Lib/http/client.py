@@ -351,12 +351,15 @@ class HTTPResponse(io.BufferedIOBase):
         # for _read_and_discard_trailer() to enforce.
         self._max_headers = _max_headers
 
-        # read until we get a non-100 response
+        # read until we get a final response, skipping 1xx (informational)
+        # responses such as "100 Continue" or "103 Early Hints".
+        # "101 Switching Protocols" is returned to the caller since it ends
+        # the HTTP/1.1 exchange on this connection.
         for _ in range(_MAXINTERIMRESPONSES):
             version, status, reason = self._read_status()
-            if status != CONTINUE:
+            if not 100 <= status < 200 or status == SWITCHING_PROTOCOLS:
                 break
-            # skip the header from the 100 response
+            # skip the header from the 1xx response
             skipped_headers = _read_headers(self.fp, _max_headers)
             if self.debuglevel > 0:
                 print("headers:", skipped_headers)

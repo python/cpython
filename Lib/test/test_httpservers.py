@@ -329,7 +329,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         allow_transfer_encoding_codes = (HTTPStatus.NOT_MODIFIED,
                                          HTTPStatus.RESET_CONTENT)
         for code in (HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED,
-                     HTTPStatus.PROCESSING, HTTPStatus.RESET_CONTENT,
+                     HTTPStatus.RESET_CONTENT,
                      HTTPStatus.SWITCHING_PROTOCOLS):
             self.con.request('SEND_ERROR', '/{}'.format(code))
             res = self.con.getresponse()
@@ -341,6 +341,23 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
             data = res.read()
             self.assertEqual(b'', data)
+
+    def test_send_error_informational(self):
+        # http.client skips 1xx (informational) responses other than
+        # "101 Switching Protocols", so read this one from the socket.
+        self.con.close()
+        with socket.create_connection((self.HOST, self.PORT)) as sock:
+            sock.sendall(b'SEND_ERROR /102 HTTP/1.1\r\n\r\n')
+            response = b''.join(iter(lambda: sock.recv(1024), b''))
+        head, sep, data = response.partition(b'\r\n\r\n')
+        self.assertEqual(sep, b'\r\n\r\n')
+        status_line, *header_lines = head.split(b'\r\n')
+        self.assertStartsWith(status_line, b'HTTP/1.1 102 ')
+        names = [line.partition(b':')[0].lower() for line in header_lines]
+        self.assertNotIn(b'content-length', names)
+        self.assertNotIn(b'content-type', names)
+        self.assertNotIn(b'transfer-encoding', names)
+        self.assertEqual(b'', data)
 
     def test_head_via_send_error(self):
         allow_transfer_encoding_codes = (HTTPStatus.NOT_MODIFIED,

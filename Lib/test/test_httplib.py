@@ -1479,6 +1479,46 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), b'hello')
         resp.close()
 
+    def test_informational_responses(self):
+        # gh-72756: every 1xx response other than "101 Switching Protocols"
+        # is an interim response and must be skipped, like "100 Continue".
+        for interim in ('102 Processing', '103 Early Hints', '199 Unknown',
+                        '103 Early Hints\r\n\r\nHTTP/1.1 100 Continue'):
+            with self.subTest(interim=interim):
+                body = (
+                    f'HTTP/1.1 {interim}\r\n'
+                    'Link: </style.css>; rel=preload; as=style\r\n'
+                    '\r\n'
+                    'HTTP/1.1 200 OK\r\n'
+                    'Content-Length: 5\r\n'
+                    '\r\n'
+                    'hello'
+                )
+                resp = client.HTTPResponse(FakeSocket(body), method="GET")
+                resp.begin()
+                self.assertEqual(resp.status, 200)
+                self.assertEqual(resp.reason, 'OK')
+                self.assertIsNone(resp.getheader('Link'))
+                self.assertEqual(resp.read(), b'hello')
+                resp.close()
+
+    def test_switching_protocols_response(self):
+        # "101 Switching Protocols" ends the HTTP/1.1 exchange, so it is
+        # returned to the caller instead of being skipped.
+        body = (
+            'HTTP/1.1 101 Switching Protocols\r\n'
+            'Upgrade: websocket\r\n'
+            'Connection: Upgrade\r\n'
+            '\r\n'
+            'not HTTP'
+        )
+        resp = client.HTTPResponse(FakeSocket(body), method="GET")
+        resp.begin()
+        self.assertEqual(resp.status, 101)
+        self.assertEqual(resp.getheader('Upgrade'), 'websocket')
+        self.assertEqual(resp.read(), b'')
+        resp.close()
+
     def test_overflowing_chunked_line(self):
         body = (
             'HTTP/1.1 200 OK\r\n'

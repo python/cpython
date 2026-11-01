@@ -1,0 +1,3 @@
+Fix :mod:`http.client` returning a 1xx informational response such as
+``103 Early Hints`` as the final response. All 1xx responses except
+``101 Switching Protocols`` are now skipped, like ``100 Continue``.
