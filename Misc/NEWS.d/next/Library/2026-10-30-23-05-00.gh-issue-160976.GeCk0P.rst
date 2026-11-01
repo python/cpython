@@ -1,0 +1,1 @@
+The Gecko reporter (``--gecko``) in ``profiling.sampling`` now records full source file paths instead of only basenames.
