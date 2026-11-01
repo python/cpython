@@ -1390,7 +1390,11 @@ class PunycodeTest(unittest.TestCase):
             (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
             (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
             (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
+            # A delimiter not preceded by any basic code point (RFC 3492, 6.2)
+            (b"-", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+            (b"-80a1acny", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
             (b"xn--w&", "ignore", "xn-"),
+            (b"-80a1acny", "ignore", ""),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
