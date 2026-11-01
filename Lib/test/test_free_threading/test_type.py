@@ -401,6 +401,74 @@ class TestType(TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    def test_class_creation_with_concurrent_setattr(self):
+        # Creating a class resolves its slots from the dicts along the MRO
+        # while holding the type lock, before the class is reachable from
+        # its bases.  If that resolution blocked on a base's dict mutex, the
+        # type lock would be released while blocked, and another thread
+        # could then assign a special method on a base that was already
+        # resolved.  The new class would end up with a slot that does not
+        # match its MRO.
+        N = 300
+
+        class B2:
+            pass
+
+        class B1(B2):
+            pass
+
+        lock = threading.Lock()
+        mismatches = []
+        done = False
+
+        def custom_repr(self):
+            return "custom repr"
+
+        def setter():
+            # Toggle B1.__repr__, so a stale resolution of B1 gives the new
+            # class object.__repr__ while B1.__repr__ is custom_repr.
+            barrier.wait()
+            while not done:
+                with lock:
+                    B1.__repr__ = custom_repr
+                with lock:
+                    del B1.__repr__
+
+        def churner():
+            # type.__setattr__ takes B2's dict mutex before the type lock
+            # and holds it while waiting for the type lock, so B2's dict
+            # mutex is contended whenever creator holds the type lock.
+            barrier.wait()
+            n = 0
+            while not done:
+                n += 1
+                B2.attr = n
+
+        def creator():
+            nonlocal done
+            # Mark the base dicts as shared, so lookups from this thread
+            # never need to take their mutexes.
+            getattr(B1, "nope", None)
+            barrier.wait()
+            try:
+                for _ in range(N):
+                    C = type("C", (B1,), {})
+                    c = C()
+                    with lock:
+                        slot_result = repr(c)
+                        mro_result = C.__repr__(c)
+                    if slot_result != mro_result:
+                        mismatches.append((slot_result, mro_result))
+            finally:
+                done = True
+
+        targets = (setter, churner, churner, creator)
+        barrier = threading.Barrier(len(targets))
+        threads = [Thread(target=target) for target in targets]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(mismatches, [])
+
 
 if __name__ == "__main__":
     unittest.main()

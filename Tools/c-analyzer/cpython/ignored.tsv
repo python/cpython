@@ -525,6 +525,7 @@ Modules/_testcapimodule.c	-	MethodDescriptor2_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapimodule.c	-	MyListDictSubclass_Type	-
 Modules/_testcapimodule.c	-	MyList_Type	-
 Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapimodule.c	-	TestError	-
