@@ -1,0 +1,1 @@
+shutil.copyfileobj now correctly returns on EOF
