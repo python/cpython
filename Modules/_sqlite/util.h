@@ -73,19 +73,28 @@ pysqlite_set_ref(PyObject *owner, PyObject **field, PyObject *value)
 static inline void
 pysqlite_mutex_enter(sqlite3_mutex *mutex)
 {
+#ifdef PY_SQLITE_HAVE_MUTEX
     if (mutex != NULL && sqlite3_mutex_try(mutex) != SQLITE_OK) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_mutex_enter(mutex);
         Py_END_ALLOW_THREADS
     }
+#else
+    /* An SQLite built without mutexes cannot be in serialized mode. */
+    (void)mutex;
+#endif
 }
 
 static inline void
 pysqlite_mutex_leave(sqlite3_mutex *mutex)
 {
+#ifdef PY_SQLITE_HAVE_MUTEX
     if (mutex != NULL) {
         sqlite3_mutex_leave(mutex);
     }
+#else
+    (void)mutex;
+#endif
 }
 
 static inline void
