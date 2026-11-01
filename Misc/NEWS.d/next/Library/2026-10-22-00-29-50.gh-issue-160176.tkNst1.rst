@@ -1,0 +1,4 @@
+Fix a crash in :mod:`tkinter` when a deeply nested or recursive list or
+tuple is passed to Tcl, or a deeply nested Tcl list is converted to Python.
+These now raise :exc:`ValueError` (beyond 1000 levels) and
+:exc:`RecursionError` respectively.
