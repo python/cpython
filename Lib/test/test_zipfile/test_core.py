@@ -719,6 +719,94 @@ class ZstdTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
 
+    def _make_archive(self, data, compressed):
+        class Compressor:
+            def compress(self, value):
+                return compressed
+
+            def flush(self):
+                return b''
+
+        archive = io.BytesIO()
+        with mock.patch.object(zipfile, '_get_compressor',
+                               return_value=Compressor()):
+            with zipfile.ZipFile(archive, 'w', self.compression) as zipfp:
+                zipfp.writestr('multiframe', data)
+        return archive
+
+    def test_read_multiframe(self):
+        first = b'first frame' * 20
+        second = b'second frame' * 20
+        data = first + second
+        compressed = (zipfile.zstd.compress(first) +
+                      zipfile.zstd.compress(second))
+        archive = self._make_archive(data, compressed)
+
+        with zipfile.ZipFile(archive) as zipfp:
+            self.assertEqual(zipfp.read('multiframe'), data)
+
+        with zipfile.ZipFile(archive) as zipfp:
+            with zipfp.open('multiframe') as fp:
+                self.assertEqual(fp.seek(len(first) + 2), len(first) + 2)
+                self.assertEqual(fp.read(), second[2:])
+                self.assertEqual(fp.seek(len(first) - 2), len(first) - 2)
+                self.assertEqual(fp.read(4),
+                                 data[len(first) - 2:len(first) + 2])
+
+        # Read one compressed byte at a time, splitting frames across reads.
+        with zipfile.ZipFile(archive) as zipfp:
+            with zipfp.open('multiframe') as fp:
+                fp.MIN_READ_SIZE = 1
+                self.assertEqual(b''.join(iter(lambda: fp.read(1), b'')),
+                                 data)
+
+    def test_read_multiframe_with_skippable_frame(self):
+        first = b'first frame'
+        second = b'second frame'
+        skippable = struct.pack('<II', 0x184D2A50, 4) + b'skip'
+        compressed = (zipfile.zstd.compress(first) + skippable +
+                      zipfile.zstd.compress(second))
+        archive = self._make_archive(first + second, compressed)
+        with zipfile.ZipFile(archive) as zipfp:
+            self.assertEqual(zipfp.read('multiframe'), first + second)
+
+    def test_read_multiframe_with_trailing_data(self):
+        compressed = (zipfile.zstd.compress(b'first frame') +
+                      b'invalid trailing bytes')
+        archive = self._make_archive(b'first frame' + b'second frame',
+                                     compressed)
+        with zipfile.ZipFile(archive) as zipfp:
+            with self.assertRaises(zipfile.BadZipFile) as cm:
+                zipfp.read('multiframe')
+        self.assertIsInstance(cm.exception.__cause__, zipfile.zstd.ZstdError)
+
+    def test_read_monkeypatched_zstd_decompressor(self):
+        class FrameDecompressor:
+            eof = False
+
+            def decompress(self, data, max_length=-1):
+                if data:
+                    self.eof = True
+                return data
+
+        class StreamDecompressor:
+            def decompress(self, data, max_length=-1):
+                return data
+
+        data = b'content'
+        archive = self._make_archive(data, data)
+        for decompressor in FrameDecompressor, StreamDecompressor:
+            with self.subTest(decompressor=decompressor.__name__):
+                with mock.patch.object(zipfile, '_get_decompressor',
+                                       side_effect=lambda _: decompressor()):
+                    with zipfile.ZipFile(archive) as zipfp:
+                        self.assertEqual(zipfp.read('multiframe'), data)
+                        with zipfp.open('multiframe') as fp:
+                            fp.MIN_READ_SIZE = 1
+                            self.assertEqual(
+                                b''.join(iter(lambda: fp.read(1), b'')), data)
+
+
 class AbstractTestZip64InSmallFiles:
     # These tests test the ZIP64 functionality without using large files,
     # see test_zipfile64 for proper tests.
