@@ -1,0 +1,3 @@
+Fix :func:`plistlib.dump` and :func:`plistlib.dumps` with
+:data:`~plistlib.FMT_BINARY` holding on to memory proportional to the size of
+large arrays and dictionaries after the call returns.
