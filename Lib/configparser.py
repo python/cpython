@@ -991,6 +991,8 @@ class RawConfigParser(MutableMapping):
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
+                if value is not None:
+                    value = str(value)
                 d[self.optionxform(key)] = value
         value_getter = lambda option: self._interpolation.before_get(
             self, section, option, d[option], d
