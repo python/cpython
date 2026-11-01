@@ -4846,6 +4846,12 @@ dnl hence CPPFLAGS instead of CFLAGS.
           [Define if SQLite was compiled with the serialize API]
         )
       ])
+      AC_CHECK_LIB([sqlite3], [sqlite3_mutex_try], [
+        AC_DEFINE(
+          [PY_SQLITE_HAVE_MUTEX], [1],
+          [Define if SQLite was compiled with mutexes (SQLITE_THREADSAFE != 0)]
+        )
+      ])
     ], [
       have_supported_sqlite3=no
     ])

@@ -434,6 +434,7 @@ remove_callbacks(sqlite3 *db)
     /* None of these APIs can fail, as long as they are given a valid
      * database pointer. */
     assert(db != NULL);
+    pysqlite_db_mutex_enter(db);
     int rc = sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
     assert(rc == SQLITE_OK), (void)rc;
 
@@ -441,6 +442,7 @@ remove_callbacks(sqlite3 *db)
 
     rc = sqlite3_set_authorizer(db, NULL, NULL);
     assert(rc == SQLITE_OK), (void)rc;
+    pysqlite_db_mutex_leave(db);
 }
 
 static int
@@ -452,7 +454,7 @@ connection_close(pysqlite_Connection *self)
 
     int rc = 0;
     if (self->autocommit == AUTOCOMMIT_DISABLED &&
-        !sqlite3_get_autocommit(self->db))
+        !pysqlite_get_autocommit(self->db))
     {
         if (connection_exec_stmt(self, "ROLLBACK") < 0) {
             rc = -1;
@@ -757,7 +759,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
     }
 
     if (self->autocommit == AUTOCOMMIT_LEGACY) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return NULL;
             }
@@ -791,7 +793,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
     }
 
     if (self->autocommit == AUTOCOMMIT_LEGACY) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
                 return NULL;
             }
@@ -1182,7 +1184,7 @@ destructor_callback(void *ctx)
 static int
 check_num_params(pysqlite_Connection *self, const int n, const char *name)
 {
-    int limit = sqlite3_limit(self->db, SQLITE_LIMIT_FUNCTION_ARG, -1);
+    int limit = pysqlite_limit(self->db, SQLITE_LIMIT_FUNCTION_ARG, -1);
     assert(limit >= 0);
     if (n < -1 || n > limit) {
         PyErr_Format(self->ProgrammingError,
@@ -1231,11 +1233,13 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
     if (ctx == NULL) {
         return NULL;
     }
+    pysqlite_db_mutex_enter(self->db);
     rc = sqlite3_create_function_v2(self->db, name, narg, flags, ctx,
                                     func_callback,
                                     NULL,
                                     NULL,
                                     &destructor_callback);  // will free 'ctx'
+    pysqlite_db_mutex_leave(self->db);
 
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
@@ -1376,14 +1380,17 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
     int flags = SQLITE_UTF8;
     int rc;
     if (Py_IsNone(aggregate_class)) {
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,
                                             0, 0, 0, 0, 0, 0);
+        pysqlite_db_mutex_leave(self->db);
     }
     else {
         callback_context *ctx = create_callback_context(cls, aggregate_class);
         if (ctx == NULL) {
             return NULL;
         }
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_create_window_function(self->db, name, num_params, flags,
                                             ctx,
                                             &step_callback,
@@ -1391,6 +1398,7 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                                             &value_callback,
                                             &inverse_callback,
                                             &destructor_callback);
+        pysqlite_db_mutex_leave(self->db);
     }
 
     if (rc != SQLITE_OK) {
@@ -1435,11 +1443,13 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
     if (ctx == NULL) {
         return NULL;
     }
+    pysqlite_db_mutex_enter(self->db);
     rc = sqlite3_create_function_v2(self->db, name, n_arg, SQLITE_UTF8, ctx,
                                     0,
                                     &step_callback,
                                     &final_callback,
                                     &destructor_callback); // will free 'ctx'
+    pysqlite_db_mutex_leave(self->db);
     if (rc != SQLITE_OK) {
         /* Workaround for SQLite bug: no error code or string is available here */
         PyErr_SetString(self->OperationalError, "Error creating aggregate");
@@ -1593,7 +1603,9 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 
     int rc;
     if (callable == Py_None) {
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_set_authorizer(self->db, NULL, NULL);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->authorizer_ctx, NULL);
     }
     else {
@@ -1601,7 +1613,9 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
         if (ctx == NULL) {
             return NULL;
         }
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_set_authorizer(self->db, authorizer_callback, ctx);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->authorizer_ctx, ctx);
     }
     if (rc != SQLITE_OK) {
@@ -1644,7 +1658,9 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 
     if (callable == Py_None) {
         /* None clears the progress handler previously set */
+        pysqlite_db_mutex_enter(self->db);
         sqlite3_progress_handler(self->db, 0, 0, (void*)0);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->progress_ctx, NULL);
     }
     else {
@@ -1652,7 +1668,9 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
         if (ctx == NULL) {
             return NULL;
         }
+        pysqlite_db_mutex_enter(self->db);
         sqlite3_progress_handler(self->db, n, progress_callback, ctx);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->progress_ctx, ctx);
     }
     Py_RETURN_NONE;
@@ -1687,7 +1705,9 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
          * - https://sqlite.org/c3ref/c_trace.html
          * - https://sqlite.org/c3ref/trace_v2.html
          */
+        pysqlite_db_mutex_enter(self->db);
         sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, 0, 0);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->trace_ctx, NULL);
     }
     else {
@@ -1695,7 +1715,9 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
         if (ctx == NULL) {
             return NULL;
         }
+        pysqlite_db_mutex_enter(self->db);
         sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, trace_callback, ctx);
+        pysqlite_db_mutex_leave(self->db);
         set_callback_context(&self->trace_ctx, ctx);
     }
 
@@ -1728,7 +1750,9 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
         return NULL;
     }
 
+    pysqlite_db_mutex_enter(self->db);
     rc = sqlite3_enable_load_extension(self->db, onoff);
+    pysqlite_db_mutex_leave(self->db);
 
     if (rc != SQLITE_OK) {
         PyErr_SetString(self->OperationalError,
@@ -1767,7 +1791,9 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
         return NULL;
     }
 
+    pysqlite_db_mutex_enter(self->db);
     rc = sqlite3_load_extension(self->db, extension_name, entrypoint, &errmsg);
+    pysqlite_db_mutex_leave(self->db);
     if (rc != 0) {
         PyErr_SetString(self->OperationalError, errmsg);
         return NULL;
@@ -1812,7 +1838,10 @@ pysqlite_connection_get_total_changes(PyObject *op, void *Py_UNUSED(closure))
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    return PyLong_FromLong(sqlite3_total_changes(self->db));
+    pysqlite_db_mutex_enter(self->db);
+    int changes = sqlite3_total_changes(self->db);
+    pysqlite_db_mutex_leave(self->db);
+    return PyLong_FromLong(changes);
 }
 
 static PyObject *
@@ -1822,7 +1851,7 @@ pysqlite_connection_get_in_transaction(PyObject *op, void *Py_UNUSED(closure))
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
-    if (!sqlite3_get_autocommit(self->db)) {
+    if (!pysqlite_get_autocommit(self->db)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -2232,8 +2261,10 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     int rc;
     int flags = SQLITE_UTF8;
     if (callable == Py_None) {
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_create_collation_v2(self->db, name, flags,
                                          NULL, NULL, NULL);
+        pysqlite_db_mutex_leave(self->db);
     }
     else {
         if (!PyCallable_Check(callable)) {
@@ -2244,9 +2275,11 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
         if (ctx == NULL) {
             return NULL;
         }
+        pysqlite_db_mutex_enter(self->db);
         rc = sqlite3_create_collation_v2(self->db, name, flags, ctx,
                                          &collation_callback,
                                          &destructor_callback);
+        pysqlite_db_mutex_leave(self->db);
     }
 
     if (rc != SQLITE_OK) {
@@ -2478,7 +2511,7 @@ setlimit_impl(pysqlite_Connection *self, int category, int limit)
         return NULL;
     }
 
-    int old_limit = sqlite3_limit(self->db, category, limit);
+    int old_limit = pysqlite_limit(self->db, category, limit);
     if (old_limit < 0) {
         PyErr_SetString(self->ProgrammingError, "'category' is out of bounds");
         return NULL;
@@ -2570,7 +2603,9 @@ setconfig_impl(pysqlite_Connection *self, int op, int enable)
     }
 
     int actual;
+    pysqlite_db_mutex_enter(self->db);
     int rc = sqlite3_db_config(self->db, op, enable, &actual);
+    pysqlite_db_mutex_leave(self->db);
     if (rc != SQLITE_OK) {
         set_error_from_db(self->state, self->db);
         return NULL;
@@ -2605,7 +2640,9 @@ getconfig_impl(pysqlite_Connection *self, int op)
     }
 
     int current;
+    pysqlite_db_mutex_enter(self->db);
     int rc = sqlite3_db_config(self->db, op, -1, &current);
+    pysqlite_db_mutex_leave(self->db);
     if (rc != SQLITE_OK) {
         set_error_from_db(self->state, self->db);
         return -1;
@@ -2645,14 +2682,14 @@ set_autocommit(PyObject *op, PyObject *val, void *Py_UNUSED(closure))
         return -1;
     }
     if (self->autocommit == AUTOCOMMIT_ENABLED) {
-        if (!sqlite3_get_autocommit(self->db)) {
+        if (!pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return -1;
             }
         }
     }
     else if (self->autocommit == AUTOCOMMIT_DISABLED) {
-        if (sqlite3_get_autocommit(self->db)) {
+        if (pysqlite_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "BEGIN") < 0) {
                 return -1;
             }

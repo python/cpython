@@ -49,7 +49,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     sqlite3 *db = connection->db;
-    int max_length = sqlite3_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
+    int max_length = pysqlite_limit(db, SQLITE_LIMIT_SQL_LENGTH, -1);
     if (size > max_length) {
         PyErr_SetString(connection->DataError,
                         "query string is too large");
@@ -104,7 +104,10 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
 error:
     assert(PyErr_Occurred());
-    if (sqlite3_finalize(stmt) != SQLITE_OK) {
+    pysqlite_db_mutex_enter(db);
+    rc = sqlite3_finalize(stmt);
+    pysqlite_db_mutex_leave(db);
+    if (rc != SQLITE_OK) {
         PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(connection->InternalError, "cannot finalize statement");
         _PyErr_ChainExceptions1(exc);

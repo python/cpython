@@ -26,6 +26,7 @@ import os
 import sqlite3 as sqlite
 import subprocess
 import sys
+import textwrap
 import threading
 import unittest
 import urllib.parse
@@ -1733,6 +1734,118 @@ class ThreadTests(unittest.TestCase):
             t.start()
             t.join()
             self.assertEqual(len(err), 0, "\n".join(err))
+
+    @requires_subprocess()
+    @unittest.skipUnless(sqlite.threadsafety == 3,
+                         "requires SQLite in serialized threading mode")
+    def test_shared_connection_callback_deadlock(self):
+        # Threads sharing a connection must not deadlock when SQLite calls
+        # back into Python.  A deadlock would hang the whole process, so run
+        # this in a child process.
+        SCRIPT = textwrap.dedent("""
+            import itertools
+            import sqlite3
+            import sys
+            import threading
+
+            sys.setswitchinterval(0.00001)
+
+            class Count:
+                def __init__(self):
+                    self.n = 0
+                def step(self, x):
+                    self.n += 1
+                def finalize(self):
+                    return self.n
+
+            def connect():
+                cx = sqlite3.connect(":memory:", check_same_thread=False)
+                cx.execute("create table t(x)")
+                cx.executemany("insert into t values(?)",
+                               ((str(i),) for i in range(50)))
+                return cx
+
+            def query(cx, sql, n, errors):
+                # Use different SQL in each thread and for each iteration:
+                # the threads must not share a cached statement, and the
+                # authorizer is only called when a statement is prepared.
+                try:
+                    for i in range(n, n + 100):
+                        params = ("", 100) if i % 2 else [None, 100]
+                        cx.execute(f"{sql} limit ?+{i}", params).fetchall()
+                except Exception as exc:
+                    errors.append(exc)
+
+            def run(name, sql, setup, concurrent=None):
+                print(name, flush=True)
+                cx = connect()
+                setup(cx)
+                errors = []
+                threads = [threading.Thread(target=query,
+                                            args=(cx, sql, 1000, errors))]
+                if concurrent is None:
+                    threads.append(threading.Thread(
+                        target=query, args=(cx, sql, 2000, errors)))
+                for t in threads:
+                    t.start()
+                while concurrent is not None and threads[0].is_alive():
+                    concurrent(cx)
+                for t in threads:
+                    t.join()
+                cx.close()
+                if errors:
+                    raise errors[0]
+
+            def function(cx):
+                cx.create_function("f", 1, lambda x: x)
+            def collation(cx):
+                cx.create_collation("c", lambda a, b: (a > b) - (a < b))
+
+            run("function", "select f(x) from t where x is not ?", function)
+            run("aggregate", "select agg(x) from t where x is not ? group by x",
+                lambda cx: cx.create_aggregate("agg", 1, Count))
+            run("collation",
+                "select x from t where x is not ? order by x collate c",
+                collation)
+            run("authorizer", "select x from t where x is not ?",
+                lambda cx: cx.set_authorizer(lambda *a: sqlite3.SQLITE_OK))
+            run("progress handler", "select x from t where x is not ?",
+                lambda cx: cx.set_progress_handler(lambda: 0, 1))
+            run("trace callback", "select x from t where x is not ?",
+                lambda cx: cx.set_trace_callback(lambda stmt: None))
+
+            # Register callbacks while another thread is in a callback.
+            # Use new names: existing functions and collations cannot be
+            # modified while statements are running.
+            sql = "select f(x) from t where x is not ?"
+            names = map("name{}".format, itertools.count())
+            run("create_function", sql, function,
+                lambda cx: cx.create_function(next(names), 0, lambda: None))
+            run("create_aggregate", sql, function,
+                lambda cx: cx.create_aggregate(next(names), 1, Count))
+            run("create_collation", sql, function,
+                lambda cx: cx.create_collation(next(names), lambda a, b: 0))
+            run("set_authorizer", sql, function,
+                lambda cx: cx.set_authorizer(None))
+            run("set_progress_handler", sql, function,
+                lambda cx: cx.set_progress_handler(None, 0))
+            run("set_trace_callback", sql, function,
+                lambda cx: cx.set_trace_callback(None))
+            run("setconfig", sql, function,
+                lambda cx: cx.setconfig(sqlite3.SQLITE_DBCONFIG_ENABLE_FKEY))
+            run("getters", sql, function,
+                lambda cx: (cx.in_transaction, cx.total_changes,
+                            cx.getlimit(sqlite3.SQLITE_LIMIT_LENGTH)))
+            print("done")
+        """)
+        try:
+            proc = subprocess.run([sys.executable, "-c", SCRIPT],
+                                  capture_output=True, text=True,
+                                  timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired as exc:
+            self.fail(f"deadlock; output: {exc.stdout!r}")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEndsWith(proc.stdout, "done\n")
 
 
 class ConstructorTests(unittest.TestCase):
