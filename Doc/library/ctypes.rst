@@ -1337,6 +1337,31 @@ write::
    :class:`threading.local` will *not* survive across different callbacks, even when
    those calls are made from the same C thread.
 
+Callback functions can return structures and unions by value, in addition to
+the simple types:
+
+.. code-block:: python
+
+   class Point(Structure):
+       _fields_ = [("x", c_int), ("y", c_int)]
+
+   @CFUNCTYPE(Point)
+   def get_origin():
+       return Point(0, 0)
+
+.. note::
+
+   A structure or union returned from a callback is copied *by value*, and
+   :mod:`!ctypes` does not keep the returned object alive after the callback
+   returns. If the structure contains a pointer field (such as
+   :class:`c_char_p` or a :func:`POINTER` type), you must ensure that the
+   memory it refers to stays valid for as long as the C code uses it -- the
+   same requirement C itself imposes. Returning a pointer to memory owned by
+   a temporary Python object will leave the C caller with a dangling pointer.
+
+.. versionchanged:: next
+   Callback functions can now return structures and unions.
+
 .. _ctypes-accessing-values-exported-from-dlls:
 
 Accessing values exported from dlls
@@ -3733,9 +3758,9 @@ fields, or any other data types containing pointer type fields.
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
    :module: ctypes.util
 
-   Information regarding a structure field defined by the :func:`struct`
-   decorator. This should be used in the second argument of a
-   :class:`typing.Annotated` wrapping a ctypes type.
+   Information regarding a structure field defined by the
+   :func:`~ctypes.util.struct` decorator. This should be used in the second
+   argument of a :class:`typing.Annotated` wrapping a ctypes type.
 
    *anonymous* specifies whether the field will be present in the
    :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.

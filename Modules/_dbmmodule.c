@@ -145,10 +145,16 @@ dbm_length_impl(dbmobject *self)
     return dp->di_size;
 }
 
+/*[clinic input]
+@critical_section
+_dbm.dbm.__bool__ as dbm_bool
+[clinic start generated code]*/
+
 static int
-dbm_bool_lock_held(PyObject *self)
+dbm_bool_impl(dbmobject *self)
+/*[clinic end generated code: output=b550ce1ae52d6ad1 input=212af765b6e60719]*/
 {
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
 
@@ -177,22 +183,20 @@ dbm_bool_lock_held(PyObject *self)
     return 1;
 }
 
-static int
-dbm_bool(PyObject *self)
-{
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_bool_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+_dbm.dbm.__getitem__ as dbm_subscript
+    key: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-dbm_subscript_lock_held(PyObject *self, PyObject *key)
+dbm_subscript_impl(dbmobject *self, PyObject *key)
+/*[clinic end generated code: output=6278465f3ff37eaa input=e748b684a0870527]*/
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = dbmobject_CAST(self);
+    dbmobject *dp = self;
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
@@ -212,16 +216,6 @@ dbm_subscript_lock_held(PyObject *self, PyObject *key)
         return NULL;
     }
     return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
-}
-
-static PyObject *
-dbm_subscript(PyObject *self, PyObject *key)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = dbm_subscript_lock_held(self, key);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]

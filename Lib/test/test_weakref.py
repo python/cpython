@@ -1026,6 +1026,36 @@ class ReferencesTestCase(TestBase):
         del root
         gc.collect()
 
+    @support.skip_if_sanitizer("requires deep stack", thread=True)
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_trashcan_deferred_dealloc(self):
+        # When the C stack is nearly exhausted, the trashcan defers
+        # deallocation of an object whose refcount has dropped to 0, leaving
+        # its weakrefs uncleared.  Calling such a weakref must return None
+        # rather than resurrecting the dead object.
+        class Node(list):
+            pass
+
+        found = []
+        class Trigger:
+            def __init__(self, wr):
+                self.wr = wr
+            def __del__(self):
+                if self.wr() is not None:
+                    found.append(True)
+
+        head = cur = Node()
+        for i in range(200_000):
+            child = Node()
+            # list_dealloc() clears items last to first: the child is
+            # deallocated (or deferred) before the trigger runs.
+            cur.extend([Trigger(weakref.ref(child)), child])
+            cur = child
+        del cur, child
+        del head
+        self.assertEqual(found, [])
+
     def test_callback_attribute(self):
         x = Object(1)
         callback = lambda ref: None
