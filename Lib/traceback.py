@@ -325,7 +325,8 @@ class FrameSummary:
     - :attr:`name` The name of the function or method that was executing
       when the frame was captured.
     - :attr:`line` The text from the linecache module for the line
-      of code that was running when the frame was captured.
+      of code that was running when the frame was captured.  It is a
+      single line, even if the code spans several lines.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
     - :attr:`end_lineno` The last line number of the source code for this frame.
