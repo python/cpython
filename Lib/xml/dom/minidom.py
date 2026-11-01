@@ -424,6 +424,7 @@ def _fixup_namespaces(element, nsmap):
     declarations = []
     # (name, value, namespace URI, attribute) of the attributes to write.
     entries = []
+    has_own_xmlns = False
     if attrs:
         for attr in attrs.values():
             name = attr.name
@@ -435,6 +436,8 @@ def _fixup_namespaces(element, nsmap):
                     nsmap, inherited,
                     attr.localName if attr.prefix else None, attr.value)
                 attr_uri = None
+                if name == "xmlns":
+                    has_own_xmlns = True
             elif attr_uri == XML_NAMESPACE:
                 # The xml prefix is bound by definition.
                 attr_uri = None
@@ -446,8 +449,10 @@ def _fixup_namespaces(element, nsmap):
         if nsmap.get(prefix) != uri:
             nsmap = _bind_namespace(nsmap, inherited, prefix, uri)
             declarations.append(("xmlns:" + prefix if prefix else "xmlns", uri))
-    elif nsmap.get(None) and ':' not in element.tagName:
+    elif (nsmap.get(None) and ':' not in element.tagName
+            and not has_own_xmlns):
         # The element is in no namespace, undeclare the default one.
+        # Don't undeclare if the element itself declared xmlns.
         nsmap = _bind_namespace(nsmap, inherited, None, None)
         declarations.append(("xmlns", ""))
 
