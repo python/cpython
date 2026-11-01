@@ -705,6 +705,22 @@ class TextIOWrapperTest:
             remaining = f.read()
             self.assertEqual(remaining, "")
 
+    def test_tell_after_seek_past_cr(self):
+        # seek() to a position after a carriage return must not leave a
+        # stale bytes-per-char ratio behind for tell().
+        for data in (b'one\rtwo\rthree\r', 'ab\r\u20ac\u20ac\u20ac'.encode()):
+            expected = data.decode().replace('\r', '\n')
+            for i in range(len(expected)):
+                with self.subTest(data=data, i=i):
+                    f = self.TextIOWrapper(self.BytesIO(data),
+                                           encoding='utf-8')
+                    f.read(i)
+                    pos = f.tell()
+                    f.read(1)
+                    f.seek(pos)
+                    self.assertEqual(f.read(1), expected[i])
+                    f.seek(f.tell())
+                    self.assertEqual(f.read(), expected[i + 1:])
 
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")

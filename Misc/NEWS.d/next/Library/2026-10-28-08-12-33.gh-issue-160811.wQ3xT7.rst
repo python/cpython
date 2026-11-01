@@ -1,0 +1,4 @@
+Fix :meth:`io.TextIOWrapper.tell` after :meth:`~io.TextIOWrapper.seek` to a
+position that follows a carriage return.  The bytes-per-char ratio was not
+updated when the input chunk was replayed, so ``tell()`` could read past an
+internal buffer and return a wrong position.

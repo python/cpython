@@ -2602,6 +2602,10 @@ class TextIOWrapper(TextIOBase):
             self._set_decoded_chars(
                 self._decoder.decode(input_chunk, need_eof))
             self._snapshot = (dec_flags, input_chunk)
+            if self._decoded_chars:
+                self._b2cratio = len(input_chunk) / len(self._decoded_chars)
+            else:
+                self._b2cratio = 0.0
 
             # Skip chars_to_skip of the decoded characters.
             if len(self._decoded_chars) < chars_to_skip:
