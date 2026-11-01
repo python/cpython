@@ -1595,6 +1595,90 @@ class TestInterestingEdgeCases(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "nobody expects the spanish inquisition"):
             next(iter(my_generator()))
 
+    def test_yield_from_stop_iteration_deleted_value(self):
+        # gh-159090: Avoid NULL dereference when StopIteration.value is deleted
+        class SillyIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                exc = StopIteration(42)
+                del exc.value
+                raise exc
+
+        def my_gen():
+            res = yield from SillyIter()
+            return res
+
+        g = my_gen()
+        with self.assertRaises(StopIteration) as cm:
+            next(g)
+        self.assertIsNone(cm.exception.value)
+
+        class CustomStopIteration(StopIteration):
+            pass
+
+        class CustomIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                exc = CustomStopIteration(42)
+                del exc.value
+                raise exc
+
+        def my_gen_custom():
+            res = yield from CustomIter()
+            return res
+
+        g = my_gen_custom()
+        with self.assertRaises(StopIteration) as cm:
+            next(g)
+        self.assertIsNone(cm.exception.value)
+
+    def test_cleanup_throw_stop_iteration_deleted_value(self):
+        # gh-159090: CLEANUP_THROW instruction with deleted StopIteration.value
+        class ThrowIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return 1
+            def throw(self, *args):
+                exc = StopIteration(42)
+                del exc.value
+                raise exc
+
+        def my_gen():
+            res = yield from ThrowIter()
+            return res
+
+        g = my_gen()
+        self.assertEqual(next(g), 1)
+        with self.assertRaises(StopIteration) as cm:
+            g.throw(ValueError)
+        self.assertIsNone(cm.exception.value)
+
+        class CustomStopIteration(StopIteration):
+            pass
+
+        class CustomThrowIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return 1
+            def throw(self, *args):
+                exc = CustomStopIteration(42)
+                del exc.value
+                raise exc
+
+        def my_gen_custom():
+            res = yield from CustomThrowIter()
+            return res
+
+        g = my_gen_custom()
+        self.assertEqual(next(g), 1)
+        with self.assertRaises(StopIteration) as cm:
+            g.throw(ValueError)
+        self.assertIsNone(cm.exception.value)
+
 
 if __name__ == '__main__':
     unittest.main()
