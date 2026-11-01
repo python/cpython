@@ -1,0 +1,4 @@
+Fix quadratic time complexity of :meth:`!clear` and :meth:`!popitem` on
+:class:`configparser.ConfigParser` objects and their section proxies.
+Clearing a section no longer fails part way with
+:exc:`~configparser.InterpolationError` on a value it removes.
