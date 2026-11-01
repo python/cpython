@@ -6003,6 +6003,26 @@ class PicklingTests(unittest.TestCase):
         expected = (copyreg.__newobj__, (A,), (None, {'spam': 42}), None, None)
         self.assertEqual(A().__reduce_ex__(2), expected)  # Shouldn't crash
 
+    def test_slotnames_size_changed_during_getstate(self):
+        class C:
+            __slotnames__ = ["value", "other"]
+
+            def __getattr__(self, name):
+                if name == "value":
+                    self.__slotnames__.clear()
+                    return 42
+                raise AttributeError(name)
+
+        for method in (lambda obj: obj.__getstate__(),
+                       lambda obj: obj.__reduce_ex__(2),
+                       lambda obj: obj.__reduce_ex__(5)):
+            with self.subTest(method=method):
+                C.__slotnames__[:] = ["value", "other"]
+                with self.assertRaisesRegex(
+                    RuntimeError, "__slotnames__ changed size during iteration"
+                ):
+                    method(C())
+
     def test_object_reduce(self):
         # Issue #29914
         # __reduce__() takes no arguments
