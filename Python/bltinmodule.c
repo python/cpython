@@ -3166,7 +3166,6 @@ static PyObject *
 zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
              Py_ssize_t iterables_length, int strict)
 /*[clinic end generated code: output=5e1a30829ce1f6ab input=4bd8e6a24e4bfb2e]*/
-
 {
     zipobject *lz;
     Py_ssize_t i;
