@@ -3283,6 +3283,14 @@ class ImplementationTest(unittest.TestCase):
             _sre.template("", ["", (), ""])
         self.assertIn("an integer is required", str(cm.exception))
 
+    @cpython_only
+    def test_sre_IN_invalid_skip(self):
+        # gh-160814: the validator must reject the IN opcode with skip < 2.
+        import _sre
+        for skip in (0, 1):
+            with self.assertRaises(RuntimeError):
+                _sre.compile("x", 0, [13, skip, 1], 0, {}, ())
+
 
 class ExternalTests(unittest.TestCase):
 
