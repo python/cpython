@@ -2771,6 +2771,43 @@ def noop(*args, **kwargs):
     pass
 
 
+class EventLoopSettingsTests(unittest.TestCase):
+
+    def make(self, max_time, max_callbacks):
+        return asyncio.EventLoopSettings(eager_max_time=max_time,
+                                         eager_max_callbacks=max_callbacks)
+
+    def test_default(self):
+        self.assertEqual(asyncio.EventLoopSettings.DEFAULT,
+                         self.make(1e-4, 100))
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+        self.assertIs(loop.get_settings(), asyncio.EventLoopSettings.DEFAULT)
+
+    def test_valid(self):
+        for args in [(0, 0), (0, 10), (0.0, 0), (1e-6, 0), (1e-6, 1),
+                     (1, 100)]:
+            with self.subTest(args=args):
+                settings = self.make(*args)
+                self.assertEqual(settings.eager_max_time, args[0])
+                self.assertEqual(settings.eager_max_callbacks, args[1])
+
+    def test_invalid_type(self):
+        for args in [(None, 1), ('1', 1), (True, 1), (False, 0),
+                     (1e-6, 1.0), (1e-6, None), (1e-6, '1'), (1e-6, True),
+                     (0, False)]:
+            with self.subTest(args=args):
+                with self.assertRaises(TypeError):
+                    self.make(*args)
+
+    def test_invalid_value(self):
+        for args in [(-1e-6, 1), (float('inf'), 1), (float('nan'), 1),
+                     (10**400, 1), (1e-6, -1)]:
+            with self.subTest(args=args):
+                with self.assertRaises(ValueError):
+                    self.make(*args)
+
+
 class HandleTests(test_utils.TestCase):
 
     def setUp(self):
@@ -3173,6 +3210,10 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.get_debug)
         self.assertRaises(
             NotImplementedError, loop.set_debug, f)
+        self.assertRaises(
+            NotImplementedError, loop.get_settings)
+        self.assertRaises(
+            NotImplementedError, loop.set_settings, f)
 
     def test_not_implemented_async(self):
 

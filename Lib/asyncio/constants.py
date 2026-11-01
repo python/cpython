@@ -33,6 +33,22 @@ FLOW_CONTROL_HIGH_WATER_SSL_WRITE = 512  # KiB
 # Default timeout for joining the threads in the threadpool
 THREAD_JOIN_TIMEOUT = 300
 
+# Default limits of eager callback processing per event loop iteration,
+# used by EventLoopSettings.DEFAULT.
+EAGER_MAX_TIME = 1e-4  # seconds
+EAGER_MAX_CALLBACKS = 100
+
+# Maximum number of callbacks run during eager processing between checks
+# of the eager_max_time deadline.  A batch also ends where the callbacks
+# scheduled during it begin, so for chains of callbacks the deadline is
+# checked after every callback.
+EAGER_BATCH_SIZE = 100
+
+# Values of BaseEventLoop._eager_state other than a number of callbacks.
+EAGER_IDLE = -1
+# Set by asyncio.sleep(0) to end eager processing.
+EAGER_BREAK = -2
+
 # The enum should be here to break circular dependencies between
 # base_events and sslproto
 class _SendfileMode(enum.Enum):

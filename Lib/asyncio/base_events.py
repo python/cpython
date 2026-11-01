@@ -434,6 +434,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._thread_id = None
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
+        self._settings = events.EventLoopSettings.DEFAULT
+        self._eager_state = constants.EAGER_IDLE
         self.set_debug(coroutines._is_debug_mode())
         # The preserved state of async generator hooks.
         self._old_agen_hooks = None
@@ -667,6 +669,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         loop cleanup logic.
         """
         self._stopping = False
+        self._eager_state = constants.EAGER_IDLE
         self._thread_id = None
         events._set_running_loop(None)
         self._set_coroutine_origin_tracking(False)
@@ -682,6 +685,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             while True:
                 self._run_once()
                 if self._stopping:
+                    if self._eager_state >= 0:
+                        self._run_once()
                     break
         finally:
             self._run_forever_cleanup()
@@ -2009,10 +2014,13 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _run_once(self):
         """Run one full iteration of the event loop.
 
-        This calls all currently ready callbacks, polls for I/O,
-        schedules the resulting callbacks, and finally schedules
-        'call_later' callbacks.
+        This polls for I/O, schedules the resulting callbacks and the
+        'call_later' callbacks that are due, and calls all ready
+        callbacks.  Then it calls the callbacks scheduled by them
+        eagerly, within the limits of the loop settings.
         """
+        nleft = self._eager_state
+        nready = len(self._ready)
 
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
@@ -2068,11 +2076,59 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         # This is the only place where callbacks are actually *called*.
         # All other places just add them to ready.
-        # Note: We run all currently scheduled callbacks, but not any
-        # callbacks scheduled by callbacks run this time around --
-        # they will be run the next time (after another I/O poll).
+        # Note: We run all currently scheduled callbacks.  Callbacks
+        # scheduled by them are run eagerly in batches, within the limits
+        # of the loop settings; the rest will be run the next time (after
+        # another I/O poll).
         # Use an idiom that is thread-safe without using locks.
+        self._eager_state = constants.EAGER_IDLE
+        settings = self._settings
+        if nleft >= 0 and self._stopping:
+            # The final iteration after stop() during eager processing: run
+            # what the loop would run without eager processing, and keep the
+            # callbacks scheduled for later iterations queued.
+            nleft = min(nleft, nready)
+            nnew = len(self._ready) - nready
+            self._run_handles(nleft, eager=False)
+            later = [self._ready.popleft() for i in range(nready - nleft)]
+            self._run_handles(nnew, eager=False)
+            self._ready.extendleft(reversed(later))
+            return
         ntodo = len(self._ready)
+        if nleft > 0:
+            nleft = min(nleft, ntodo)
+            self._run_handles(nleft, eager=False)
+            if self._stopping:
+                return
+            ntodo -= nleft
+            nleft = len(self._ready) - ntodo
+        self._run_handles(ntodo, eager=False)
+        if (not self._ready or self._eager_state == constants.EAGER_BREAK
+                or self._stopping or settings.eager_max_time <= 0
+                or not settings.eager_max_callbacks):
+            if nleft > 0:
+                self._eager_state = nleft
+            return
+
+        # Eager processing: run the callbacks scheduled by the callbacks
+        # above, in batches, within the limits of the loop settings.
+        deadline = (self.time() + settings.eager_max_time
+                    + self._clock_resolution)
+        nremaining = settings.eager_max_callbacks
+        while True:
+            if nleft <= 0:
+                nleft = len(self._ready)
+            ntodo = min(nleft, nremaining, constants.EAGER_BATCH_SIZE)
+            nremaining -= ntodo
+            nleft -= self._run_handles(ntodo, eager=True)
+            if (not nremaining or not self._ready
+                    or self._eager_state == constants.EAGER_BREAK
+                    or self._stopping or self.time() > deadline):
+                break
+        if nleft > 0 or self._stopping:
+            self._eager_state = nleft
+
+    def _run_handles(self, ntodo, *, eager):
         for i in range(ntodo):
             handle = self._ready.popleft()
             if handle._cancelled:
@@ -2090,7 +2146,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     self._current_handle = None
             else:
                 handle._run()
+            if eager and self._eager_state == constants.EAGER_BREAK:
+                ntodo = i + 1
+                break
         handle = None  # Needed to break cycles when an exception occurs.
+        return ntodo
 
     def _set_coroutine_origin_tracking(self, enabled):
         if bool(enabled) == bool(self._coroutine_origin_tracking_enabled):
@@ -2115,3 +2175,11 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         if self.is_running():
             self.call_soon_threadsafe(self._set_coroutine_origin_tracking, enabled)
+
+    def get_settings(self):
+        return self._settings
+
+    def set_settings(self, settings):
+        if not isinstance(settings, events.EventLoopSettings):
+            raise TypeError('settings must be EventLoopSettings instance')
+        self._settings = settings
