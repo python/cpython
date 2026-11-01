@@ -12,7 +12,7 @@ maintaining the widget state and invoking callbacks, all aspects
 of the widgets appearance lies at Themes.
 """
 
-__author__ = "Guilherme Polo <ggpolo@gmail.com>"
+# Original author: Guilherme Polo <ggpolo@gmail.com>
 
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
@@ -24,6 +24,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "tclobjs_to_py", "setup_master"]
 
 import tkinter
+lazy import warnings
 from tkinter import _flatten, _join, _stringify, _splitdict
 
 
@@ -1604,7 +1605,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
         Without arguments, return a tuple of all detached items (but not
         their descendants; see detached_all).  With item, return whether item
-        is detached; since Tk 9.1, also return true if an ancestor of item
+        is detached; since Tk 9.1, also return True if an ancestor of item
         is detached.
 
         * Availability: Tk 9.0"""
@@ -2031,8 +2032,8 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
 
     def tag_has(self, tagname, item=None):
-        """If item is specified, returns 1 or 0 depending on whether the
-        specified item has the given tagname. Otherwise, returns a list of
+        """If item is specified, returns True if the specified item has the
+        given tagname, False otherwise. Otherwise, returns a list of
         all items which have the specified tag.
 
         * Availability: Tk 8.6"""
@@ -2210,9 +2211,10 @@ class OptionMenu(Menubutton):
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
-        return "0.3.1"  # Do not change
+    if name in ("__version__", "__author__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.3.1",
+            "__author__": "Guilherme Polo <ggpolo@gmail.com>",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

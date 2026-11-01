@@ -18,23 +18,28 @@ try:
 except ImportError:
     _ZLIB_SUPPORTED = False
 
+# bz2, lzma and compression.zstd are pure Python wrappers whose only
+# importable dependency that may be missing is the extension module they
+# wrap.  Probe those extensions directly instead: it gives the same answer
+# without executing the wrappers, which shutil only needs when an archive
+# is actually created or extracted.
 try:
-    import bz2
-    del bz2
+    import _bz2
+    del _bz2
     _BZ2_SUPPORTED = True
 except ImportError:
     _BZ2_SUPPORTED = False
 
 try:
-    import lzma
-    del lzma
+    import _lzma
+    del _lzma
     _LZMA_SUPPORTED = True
 except ImportError:
     _LZMA_SUPPORTED = False
 
 try:
-    from compression import zstd
-    del zstd
+    import _zstd
+    del _zstd
     _ZSTD_SUPPORTED = True
 except ImportError:
     _ZSTD_SUPPORTED = False
@@ -292,8 +297,11 @@ def copyfile(src, dst, *, follow_symlinks=True):
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
+    copy_symlink = not follow_symlinks and _islink(src)
     file_size = 0
     for i, fn in enumerate([src, dst]):
+        if copy_symlink and i == 0:
+            continue
         try:
             st = _stat(fn)
         except OSError:
@@ -315,7 +323,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 
-    if not follow_symlinks and _islink(src):
+    if copy_symlink:
         os.symlink(os.readlink(src), dst)
     else:
         with open(src, 'rb') as fsrc:
@@ -551,7 +559,8 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks, dirs_exist_ok=False):
+              ignore_dangling_symlinks, dirs_exist_ok=False,
+              copy_dir_stat=True):
     if ignore is not None:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
@@ -591,12 +600,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
                                  copy_function, ignore_dangling_symlinks,
-                                 dirs_exist_ok)
+                                 dirs_exist_ok,
+                                 copy_dir_stat=copy_dir_stat)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
-                         ignore_dangling_symlinks, dirs_exist_ok)
+                         ignore_dangling_symlinks, dirs_exist_ok,
+                         copy_dir_stat=copy_dir_stat)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -607,7 +618,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
-        copystat(src, dst)
+        if copy_dir_stat:
+            copystat(src, dst)
     except OSError as why:
         # Copying file access times may fail on Windows
         if getattr(why, 'winerror', None) is None:
@@ -617,7 +629,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+             ignore_dangling_symlinks=False, dirs_exist_ok=False,
+             *, copy_dir_stat=True):
     """Recursively copy a directory tree and return the destination directory.
 
     If exception(s) occur, an Error is raised with a list of reasons.
@@ -655,6 +668,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     operation will continue if it encounters existing directories, and files
     within the `dst` tree will be overwritten by corresponding files from the
     `src` tree.
+
+    If copy_dir_stat is false, directory metadata is not copied with
+    copystat(), e.g. to copy a read-only tree into a writable one. It
+    defaults to true. Note that file metadata is always handled by
+    copy_function: use e.g. `copy_function=shutil.copyfile` to skip
+    that as well.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
@@ -662,7 +681,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                      ignore=ignore, copy_function=copy_function,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
-                     dirs_exist_ok=dirs_exist_ok)
+                     dirs_exist_ok=dirs_exist_ok,
+                     copy_dir_stat=copy_dir_stat)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     def _rmtree_islink(st):
@@ -753,6 +773,7 @@ def _rmtree_safe_fd_step(stack, onexc):
     #   save a call to os.lstat() when walking subdirectories.
     func, dirfd, path, orig_entry = stack.pop()
     name = path if orig_entry is None else orig_entry.name
+    parent_fd = None if func is os.close else dirfd
     try:
         if func is os.close:
             os.close(dirfd)
@@ -800,14 +821,14 @@ def _rmtree_safe_fd_step(stack, onexc):
             except FileNotFoundError:
                 continue
             except OSError as err:
-                onexc(os.unlink, fullname, err)
+                onexc(os.unlink, fullname, err, direntry=entry, dir_fd=topfd)
     except FileNotFoundError as err:
         if orig_entry is None or func is os.close:
             err.filename = path
-            onexc(func, path, err)
+            onexc(func, path, err, direntry=orig_entry, dir_fd=parent_fd)
     except OSError as err:
         err.filename = path
-        onexc(func, path, err)
+        onexc(func, path, err, direntry=orig_entry, dir_fd=parent_fd)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
@@ -815,7 +836,8 @@ _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.stat in os.supports_follow_symlinks)
 _rmtree_impl = _rmtree_safe_fd if _use_fd_functions else _rmtree_unsafe
 
-def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
+def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None,
+           _onexc_kwargs=False):
     """Recursively delete a directory tree.
 
     If dir_fd is not None, it should be a file descriptor open to a directory;
@@ -838,24 +860,29 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
-        def onexc(*args):
+        def onexc(*args, **kwargs):
             pass
     elif onerror is None and onexc is None:
-        def onexc(*args):
+        def onexc(*args, **kwargs):
             raise
     elif onexc is None:
         if onerror is None:
-            def onexc(*args):
+            def onexc(*args, **kwargs):
                 raise
         else:
             # delegate to onerror
-            def onexc(*args):
+            def onexc(*args, **kwargs):
                 func, path, exc = args
                 if exc is None:
                     exc_info = None, None, None
                 else:
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
+    elif not _onexc_kwargs:
+        # Only the internal caller in tempfile asks for the extra arguments.
+        _onexc = onexc
+        def onexc(func, path, err, **kwargs):
+            return _onexc(func, path, err)
 
     _rmtree_impl(path, dir_fd, onexc)
 
@@ -980,7 +1007,7 @@ def _get_gid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.gr_gid
     return None
 
 def _get_uid(name):
@@ -998,7 +1025,7 @@ def _get_uid(name):
     except KeyError:
         result = None
     if result is not None:
-        return result[2]
+        return result.pw_uid
     return None
 
 def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
@@ -1349,6 +1376,7 @@ def _unpack_tarfile(filename, extract_dir, *, filter=None):
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
+    'whl':   (['.whl'], _unpack_zipfile, [], "Wheel file"),
 }
 
 if _ZLIB_SUPPORTED:
@@ -1383,9 +1411,9 @@ def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     is unpacked. If not provided, the current working directory is used.
 
     `format` is the archive format: one of "zip", "tar", "gztar", "bztar",
-    "xztar", or "zstdtar".  Or any other registered format.  If not provided,
-    unpack_archive will use the filename extension and see if an unpacker
-    was registered for that extension.
+    "xztar", "zstdtar", or "whl".  Or any other registered format.  If not
+    provided, unpack_archive will use the filename extension and see if an
+    unpacker was registered for that extension.
 
     In case none is found, a ValueError is raised.
 

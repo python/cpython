@@ -6,7 +6,7 @@ from tkinter import ttk
 from tkinter.commondialog import Dialog
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import AbstractTkTest
+from test.test_tkinter.support import AbstractDialogTest, AbstractTkTest
 
 requires('gui')
 
@@ -72,7 +72,7 @@ class CancelResultTest(AbstractTkTest, unittest.TestCase):
                          ('/a', '/b'))
 
 
-class FileDialogTest(AbstractTkTest, unittest.TestCase):
+class FileDialogTest(AbstractDialogTest, unittest.TestCase):
     # The pure-Python FileDialog runs its own modal loop in go(); its logic is
     # exercised here without entering the loop.
 
@@ -124,7 +124,7 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(d.ok_button.winfo_class(), 'Button')
         self.assertEqual(d.selection.winfo_class(), 'Entry')
         if d.top._windowingsystem == 'x11':
-            self.assertEqual(str(d.botframe.cget('relief')), 'raised')
+            self.assertEqual(d.botframe.cget('relief'), 'raised')
 
     def test_background(self):
         # The ttk dialog adopts the ttk background, even a customized one, while
@@ -145,26 +145,27 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         # The buttons' "&" accelerators are parsed.
         d = self.open()
         self.assertEqual(str(d.ok_button.cget('text')), 'OK')
-        self.assertEqual(int(d.ok_button.cget('underline')), 0)
+        self.assertEqual(d.ok_button.cget('underline'),
+                         0 if self.wantobjects else '0')
 
     def test_default_ring(self):
         # The default ring follows the keyboard focus among the buttons.
         d = self.open()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'normal')
+        self.assertEqual(d.cancel_button.cget('default'), 'normal')
         d.cancel_button.focus_force()
         d.top.update()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'active')
+        self.assertEqual(d.cancel_button.cget('default'), 'active')
         d.ok_button.focus_force()
         d.top.update()
-        self.assertEqual(str(d.cancel_button.cget('default')), 'normal')
+        self.assertEqual(d.cancel_button.cget('default'), 'normal')
 
     def test_alt_key(self):
         # Alt + the underlined letter invokes the matching button.
         d = self.open()
         invoked = []
         d.cancel_button.configure(command=lambda: invoked.append(True))
-        d.top.focus_force()
         d.top.update()
+        d.top.focus_force()
         d.top.event_generate('<Alt-c>')  # "&Cancel"
         d.top.update()
         self.assertTrue(invoked)
@@ -173,8 +174,8 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         # The Escape key cancels the dialog.
         d = self.open()
         d.how = 'spam'
-        d.top.focus_force()
         d.top.update()
+        d.top.focus_force()
         d.top.event_generate('<Escape>')
         d.top.update()
         self.assertIsNone(d.how)
@@ -182,8 +183,8 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
     def test_horizontal_scrollbars(self):
         # Each list has a horizontal scrollbar besides the vertical one.
         d = self.open()
-        self.assertEqual(str(d.dirshbar.cget('orient')), 'horizontal')
-        self.assertEqual(str(d.fileshbar.cget('orient')), 'horizontal')
+        self.assertEqual(d.dirshbar.cget('orient'), 'horizontal')
+        self.assertEqual(d.fileshbar.cget('orient'), 'horizontal')
         self.assertTrue(d.dirs.cget('xscrollcommand'))
         self.assertTrue(d.files.cget('xscrollcommand'))
 
@@ -194,12 +195,22 @@ class FileDialogTest(AbstractTkTest, unittest.TestCase):
         d.files.delete(0, 'end')
         for name in ('alpha', 'bravo', 'charlie'):
             d.files.insert('end', name)
-        d.files.focus_force()
         d.top.update()
+        # Force the focus right before generating the event: the window
+        # manager can take it back.
+        d.files.focus_force()
         d.files.event_generate('<Key>', keysym='c')
         d.top.update()
         sel = d.files.curselection()
         self.assertEqual([d.files.get(i) for i in sel], ['charlie'])
+
+
+class DeprecationTest(unittest.TestCase):
+
+    def test_askopenfiles_deprecated(self):
+        with swap_attr(filedialog, 'askopenfilenames', lambda **kw: ()):
+            with self.assertWarns(DeprecationWarning):
+                filedialog.askopenfiles()
 
 
 if __name__ == "__main__":

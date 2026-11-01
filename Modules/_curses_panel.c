@@ -437,11 +437,11 @@ PyCursesPanel_Clear(PyObject *op)
     PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
     PyObject *extra = (PyObject *)panel_userptr(self->pan);
     if (extra != NULL) {
-        Py_DECREF(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
             return -1;
         }
+        Py_DECREF(extra);
     }
     // self->wo should not be cleared because an associated WINDOW may exist
     return 0;
@@ -454,20 +454,21 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    if (PyCursesPanel_Clear(self) < 0) {
+    PyObject *extra = (PyObject *)panel_userptr(po->pan);
+    if (extra != NULL && set_panel_userptr(po->pan, NULL) == ERR) {
+        curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
+    if (po->wo != NULL && remove_lop(po) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
-    if (po->wo != NULL) {
-        Py_DECREF(po->wo);
-        if (remove_lop(po) < 0) {
-            PyErr_SetString(PyExc_RuntimeError, "__del__: no panel object to delete");
-            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
-        }
-    }
+    Py_XDECREF(extra);
+    Py_XDECREF(po->wo);
     tp->tp_free(po);
     Py_DECREF(tp);
 }
@@ -591,6 +592,12 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
 {
     PyCursesPanelObject *po = find_po(self->pan, "replace", NULL);
     if (po == NULL) {
+        return NULL;
+    }
+
+    if (win->win == NULL) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(self);
+        PyErr_SetString(state->error, "the window has been detached");
         return NULL;
     }
 
