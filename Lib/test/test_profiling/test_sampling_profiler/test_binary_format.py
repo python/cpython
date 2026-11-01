@@ -1972,6 +1972,13 @@ class TestBinaryReplayToHeatmap(unittest.TestCase):
                     self.assertIn('<span class="stat-value">0.4</span>', content)
                     self.assertIn('<span class="rate-value">2.0%</span>', content)
                     self.assertIn('<span class="rate-value">1.5%</span>', content)
+                else:
+                    self.assertEqual(
+                        content.count('<span class="stat-value">N/A</span>'), 2
+                    )
+                    self.assertEqual(
+                        content.count('<span class="rate-value">N/A</span>'), 2
+                    )
 
 
 class TestBinaryReplayToJsonl(BinaryFormatTestBase):
