@@ -393,12 +393,15 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
         }
     }
 
-    Py_ssize_t str_len;
-    const char *str_data = PyUnicode_AsUTF8AndSize(string, &str_len);
-    if (!str_data) {
+    /* Frame names can contain surrogates (e.g. from undecodable filenames).
+     * Escape them to keep the string table valid UTF-8. */
+    PyObject *encoded = PyUnicode_AsEncodedString(string, "utf-8", "backslashreplace");
+    if (encoded == NULL) {
         return -1;
     }
+    Py_ssize_t str_len = PyBytes_GET_SIZE(encoded);
     if ((uintmax_t)str_len > UINT32_MAX) {
+        Py_DECREF(encoded);
         writer->state = BINARY_WRITER_LIMIT_REACHED;
         PyErr_Format(PyExc_OverflowError,
             "string length %zd exceeds binary format maximum %u",
@@ -408,10 +411,12 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
 
     char *str_copy = PyMem_Malloc(str_len + 1);
     if (!str_copy) {
+        Py_DECREF(encoded);
         PyErr_NoMemory();
         return -1;
     }
-    memcpy(str_copy, str_data, str_len + 1);
+    memcpy(str_copy, PyBytes_AS_STRING(encoded), str_len + 1);
+    Py_DECREF(encoded);
 
     *index = (uint32_t)writer->string_count;
 

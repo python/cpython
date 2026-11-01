@@ -739,6 +739,34 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
                 self.assertEqual(count, 1)
                 self.assert_samples_equal(samples, collector)
 
+    def test_surrogates_in_frame_names(self):
+        cases = [
+            ("\udce9", r"\udce9"),  # A surrogate-escaped filename byte.
+            ("\uddd0", r"\uddd0"),  # The surrogate from gh-160601.
+            ("\ud800", r"\ud800"),
+            ("\udfff", r"\udfff"),
+            ("\ud800\udfff", r"\ud800\udfff"),
+            ("caf\xe9\udce9\U0001f40d", "caf\xe9\\udce9\U0001f40d"),
+        ]
+        for name, escaped_name in cases:
+            with self.subTest(name=name):
+                frames = [
+                    make_frame(f"/path/{name}.py", 42, f"func_{name}"),
+                    make_frame("test.py", 1, "main"),
+                ]
+                samples = [[make_interpreter(0, [make_thread(1, frames)])]] * 3
+                collector, count = self.roundtrip(samples)
+                self.assertEqual(count, 3)
+
+                expected_frames = [
+                    make_frame(f"/path/{escaped_name}.py", 42,
+                               f"func_{escaped_name}"),
+                    frames[1],
+                ]
+                expected = [[make_interpreter(
+                    0, [make_thread(1, expected_frames)])]] * 3
+                self.assert_samples_equal(expected, collector)
+
     def test_special_char_filenames(self):
         """Filenames with special characters roundtrip exactly."""
         filenames = [
