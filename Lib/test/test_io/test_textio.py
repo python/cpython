@@ -705,6 +705,32 @@ class TextIOWrapperTest:
             remaining = f.read()
             self.assertEqual(remaining, "")
 
+    def test_tell_after_seek_with_chars_to_skip(self):
+        # tell() after seek() to a position inside the output of one decoder
+        # step, when the chunk read before had many bytes per character.
+        for encoding, errors, data, decoded in [
+            ("big5hkscs", "ignore", b"\x88\x62" + b"\xff" * 8190,
+             "\xca\u0304"),
+            ("utf-7", "strict", b"+AGEAYg-+" + b"A" * 8183, "ab"),
+        ]:
+            with self.subTest(encoding=encoding):
+                f = self.TextIOWrapper(self.BytesIO(data),
+                                       encoding=encoding, errors=errors)
+                self.assertEqual(f.read(1), decoded[0])
+                pos = f.tell()
+                f.seek(pos)
+                self.assertEqual(f.tell(), pos)
+                self.assertEqual(f.read(1), decoded[1])
+
+    def test_tell_after_seek_after_lone_cr(self):
+        data = b"\xff" * 8000 + "a\r\u3042\n".encode()
+        f = self.TextIOWrapper(self.BytesIO(data),
+                               encoding="utf-8", errors="ignore")
+        self.assertEqual(f.readline(), "a\n")
+        pos = f.tell()
+        f.seek(pos)
+        self.assertEqual(f.tell(), pos)
+        self.assertEqual(f.read(), "\u3042\n")
 
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
