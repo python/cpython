@@ -84,8 +84,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
-        """Return True if lock is acquired."""
-        return self._locked
+        """Return True if lock is acquired or if there are active waiters."""
+        return self._locked or self._waiters
 
     async def acquire(self):
         """Acquire a lock.
