@@ -732,7 +732,7 @@ def main():
                              compresslevel=compresslevel)
             else:
                 f = builtins.open(arg, "rb")
-                g = open(arg + ".gz", "wb")
+                g = open(arg + ".gz", "wb", compresslevel=compresslevel)
         while True:
             chunk = f.read(READ_BUFFER_SIZE)
             if not chunk:
