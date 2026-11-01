@@ -1,0 +1,2 @@
+Render interactive examples in docstrings as separate blocks in the HTML output
+of :mod:`pydoc`.
