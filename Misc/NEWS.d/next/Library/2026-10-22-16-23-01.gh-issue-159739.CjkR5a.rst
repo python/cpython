@@ -1,4 +1,6 @@
-Fix HZ encoding of a tilde at an output buffer boundary and ISO-2022 decoding
-of split escape sequences. Reset ISO-2022 incremental codecs to their initial
-state. Keep multibyte codec tables and custom encoder error policies alive
-when Python code replaces them during use.
+Fix the ``hz`` codec sometimes encoding ``~`` as a single ``~`` in text that
+mixes ASCII and Chinese characters, and the incremental ``iso2022_*`` codecs
+mishandling an escape sequence split across calls or keeping the previous
+character set after :meth:`!reset`.  Also fix possible crashes in the CJK
+incremental and stream codecs when their ``errors`` attribute or their class's
+``codec`` attribute is replaced while they are in use.
