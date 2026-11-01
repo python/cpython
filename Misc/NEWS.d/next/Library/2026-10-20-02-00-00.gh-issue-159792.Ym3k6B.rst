@@ -1,0 +1,2 @@
+Fix the ``"once"`` warning filter to suppress repeated warnings across
+modules, matching the documented behavior and the pure-Python implementation.
