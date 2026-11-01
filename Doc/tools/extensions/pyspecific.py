@@ -11,6 +11,7 @@
 
 import re
 
+from docutils import nodes
 from sphinx import addnodes
 from sphinx.domains.python import PyFunction, PyMethod
 
@@ -78,6 +79,13 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def parse_make_target(env, sig, signode):
+    """Transform a make target signature into RST nodes."""
+    signode += addnodes.desc_name(sig, sig)
+    signode['ids'].append(nodes.make_id(sig))
+    return sig
+
+
 def parse_monitoring_event(env, sig, signode):
     """Transform a monitoring event signature into RST nodes."""
     signode += addnodes.desc_addname('sys.monitoring.events.', 'sys.monitoring.events.')
@@ -113,6 +121,7 @@ def setup(app):
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
+    app.add_object_type('make-target', 'make-target', '%s (make target)', parse_make_target)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.connect('env-check-consistency', patch_pairindextypes)
