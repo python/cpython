@@ -2712,6 +2712,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
         textiowrapper_set_decoded_chars(self, NULL);
         Py_CLEAR(self->snapshot);
+        self->telling = self->seekable;
         if (self->decoder) {
             res = PyObject_CallMethodNoArgs(self->decoder, &_Py_ID(reset));
             if (res == NULL)
@@ -2780,6 +2781,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
     textiowrapper_set_decoded_chars(self, NULL);
     Py_CLEAR(self->snapshot);
+    self->telling = self->seekable;
 
     /* Restore the decoder to its state from the safe start point. */
     if (self->decoder) {
@@ -3256,7 +3258,14 @@ _io_TextIOWrapper_flush_impl(textio *self)
 {
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
-    self->telling = self->seekable;
+    /* The snapshot is stale after next(), so only re-enable tell() when
+       it needs neither the snapshot nor pending decoded text. */
+    if (self->snapshot == NULL &&
+        (self->decoded_chars == NULL ||
+         PyUnicode_GET_LENGTH(self->decoded_chars) == 0))
+    {
+        self->telling = self->seekable;
+    }
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
     return buffer_callmethod_noargs(self, &_Py_ID(flush));

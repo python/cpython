@@ -2271,7 +2271,10 @@ class TextIOWrapper(TextIOBase):
 
     def flush(self):
         self.buffer.flush()
-        self._telling = self._seekable
+        # The snapshot is stale after next(), so only re-enable tell() when
+        # it needs neither the snapshot nor pending decoded text.
+        if self._snapshot is None and not self._decoded_chars:
+            self._telling = self._seekable
 
     def close(self):
         if self.buffer is not None and not self.closed:
@@ -2568,6 +2571,7 @@ class TextIOWrapper(TextIOBase):
             position = self.buffer.seek(0, whence)
             self._set_decoded_chars('')
             self._snapshot = None
+            self._telling = self._seekable
             if self._decoder:
                 self._decoder.reset()
             _reset_encoder(position)
@@ -2587,6 +2591,7 @@ class TextIOWrapper(TextIOBase):
         self.buffer.seek(start_pos)
         self._set_decoded_chars('')
         self._snapshot = None
+        self._telling = self._seekable
 
         # Restore the decoder to its state from the safe start point.
         if cookie == 0 and self._decoder:
