@@ -122,7 +122,16 @@ class ForwardRef:
                 is_forwardref_format = True
             case _:
                 raise NotImplementedError(format)
-        if isinstance(self.__cell__, types.CellType):
+        if (
+            globals is None
+            and locals is None
+            and isinstance(self.__cell__, types.CellType)
+        ):
+            # The cell holds the value of the name from the enclosing scope.
+            # Take this shortcut only if no namespaces were provided;
+            # otherwise, the resolution below gives an explicitly passed
+            # locals precedence over the cell, and the cell precedence
+            # over globals.
             try:
                 return self.__cell__.cell_contents
             except ValueError:
@@ -194,9 +203,18 @@ class ForwardRef:
             resolved = _sentinel
             if arg in locals:
                 resolved = locals[arg]
-            elif arg in globals:
+            elif isinstance(self.__cell__, types.CellType):
+                # The cell holds the value of the name from the enclosing
+                # scope. Like the dict-of-cells path above, which merges
+                # cells into locals with setdefault, it takes precedence
+                # over globals, but not over locals.
+                try:
+                    resolved = self.__cell__.cell_contents
+                except ValueError:
+                    pass
+            if resolved is _sentinel and arg in globals:
                 resolved = globals[arg]
-            elif hasattr(builtins, arg):
+            elif resolved is _sentinel and hasattr(builtins, arg):
                 resolved = getattr(builtins, arg)
 
             if resolved is not _sentinel:
