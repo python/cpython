@@ -996,11 +996,55 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
-static void
+/* "gc: " + " <" + " 0x" + 16 hex digits + ">\n" + NUL, excluding msg and
+ * tp_name */
+#define DEBUG_LINE_FIXED_LEN 32
+
+static char *
 debug_cycle(const char *msg, PyObject *op)
 {
-    PySys_FormatStderr("gc: %s <%s %p>\n",
-                       msg, Py_TYPE(op)->tp_name, op);
+    const char *name = Py_TYPE(op)->tp_name;
+    size_t size = strlen(msg) + strlen(name) + DEBUG_LINE_FIXED_LEN;
+    char *line = PyMem_RawMalloc(size);
+    if (line == NULL) {
+        return NULL;
+    }
+    /* Not %p: its output is platform-specific (no "0x" prefix on Windows). */
+    PyOS_snprintf(line, size, "gc: %s <%s 0x%" PRIxPTR ">\n",
+                  msg, name, (uintptr_t)op);
+    return line;
+}
+
+/* Format a line for each object in `list`, then print them.
+ * sys.stderr.write(). Stores into buffers so can iterate
+ * to avoid calling into Python whilst we iterate the objects
+ */
+static Py_ssize_t
+debug_cycles(const char *msg, PyGC_Head *list)
+{
+    Py_ssize_t n = gc_list_size(list);
+    if (n == 0) {
+        return n;
+    }
+
+    char **lines = PyMem_RawCalloc(n, sizeof(char *));
+    if (lines == NULL) {
+        return n;
+    }
+
+    Py_ssize_t i = 0;
+    for (PyGC_Head *gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc), i++) {
+        lines[i] = debug_cycle(msg, FROM_GC(gc));
+    }
+
+    for (i = 0; i < n; i++) {
+        if (lines[i] != NULL) {
+            PySys_FormatStderr("%s", lines[i]);
+        }
+        PyMem_RawFree(lines[i]);
+    }
+    PyMem_RawFree(lines);
+    return n;
 }
 
 /* Handle uncollectable garbage (cycles with tp_del slots, and stuff reachable
@@ -1435,7 +1479,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     PyGC_Head *old; /* next older generation */
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
-    PyGC_Head *gc;
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -1558,9 +1601,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_COLLECTABLE) {
         /* sys.stderr.write() can resurrect objects. */
         needs_resurrection_check = true;
-        for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {
-            debug_cycle("collectable", FROM_GC(gc));
-        }
+        debug_cycles("collectable", &unreachable);
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
@@ -1603,13 +1644,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
-    Py_ssize_t n = 0;
-    for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
-        n++;
-        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
-            debug_cycle("uncollectable", FROM_GC(gc));
+    if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
+        stats.uncollectable = debug_cycles("uncollectable", &finalizers);
     }
-    stats.uncollectable = n;
+    else {
+        stats.uncollectable = gc_list_size(&finalizers);
+    }
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
