@@ -612,10 +612,10 @@ class CAPITest(unittest.TestCase):
     def test_dict_as_frozendict_and_clear(self):
         # Test PyDict_AsFrozenDictAndClear()
         as_frozendict = _testcapi.dict_as_frozendict_and_clear
-        d = {1: 2, 'a': 'b'}
+        d = dict(x=1, y=2)
         f = as_frozendict(d)
         self.assertIs(type(f), frozendict)
-        self.assertEqual(f, frozendict({1: 2, 'a': 'b'}))
+        self.assertEqual(f, frozendict(x=1, y=2))
         self.assertIs(type(d), dict)
         self.assertEqual(d, {})
 
@@ -628,10 +628,10 @@ class CAPITest(unittest.TestCase):
 
         class DictSubtype(dict): ...
 
-        d = DictSubtype({'x': None})
+        d = DictSubtype({'x': 123})
         f = as_frozendict(d)
         self.assertIs(type(f), frozendict)
-        self.assertEqual(f, frozendict({'x': None}))
+        self.assertEqual(f, frozendict({'x': 123}))
         self.assertIs(type(d), DictSubtype)
         self.assertEqual(d, DictSubtype({}))
 
