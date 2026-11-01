@@ -240,8 +240,9 @@ def _check_zipfile(fp):
                 return True     # Empty zipfiles are still zipfiles
             elif endrec[_ECD_DISK_NUMBER] == endrec[_ECD_DISK_START]:
                 # Central directory is on the same disk
-                fp.seek(sum(_handle_prepended_data(endrec)))
-                if endrec[_ECD_SIZE] >= sizeCentralDir:
+                start_dir = sum(_handle_prepended_data(endrec))
+                if start_dir >= 0 and endrec[_ECD_SIZE] >= sizeCentralDir:
+                    fp.seek(start_dir)
                     data = fp.read(sizeCentralDir)   # CD is where we expect it to be
                     if len(data) == sizeCentralDir:
                         centdir = struct.unpack(structCentralDir, data) # CD is the right size
