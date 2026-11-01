@@ -28,8 +28,8 @@
 """Read from and write to tar format archives.
 """
 
-__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
+# Original author: Lars Gustäbel (lars@gustaebel.de)
+# Credits: Gustavo Niemeyer, Niels Gustäbel, Richard Townsend.
 
 #---------
 # Imports
@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+lazy import warnings
 
 try:
     import pwd
@@ -2734,6 +2735,13 @@ class TarFile(object):
         else:
             self.makefile(tarinfo, targetpath)
 
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
+
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)
             if not tarinfo.issym():
@@ -3259,11 +3267,13 @@ def main():
 
 
 def __getattr__(name):
-    if name == "version":
-        from warnings import _deprecated
-
-        _deprecated("version", remove=(3, 20))
-        return "0.9.0"  # Do not change
+    if name in ("version", "__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "version": "0.9.0",
+            "__author__": "Lars Gust\u00e4bel (lars@gustaebel.de)",
+            "__credits__": "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend.",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

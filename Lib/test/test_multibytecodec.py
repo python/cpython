@@ -461,6 +461,84 @@ class TestStateful(unittest.TestCase):
         self.assertEqual(output, self.expected_reset)
         self.assertEqual(encoder.encode('', final=True), b'')
 
+    def test_streamwriter_reset(self):
+        stream = io.BytesIO()
+        writer = codecs.getwriter(self.encoding)(stream)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), b'')
+        writer.write(self.text)
+        self.assertEqual(stream.getvalue(), self.expected)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.write(self.text)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset * 2)
+
+    def test_streamwriter_seek0(self):
+        # The reset sequence is written before the stream is rewound.
+        info = codecs.lookup(self.encoding)
+        for wrap in (
+            info.streamwriter,
+            lambda stream: codecs.StreamReaderWriter(
+                stream, info.streamreader, info.streamwriter),
+            lambda stream: codecs.EncodedFile(stream, 'utf-8', self.encoding),
+        ):
+            stream = io.BytesIO()
+            writer = wrap(stream)
+            text = self.text
+            if isinstance(writer, codecs.StreamRecoder):
+                text = text.encode()
+            writer.write(text)
+            writer.seek(0)
+            self.assertEqual(stream.tell(), 0)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+            writer.write(text)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+
+    def test_incrementalencoder_error(self):
+        # The output of a failed encode() is lost, so the shift state
+        # must not be changed.
+        encoder = codecs.getincrementalencoder(self.encoding)()
+        state = encoder.getstate()
+        for final in False, True:
+            self.assertRaises(UnicodeEncodeError, encoder.encode,
+                              self.text + '\U0001f600', final)
+            self.assertEqual(encoder.getstate(), state)
+        self.assertEqual(encoder.encode(self.text), self.expected)
+        state = encoder.getstate()
+        for final in False, True:
+            self.assertRaises(UnicodeEncodeError, encoder.encode,
+                              'a\U0001f600', final)
+            self.assertEqual(encoder.getstate(), state)
+        self.assertEqual(encoder.encode('a'), self.reset + b'a')
+
+    def test_streamwriter_error(self):
+        stream = io.BytesIO()
+        writer = codecs.getwriter(self.encoding)(stream)
+        self.assertRaises(UnicodeEncodeError, writer.write,
+                          self.text + '\U0001f600')
+        self.assertEqual(stream.getvalue(), b'')
+        writer.write(self.text)
+        self.assertEqual(stream.getvalue(), self.expected)
+
+    def test_textiowrapper_error(self):
+        raw = io.BytesIO()
+        with io.TextIOWrapper(raw, encoding=self.encoding) as f:
+            self.assertRaises(UnicodeEncodeError, f.write,
+                              self.text + '\U0001f600')
+            f.write(self.text)
+            f.flush()
+            self.assertEqual(raw.getvalue(), self.expected)
+
+class TestISO2022KRStateful(TestStateful):
+    text = '\uac00\uac00'
+    encoding = 'iso-2022-kr'
+    expected = b'\x1b$)C\x0e0!0!'
+    reset = b'\x0f'
+    expected_reset = expected + reset
+
 class TestHZStateful(TestStateful):
     text = '\u804a\u804a'
     encoding = 'hz'
