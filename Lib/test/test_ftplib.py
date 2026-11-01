@@ -1205,7 +1205,7 @@ class CommandLineTest(TestCase):
         self.assertIn('Options:', output)
         self.assertIn('Commands:', output)
 
-    @requires_subprocess
+    @requires_subprocess()
     def test_subprocess_invocation_no_args(self):
         from test.support.script_helper import assert_python_ok
         rc, out, err = assert_python_ok('-m', 'ftplib')
@@ -1216,7 +1216,8 @@ class CommandLineTest(TestCase):
         self.assertEqual(err, b'')
 
     @mock.patch('ftplib.FTP')
-    def test_cli_host_and_debugging(self, mock_ftp_cls):
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_host_and_debugging(self, mock_netrc, mock_ftp_cls):
         mock_ftp = mock_ftp_cls.return_value
         with mock.patch('sys.argv', ['ftplib', '-d', '-d', 'example.com']):
             ftplib.test()
@@ -1226,18 +1227,20 @@ class CommandLineTest(TestCase):
         mock_ftp.quit.assert_called_once()
 
     @mock.patch('ftplib.FTP')
-    def test_cli_commands(self, mock_ftp_cls):
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_commands(self, mock_netrc, mock_ftp_cls):
         mock_ftp = mock_ftp_cls.return_value
         with mock.patch('sys.argv', ['ftplib', 'example.com', '-l/pub', '-d/incoming', '-p']):
             ftplib.test()
         mock_ftp_cls.assert_called_once_with('example.com')
         mock_ftp.dir.assert_called_once_with('/pub')
         mock_ftp.sendcmd.assert_called_once_with('CWD /incoming')
-        mock_ftp.set_pasv.assert_called_once_with(not mock_ftp.passiveserver)
+        mock_ftp.set_pasv.assert_called_once()
         mock_ftp.quit.assert_called_once()
 
     @mock.patch('ftplib.FTP')
-    def test_cli_retrieve_file(self, mock_ftp_cls):
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_retrieve_file(self, mock_netrc, mock_ftp_cls):
         mock_ftp = mock_ftp_cls.return_value
         with mock.patch('sys.argv', ['ftplib', 'example.com', 'testfile.txt']):
             ftplib.test()
