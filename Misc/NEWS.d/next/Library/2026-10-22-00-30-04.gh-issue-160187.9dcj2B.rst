@@ -1,0 +1,4 @@
+Fix the ISO-2022 decoders (``iso2022_jp``, ``iso2022_kr`` and related)
+accepting escape sequences that designate a character set to the wrong code
+element (G0, G1 or G2).  Such sequences now raise :exc:`UnicodeDecodeError`
+instead of producing wrong text or :exc:`RuntimeError`.
