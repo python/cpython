@@ -293,10 +293,13 @@ error_external_entity_ref_handler(XML_Parser parser,
 
 /* Dummy character data handler used when an error (exception) has
    been detected, and the actual parsing can be terminated early.
-   This is needed since character data handler can't be safely removed
-   from within the character data handler, but can be replaced.  It is
-   used only from the character data handler trampoline, and must be
-   used right after `flag_error()` is called. */
+   This is needed since the character data and default handlers can't be
+   safely removed from within a callback, only replaced: Expat may call
+   them several times for one piece of text (a long comment in a document
+   that is not UTF-8, for example).  The default handler has the same
+   signature, so this function serves for both.  clear_handlers() installs
+   it after `flag_error()`, and the handler setter installs it when a
+   handler is set to None from within a callback. */
 static void
 noop_character_data_handler(void *userData, const XML_Char *data, int len)
 {
@@ -1838,8 +1841,14 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
            active, so Expat does a little more work than it
            otherwise would, but that's really an odd case.  A more
            elaborate system of handlers and state could remove the
-           C handler more effectively. */
-        if (handlernum == CharacterData && self->in_callback) {
+           C handler more effectively.  The same applies to the
+           default handler, which Expat can call several times for one
+           piece of text, such as a long comment in a document that is
+           not UTF-8. */
+        if (self->in_callback
+            && (handlernum == CharacterData
+                || handlernum == Default
+                || handlernum == DefaultHandlerExpand)) {
             c_handler = (xmlhandler)noop_character_data_handler;
         }
         v = NULL;
@@ -2786,7 +2795,16 @@ clear_handlers(xmlparseobject *self, int initial)
         }
         else {
             Py_CLEAR(self->handlers[i]);
-            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, NULL);
+            xmlhandler c_handler = NULL;
+            if (i == Default || i == DefaultHandlerExpand) {
+                /* Like the character data handler, the default handler
+                   can't be removed from within a callback: for a document
+                   that is not UTF-8, Expat passes a long piece of text to
+                   it in several calls and re-reads the handler before each
+                   one (reportDefault() in xmlparse.c). */
+                c_handler = (xmlhandler)noop_character_data_handler;
+            }
+            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, c_handler);
         }
     }
 }
