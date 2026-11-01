@@ -784,7 +784,8 @@ def main():
             else:
                 f = builtins.open(arg, "rb")
                 outfile = _create_output(arg + ".gz", f)
-                g = GzipFile(fileobj=outfile, mode="wb")
+                g = GzipFile(fileobj=outfile, mode="wb",
+                             compresslevel=compresslevel)
         while True:
             chunk = f.read(READ_BUFFER_SIZE)
             if not chunk:
