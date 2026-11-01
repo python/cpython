@@ -16,6 +16,7 @@ from importlib.metadata import (
     EntryPoint,
     MetadataNotFound,
     PackageNotFoundError,
+    PackagePath,
     _unique,
     diagnose,
     distributions,
@@ -598,3 +599,21 @@ class EditableDistributionTest(fixtures.DistInfoPkgEditable, unittest.TestCase):
         dist = Distribution.from_name('distinfo-pkg')
         assert dist.origin.url.endswith('.whl')
         assert dist.origin.archive_info.hashes.sha256
+
+
+class PackagePathTests(unittest.TestCase):
+    def test_backslash_in_name(self):
+        # Windows RECORD files may use backslashes as path separators per
+        # the packaging spec; PackagePath must normalize them so that
+        # .name/.parts/.parent behave correctly.
+        p = PackagePath('dist_info-1.0.dist-info\\METADATA')
+        self.assertEqual(p.name, 'METADATA')
+
+    def test_backslash_parts(self):
+        p = PackagePath('a\\b\\c.py')
+        self.assertEqual(p.parts, ('a', 'b', 'c.py'))
+
+    def test_forward_slash_unchanged(self):
+        p = PackagePath('dist_info-1.0.dist-info/METADATA')
+        self.assertEqual(p.name, 'METADATA')
+        self.assertEqual(p.parts, ('dist_info-1.0.dist-info', 'METADATA'))

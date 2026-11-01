@@ -377,6 +377,16 @@ class PackagePath(pathlib.PurePosixPath):
     size: int
     dist: Distribution
 
+    def __init__(self, *args):
+        # Normalize Windows backslashes to forward slashes. Per the packaging
+        # spec, backslashes are valid path separators in RECORD files on Windows,
+        # but PurePosixPath treats them as literal characters, not separators.
+        normalized = tuple(
+            arg.replace('\\', '/') if isinstance(arg, str) else arg
+            for arg in args
+        )
+        super().__init__(*normalized)
+
     def read_text(self, encoding: str = 'utf-8') -> str:
         return self.locate().read_text(encoding=encoding)
 
