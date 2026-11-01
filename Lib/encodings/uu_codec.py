@@ -46,8 +46,17 @@ def uu_decode(input, errors='strict'):
         s = readline()
         if not s:
             raise ValueError('Missing "begin" line in input data')
-        if s[:5] == b'begin':
-            break
+        # Only a "begin <octal mode>" line, optionally followed by a
+        # filename, starts the encoded data (as in
+        # email.message._decode_uu()); anything else is leading text.
+        if s[:6] != b'begin ':
+            continue
+        mode = s[6:].split(b' ', 1)[0]
+        try:
+            int(mode, 8)
+        except ValueError:
+            continue
+        break
 
     # Decode
     while True:
