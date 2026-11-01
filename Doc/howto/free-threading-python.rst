@@ -105,7 +105,12 @@ As of the 3.14 release, immortalization is limited to:
 
 * Code constants: numeric literals, string literals, and tuple literals
   composed of other constants.
-* Strings interned by :func:`sys.intern`.
+* All interned strings, including those interned by :func:`sys.intern`
+  and the names used in code objects (see
+  :ref:`below <ft-interned-immortal>`).
+
+Objects that are immortal in the default build, such as ``None``, small
+integers and static types, are also immortal in the free-threaded build.
 
 
 Frame objects
@@ -170,6 +175,8 @@ Increased memory usage
 The free-threaded build will typically use more memory compared to the default
 build.  There are multiple reasons for this, mostly due to design decisions.
 
+
+.. _ft-interned-immortal:
 
 All interned strings are immortal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -255,7 +262,8 @@ following types:
 
 * module objects
 * module top-level functions
-* class methods defined in the class scope
+* functions defined in a class scope (methods)
+* :func:`classmethod` and :func:`staticmethod` objects
 * descriptor objects
 * thread-local objects, created by :class:`threading.local`
 

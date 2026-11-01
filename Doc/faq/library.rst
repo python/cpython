@@ -362,8 +362,8 @@ class provides a featureful interface.
 What kinds of global value mutation are thread-safe?
 ----------------------------------------------------
 
-A :term:`global interpreter lock` (GIL) is used internally to ensure that only one
-thread runs in the Python VM at a time.  In general, Python offers to switch
+In the default build of CPython, a :term:`global interpreter lock` (GIL) is
+used internally to ensure that only one thread runs in the Python VM at a time.  In general, Python offers to switch
 among threads only between bytecode instructions; how frequently it switches can
 be set via :func:`sys.setswitchinterval`.  Each bytecode instruction and
 therefore all the C implementation code reached from each instruction is
@@ -401,6 +401,17 @@ Operations that replace other objects may invoke those other objects'
 affect things.  This is especially true for the mass updates to dictionaries and
 lists.  When in doubt, use a mutex!
 
+.. note::
+
+   The above relies on the GIL.  In the :term:`free-threaded <free threading>`
+   build, where the GIL is disabled, threads can run bytecode in parallel and
+   a bytecode instruction is not atomic in general.  Built-in types such as
+   :class:`list`, :class:`dict` and :class:`set` use internal locks so that
+   individual operations on them still behave atomically, but compound
+   operations such as ``D[x] = D[x] + 1`` remain unsafe.  See
+   :ref:`threadsafety` for the guarantees provided for built-in types and
+   :ref:`freethreading-python-howto` for more information.
+
 
 Can't we get rid of the Global Interpreter Lock?
 ------------------------------------------------
@@ -410,14 +421,14 @@ deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
-With the approval of :pep:`703` work is now underway to remove the GIL from the
-CPython implementation of Python.  Initially it will be implemented as an
-optional compiler flag when building the interpreter, and so separate
-builds will be available with and without the GIL.  Long-term, the hope is
-to settle on a single build, once the performance implications of removing the
-GIL are fully understood.  Python 3.13 is likely to be the first release
-containing this work, although it may not be completely functional in this
-release.
+With the approval of :pep:`703` the GIL can be disabled in CPython.  This is
+implemented as an optional compile-time flag (:option:`--disable-gil`), so
+separate builds are available with and without the GIL.  The first release
+containing this work was Python 3.13, where it was experimental; the
+:term:`free-threaded <free threading>` build is officially supported as of
+Python 3.14.  See :ref:`freethreading-python-howto` for details.  Long-term,
+the hope is to settle on a single build, once the performance implications of
+removing the GIL are fully understood.
 
 The current work to remove the GIL is based on a
 `fork of Python 3.9 with the GIL removed <https://github.com/colesbury/nogil>`_
