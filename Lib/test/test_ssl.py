@@ -14,11 +14,14 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
 import array
+import base64
 import re
 import socket
 import select
 import struct
+import tempfile
 import time
+import zipfile
 import enum
 import gc
 import http.client
@@ -129,6 +132,19 @@ SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
 LEAF_MISSING_AKI_CERTFILE = data_file("leaf-missing-aki.keycert.pem")
 LEAF_MISSING_AKI_CERTFILE_HOSTNAME = "example.com"
 LEAF_MISSING_AKI_CA = data_file("leaf-missing-aki.ca.pem")
+
+# gh-160040: a leaf signed by a compromised eMudhra intermediate whose public
+# key is on the _ssl distrusted list. The chain to distrusted_root.pem is
+# otherwise valid.
+# The PEMs live in a password-protected zip so the compromised eMudhra certs
+# don't trip security scanners that cannot tell internal test fixtures from
+# production secrets and flag any certificate or private key they find.  It is
+# encrypted, not merely zipped, because such scanners read inside plain archives.
+# The password is fixed, public, and not a secret; it only keeps the archive
+# from storing the PEMs in the clear.
+DISTRUSTED_SPKI_ZIP = data_file("distrusted.zip")
+DISTRUSTED_SPKI_CHOSEN_KNIGHT = b"Brave Sir Robin"  # not a secret, see comment
+DISTRUSTED_SPKI_HOSTNAME = "localhost"
 
 # Same certificate as pycacert.pem, but without extra text in file
 SIGNING_CA = data_file("capath", "ceff1710.0")
@@ -441,6 +457,7 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(ssl.HAS_ECDH, True)
         self.assertIsInstance(ssl.HAS_TLSv1_2, bool)
         self.assertEqual(ssl.HAS_TLSv1_3, True)
+        self.assertIsInstance(ssl.HAS_ECH, bool)
         ssl.OP_NO_SSLv2
         ssl.OP_NO_SSLv3
         ssl.OP_NO_TLSv1
@@ -1134,6 +1151,16 @@ class ContextTests(unittest.TestCase):
         # Ignoring unknown sigalgs is only supported since OpenSSL 3.3.
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256:?foo'))
+
+    @unittest.skipUnless(CAN_GET_SELECTED_OPENSSL_GROUP,
+                         "SSL library doesn't support getting selected group")
+    def test_no_session_group_does_not_crash(self):
+        # Ensure that .group() does not crash because of OpenSSL itself.
+        # See https://github.com/python/cpython/issues/155782.
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        self.assertIsNone(obj.group())
 
     def test_options(self):
         # Test default SSLContext options
@@ -2033,6 +2060,491 @@ class ContextTests(unittest.TestCase):
         ctx.set_psk_server_callback(psk_server_callback)
 
 
+class ECHTests(unittest.TestCase):
+    requires_ech_x25519 = unittest.skipUnless(
+        ssl.HAS_ECH
+        and 'x25519' in ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).get_groups(),
+        'requires ECH with X25519',
+    )
+
+    # An ECHConfigList for localhost using X25519, HKDF-SHA256 and AES-128-GCM.
+    ECH_CONFIG = bytes.fromhex(
+        '003c fe0d 0038 db 0020 0020'
+        '696c2bdc8e1cfa03453ed9bf8c3adee2e676835c8746af33c10994b8e603405c'
+        '0004 0001 0001 00 09 6c6f63616c686f7374 0000'
+    )
+
+    def make_ssl_objects(self, context):
+        obj = context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                               server_hostname='localhost')
+        sock, peer = socket.socketpair()
+        self.addCleanup(sock.close)
+        self.addCleanup(peer.close)
+        ssock = context.wrap_socket(sock, server_hostname='localhost',
+                                    do_handshake_on_connect=False)
+        self.addCleanup(ssock.close)
+        return obj, ssock
+
+    def test_availability(self):
+        self.assertEqual(hasattr(ssl, 'ECHStatus'), ssl.HAS_ECH)
+        for module in (ssl, _ssl):
+            names = [name for name in dir(module)
+                     if name.startswith(('ECH_STATUS_', 'OP_ECH_'))]
+            with self.subTest(module=module):
+                self.assertEqual(bool(names), ssl.HAS_ECH)
+
+        self.assertTrue(issubclass(ssl.SSLECHRejectedError, ssl.SSLError))
+        context_methods = ('set_ech_config', 'load_ech_keys',
+                           '_set_outer_alpn_protocols')
+        socket_methods = ('set_ech_config', 'get_ech_status',
+                          'get_ech_retry_config')
+        for owner, names in (
+            (_ssl._SSLContext, context_methods),
+            (ssl.SSLContext, (*context_methods, 'set_outer_alpn_protocols')),
+            (_ssl._SSLSocket, socket_methods),
+            (ssl.SSLObject, (*socket_methods, 'outer_server_hostname')),
+            (ssl.SSLSocket, (*socket_methods, 'outer_server_hostname')),
+        ):
+            for name in names:
+                with self.subTest(owner=owner, name=name):
+                    self.assertEqual(hasattr(owner, name), ssl.HAS_ECH)
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_socket_without_ssl_object(self):
+        ctx = make_test_context()
+        with ctx.wrap_socket(socket.socket()) as sock:
+            self.assertIsNone(sock.outer_server_hostname)
+            self.assertIsNone(sock.get_ech_status())
+            self.assertIsNone(sock.get_ech_retry_config())
+        self.assertIsNone(sock.outer_server_hostname)
+        self.assertIsNone(sock.get_ech_status())
+        self.assertIsNone(sock.get_ech_retry_config())
+
+    @requires_ech_x25519
+    def test_set_ech_config(self):
+        ctx = make_test_context()
+        for config in (self.ECH_CONFIG, bytearray(self.ECH_CONFIG),
+                       memoryview(self.ECH_CONFIG)):
+            with self.subTest(type=type(config)):
+                self.assertIsNone(ctx.set_ech_config(config))
+        config = bytearray(self.ECH_CONFIG)
+        ctx.set_ech_config(config)
+        config.clear()  # The input buffer must have been released.
+        for config in (None, 'config', 42):
+            with self.subTest(config=config):
+                self.assertRaises(TypeError, ctx.set_ech_config, config)
+        for config in (b'', b'\x00', b'\x00\x00', b'invalid',
+                       self.ECH_CONFIG[:-1], self.ECH_CONFIG + b'\x00'):
+            with self.subTest(config=config):
+                self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+        self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
+
+    @requires_ech_x25519
+    def test_set_ech_config_base64(self):
+        ctx = make_test_context()
+        self.assertIsNone(ctx.set_ech_config(base64.b64encode(self.ECH_CONFIG)))
+
+    @requires_ech_x25519
+    def test_context_roles(self):
+        client_ctx, server_ctx, _ = testing_context()
+        with self.assertRaisesRegex(ssl.SSLError, 'PROTOCOL_TLS_SERVER'):
+            server_ctx.set_ech_config(self.ECH_CONFIG)
+        with self.assertRaisesRegex(ssl.SSLError, 'PROTOCOL_TLS_CLIENT'):
+            client_ctx.load_ech_keys(data_file('ech.pem'))
+        with warnings_helper.check_warnings():
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        self.assertIsNone(ctx.set_ech_config(self.ECH_CONFIG))
+        self.assertIsNone(ctx.load_ech_keys(data_file('ech.pem')))
+
+    @requires_ech_x25519
+    def test_mixed_ech_config_versions(self):
+        ctx = make_test_context()
+        supported = self.ECH_CONFIG[2:]
+        unsupported = b'\xff\xff\x00\x01\x00'
+        # OpenSSL's binary format detection requires a known version first.
+        entries = unsupported + supported
+        config = len(entries).to_bytes(2, 'big') + entries
+        self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+        entries = supported + unsupported
+        config = len(entries).to_bytes(2, 'big') + entries
+        self.assertIsNone(ctx.set_ech_config(config))
+
+    @requires_ech_x25519
+    def test_mixed_ech_config_unsupported_suites(self):
+        ctx = make_test_context()
+        supported = self.ECH_CONFIG[2:]
+        for algorithm, offset in (('KEM', 5), ('KDF', 43), ('AEAD', 45)):
+            unsupported = bytearray(supported)
+            unsupported[offset:offset + 2] = b'\xff\xff'
+            with self.subTest(algorithm=algorithm):
+                config = len(unsupported).to_bytes(2, 'big') + unsupported
+                self.assertRaises(ssl.SSLError, ctx.set_ech_config, config)
+                # OpenSSL currently rejects the whole list even if another
+                # entry has a supported suite. That should probably be fixed
+                # upstream, since it disagrees with the RFC.
+                for entries in (unsupported + supported,
+                                supported + unsupported):
+                    with self.subTest(entries=entries):
+                        config = len(entries).to_bytes(2, 'big') + entries
+                        self.assertRaises(ssl.SSLError, ctx.set_ech_config,
+                                          config)
+
+    def read_ech_key_and_config(self, filename='ech.pem'):
+        # Generated with:
+        # openssl ech -public_name public.example -suite 0x20,1,1
+        # ech-localhost.pem uses -public_name localhost, so that the test
+        # certificate also authenticates the outer ClientHello.
+        with open(data_file(filename), 'rb') as f:
+            key, config = f.read().split(b'-----BEGIN ECHCONFIG-----')
+        config = base64.b64decode(config.split(b'-----END ECHCONFIG-----')[0])
+        return key, config
+
+    def stale_config(self, config):
+        # A config whose HPKE public key the server does not have.
+        stale = bytearray(config)
+        stale[11] ^= 1
+        return bytes(stale)
+
+    def handshake_bio_pair(self, client, server, c_in, c_out, s_in, s_out):
+        for _ in range(5):
+            with contextlib.suppress(ssl.SSLWantReadError):
+                client.do_handshake()
+            s_in.write(c_out.read())
+            with contextlib.suppress(ssl.SSLWantReadError):
+                server.do_handshake()
+            c_in.write(s_out.read())
+
+    def echo_server_thread(self, server_ctx, sock):
+        def serve():
+            try:
+                with server_ctx.wrap_socket(sock, server_side=True) as ssock:
+                    ssock.sendall(ssock.recv(1024))
+            except OSError:
+                pass
+            finally:
+                sock.close()
+        thread = threading.Thread(target=serve)
+        thread.start()
+        self.addCleanup(thread.join)
+
+    @requires_ech_x25519
+    def test_connection_ech_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+        # The context has a configuration the server cannot decrypt; the
+        # connection's configuration must replace it.
+        client_ctx.set_ech_config(self.stale_config(config))
+        for ctx_config in (False, True):
+            with self.subTest(context_configured=ctx_config):
+                if not ctx_config:
+                    client_ctx, _, hostname = testing_context()
+                c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                             ech_config=config)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+                for obj in (client, server):
+                    self.assertEqual(obj.get_ech_status(),
+                                     ssl.ECHStatus.ECH_STATUS_SUCCESS)
+                with self.assertRaisesRegex(ValueError, 'after handshake'):
+                    client.set_ech_config(config)
+
+        with self.assertRaisesRegex(ValueError, 'client mode'):
+            server_ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                server_side=True, ech_config=config)
+        with socket.socket() as sock:
+            with self.assertRaisesRegex(ValueError, 'client mode'):
+                server_ctx.wrap_socket(sock, server_side=True,
+                                       ech_config=config)
+        obj = client_ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                  server_hostname=hostname)
+        self.assertRaises(TypeError, obj.set_ech_config, 'config')
+        self.assertRaises(ssl.SSLError, obj.set_ech_config, b'invalid')
+        self.assertIsNone(obj.set_ech_config(bytearray(config)))
+
+        # An unconnected socket applies the configuration when connecting.
+        with client_ctx.wrap_socket(socket.socket(), server_hostname=hostname,
+                                    ech_config=config) as sock:
+            self.assertIs(sock._ech_config, config)
+            sock.set_ech_config(bytearray(config))
+            self.assertEqual(sock._ech_config, config)
+
+    @requires_ech_x25519
+    def test_rejected_ech_retry_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        stale = self.stale_config(config)
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                     ech_config=stale)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+        with self.assertRaises(ssl.SSLECHRejectedError) as cm:
+            self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+        self.assertEqual(cm.exception.reason, 'ECH_REQUIRED')
+        self.assertEqual(cm.exception.retry_config, config)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_FAILED_ECH)
+        self.assertEqual(client.get_ech_retry_config(), config)
+
+        # The retry configuration from the exception must be usable for a
+        # new connection, even though wrap_socket() closed the first one.
+        sock, peer = socket.socketpair()
+        sock.settimeout(support.SHORT_TIMEOUT)
+        self.echo_server_thread(server_ctx, peer)
+        with self.assertRaises(ssl.SSLECHRejectedError) as cm:
+            client_ctx.wrap_socket(sock, server_hostname=hostname,
+                                   ech_config=stale)
+        self.assertEqual(cm.exception.retry_config, config)
+        sock, peer = socket.socketpair()
+        sock.settimeout(support.SHORT_TIMEOUT)
+        self.echo_server_thread(server_ctx, peer)
+        with client_ctx.wrap_socket(sock, server_hostname=hostname,
+                                    ech_config=cm.exception.retry_config) as ssock:
+            self.assertEqual(ssock.get_ech_status(),
+                             ssl.ECHStatus.ECH_STATUS_SUCCESS)
+            ssock.sendall(b'hello')
+            self.assertEqual(ssock.recv(1024), b'hello')
+
+    @requires_ech_x25519
+    def test_outer_alpn_with_connection_ech_config(self):
+        key, config = self.read_ech_key_and_config('ech-localhost.pem')
+        client_ctx, server_ctx, hostname = testing_context()
+        server_ctx.load_ech_keys(data_file('ech-localhost.pem'))
+        client_ctx.set_alpn_protocols(['h2'])
+        client_ctx.set_outer_alpn_protocols(['http/1.1'])
+        server_ctx.set_alpn_protocols(['h2', 'http/1.1'])
+        for current, expected in ((config, 'h2'),
+                                  (self.stale_config(config), 'http/1.1')):
+            with self.subTest(expected=expected):
+                c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+                client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname,
+                                             ech_config=current)
+                server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+                # When the server rejects ECH it only ever saw the outer
+                # ClientHello, so it selects from the outer ALPN. OpenSSL 4.0
+                # incorrectly checks that choice against the inner list,
+                # raising BAD_EXTENSION instead of SSLECHRejectedError.
+                # https://github.com/python/cpython/pull/160318#discussion_r4362699854
+                with contextlib.suppress(ssl.SSLError):
+                    self.handshake_bio_pair(client, server,
+                                            c_in, c_out, s_in, s_out)
+                self.assertEqual(server.selected_alpn_protocol(), expected)
+
+    @requires_ech_x25519
+    def test_load_ech_keys(self):
+        client_ctx, ctx, hostname = testing_context()
+        filename = data_file('ech.pem')
+        for path in (filename, os.fsencode(filename),
+                     os_helper.FakePath(filename)):
+            self.assertIsNone(ctx.load_ech_keys(path))
+        self.assertRaises(TypeError, ctx.load_ech_keys, None)
+        self.assertRaises(ValueError, ctx.load_ech_keys, 'key\x00file')
+        with self.assertRaises(OSError) as cm:
+            ctx.load_ech_keys(NONEXISTINGKEY)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
+        self.assertEqual(cm.exception.filename, NONEXISTINGKEY)
+
+        key, config = self.read_ech_key_and_config()
+        public = (b'-----BEGIN ECHCONFIG-----\n' + base64.b64encode(config)
+                  + b'\n-----END ECHCONFIG-----\n')
+        mismatched = bytearray(config)
+        mismatched[11] ^= 1  # Change one bit of the HPKE public key.
+        mismatched = (key + b'-----BEGIN ECHCONFIG-----\n'
+                      + base64.b64encode(mismatched)
+                      + b'\n-----END ECHCONFIG-----\n')
+        with open(ONLYKEY_PROTECTED, 'rb') as f:
+            encrypted = f.read() + public
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        for pem in (b'invalid', public, mismatched, encrypted):
+            with self.subTest(pem=pem):
+                with open(os_helper.TESTFN, 'wb') as f:
+                    f.write(pem)
+                self.assertRaises(ssl.SSLError, ctx.load_ech_keys,
+                                  os_helper.TESTFN)
+        # Failed loads must leave the previously loaded keys usable.
+        client_ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_ctx.set_ech_config(config)
+        client, server, *_ = connected_bio_pair(client_ctx, ctx, hostname)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_SUCCESS)
+
+    @requires_ech_x25519
+    def test_load_ech_keys_password(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # ech.pem's key encrypted with:
+        # openssl pkey -in ech.pem -aes-256-cbc -passout pass:somepass
+        filename = data_file('ech-encrypted.pem')
+        for password in (KEY_PASSWORD, lambda: KEY_PASSWORD):
+            self.assertIsNone(ctx.load_ech_keys(filename, password=password))
+
+        def password_error():
+            raise ValueError('password callback failed')
+
+        with self.assertRaisesRegex(ValueError, 'password callback failed'):
+            ctx.load_ech_keys(filename, password=password_error)
+        self.assertIsNone(ctx.load_ech_keys(data_file('ech.pem'),
+                                          password=password_error))
+
+    @requires_ech_x25519
+    def test_ech_handshake(self):
+        key, config = self.read_ech_key_and_config()
+        other_config = bytearray(config)
+        other_config[6] ^= 1  # A different config_id using the same key.
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as f:
+            f.write(key + b'-----BEGIN ECHCONFIG-----\n'
+                    + base64.b64encode(other_config)
+                    + b'\n-----END ECHCONFIG-----\n')
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+        server_ctx.load_ech_keys(data_file('ech.pem'), for_retry=False)
+        server_ctx.load_ech_keys(os_helper.TESTFN)
+        # Both the old and newly appended configurations must work.
+        for current_config in (config, other_config):
+            with self.subTest(config_id=current_config[6]):
+                client_ctx.set_ech_config(current_config)
+                seen_names = []
+
+                def sni_callback(obj, name, ctx):
+                    seen_names.append(name)
+
+                server_ctx.sni_callback = sni_callback
+                client, server, c_in, c_out, s_in, s_out = connected_bio_pair(
+                    client_ctx, server_ctx, hostname)
+                for obj in (client, server):
+                    self.assertEqual(obj.get_ech_status(),
+                                     ssl.ECHStatus.ECH_STATUS_SUCCESS)
+                    self.assertEqual(obj.outer_server_hostname,
+                                     'public.example')
+                self.assertEqual(seen_names, [hostname])
+                client.write(b'hello')
+                s_in.write(c_out.read())
+                self.assertEqual(server.read(), b'hello')
+                server.write(b'world')
+                c_in.write(s_out.read())
+                self.assertEqual(client.read(), b'world')
+        client_ctx, _, hostname = testing_context()
+        client_ctx.options |= ssl.OP_ECH_GREASE
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.get_ech_retry_config(), bytes(other_config))
+
+    @requires_ech_x25519
+    def test_status_before_handshake(self):
+        ctx = make_test_context()
+        for configured in (False, True):
+            if configured:
+                ctx.set_ech_config(self.ECH_CONFIG)
+                expected = ssl.ECHStatus.ECH_STATUS_NOT_TRIED
+            else:
+                expected = ssl.ECHStatus.ECH_STATUS_NOT_CONFIGURED
+            for obj in self.make_ssl_objects(ctx):
+                with self.subTest(configured=configured, type=type(obj)):
+                    status = obj.get_ech_status()
+                    self.assertIsInstance(status, ssl.ECHStatus)
+                    self.assertEqual(status, expected)
+                    self.assertEqual(obj._sslobj.get_ech_status(),
+                                     (expected, None, None))
+                    self.assertIsNone(obj.outer_server_hostname)
+                    self.assertEqual(obj.get_ech_retry_config(), b'')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_set_outer_alpn_protocols(self):
+        ctx = make_test_context()
+        for protocols in (['h2'], ['h2', 'http/1.1'], []):
+            with self.subTest(protocols=protocols):
+                self.assertIsNone(ctx.set_outer_alpn_protocols(protocols))
+        for protocols in ([''], ['a' * 256]):
+            self.assertRaises(ssl.SSLError,
+                              ctx.set_outer_alpn_protocols, protocols)
+        self.assertRaises(UnicodeEncodeError,
+                          ctx.set_outer_alpn_protocols, ['non-ascii-\u00e9'])
+        self.assertRaises(TypeError, ctx.set_outer_alpn_protocols, [42])
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_outer_alpn_does_not_replace_inner(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        for ctx in (client_ctx, server_ctx):
+            ctx.set_alpn_protocols(['h2'])
+            ctx.set_outer_alpn_protocols(['http/1.1'])
+        client_ctx.set_outer_alpn_protocols([])
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.selected_alpn_protocol(), 'h2')
+        self.assertEqual(server.selected_alpn_protocol(), 'h2')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_outer_alpn_without_ech_config(self):
+        for options in (0, ssl.OP_ECH_GREASE):
+            client_ctx, server_ctx, hostname = testing_context()
+            client_ctx.options |= options
+            client_ctx.set_alpn_protocols(['h2'])
+            client_ctx.set_outer_alpn_protocols(['http/1.1'])
+            server_ctx.set_alpn_protocols(['h2', 'http/1.1'])
+            client, server, *_ = connected_bio_pair(
+                client_ctx, server_ctx, hostname)
+            self.assertEqual(client.selected_alpn_protocol(), 'h2')
+            self.assertEqual(server.selected_alpn_protocol(), 'h2')
+
+    @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    def test_grease(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.options |= ssl.OP_ECH_GREASE
+        client, server, *_ = connected_bio_pair(client_ctx, server_ctx, hostname)
+        self.assertEqual(client.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_GREASE)
+        self.assertIsNone(client.outer_server_hostname)
+        self.assertEqual(client.get_ech_retry_config(), b'')
+        self.assertEqual(server.get_ech_status(),
+                         ssl.ECHStatus.ECH_STATUS_NOT_CONFIGURED)
+
+    def make_rejected_client(self):
+        client_ctx, server_ctx, hostname = testing_context()
+        client_ctx.set_ech_config(self.ECH_CONFIG)
+        c_in, c_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        s_in, s_out = ssl.MemoryBIO(), ssl.MemoryBIO()
+        client = client_ctx.wrap_bio(c_in, c_out, server_hostname=hostname)
+        server = server_ctx.wrap_bio(s_in, s_out, server_side=True)
+        with self.assertRaisesRegex(ssl.SSLECHRejectedError,
+                                    'ECH_REQUIRED') as cm:
+            self.handshake_bio_pair(client, server, c_in, c_out, s_in, s_out)
+        # A server without ECH sends no retry configuration.
+        self.assertEqual(cm.exception.retry_config, b'')
+        return client
+
+    @requires_ech_x25519
+    def test_rejected_ech(self):
+        client = self.make_rejected_client()
+        self.assertEqual(client.get_ech_status(), ssl.ECHStatus.ECH_STATUS_FAILED)
+        self.assertEqual(client._sslobj.get_ech_status(),
+                         (ssl.ECHStatus.ECH_STATUS_FAILED,
+                          'localhost', 'localhost'))
+        self.assertEqual(client.outer_server_hostname, 'localhost')
+        self.assertEqual(client.get_ech_retry_config(), b'')
+
+    @requires_ech_x25519
+    @support.nomemtest
+    def test_status_allocation_failure(self):
+        import _testcapi
+
+        client = self.make_rejected_client()
+        get_status = client._sslobj.get_ech_status
+        failures = 0
+        for fail_at in range(10):
+            try:
+                _testcapi.call_with_nomemory(fail_at, fail_at + 1, get_status)
+            except MemoryError:
+                failures += 1
+            self.assertEqual(get_status(),
+                             (ssl.ECHStatus.ECH_STATUS_FAILED,
+                              'localhost', 'localhost'))
+        self.assertGreaterEqual(failures, 2)
+
+
 class SSLErrorTests(unittest.TestCase):
 
     def test_str(self):
@@ -2269,6 +2781,28 @@ class SSLObjectTests(unittest.TestCase):
         # raise either.
         c_in.write(s_out.read())
         client.unwrap()
+
+    def test_distrusted_spki(self):
+        # gh-160040: the server chain is otherwise valid, but the eMudhra
+        # intermediate's public key is on the _ssl distrusted list, so
+        # verification rejects it.
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        # the contexts load the PEMs now, so the files are only needed here
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with zipfile.ZipFile(DISTRUSTED_SPKI_ZIP) as z:
+                z.extractall(tmpdir, pwd=DISTRUSTED_SPKI_CHOSEN_KNIGHT)
+            certdir = os.path.join(tmpdir, "distrusted")
+            client_context.load_verify_locations(
+                os.path.join(certdir, "distrusted_root.pem"))
+            server_context.load_cert_chain(
+                os.path.join(certdir, "distrusted_keycert.pem"))
+
+        with self.assertRaises(ssl.SSLCertVerificationError) as cm:
+            connected_bio_pair(client_context, server_context,
+                               DISTRUSTED_SPKI_HOSTNAME)
+        # X509_V_ERR_CERT_REJECTED
+        self.assertEqual(cm.exception.verify_code, 28)
 
     def test_sni_callback_context_released_and_callback_raises(self):
         # Variant of the test below without a HelloRetryRequest: the callback
@@ -3007,11 +3541,19 @@ class ThreadedEchoServer(threading.Thread):
                         cert = self.sslconn.getpeercert()
                         self.write(repr(cert).encode("us-ascii") + b"\n")
                     elif stripped == b'VERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_verified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_verified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     elif stripped == b'UNVERIFIEDCHAIN':
-                        certs = self.sslconn._sslobj.get_unverified_chain()
-                        self.write(len(certs).to_bytes(1, "big") + b"\n")
+                        try:
+                            certs = self.sslconn.get_unverified_chain()
+                        except Exception as e:
+                            self.write(repr(e).encode("us-ascii") + b"\n")
+                        else:
+                            self.write(len(certs).to_bytes(1, "big") + b"\n")
                     else:
                         if (support.verbose and
                             self.server.connectionchatty):
@@ -4025,6 +4567,8 @@ class ThreadedTests(unittest.TestCase):
         try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
 
     @requires_tls_version('TLSv1_2')
+    @unittest.skipUnless(hasattr(ssl, 'PROTOCOL_TLSv1_2'),
+                         'needs ssl.PROTOCOL_TLSv1_2')
     def test_protocol_tlsv1_2(self):
         """Connecting to a TLSv1.2 server with various client options.
            Testing against older TLS versions."""
@@ -5198,7 +5742,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(lambda hint: (None, psk))
@@ -5278,7 +5821,6 @@ class ThreadedTests(unittest.TestCase):
 
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
         client_context.minimum_version = ssl.TLSVersion.TLSv1_3
         client_context.set_ciphers('PSK')
         client_context.set_psk_client_callback(client_callback)
@@ -5292,6 +5834,7 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
 
     @support.skip_if_sanitizer("gh-150191: OpenSSL races on SSL->rwstate and "
                                "the socket BIO flags with concurrent read "
@@ -5691,6 +6234,66 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 res = s.recv(1024)
                 self.assertEqual(res, b'\x02\n')
 
+    def test_internal_chain_server_resumed_session(self):
+        # A session resumed from a ticket stores the client's certificate
+        # but not the chain it was sent with.
+        for version in ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3:
+            if not has_tls_version(version):
+                continue
+            with self.subTest(version=version.name):
+                self.check_chain_server_resumed_session(version)
+
+    def check_chain_server_resumed_session(self, version):
+        client_context, server_context, hostname = testing_context()
+        client_context.load_cert_chain(SIGNED_CERTFILE)
+        server_context.verify_mode = ssl.CERT_REQUIRED
+        client_context.minimum_version = version
+        client_context.maximum_version = version
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x02\n')
+                # TLS 1.3 sends the ticket after the handshake, so only
+                # get the session once data was received.
+                session = s.session
+                self.assertTrue(session.has_ticket)
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname,
+                session=session
+            ) as s:
+                s.connect((HOST, server.port))
+                self.assertTrue(s.session_reused)
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x01\n')
+                # The verified chain is not stored with the session at all.
+                s.write(b'VERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
+
+    def test_internal_chain_server_no_client_cert(self):
+        client_context, server_context, hostname = testing_context()
+        server_context.verify_mode = ssl.CERT_OPTIONAL
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(
+                socket.socket(),
+                server_hostname=hostname
+            ) as s:
+                s.connect((HOST, server.port))
+                s.write(b'UNVERIFIEDCHAIN\n')
+                res = s.recv(1024)
+                self.assertEqual(res, b'\x00\n')
+
 
 class TestSSLDebug(unittest.TestCase):
 
@@ -5917,7 +6520,11 @@ class TestPreHandshakeClose(unittest.TestCase):
                     self.listener.close()
             except OSError:
                 pass
-            self.join()
+            timeout = support.SHORT_TIMEOUT
+            self.join(timeout=timeout)
+            if self.is_alive():
+                raise AssertionError("failed to join the server thread "
+                                     f"in {timeout} seconds")
             self.wrap_error = None  # avoid dangling references
 
         def start(self):
@@ -6123,28 +6730,30 @@ class TestPreHandshakeClose(unittest.TestCase):
                 call_after_accept=call_after_accept,
                 name="non_tls_http_RST_responder",
                 timeout=timeout)
-        self.enterContext(server)  # starts it & unittest.TestCase stops it.
-        # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
-        set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        connection = SynchronizedHTTPSConnection(
-                server.listener.getsockname()[0],
-                port=server.port,
-                context=ssl.create_default_context(),
-                timeout=timeout,
-        )
+        with server:
+            # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
+            set_socket_so_linger_on_with_zero_timeout(server.listener)
 
-        # There are lots of reasons this raises as desired, long before this
-        # test was added. Sending the request requires a successful TLS wrapped
-        # socket; that fails if the connection is broken. It may seem pointless
-        # to test this. It serves as an illustration of something that we never
-        # want to happen... properly not happening.
-        with warnings_helper.check_no_resource_warning(self), \
-                self.assertRaises(OSError):
-            connection.request("HEAD", "/test", headers={"Host": "localhost"})
-            response = connection.getresponse()
+            connection = SynchronizedHTTPSConnection(
+                    server.listener.getsockname()[0],
+                    port=server.port,
+                    context=ssl.create_default_context(),
+                    timeout=timeout,
+            )
 
-        server.join()
+            # There are lots of reasons this raises as desired, long before this
+            # test was added. Sending the request requires a successful TLS wrapped
+            # socket; that fails if the connection is broken. It may seem pointless
+            # to test this. It serves as an illustration of something that we never
+            # want to happen... properly not happening.
+            with warnings_helper.check_no_resource_warning(self), \
+                    self.assertRaises(OSError):
+                try:
+                    connection.request("HEAD", "/test", headers={"Host": "localhost"})
+                    response = connection.getresponse()
+                finally:
+                    connection.close()
 
 
 class TestEnumerations(unittest.TestCase):

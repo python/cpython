@@ -514,6 +514,11 @@ multibytecodec_encode(const MultibyteCodec *codec,
     if (datalen == 0 && !(flags & MBENC_RESET))
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
+    /* A callback may change a stateful encoder's errors attribute. */
+    if (ERROR_ISCUSTOM(errors)) {
+        Py_INCREF(errors);
+    }
+
     buf.excobj = NULL;
     buf.writer = NULL;
     buf.inobj = text;   /* borrowed reference */
@@ -567,10 +572,12 @@ multibytecodec_encode(const MultibyteCodec *codec,
     if (inpos_t)
         *inpos_t = buf.inpos;
     Py_XDECREF(buf.excobj);
+    ERROR_DECREF(errors);
     return PyBytesWriter_FinishWithPointer(buf.writer, buf.outbuf);
 
 errorexit:
     Py_XDECREF(buf.excobj);
+    ERROR_DECREF(errors);
     PyBytesWriter_Discard(buf.writer);
     return NULL;
 }
@@ -787,6 +794,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *inbuf = NULL;
     Py_ssize_t inpos, datalen;
     PyObject *origpending = NULL;
+    MultibyteCodec_State origstate;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -802,6 +810,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         }
     }
 
+    origstate = ctx->state;
     if (ctx->pending) {
         PyObject *inbuf_tmp;
 
@@ -859,6 +868,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     return r;
 
 errorexit:
+    /* recover the original codec state: the discarded output may have
+     * included an escape sequence for a state change */
+    ctx->state = origstate;
     Py_XDECREF(r);
     Py_XDECREF(ucvt);
     Py_XDECREF(origpending);
@@ -1101,7 +1113,7 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->codec->encinit(&self->state, self->codec) != 0)
         goto errorexit;
 
-    Py_DECREF(codec);
+    self->codec_owner = codec;
     return (PyObject *)self;
 
 errorexit:
@@ -1122,6 +1134,7 @@ mbiencoder_traverse(PyObject *op, visitproc visit, void *arg)
     MultibyteIncrementalEncoderObject *self = _MultibyteIncrementalEncoderObject_CAST(op);
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
+    Py_VISIT(self->codec_owner);
     return 0;
 }
 
@@ -1133,6 +1146,7 @@ mbiencoder_dealloc(PyObject *op)
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_CLEAR(self->pending);
+    Py_XDECREF(self->codec_owner);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1384,7 +1398,7 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->codec->decinit(&self->state, self->codec) != 0)
         goto errorexit;
 
-    Py_DECREF(codec);
+    self->codec_owner = codec;
     return (PyObject *)self;
 
 errorexit:
@@ -1405,6 +1419,7 @@ mbidecoder_traverse(PyObject *op, visitproc visit, void *arg)
     MultibyteIncrementalDecoderObject *self = _MultibyteIncrementalDecoderObject_CAST(op);
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
+    Py_VISIT(self->codec_owner);
     return 0;
 }
 
@@ -1415,6 +1430,7 @@ mbidecoder_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
+    Py_XDECREF(self->codec_owner);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1703,7 +1719,7 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->codec->decinit(&self->state, self->codec) != 0)
         goto errorexit;
 
-    Py_DECREF(codec);
+    self->codec_owner = codec;
     return (PyObject *)self;
 
 errorexit:
@@ -1725,6 +1741,7 @@ mbstreamreader_traverse(PyObject *op, visitproc visit, void *arg)
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
     Py_VISIT(self->stream);
+    Py_VISIT(self->codec_owner);
     return 0;
 }
 
@@ -1736,6 +1753,7 @@ mbstreamreader_dealloc(PyObject *op)
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_XDECREF(self->stream);
+    Py_XDECREF(self->codec_owner);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1857,13 +1875,17 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
                                                  PyTypeObject *cls)
 /*[clinic end generated code: output=32ef224c2a38aa3d input=28af6a9cd38d1979]*/
 {
-    PyObject *pwrt;
+    PyObject *pwrt, *pending;
 
-    if (!self->pending)
-        Py_RETURN_NONE;
+    /* even without pending characters, a stateful codec may have to
+     * write a sequence that returns the output to its initial state */
+    pending = self->pending;
+    if (pending == NULL) {
+        pending = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_STR);
+    }
 
     pwrt = multibytecodec_encode(self->codec, &self->state,
-                    self->pending, NULL, self->errors,
+                    pending, NULL, self->errors,
                     MBENC_FLUSH | MBENC_RESET);
     /* some pending buffer can be truncated when UnicodeEncodeError is
      * raised on 'strict' mode. but, 'reset' method is designed to
@@ -1886,6 +1908,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
             Py_DECREF(pwrt);
             return NULL;
         }
+        Py_DECREF(wr);
     }
     Py_DECREF(pwrt);
 
@@ -1927,7 +1950,7 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->codec->encinit(&self->state, self->codec) != 0)
         goto errorexit;
 
-    Py_DECREF(codec);
+    self->codec_owner = codec;
     return (PyObject *)self;
 
 errorexit:
@@ -1949,6 +1972,7 @@ mbstreamwriter_traverse(PyObject *op, visitproc visit, void *arg)
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
     Py_VISIT(self->stream);
+    Py_VISIT(self->codec_owner);
     return 0;
 }
 
@@ -1960,6 +1984,7 @@ mbstreamwriter_dealloc(PyObject *op)
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_XDECREF(self->stream);
+    Py_XDECREF(self->codec_owner);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

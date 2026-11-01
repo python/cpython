@@ -878,6 +878,7 @@ TRUE
 MACHDEP_OBJS
 DYNLOADFILE
 DLINCLDIR
+PLATFORM_MAIN_OBJS
 PLATFORM_OBJS
 PLATFORM_HEADERS
 DTRACE_OBJS
@@ -937,6 +938,7 @@ LLVM_PROF_FOUND
 LLVM_PROFDATA
 LLVM_PROF_ERR
 LLVM_PROF_FILE
+LLVM_PROF_SHOW
 LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
@@ -994,6 +996,10 @@ LDFLAGS
 CFLAGS
 CC
 HAS_XCRUN
+EXPORT_XROS_DEPLOYMENT_TARGET
+WATCHOS_DEPLOYMENT_TARGET
+XROS_DEPLOYMENT_TARGET
+TVOS_DEPLOYMENT_TARGET
 IPHONEOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
@@ -4188,6 +4194,15 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-apple-tvos*)
+		ac_sys_system=tvOS
+		;;
+	*-apple-xros*)
+		ac_sys_system=visionOS
+		;;
+	*-apple-watchos*)
+		ac_sys_system=watchOS
+		;;
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
@@ -4272,7 +4287,7 @@ fi
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
+# On iOS/tvOS/visionOS/watchOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -4287,6 +4302,17 @@ if test -z "$AR"; then
 		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+
+		aarch64-apple-tvos*-simulator) AR=arm64-apple-tvos-simulator-ar ;;
+		aarch64-apple-tvos*)           AR=arm64-apple-tvos-ar ;;
+		x86_64-apple-tvos*-simulator)  AR=x86_64-apple-tvos-simulator-ar ;;
+
+		aarch64-apple-xros*-simulator) AR=arm64-apple-xros-simulator-ar ;;
+		aarch64-apple-xros*)           AR=arm64-apple-xros-ar ;;
+
+		aarch64-apple-watchos*-simulator) AR=arm64-apple-watchos-simulator-ar ;;
+		aarch64-apple-watchos*)           AR=arm64_32-apple-watchos-ar ;;
+		x86_64-apple-watchos*-simulator)  AR=x86_64-apple-watchos-simulator-ar ;;
 		*)
     esac
 fi
@@ -4295,6 +4321,17 @@ if test -z "$CC"; then
 		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
 		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
 		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+
+		aarch64-apple-tvos*-simulator) CC=arm64-apple-tvos-simulator-clang ;;
+		aarch64-apple-tvos*)           CC=arm64-apple-tvos-clang ;;
+		x86_64-apple-tvos*-simulator)  CC=x86_64-apple-tvos-simulator-clang ;;
+
+		aarch64-apple-xros*-simulator) CC=arm64-apple-xros-simulator-clang ;;
+		aarch64-apple-xros*)           CC=arm64-apple-xros-clang ;;
+
+		aarch64-apple-watchos*-simulator) CC=arm64-apple-watchos-simulator-clang ;;
+		aarch64-apple-watchos*)           CC=arm64_32-apple-watchos-clang ;;
+		x86_64-apple-watchos*-simulator)  CC=x86_64-apple-watchos-simulator-clang ;;
 		*)
 	esac
 fi
@@ -4303,6 +4340,17 @@ if test -z "$CPP"; then
 		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
 		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
 		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+
+		aarch64-apple-tvos*-simulator) CPP=arm64-apple-tvos-simulator-cpp ;;
+		aarch64-apple-tvos*)           CPP=arm64-apple-tvos-cpp ;;
+		x86_64-apple-tvos*-simulator)  CPP=x86_64-apple-tvos-simulator-cpp ;;
+
+		aarch64-apple-xros*-simulator) CPP=arm64-apple-xros-simulator-cpp ;;
+		aarch64-apple-xros*)           CPP=arm64-apple-xros-cpp ;;
+
+		aarch64-apple-watchos*-simulator) CPP=arm64-apple-watchos-simulator-cpp ;;
+		aarch64-apple-watchos*)           CPP=arm64_32-apple-watchos-cpp ;;
+		x86_64-apple-watchos*-simulator)  CPP=x86_64-apple-watchos-simulator-cpp ;;
 		*)
 	esac
 fi
@@ -4311,6 +4359,17 @@ if test -z "$CXX"; then
 		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
 		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
 		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
+
+		aarch64-apple-tvos*-simulator) CXX=arm64-apple-tvos-simulator-clang++ ;;
+		aarch64-apple-tvos*)           CXX=arm64-apple-tvos-clang++ ;;
+		x86_64-apple-tvos*-simulator)  CXX=x86_64-apple-tvos-simulator-clang++ ;;
+
+		aarch64-apple-xros*-simulator) CXX=arm64-apple-xros-simulator-clang++ ;;
+		aarch64-apple-xros*)           CXX=arm64-apple-xros-clang++ ;;
+
+		aarch64-apple-watchos*-simulator) CXX=arm64-apple-watchos-simulator-clang++ ;;
+		aarch64-apple-watchos*)           CXX=arm64_32-apple-watchos-clang++ ;;
+		x86_64-apple-watchos*-simulator)  CXX=x86_64-apple-watchos-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -4433,8 +4492,11 @@ then :
 	case $enableval in
 	yes)
 		case $ac_sys_system in
-			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			Darwin)  enableval=/Library/Frameworks ;;
+			iOS)     enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			tvOS)    enableval=Platforms/Apple/tvOS/Frameworks/\$\(MULTIARCH\) ;;
+			visionOS) enableval=Platforms/Apple/visionOS/Frameworks/\$\(MULTIARCH\) ;;
+			watchOS) enableval=Platforms/Apple/watchOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -4546,6 +4608,51 @@ then :
 				ac_config_files="$ac_config_files Platforms/Apple/iOS/Resources/Info.plist"
 
 				;;
+			tvOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/tvOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/tvOS/Resources/Info.plist"
+
+				;;
+			visionOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/visionOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/visionOS/Resources/Info.plist"
+
+				;;
+			watchOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/watchOS/Resources
+
+				ac_config_files="$ac_config_files Platforms/Apple/watchOS/Resources/Info.plist"
+
+				;;
 			*)
 				as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 				;;
@@ -4606,8 +4713,8 @@ then :
     case "$withval" in
     yes)
       case $ac_sys_system in
-        Darwin|iOS)
-          # iOS is able to share the macOS patch
+        Darwin|iOS|tvOS|visionOS|watchOS)
+          # iOS/tvOS/visionOS/watchOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
           ;;
         *) as_fn_error $? "no default app store compliance patch available for $ac_sys_system" "$LINENO" 5 ;;
@@ -4625,8 +4732,8 @@ printf "%s\n" "applying custom app store compliance patch" >&6; }
 else case e in #(
   e)
     case $ac_sys_system in
-      iOS)
-        # Always apply the compliance patch on iOS; we can use the macOS patch
+      iOS|tvOS|visionOS|watchOS)
+        # Always apply the compliance patch on iOS/tvOS/visionOS/watchOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: applying default app store compliance patch" >&5
 printf "%s\n" "applying default app store compliance patch" >&6; }
@@ -4643,6 +4750,8 @@ esac
 fi
 
 
+
+EXPORT_XROS_DEPLOYMENT_TARGET='#'
 
 
 if test "$cross_compiling" = yes; then
@@ -4684,6 +4793,78 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 				;;
 		esac
 		;;
+	*-apple-tvos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# TVOS_DEPLOYMENT_TARGET is the minimum supported tvOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking tvOS deployment target" >&5
+printf %s "checking tvOS deployment target... " >&6; }
+		TVOS_DEPLOYMENT_TARGET=${_host_os:4}
+		TVOS_DEPLOYMENT_TARGET=${TVOS_DEPLOYMENT_TARGET:=12.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TVOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$TVOS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-arm64-appletv${_host_device}
+				;;
+			*)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-$host_cpu-appletv${_host_device}
+				;;
+		esac
+		;;
+	*-apple-xros*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# XROS_DEPLOYMENT_TARGET is the minimum supported visionOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking visionOS deployment target" >&5
+printf %s "checking visionOS deployment target... " >&6; }
+		XROS_DEPLOYMENT_TARGET=${_host_os:8}
+		XROS_DEPLOYMENT_TARGET=${XROS_DEPLOYMENT_TARGET:=2.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $XROS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$XROS_DEPLOYMENT_TARGET" >&6; }
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking exporting flag of visionOS deployment target" >&5
+printf %s "checking exporting flag of visionOS deployment target... " >&6; }
+        	export XROS_DEPLOYMENT_TARGET
+		EXPORT_XROS_DEPLOYMENT_TARGET=''
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXPORT_XROS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$EXPORT_XROS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-arm64-xr${_host_device}
+				;;
+			*)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-$host_cpu-xr${_host_device}
+				;;
+		esac
+		;;
+	*-apple-watchos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# WATCHOS_DEPLOYMENT_TARGET is the minimum supported watchOS version
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking watchOS deployment target" >&5
+printf %s "checking watchOS deployment target... " >&6; }
+		WATCHOS_DEPLOYMENT_TARGET=${_host_os:7}
+		WATCHOS_DEPLOYMENT_TARGET=${WATCHOS_DEPLOYMENT_TARGET:=9.0}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $WATCHOS_DEPLOYMENT_TARGET" >&5
+printf "%s\n" "$WATCHOS_DEPLOYMENT_TARGET" >&6; }
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-arm64-watch${_host_device}
+				;;
+			*)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-$host_cpu-watch${_host_device}
+				;;
+		esac
+		;;
 	*-*-darwin*)
 		case "$host_cpu" in
 		arm*)
@@ -4720,20 +4901,6 @@ fi
 # wildcard, and that the wildcard does not include future systems
 # (which may remove their limitations).
 case $ac_sys_system/$ac_sys_release in
-  # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
-  # even though select is a POSIX function. Reported by J. Ribbens.
-  # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  # In addition, Stefan Krah confirms that issue #1244610 exists through
-  # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.[0123456])
-    define_xopen_source=no
-    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
-    # also defined. This can be overridden by defining _BSD_SOURCE
-    # As this has a different meaning on Linux, only define it on OpenBSD
-
-printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
-
-    ;;
   OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
@@ -4742,11 +4909,6 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
 printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
 
     ;;
-  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
-  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
-  # Marc Recht
-  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
-    define_xopen_source=no;;
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
@@ -4771,8 +4933,14 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
     define_xopen_source=no;;
   Darwin/[12][0-9].*)
     define_xopen_source=no;;
-  # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
+  # On iOS/tvOS/visionOS/watchOS, defining _POSIX_C_SOURCE also disables platform specific features.
   iOS/*)
+    define_xopen_source=no;;
+  tvOS/*)
+    define_xopen_source=no;;
+  visionOS/*)
+    define_xopen_source=no;;
+  watchOS/*)
     define_xopen_source=no;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
@@ -4852,7 +5020,14 @@ fi
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
-# Record the value of IPHONEOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+# Record the value of IPHONEOS_DEPLOYMENT_TARGET / TVOS_DEPLOYMENT_TARGET /
+# XROS_DEPLOYMENT_TARGET / WATCHOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+
+
+
+
+
+# XROS_DEPLOYMENT_TARGET should get exported
 
 
 # checks for alternative programs
@@ -4897,6 +5072,26 @@ case $host in #(
 
     as_fn_append CFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-tvos*-simulator) :
+
+    as_fn_append CFLAGS " -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-tvos*) :
+
+    as_fn_append CFLAGS " -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-watchos*-simulator) :
+
+    as_fn_append CFLAGS " -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+   ;; #(
+  *-apple-watchos*) :
+
+    as_fn_append CFLAGS " -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"
    ;; #(
   *) :
      ;;
@@ -7379,6 +7574,12 @@ case $ac_sys_system in #(
     MULTIARCH="" ;; #(
   iOS) :
     MULTIARCH="" ;; #(
+  tvOS) :
+    MULTIARCH="" ;; #(
+  visionOS) :
+    MULTIARCH="" ;; #(
+  watchOS) :
+    MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
   OpenBSD*) :
@@ -7401,7 +7602,7 @@ fi
 printf "%s\n" "$MULTIARCH" >&6; }
 
 case $ac_sys_system in #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
     SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2` ;; #(
   *) :
     SOABI_PLATFORM=$PLATFORM_TRIPLET
@@ -7952,7 +8153,7 @@ then
   case $ac_sys_system in
     Darwin)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)';;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
     *)
       as_fn_error $? "Unknown platform for framework build" "$LINENO" 5;;
@@ -8018,7 +8219,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       if test -z "$PYTHONFRAMEWORK"; then
         as_fn_error $? "iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib" "$LINENO" 5
       fi
@@ -9163,6 +9364,7 @@ fi
 
 
 
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
 set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
@@ -9294,6 +9496,7 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
+LLVM_PROF_SHOW=true
 
 case "$ac_cv_cc_name" in
   clang|icx)
@@ -9302,6 +9505,7 @@ case "$ac_cv_cc_name" in
     PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
     LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
+    LLVM_PROF_SHOW=" ${LLVM_PROFDATA} show --detailed-summary --topn=500 \"\$(shell pwd)/code.profclangd\" "
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -9494,6 +9698,33 @@ else case e in #(
 esac
 fi
 
+
+  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
+  # see https://github.com/llvm/llvm-project/pull/187955
+  # Check explicit flags here to provide a friendlier error. Recent BOLT
+  # versions reject workaround veneers by default, including those
+  # from compiler defaults, so we do not perform exhaustive detection.
+  case $host_cpu in #(
+  aarch64*) :
+
+    case "$CC $CFLAGS $CPPFLAGS $CFLAGS_NODIST $LDFLAGS $LDFLAGS_NODIST $LIBS" in #(
+  *-mfix-cortex-a53-843419*|*--fix-cortex-a53-843419*) :
+
+      as_fn_error $? "--enable-bolt is incompatible with the Cortex-A53 erratum 843419 workaround.
+BOLT does not preserve protection against this erratum. Its output must not run
+on affected Cortex-A53 processors, including during the build.
+If the generated binaries will never run on affected processors, disable the
+workaround explicitly. With GCC, configure with
+LDFLAGS_NODIST=\"-mno-fix-cortex-a53-843419\". Also remove any explicit
+-mfix-cortex-a53-843419 or -Wl,--fix-cortex-a53-843419 flags." "$LINENO" 5
+     ;; #(
+  *) :
+     ;;
+esac
+   ;; #(
+  *) :
+     ;;
+esac
 
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
@@ -9780,7 +10011,14 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=0 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+      case $host_cpu in #(
+  x86_64) :
+    bolt_frame_opt_flags="-frame-opt=hot" ;; #(
+  *) :
+    bolt_frame_opt_flags=""
+   ;;
+esac
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=0 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack ${bolt_frame_opt_flags} "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
@@ -9976,7 +10214,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,NODEFS"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -12008,12 +12246,6 @@ then :
   printf "%s\n" "#define HAVE_LINUX_RANDOM_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "linux/soundcard.h" "ac_cv_header_linux_soundcard_h" "$ac_includes_default"
-if test "x$ac_cv_header_linux_soundcard_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_LINUX_SOUNDCARD_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "linux/sched.h" "ac_cv_header_linux_sched_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_sched_h" = xyes
 then :
@@ -12074,6 +12306,12 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "pthread_np.h" "ac_cv_header_pthread_np_h" "$ac_includes_default"
+if test "x$ac_cv_header_pthread_np_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_NP_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "pty.h" "ac_cv_header_pty_h" "$ac_includes_default"
 if test "x$ac_cv_header_pty_h" = xyes
 then :
@@ -12092,12 +12330,6 @@ then :
   printf "%s\n" "#define HAVE_SETJMP_H 1" >>confdefs.h
 
 fi
-ac_fn_c_check_header_compile "$LINENO" "shadow.h" "ac_cv_header_shadow_h" "$ac_includes_default"
-if test "x$ac_cv_header_shadow_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SHADOW_H 1" >>confdefs.h
-
-fi
 ac_fn_c_check_header_compile "$LINENO" "signal.h" "ac_cv_header_signal_h" "$ac_includes_default"
 if test "x$ac_cv_header_signal_h" = xyes
 then :
@@ -12108,12 +12340,6 @@ ac_fn_c_check_header_compile "$LINENO" "spawn.h" "ac_cv_header_spawn_h" "$ac_inc
 if test "x$ac_cv_header_spawn_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SPAWN_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "sys/audioio.h" "ac_cv_header_sys_audioio_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_audioio_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYS_AUDIOIO_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/bsdtty.h" "ac_cv_header_sys_bsdtty_h" "$ac_includes_default"
@@ -12252,12 +12478,6 @@ ac_fn_c_check_header_compile "$LINENO" "sys/socket.h" "ac_cv_header_sys_socket_h
 if test "x$ac_cv_header_sys_socket_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SYS_SOCKET_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "sys/soundcard.h" "ac_cv_header_sys_soundcard_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_soundcard_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYS_SOUNDCARD_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
@@ -14149,17 +14369,48 @@ printf %s "checking for --with-address-sanitizer... " >&6; }
 if test ${with_address_sanitizer+y}
 then :
   withval=$with_address_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
-
 else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
+  e) with_address_sanitizer=no ;;
 esac
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_address_sanitizer" >&5
+printf "%s\n" "$with_address_sanitizer" >&6; }
+if test "x$with_address_sanitizer" = xno
+then :
+
+else case e in #(
+  e)
+BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=address $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=address" >&5
+printf %s "checking whether a program links with -fsanitize=address... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-hwaddress-sanitizer" >&5
 printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
@@ -14168,8 +14419,18 @@ printf %s "checking for --with-hwaddress-sanitizer... " >&6; }
 if test ${with_hwaddress_sanitizer+y}
 then :
   withval=$with_hwaddress_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
+else case e in #(
+  e) with_hwaddress_sanitizer=no ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_hwaddress_sanitizer" >&5
+printf "%s\n" "$with_hwaddress_sanitizer" >&6; }
+if test "x$with_hwaddress_sanitizer" = xno
+then :
+
+else case e in #(
+  e)
 hwasan_flags="-fsanitize=hwaddress"
 # x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
 # See gh-156049 and
@@ -14181,17 +14442,11 @@ case $host_cpu in #(
   *) :
      ;;
 esac
-as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$hwasan_flags" | sed "$as_sed_sh"`
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $hwasan_flags" >&5
-printf %s "checking whether C compiler accepts $hwasan_flags... " >&6; }
-if eval test \${$as_CACHEVAR+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  $hwasan_flags"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="$hwasan_flags $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with $hwasan_flags" >&5
+printf %s "checking whether a program links with $hwasan_flags... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -14202,38 +14457,21 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  eval "$as_CACHEVAR=yes"
-else case e in #(
-  e) eval "$as_CACHEVAR=no" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-eval ac_res=\$$as_CACHEVAR
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-if eval test \"x\$"$as_CACHEVAR"\" = x"yes"
-then :
-
-BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="$hwasan_flags $LDFLAGS"
-
-else case e in #(
-  e) as_fn_error $? "The selected compiler doesn't support hardware address sanitizer" "$LINENO" 5 ;;
-esac
-fi
-
-
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
 esac
 fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-memory-sanitizer" >&5
 printf %s "checking for --with-memory-sanitizer... " >&6; }
@@ -14242,18 +14480,23 @@ printf %s "checking for --with-memory-sanitizer... " >&6; }
 if test ${with_memory_sanitizer+y}
 then :
   withval=$with_memory_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fsanitize=memory" >&5
-printf %s "checking whether C compiler accepts -fsanitize=memory... " >&6; }
-if test ${ax_cv_check_cflags___fsanitize_memory+y}
+else case e in #(
+  e) with_memory_sanitizer=no ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_memory_sanitizer" >&5
+printf "%s\n" "$with_memory_sanitizer" >&6; }
+if test "x$with_memory_sanitizer" = xno
 then :
-  printf %s "(cached) " >&6
+
 else case e in #(
   e)
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fsanitize=memory"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=memory" >&5
+printf %s "checking whether a program links with -fsanitize=memory... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -14264,37 +14507,21 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
-  ax_cv_check_cflags___fsanitize_memory=yes
-else case e in #(
-  e) ax_cv_check_cflags___fsanitize_memory=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fsanitize_memory" >&5
-printf "%s\n" "$ax_cv_check_cflags___fsanitize_memory" >&6; }
-if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes
-then :
-
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-
-else case e in #(
-  e) as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5 ;;
-esac
-fi
-
-
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
 esac
 fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-undefined-behavior-sanitizer" >&5
 printf %s "checking for --with-undefined-behavior-sanitizer... " >&6; }
@@ -14303,21 +14530,51 @@ printf %s "checking for --with-undefined-behavior-sanitizer... " >&6; }
 if test ${with_undefined_behavior_sanitizer+y}
 then :
   withval=$with_undefined_behavior_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
-with_ubsan="yes"
-
 else case e in #(
-  e)
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-with_ubsan="no"
- ;;
+  e) with_undefined_behavior_sanitizer=no ;;
 esac
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_undefined_behavior_sanitizer" >&5
+printf "%s\n" "$with_undefined_behavior_sanitizer" >&6; }
+if test "x$with_undefined_behavior_sanitizer" = xno
+then :
+
+with_ubsan="no"
+
+else case e in #(
+  e)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_ubsan="yes"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=undefined" >&5
+printf %s "checking whether a program links with -fsanitize=undefined... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
 printf %s "checking for --with-thread-sanitizer... " >&6; }
@@ -14326,21 +14583,51 @@ printf %s "checking for --with-thread-sanitizer... " >&6; }
 if test ${with_thread_sanitizer+y}
 then :
   withval=$with_thread_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=thread $BASECFLAGS"
-LDFLAGS="-fsanitize=thread $LDFLAGS"
-with_tsan="yes"
-
 else case e in #(
-  e)
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-with_tsan="no"
- ;;
+  e) with_thread_sanitizer=no ;;
 esac
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_thread_sanitizer" >&5
+printf "%s\n" "$with_thread_sanitizer" >&6; }
+if test "x$with_thread_sanitizer" = xno
+then :
+
+with_tsan="no"
+
+else case e in #(
+  e)
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether a program links with -fsanitize=thread" >&5
+printf %s "checking whether a program links with -fsanitize=thread... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+   as_fn_error $? "cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log" "$LINENO" 5 ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+ ;;
+esac
+fi
 
 # Set info about shared libraries.
 
@@ -14445,7 +14732,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	iOS/*)
+	iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
@@ -14578,7 +14865,7 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*|iOS/*)
+	Darwin/*|iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
@@ -14602,7 +14889,7 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
-		elif test $ac_sys_system = "iOS"; then
+		elif test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS"; then
 			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 			if test "$enable_framework"; then
@@ -15904,6 +16191,11 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -16287,8 +16579,8 @@ if test "x$ac_cv_lib_ffi_ffi_call" = xyes
 then :
 
                 have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
 
 fi
 
@@ -16546,7 +16838,7 @@ then :
 
             ctypes_malloc_closure=yes
      ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
 
       ctypes_malloc_closure=yes
      ;; #(
@@ -18014,34 +18306,41 @@ printf %s "checking for --enable-loadable-sqlite-extensions... " >&6; }
 if test ${enable_loadable_sqlite_extensions+y}
 then :
   enableval=$enable_loadable_sqlite_extensions;
-    if test "x$have_sqlite3_load_extension" = xno
-then :
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
-printf "%s\n" "n/a" >&6; }
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
-printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
-
 else case e in #(
-  e)
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
-
-     ;;
-esac
-fi
-
-else case e in #(
-  e)
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
+  e) enable_loadable_sqlite_extensions=no
  ;;
 esac
 fi
 
+if test "x$enable_loadable_sqlite_extensions" = xyes
+then :
+
+  if test "x$have_sqlite3_load_extension" = xno
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: n/a" >&5
+printf "%s\n" "n/a" >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Your version of SQLite does not support loadable extensions" >&5
+printf "%s\n" "$as_me: WARNING: Your version of SQLite does not support loadable extensions" >&2;}
+
+else case e in #(
+  e)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+   ;;
+esac
+fi
+
+else case e in #(
+  e)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
 
 found_tcltk=no
 for _QUERY in \
@@ -20375,6 +20674,7 @@ fi
 
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 case $ac_sys_system in #(
   Emscripten) :
@@ -20385,6 +20685,7 @@ case $ac_sys_system in #(
     if test "x$enable_emscripten_syscalls" = xyes
 then :
 
+      as_fn_append PLATFORM_MAIN_OBJS ' Programs/emscripten_beforemain.o'
       as_fn_append PLATFORM_OBJS ' Python/emscripten_syscalls.o'
 
 fi
@@ -20398,6 +20699,7 @@ fi
   *) :
      ;;
 esac
+
 
 
 
@@ -20576,12 +20878,6 @@ then :
   printf "%s\n" "#define HAVE_DUP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
-if test "x$ac_cv_func_execv" = xyes
-then :
-  printf "%s\n" "#define HAVE_EXECV 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "explicit_bzero" "ac_cv_func_explicit_bzero"
 if test "x$ac_cv_func_explicit_bzero" = xyes
 then :
@@ -20642,18 +20938,6 @@ then :
   printf "%s\n" "#define HAVE_FEXECVE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
-if test "x$ac_cv_func_fork" = xyes
-then :
-  printf "%s\n" "#define HAVE_FORK 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "fork1" "ac_cv_func_fork1"
-if test "x$ac_cv_func_fork1" = xyes
-then :
-  printf "%s\n" "#define HAVE_FORK1 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "fpathconf" "ac_cv_func_fpathconf"
 if test "x$ac_cv_func_fpathconf" = xyes
 then :
@@ -20664,12 +20948,6 @@ ac_fn_c_check_func "$LINENO" "fstatat" "ac_cv_func_fstatat"
 if test "x$ac_cv_func_fstatat" = xyes
 then :
   printf "%s\n" "#define HAVE_FSTATAT 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "ftime" "ac_cv_func_ftime"
-if test "x$ac_cv_func_ftime" = xyes
-then :
-  printf "%s\n" "#define HAVE_FTIME 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "ftruncate" "ac_cv_func_ftruncate"
@@ -20870,18 +21148,6 @@ then :
   printf "%s\n" "#define HAVE_GETSID 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "getspent" "ac_cv_func_getspent"
-if test "x$ac_cv_func_getspent" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETSPENT 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getspnam" "ac_cv_func_getspnam"
-if test "x$ac_cv_func_getspnam" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETSPNAM 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
 if test "x$ac_cv_func_gettid" = xyes
 then :
@@ -20892,12 +21158,6 @@ ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
   printf "%s\n" "#define HAVE_GETUID 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getwd" "ac_cv_func_getwd"
-if test "x$ac_cv_func_getwd" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETWD 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "grantpt" "ac_cv_func_grantpt"
@@ -21126,24 +21386,6 @@ ac_fn_c_check_func "$LINENO" "posix_openpt" "ac_cv_func_posix_openpt"
 if test "x$ac_cv_func_posix_openpt" = xyes
 then :
   printf "%s\n" "#define HAVE_POSIX_OPENPT 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
-if test "x$ac_cv_func_posix_spawn" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWN 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
-if test "x$ac_cv_func_posix_spawnp" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
-if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
-then :
-  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pread" "ac_cv_func_pread"
@@ -21464,12 +21706,6 @@ then :
   printf "%s\n" "#define HAVE_SIGACTION 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "sigaltstack" "ac_cv_func_sigaltstack"
-if test "x$ac_cv_func_sigaltstack" = xyes
-then :
-  printf "%s\n" "#define HAVE_SIGALTSTACK 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "sigfillset" "ac_cv_func_sigfillset"
 if test "x$ac_cv_func_sigfillset" = xyes
 then :
@@ -21486,12 +21722,6 @@ ac_fn_c_check_func "$LINENO" "sigpending" "ac_cv_func_sigpending"
 if test "x$ac_cv_func_sigpending" = xyes
 then :
   printf "%s\n" "#define HAVE_SIGPENDING 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "sigrelse" "ac_cv_func_sigrelse"
-if test "x$ac_cv_func_sigrelse" = xyes
-then :
-  printf "%s\n" "#define HAVE_SIGRELSE 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "sigtimedwait" "ac_cv_func_sigtimedwait"
@@ -21578,12 +21808,6 @@ then :
   printf "%s\n" "#define HAVE_TCSETPGRP 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "tempnam" "ac_cv_func_tempnam"
-if test "x$ac_cv_func_tempnam" = xyes
-then :
-  printf "%s\n" "#define HAVE_TEMPNAM 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "timegm" "ac_cv_func_timegm"
 if test "x$ac_cv_func_timegm" = xyes
 then :
@@ -21600,18 +21824,6 @@ ac_fn_c_check_func "$LINENO" "tmpfile" "ac_cv_func_tmpfile"
 if test "x$ac_cv_func_tmpfile" = xyes
 then :
   printf "%s\n" "#define HAVE_TMPFILE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "tmpnam" "ac_cv_func_tmpnam"
-if test "x$ac_cv_func_tmpnam" = xyes
-then :
-  printf "%s\n" "#define HAVE_TMPNAM 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "tmpnam_r" "ac_cv_func_tmpnam_r"
-if test "x$ac_cv_func_tmpnam_r" = xyes
-then :
-  printf "%s\n" "#define HAVE_TMPNAM_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "truncate" "ac_cv_func_truncate"
@@ -21814,6 +22026,49 @@ fi
 
 
 
+# FreeBSD pthread_attr_get_np()
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pthread_attr_get_np" >&5
+printf %s "checking for pthread_attr_get_np... " >&6; }
+if test ${ac_cv_func_pthread_attr_get_np+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread_np.h>
+int
+main (void)
+{
+void *x=pthread_attr_get_np
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pthread_attr_get_np=yes
+else case e in #(
+  e) ac_cv_func_pthread_attr_get_np=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pthread_attr_get_np" >&5
+printf "%s\n" "$ac_cv_func_pthread_attr_get_np" >&6; }
+  if test "x$ac_cv_func_pthread_attr_get_np" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PTHREAD_ATTR_GET_NP 1" >>confdefs.h
+
+fi
+
+
+
+
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -21845,14 +22100,14 @@ fi
 
 fi
 
-# iOS defines some system methods that can be linked (so they are
+# iOS/tvOS/visionOS/watchOS define some system methods that can be linked (so they are
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# In particular, dup3 and pipe2 are available as of iOS/tvOS/watchOS/visionOS 27 but were
 # incorrectly detected in older simulator versions.
 case "$ac_sys_system" in
-    iOS)
+    iOS|tvOS|watchOS|visionOS)
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if iOS SDK is older than 27" >&5
 printf %s "checking if iOS SDK is older than 27... " >&6; }
         ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
@@ -21878,7 +22133,7 @@ printf "%s\n" "yes" >&6; }
         fi
         ;;
     *)
-        # not iOS
+        # not iOS/tvOS/watchOS/visionOS
         ac_fn_c_check_func "$LINENO" "dup3" "ac_cv_func_dup3"
 if test "x$ac_cv_func_dup3" = xyes
 then :
@@ -21912,6 +22167,53 @@ fi
 
         ;;
 esac
+
+# tvOS/watchOS have some additional methods that can be found, but not used.
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
+  ac_fn_c_check_func "$LINENO" "execv" "ac_cv_func_execv"
+if test "x$ac_cv_func_execv" = xyes
+then :
+  printf "%s\n" "#define HAVE_EXECV 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "fork" "ac_cv_func_fork"
+if test "x$ac_cv_func_fork" = xyes
+then :
+  printf "%s\n" "#define HAVE_FORK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "fork1" "ac_cv_func_fork1"
+if test "x$ac_cv_func_fork1" = xyes
+then :
+  printf "%s\n" "#define HAVE_FORK1 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
+if test "x$ac_cv_func_posix_spawn" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
+if test "x$ac_cv_func_posix_spawnp" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
+if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "sigaltstack" "ac_cv_func_sigaltstack"
+if test "x$ac_cv_func_sigaltstack" = xyes
+then :
+  printf "%s\n" "#define HAVE_SIGALTSTACK 1" >>confdefs.h
+
+fi
+
+fi
 
 ac_fn_check_decl "$LINENO" "dirfd" "ac_cv_have_decl_dirfd" "#include <sys/types.h>
                #include <dirent.h>
@@ -25504,12 +25806,14 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 
 fi
 
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-if test "$ac_cv_libc" != musl
-then :
-
-ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
-               #include <sys/prctl.h>
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+case $host in #(
+  *-musl*) :
+     ;; #(
+  *) :
+    ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+                 #include <sys/prctl.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
 then :
@@ -25526,10 +25830,11 @@ printf "%s\n" "#define _Py_HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
-
-fi
+ ;;
+esac
 # check for openpty, login_tty, and forkpty
-
+# tvOS/watchOS have functions for tty, but can't use them
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
 
   for ac_func in openpty
 do :
@@ -25643,7 +25948,7 @@ esac
 fi
 
 done
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing login_tty" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing login_tty" >&5
 printf %s "checking for library containing login_tty... " >&6; }
 if test ${ac_cv_search_login_tty+y}
 then :
@@ -25826,14 +26131,9 @@ esac
 fi
 
 done
+fi
 
 # check for long file support functions
-ac_fn_c_check_func "$LINENO" "fseek64" "ac_cv_func_fseek64"
-if test "x$ac_cv_func_fseek64" = xyes
-then :
-  printf "%s\n" "#define HAVE_FSEEK64 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "fseeko" "ac_cv_func_fseeko"
 if test "x$ac_cv_func_fseeko" = xyes
 then :
@@ -25844,12 +26144,6 @@ ac_fn_c_check_func "$LINENO" "fstatvfs" "ac_cv_func_fstatvfs"
 if test "x$ac_cv_func_fstatvfs" = xyes
 then :
   printf "%s\n" "#define HAVE_FSTATVFS 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "ftell64" "ac_cv_func_ftell64"
-if test "x$ac_cv_func_ftell64" = xyes
-then :
-  printf "%s\n" "#define HAVE_FTELL64 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "ftello" "ac_cv_func_ftello"
@@ -26091,10 +26385,10 @@ fi
 
 done
 
-# On Android and iOS, clock_settime can be linked (so it is found by
+# On Android, iOS, tvOS, visionOS, and watchOS, clock_settime can be linked (so it is found by
 # configure), but when used in an unprivileged process, it crashes rather than
 # returning an error. Force the symbol off.
-if test "$ac_sys_system" != "Linux-android" && test "$ac_sys_system" != "iOS"
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "iOS" -a "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "visionOS" -a "$ac_sys_system" != "watchOS"
 then
 
   for ac_func in clock_settime
@@ -26411,7 +26705,7 @@ else case e in #(
   e) if test "$cross_compiling" = yes
 then :
 
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS" || test "$ac_sys_system" = "tvOS" || test "$ac_sys_system" = "visionOS" || test "$ac_sys_system" = "watchOS"; then
   ac_cv_buggy_getaddrinfo="no"
 elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
@@ -26967,175 +27261,6 @@ printf "%s\n" "#define HAVE_SOCKADDR_ALG 1" >>confdefs.h
 
 fi
 
-# checks for compiler characteristics
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
-printf %s "checking for an ANSI C-conforming const... " >&6; }
-if test ${ac_cv_c_const+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-#ifndef __cplusplus
-  /* Ultrix mips cc rejects this sort of thing.  */
-  typedef int charset[2];
-  const charset cs = { 0, 0 };
-  /* SunOS 4.1.1 cc rejects this.  */
-  char const *const *pcpcc;
-  char **ppc;
-  /* NEC SVR4.0.2 mips cc rejects this.  */
-  struct point {int x, y;};
-  static struct point const zero = {0,0};
-  /* IBM XL C 1.02.0.0 rejects this.
-     It does not let you subtract one const X* pointer from another in
-     an arm of an if-expression whose if-part is not a constant
-     expression */
-  const char *g = "string";
-  pcpcc = &g + (g ? g-g : 0);
-  /* HPUX 7.0 cc rejects these. */
-  ++pcpcc;
-  ppc = (char**) pcpcc;
-  pcpcc = (char const *const *) ppc;
-  { /* SCO 3.2v4 cc rejects this sort of thing.  */
-    char tx;
-    char *t = &tx;
-    char const *s = 0 ? (char *) 0 : (char const *) 0;
-
-    *t++ = 0;
-    if (s) return 0;
-  }
-  { /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
-    int x[] = {25, 17};
-    const int *foo = &x[0];
-    ++foo;
-  }
-  { /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
-    typedef const int *iptr;
-    iptr p = 0;
-    ++p;
-  }
-  { /* IBM XL C 1.02.0.0 rejects this sort of thing, saying
-       "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
-    struct s { int j; const int *ap[3]; } bx;
-    struct s *b = &bx; b->j = 5;
-  }
-  { /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
-    const int foo = 10;
-    if (!foo) return 0;
-  }
-  return !cs[0] && !zero.x;
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_c_const=yes
-else case e in #(
-  e) ac_cv_c_const=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_const" >&5
-printf "%s\n" "$ac_cv_c_const" >&6; }
-if test $ac_cv_c_const = no; then
-
-printf "%s\n" "#define const /**/" >>confdefs.h
-
-fi
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working signed char" >&5
-printf %s "checking for working signed char... " >&6; }
-if test ${ac_cv_working_signed_char_c+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-signed char c;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_working_signed_char_c=yes
-else case e in #(
-  e) ac_cv_working_signed_char_c=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_signed_char_c" >&5
-printf "%s\n" "$ac_cv_working_signed_char_c" >&6; }
-if test "x$ac_cv_working_signed_char_c" = xno
-then :
-
-
-printf "%s\n" "#define signed /**/" >>confdefs.h
-
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for prototypes" >&5
-printf %s "checking for prototypes... " >&6; }
-if test ${ac_cv_function_prototypes+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int foo(int x) { return 0; }
-int
-main (void)
-{
-return foo(10);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_function_prototypes=yes
-else case e in #(
-  e) ac_cv_function_prototypes=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_function_prototypes" >&5
-printf "%s\n" "$ac_cv_function_prototypes" >&6; }
-if test "x$ac_cv_function_prototypes" = xyes
-then :
-
-
-printf "%s\n" "#define HAVE_PROTOTYPES 1" >>confdefs.h
-
-
-fi
-
-
 # check for socketpair
 
 
@@ -27500,55 +27625,6 @@ printf "%s\n" "default LIBC=\"$LIBC\"" >&6; } ;;
 esac
 fi
 
-
-# **************************************
-# * Check for gcc x64 inline assembler *
-# **************************************
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for x64 gcc inline assembler" >&5
-printf %s "checking for x64 gcc inline assembler... " >&6; }
-if test ${ac_cv_gcc_asm_for_x64+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  __asm__ __volatile__ ("movq %rcx, %rax");
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_gcc_asm_for_x64=yes
-else case e in #(
-  e) ac_cv_gcc_asm_for_x64=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_asm_for_x64" >&5
-printf "%s\n" "$ac_cv_gcc_asm_for_x64" >&6; }
-
-if test "x$ac_cv_gcc_asm_for_x64" = xyes
-then :
-
-
-printf "%s\n" "#define HAVE_GCC_ASM_FOR_X64 1" >>confdefs.h
-
-
-fi
 
 # **************************************************
 # * Check for various properties of floating point *
@@ -28784,8 +28860,8 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the framework, when built
-if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
+# On iOS/tvOS/watchOS the shared libraries must be linked with the framework, when built
+if test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
@@ -34233,7 +34309,7 @@ LIBS=$save_LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" -o "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS"  -o "$ac_sys_system" = "watchOS" ; then
   ac_cv_file__dev_ptmx=no
   ac_cv_file__dev_ptc=no
 else
@@ -34578,95 +34654,6 @@ done
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: done" >&5
 printf "%s\n" "done" >&6; }
 
-# Availability of -O2:
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for -O2" >&5
-printf %s "checking for -O2... " >&6; }
-if test ${ac_cv_compile_o2+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-saved_cflags="$CFLAGS"
-CFLAGS="-O2"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_compile_o2=yes
-else case e in #(
-  e) ac_cv_compile_o2=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-CFLAGS="$saved_cflags"
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_compile_o2" >&5
-printf "%s\n" "$ac_cv_compile_o2" >&6; }
-
-# _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-# http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for glibc _FORTIFY_SOURCE/memmove bug" >&5
-printf %s "checking for glibc _FORTIFY_SOURCE/memmove bug... " >&6; }
-saved_cflags="$CFLAGS"
-CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$ac_cv_compile_o2" = no; then
-    CFLAGS=""
-fi
-if test "$cross_compiling" = yes
-then :
-  have_glibc_memmove_bug=undefined
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-void foo(void *p, void *q) { memmove(p, q, 19); }
-int main(void) {
-  char a[32] = "123456789000000000";
-  foo(&a[9], a);
-  if (strcmp(a, "123456789123456789000000000") != 0)
-    return 1;
-  foo(a, &a[9]);
-  if (strcmp(a, "123456789000000000") != 0)
-    return 1;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  have_glibc_memmove_bug=no
-else case e in #(
-  e) have_glibc_memmove_bug=yes ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-CFLAGS="$saved_cflags"
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_glibc_memmove_bug" >&5
-printf "%s\n" "$have_glibc_memmove_bug" >&6; }
-if test "$have_glibc_memmove_bug" = yes; then
-
-printf "%s\n" "#define HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
-
-fi
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if we need to manually block large inlining in ceval.c" >&5
 printf %s "checking if we need to manually block large inlining in ceval.c... " >&6; }
 if test "$cross_compiling" = yes
@@ -34713,64 +34700,6 @@ if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = 
 fi
 
 
-if test "$ac_cv_gcc_asm_for_x87" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $ac_cv_cc_name in
-        gcc)
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc ipa-pure-const bug" >&5
-printf %s "checking for gcc ipa-pure-const bug... " >&6; }
-            saved_cflags="$CFLAGS"
-            CFLAGS="-O2"
-            if test "$cross_compiling" = yes
-then :
-  have_ipa_pure_const_bug=undefined
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-            __attribute__((noinline)) int
-            foo(int *p) {
-              int r;
-              asm ( "movl \$6, (%1)\n\t"
-                    "xorl %0, %0\n\t"
-                    : "=r" (r) : "r" (p) : "memory"
-              );
-              return r;
-            }
-            int main(void) {
-              int p = 8;
-              if ((foo(&p) ? : p) != 6)
-                return 1;
-              return 0;
-            }
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  have_ipa_pure_const_bug=no
-else case e in #(
-  e) have_ipa_pure_const_bug=yes ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-
-            CFLAGS="$saved_cflags"
-            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ipa_pure_const_bug" >&5
-printf "%s\n" "$have_ipa_pure_const_bug" >&6; }
-            if test "$have_ipa_pure_const_bug" = yes; then
-
-printf "%s\n" "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
-
-            fi
-        ;;
-    esac
-fi
-
 # ensurepip option
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
 printf %s "checking for ensurepip... " >&6; }
@@ -34786,7 +34715,7 @@ else case e in #(
     with_ensurepip=no ;; #(
   WASI) :
     with_ensurepip=no ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
     with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
@@ -35791,6 +35720,9 @@ case "$ac_sys_system" in
   NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  tvOS) _PYTHREAD_NAME_MAXLEN=63;;
+  visionOS) _PYTHREAD_NAME_MAXLEN=63;;
+  watchOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
@@ -35823,7 +35755,7 @@ case $ac_sys_system in #(
  ;; #(
     Darwin) :
      ;; #(
-  iOS) :
+  iOS|tvOS|visionOS|watchOS) :
 
 
 
@@ -40138,6 +40070,9 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "Platforms/Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/iOS/Resources/Info.plist" ;;
+    "Platforms/Apple/tvOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/tvOS/Resources/Info.plist" ;;
+    "Platforms/Apple/visionOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/visionOS/Resources/Info.plist" ;;
+    "Platforms/Apple/watchOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Platforms/Apple/watchOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
@@ -40754,12 +40689,12 @@ fi
 printf "%s\n" "$as_me: creating Makefile" >&6;}
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib -b Modules/Setup.bootstrap $srcdir/Modules/Setup
 if test $? -ne 0; then
   as_fn_error $? "makesetup failed" "$LINENO" 5
 fi
 
-mv config.c Modules
+mv config.c config_bootstrap.c Modules
 
 if test -z "$PKG_CONFIG"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: pkg-config is missing. Some dependencies may not be detected correctly." >&5

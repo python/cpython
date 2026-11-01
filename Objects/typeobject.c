@@ -7472,7 +7472,9 @@ _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op)
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
-    return Py_NewRef(Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    _Py_INCREF_TYPE(type);
+    return (PyObject *)type;
 }
 
 static int

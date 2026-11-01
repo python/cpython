@@ -345,6 +345,15 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-apple-tvos*)
+		ac_sys_system=tvOS
+		;;
+	*-apple-xros*)
+		ac_sys_system=visionOS
+		;;
+	*-apple-watchos*)
+		ac_sys_system=watchOS
+		;;
 	*-*-darwin*)
 		ac_sys_system=Darwin
 		;;
@@ -423,7 +432,7 @@ AC_SUBST([host_exec_prefix])
 # On cross-compile builds, configure will look for a host-specific compiler by
 # prepending the user-provided host triple to the required binary name.
 #
-# On iOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
+# On iOS/tvOS/visionOS/watchOS, this results in binaries like "arm64-apple-ios13.0-simulator-gcc",
 # which isn't a binary that exists, and isn't very convenient, as it contains the
 # iOS version. As the default cross-compiler name won't exist, configure falls
 # back to gcc, which *definitely* won't work. We're providing wrapper scripts for
@@ -438,6 +447,17 @@ if test -z "$AR"; then
 		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
 		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
 		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+
+		aarch64-apple-tvos*-simulator) AR=arm64-apple-tvos-simulator-ar ;;
+		aarch64-apple-tvos*)           AR=arm64-apple-tvos-ar ;;
+		x86_64-apple-tvos*-simulator)  AR=x86_64-apple-tvos-simulator-ar ;;
+
+		aarch64-apple-xros*-simulator) AR=arm64-apple-xros-simulator-ar ;;
+		aarch64-apple-xros*)           AR=arm64-apple-xros-ar ;;
+
+		aarch64-apple-watchos*-simulator) AR=arm64-apple-watchos-simulator-ar ;;
+		aarch64-apple-watchos*)           AR=arm64_32-apple-watchos-ar ;;
+		x86_64-apple-watchos*-simulator)  AR=x86_64-apple-watchos-simulator-ar ;;
 		*)
     esac
 fi
@@ -446,6 +466,17 @@ if test -z "$CC"; then
 		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
 		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
 		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+
+		aarch64-apple-tvos*-simulator) CC=arm64-apple-tvos-simulator-clang ;;
+		aarch64-apple-tvos*)           CC=arm64-apple-tvos-clang ;;
+		x86_64-apple-tvos*-simulator)  CC=x86_64-apple-tvos-simulator-clang ;;
+
+		aarch64-apple-xros*-simulator) CC=arm64-apple-xros-simulator-clang ;;
+		aarch64-apple-xros*)           CC=arm64-apple-xros-clang ;;
+
+		aarch64-apple-watchos*-simulator) CC=arm64-apple-watchos-simulator-clang ;;
+		aarch64-apple-watchos*)           CC=arm64_32-apple-watchos-clang ;;
+		x86_64-apple-watchos*-simulator)  CC=x86_64-apple-watchos-simulator-clang ;;
 		*)
 	esac
 fi
@@ -454,6 +485,17 @@ if test -z "$CPP"; then
 		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
 		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
 		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+
+		aarch64-apple-tvos*-simulator) CPP=arm64-apple-tvos-simulator-cpp ;;
+		aarch64-apple-tvos*)           CPP=arm64-apple-tvos-cpp ;;
+		x86_64-apple-tvos*-simulator)  CPP=x86_64-apple-tvos-simulator-cpp ;;
+
+		aarch64-apple-xros*-simulator) CPP=arm64-apple-xros-simulator-cpp ;;
+		aarch64-apple-xros*)           CPP=arm64-apple-xros-cpp ;;
+
+		aarch64-apple-watchos*-simulator) CPP=arm64-apple-watchos-simulator-cpp ;;
+		aarch64-apple-watchos*)           CPP=arm64_32-apple-watchos-cpp ;;
+		x86_64-apple-watchos*-simulator)  CPP=x86_64-apple-watchos-simulator-cpp ;;
 		*)
 	esac
 fi
@@ -462,6 +504,17 @@ if test -z "$CXX"; then
 		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang++ ;;
 		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang++ ;;
 		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang++ ;;
+
+		aarch64-apple-tvos*-simulator) CXX=arm64-apple-tvos-simulator-clang++ ;;
+		aarch64-apple-tvos*)           CXX=arm64-apple-tvos-clang++ ;;
+		x86_64-apple-tvos*-simulator)  CXX=x86_64-apple-tvos-simulator-clang++ ;;
+
+		aarch64-apple-xros*-simulator) CXX=arm64-apple-xros-simulator-clang++ ;;
+		aarch64-apple-xros*)           CXX=arm64-apple-xros-clang++ ;;
+
+		aarch64-apple-watchos*-simulator) CXX=arm64-apple-watchos-simulator-clang++ ;;
+		aarch64-apple-watchos*)           CXX=arm64_32-apple-watchos-clang++ ;;
+		x86_64-apple-watchos*-simulator)  CXX=x86_64-apple-watchos-simulator-clang++ ;;
 		*)
 	esac
 fi
@@ -576,8 +629,11 @@ AC_ARG_ENABLE([framework],
 	case $enableval in
 	yes)
 		case $ac_sys_system in
-			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			Darwin)  enableval=/Library/Frameworks ;;
+			iOS)     enableval=Platforms/Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			tvOS)    enableval=Platforms/Apple/tvOS/Frameworks/\$\(MULTIARCH\) ;;
+			visionOS) enableval=Platforms/Apple/visionOS/Frameworks/\$\(MULTIARCH\) ;;
+			watchOS) enableval=Platforms/Apple/watchOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -684,6 +740,48 @@ AC_ARG_ENABLE([framework],
 
 				AC_CONFIG_FILES([Platforms/Apple/iOS/Resources/Info.plist])
 				;;
+			tvOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/tvOS/Resources
+
+				AC_CONFIG_FILES([Platforms/Apple/tvOS/Resources/Info.plist])
+				;;
+			visionOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/visionOS/Resources
+
+				AC_CONFIG_FILES([Platforms/Apple/visionOS/Resources/Info.plist])
+				;;
+			watchOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=Platforms/Apple/watchOS/Resources
+
+				AC_CONFIG_FILES([Platforms/Apple/watchOS/Resources/Info.plist])
+				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
 				;;
@@ -740,8 +838,8 @@ AC_ARG_WITH(
     case "$withval" in
     yes)
       case $ac_sys_system in
-        Darwin|iOS)
-          # iOS is able to share the macOS patch
+        Darwin|iOS|tvOS|visionOS|watchOS)
+          # iOS/tvOS/visionOS/watchOS is able to share the macOS patch
           APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
           ;;
         *) AC_MSG_ERROR([no default app store compliance patch available for $ac_sys_system]) ;;
@@ -755,8 +853,8 @@ AC_ARG_WITH(
     esac
   ],[
     case $ac_sys_system in
-      iOS)
-        # Always apply the compliance patch on iOS; we can use the macOS patch
+      iOS|tvOS|visionOS|watchOS)
+        # Always apply the compliance patch on iOS/tvOS/visionOS/watchOS; we can use the macOS patch
         APP_STORE_COMPLIANCE_PATCH="Mac/Resources/app-store-compliance.patch"
         AC_MSG_RESULT([applying default app store compliance patch])
         ;;
@@ -768,6 +866,8 @@ AC_ARG_WITH(
     esac
 ])
 AC_SUBST([APP_STORE_COMPLIANCE_PATCH])
+
+EXPORT_XROS_DEPLOYMENT_TARGET='#'
 
 AC_SUBST([_PYTHON_HOST_PLATFORM])
 if test "$cross_compiling" = yes; then
@@ -804,6 +904,70 @@ if test "$cross_compiling" = yes; then
 				;;
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				;;
+		esac
+		;;
+	*-apple-tvos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# TVOS_DEPLOYMENT_TARGET is the minimum supported tvOS version
+		AC_MSG_CHECKING([tvOS deployment target])
+		TVOS_DEPLOYMENT_TARGET=${_host_os:4}
+		TVOS_DEPLOYMENT_TARGET=${TVOS_DEPLOYMENT_TARGET:=12.0}
+		AC_MSG_RESULT([$TVOS_DEPLOYMENT_TARGET])
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-arm64-appletv${_host_device}
+				;;
+			*)
+				_host_ident=${TVOS_DEPLOYMENT_TARGET}-$host_cpu-appletv${_host_device}
+				;;
+		esac
+		;;
+	*-apple-xros*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# XROS_DEPLOYMENT_TARGET is the minimum supported visionOS version
+		AC_MSG_CHECKING([visionOS deployment target])
+		XROS_DEPLOYMENT_TARGET=${_host_os:8}
+		XROS_DEPLOYMENT_TARGET=${XROS_DEPLOYMENT_TARGET:=2.0}
+		AC_MSG_RESULT([$XROS_DEPLOYMENT_TARGET])
+		AC_MSG_CHECKING([exporting flag of visionOS deployment target])
+        	export XROS_DEPLOYMENT_TARGET
+		EXPORT_XROS_DEPLOYMENT_TARGET=''
+		AC_MSG_RESULT([$EXPORT_XROS_DEPLOYMENT_TARGET])
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-arm64-xr${_host_device}
+				;;
+			*)
+				_host_ident=${XROS_DEPLOYMENT_TARGET}-$host_cpu-xr${_host_device}
+				;;
+		esac
+		;;
+	*-apple-watchos*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		# WATCHOS_DEPLOYMENT_TARGET is the minimum supported watchOS version
+		AC_MSG_CHECKING([watchOS deployment target])
+		WATCHOS_DEPLOYMENT_TARGET=${_host_os:7}
+		WATCHOS_DEPLOYMENT_TARGET=${WATCHOS_DEPLOYMENT_TARGET:=9.0}
+		AC_MSG_RESULT([$WATCHOS_DEPLOYMENT_TARGET])
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-arm64-watch${_host_device}
+				;;
+			*)
+				_host_ident=${WATCHOS_DEPLOYMENT_TARGET}-$host_cpu-watch${_host_device}
 				;;
 		esac
 		;;
@@ -844,19 +1008,6 @@ fi
 # (which may remove their limitations).
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 case $ac_sys_system/$ac_sys_release in
-  # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
-  # even though select is a POSIX function. Reported by J. Ribbens.
-  # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  # In addition, Stefan Krah confirms that issue #1244610 exists through
-  # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@)
-    define_xopen_source=no
-    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
-    # also defined. This can be overridden by defining _BSD_SOURCE
-    # As this has a different meaning on Linux, only define it on OpenBSD
-    AC_DEFINE([_BSD_SOURCE], [1],
-              [Define on OpenBSD to activate all library features])
-    ;;
   OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
@@ -864,11 +1015,6 @@ case $ac_sys_system/$ac_sys_release in
     AC_DEFINE([_BSD_SOURCE], [1],
               [Define on OpenBSD to activate all library features])
     ;;
-  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
-  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
-  # Marc Recht
-  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
-    define_xopen_source=no;;
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
@@ -893,8 +1039,14 @@ case $ac_sys_system/$ac_sys_release in
     define_xopen_source=no;;
   Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
     define_xopen_source=no;;
-  # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
+  # On iOS/tvOS/visionOS/watchOS, defining _POSIX_C_SOURCE also disables platform specific features.
   iOS/*)
+    define_xopen_source=no;;
+  tvOS/*)
+    define_xopen_source=no;;
+  visionOS/*)
+    define_xopen_source=no;;
+  watchOS/*)
     define_xopen_source=no;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
@@ -968,8 +1120,15 @@ AC_SUBST([EXPORT_MACOSX_DEPLOYMENT_TARGET])
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
-# Record the value of IPHONEOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+# Record the value of IPHONEOS_DEPLOYMENT_TARGET / TVOS_DEPLOYMENT_TARGET /
+# XROS_DEPLOYMENT_TARGET / WATCHOS_DEPLOYMENT_TARGET enforced by the selected host triple.
 AC_SUBST([IPHONEOS_DEPLOYMENT_TARGET])
+AC_SUBST([TVOS_DEPLOYMENT_TARGET])
+AC_SUBST([XROS_DEPLOYMENT_TARGET])
+AC_SUBST([WATCHOS_DEPLOYMENT_TARGET])
+
+# XROS_DEPLOYMENT_TARGET should get exported
+AC_SUBST([EXPORT_XROS_DEPLOYMENT_TARGET])
 
 # checks for alternative programs
 
@@ -1003,15 +1162,28 @@ AS_CASE([$host],
   ],
 )
 
-dnl Add the compiler flag for the iOS minimum supported OS version.
+dnl Add the compiler flag for the iOS/tvOS/watchOS minimum supported OS
+dnl version. visionOS doesn't use an explicit -mxros-version-min option -
+dnl it encodes the min version into the target triple.
 AS_CASE([$host],
   [*-apple-ios*-simulator], [
     AS_VAR_APPEND([CFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-simulator-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
-  ],
-  [*-apple-ios*], [
+  ],[*-apple-ios*], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+  ],[*-apple-tvos*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mtvos-simulator-version-min=${TVOS_DEPLOYMENT_TARGET}"])
+  ],[*-apple-tvos*], [
+    AS_VAR_APPEND([CFLAGS], [" -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mtvos-version-min=${TVOS_DEPLOYMENT_TARGET}"])
+  ],[*-apple-watchos*-simulator], [
+    AS_VAR_APPEND([CFLAGS], [" -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mwatchos-simulator-version-min=${WATCHOS_DEPLOYMENT_TARGET}"])
+  ],[*-apple-watchos*], [
+    AS_VAR_APPEND([CFLAGS], [" -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mwatchos-version-min=${WATCHOS_DEPLOYMENT_TARGET}"])
   ],
 )
 
@@ -1203,6 +1375,9 @@ AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
   [iOS], [MULTIARCH=""],
+  [tvOS], [MULTIARCH=""],
+  [visionOS], [MULTIARCH=""],
+  [watchOS], [MULTIARCH=""],
   [FreeBSD*], [MULTIARCH=""],
   [OpenBSD*], [MULTIARCH=""],
   [MULTIARCH=$($CC --print-multiarch 2>/dev/null)]
@@ -1225,7 +1400,7 @@ dnl will have multiple sysconfig modules (one for each CPU architecture), but
 dnl use a single "fat" binary at runtime. SOABI_PLATFORM is the component of
 dnl the PLATFORM_TRIPLET that will be used in binary module extensions.
 AS_CASE([$ac_sys_system],
-  [iOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
+  [iOS|tvOS|visionOS|watchOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
 
@@ -1608,7 +1783,7 @@ then
   case $ac_sys_system in
     Darwin)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)';;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
     *)
       AC_MSG_ERROR([Unknown platform for framework build]);;
@@ -1673,7 +1848,7 @@ if test $enable_shared = "yes"; then
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
-    iOS)
+    iOS|tvOS|visionOS|watchOS)
       if test -z "$PYTHONFRAMEWORK"; then
         AC_MSG_ERROR([iOS shared builds must use --enable-framework; an iOS app can only load a signed framework, never a bare dylib])
       fi
@@ -2099,6 +2274,7 @@ fi
 AC_SUBST([PGO_PROF_GEN_FLAG])
 AC_SUBST([PGO_PROF_USE_FLAG])
 AC_SUBST([LLVM_PROF_MERGER])
+AC_SUBST([LLVM_PROF_SHOW])
 AC_SUBST([LLVM_PROF_FILE])
 AC_SUBST([LLVM_PROF_ERR])
 AC_SUBST([LLVM_PROFDATA])
@@ -2123,6 +2299,7 @@ then
   fi
 fi
 LLVM_PROF_ERR=no
+LLVM_PROF_SHOW=true
 
 case "$ac_cv_cc_name" in
   clang|icx)
@@ -2135,6 +2312,10 @@ case "$ac_cv_cc_name" in
             \"\$(shell pwd)\"/*.profclangr
     ")
     LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
+    LLVM_PROF_SHOW=m4_normalize("
+        ${LLVM_PROFDATA} show --detailed-summary --topn=500
+            \"\$(shell pwd)/code.profclangd\"
+    ")
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -2210,6 +2391,24 @@ if test "$Py_BOLT" = 'true' ; then
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
+  # BOLT rejects binaries with Cortex-A53 erratum 843419 workaround veneers,
+  # see https://github.com/llvm/llvm-project/pull/187955
+  # Check explicit flags here to provide a friendlier error. Recent BOLT
+  # versions reject workaround veneers by default, including those
+  # from compiler defaults, so we do not perform exhaustive detection.
+  AS_CASE([$host_cpu], [aarch64*], [
+    AS_CASE(["$CC $CFLAGS $CPPFLAGS $CFLAGS_NODIST $LDFLAGS $LDFLAGS_NODIST $LIBS"],
+      [*-mfix-cortex-a53-843419*|*--fix-cortex-a53-843419*], [
+      AC_MSG_ERROR([--enable-bolt is incompatible with the Cortex-A53 erratum 843419 workaround.
+BOLT does not preserve protection against this erratum. Its output must not run
+on affected Cortex-A53 processors, including during the build.
+If the generated binaries will never run on affected processors, disable the
+workaround explicitly. With GCC, configure with
+LDFLAGS_NODIST="-mno-fix-cortex-a53-843419". Also remove any explicit
+-mfix-cortex-a53-843419 or -Wl,--fix-cortex-a53-843419 flags.])
+    ])
   ])
 
   # These flags are required for bolt to work:
@@ -2288,6 +2487,12 @@ AC_ARG_VAR(
 AC_MSG_CHECKING([BOLT_APPLY_FLAGS])
 if test -z "${BOLT_APPLY_FLAGS}"
 then
+  dnl The frame optimizer is only implemented for x86. BOLT 22 and newer
+  dnl refuse to run it on other architectures.
+  AS_CASE([$host_cpu],
+    [x86_64], [bolt_frame_opt_flags="-frame-opt=hot"],
+    [bolt_frame_opt_flags=""]
+  )
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
@@ -2305,7 +2510,7 @@ then
      -indirect-call-promotion=all
      -dyno-stats
      -use-gnu-stack
-     -frame-opt=hot
+     ${bolt_frame_opt_flags}
    ")]
   )
 fi
@@ -2443,7 +2648,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY,ERRNO_CODES"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,_PyGILState_GetThisThreadState,NODEFS"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -3194,12 +3399,13 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
-  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  linux/netfilter_ipv4.h linux/random.h linux/sched.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
+  poll.h process.h pthread.h pthread_np.h pty.h \
+  sched.h setjmp.h signal.h spawn.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
-  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
   sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -3522,12 +3728,17 @@ AC_MSG_CHECKING([for --with-address-sanitizer])
 AC_ARG_WITH([address_sanitizer],
             AS_HELP_STRING([--with-address-sanitizer],
                            [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT([$withval])
+[], [with_address_sanitizer=no])
+AC_MSG_RESULT([$with_address_sanitizer])
+AS_VAR_IF([with_address_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
-],
-[AC_MSG_RESULT([no])])
+AC_MSG_CHECKING([whether a program links with -fsanitize=address])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
+])
 
 AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
 AC_ARG_WITH(
@@ -3536,8 +3747,9 @@ AC_ARG_WITH(
     [--with-hwaddress-sanitizer],
     [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_hwaddress_sanitizer=no])
+AC_MSG_RESULT([$with_hwaddress_sanitizer])
+AS_VAR_IF([with_hwaddress_sanitizer], [no], [], [
 hwasan_flags="-fsanitize=hwaddress"
 # x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
 # See gh-156049 and
@@ -3545,12 +3757,14 @@ hwasan_flags="-fsanitize=hwaddress"
 AS_CASE([$host_cpu],
   [x86_64|amd64], [hwasan_flags="$hwasan_flags -fsanitize-hwaddress-experimental-aliasing"]
 )
-AX_CHECK_COMPILE_FLAG([$hwasan_flags],[
 BASECFLAGS="$hwasan_flags -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="$hwasan_flags $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support hardware address sanitizer])])
-],
-[AC_MSG_RESULT([no])])
+AC_MSG_CHECKING([whether a program links with $hwasan_flags])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
+])
 
 AC_MSG_CHECKING([for --with-memory-sanitizer])
 AC_ARG_WITH(
@@ -3559,14 +3773,17 @@ AC_ARG_WITH(
     [--with-memory-sanitizer],
     [enable MemorySanitizer allocation error detector, 'msan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
-AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
+[], [with_memory_sanitizer=no])
+AC_MSG_RESULT([$with_memory_sanitizer])
+AS_VAR_IF([with_memory_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
-],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
-],
-[AC_MSG_RESULT([no])])
+AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
+])
 
 AC_MSG_CHECKING([for --with-undefined-behavior-sanitizer])
 AC_ARG_WITH(
@@ -3575,15 +3792,19 @@ AC_ARG_WITH(
     [--with-undefined-behavior-sanitizer],
     [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_undefined_behavior_sanitizer=no])
+AC_MSG_RESULT([$with_undefined_behavior_sanitizer])
+AS_VAR_IF([with_undefined_behavior_sanitizer], [no], [
+with_ubsan="no"
+], [
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
-],
-[
-AC_MSG_RESULT([no])
-with_ubsan="no"
+AC_MSG_CHECKING([whether a program links with -fsanitize=undefined])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
 ])
 
 AC_MSG_CHECKING([for --with-thread-sanitizer])
@@ -3593,15 +3814,19 @@ AC_ARG_WITH(
     [--with-thread-sanitizer],
     [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_thread_sanitizer=no])
+AC_MSG_RESULT([$with_thread_sanitizer])
+AS_VAR_IF([with_thread_sanitizer], [no], [
+with_tsan="no"
+], [
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
-],
-[
-AC_MSG_RESULT([no])
-with_tsan="no"
+AC_MSG_CHECKING([whether a program links with -fsanitize=thread])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+  [AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no])
+   AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
 ])
 
 # Set info about shared libraries.
@@ -3704,7 +3929,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	iOS/*)
+	iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
@@ -3828,7 +4053,7 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*|iOS/*)
+	Darwin/*|iOS/*|tvOS/*|visionOS/*|watchOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
@@ -3852,7 +4077,7 @@ then
 				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 			fi
 			LINKFORSHARED="$LINKFORSHARED"
-		elif test $ac_sys_system = "iOS"; then
+		elif test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS"; then
 			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 			if test "$enable_framework"; then
@@ -4241,6 +4466,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -4396,8 +4626,8 @@ AS_VAR_IF([ac_sys_system], [Darwin], [
       AC_CHECK_LIB([ffi], [ffi_call], [
         dnl use ffi from SDK root
         have_libffi=yes
-        LIBFFI_CFLAGS="-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"
-        LIBFFI_LIBS="-lffi"
+        LIBFFI_CFLAGS=${LIBFFI_CFLAGS-"-I${SDKROOT}/usr/include/ffi -DUSING_APPLE_OS_LIBFFI=1"}
+        LIBFFI_LIBS=${LIBFFI_LIBS-"-lffi"}
       ])
     ])
   ])
@@ -4425,7 +4655,7 @@ AS_VAR_IF([have_libffi], [yes], [
       dnl when do we need USING_APPLE_OS_LIBFFI?
       ctypes_malloc_closure=yes
     ],
-    [iOS], [
+    [iOS|tvOS|visionOS|watchOS], [
       ctypes_malloc_closure=yes
     ],
     [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
@@ -4630,21 +4860,22 @@ AC_ARG_ENABLE([loadable-sqlite-extensions],
       support loadable extensions in the sqlite3 module, see
       Doc/library/sqlite3.rst (default is no)
     ]
-  ), [
-    AS_VAR_IF([have_sqlite3_load_extension], [no], [
-      AC_MSG_RESULT([n/a])
-      AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
-    ], [
-      AC_MSG_RESULT([yes])
-      AC_DEFINE(
-        [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
-        [Define to 1 to build the sqlite module with loadable extensions support.]
-      )
-    ])
-  ], [
-    AC_MSG_RESULT([no])
-  ]
+  ), [], [enable_loadable_sqlite_extensions=no]
 )
+AS_VAR_IF([enable_loadable_sqlite_extensions], [yes], [
+  AS_VAR_IF([have_sqlite3_load_extension], [no], [
+    AC_MSG_RESULT([n/a])
+    AC_MSG_WARN([Your version of SQLite does not support loadable extensions])
+  ], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(
+      [PY_SQLITE_ENABLE_LOAD_EXTENSION], [1],
+      [Define to 1 to build the sqlite module with loadable extensions support.]
+    )
+  ])
+], [
+  AC_MSG_RESULT([no])
+])
 
 dnl
 dnl Detect Tcl/Tk. Use pkg-config if available.
@@ -5459,6 +5690,7 @@ fi
 dnl Platform-specific C and header files.
 PLATFORM_HEADERS=
 PLATFORM_OBJS=
+PLATFORM_MAIN_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
@@ -5466,6 +5698,7 @@ AS_CASE([$ac_sys_system],
     AS_VAR_APPEND([CFLAGS_NODIST], [" -mgc"])
 
     AS_VAR_IF([enable_emscripten_syscalls], [yes], [
+      AS_VAR_APPEND([PLATFORM_MAIN_OBJS], [' Programs/emscripten_beforemain.o'])
       AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_syscalls.o'])
     ])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
@@ -5477,6 +5710,7 @@ AS_CASE([$ac_sys_system],
 )
 AC_SUBST([PLATFORM_HEADERS])
 AC_SUBST([PLATFORM_OBJS])
+AC_SUBST([PLATFORM_MAIN_OBJS])
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST([DLINCLDIR])
@@ -5553,20 +5787,19 @@ fi
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clearenv \
   clock closefrom close_range confstr \
-  copy_file_range ctermid dladdr dup execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dladdr dup explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
-  fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  fpathconf fstatat ftruncate futimens futimes futimesat \
   gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
+  gettid getuid grantpt if_indextoname if_nameindex \
   if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
   pidfd_open pidfd_getfd pidfd_send_signal pipe \
-  plock poll ppoll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
-  posix_spawn_file_actions_addclosefrom_np \
+  plock poll ppoll posix_fadvise posix_fallocate posix_openpt \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
   pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np \
@@ -5576,16 +5809,18 @@ AC_CHECK_FUNCS([ \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
-  setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
-  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  setresuid setreuid setsid setuid setvbuf shutdown sigaction \
+  sigfillset siginterrupt sigpending sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp timegm times tmpfile \
+  truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
 PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
+# FreeBSD pthread_attr_get_np()
+PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
@@ -5601,14 +5836,14 @@ if test "$MACHDEP" != linux; then
   AC_CHECK_FUNCS([lchmod])
 fi
 
-# iOS defines some system methods that can be linked (so they are
+# iOS/tvOS/visionOS/watchOS define some system methods that can be linked (so they are
 # found by configure), but either raise a compilation error (because the
 # header definition prevents usage - autoconf doesn't use the headers), or
 # raise an error if used at runtime. Force these symbols off.
-# In particular, dup3 and pipe2 are available as of iOS 27 but were
+# In particular, dup3 and pipe2 are available as of iOS/tvOS/watchOS/visionOS 27 but were
 # incorrectly detected in older simulator versions.
 case "$ac_sys_system" in
-    iOS)
+    iOS|tvOS|watchOS|visionOS)
         AC_MSG_CHECKING([if iOS SDK is older than 27])
         ios_sdk_version=$(xcrun --sdk iphoneos --show-sdk-version 2>/dev/null | cut -d. -f1)
         if test -n "$ios_sdk_version" && test "$ios_sdk_version" -ge 27; then
@@ -5619,10 +5854,18 @@ case "$ac_sys_system" in
         fi
         ;;
     *)
-        # not iOS
+        # not iOS/tvOS/watchOS/visionOS
         AC_CHECK_FUNCS([dup3 getentropy getgroups pipe2 system])
         ;;
 esac
+
+# tvOS/watchOS have some additional methods that can be found, but not used.
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
+  AC_CHECK_FUNCS([ \
+    execv fork fork1 posix_spawn posix_spawnp posix_spawn_file_actions_addclosefrom_np \
+    sigaltstack \
+  ])
+fi
 
 AC_CHECK_DECL([dirfd],
               [AC_DEFINE([HAVE_DIRFD], [1],
@@ -6005,33 +6248,37 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
-# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h
-AS_IF([test "$ac_cv_libc" != musl], [
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-])
-# check for openpty, login_tty, and forkpty
-
-AC_CHECK_FUNCS([openpty], [],
-  [AC_CHECK_LIB([util], [openpty],
-    [AC_DEFINE([HAVE_OPENPTY]) LIBS="$LIBS -lutil"],
-    [AC_CHECK_LIB([bsd], [openpty],
-      [AC_DEFINE([HAVE_OPENPTY]) LIBS="$LIBS -lbsd"])])])
-AC_SEARCH_LIBS([login_tty], [util],
- [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
+# musl libc redefines struct prctl_mm_map and conflicts with linux/prctl.h.
+# The conftest does not reliably catch this, so skip the check on musl.
+AS_CASE([$host],
+  [*-musl*], [],
+  [AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+                [AC_DEFINE([_Py_HAVE_PR_SET_VMA_ANON_NAME], [1],
+                           [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+                [],
+                [@%:@include <linux/prctl.h>
+                 @%:@include <sys/prctl.h>])]
 )
-AC_CHECK_FUNCS([forkpty], [],
-  [AC_CHECK_LIB([util], [forkpty],
-    [AC_DEFINE([HAVE_FORKPTY]) LIBS="$LIBS -lutil"],
-    [AC_CHECK_LIB([bsd], [forkpty],
-      [AC_DEFINE([HAVE_FORKPTY]) LIBS="$LIBS -lbsd"])])])
+# check for openpty, login_tty, and forkpty
+# tvOS/watchOS have functions for tty, but can't use them
+if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
+  AC_CHECK_FUNCS([openpty], [],
+    [AC_CHECK_LIB([util], [openpty],
+      [AC_DEFINE([HAVE_OPENPTY]) LIBS="$LIBS -lutil"],
+      [AC_CHECK_LIB([bsd], [openpty],
+        [AC_DEFINE([HAVE_OPENPTY]) LIBS="$LIBS -lbsd"])])])
+  AC_SEARCH_LIBS([login_tty], [util],
+   [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
+  )
+  AC_CHECK_FUNCS([forkpty], [],
+    [AC_CHECK_LIB([util], [forkpty],
+      [AC_DEFINE([HAVE_FORKPTY]) LIBS="$LIBS -lutil"],
+      [AC_CHECK_LIB([bsd], [forkpty],
+        [AC_DEFINE([HAVE_FORKPTY]) LIBS="$LIBS -lbsd"])])])
+fi
 
 # check for long file support functions
-AC_CHECK_FUNCS([fseek64 fseeko fstatvfs ftell64 ftello statvfs])
+AC_CHECK_FUNCS([fseeko fstatvfs ftello statvfs])
 
 AC_REPLACE_FUNCS([dup2])
 AC_CHECK_FUNCS([getpgrp],
@@ -6067,10 +6314,10 @@ AC_CHECK_FUNCS([clock_getres], [], [
     ])
 ])
 
-# On Android and iOS, clock_settime can be linked (so it is found by
+# On Android, iOS, tvOS, visionOS, and watchOS, clock_settime can be linked (so it is found by
 # configure), but when used in an unprivileged process, it crashes rather than
 # returning an error. Force the symbol off.
-if test "$ac_sys_system" != "Linux-android" && test "$ac_sys_system" != "iOS"
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "iOS" -a "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "visionOS" -a "$ac_sys_system" != "watchOS"
 then
   AC_CHECK_FUNCS([clock_settime], [], [
       AC_CHECK_LIB([rt], [clock_settime], [
@@ -6228,7 +6475,7 @@ int main(void)
 [ac_cv_buggy_getaddrinfo=no],
 [ac_cv_buggy_getaddrinfo=yes],
 [
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS" || test "$ac_sys_system" = "tvOS" || test "$ac_sys_system" = "visionOS" || test "$ac_sys_system" = "watchOS"; then
   ac_cv_buggy_getaddrinfo="no"
 elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
@@ -6328,28 +6575,6 @@ if test $ac_cv_struct_sockaddr_alg = yes; then
 	AC_DEFINE([HAVE_SOCKADDR_ALG], [1],
       [struct sockaddr_alg (linux/if_alg.h)])
 fi
-
-# checks for compiler characteristics
-
-AC_C_CONST
-
-AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char c;]])],
-  [ac_cv_working_signed_char_c=yes], [ac_cv_working_signed_char_c=no])
-])
-AS_VAR_IF([ac_cv_working_signed_char_c], [no], [
-  AC_DEFINE([signed], [], [Define to empty if the keyword does not work.])
-])
-
-AC_CACHE_CHECK([for prototypes], [ac_cv_function_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return foo(10);]])],
-  [ac_cv_function_prototypes=yes], [ac_cv_function_prototypes=no])
-])
-AS_VAR_IF([ac_cv_function_prototypes], [yes], [
-  AC_DEFINE([HAVE_PROTOTYPES], [1],
-     [Define if your compiler supports function prototype])
-])
-
 
 # check for socketpair
 PY_CHECK_FUNC([socketpair], [
@@ -6488,22 +6713,6 @@ then LIBC=$withval
 else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT([default LIBC="$LIBC"])])
-
-# **************************************
-# * Check for gcc x64 inline assembler *
-# **************************************
-
-
-AC_CACHE_CHECK([for x64 gcc inline assembler], [ac_cv_gcc_asm_for_x64], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
-  __asm__ __volatile__ ("movq %rcx, %rax");
-]])],[ac_cv_gcc_asm_for_x64=yes],[ac_cv_gcc_asm_for_x64=no])
-])
-
-AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_X64], [1],
-    [Define if we can use x64 gcc inline assembler])
-])
 
 # **************************************************
 # * Check for various properties of floating point *
@@ -6840,8 +7049,8 @@ if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MA
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 fi
 
-# On iOS the shared libraries must be linked with the framework, when built
-if test "$ac_sys_system" = "iOS" && test "$enable_framework"; then
+# On iOS/tvOS/watchOS the shared libraries must be linked with the framework, when built
+if test "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS" -o "$ac_sys_system" = "watchOS" && test "$enable_framework"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
@@ -7592,7 +7801,7 @@ AC_MSG_NOTICE([checking for device files])
 dnl NOTE: Inform user how to proceed with files when cross compiling.
 dnl Some cross-compile builds are predictable; they won't ever
 dnl have /dev/ptmx or /dev/ptc, so we can set them explicitly.
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+if test "$ac_sys_system" = "Linux-android" -o "$ac_sys_system" = "iOS" -o "$ac_sys_system" = "tvOS" -o "$ac_sys_system" = "visionOS"  -o "$ac_sys_system" = "watchOS" ; then
   ac_cv_file__dev_ptmx=no
   ac_cv_file__dev_ptc=no
 else
@@ -7800,49 +8009,6 @@ for dir in $SRCDIRS; do
 done
 AC_MSG_RESULT([done])
 
-# Availability of -O2:
-AC_CACHE_CHECK([for -O2], [ac_cv_compile_o2], [
-saved_cflags="$CFLAGS"
-CFLAGS="-O2"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [ac_cv_compile_o2=yes], [ac_cv_compile_o2=no])
-CFLAGS="$saved_cflags"
-])
-
-# _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-# http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-AC_MSG_CHECKING([for glibc _FORTIFY_SOURCE/memmove bug])
-saved_cflags="$CFLAGS"
-CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$ac_cv_compile_o2" = no; then
-    CFLAGS=""
-fi
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-void foo(void *p, void *q) { memmove(p, q, 19); }
-int main(void) {
-  char a[32] = "123456789000000000";
-  foo(&a[9], a);
-  if (strcmp(a, "123456789123456789000000000") != 0)
-    return 1;
-  foo(a, &a[9]);
-  if (strcmp(a, "123456789000000000") != 0)
-    return 1;
-  return 0;
-}
-]])],
-[have_glibc_memmove_bug=no],
-[have_glibc_memmove_bug=yes],
-[have_glibc_memmove_bug=undefined])
-CFLAGS="$saved_cflags"
-AC_MSG_RESULT([$have_glibc_memmove_bug])
-if test "$have_glibc_memmove_bug" = yes; then
-    AC_DEFINE([HAVE_GLIBC_MEMMOVE_BUG], [1],
-    [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
-     for memmove and bcopy.])
-fi
-
 AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void) {
@@ -7871,45 +8037,6 @@ if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = 
 fi
 AC_SUBST([CFLAGS_CEVAL])
 
-if test "$ac_cv_gcc_asm_for_x87" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $ac_cv_cc_name in
-        gcc)
-            AC_MSG_CHECKING([for gcc ipa-pure-const bug])
-            saved_cflags="$CFLAGS"
-            CFLAGS="-O2"
-            AC_RUN_IFELSE([AC_LANG_SOURCE([[
-            __attribute__((noinline)) int
-            foo(int *p) {
-              int r;
-              asm ( "movl \$6, (%1)\n\t"
-                    "xorl %0, %0\n\t"
-                    : "=r" (r) : "r" (p) : "memory"
-              );
-              return r;
-            }
-            int main(void) {
-              int p = 8;
-              if ((foo(&p) ? : p) != 6)
-                return 1;
-              return 0;
-            }
-            ]])],
-            [have_ipa_pure_const_bug=no],
-            [have_ipa_pure_const_bug=yes],
-            [have_ipa_pure_const_bug=undefined])
-            CFLAGS="$saved_cflags"
-            AC_MSG_RESULT([$have_ipa_pure_const_bug])
-            if test "$have_ipa_pure_const_bug" = yes; then
-                AC_DEFINE([HAVE_IPA_PURE_CONST_BUG], [1],
-                          [Define if gcc has the ipa-pure-const bug.])
-            fi
-        ;;
-    esac
-fi
-
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])
 AC_ARG_WITH([ensurepip],
@@ -7920,7 +8047,7 @@ AC_ARG_WITH([ensurepip],
       AS_CASE([$ac_sys_system],
         [Emscripten], [with_ensurepip=no],
         [WASI], [with_ensurepip=no],
-        [iOS], [with_ensurepip=no],
+        [iOS|tvOS|visionOS|watchOS], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
@@ -8351,6 +8478,9 @@ case "$ac_sys_system" in
   NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  tvOS) _PYTHREAD_NAME_MAXLEN=63;;
+  visionOS) _PYTHREAD_NAME_MAXLEN=63;;
+  watchOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
   OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   CYGWIN*) _PYTHREAD_NAME_MAXLEN=16;;
@@ -8376,7 +8506,7 @@ AS_CASE([$ac_sys_system],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [termios], [grp])],
   dnl The _scproxy module is available on macOS
   [Darwin], [],
-  [iOS], [
+  [iOS|tvOS|visionOS|watchOS], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.
     dnl gdbm and nis aren't available
@@ -8945,12 +9075,12 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib -b Modules/Setup.bootstrap $srcdir/Modules/Setup
 if test $? -ne 0; then
   AC_MSG_ERROR([makesetup failed])
 fi
 
-mv config.c Modules
+mv config.c config_bootstrap.c Modules
 
 if test -z "$PKG_CONFIG"; then
   AC_MSG_WARN([pkg-config is missing. Some dependencies may not be detected correctly.])

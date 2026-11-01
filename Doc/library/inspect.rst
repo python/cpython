@@ -284,6 +284,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | ``AGEN_SUSPENDED``, or    |
 |                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
+| async generator | aga_gen           | async generator driven by |
+| awaitable       |                   | the awaitable returned    |
+|                 |                   | from ``asend()``,         |
+|                 |                   | ``athrow()``, or          |
+|                 |                   | ``aclose()``              |
++-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
 |                 | __qualname__      | qualified name            |
@@ -319,6 +325,8 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | __self__          | instance to which a       |
 |                 |                   | method is bound, or       |
+|                 |                   | module object a function  |
+|                 |                   | was defined in, or        |
 |                 |                   | ``None``                  |
 +-----------------+-------------------+---------------------------+
 
@@ -357,6 +365,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
    coroutines, and ``ag_state`` attribute to async generators.
+
+.. versionchanged:: 3.16
+
+   Add ``aga_gen`` attribute to the awaitables returned by the ``asend()``,
+   ``athrow()`` and ``aclose()`` methods of async generators.
 
 .. function:: getmembers(object[, predicate])
 
@@ -1344,6 +1357,11 @@ Classes and functions
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
+
+   Arguments whose names are absent from *locals*, including ``*`` and ``**``
+   arguments, are displayed with a value of ``<deleted>``. A custom *formatvalue*
+   function receives a placeholder object whose :func:`repr` is ``<deleted>``
+   for these arguments.
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
