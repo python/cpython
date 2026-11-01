@@ -1229,7 +1229,8 @@ class TestCommandLine(unittest.TestCase):
 
     @create_and_remove_directory(TEMPDIR)
     def test_compress_infile_outfile(self):
-        for compress_level in ('--fast', '--best'):
+        # The XFL header byte records the compression level used.
+        for compress_level, xfl in (('--fast', 4), ('--best', 2)):
             with self.subTest(compress_level=compress_level):
                 local_testgzip = os.path.join(TEMPDIR, 'testgzip')
                 gzipname = local_testgzip + '.gz'
@@ -1243,6 +1244,8 @@ class TestCommandLine(unittest.TestCase):
                 self.assertTrue(os.path.exists(gzipname))
                 self.assertEqual(out, b'')
                 self.assertEqual(err, b'')
+                with open(gzipname, 'rb') as fp:
+                    self.assertEqual(fp.read()[8], xfl)
                 os.remove(gzipname)
                 self.assertFalse(os.path.exists(gzipname))
 
