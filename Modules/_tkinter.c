@@ -1078,7 +1078,9 @@ TupleAsObj(PyObject *value, int wrapped, int depth)
     for (Py_ssize_t i = 0; i < size; i++) {
         Tcl_Obj *item = AsObjNested(PyTuple_GET_ITEM(value, i), depth + 1);
         if (item == NULL) {
-            /* Release the already converted items. */
+            /* Free the already converted items.  A new Tcl object has a
+               zero reference count, so it must be acquired before it can
+               be released. */
             while (--i >= 0) {
                 Tcl_IncrRefCount(argv[i]);
                 Tcl_DecrRefCount(argv[i]);

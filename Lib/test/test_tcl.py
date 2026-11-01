@@ -589,7 +589,8 @@ class TclTest(unittest.TestCase):
     def test_returning_deeply_nested(self):
         if not self.wantobjects:
             self.skipTest('requires wantobjects')
-        # The interpreter can only be used in the thread that created it.
+        # run_with_limited_c_stack() runs the test in a new thread, and a
+        # Tcl interpreter can only be used in the thread that created it.
         interp = Tcl()
         interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
                     % support.exceeds_recursion_limit())
