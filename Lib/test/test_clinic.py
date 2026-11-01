@@ -3570,6 +3570,18 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=7)
 
+    def test_vectorcall_with_deprecated_parameters(self):
+        err = "@vectorcall does not support deprecated parameters"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                a: object = None
+                / [from 3.14]
+        """
+        self.expect_failure(block, err, lineno=5)
+
     def test_unused_param(self):
         block = self.parse("""
             module foo
