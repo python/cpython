@@ -3939,8 +3939,8 @@ x_mul(PyLongObject *a, PyLongObject *b)
     if (z == NULL)
         return NULL;
 
-    memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
+        memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
         /* Efficient squaring per HAC, Algorithm 14.16:
          * https://cacr.uwaterloo.ca/hac/about/chap14.pdf
          * Gives slightly less than a 2x speedup when a == b,
@@ -4011,15 +4011,17 @@ x_mul(PyLongObject *a, PyLongObject *b)
                     return NULL;
                 });
 
+            /* Row 0 has nothing to add to yet (z is not zeroed); every
+               later row only reads digits that the previous row wrote.
+               Compilers split the i == 0 row off into its own loop. */
             while (pb < pbend) {
-                carry += *pz + *pb++ * f;
+                carry += (i ? *pz : 0) + *pb++ * f;
                 *pz++ = (digit)(carry & PyLong_MASK);
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
             }
-            if (carry)
-                *pz += (digit)(carry & PyLong_MASK);
             assert((carry >> PyLong_SHIFT) == 0);
+            *pz = (digit)carry;
         }
     }
     return long_normalize(z);
