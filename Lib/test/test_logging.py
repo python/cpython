@@ -6400,6 +6400,7 @@ class LoggerTest(BaseTest, AssertErrorMessage):
 
     def test_caching_unregistered_logger(self):
         # A logger that is not in loggerDict must not keep a stale cache.
+        self.addCleanup(logging.root.manager._clear_cache)
         logger = logging.Logger("unregistered")
         self.assertEqual(logger._cache, {})
         logger.setLevel(logging.DEBUG)
@@ -6413,6 +6414,7 @@ class LoggerTest(BaseTest, AssertErrorMessage):
 
     def test_clear_cache_empties_cached_loggers(self):
         manager = logging.root.manager
+        self.addCleanup(manager._clear_cache)
         registered = logging.getLogger("cached.registered")
         unregistered = logging.Logger("cached.unregistered")
         # Start from a known state: other tests may have cached results.
