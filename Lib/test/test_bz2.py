@@ -983,6 +983,34 @@ class BZ2DecompressorTest(BaseTest):
         self.assertEqual(out, self.BIG_TEXT)
         self.assertEqual(bzd.unused_data, b"")
 
+    def test_decompressor_needs_input_with_buffered_output(self):
+        # gh-159999: needs_input must be false if all input was consumed
+        # but max_length prevented returning all output.
+        data = b"\x00\x10 0@" * 2
+        bzd = BZ2Decompressor()
+        self.assertEqual(bzd.decompress(bz2.compress(data)[:40], max_length=0),
+                         b"")
+        self.assertFalse(bzd.needs_input)
+        self.assertEqual(bzd.decompress(b""), data)
+
+        # Without max_length, decompress() must return all output available
+        # so far, and with max_length, needs_input must stay false until it
+        # has been returned.
+        data = bytes(100_000)
+        compressed = bz2.compress(data)
+        for max_length in (-1, 1000):
+            with self.subTest(max_length=max_length):
+                bzd = BZ2Decompressor()
+                out = []
+                for i in range(len(compressed)):
+                    out.append(bzd.decompress(compressed[i:i+1], max_length))
+                    while not bzd.needs_input and not bzd.eof:
+                        out.append(bzd.decompress(b"", max_length))
+                    if not bzd.eof:
+                        self.assertEqual(bzd.decompress(b""), b"")
+                self.assertTrue(bzd.eof)
+                self.assertEqual(b"".join(out), data)
+
     def test_decompressor_inputbuf_1(self):
         # Test reusing input buffer after moving existing
         # contents to beginning
