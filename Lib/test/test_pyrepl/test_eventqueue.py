@@ -95,6 +95,16 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[1].evt, "key")
         self.assertEqual(eq.events[1].data, "b")
 
+    def test_push_bracketed_paste(self):
+        eq = self.make_eventqueue()
+        for byte in b"\x1b[200~":
+            eq.push(byte)
+        event = eq.get()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.evt, "key")
+        self.assertEqual(event.data, "bracketed paste")
+        self.assertEqual(event.raw, b"\x1b[200~")
+
     def test_push_special_key(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
