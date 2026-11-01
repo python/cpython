@@ -78,7 +78,7 @@ def load_data(fobj):
     # Read the ttinfo struct, (utoff, isdst, abbrind)
     if typecnt:
         utcoff, isdst, abbrind = zip(
-            *(struct.unpack(">lbb", fobj.read(6)) for i in range(typecnt))
+            *(struct.unpack(">lbB", fobj.read(6)) for i in range(typecnt))
         )
     else:
         utcoff = ()
@@ -89,6 +89,14 @@ def load_data(fobj):
     # not by position in the array but by position in the unsplit
     # abbreviation string. I suppose this makes more sense in C, which uses
     # null to terminate the strings, but it's inconvenient here...
+    #
+    # Each abbreviation index is a single unsigned byte, so only about the
+    # first 256 characters of the block can be referenced.  A much longer
+    # block holds nothing usable, and reading it would copy most of the
+    # block for every local time type.
+    if not 0 <= charcnt <= 512:
+        raise ValueError(f"Invalid TZif file: invalid charcnt: {charcnt}")
+
     abbr_vals = {}
     abbr_chars = fobj.read(charcnt)
 
