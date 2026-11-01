@@ -1,0 +1,4 @@
+Fix :meth:`multiprocessing.pool.Pool.imap` and
+:meth:`~multiprocessing.pool.Pool.imap_unordered` with *buffersize* silently
+dropping results when :meth:`~multiprocessing.pool.Pool.close` was called
+before the iterator was exhausted.
