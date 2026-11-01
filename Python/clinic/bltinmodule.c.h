@@ -279,6 +279,67 @@ PyDoc_STRVAR(builtin_callable__doc__,
 #define BUILTIN_CALLABLE_METHODDEF    \
     {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
+PyDoc_STRVAR(filter_new__doc__,
+"filter(function, iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator over items of iterable where function(item) is true.\n"
+"\n"
+"If function is None, return the items that are true.");
+
+static PyObject *
+filter_new_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+filter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyFilter_Type;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("filter", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("filter", PyTuple_GET_SIZE(args), 2, 2)) {
+        goto exit;
+    }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
+    return_value = filter_new_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+filter_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == filter_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("filter", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("filter", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = filter_new_impl(_PyType_CAST(type), func, seq);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
@@ -1495,4 +1556,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1dacff294aaa7485 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e42f21f39d16c160 input=a9049054013a1b77]*/
