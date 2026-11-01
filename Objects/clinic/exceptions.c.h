@@ -5,6 +5,36 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
+static PyObject *
+BaseException_str_impl(PyBaseExceptionObject *self);
+
+static PyObject *
+BaseException_str(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = BaseException_str_impl((PyBaseExceptionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+BaseException_repr_impl(PyBaseExceptionObject *self);
+
+static PyObject *
+BaseException_repr(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = BaseException_repr_impl((PyBaseExceptionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(BaseException___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -340,4 +370,4 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 
 #define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, NULL},
 
-/*[clinic end generated code: output=b14d57bb5ad3be0d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20829af0c376b1e9 input=a9049054013a1b77]*/

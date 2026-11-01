@@ -899,6 +899,10 @@ pattern_dealloc(PyObject *self)
 LOCAL(Py_ssize_t)
 sre_match(SRE_STATE* state, SRE_CODE* pattern)
 {
+    /* No match if pos > endpos. */
+    if (state->ptr > state->end) {
+        return 0;
+    }
     if (state->charsize == 1)
         return sre_ucs1_match(state, pattern, 1);
     if (state->charsize == 2)

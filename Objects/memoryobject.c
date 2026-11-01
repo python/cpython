@@ -2468,22 +2468,19 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         return ret;
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
-    if (writer == NULL) {
+    char *buffer = PyMem_Malloc(src->len);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
-    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
-                              src, src->len, 'C') < 0) {
-        PyBytesWriter_Discard(writer);
+    if (PyBuffer_ToContiguous(buffer, src, src->len, 'C') < 0) {
+        PyMem_Free(buffer);
         return NULL;
     }
 
-    PyObject *ret = _Py_strhex_with_sep(
-        PyBytesWriter_GetData(writer),
-        PyBytesWriter_GetSize(writer),
-        sep, bytes_per_sep);
-    PyBytesWriter_Discard(writer);
+    PyObject *ret = _Py_strhex_with_sep(buffer, src->len, sep, bytes_per_sep);
+    PyMem_Free(buffer);
 
     return ret;
 }

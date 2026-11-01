@@ -28,6 +28,10 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     ctype_free_stginfo_members(dst_info);
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
+    /* Owned buffers must not be shared if a subsequent allocation fails. */
+    dst_info->format = NULL;
+    dst_info->shape = NULL;
+    dst_info->ffi_type_pointer.elements = NULL;
 #ifdef Py_GIL_DISABLED
     dst_info->mutex = (PyMutex){0};
 #endif

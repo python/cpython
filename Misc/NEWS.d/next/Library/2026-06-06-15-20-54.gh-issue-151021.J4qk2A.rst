@@ -1,3 +1,0 @@
-Fix :meth:`mmap.mmap.find` and :meth:`~mmap.mmap.rfind` to return ``-1``
-when searching for an empty subsequence with a start position past the end
-of the mapping.

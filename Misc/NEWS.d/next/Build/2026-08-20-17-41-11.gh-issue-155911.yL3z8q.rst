@@ -1,2 +1,0 @@
-Fix curses detection with libraries in ``LIBS`` and
-:option:`--without-curses`. Patch by Shamil Abdulaev.

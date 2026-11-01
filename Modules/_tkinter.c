@@ -1047,13 +1047,21 @@ asBignumObj(PyObject *value)
     return result;
 }
 
-static Tcl_Obj* AsObj(PyObject *value);
+static Tcl_Obj* AsObjNested(PyObject *value, int depth);
 
 static Tcl_Obj*
-TupleAsObj(PyObject *value, int wrapped)
+TupleAsObj(PyObject *value, int wrapped, int depth)
 {
     Tcl_Obj *result = NULL;
     Py_ssize_t size = PyTuple_GET_SIZE(value);
+    /* The same limit as in _flatten1().  It bounds not only the recursion
+       here, but also the recursion in Tcl when it generates the string
+       representation of the nested list, so a C stack check is not enough. */
+    if (depth > 1000) {
+        PyErr_SetString(PyExc_ValueError,
+                        "nesting too deep in conversion to Tcl object");
+        return NULL;
+    }
     if (size == 0) {
         return Tcl_NewListObj(0, NULL);
     }
@@ -1068,8 +1076,15 @@ TupleAsObj(PyObject *value, int wrapped)
       return NULL;
     }
     for (Py_ssize_t i = 0; i < size; i++) {
-        Tcl_Obj *item = AsObj(PyTuple_GET_ITEM(value, i));
+        Tcl_Obj *item = AsObjNested(PyTuple_GET_ITEM(value, i), depth + 1);
         if (item == NULL) {
+            /* Free the already converted items.  A new Tcl object has a
+               zero reference count, so it must be acquired before it can
+               be released. */
+            while (--i >= 0) {
+                Tcl_IncrRefCount(argv[i]);
+                Tcl_DecrRefCount(argv[i]);
+            }
             goto exit;
         }
         argv[i] = item;
@@ -1082,7 +1097,7 @@ exit:
 }
 
 static Tcl_Obj*
-AsObj(PyObject *value)
+AsObjNested(PyObject *value, int depth)
 {
     Tcl_Obj *result;
 
@@ -1128,7 +1143,7 @@ AsObj(PyObject *value)
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
 
     if (PyTuple_Check(value)) {
-        return TupleAsObj(value, false);
+        return TupleAsObj(value, false, depth);
     }
 
     if (PyList_Check(value)) {
@@ -1136,7 +1151,7 @@ AsObj(PyObject *value)
         if (value_as_tuple == NULL) {
             return NULL;
         }
-        result = TupleAsObj(value_as_tuple, true);
+        result = TupleAsObj(value_as_tuple, true, depth);
         Py_DECREF(value_as_tuple);
         return result;
     }
@@ -1221,10 +1236,16 @@ AsObj(PyObject *value)
         PyObject *v = PyObject_Str(value);
         if (!v)
             return 0;
-        result = AsObj(v);
+        result = AsObjNested(v, depth);
         Py_DECREF(v);
         return result;
     }
+}
+
+static Tcl_Obj*
+AsObj(PyObject *value)
+{
+    return AsObjNested(value, 0);
 }
 
 static PyObject *
@@ -1384,19 +1405,25 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         result = PyTuple_New(size);
         if (!result)
             return NULL;
+        if (Py_EnterRecursiveCall(" while converting a Tcl list")) {
+            Py_DECREF(result);
+            return NULL;
+        }
         for (i = 0; i < size; i++) {
             status = Tcl_ListObjIndex(interp, value, i, &tcl_elem);
             if (status == TCL_ERROR) {
-                Py_DECREF(result);
-                return Tkinter_Error(tkapp);
+                Tkinter_Error(tkapp);
+                Py_CLEAR(result);
+                break;
             }
             elem = FromObj(tkapp, tcl_elem);
             if (!elem) {
-                Py_DECREF(result);
-                return NULL;
+                Py_CLEAR(result);
+                break;
             }
             PyTuple_SET_ITEM(result, i, elem);
         }
+        Py_LeaveRecursiveCall();
         return result;
     }
 

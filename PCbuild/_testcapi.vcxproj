@@ -135,6 +135,7 @@
     <ClCompile Include="..\Modules\_testcapi\function.c" />
     <ClCompile Include="..\Modules\_testcapi\weakref.c" />
     <ClCompile Include="..\Modules\_testcapi\marshal.c" />
+    <ClCompile Include="..\Modules\_testcapi\fpcast.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
