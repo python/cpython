@@ -1257,6 +1257,42 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
 
+    def test_unquote_ascii_and_non_ascii_agree(self):
+        # ASCII input takes a fast path; with a non-UTF-8 encoding, a
+        # non-ASCII prefix forces the general path.  Both must decode the
+        # escapes the same way.
+        for given in ['%41%zz%', 'a%20b%2Fc%E2%82%AC', '%F3%B1', '%C3%BC+%2B']:
+            for encoding, errors in [('latin-1', 'strict'),
+                                     ('ascii', 'ignore'),
+                                     ('cp1252', 'replace')]:
+                with self.subTest(given=given, encoding=encoding,
+                                  errors=errors):
+                    expect = urllib.parse.unquote(given, encoding, errors)
+                    result = urllib.parse.unquote('\u00e9' + given,
+                                                  encoding, errors)
+                    self.assertEqual(result, '\u00e9' + expect)
+
+    def test_unquote_non_ascii_utf8(self):
+        # Non-ASCII input decoded as UTF-8 takes a fast path that encodes
+        # the whole string at once.  Literal characters must not combine
+        # with adjacent invalid escapes.
+        cases = [
+            ('\u00e9%ff', '\u00e9\ufffd'),
+            ('%C3\u00e9', '\ufffd\u00e9'),
+            ('%F0%9F\U0001F600', '\ufffd\U0001F600'),
+            ('\u6f22%20\u5b57%E2%82%AC', '\u6f22 \u5b57\u20ac'),
+            # Lone surrogates cannot be encoded and are passed through.
+            ('\ud800%41', '\ud800A'),
+        ]
+        for given, expect in cases:
+            with self.subTest(given=given):
+                self.assertEqual(urllib.parse.unquote(given), expect)
+                self.assertEqual(urllib.parse.unquote(given, 'utf8'), expect)
+        self.assertEqual(urllib.parse.unquote_plus('caf\u00e9+%2B'),
+                         'caf\u00e9 +')
+        self.assertRaises(UnicodeDecodeError, urllib.parse.unquote,
+                          '\u00e9%ff', errors='strict')
+
     def test_unquoting_with_bytes_input(self):
         # ASCII characters decoded to a string
         given = b'blueberryjam'
