@@ -8,7 +8,8 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-from test.support import force_not_colorized, warnings_helper
+from test.support import (force_not_colorized,
+                          force_not_colorized_test_class, warnings_helper)
 from test.support import os_helper
 from test.support import threading_helper
 
@@ -998,6 +999,149 @@ class TestCommandLine(unittest.TestCase):
         # does not crash.
         code = 'import _testcapi; _testcapi.test_pymem_alloc0(); 1'
         assert_python_ok('-X', 'tracemalloc', '-c', code)
+
+
+@force_not_colorized_test_class
+class TestModuleCommandLine(unittest.TestCase):
+    script = textwrap.dedent("""
+        import sys
+        def alloc():
+            return [bytes(10_000) for _ in range(100)]
+        data = alloc()
+        print(f'name={__name__} argv={sys.argv[1:]}')
+    """)
+
+    def setUp(self):
+        self.tmpdir = self.enterContext(os_helper.temp_dir())
+        self.script_path = self.write_script('script.py', self.script)
+
+    def write_script(self, name, source):
+        path = os.path.join(self.tmpdir, name)
+        with open(path, 'w', encoding='utf-8') as fp:
+            fp.write(source)
+        return path
+
+    def run_cli(self, *args, **kwargs):
+        res = assert_python_ok('-m', 'tracemalloc', *args, **kwargs)
+        return res.out.decode()
+
+    def run_cli_failure(self, *args):
+        res = assert_python_failure('-m', 'tracemalloc', *args)
+        return res.err.decode()
+
+    def test_script(self):
+        out = self.run_cli(self.script_path, 'a', '-b', '--c')
+        self.assertIn("name=__main__ argv=['a', '-b', '--c']", out)
+        self.assertIn('Top 10 lineno allocations still alive at exit:', out)
+        self.assertRegex(out, r'script\.py:4: size=\d+ KiB, count=\d+')
+        self.assertIn('Total size: ', out)
+        self.assertIn('Peak size: ', out)
+
+    def test_globals_alive(self):
+        # Memory referenced by globals is alive at exit, even without a
+        # reference cycle between a function and the globals
+        script = self.write_script(
+            'nofunc.py', 'data = [bytes(10_000) for _ in range(100)]\n')
+        out = self.run_cli(script)
+        self.assertRegex(out, r'nofunc\.py:1: size=\d+ KiB, count=\d+')
+
+    def test_module(self):
+        out = self.run_cli('-m', 'script', 'arg', __cwd=self.tmpdir,
+                           __isolated=False)
+        self.assertIn("name=__main__ argv=['arg']", out)
+        self.assertRegex(out, r'script\.py:4: size=\d+ KiB')
+
+    def test_script_sys_path(self):
+        self.write_script('helper.py', 'print("helper imported")\n')
+        script = self.write_script('importer.py', 'import helper\n')
+        out = self.run_cli(script, __isolated=False)
+        self.assertIn('helper imported', out)
+
+    def test_limit(self):
+        out = self.run_cli('-l', '1', self.script_path)
+        lines = out.splitlines()
+        index = lines.index('Top 1 lineno allocations still alive at exit:')
+        self.assertRegex(lines[index + 1], r'script\.py:4: ')
+        self.assertRegex(lines[index + 2], r'^\d+ other: size=')
+
+    def test_key_type_filename(self):
+        out = self.run_cli('-t', 'filename', self.script_path)
+        self.assertRegex(out, r'script\.py:0: size=\d+ KiB')
+
+    def test_key_type_traceback(self):
+        out = self.run_cli('-t', 'traceback', '-n', '5', '-l', '1',
+                           self.script_path)
+        self.assertIn('Top 1 traceback allocations still alive at exit:', out)
+        self.assertIn('    data = alloc()', out)
+        self.assertIn('    return [bytes(10_000) for _ in range(100)]', out)
+        # Frames of the command line interface are not displayed
+        self.assertNotIn('runpy', out)
+        self.assertNotIn('tracemalloc.py', out)
+
+    def test_cumulative(self):
+        out = self.run_cli('--cumulative', '-n', '5', '-l', '2',
+                           self.script_path)
+        self.assertRegex(out, r'script\.py:5: size=\d+ KiB')
+        self.assertRegex(out, r'script\.py:4: size=\d+ KiB')
+        self.assertNotIn('runpy', out)
+        self.assertNotIn(' other: ', out)
+
+    def test_outfile(self):
+        outfile = os.path.join(self.tmpdir, 'snapshot.pickle')
+        out = self.run_cli('-n', '3', '-o', outfile, self.script_path)
+        self.assertNotIn('Total size', out)
+        snapshot = tracemalloc.Snapshot.load(outfile)
+        self.assertEqual(snapshot.traceback_limit, 3)
+        top = snapshot.statistics('lineno')[0]
+        self.assertEqual(top.traceback[0].filename, self.script_path)
+        self.assertEqual(top.traceback[0].lineno, 4)
+
+    def test_already_tracing(self):
+        # -n overrides the number of frames set by -X tracemalloc
+        outfile = os.path.join(self.tmpdir, 'snapshot.pickle')
+        self.run_cli('-n', '3', '-o', outfile, self.script_path,
+                     __isolated=False, PYTHONTRACEMALLOC='1')
+        snapshot = tracemalloc.Snapshot.load(outfile)
+        self.assertEqual(snapshot.traceback_limit, 3)
+
+    def test_exit_code(self):
+        script = self.write_script('exit.py', 'import sys\nsys.exit(3)\n')
+        res = assert_python_failure('-m', 'tracemalloc', script)
+        self.assertEqual(res.rc, 3)
+        self.assertIn(b'Total size: ', res.out)
+
+    def test_exception(self):
+        script = self.write_script('error.py', '1/0\n')
+        res = assert_python_failure('-m', 'tracemalloc', script)
+        self.assertIn(b'ZeroDivisionError', res.err)
+        self.assertIn(b'Total size: ', res.out)
+
+    def test_tracing_stopped(self):
+        # The traced program can stop tracing
+        script = self.write_script(
+            'stop.py', 'import sys, tracemalloc\n'
+                       'tracemalloc.stop()\n'
+                       'sys.exit(3)\n')
+        res = assert_python_failure('-m', 'tracemalloc', script)
+        self.assertEqual(res.rc, 3)
+        self.assertEqual(res.out, b'')
+        self.assertEqual(res.err, b'')
+
+    def test_errors(self):
+        err = self.run_cli_failure()
+        self.assertIn('the following arguments are required: target', err)
+        err = self.run_cli_failure(os.path.join(self.tmpdir, 'missing.py'))
+        self.assertIn('cannot find script', err)
+        err = self.run_cli_failure('-t', 'traceback', '--cumulative',
+                                   self.script_path)
+        self.assertIn("--cumulative cannot be used with key type", err)
+        err = self.run_cli_failure('-l', '0', self.script_path)
+        self.assertIn('--limit must be a positive integer', err)
+        for nframe in INVALID_NFRAME:
+            with self.subTest(nframe=nframe):
+                err = self.run_cli_failure('-n', str(nframe),
+                                           self.script_path)
+                self.assertIn('the number of frames must be in range', err)
 
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi')
