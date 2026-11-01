@@ -1,0 +1,3 @@
+:func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlparse` now raise
+:exc:`ValueError` for an invalid port when the URL is parsed, instead of
+when the :attr:`!port` attribute is read. Patch by Miguel Brito and Senthil Kumaran.
