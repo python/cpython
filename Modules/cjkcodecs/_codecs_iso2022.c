@@ -732,7 +732,7 @@ jisx0213_2000_2_decoder(const MultibyteCodec *codec, const unsigned char *data)
 {
     Py_UCS4 u;
     EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(config, u, data[0], data[1])
-    if (TRYMAP_DEC_ST(jisx0213_2_bmp, u, data[0], data[1]))
+    else if (TRYMAP_DEC_ST(jisx0213_2_bmp, u, data[0], data[1]))
         ;
     else if (TRYMAP_DEC_ST(jisx0213_2_emp, u, data[0], data[1]))
         u |= 0x20000;
