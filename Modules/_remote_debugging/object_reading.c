@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "internal/pycore_unicodeobject.h"  // _Py_MAX_UNICODE
 #include <limits.h>
 
 /* ============================================================================
@@ -25,7 +26,6 @@ read_##type_name(RemoteUnwinderObject *unwinder, uintptr_t address, c_type *resu
 }
 
 DEFINE_MEMORY_READER(ptr, uintptr_t, "Failed to read pointer from remote memory")
-DEFINE_MEMORY_READER(Py_ssize_t, Py_ssize_t, "Failed to read Py_ssize_t from remote memory")
 DEFINE_MEMORY_READER(char, char, "Failed to read char from remote memory")
 
 int
@@ -64,11 +64,15 @@ read_py_str(
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, unicode_obj, unwinder->debug_offsets.unicode_object.length);
-    if (len < 0 || len > max_len) {
+    if (len < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Invalid string length (%zd) at 0x%lx", len, address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid string length in remote Unicode object");
         return NULL;
+    }
+    if (len > max_len) {
+        // gh-157788: a long name must not fail the whole read
+        len = max_len;
     }
 
     // Inspect state to pick the right data offset and character width.
@@ -88,23 +92,15 @@ read_py_str(
     }
 
     int kind = (int)state.kind;
-    Py_UCS4 max_char;
-    switch (kind) {
-        case PyUnicode_1BYTE_KIND:
-            max_char = state.ascii ? 0x7F : 0xFF;
-            break;
-        case PyUnicode_2BYTE_KIND:
-            max_char = 0xFFFF;
-            break;
-        case PyUnicode_4BYTE_KIND:
-            max_char = 0x10FFFF;
-            break;
-        default:
-            PyErr_Format(PyExc_RuntimeError,
-                         "Invalid Unicode kind %d at 0x%lx", kind, address);
-            set_exception_cause(unwinder, PyExc_RuntimeError,
-                                "Invalid kind in remote Unicode object");
-            return NULL;
+    if (kind != PyUnicode_1BYTE_KIND
+        && kind != PyUnicode_2BYTE_KIND
+        && kind != PyUnicode_4BYTE_KIND)
+    {
+        PyErr_Format(PyExc_RuntimeError,
+                     "Invalid Unicode kind %d at 0x%lx", kind, address);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+                            "Invalid kind in remote Unicode object");
+        return NULL;
     }
 
     size_t header_size = state.ascii
@@ -124,16 +120,16 @@ read_py_str(
         return NULL;
     }
 
-    PyObject *result = PyUnicode_New(len, max_char);
-    if (result == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to allocate PyUnicode for remote string");
-        return NULL;
-    }
     if (nbytes == 0) {
-        return result;
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
-    void *data = PyUnicode_DATA(result);
+    char *data = PyMem_Malloc(nbytes);
+    if (data == NULL) {
+        PyErr_NoMemory();
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate buffer for remote string");
+        return NULL;
+    }
 
     // Reuse data already present in the header read; only round-trip for
     // whatever spills past it.
@@ -150,14 +146,36 @@ read_py_str(
             &unwinder->handle,
             address + header_size + inline_bytes,
             nbytes - inline_bytes,
-            (char *)data + inline_bytes);
+            data + inline_bytes);
         if (res < 0) {
-            Py_DECREF(result);
+            PyMem_Free(data);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read string data from remote memory");
             return NULL;
         }
     }
 
+    if (kind == PyUnicode_4BYTE_KIND) {
+        Py_UCS4 *ucs4 = (Py_UCS4 *)data;
+        for (Py_ssize_t i = 0; i < len; i++) {
+            Py_UCS4 ch = ucs4[i];
+            if (ch > _Py_MAX_UNICODE) {
+                PyMem_Free(data);
+                PyErr_Format(PyExc_RuntimeError,
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, _Py_MAX_UNICODE);
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                                    "Unicode string contains invalid character");
+                return NULL;
+            }
+        }
+    }
+
+    PyObject *result = PyUnicode_FromKindAndData(kind, data, len);
+    PyMem_Free(data);
+    if (result == NULL) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Invalid character data in remote Unicode object");
+        return NULL;
+    }
     return result;
 }
 

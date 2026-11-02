@@ -48,6 +48,26 @@ class TestDecode:
         self.assertEqual(self.loads('[]'), [])
         self.assertEqual(self.loads('""'), "")
 
+    def test_object_hook(self):
+        s = '{"a":{"b":{}}}'
+
+        expected_result = {"a":{"b":{"x":1}, "x":1}, "x":1}
+        expected_hook_arguments = [
+            {}, {"b": {"x":1}}, {"a": {"b": {"x":1}, "x":1}}
+        ]
+
+        hook_arguments = []
+
+        def hook(x):
+            hook_arguments.append(x)
+            return {**x, "x":1}
+
+        result = self.loads(s, object_hook=hook)
+
+        self.assertEqual(result, expected_result)
+        self.assertEqual(hook_arguments, expected_hook_arguments)
+
+
     def test_object_pairs_hook(self):
         s = '{"xkd":1, "kcw":2, "art":3, "hxm":4, "qrt":5, "pad":6, "hoy":7}'
         p = [("xkd", 1), ("kcw", 2), ("art", 3), ("hxm", 4),

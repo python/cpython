@@ -307,9 +307,7 @@ With a new bytecode you must also change what is called the "magic number" for
 .pyc files: bump the value of the variable `MAGIC_NUMBER` in
 [`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py).
 Changing this number will lead to all .pyc files with the old `MAGIC_NUMBER`
-to be recompiled by the interpreter on import.  Whenever `MAGIC_NUMBER` is
-changed, the ranges in the `magic_values` array in
-[`PC/launcher.c`](../PC/launcher.c) may also need to be updated.  Changes to
+to be recompiled by the interpreter on import.  Changes to
 [`Lib/importlib/_bootstrap_external.py`](../Lib/importlib/_bootstrap_external.py)
 will take effect only after running `make regen-importlib`.
 

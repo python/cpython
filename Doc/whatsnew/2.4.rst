@@ -1015,8 +1015,8 @@ complete list of changes, or look through the CVS logs for all the details.
 * Chinese (ROC): big5, cp950
 
 * Japanese: cp932, euc-jis-2004, euc-jp, euc-jisx0213, iso-2022-jp,
-    iso-2022-jp-1, iso-2022-jp-2, iso-2022-jp-3, iso-2022-jp-ext, iso-2022-jp-2004,
-    shift-jis, shift-jisx0213, shift-jis-2004
+  iso-2022-jp-1, iso-2022-jp-2, iso-2022-jp-3, iso-2022-jp-ext, iso-2022-jp-2004,
+  shift-jis, shift-jisx0213, shift-jis-2004
 
 * Korean: cp949, euc-kr, johab, iso-2022-kr
 

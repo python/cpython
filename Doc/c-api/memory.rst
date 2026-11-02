@@ -437,6 +437,8 @@ Release build                        ``"pymalloc"``           ``malloc``        
 Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug    ``pymalloc`` + debug    ``pymalloc`` + debug
 Release build, without pymalloc      ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
 Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Release build, with ASan or MSan     ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, with ASan or MSan       ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
 Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``            ``mimalloc``
 Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug    ``mimalloc`` + debug
 ===================================  =======================  ====================  ======================  ======================
@@ -451,6 +453,10 @@ Legend:
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
+* "with ASan or MSan": sanitizer build as configured using the
+  :option:`--with-address-sanitizer`,
+  :option:`--with-hwaddress-sanitizer`, and/or
+  :option:`--with-memory-sanitizer` option.
 
 .. _customize-memory-allocators:
 
@@ -705,9 +711,11 @@ This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
-Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
-uncover low level bugs within the C code.
+The pymalloc allocator is disabled by default when Python is built with
+a sanitizer which does not track pymalloc allocations
+(:option:`--with-address-sanitizer`, :option:`--with-hwaddress-sanitizer`,
+:option:`--with-memory-sanitizer`).
+Use :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to enable pymalloc.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

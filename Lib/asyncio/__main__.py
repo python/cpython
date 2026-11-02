@@ -212,11 +212,14 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    repl_locals = {'asyncio': asyncio}
-    for key in {'__name__', '__package__',
-                '__loader__', '__spec__',
-                '__builtins__', '__file__'}:
-        repl_locals[key] = locals()[key]
+    repl_locals = {
+        'asyncio': asyncio,
+        '__name__': __name__,
+        '__package__': None,
+        '__loader__': __loader__,
+        '__spec__': None,
+        '__builtins__': __builtins__,
+    }
 
     console = AsyncIOInteractiveConsole(repl_locals, loop)
 

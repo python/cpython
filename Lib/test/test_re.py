@@ -1,3 +1,4 @@
+from test import support
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, linked_to_musl,
@@ -1537,6 +1538,10 @@ class ReTests(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('error', FutureWarning)
             re.compile(r'[a-z--[aeiou]]')
+        # A reserved construct inside a nested operand warns against the caller.
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            re.compile(r'[\w--[[:digit:]]]')
+        self.assertEqual(w.filename, __file__)
 
         # Set union  A||B == A or B (an explicit form of [AB]); flat operands
         # merge into one charset, otherwise the operations are alternated.
@@ -1557,6 +1562,10 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.findall(r'[\d~~1]', s), list('0123456789~'))
         self.assertEqual(w.filename, __file__)
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
+        with self.assertWarnsRegex(FutureWarning,
+                                   'Possible set symmetric difference ') as w:
+            re.compile(r'[\w--[\d~~1]]')
+        self.assertEqual(w.filename, __file__)
 
     def test_search_coverage(self):
         self.assertEqual(re.search(r"\s(b)", " b").group(1), "b")
@@ -2145,6 +2154,28 @@ class ReTests(unittest.TestCase):
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
         self.assertRaises(re.PatternError, re.compile, b'(?aL)')
 
+    def test_locale_ignorecase_negated_set(self):
+        IL = re.LOCALE | re.IGNORECASE
+        # [bc] matches b'B', so [^bc] must not.
+        self.assertTrue(re.fullmatch(rb'[bc]', b'B', IL))
+        self.assertIsNone(re.fullmatch(rb'[^bc]', b'B', IL))
+        self.assertIsNone(re.fullmatch(rb'[^b-c]', b'C', IL))
+        self.assertIsNone(re.fullmatch(rb'[^bc]', b'c', IL))
+        self.assertTrue(re.fullmatch(rb'[^bc]', b'a', IL))
+        # A one-member set compiles to NOT_LITERAL_LOC_IGNORE.
+        self.assertIsNone(re.fullmatch(rb'[^b]', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'[^b]', b'a', IL))
+        self.assertIsNone(re.fullmatch(rb'[^\wq]', b'Q', IL))
+        # A sparse set compiles to a bitmap instead of ranges.
+        self.assertTrue(re.fullmatch(rb'[ace]', b'C', IL))
+        self.assertIsNone(re.fullmatch(rb'[^ace]', b'C', IL))
+        self.assertTrue(re.fullmatch(rb'[^ace]', b'b', IL))
+        # An alternation folded into a set puts NEGATE in the middle of it.
+        self.assertIsNone(re.fullmatch(rb'(?:a|[^bc])', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'(?:a|[^bc])', b'A', IL))
+        self.assertIsNone(re.fullmatch(rb'\w(?<!b)', b'B', IL))
+        self.assertTrue(re.fullmatch(rb'\w(?<!b)', b'A', IL))
+
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
         self.assertIsNone(re.match(r'(?i:a)b', 'aB'))
@@ -2251,7 +2282,7 @@ class ReTests(unittest.TestCase):
 
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
-    @bigmemtest(size=_2G, memuse=16 + 2)
+    @bigmemtest(size=_2G, memuse=16 + 3)
     def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size
@@ -2396,6 +2427,25 @@ class ReTests(unittest.TestCase):
         self.assertEqual(
             pat.scanner(string='abracadabra', pos=3, endpos=10).search().span(),
             (7, 9))
+
+    def test_pos_greater_than_endpos(self):
+        # If endpos is less than pos, no match will be found.
+        for pattern in ['', r'$', r'^$', r'\b$', r'(?:x|$)']:
+            for string in ['abc\n', b'abc\n', bytearray(b'abc\n')]:
+                with self.subTest(pattern=pattern, string=string):
+                    if isinstance(string, str):
+                        p = re.compile(pattern, re.MULTILINE)
+                    else:
+                        p = re.compile(pattern.encode(), re.MULTILINE)
+                    for pos, endpos in [(3, 0), (4, 0), (4, 3), (2, 1)]:
+                        self.assertIsNone(p.match(string, pos, endpos))
+                        self.assertIsNone(p.fullmatch(string, pos, endpos))
+                        self.assertIsNone(p.search(string, pos, endpos))
+                        self.assertIsNone(
+                            p.scanner(string, pos, endpos).match())
+                        self.assertIsNone(
+                            p.scanner(string, pos, endpos).search())
+                        self.assertEqual(p.findall(string, pos, endpos), [])
 
     def test_bug_20998(self):
         # Issue #20998: Fullmatch of repeated single character pattern
@@ -3348,13 +3398,10 @@ class ExternalTests(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(re, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, re, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":
