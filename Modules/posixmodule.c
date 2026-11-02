@@ -8397,7 +8397,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
-                "spawnv() arg 2 first element cannot be empty");
+                "spawnve() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
@@ -12337,7 +12337,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (!PySequence_Check(buffers)) {
         PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
+            "preadv() arg 2 must be a sequence");
         return -1;
     }
 
