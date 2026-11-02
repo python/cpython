@@ -28,12 +28,11 @@ class PythonTestRunner(val context: Context) {
      * @param args Python command-line, encoded as JSON.
      * @return The Python exit status: zero on success, nonzero on failure. */
     fun run(args: String) : Int {
-        // We leave argument 0 as an empty string, which is a placeholder for the
-        // executable name in embedded mode.
+        // Argument 0 is a placeholder for the executable name in embedded mode.
         val argsJsonArray = JSONArray(args)
-        val argsStringArray = Array<String>(argsJsonArray.length() + 1) { it -> ""}
-        for (i in 0..<argsJsonArray.length()) {
-            argsStringArray[i + 1] = argsJsonArray.getString(i)
+        val argsStringArray = Array<String>(argsJsonArray.length() + 1) { i ->
+            if (i == 0) ""
+            else argsJsonArray.getString(i - 1)
         }
 
         // Python needs this variable to help it find the temporary directory,

@@ -3,23 +3,70 @@ import functools
 import os
 import gc
 import platform
+import signal
 import sys
 import textwrap
 import time
 import unittest
 import weakref
+import _tkinter
 import tkinter
 from tkinter import TclError, ttk
 import enum
 from test import support
 from test.support import os_helper
+from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version, tk_version)
+                                       tcl_version, tk_version,
+                                       wait_until_mapped)
 
 support.requires('gui')
+
+def check_version_info(test, vi):
+    # The following is almost a copy of tests for sys.version_info.
+    test.assertIsInstance(vi[:], tuple)
+    test.assertEqual(len(vi), 5)
+    test.assertIsInstance(vi[0], int)
+    test.assertIsInstance(vi[1], int)
+    test.assertIsInstance(vi[2], int)
+    test.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
+    test.assertIsInstance(vi[4], int)
+    test.assertIsInstance(vi.major, int)
+    test.assertIsInstance(vi.minor, int)
+    test.assertIsInstance(vi.micro, int)
+    test.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
+    test.assertIsInstance(vi.serial, int)
+    test.assertEqual(vi[0], vi.major)
+    test.assertEqual(vi[1], vi.minor)
+    test.assertEqual(vi[2], vi.micro)
+    test.assertEqual(vi[3], vi.releaselevel)
+    test.assertEqual(vi[4], vi.serial)
+    test.assertTrue(vi > (1,0,0))
+    if vi.releaselevel == 'final':
+        test.assertEqual(vi.serial, 0)
+    else:
+        test.assertEqual(vi.micro, 0)
+    test.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+
+
+class VersionTest(unittest.TestCase):
+
+    def test_version_info(self):
+        for vi, version, patchlevel in (
+            (tkinter.TCL_VERSION_INFO, _tkinter.TCL_VERSION, _tkinter.TCL_PATCH_LEVEL),
+            (tkinter.TK_VERSION_INFO, _tkinter.TK_VERSION, _tkinter.TK_PATCH_LEVEL),
+        ):
+            with self.subTest(patchlevel=patchlevel):
+                check_version_info(self, vi)
+                self.assertEqual(str(vi), patchlevel)
+                self.assertEqual(f'{vi.major}.{vi.minor}', version)
+        self.assertEqual(tkinter.TclVersion,
+                         float(f'{tkinter.TCL_VERSION_INFO.major}.'
+                               f'{tkinter.TCL_VERSION_INFO.minor}'))
+
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
@@ -508,15 +555,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update_idletasks()
         f.focus_force()
         self.root.update()
-        self.assertIs(self.root.focus_get(), f)
-        self.assertIs(self.root.focus_displayof(), f)
+        # The window manager can take the focus away, and then focus_get()
+        # and focus_displayof() return None.
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), f)
+            self.assertIs(self.root.focus_displayof(), f)
         self.assertIs(f.focus_lastfor(), f)
         b = tkinter.Button(f)
         b.pack()
         self.root.update()
         b.focus_set()
         self.root.update()
-        self.assertIs(self.root.focus_get(), b)
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), b)
+        self.assertIs(f.focus_lastfor(), b)
 
     def test_focus_methods_unresolvable(self):
         # The focus may be on a widget that tkinter did not create and so
@@ -822,30 +874,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         vi = self.root.info_patchlevel()
         f = tkinter.Frame(self.root)
         self.assertEqual(f.info_patchlevel(), vi)
-        # The following is almost a copy of tests for sys.version_info.
-        self.assertIsInstance(vi[:], tuple)
-        self.assertEqual(len(vi), 5)
-        self.assertIsInstance(vi[0], int)
-        self.assertIsInstance(vi[1], int)
-        self.assertIsInstance(vi[2], int)
-        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
-        self.assertIsInstance(vi[4], int)
-        self.assertIsInstance(vi.major, int)
-        self.assertIsInstance(vi.minor, int)
-        self.assertIsInstance(vi.micro, int)
-        self.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
-        self.assertIsInstance(vi.serial, int)
-        self.assertEqual(vi[0], vi.major)
-        self.assertEqual(vi[1], vi.minor)
-        self.assertEqual(vi[2], vi.micro)
-        self.assertEqual(vi[3], vi.releaselevel)
-        self.assertEqual(vi[4], vi.serial)
-        self.assertTrue(vi > (1,0,0))
-        if vi.releaselevel == 'final':
-            self.assertEqual(vi.serial, 0)
-        else:
-            self.assertEqual(vi.micro, 0)
-        self.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+        check_version_info(self, vi)
+        # The Tcl library loaded at runtime should be compatible with
+        # the one used for building the module.
+        self.assertEqual(vi[:2], tkinter.TCL_VERSION_INFO[:2])
 
     def test_embedded_null(self):
         widget = tkinter.Entry(self.root)
@@ -1319,9 +1351,15 @@ class WmTest(AbstractTkTest, unittest.TestCase):
     def test_wm_stackorder(self):
         t1 = tkinter.Toplevel(self.root)
         t2 = tkinter.Toplevel(self.root)
+        if self.root._windowingsystem == 'x11':
+            # Bypass the window manager, which may ignore lift() or reorder
+            # the windows while they are being mapped.
+            t1.overrideredirect(True)
+            t2.overrideredirect(True)
         t1.deiconify()
         t2.deiconify()
-        self.root.update()
+        wait_until_mapped(t1)
+        wait_until_mapped(t2)
         t1.lift(t2)  # Raise t1 above t2.
         self.root.update()
         order = self.root.wm_stackorder()
@@ -1361,7 +1399,9 @@ class EventTest(AbstractTkTest, unittest.TestCase):
 
         f.focus_force()
         self.root.update()
-        self.assertEqual(len(events), 1, events)
+        # The window manager can take the focus away and give it back,
+        # which makes Tk generate additional focus events.
+        self.assertGreaterEqual(len(events), 1, events)
         e = events[0]
         self.assertIs(e.type, tkinter.EventType.FocusIn)
         self.assertIs(e.widget, f)
@@ -2133,6 +2173,18 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class SignalTest(unittest.TestCase):
+
+    @runInSubprocess()
+    def test_sigint_handler(self):
+        # gh-157672: Tk on macOS replaced the SIGINT handler with its own,
+        # which exits the process.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
 
 
 class TclObjTypeTest(AbstractTkTest, unittest.TestCase):

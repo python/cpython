@@ -1,0 +1,2 @@
+Fix ``--enable-bolt`` build failures on AArch64 with recent LLVM: pass
+``-frame-opt=hot`` only on x86. Patch by Donghee Na.

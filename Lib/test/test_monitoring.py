@@ -1192,6 +1192,80 @@ LINE_AND_INSTRUCTION_RECORDERS = InstructionRecorder, LineRecorder
 class TestLineAndInstructionEvents(CheckEvents):
     maxDiff = None
 
+    def test_disable_line_keeps_instruction_events(self):
+        for local in (False, True):
+            # Use the same tool or different tools for LINE and INSTRUCTION.
+            for line_tool, instr_tool in (
+                (TEST_TOOL, TEST_TOOL),
+                (TEST_TOOL2, TEST_TOOL),
+            ):
+                with self.subTest(local=local, line_tool=line_tool,
+                                  instr_tool=instr_tool):
+                    self.check_disable_line_keeps_instruction_events(
+                        local, line_tool, instr_tool)
+
+    def check_disable_line_keeps_instruction_events(self, local, line_tool,
+                                                   instr_tool):
+        def func(x):
+            a = x + 1
+            # Split the assignment so line events also move backwards from
+            # the expression's line to the assignment's line.
+            b = (
+                a * 2
+            )
+            return b
+
+        code = func.__code__
+        instructions = []
+        lines = []
+        disable = False
+
+        def instruction(code_arg, offset):
+            if code_arg is code:
+                instructions.append(offset)
+
+        def line(code_arg, lineno):
+            if code_arg is code:
+                lines.append(lineno)
+                if disable:
+                    return sys.monitoring.DISABLE
+
+        sys.monitoring.register_callback(instr_tool, E.INSTRUCTION, instruction)
+        sys.monitoring.register_callback(line_tool, E.LINE, line)
+        events = {instr_tool: E.INSTRUCTION}
+        events[line_tool] = events.get(line_tool, 0) | E.LINE
+        try:
+            for tool, mask in events.items():
+                if local:
+                    sys.monitoring.set_local_events(tool, code, mask)
+                else:
+                    sys.monitoring.set_events(tool, mask)
+            func(1)
+            expected_instructions = instructions[:]
+            expected_lines = lines[:]
+            self.assertEqual(expected_instructions, [
+                inst.offset for inst in dis.get_instructions(func)
+                if inst.opname != "RESUME"
+            ])
+            self.assertTrue(expected_lines)
+            disable = True
+            for restart in (False, True):
+                if restart:
+                    sys.monitoring.restart_events()
+                for call in range(2):
+                    instructions.clear()
+                    lines.clear()
+                    func(1)
+                    self.assertEqual(instructions, expected_instructions)
+                    self.assertEqual(lines, expected_lines if call == 0 else [])
+        finally:
+            for tool in events:
+                sys.monitoring.set_local_events(tool, code, 0)
+                sys.monitoring.set_events(tool, 0)
+            sys.monitoring.register_callback(instr_tool, E.INSTRUCTION, None)
+            sys.monitoring.register_callback(line_tool, E.LINE, None)
+            sys.monitoring.restart_events()
+
     def test_simple(self):
 
         def func1():
@@ -2528,6 +2602,37 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_local_events(0, foo.__code__, E.BRANCH_LEFT | E.BRANCH_RIGHT)
         foo()
         sys.monitoring.set_local_events(0, foo.__code__, 0)
+
+    def test_130279(self):
+        # gh-130279
+        # An exception raised by the BRANCH_LEFT callback of a forward
+        # branch must be caught by the enclosing try
+        class Boom(Exception):
+            pass
+
+        raised = False
+
+        def callback(code, src, dst):
+            nonlocal raised
+            if not raised:
+                raised = True
+                raise Boom
+
+        def foo(x):
+            try:
+                if x:
+                    pass
+            except Boom:
+                return "caught"
+            return "not raised"
+
+        sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
+        sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.BRANCH_LEFT)
+        try:
+            self.assertEqual(foo(True), "caught")
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, None)
 
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
