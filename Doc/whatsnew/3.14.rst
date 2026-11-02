@@ -3154,11 +3154,10 @@ Build changes
   with :c:expr:`Py_NO_LINK_LIB`.
   (Contributed by Jean-Christophe Fillion-Robin in :gh:`82909`.)
 
-* CPython now enables a set of recommended compiler options by default
-  for improved security.
-  Use the :option:`--disable-safety` :file:`configure` option to disable them,
-  or the :option:`--enable-slower-safety` option for a larger set
-  of compiler options, albeit with a performance cost.
+* The :option:`--enable-safety` :file:`configure` option enables a set of
+  recommended compiler options for improved security. The
+  :option:`--enable-slower-safety` option enables additional compiler options
+  with a performance cost. Both options are disabled by default.
 
 * The ``WITH_FREELISTS`` macro and ``--without-freelists`` :file:`configure`
   option have been removed.

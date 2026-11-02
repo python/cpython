@@ -10385,16 +10385,16 @@ esac
 fi
 
 # Enable flags that warn and protect for potential security vulnerabilities.
-# These flags should be enabled by default for all builds.
+# These flags are opt-in to avoid additional compiler warnings.
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-safety" >&5
 printf %s "checking for --enable-safety... " >&6; }
 # Check whether --enable-safety was given.
 if test ${enable_safety+y}
 then :
-  enableval=$enable_safety; if test "x$disable_safety" = xyes
+  enableval=$enable_safety; if test "x$enable_safety" = xno
 then :
-  enable_safety=no
+
 else case e in #(
   e) enable_safety=yes ;;
 esac
@@ -10668,9 +10668,9 @@ printf %s "checking for --enable-slower-safety... " >&6; }
 # Check whether --enable-slower-safety was given.
 if test ${enable_slower_safety+y}
 then :
-  enableval=$enable_slower_safety; if test "x$disable_slower_safety" = xyes
+  enableval=$enable_slower_safety; if test "x$enable_slower_safety" = xno
 then :
-  enable_slower_safety=no
+
 else case e in #(
   e) enable_slower_safety=yes ;;
 esac
