@@ -1273,7 +1273,8 @@ This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
 When first iterated over, an asynchronous generator-iterator will store the
 registered *finalizer* to be called upon finalization. For a reference example
 of a *finalizer* method see the implementation of
-``asyncio.Loop.shutdown_asyncgens`` in :source:`Lib/asyncio/base_events.py`.
+``asyncio.BaseEventLoop.shutdown_asyncgens`` in
+:source:`Lib/asyncio/base_events.py`.
 
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
