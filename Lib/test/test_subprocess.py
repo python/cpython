@@ -4120,6 +4120,18 @@ class MiscTests(unittest.TestCase):
                 raise KeyboardInterrupt  # Test how __exit__ handles ^C.
         self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
 
+    @mock.patch.object(subprocess.Popen, "_communicate")
+    def test_run_keyboardinterrupt_reaps_killed_child(self, mock__communicate):
+        # gh-160787: run() kills the child on ^C, it must also reap it.
+        mock__communicate.side_effect = KeyboardInterrupt
+        with mock.patch.object(subprocess, "Popen", self.RecordingPopen):
+            with self.assertRaises(KeyboardInterrupt):
+                subprocess.run(
+                    [sys.executable, "-c", "import time; time.sleep(60)"],
+                    timeout=60)
+        process = self.RecordingPopen.instances_created.pop()
+        self.assertIsNotNone(process.returncode)
+
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
