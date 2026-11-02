@@ -444,8 +444,10 @@ class DirCmpImplementationTests(unittest.TestCase):
                 raise OSError
             return original_stat(path, *args, **kwargs)
 
-        self.enterContext(patch("os.stat", side_effect=fake_stat))
-        dc = filecmp.dircmp(self.dir, self.dir_same)
+        with patch("os.stat", side_effect=fake_stat):
+            dc = filecmp.dircmp(self.dir, self.dir_same)
+            dc.common_funny
+
         self.assertIn(trigger_file, dc.common_funny)
 
     # Test common_funny layout with regular files, directories, and sockets.
@@ -482,8 +484,10 @@ class DirCmpImplementationTests(unittest.TestCase):
 
             return st
 
-        self.enterContext(patch("os.stat", side_effect=fake_stat_types))
-        dc = filecmp.dircmp(self.dir, self.dir_same)
+        with patch("os.stat", side_effect=fake_stat_types):
+            dc = filecmp.dircmp(self.dir, self.dir_same)
+            dc.common_funny  
+
         self.assertIn(file_diff_type, dc.common_funny)
         self.assertIn(file_funny_type, dc.common_funny)
 
