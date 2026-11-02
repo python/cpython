@@ -1,0 +1,2 @@
+Fix the function names in the error messages of :func:`os.spawnve`,
+:func:`os.preadv` and :meth:`tkinter.Wm.wm_attributes`.
