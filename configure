@@ -10154,12 +10154,13 @@ printf %s "checking for --enable-safety... " >&6; }
 # Check whether --enable-safety was given.
 if test ${enable_safety+y}
 then :
-  enableval=$enable_safety; case $enableval in #(
-  yes|no) :
-    enable_safety=$enableval ;; #(
-  *) :
-    as_fn_error $? "invalid --enable-safety option: expected \"yes\" or \"no\"" "$LINENO" 5 ;;
+  enableval=$enable_safety; if test "x$enable_safety" = xno
+then :
+
+else case e in #(
+  e) enable_safety=yes ;;
 esac
+fi
 else case e in #(
   e) enable_safety=no ;;
 esac
@@ -10429,12 +10430,13 @@ printf %s "checking for --enable-slower-safety... " >&6; }
 # Check whether --enable-slower-safety was given.
 if test ${enable_slower_safety+y}
 then :
-  enableval=$enable_slower_safety; case $enableval in #(
-  yes|no) :
-    enable_slower_safety=$enableval ;; #(
-  *) :
-    as_fn_error $? "invalid --enable-slower-safety option: expected \"yes\" or \"no\"" "$LINENO" 5 ;;
+  enableval=$enable_slower_safety; if test "x$enable_slower_safety" = xno
+then :
+
+else case e in #(
+  e) enable_slower_safety=yes ;;
 esac
+fi
 else case e in #(
   e) enable_slower_safety=no ;;
 esac
