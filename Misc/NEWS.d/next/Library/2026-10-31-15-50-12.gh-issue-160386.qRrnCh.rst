@@ -1,0 +1,6 @@
+Applied changes to ``importlib.metadata`` from `importlib_metadata 10.0
+<https://importlib-metadata.readthedocs.io/en/latest/history.html#v10-0-0>`_:
+added the ``IDistribution`` and ``IPackagePath`` protocols, so a consumer can
+target one interface across ``importlib.metadata`` and the backport rather
+than either library's concrete classes, and the functions returning
+distributions and files are annotated with them.
