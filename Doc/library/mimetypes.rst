@@ -140,7 +140,7 @@ behavior of the module.
    .. deprecated:: 3.14
       *ext* values that do not start with ``'.'`` are deprecated.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
 
 
@@ -325,7 +325,7 @@ than one MIME-type database; it provides an interface similar to the one of the
       .. deprecated:: 3.14
          *ext* values that do not start with ``'.'`` are deprecated.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          *ext* now must start with ``'.'``. Otherwise :exc:`ValueError` is raised.
 
 

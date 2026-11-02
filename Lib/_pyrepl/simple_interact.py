@@ -82,7 +82,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except Exception:
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
@@ -134,9 +134,14 @@ def run_multiline_interactive_console(
                 sys.stdout.flush()
             except Exception:
                 pass
-
-            ps1 = getattr(sys, "ps1", ">>> ")
-            ps2 = getattr(sys, "ps2", "... ")
+            try:
+                ps1 = str(getattr(sys, "ps1", ">>> "))
+            except Exception:
+                ps1 = ">>> "
+            try:
+                ps2 = str(getattr(sys, "ps2", "... "))
+            except Exception:
+                ps2 = "... "
             try:
                 statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:

@@ -9,7 +9,9 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import (Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL)
+from tkinter import (Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL,
+                     EventType)
+from types import SimpleNamespace
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -1060,6 +1062,14 @@ class KeysPageTest(unittest.TestCase):
         self.assertEqual(b.get('anchor'), 'find')
         self.assertNotIn('disabled', d.button_new_keys.state())
 
+        # gh-75234: Up and Down keys move the active item, but not the
+        # anchor; the handler moves the anchor.
+        d.button_new_keys.state(('disabled',))
+        b.activate(0)
+        d.on_bindingslist_select(SimpleNamespace(type=EventType.KeyRelease))
+        self.assertEqual(b.get('anchor'), 'copy')
+        self.assertNotIn('disabled', d.button_new_keys.state())
+
     def test_create_new_key_set_and_save_new_key_set(self):
         eq = self.assertEqual
         d = self.page
@@ -1110,11 +1120,14 @@ class KeysPageTest(unittest.TestCase):
                     'force-open-completions - <Control-Key-space>',
                     'spam - <Shift-Key-a>')
 
-        # No current selection.
+        # No current selection: select the first item.
+        d.button_new_keys.state(('disabled',))
         d.load_keys_list('my keys')
         eq(b.get(0, 'end'), expected)
-        eq(b.get('anchor'), '')
-        eq(b.curselection(), ())
+        eq(b.get('anchor'), 'copy - <Control-Key-c> <Control-Key-C>')
+        eq(b.curselection(), (0, ))
+        eq(b.index('active'), 0)
+        self.assertNotIn('disabled', d.button_new_keys.state())
 
         # Check selection.
         b.selection_set(1)
@@ -1584,6 +1597,26 @@ class HelpSourceTest(unittest.TestCase):
         eq(fr.user_helplist, [])
         self.assertTrue(fr.upc.called == fr.set.called == 1)
 
+    def test_helplist_item_remove_keyboard_selection(self):
+        # gh-75234: Up and Down keys move the active item, but not the
+        # anchor; the handler moves the anchor.
+        eq = self.assertEqual
+        fr = self.frame
+        fr.helplist.delete(0, 'end')
+        fr.helplist.insert('end', 'name1', 'name2')
+        fr.helplist.selection_anchor(0)
+        fr.helplist.selection_set(1)
+        fr.helplist.activate(1)
+        fr.user_helplist.clear()
+        fr.user_helplist.extend([('name1', 'file1'), ('name2', 'file2')])
+        fr.set.called = fr.upc.called = 0
+
+        fr.help_source_selected(SimpleNamespace(type=EventType.KeyRelease))
+        eq(fr.helplist.get('anchor'), 'name2')
+        fr.helplist_item_remove()
+        eq(fr.helplist.get(0, 'end'), ('name1',))
+        eq(fr.user_helplist, [('name1', 'file1')])
+
     def test_update_help_changes(self):
         fr = self.frame
         self.addCleanup(setattr, fr, 'update_help_changes', Func())  # Re-mask method.
@@ -1678,6 +1711,10 @@ class VarTraceTest(unittest.TestCase):
         sv.set('5')
         cb()
         self.assertEqual(changes['main']['section']['option'], '5')
+        # gh-75487: blanking the entry forgets the value recorded before.
+        sv.set('')
+        cb()
+        self.assertNotIn('option', changes['main']['section'])
         changes.clear()
 
     def test_attach_detach(self):

@@ -6,6 +6,7 @@
 
 #include "pegen.h"
 #include "string_parser.h"          // _PyPegen_decode_string()
+#include "lexer/state.h"            // tok_state
 
 
 void *
@@ -344,6 +345,20 @@ _PyPegen_set_expr_context(Parser *p, expr_ty expr, expr_context_ty ctx)
             new = expr;
     }
     return new;
+}
+
+/* Invalid targets return NULL without raising, allowing parsing to backtrack.
+   Copy valid targets to preserve the memoized expression's context. */
+expr_ty
+_PyPegen_make_target(Parser *p, expr_ty expr, TARGETS_TYPE targets_type)
+{
+    assert(expr != NULL);
+    assert(targets_type != FOR_TARGETS);
+    if (_PyPegen_get_invalid_target(expr, targets_type) != NULL) {
+        return NULL;
+    }
+    return _PyPegen_set_expr_context(
+        p, expr, targets_type == DEL_TARGETS ? Del : Store);
 }
 
 /* Constructs a KeyValuePair that is used when parsing a dict's key value pairs */
@@ -1236,6 +1251,14 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
         return NULL;
     }
 
+    if (targets_type == SINGLE_TARGETS ||
+        targets_type == ATTRIBUTE_OR_SUBSCRIPT_TARGETS) {
+        if (targets_type == SINGLE_TARGETS && e->kind == Name_kind) {
+            return NULL;
+        }
+        return e->kind == Attribute_kind || e->kind == Subscript_kind ? NULL : e;
+    }
+
 #define VISIT_CONTAINER(CONTAINER, TYPE) do { \
         Py_ssize_t len = asdl_seq_LEN((CONTAINER)->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
@@ -1350,7 +1373,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* tok
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
     PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
-        _Pypegen_raise_decode_error(p);
+        _Pypegen_raise_decode_error_known_location(p, constant);
         return NULL;
     }
     if (_PyArena_AddPyObject(p->arena, str) < 0) {
@@ -1474,17 +1497,24 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
 }
 
 expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
-    Py_ssize_t bsize;
-    char* bstr;
-    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
     }
+    Py_ssize_t bsize = PyBytes_GET_SIZE(tok->bytes);
+    const char *bstr = PyBytes_AS_STRING(tok->bytes);
 
     int is_raw = tok->is_raw;
 
     PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) || tok->is_incomplete) {
+            _Pypegen_raise_decode_error(p);
+        }
         return NULL;
+    }
+    if (tok->is_incomplete) {
+        Py_DECREF(str);
+        return _PyPegen_raise_incomplete_input(p);
     }
     if (_PyArena_AddPyObject(p->arena, str) < 0) {
         Py_DECREF(str);
@@ -1496,9 +1526,24 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
-    const char* bstr = PyBytes_AsString(tok->bytes);
-    if (bstr == NULL) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
+    }
+    const char *bstr = PyBytes_AS_STRING(tok->bytes);
+    Py_ssize_t bsize = PyBytes_GET_SIZE(tok->bytes);
+    if (((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) || tok->is_incomplete) &&
+        !tok->is_raw && memchr(bstr, '\\', bsize) != NULL) {
+        // Check escapes before the string is complete, without emitting warnings.
+        PyObject *decoded = _PyPegen_decode_string(
+            p, 0, bstr, bsize, tok->is_incomplete ? tok : NULL);
+        if (decoded == NULL) {
+            _Pypegen_raise_decode_error(p);
+            return NULL;
+        }
+        Py_DECREF(decoded);
+    }
+    if (tok->is_incomplete) {
+        return _PyPegen_raise_incomplete_input(p);
     }
     PyObject* str = PyUnicode_FromString(bstr);
     if (str == NULL) {
@@ -1514,10 +1559,10 @@ expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
 }
 
 expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
-    const char* the_str = PyBytes_AsString(tok->bytes);
-    if (the_str == NULL) {
-        return NULL;
+    if (tok->bytes == NULL) {
+        return _PyPegen_raise_incomplete_input(p);
     }
+    const char *the_str = PyBytes_AS_STRING(tok->bytes);
     PyObject *s = _PyPegen_parse_string(p, tok);
     if (s == NULL) {
         _Pypegen_raise_decode_error(p);
@@ -2111,6 +2156,7 @@ _PyPegen_checked_from_import(Parser *p, asdl_seq *dots, expr_ty module_name,
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
                 p->flags |= PyPARSE_BARRY_AS_BDFL;
+                p->tok->barry_as_bdfl = 1;
             }
         }
     }

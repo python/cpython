@@ -863,7 +863,8 @@ determined by the C function. Special read-only attributes:
 * :attr:`!__doc__` is the function's documentation string, or ``None`` if
   unavailable. See :attr:`function.__doc__`.
 * :attr:`!__name__` is the function's name. See :attr:`function.__name__`.
-* :attr:`!__self__` is set to ``None`` (but see the next item).
+* :attr:`!__self__` is the module object the function was defined in or
+  ``None`` if unavailable.
 * :attr:`!__module__` is the name of
   the module the function was defined in or ``None`` if unavailable.
   See :attr:`function.__module__`.
@@ -1556,6 +1557,16 @@ Special read-only attributes
 
    * - .. attribute:: codeobject.co_firstlineno
      - The line number of the first line of the function
+
+   * - .. attribute:: codeobject.co_linetable
+     - A :class:`bytes` object containing encoded source location information.
+       The exact format is an implementation detail and may change between
+       Python versions. Use :meth:`~codeobject.co_lines` and
+       :meth:`~codeobject.co_positions` for supported access to line and
+       position information. To create a modified copy of a code object,
+       use :meth:`~codeobject.replace`.
+
+       .. versionadded:: 3.10
 
    * - .. attribute:: codeobject.co_stacksize
      - The required stack size of the code object

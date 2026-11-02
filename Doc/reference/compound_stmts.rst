@@ -1952,7 +1952,7 @@ and decorators are evaluated outside that scope. This is illustrated
 by this example::
 
    @decorator
-   class Bag(Base[T], arg=T): ...
+   class Bag[T](Base[T], arg=T): ...
 
 This is equivalent to::
 

@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "12dffaa4a67cbe308643dbec7ffc1b4fd38abbde"
+          "checksumValue": "6bb4cc0b942c84d120fabf76299572ee8078f59c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0e912e25375e213b6e4ff90d554e0a0e037e6f0c20dfa734d366e5bdff289f20"
+          "checksumValue": "805f17ae5f597eeb9f058f60428a1a62268de242a096af17cbcc2e17af111bad"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -62,11 +62,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "288700b1dd47ec564d2159a0a519bbc2f273b9e9"
+          "checksumValue": "4857095da1f3fac0c52db3fbfa455898d90ac321"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d55e546603baf0b7085d6ff1d8f38d56d6de009a1731186509103c5d292c1a75"
+          "checksumValue": "a02fba65fcf68652fc24619d673ee32969c1dca46c7a0fd1f15906722babff6d"
         }
       ],
       "fileName": "Modules/expat/expat_external.h"
@@ -84,6 +84,20 @@
         }
       ],
       "fileName": "Modules/expat/fallthrough.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-hash-table.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "e0ab4fb3f3b06bac642dc525d98107337c3534d0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ad93851f86df1f4e8f85488dbac53cab3539e59d701ad747c7beea354d69e0dc"
+        }
+      ],
+      "fileName": "Modules/expat/hash_table.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-iasciitab.h",
@@ -104,11 +118,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4afd563c90edd6b4aa5abedcd3df5df023668d26"
+          "checksumValue": "14f839bca5a88c8020ba4e3b0650b03b7c05b829"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "beb7211c800d827743bd3d6ddb86538302d6c51180be6d3b61a1c315e061762d"
+          "checksumValue": "9dd01acd513ff6143781e1c01f5738126a512b20f42600f9523ec95e2dd4dcf1"
         }
       ],
       "fileName": "Modules/expat/internal.h"
@@ -198,29 +212,43 @@
       "fileName": "Modules/expat/winconfig.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-xcsinc.c",
+      "SPDXID": "SPDXRef-FILE-Modules-expat-xcs.c",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "ecac5a698350e3c9e6c899bbcbfb62875ecf326e"
+          "checksumValue": "e5ba4185088e0217eb7be7bf90c426b33cebb524"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1210979a688301412f46e058d0497fa3c1c63c296c2e015834cda0f0b314875d"
+          "checksumValue": "15759b35a51a35c59b2b8f5b07057578e3505dbbce57a5adaae9f2d113b4b852"
         }
       ],
-      "fileName": "Modules/expat/xcsinc.c"
+      "fileName": "Modules/expat/xcs.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-expat-xcs.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b7b265932c21cb554f3a520f754271c5af51db97"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "866a6cadbb9eaaaebefe08ee4f3de72a00ffdf77a6da3408605dfc16803f0bd3"
+        }
+      ],
+      "fileName": "Modules/expat/xcs.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-xmlparse.c",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b9e4628f37353a7eec8a98c26ebb88d7e2d48971"
+          "checksumValue": "b56b7fd9a13af5719738bf142fef0beb936139d5"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "9afa5cb812283750f1970e230ba392201bac46240abf51ab65e5090e93ca34a6"
+          "checksumValue": "533c0f387350f49c3e5cd392d87b8cc0268d9b49d414c10095e2143eaf8b3774"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -230,11 +258,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "6e046b576085df9bb8f6b18f60ccf0f7a40308b5"
+          "checksumValue": "56999d78b6ed247b00b0e3283fd174065b04e40f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "db4004fa2cabc811fc493b5b04b44cd336d19434bc653725f090131e43a89406"
+          "checksumValue": "b1ad87cc3c0d4722358a7dfb1642df7f62066d1613a0a56dc9289e7112fb3f0c"
         }
       ],
       "fileName": "Modules/expat/xmlrole.c"
@@ -244,11 +272,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4a3bf2554da3a7b02b0f2d4d07f446f7f6e34af5"
+          "checksumValue": "08de6d1246312e179918de3533328000c887a95b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "486faffdfcd0c1668406648220c6638c98ddfe044d04d66551999ab8e02564fa"
+          "checksumValue": "8a0b61cd6efcd7427acbc86759e9013e7a61755097a1f82cbb2a79c011af5ee5"
         }
       ],
       "fileName": "Modules/expat/xmlrole.h"
@@ -258,11 +286,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "c3377af96ec7fef8b502967ac818e3bfea04f584"
+          "checksumValue": "1a98bb41885c1795b5d66da1cd8ab4babc645670"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f2732a8e91fd901d75431d35edc421e1ff3893a275c4de1cc855b3d4deadfd37"
+          "checksumValue": "44baab2a4970749f6f29992bbbc1b3c62239ef9ec2a20de96332ef4659b9e32d"
         }
       ],
       "fileName": "Modules/expat/xmltok.c"
@@ -272,11 +300,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e9a5972f664c1c530443ddd8b7900e406e3ca02a"
+          "checksumValue": "ecbd8a75bbe1bc5a82790553d73d4f11833dcdd2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "41a6cef659ef1da9ee732304332c4134afe4b63571442de77eaf9918abf9e5df"
+          "checksumValue": "623dea24bc27712e2e205a0c0517c79e211234f8d1051fe46d780839f754cf9e"
         }
       ],
       "fileName": "Modules/expat/xmltok.h"
@@ -286,11 +314,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9f1c475da821ccf2763594c9b79175544af08d7a"
+          "checksumValue": "1d1aabfb8dd3e9d89841d1b3f385d1def9ab46a3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c7b197b596192ad3f8c872ae9c0524e7dd85da10cb4bfdf29d630e12782dfbf7"
+          "checksumValue": "857d4d0984aaaca0ff6c907f0e9abf26c476fd80f6cb85896c2aa1d78eb66ae1"
         }
       ],
       "fileName": "Modules/expat/xmltok_impl.c"
@@ -314,11 +342,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "974e4255236de201a718a1e5fc1c772356153415"
+          "checksumValue": "b2dd2b7fcb57fcecd95679b5b53cc92256eb0190"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3c0c930dfdd484f98c6a32bd397919f3d2ee3701e6023effb463512af1849499"
+          "checksumValue": "ea723a3470d3eed5c4a4e873bec2f996c605326fad25709b45452664261c5465"
         }
       ],
       "fileName": "Modules/expat/xmltok_ns.c"
@@ -1044,14 +1072,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "b8ece2437692dad44d851c4532723390a5a330990007706be9c8d2b90d294f36"
+          "checksumValue": "16afbb9cefead2aa278105cf27d9f597bde7fbf3dbb85015857ca7ca6a4e89ba"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_9_0/expat-2.9.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.8.4:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.9.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1059,7 +1087,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.8.4"
+      "versionInfo": "2.9.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
@@ -1138,6 +1166,11 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-hash-table.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-iasciitab.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
@@ -1178,7 +1211,12 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-xcsinc.c",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-xcs.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-expat"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-xcs.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
