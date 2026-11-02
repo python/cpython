@@ -1253,7 +1253,7 @@ class CommandLineTest(TestCase):
         mock_ftp.quit.assert_called_once()
 
     @mock.patch('ftplib.FTP')
-    @mock.patch('netrc.netrc', side_effect=OSError('file not found'))
+    @mock.patch('netrc.netrc', side_effect=OSError)
     def test_cli_custom_rcfile_error(self, mock_netrc, mock_ftp_cls):
         with mock.patch('sys.argv', ['ftplib', '-rnonexistent.netrc', 'example.com']), \
              support.captured_stderr() as stderr:
