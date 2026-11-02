@@ -339,6 +339,9 @@ The :mod:`!functools` module defines the following functions:
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: next
+      ``Placeholder`` is now a :class:`sentinel`.
+
 .. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
