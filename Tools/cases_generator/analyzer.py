@@ -599,6 +599,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_PushUnchecked",
     "_PyFrame_SetStackPointer",
     "_PyFrame_StackPush",
+    "_PyEval_LazyCoroSendInstr",
     "_PyFrame_StackAssertInvalid",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",

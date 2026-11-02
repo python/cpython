@@ -1888,8 +1888,17 @@
 
         case _GET_AWAITABLE: {
             JitOptRef iter;
+            JitOptRef null;
+            JitOptRef none;
             iter = sym_new_not_null(ctx);
+            null = sym_new_null(ctx);
+            none = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2);
             stack_pointer[-1] = iter;
+            stack_pointer[0] = null;
+            stack_pointer[1] = none;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
