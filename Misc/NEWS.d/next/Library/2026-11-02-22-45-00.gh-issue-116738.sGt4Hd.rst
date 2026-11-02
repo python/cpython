@@ -1,0 +1,2 @@
+Fix a possible crash in :func:`signal.getsignal` on a free-threaded build when
+another thread replaces the signal handler at the same time.
