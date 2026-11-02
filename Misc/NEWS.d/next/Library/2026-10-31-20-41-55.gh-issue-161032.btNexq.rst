@@ -1,2 +1,0 @@
-:mod:`asyncio`: The resolution of the monotonic clock is now computed once at
-import time instead of in every event loop.
