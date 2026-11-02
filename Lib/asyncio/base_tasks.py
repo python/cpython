@@ -67,8 +67,6 @@ def _task_get_stack(task, limit):
 
 
 def _task_print_stack(task, limit, file):
-    # gh-161166: use the traceback line number instead of the frame’s current line number
-    # because it can give false exception causes
     exc = task._exception
     tb = exc.__traceback__ if exc is not None else None
     extracted_list = []
