@@ -349,35 +349,20 @@ ctz(size_t v)
 #  define HAVE_CTZ 0
 #endif
 
-/* Skip a size_t word at a time towards the first '\r' or '\n' in the
-   NUL-terminated UCS1 buffer [s, end).  Return a pointer to it, or to an
-   earlier character from which the caller's own loop finds it.
-
-   If out is not NULL, also copy the skipped characters to out.  out must
-   be no further into its buffer than s is into the input, and its buffer
-   must have room for the whole input.  Whole words are copied, so up to
-   sizeof(size_t) bytes past the skipped characters may also be written;
-   the caller overwrites them or leaves them past the end of its result.
-
-   Lines are often short, and the caller's loop is fastest for them, so if
-   either of the first two characters is '\r' or below, return a pointer
-   to it at once.  Most words of text have no byte below 0x0E and cost one
-   cheap test; the rest are checked for '\r' and '\n' exactly, so tabs and
-   other control characters do not stop the search.
-
-   (x - ones * n) & ~x & high flags the bytes of x below n.  The cheap test
-   uses n = 0x0E; the exact test uses n = 1 on x = w ^ (ones * '\n') and
-   x = w ^ (ones * '\r'), whose zero bytes are the matches.  Borrows can
-   flag extra bytes, but only above a byte below n, so the lowest flagged
-   byte is always correct: on little-endian machines, ctz() gives the
-   first match; elsewhere, the caller finds it in the word. */
+/* Skip a word at a time through the NUL-terminated UCS1 string [s, end).
+   Return a pointer to the first '\r' or '\n', or to an earlier character
+   from which the caller's loop finds it.  If out is not NULL, also copy
+   the skipped characters to out, which must be no further along than s
+   and have room for the whole input; up to sizeof(size_t) extra bytes
+   may be written past them. */
 static inline const char *
 skip_to_newline_ucs1(const char *s, const char *end, char *out)
 {
     const size_t ones = (size_t)-1 / 0xFF;  /* 0x01 in every byte */
     const size_t high = ones * 0x80;
 
-    /* s[1] is only read when s[0] is not the terminating NUL. */
+    /* Leave short lines to the caller's loop.  s[1] is only read when
+       s[0] is not the terminating NUL. */
     if ((unsigned char)s[0] <= '\r') {
         return s;
     }
@@ -394,7 +379,11 @@ skip_to_newline_ucs1(const char *s, const char *end, char *out)
             memcpy(out, &w, sizeof(w));
             out += sizeof(w);
         }
+        /* (x - ones * n) & ~x & high is nonzero if a byte of x is below n.
+           Most words have no byte below 0x0E. */
         if ((w - ones * 0x0E) & ~w & high) {
+            /* Flag the bytes equal to '\n' or '\r'.  Borrows can flag extra
+               bytes, but only above the first match. */
             size_t lf = w ^ (ones * '\n');
             size_t cr = w ^ (ones * '\r');
             size_t m = (((lf - ones) & ~lf) | ((cr - ones) & ~cr)) & high;

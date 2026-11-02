@@ -460,9 +460,8 @@ class TextIOWrapperTest:
             self.assertEqual(txt.read(), "".join(expected))
 
     def test_newlines_input_long_lines(self):
-        # Lines from a few characters to many machine words long, with and
-        # without control or non-ASCII characters in them, read with and
-        # without newline translation.
+        # Lines shorter and longer than a machine word, some with control
+        # or non-ASCII characters.
         lengths = [*range(20), *range(248, 272), 600]
         for end in ("\n", "\r", "\r\n"):
             for ctrl in ("", "\x00", "\t", "\x0c", "\x0e", "\xe9"):
