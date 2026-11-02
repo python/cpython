@@ -1,0 +1,3 @@
+Fix :class:`mailbox.Babyl` returning message labels as bytes after reopening a
+mailbox, which could cause incorrect read flags and errors when rewriting or
+copying messages. Preserve non-UTF-8 label bytes using ``surrogateescape``.
