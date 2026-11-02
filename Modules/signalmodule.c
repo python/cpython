@@ -9,6 +9,7 @@
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
+#include "pycore_lock.h"          // _PyMutex_at_fork_reinit()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -128,7 +129,6 @@ typedef struct {
     PyTypeObject *siginfo_type;
 } _signal_module_state;
 
-
 Py_LOCAL_INLINE(PyObject *)
 get_handler(int i)
 {
@@ -141,6 +141,34 @@ set_handler(int i, PyObject* func)
     /* Store func with atomic operation to ensure
        that PyErr_SetInterrupt is async-signal-safe. */
     _Py_atomic_store_ptr(&Handlers[i].func, func);
+}
+
+/* Serialize readers of Handlers[] with signal.signal() replacing a handler:
+   the slot's reference is handed to the caller of signal.signal(), who may
+   release it while another thread has loaded the pointer but not yet
+   incref'ed it.  Never take this mutex from a signal handler.
+
+   The GIL already makes "load the handler and incref it" atomic with respect
+   to signal.signal(), so the lock is only needed in the free-threaded build;
+   the helpers do nothing in the default build. */
+#ifdef Py_GIL_DISABLED
+static PyMutex handlers_mutex;
+#endif
+
+Py_LOCAL_INLINE(void)
+claim_signalnum(void)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&handlers_mutex);
+#endif
+}
+
+Py_LOCAL_INLINE(void)
+release_signalnum(void)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&handlers_mutex);
+#endif
 }
 
 
@@ -532,8 +560,10 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
 
+    claim_signalnum();
     old_handler = get_handler(signalnum);
     set_handler(signalnum, Py_NewRef(handler));
+    release_signalnum();
 
     if (old_handler != NULL) {
         return old_handler;
@@ -569,9 +599,12 @@ signal_getsignal_impl(PyObject *module, int signalnum)
                         "signal number out of range");
         return NULL;
     }
-    old_handler = get_handler(signalnum);
+    claim_signalnum();
+    old_handler = Py_XNewRef(get_handler(signalnum));
+    release_signalnum();
+
     if (old_handler != NULL) {
-        return Py_NewRef(old_handler);
+        return old_handler;
     }
     else {
         Py_RETURN_NONE;
@@ -1595,8 +1628,10 @@ signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
         }
         // If signal_module_exec() is called more than one, we must
         // clear the strong reference to the previous function.
+        claim_signalnum();
         PyObject* old_func = get_handler(signum);
         set_handler(signum, Py_NewRef(func));
+        release_signalnum();
         Py_XDECREF(old_func);
     }
 
@@ -1609,7 +1644,9 @@ signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
             return -1;
         }
 
+        claim_signalnum();
         set_handler(SIGINT, int_handler);
+        release_signalnum();
         Py_DECREF(sigint_func);
         PyOS_setsig(SIGINT, signal_handler);
     }
@@ -1744,9 +1781,11 @@ _PySignal_Fini(void)
 
     // Restore default signals and clear handlers
     for (int signum = 1; signum < Py_NSIG; signum++) {
-        PyObject *func = get_handler(signum);
         _Py_atomic_store_int_relaxed(&Handlers[signum].tripped, 0);
+        claim_signalnum();
+        PyObject *func = get_handler(signum);
         set_handler(signum, NULL);
+        release_signalnum();
         if (func != NULL
             && func != Py_None
             && !compare_handler(func, state->default_handler)
@@ -2056,6 +2095,16 @@ _clear_pending_signals(void)
     }
 }
 
+static void
+reinit_handlers_mutex(void)
+{
+    /* Another thread may have held the mutex when fork() was called; it does
+       not exist in the child, so nobody would ever release it. */
+#ifdef Py_GIL_DISABLED
+    _PyMutex_at_fork_reinit(&handlers_mutex);
+#endif
+}
+
 void
 _PySignal_AfterFork(void)
 {
@@ -2063,6 +2112,7 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
+    reinit_handlers_mutex();
 }
 #endif   /* HAVE_FORK */
 
