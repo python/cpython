@@ -1715,25 +1715,6 @@ class ExtractTests(unittest.TestCase):
         with temp_dir() as extdir:
             self._test_extract_all_with_target(FakePath(extdir))
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
-    @unittest.skipIf(sys.platform == 'win32', 'Unix permissions only')
-    def test_extract_preserves_unix_permissions(self):
-        """_extract_member must apply Unix mode stored in external_attr."""
-        info = zipfile.ZipInfo('secret.txt')
-        info.external_attr = (stat.S_IFREG | 0o600) << 16
-        with zipfile.ZipFile(TESTFN2, 'w') as zf:
-            zf.writestr(info, b'data')
-
-        with temp_dir() as extdir:
-            with zipfile.ZipFile(TESTFN2, 'r') as zf:
-                zf.extract('secret.txt', path=extdir)
-
-            extracted = os.path.join(extdir, 'secret.txt')
-            actual = stat.S_IMODE(os.stat(extracted).st_mode)
-            self.assertEqual(actual, 0o600, f'expected 0o600, got 0o{actual:03o}')
-
-        unlink(TESTFN2)
-
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
         with open(filename, 'rb') as f:
@@ -1838,6 +1819,106 @@ class ExtractTests(unittest.TestCase):
             rmtree(fixedname.split('/')[0])
 
             unlink(TESTFN2)
+
+
+@unittest.skipIf(sys.platform == 'win32', 'requires Unix permissions')
+@os_helper.skip_unless_working_chmod
+class PreservePermissionsTests(unittest.TestCase):
+    # File modes saved in the test archive.
+    FILE_MODES = {
+        'plain': 0o644,
+        'private': 0o600,
+        'script': 0o755,
+        'setuid': 0o4755,
+        'setgid': 0o2755,
+        'sticky': 0o1644,
+    }
+
+    def setUp(self):
+        # Fixed umask, so we know the default mode (0o644).
+        self.enterContext(os_helper.temp_umask(0o022))
+        self.addCleanup(unlink, TESTFN2)
+
+    def make_zip(self, members, dirs=()):
+        # members maps a name to (external_attr, create_system).
+        with zipfile.ZipFile(TESTFN2, 'w') as zf:
+            for name, mode in dirs:
+                zf.mkdir(name, mode)
+            for name, (external_attr, create_system) in members.items():
+                zinfo = zipfile.ZipInfo(name)
+                zinfo.external_attr = external_attr
+                zinfo.create_system = create_system
+                zf.writestr(zinfo, name)
+
+    def make_unix_zip(self, file_modes, dirs=()):
+        # The Unix mode goes in the top 16 bits; 3 means made on Unix.
+        self.make_zip({name: ((stat.S_IFREG | mode) << 16, 3)
+                       for name, mode in file_modes.items()}, dirs)
+
+    def check_extract(self, expected, methods=('extract', 'extractall'),
+                      **kwargs):
+        for method in methods:
+            with self.subTest(method=method, **kwargs), temp_dir() as extdir:
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    if method == 'extract':
+                        for name in zf.namelist():
+                            zf.extract(name, extdir, **kwargs)
+                    else:
+                        zf.extractall(extdir, **kwargs)
+                for name, mode in expected.items():
+                    st = os.stat(os.path.join(extdir, name))
+                    self.assertEqual(oct(stat.S_IMODE(st.st_mode)), oct(mode),
+                                     name)
+
+    def test_default(self):
+        self.make_unix_zip(self.FILE_MODES)
+        expected = dict.fromkeys(self.FILE_MODES, 0o644)
+        self.check_extract(expected)
+        self.check_extract(expected,
+                           preserve_permissions=zipfile.PreserveMode.NONE)
+
+    def test_preserve_safe(self):
+        self.make_unix_zip(self.FILE_MODES)
+        expected = {name: mode & 0o777
+                    for name, mode in self.FILE_MODES.items()}
+        self.check_extract(expected,
+                           preserve_permissions=zipfile.PreserveMode.SAFE)
+
+    def test_preserve_all(self):
+        # No setgid or sticky here: normal users can't always set them.
+        file_modes = {'private': 0o600, 'script': 0o755, 'setuid': 0o4755}
+        self.make_unix_zip(file_modes)
+        self.check_extract(file_modes,
+                           preserve_permissions=zipfile.PreserveMode.ALL)
+
+    def test_mode_not_used(self):
+        # These members always get the default mode.
+        self.make_zip({
+            'no_mode': (0x20, 3),  # only a DOS flag, no Unix mode
+            'windows': ((stat.S_IFREG | 0o755) << 16, 0),  # made on Windows
+            'symlink': ((stat.S_IFLNK | 0o777) << 16, 3),  # a symlink
+        })
+        expected = dict.fromkeys(['no_mode', 'windows', 'symlink'], 0o644)
+        self.check_extract(expected,
+                           preserve_permissions=zipfile.PreserveMode.ALL)
+
+    def test_read_only_directory(self):
+        # extractall() sets directory modes last, so the file can still
+        # be written into the read-only directory.
+        self.make_unix_zip({'ro/file': 0o644}, dirs=[('ro', 0o555)])
+        self.check_extract({'ro': 0o555, 'ro/file': 0o644},
+                           methods=['extractall'],
+                           preserve_permissions=zipfile.PreserveMode.SAFE)
+
+    def test_bad_value(self):
+        self.make_unix_zip({'plain': 0o644})
+        with zipfile.ZipFile(TESTFN2) as zf, temp_dir() as extdir:
+            with self.assertRaises(TypeError):
+                zf.extract('plain', extdir, preserve_permissions='SAFE')
+            with self.assertRaises(TypeError):
+                zf.extractall(extdir, preserve_permissions='SAFE')
+            # Nothing was extracted.
+            self.assertEqual(os.listdir(extdir), [])
 
 
 class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
