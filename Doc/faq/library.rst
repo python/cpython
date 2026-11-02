@@ -421,14 +421,12 @@ deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
-With the approval of :pep:`703` the GIL can be disabled in CPython.  This is
-implemented as an optional compile-time flag (:option:`--disable-gil`), so
-separate builds are available with and without the GIL.  The first release
-containing this work was Python 3.13, where it was experimental; the
-:term:`free-threaded <free threading>` build is officially supported as of
-Python 3.14.  See :ref:`freethreading-python-howto` for details.  Long-term,
-the hope is to settle on a single build, once the performance implications of
-removing the GIL are fully understood.
+CPython has a supported :term:`free-threaded <free threading>` build in which
+the GIL is disabled (:pep:`703`).  It is built with the
+:option:`--disable-gil` configure option, so separate builds are available with
+and without the GIL.  See :ref:`freethreading-python-howto` for details.
+Long-term, the hope is to settle on a single build, once the performance
+implications of removing the GIL are fully understood.
 
 The current work to remove the GIL is based on a
 `fork of Python 3.9 with the GIL removed <https://github.com/colesbury/nogil>`_
