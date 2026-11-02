@@ -457,7 +457,7 @@ available:
 
 .. object:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
-   This probe point is the converse of ``python.function.return``, and
+   This probe point is the converse of ``python.function.entry``, and
    indicates that execution of a Python function has ended (either via
    ``return``, or via an exception).  It is only triggered for pure-Python
    (bytecode) functions.
