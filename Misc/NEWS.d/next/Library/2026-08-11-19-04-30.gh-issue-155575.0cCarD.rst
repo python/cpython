@@ -1,0 +1,1 @@
+Fix :mod:`asyncio` eager tasks inheriting the creator's exception state.
