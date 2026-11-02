@@ -1084,7 +1084,8 @@ Debug options
 .. option:: --with-thread-sanitizer
 
    Enable ThreadSanitizer data race detector, ``tsan``
-   (default is no).
+   (default is no).  It is most useful together with :option:`--disable-gil`.
+   See :ref:`freethreading-tsan`.
 
    .. versionadded:: 3.13
 
