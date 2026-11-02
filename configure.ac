@@ -1153,12 +1153,12 @@ if test -z "$CFLAGS"; then
 fi
 
 dnl Emscripten SDK and WASI SDK default to wasm32.
-dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl On Emscripten use -m64 to build target wasm64-emscripten.
 dnl for wasm64.
 AS_CASE([$host],
   [wasm64-*-emscripten], [
-    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
-    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([CFLAGS], [" -m64"])
+    AS_VAR_APPEND([LDFLAGS], [" -m64"])
   ],
 )
 
@@ -2659,7 +2659,7 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
       AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
-      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -pthread"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
