@@ -260,7 +260,6 @@ typedef struct {
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
 
-    PyObject *dict;
     PyObject *weakreflist;
 } buffered;
 
@@ -417,7 +416,7 @@ buffered_clear(PyObject *op)
     buffered *self = buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -467,8 +466,7 @@ buffered_traverse(PyObject *op, visitproc visit, void *arg)
     buffered *self = buffered_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 /* Because this can call arbitrary code, it shouldn't be called when
@@ -2250,7 +2248,6 @@ typedef struct {
     PyObject_HEAD
     buffered *reader;
     buffered *writer;
-    PyObject *dict;
     PyObject *weakreflist;
 } rwpair;
 
@@ -2309,10 +2306,9 @@ bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 {
     rwpair *self = rwpair_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
     Py_VISIT(self->reader);
     Py_VISIT(self->writer);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
@@ -2321,7 +2317,7 @@ bufferedrwpair_clear(PyObject *op)
     rwpair *self = rwpair_CAST(op);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -2639,7 +2635,6 @@ static PyMemberDef bufferedreader_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2698,7 +2693,6 @@ static PyMemberDef bufferedwriter_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2752,7 +2746,6 @@ static PyMethodDef bufferedrwpair_methods[] = {
 
 static PyMemberDef bufferedrwpair_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rwpair, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(rwpair, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2815,7 +2808,6 @@ static PyMemberDef bufferedrandom_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 

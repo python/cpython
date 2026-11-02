@@ -42,7 +42,6 @@ typedef struct {
     PyObject *readnl;
     PyObject *writenl;
 
-    PyObject *dict;
     PyObject *weakreflist;
     _PyIO_State *module_state;
 } stringio;
@@ -675,8 +674,7 @@ stringio_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->readnl);
     Py_VISIT(self->writenl);
     Py_VISIT(self->decoder);
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
@@ -686,7 +684,7 @@ stringio_clear(PyObject *op)
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -930,11 +928,16 @@ _io_StringIO___getstate___impl(stringio *self)
 
     if (initvalue == NULL)
         return NULL;
-    if (self->dict == NULL) {
-        dict = Py_NewRef(Py_None);
+    dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+    if (dict == NULL) {
+        Py_DECREF(initvalue);
+        return NULL;
+    }
+    if (PyDict_GET_SIZE(dict) == 0) {
+        Py_SETREF(dict, Py_NewRef(Py_None));
     }
     else {
-        dict = PyDict_Copy(self->dict);
+        Py_SETREF(dict, PyDict_Copy(dict));
         if (dict == NULL) {
             Py_DECREF(initvalue);
             return NULL;
@@ -1045,14 +1048,16 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
                          Py_TYPE(dict)->tp_name);
             return NULL;
         }
-        if (self->dict) {
-            /* Alternatively, we could replace the internal dictionary
-               completely. However, it seems more practical to just update it. */
-            if (PyDict_Update(self->dict, dict) < 0)
-                return NULL;
+        /* Alternatively, we could replace the internal dictionary
+           completely. However, it seems more practical to just update it. */
+        PyObject *self_dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (self_dict == NULL) {
+            return NULL;
         }
-        else {
-            self->dict = Py_NewRef(dict);
+        int rc = PyDict_Update(self_dict, dict);
+        Py_DECREF(self_dict);
+        if (rc < 0) {
+            return NULL;
         }
     }
 
@@ -1140,7 +1145,6 @@ static PyGetSetDef stringio_getset[] = {
 
 static struct PyMemberDef stringio_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
     {NULL},
 };
 

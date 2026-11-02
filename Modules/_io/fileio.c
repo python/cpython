@@ -81,7 +81,6 @@ typedef struct {
        gh-109523). */
     struct _Py_stat_struct *stat_atopen;
     PyObject *weakreflist;
-    PyObject *dict;
 } fileio;
 
 #define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
@@ -558,15 +557,13 @@ fileio_traverse(PyObject *op, visitproc visit, void *arg)
 {
     fileio *self = PyFileIO_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 fileio_clear(PyObject *op)
 {
-    fileio *self = PyFileIO_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1367,7 +1364,6 @@ static PyGetSetDef fileio_getsetlist[] = {
 static PyMemberDef fileio_members[] = {
     {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},
     {NULL}
 };
 

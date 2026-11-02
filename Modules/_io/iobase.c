@@ -33,7 +33,6 @@ class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
 typedef struct {
     PyObject_HEAD
 
-    PyObject *dict;
     PyObject *weakreflist;
 } iobase;
 
@@ -383,15 +382,13 @@ iobase_traverse(PyObject *op, visitproc visit, void *arg)
 {
     iobase *self = iobase_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 iobase_clear(PyObject *op)
 {
-    iobase *self = iobase_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -400,8 +397,8 @@ iobase_clear(PyObject *op)
 static void
 iobase_dealloc(PyObject *op)
 {
-    /* NOTE: since IOBaseObject has its own dict, Python-defined attributes
-       are still available here for close() to use.
+    /* NOTE: since the managed dict is only cleared below, Python-defined
+       attributes are still available here for close() to use.
        However, if the derived class declares a __slots__, those slots are
        already gone.
     */
@@ -417,7 +414,7 @@ iobase_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     FT_CLEAR_WEAKREFS(op, self->weakreflist);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -909,7 +906,6 @@ static PyGetSetDef iobase_getset[] = {
 
 static struct PyMemberDef iobase_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(iobase, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(iobase, dict), Py_READONLY},
     {NULL},
 };
 
@@ -932,7 +928,7 @@ PyType_Spec _Py_iobase_spec = {
     .name = "_io._IOBase",
     .basicsize = sizeof(iobase),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
     .slots = iobase_slots,
 };
 

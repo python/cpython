@@ -10,6 +10,7 @@ import gc
 import io
 import _pyio as pyio
 import pickle
+import struct
 import sys
 import weakref
 
@@ -1037,11 +1038,13 @@ class CBytesIOTest(PyBytesIOTest):
     @support.cpython_only
     def test_sizeof(self):
         if support.Py_GIL_DISABLED:
-            basesize = support.calcobjsize('P2n2Pni')
+            basesize = support.calcobjsize('P2nPni')
         else:
-            basesize = support.calcobjsize('P2n2Pn')
+            basesize = support.calcobjsize('P2nPn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
+        # sys.getsizeof() includes the managed dict pre-header
+        basesize += 2 * struct.calcsize('P')
         check(io.BytesIO(), basesize )
         n = 1000  # use a variable to prevent constant folding
         check(io.BytesIO(b'a' * n), basesize + sys.getsizeof(b'a' * n))

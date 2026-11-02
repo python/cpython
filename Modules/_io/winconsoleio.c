@@ -217,7 +217,6 @@ typedef struct {
     char finalizing;
     unsigned int blksize;
     PyObject *weakreflist;
-    PyObject *dict;
     char buf[SMALLBUF];
     wchar_t wbuf;
 } winconsoleio;
@@ -498,15 +497,13 @@ winconsoleio_traverse(PyObject *op, visitproc visit, void *arg)
 {
     winconsoleio *self = winconsoleio_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 winconsoleio_clear(PyObject *op)
 {
-    winconsoleio *self = winconsoleio_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -520,7 +517,7 @@ winconsoleio_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     FT_CLEAR_WEAKREFS(op, self->weakreflist);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1259,7 +1256,6 @@ static PyMemberDef winconsoleio_members[] = {
     {"_blksize", Py_T_UINT, offsetof(winconsoleio, blksize), 0},
     {"_finalizing", Py_T_BOOL, offsetof(winconsoleio, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, dict), Py_READONLY},
     {NULL}
 };
 

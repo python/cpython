@@ -732,7 +732,6 @@ struct textio
     PyObject *raw;
 
     PyObject *weakreflist;
-    PyObject *dict;
 
     _PyIO_State *state;
 };
@@ -1542,7 +1541,7 @@ textiowrapper_clear(PyObject *op)
     Py_CLEAR(self->errors);
     Py_CLEAR(self->raw);
 
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1578,8 +1577,7 @@ textiowrapper_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->errors);
     Py_VISIT(self->raw);
 
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static PyObject *
@@ -3539,7 +3537,6 @@ static PyMemberDef textiowrapper_members[] = {
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(textio, dict), Py_READONLY},
     {NULL}
 };
 
