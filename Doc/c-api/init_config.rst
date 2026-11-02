@@ -168,7 +168,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -1939,7 +1939,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
