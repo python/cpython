@@ -482,10 +482,10 @@ class DirCmpImplementationTests(unittest.TestCase):
 
             return st
 
-        with patch("os.stat", side_effect=fake_stat_types):
-            dc = filecmp.dircmp(self.dir, self.dir_same)
-            self.assertIn(file_diff_type, dc.common_funny)
-            self.assertIn(file_funny_type, dc.common_funny)
+        self.enterContext(patch("os.stat", side_effect=fake_stat_types))
+        dc = filecmp.dircmp(self.dir, self.dir_same)
+        self.assertIn(file_diff_type, dc.common_funny)
+        self.assertIn(file_funny_type, dc.common_funny)
 
     # Test phase4_closure and report() output for common funny files.
     # Modifies os.stat for 'funny_report_file.txt' to return a socket type,
