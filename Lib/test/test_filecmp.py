@@ -531,7 +531,6 @@ class DirCmpImplementationTests(unittest.TestCase):
             patch("filecmp._cmp", side_effect=fake_private_cmp),
         ):
             dc = filecmp.dircmp(self.dir, self.dir_same)
-            _ = dc.subdirs
             dc.phase4_closure()
 
             with support.captured_stdout() as mock_stdout:
