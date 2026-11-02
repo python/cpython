@@ -1596,7 +1596,7 @@ sqlite3
 
 The :mod:`sqlite3` module was updated to pysqlite version 2.6.0.  It has two new capabilities.
 
-* The :attr:`!sqlite3.Connection.in_transit` attribute is true if there is an
+* The :attr:`sqlite3.Connection.in_transaction` attribute is true if there is an
   active transaction for uncommitted changes.
 
 * The :meth:`sqlite3.Connection.enable_load_extension` and

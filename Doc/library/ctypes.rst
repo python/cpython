@@ -2835,7 +2835,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
    On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
-   to :class:`c_long`.
+   to :class:`c_ulong`.
 
 
 .. class:: c_ushort
