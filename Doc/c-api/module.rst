@@ -337,7 +337,7 @@ Creation and initialization slots
 
    .. versionchanged:: 3.15
 
-      The *slots* argument may be a ``ModuleSpec``-like object, rather than
+      The *spec* argument may be a ``ModuleSpec``-like object, rather than
       a true :py:class:`~importlib.machinery.ModuleSpec` instance.
       Note that previous versions of CPython did not enforce this.
 
