@@ -403,8 +403,8 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([f'-j{value}'], 'expected a percentage')
 
     def test_percentage_jobs_without_load_average(self):
-        with unittest.mock.patch.object(os, 'getloadavg', create=True):
-            del os.getloadavg
+        with unittest.mock.patch.dict(os.__dict__):
+            os.__dict__.pop('getloadavg', None)
             self.assertEqual(self.parse_args(['-j90%']).use_mp, 0.9)
             ns = self.parse_args(['-j90%', '--single-process'])
             self.assertIsNone(ns.use_mp)
