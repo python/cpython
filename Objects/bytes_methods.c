@@ -242,16 +242,10 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 }
 
 
-/* Return 0x20 in each byte of the word x that is in the range
-   first..first+25 ('A'..'Z' or 'a'..'z'), and 0 in every other byte.
-   XOR-ing the result into x switches the case of exactly those letters.
-
-   For a byte b below 0x80, b + (0x80 - first) has its high bit set iff
-   b >= first, and b + (0x80 - first - 26) has its high bit set iff
-   b > first + 25.  The sums stay below 0x100, so nothing carries into the
-   next byte.  Bytes 0x80 and above are dropped by "& ~x".  Every step works
-   on each byte separately, so the result depends neither on byte order nor
-   on the size of size_t. */
+/* Return 0x20 in each byte of x that lies in first..first+25, else 0.
+   For a byte b < 0x80, b + (0x80 - first) has its high bit set iff
+   b >= first, and b + (0x80 - first - 26) iff b > first + 25; neither
+   sum carries.  "& ~x" drops bytes >= 0x80. */
 static inline Py_ALWAYS_INLINE size_t
 ascii_case_bits(size_t x, unsigned char first)
 {
@@ -262,7 +256,6 @@ ascii_case_bits(size_t x, unsigned char first)
     return (ge_first & ~gt_last & ~x & (0x80 * ones)) >> 2;
 }
 
-/* Convert the word at cptr + i into result + i. */
 static inline Py_ALWAYS_INLINE void
 ascii_case_word(char *result, const char *cptr, Py_ssize_t i,
                 unsigned char first)
@@ -273,10 +266,9 @@ ascii_case_word(char *result, const char *cptr, Py_ssize_t i,
     memcpy(result + i, &x, sizeof(x));
 }
 
-/* Convert len >= SIZEOF_SIZE_T bytes a word at a time.  If len is not a
-   multiple of the word size, the last word overlaps the one before it;
-   converting a byte twice gives the same result as converting it once.
-   Kept out of line so that short strings don't pay for its setup. */
+/* Requires len >= SIZEOF_SIZE_T.  The last word may overlap the one before
+   it; converting a byte twice is harmless.  Not inlined, so that short
+   strings skip its setup. */
 static Py_NO_INLINE void
 ascii_case_words(char *result, const char *cptr, Py_ssize_t len,
                  unsigned char first)
