@@ -76,6 +76,84 @@ _PyTuple_Recycle(PyObject *op)
 #endif
 #define _PyTuple_HASH_EMPTY (_PyTuple_HASH_XXPRIME_5 + (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL))
 
+
+#ifndef NDEBUG
+// Check that a tuple can be mutated in-place.
+// Usage: assert(_PyTuple_CanMutate(v));
+static int
+_PyTuple_CanMutate(PyTupleObject *tuple)
+{
+    assert(PyTuple_Check(tuple));
+
+    // Do not check _PyObject_IsUniquelyReferenced(): the function is called
+    // by _PyTupleWriter_CheckConsistency() and a tuple writer can be used by
+    // multiple threads using external locking.
+    assert(Py_REFCNT(tuple) == 1);
+
+    // The empty tuple must not be modified
+    assert(1 <= Py_SIZE(tuple));
+    assert(tuple != &_Py_SINGLETON(tuple_empty));
+
+    // The hash value must not be cached yet. Otherwise, it means that the
+    // tuple object was already used in Python somehow (ex: as a dictionary
+    // key).
+    assert(tuple->ob_hash == -1);
+
+    return 1;
+}
+#endif
+
+
+/* --- PyTupleWriter API -------------------------------------------------- */
+
+#ifndef NDEBUG
+static inline int
+_PyTupleWriter_CheckConsistency(PyTupleWriter *writer)
+{
+    assert(writer != NULL);
+    assert(PyTuple_CheckExact(_PyObject_CAST(writer)));
+    PyTupleObject *tuple = (PyTupleObject*)writer;
+    assert(0 <= Py_SIZE(tuple));
+    if (Py_SIZE(tuple) != 0) {
+        // Do not use _PyObject_IsUniquelyReferenced(): the caller can have
+        // its own lock to prevent a writer from being used by two threads
+        // at the same time.
+        assert(Py_REFCNT(tuple) == 1);
+
+        assert(!_PyObject_GC_IS_TRACKED(tuple));
+    }
+    else {
+        assert(tuple == &_Py_SINGLETON(tuple_empty));
+    }
+    return 1;
+}
+#endif
+
+
+static inline void
+_PyTupleWriter_SET_ITEM_STEAL(PyTupleWriter *writer,
+                              Py_ssize_t index, PyObject *item)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyTupleObject *tuple = _PyTuple_CAST(writer);
+
+    assert(_PyTuple_CanMutate(tuple));
+    assert(0 <= index && index < Py_SIZE(tuple));
+    assert(tuple->ob_item[index] == NULL);
+    assert(item != NULL);
+
+    tuple->ob_item[index] = item;
+}
+
+
+static inline void
+_PyTupleWriter_SET_ITEM(PyTupleWriter *writer,
+                        Py_ssize_t index, PyObject *item)
+{
+    assert(item != NULL);
+    return _PyTupleWriter_SET_ITEM_STEAL(writer, index, Py_NewRef(item));
+}
+
 #ifdef __cplusplus
 }
 #endif

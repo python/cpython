@@ -164,6 +164,9 @@ Tuple Objects
    .. versionchanged:: next
       The function now fails if the tuple hash value was already computed.
 
+   .. soft-deprecated:: next
+      Use the :ref:`PyTupleWriter API <pytuplewriter>` instead.
+
 
 .. _struct-sequence-objects:
 
@@ -293,3 +296,101 @@ type.
 
    .. versionchanged:: 3.13
       Now implemented as an alias to :c:func:`PyStructSequence_SetItem`.
+
+
+.. _pytuplewriter:
+
+PyTupleWriter
+-------------
+
+The ``PyTupleWriter`` API can be used to create a Python :class:`tuple` object
+when the final size is not known in advance.
+
+.. versionadded:: next
+
+.. c:type:: PyTupleWriter
+
+   A tuple writer instance.
+
+   The instance must be destroyed by :c:func:`PyTupleWriter_Finish` on
+   success, or :c:func:`PyTupleWriter_Discard` on error.
+
+   The API is **not thread safe**. To share a writer with multiple threads, a
+   critical section or a lock is needed.
+
+.. c:function:: PyTupleWriter* PyTupleWriter_Create(Py_ssize_t size)
+
+   Create a tuple writer instance.
+
+   *size* must be greater than or equal to ``0``.
+
+   If *size* is greater than ``0``, allocate an internal buffer of *size* items
+   and all items must be set with :c:func:`PyTupleWriter_SetItem` or
+   :c:func:`PyTupleWriter_SetItems`.
+
+   Set an exception and return ``NULL`` on error.
+
+.. c:function:: PyObject* PyTupleWriter_Finish(PyTupleWriter *writer)
+
+   Return the final Python :class:`str` object and destroy the writer instance.
+
+   Set an exception and return ``NULL`` on error.
+
+   The writer instance is invalid after this call.
+
+.. c:function:: PyObject* PyTupleWriter_FinishWithSize(PyTupleWriter *writer, Py_ssize_t final_size)
+
+   Similar to :c:func:`PyTupleWriter_FinishWithSize`, but first truncates
+   the tuple to *final_size* items.
+
+   On success, return a new tuple object.
+   On error, set an exception and return ``NULL``.
+
+.. c:function:: void PyTupleWriter_Discard(PyTupleWriter *writer)
+
+   Discard the internal Tuple buffer and destroy the writer instance.
+
+   If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
+
+.. c:function:: void PyTupleWriter_Discard(PyTupleWriter *writer)
+
+   Discard the internal tuple buffer and destroy the writer instance.
+
+   If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
+
+.. c:function:: Py_ssize_t PyTupleWriter_GetSize(PyTupleWriter *writer)
+
+   Get the writer size.
+
+   The function cannot fail.
+
+.. c:function:: int PyTupleWriter_SetItem(PyTupleWriter *writer, Py_ssize_t index, PyObject *item)
+
+   Set an item of a tuple writer start at position *index*.
+   Copy *item* reference.
+
+   An item must be set exactly once.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyTupleWriter_SetItems(PyTupleWriter *writer, Py_ssize_t index, PyObject *const *items, Py_ssize_t nitem)
+
+   Set *nitem* items of a tuple writer start at position *index*.
+   Copy *items* references.
+
+   Items must be set exactly once.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PyTupleWriter_Resize(PyTupleWriter **writer, Py_ssize_t new_size)
+
+   Resize the tuple writer to *new_size* items.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.

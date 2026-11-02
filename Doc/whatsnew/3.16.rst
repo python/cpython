@@ -1398,6 +1398,20 @@ New features
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
+* Add a new :ref:`PyTupleWriter API <pytuplewriter>` to create a :class:`tuple`
+  when the final size is not known in advance. Add functions:
+
+  * :c:func:`PyTupleWriter_Create`
+  * :c:func:`PyTupleWriter_Finish`
+  * :c:func:`PyTupleWriter_FinishWithSize`
+  * :c:func:`PyTupleWriter_Discard`
+  * :c:func:`PyTupleWriter_GetSize`
+  * :c:func:`PyTupleWriter_SetItem`
+  * :c:func:`PyTupleWriter_SetItems`
+  * :c:func:`PyTupleWriter_Resize`
+
+  (Contributed by Victor Stinner in :gh:`161694`.)
+
 * Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
   (Contributed by Victor Stinner in :gh:`161172`.)
 
@@ -1449,6 +1463,10 @@ Deprecated C APIs
 * :c:func:`PyModule_GetFilename` is no longer deprecated, but using
   :c:func:`PyModule_GetFilenameObject` instead is still recommended.
   (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Soft deprecate the :c:func:`_PyTuple_Resize` function: use the new
+  :ref:`PyTupleWriter API <pytuplewriter>` instead.
+  (Contributed by Victor Stinner in :gh:`161694`.)
 
 * Soft deprecate functions modifying Unicode strings:
   :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
