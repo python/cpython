@@ -681,10 +681,10 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # end polls as readable whenever unread data sits in the FIFO, and no
         # event is delivered when the read end is closed, so it can only
         # ever report a false disconnection (gh-145030). The same XNU
-        # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
+        # behaviour applies on iOS/tvOS/visionOS/watchOS (sys.platform is not
         # "darwin" there).
         is_named_fifo_without_close_event = (
-            sys.platform in {"darwin", "ios", "tvos", "watchos", "sunos5"}
+            sys.platform in {"darwin", "ios", "tvos", "visionos", "watchos", "sunos5"}
             and is_fifo and pipe_stat.st_nlink > 0)
         if is_socket or (is_fifo
                          and not sys.platform.startswith("aix")

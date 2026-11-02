@@ -167,7 +167,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -840,7 +840,7 @@ Example::
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
-        PyMem_Free(ptr);
+        PyMem_RawFree(ptr);
         return 0;
     }
 
@@ -889,9 +889,9 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
-      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): use ``mimalloc``, a fast
         malloc replacement.
-      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): use ``mimalloc``, a fast
         malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
 
 
@@ -1948,7 +1948,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 

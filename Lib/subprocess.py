@@ -75,7 +75,7 @@ else:
     _mswindows = True
 
 # some platforms do not support subprocesses
-_can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watchos"}
+_can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "visionos", "watchos"}
 
 if _mswindows:
     import _winapi

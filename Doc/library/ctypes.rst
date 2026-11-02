@@ -2927,7 +2927,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
    On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
-   to :class:`c_long`.
+   to :class:`c_ulong`.
 
 
 .. class:: c_ushort
@@ -3758,9 +3758,9 @@ fields, or any other data types containing pointer type fields.
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
    :module: ctypes.util
 
-   Information regarding a structure field defined by the :func:`struct`
-   decorator. This should be used in the second argument of a
-   :class:`typing.Annotated` wrapping a ctypes type.
+   Information regarding a structure field defined by the
+   :func:`~ctypes.util.struct` decorator. This should be used in the second
+   argument of a :class:`typing.Annotated` wrapping a ctypes type.
 
    *anonymous* specifies whether the field will be present in the
    :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.
