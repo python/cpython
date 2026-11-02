@@ -486,7 +486,7 @@ class DirCmpImplementationTests(unittest.TestCase):
 
         with patch("os.stat", side_effect=fake_stat_types):
             dc = filecmp.dircmp(self.dir, self.dir_same)
-            dc.common_funny  
+            dc.common_funny
 
         self.assertIn(file_diff_type, dc.common_funny)
         self.assertIn(file_funny_type, dc.common_funny)
