@@ -1182,8 +1182,9 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -1244,8 +1245,9 @@ record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list,
-                                FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -2056,6 +2058,19 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
         arg = NULL;
     }
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
+}
+
+/* Return a str holding code points above U+10FFFF. */
+static PyObject *
+new_invalid_str(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *str = PyUnicode_New(2, _Py_MAX_UNICODE);
+    if (str == NULL) {
+        return NULL;
+    }
+    PyUnicode_4BYTE_DATA(str)[0] = _Py_MAX_UNICODE + 1;
+    PyUnicode_4BYTE_DATA(str)[1] = _Py_MAX_UNICODE + 2;
+    return str;
 }
 
 static PyObject *
@@ -3400,6 +3415,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"new_invalid_str", new_invalid_str, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},

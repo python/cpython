@@ -82,6 +82,7 @@ class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "\001\002sqlite> \001\002"
     PS2 = "\001\002    ... \001\002"
+    EOF_KEY = "CTRL-Z" if sys.platform == "win32" else "CTRL-D"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -104,9 +105,17 @@ class InteractiveSession(unittest.TestCase):
     def test_interact(self):
         out, err = self.run_cli()
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(f'type ".quit" or {self.EOF_KEY} to quit', err)
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_help(self):
+        out, err = self.run_cli(commands=(".help",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(f"Exit the CLI, equivalent to {self.EOF_KEY}", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_quit(self):
