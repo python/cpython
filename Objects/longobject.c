@@ -5554,14 +5554,20 @@ _PyLong_Lshift(PyObject *a, int64_t shiftby)
 static void
 v_complement(digit *z, digit *a, Py_ssize_t m)
 {
-    Py_ssize_t i;
-    digit carry = 1;
-    for (i = 0; i < m; ++i) {
-        carry += a[i] ^ PyLong_MASK;
-        z[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
+    Py_ssize_t i = 0;
+
+    /* -a is ~a + 1, and the +1 only carries through the trailing zero
+       digits: they stay zero, the first nonzero digit is negated, and the
+       digits above it are just inverted.  No carry is passed between
+       iterations of the last loop, so it can be vectorized. */
+    while (i < m && a[i] == 0) {
+        z[i++] = 0;
     }
-    assert(carry == 0);
+    assert(i < m);
+    z[i] = (0U - a[i]) & PyLong_MASK;
+    for (++i; i < m; ++i) {
+        z[i] = a[i] ^ PyLong_MASK;
+    }
 }
 
 /* Bitwise and/xor/or operations */
