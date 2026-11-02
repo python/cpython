@@ -133,12 +133,10 @@ class TestFreeThreading:
         def worker(batches):
             loop = asyncio.new_event_loop()
             loop.set_task_factory(self.factory)
-
             tls_tasks = make_pending_tasks(loop, 8)
             for task in tls_tasks:
                 task.get_coro().close()
             tls.tasks = tls_tasks
-
             batches.append((loop, make_pending_tasks(loop, 8)))
 
         stop = threading.Event()
