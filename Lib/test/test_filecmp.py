@@ -82,6 +82,7 @@ class FileCompareTestCase(unittest.TestCase):
 
     def test_cache_overflow_and_hit(self):
         filecmp.clear_cache()
+        self.addCleanup(filecmp.clear_cache)
         s1 = filecmp._sig(os.stat(self.name))
         s2 = filecmp._sig(os.stat(self.name_same))
         base_dir = os.path.dirname(self.name)
