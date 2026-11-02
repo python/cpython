@@ -1464,7 +1464,7 @@ class TestAsyncioToolsBasic(unittest.TestCase):
                         coroutine_stack=[],
                         awaited_by=[
                             CoroInfo(
-                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                call_stack=[FrameInfo("f", "", 0)],
                                 task_name=i - 1
                             )
                         ] if i > 1 else []
@@ -1495,11 +1495,11 @@ class TestAsyncioToolsBasic(unittest.TestCase):
                         coroutine_stack=[],
                         awaited_by=[
                             CoroInfo(
-                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                call_stack=[FrameInfo("f", "", 0)],
                                 task_name=1
                             ),
                             CoroInfo(
-                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                call_stack=[FrameInfo("f", "", 0)],
                                 task_name=3
                             )
                         ]
@@ -1510,7 +1510,7 @@ class TestAsyncioToolsBasic(unittest.TestCase):
                         coroutine_stack=[],
                         awaited_by=[
                             CoroInfo(
-                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                call_stack=[FrameInfo("f", "", 0)],
                                 task_name=2
                             )
                         ]
