@@ -130,7 +130,7 @@ def _find_cycles(graph):
         path.append(v)
         stack = [(v, iter(graph.get(v, ())))]
         while stack:
-            v, children = stack[-1]
+            node, children = stack[-1]
             for w in children:
                 if color[w] == WHITE:
                     color[w] = GREY
@@ -141,7 +141,7 @@ def _find_cycles(graph):
                     i = path.index(w)
                     cycles.append(path[i:] + [w])  # make a copy
             else:
-                color[v] = BLACK
+                color[node] = BLACK
                 path.pop()
                 stack.pop()
 
@@ -183,8 +183,8 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
             buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
             new_pref = prefix + ("    " if last else "│   ")
             kids = children.get(node, [])
-            for i, kid in reversed(list(enumerate(kids))):
-                stack.append((kid, new_pref, i == len(kids) - 1))
+            for i in range(len(kids) - 1, -1, -1):
+                stack.append((kids[i], new_pref, i == len(kids) - 1))
         return buf
 
     return [render(root) for root in _roots(labels, children)]
