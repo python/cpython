@@ -7,6 +7,7 @@ import threading
 import unittest
 from unittest.mock import Mock, patch
 
+from test.support import threading_helper
 from test.libregrtest.adaptive_workers import AdaptiveWorkerGate
 from test.libregrtest.logger import Logger
 from test.libregrtest.results import TestResults
@@ -67,6 +68,7 @@ class AdaptiveWorkerGateTests(unittest.TestCase):
         gate.release()
         self.assertEqual(gate.get_active_workers(), 0)
 
+    @threading_helper.requires_working_threading()
     def test_waiter_shutdown(self):
         gate, _ = self.make_gate()
         self.assertTrue(gate.acquire())
@@ -83,6 +85,7 @@ class AdaptiveWorkerGateTests(unittest.TestCase):
             thread.join(5)
             gate.release()
 
+    @threading_helper.requires_working_threading()
     def test_release_wakes_waiter(self):
         gate, _ = self.make_gate()
         self.assertTrue(gate.acquire())
@@ -115,6 +118,7 @@ class AdaptiveWorkerGateTests(unittest.TestCase):
         gate.release()
         gate.release()
 
+    @threading_helper.requires_working_threading()
     def test_increase_wakes_waiter(self):
         gate, get_load_avg = self.make_gate()
         self.assertTrue(gate.acquire())
