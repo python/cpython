@@ -1004,6 +1004,18 @@ class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_truncate_size_closes_stream(self):
+        stream = self.ioclass()
+        stream.write("abc")
+
+        class Size:
+            def __index__(self):
+                stream.close()
+                return 0
+
+        with self.assertRaises(ValueError):
+            stream.truncate(Size())
+
     def test_truncate_large_size(self):
         # Sizes above 2**31 - 1 must work where C long is 32-bit.
         if sys.maxsize > 2**31:
