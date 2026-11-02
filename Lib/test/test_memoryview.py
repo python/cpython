@@ -91,6 +91,13 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_released_empty_iterator(self):
+        for tp in self._types:
+            m = self._view(tp(b""))
+            iterator = iter(m)
+            m.release()
+            self.assertRaises(StopIteration, next, iterator)
+
     def test_count(self):
         for tp in self._types:
             b = tp(self._source)
@@ -554,6 +561,61 @@ class BaseMemorySliceSliceTests:
 class BytesMemoryviewTest(unittest.TestCase,
     BaseMemoryviewTests, BaseBytesMemoryTests):
 
+    def test_comparison_release_during_buffer_callback(self):
+        # Releasing the view from inside the other operand's __buffer__
+        # succeeds, but the buffer stays pinned until the comparison ends:
+        # the exporter cannot be resized under the running comparison.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+        assert_raises = self.assertRaises
+
+        class Other:
+            def __buffer__(self, flags):
+                view.release()
+                with assert_raises(BufferError):
+                    data.clear()
+                return memoryview(data)
+
+        view == Other()
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+        data.clear()
+
+    def test_comparison_releases_buffer_after_access(self):
+        # __release_buffer__ releasing the very view being compared.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertTrue(view == Other())
+            self.assertIsNone(cm.unraisable)
+        data.clear()
+
+    def test_assignment_releases_buffer_after_access(self):
+        # __release_buffer__ releasing the very view being assigned to.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            view[:] = Other()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(data, b'abc')
+        data.clear()
+
     def test_constructor(self):
         for tp in self._types:
             ob = tp(self._source)
@@ -689,6 +751,29 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
 
 
 class OtherTest(unittest.TestCase):
+    def test_gc_cleared_view(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        view = memoryview(bytearray(b"abc"))
+        _testcapi.clear_memoryview(view)
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+
+        # Clearing the view while an operation is in progress must not
+        # free the buffer under that operation, nor crash when it ends.
+        data = bytearray(b"abc")
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                _testcapi.clear_memoryview(view)
+                return memoryview(data)
+
+        self.assertTrue(view == Other())
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+        data.clear()
+
     def test_cast_order(self):
         # gh-78959: cast(order=...) selects the result memory layout.
         b = bytearray(range(6))

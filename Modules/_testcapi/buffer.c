@@ -114,8 +114,22 @@ buffer_pointer_as_int(PyObject *Py_UNUSED(module), PyObject *obj)
     return out;
 }
 
+static PyObject *
+clear_memoryview(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    if (!PyMemoryView_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError, "memoryview expected");
+        return NULL;
+    }
+    if (Py_TYPE(obj)->tp_clear(obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"buffer_pointer_as_int", buffer_pointer_as_int, METH_O},
+    {"clear_memoryview", clear_memoryview, METH_O},
     {NULL},
 };
 
