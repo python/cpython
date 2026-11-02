@@ -4132,8 +4132,10 @@ class MiscTests(unittest.TestCase):
         try:
             dir = tempfile.mkdtemp()
             name = os.path.join(dir, "foo")
+            # The message comes from the shell in the console code page,
+            # which need not be the encoding getstatusoutput() uses.
             status, output = subprocess.getstatusoutput(
-                ("type " if mswindows else "cat ") + name)
+                ("type " if mswindows else "cat ") + name, errors="replace")
             self.assertNotEqual(status, 0)
         finally:
             if dir is not None:
