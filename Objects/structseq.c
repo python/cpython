@@ -474,12 +474,11 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
 
 static int
 initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
-                          Py_ssize_t n_members, Py_ssize_t n_unnamed_members) {
-    PyObject *v;
-
+                          Py_ssize_t n_members, Py_ssize_t n_unnamed_members)
+{
 #define SET_DICT_FROM_SIZE(key, value)                                         \
     do {                                                                       \
-        v = PyLong_FromSsize_t(value);                                         \
+        PyObject *v = PyLong_FromSsize_t(value);                               \
         if (v == NULL) {                                                       \
             return -1;                                                         \
         }                                                                      \
@@ -496,7 +495,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
 
     // Prepare and set __match_args__
     Py_ssize_t i, k;
-    PyObject* keys = PyTuple_New(desc->n_in_sequence);
+    PyTupleWriter *keys = PyTupleWriter_Create(desc->n_in_sequence);
     if (keys == NULL) {
         return -1;
     }
@@ -509,24 +508,26 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         if (new_member == NULL) {
             goto error;
         }
-        PyTuple_SET_ITEM(keys, k, new_member);
+        _PyTupleWriter_SET_ITEM_STEAL(keys, k, new_member);
         k++;
     }
 
-    if (_PyTuple_Resize(&keys, k) == -1) {
-        assert(keys == NULL);
-        return -1;
-    }
-
-    if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+    PyObject *keys_obj = PyTupleWriter_FinishWithSize(keys, k);
+    keys = NULL;
+    if (keys_obj == NULL) {
         goto error;
     }
 
-    Py_DECREF(keys);
+    if (PyDict_SetItemString(dict, match_args_key, keys_obj) < 0) {
+        Py_DECREF(keys_obj);
+        goto error;
+    }
+    Py_DECREF(keys_obj);
+
     return 0;
 
 error:
-    Py_DECREF(keys);
+    PyTupleWriter_Discard(keys);
     return -1;
 }
 
