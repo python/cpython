@@ -177,7 +177,7 @@ Tables/dicts
       the source.
 
 Integers
-   TOML recommends supporting integers in ``range(−2**63, 2**63)``.
+   TOML recommends supporting integers in ``range(-2**63, 2**63)``.
 
    .. impl-detail::
       :mod:`!tomllib` uses :ref:`Python's limit on integer string conversion
