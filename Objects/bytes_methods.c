@@ -242,6 +242,52 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 }
 
 
+/* Return 0x20 in each byte of the word x that is in the range
+   first..first+25 ('A'..'Z' or 'a'..'z'), and 0 in every other byte.
+   XOR-ing the result into x switches the case of exactly those letters.
+
+   For a byte b below 0x80, b + (0x80 - first) has its high bit set iff
+   b >= first, and b + (0x80 - first - 26) has its high bit set iff
+   b > first + 25.  The sums stay below 0x100, so nothing carries into the
+   next byte.  Bytes 0x80 and above are dropped by "& ~x".  Every step works
+   on each byte separately, so the result depends neither on byte order nor
+   on the size of size_t. */
+static inline Py_ALWAYS_INLINE size_t
+ascii_case_bits(size_t x, unsigned char first)
+{
+    const size_t ones = (size_t)-1 / 0xff;  /* 0x01 in every byte */
+    size_t b = x & (0x7f * ones);
+    size_t ge_first = b + (0x80 - first) * ones;
+    size_t gt_last = b + (0x80 - first - 26) * ones;
+    return (ge_first & ~gt_last & ~x & (0x80 * ones)) >> 2;
+}
+
+/* Convert the word at cptr + i into result + i. */
+static inline Py_ALWAYS_INLINE void
+ascii_case_word(char *result, const char *cptr, Py_ssize_t i,
+                unsigned char first)
+{
+    size_t x;
+    memcpy(&x, cptr + i, sizeof(x));
+    x ^= ascii_case_bits(x, first);
+    memcpy(result + i, &x, sizeof(x));
+}
+
+/* Convert len >= SIZEOF_SIZE_T bytes a word at a time.  If len is not a
+   multiple of the word size, the last word overlaps the one before it;
+   converting a byte twice gives the same result as converting it once.
+   Kept out of line so that short strings don't pay for its setup. */
+static Py_NO_INLINE void
+ascii_case_words(char *result, const char *cptr, Py_ssize_t len,
+                 unsigned char first)
+{
+    Py_ssize_t i;
+    for (i = 0; i < len - SIZEOF_SIZE_T; i += SIZEOF_SIZE_T) {
+        ascii_case_word(result, cptr, i, first);
+    }
+    ascii_case_word(result, cptr, len - SIZEOF_SIZE_T, first);
+}
+
 PyDoc_STRVAR_shared(_Py_lower__doc__,
 "B.lower() -> copy of B\n\
 \n\
@@ -252,6 +298,10 @@ _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len)
 {
     Py_ssize_t i;
 
+    if (len >= SIZEOF_SIZE_T) {
+        ascii_case_words(result, cptr, len, 'A');
+        return;
+    }
     for (i = 0; i < len; i++) {
         result[i] = Py_TOLOWER((unsigned char) cptr[i]);
     }
@@ -268,6 +318,10 @@ _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 {
     Py_ssize_t i;
 
+    if (len >= SIZEOF_SIZE_T) {
+        ascii_case_words(result, cptr, len, 'a');
+        return;
+    }
     for (i = 0; i < len; i++) {
         result[i] = Py_TOUPPER((unsigned char) cptr[i]);
     }
