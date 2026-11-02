@@ -16,6 +16,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/util/libc.h"
 #include "mimalloc/util/options.h"
 #include "mimalloc/util/threadlocal.h"
+#include "mimalloc/heap/process.h"
 
 /* -----------------------------------------------------------
   Each thread can have (a dynamically expanding) array of
@@ -220,30 +221,25 @@ Create and free fresh TLS key's
 ----------------------------------------------------------- */
 #include "../arena/bitmap.h"
 
-static mi_lock_t    mi_thread_locals_lock;    // we need a lock in order to re-allocate the slot bits
-static mi_bitmap_t* mi_thread_locals_free;    // reuse an arena bitmap to track which slots were assigned (1=free, 0=in-use)
-static mi_memid_t   mi_thread_locals_memid;   // provenance of mi_thread_locals_free
-static size_t       mi_thread_locals_version; // version to be able to reuse slots safely
-
 void _mi_thread_locals_init(void) {
-  mi_lock_init(&mi_thread_locals_lock);
+  mi_lock_init(&_mi_process.thread_locals_lock);
 }
 
 void _mi_thread_locals_done(void) {
-  mi_lock(&mi_thread_locals_lock) {
-    mi_bitmap_t* const slots = mi_thread_locals_free;
+  mi_lock(&_mi_process.thread_locals_lock) {
+    mi_bitmap_t* const slots = _mi_process.thread_locals_free;
     if (slots!=NULL) {
-      _mi_meta_free(_mi_subproc_main(), slots, mi_thread_locals_memid);
+      _mi_meta_free(_mi_subproc_main(), slots, _mi_process.thread_locals_memid);
     }
   }
-  mi_lock_done(&mi_thread_locals_lock);
+  mi_lock_done(&_mi_process.thread_locals_lock);
   mi_thread_locals_delete();
   mi_slot_fast_delete();
 }
 
 // strange signature but allows us to reuse the arena code for claiming free pages
-static bool mi_thread_local_claim_fun(size_t _slice_index, mi_arena_t* _arena, bool* keep_set) {
-  MI_UNUSED(_slice_index); MI_UNUSED(_arena);
+static bool mi_thread_local_claim_fun(size_t _slice_index, void* _arg, bool* keep_set) {
+  MI_UNUSED(_slice_index); MI_UNUSED(_arg);
   *keep_set = false;
   return true;
 }
@@ -252,10 +248,10 @@ static bool mi_thread_local_claim_fun(size_t _slice_index, mi_arena_t* _arena, b
 // (so if we reuse a slot it will be returning NULL initially when a thread tries to get it)
 static mi_thread_local_t mi_thread_local_claim(void) {
   size_t idx = 0;
-  if (mi_thread_locals_free != NULL && mi_bitmap_try_find_and_claim(mi_thread_locals_free,0,&idx,&mi_thread_local_claim_fun,NULL)) {
-    mi_thread_locals_version++;
-    if (mi_thread_locals_version >= MI_TLS_VERSION_MAX) { mi_thread_locals_version = 1; }  /* wrap around the version */
-    return mi_key_create( idx, mi_thread_locals_version);
+  if (_mi_process.thread_locals_free != NULL && mi_bitmap_try_find_and_claim(_mi_process.thread_locals_free,0,&idx,&mi_thread_local_claim_fun,NULL)) {
+    _mi_process.thread_locals_version++;
+    if (_mi_process.thread_locals_version >= MI_TLS_VERSION_MAX) { _mi_process.thread_locals_version = 1; }  /* wrap around the version */
+    return mi_key_create( idx, _mi_process.thread_locals_version);
   }
   else {
     return 0;
@@ -263,7 +259,7 @@ static mi_thread_local_t mi_thread_local_claim(void) {
 }
 
 static bool mi_thread_local_create_expand(void) {
-  mi_bitmap_t* const slots = mi_thread_locals_free;
+  mi_bitmap_t* const slots = _mi_process.thread_locals_free;
   // 1024 bits at a time
   const size_t oldcount = (slots==NULL ? 0 : mi_bitmap_max_bits(slots));
   const size_t newcount = 1024 + oldcount;
@@ -278,12 +274,12 @@ static bool mi_thread_local_create_expand(void) {
     // copy over the previous bitmap
     const size_t oldsize = mi_bitmap_size(oldcount,NULL);
     mi_memcpy_aligned(newslots, slots, oldsize);
-    _mi_meta_free(_mi_subproc_main(), slots, mi_thread_locals_memid);
+    _mi_meta_free(_mi_subproc_main(), slots, _mi_process.thread_locals_memid);
   }
   mi_bitmap_init(newslots, newcount, true /* pretend already zero'd so we do not zero out the copied old entries */);
   mi_bitmap_unsafe_setN(newslots, oldcount, newcount - oldcount);  /* set the new expanded slots as available */
-  mi_thread_locals_free = newslots;
-  mi_thread_locals_memid = memid;
+  _mi_process.thread_locals_free = newslots;
+  _mi_process.thread_locals_memid = memid;
   return true;
 }
 
@@ -291,7 +287,7 @@ static bool mi_thread_local_create_expand(void) {
 // create a fresh key
 mi_thread_local_t _mi_thread_local_create(void) {
   mi_thread_local_t key = 0;
-  mi_lock(&mi_thread_locals_lock) {
+  mi_lock(&_mi_process.thread_locals_lock) {
     key = mi_thread_local_claim();
     if (key==0) {
       if (mi_thread_local_create_expand()) {
@@ -308,8 +304,8 @@ mi_thread_local_t _mi_thread_local_create(void) {
 void _mi_thread_local_free(mi_thread_local_t key) {
   if (key==0) return;
   const size_t idx = mi_key_index(key);
-  mi_lock(&mi_thread_locals_lock) {
-    mi_bitmap_t* const slots = mi_thread_locals_free;
+  mi_lock(&_mi_process.thread_locals_lock) {
+    mi_bitmap_t* const slots = _mi_process.thread_locals_free;
     if (slots!=NULL && idx < mi_bitmap_max_bits(slots)) {
       mi_bitmap_set(slots,idx);
     }

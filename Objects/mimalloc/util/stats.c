@@ -9,6 +9,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim/prim-tls.h"
 #include "mimalloc/alloc/page.h"
 #include "mimalloc/util/stats.h"
+#include "mimalloc/heap/process.h"  // _mi_process.clock_*
 
 #if defined(_MSC_VER) && (_MSC_VER < 1920)
 #pragma warning(disable:4204)  // non-constant aggregate initializer
@@ -435,11 +436,9 @@ void _mi_stats_print(const char* name, size_t id, const mi_stats_t* stats, mi_ou
 }
 
 
-static mi_msecs_t mi_process_start; // = 0
-
 // called on process init
 void _mi_stats_init(void) {
-  if (mi_process_start == 0) { mi_process_start = _mi_clock_start(); };
+  if (_mi_process.clock_process_start == 0) { _mi_process.clock_process_start = _mi_clock_start(); }
 }
 
 static void mi_stats_add_into(mi_stats_t* to, const mi_stats_t* from) {
@@ -546,23 +545,21 @@ void mi_thread_stats_print_out(mi_output_fun* out, void* arg) mi_attr_noexcept {
 // Basic timer for convenience; use milli-seconds to avoid doubles
 // ----------------------------------------------------------------
 
-static mi_msecs_t mi_clock_diff;
-
 mi_msecs_t _mi_clock_now(void) {
   return _mi_prim_clock_now();
 }
 
 mi_msecs_t _mi_clock_start(void) {
-  if (mi_clock_diff == 0.0) {
-    mi_msecs_t t0 = _mi_clock_now();
-    mi_clock_diff = _mi_clock_now() - t0;
+  if (_mi_process.clock_overhead == 0) {
+    const mi_msecs_t t0 = _mi_clock_now();
+    _mi_process.clock_overhead = _mi_clock_now() - t0;
   }
   return _mi_clock_now();
 }
 
 mi_msecs_t _mi_clock_end(mi_msecs_t start) {
   mi_msecs_t end = _mi_clock_now();
-  return (end - start - mi_clock_diff);
+  return (end - start - _mi_process.clock_overhead);
 }
 
 
@@ -574,7 +571,7 @@ mi_decl_export void mi_process_info(size_t* elapsed_msecs, size_t* user_msecs, s
 {
   mi_process_info_t pinfo;
   _mi_memzero_var(pinfo);
-  pinfo.elapsed        = _mi_clock_end(mi_process_start);
+  pinfo.elapsed        = _mi_clock_end(_mi_process.clock_process_start);
   { const mi_subproc_t* subproc = _mi_subproc_main();
     if (subproc!=NULL) {
       const int64_t current = mi_atomic_loadi64_relaxed((_Atomic(int64_t)*)(&subproc->stats.committed.current));

@@ -189,13 +189,13 @@ static inline bool mi_bitmap_is_clear(mi_bitmap_t* bitmap, size_t idx) {
 }
 
 // Called once a bit is cleared to see if the memory slice can be claimed.
-typedef bool (mi_claim_fun_t)(size_t slice_index, mi_arena_t* arena, bool* keep_set);
+typedef bool (mi_claim_fun_t)(size_t slice_index, void* arg, bool* keep_set);
 
 // Find a set bits in the bitmap, atomically clear it, and check if `claim` returns true.
 // If not claimed, continue on (potentially setting the bit again depending on `keep_set`).
 // Returns true on success, and in that case sets the index: `0 <= *pidx <= MI_BITMAP_MAX_BITS-n`.
 mi_decl_nodiscard bool mi_bitmap_try_find_and_claim(mi_bitmap_t* bitmap, size_t tseq, size_t* pidx,
-                                                    mi_claim_fun_t* claim, mi_arena_t* arena );
+                                                    mi_claim_fun_t* claim, void* arg );
 
 
 // Atomically clear a bit but only if it is set. Will block otherwise until the bit is set.

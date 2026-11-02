@@ -37,7 +37,7 @@ static inline size_t mi_min(size_t x,  size_t y) { return (x <= y ? x : y); }
 static inline size_t mi_max(size_t x,  size_t y) { return (x >= y ? x : y); }
 
 // Is `x` a power of two? (0 is considered a power of two)
-static inline bool mi_is_power_of_two(uintptr_t x) {
+static inline bool mi_is_power_of_two(size_t x) {
   return ((x & (x - 1)) == 0);
 }
 
@@ -48,13 +48,13 @@ static inline bool mi_alignment_is_valid(size_t alignment) {
 
 // Is a pointer aligned?
 static inline bool mi_is_aligned(const void* p, size_t alignment) {
-  return (alignment==0 || ((uintptr_t)p % alignment) == 0);
+  return (alignment==0 || (mi_addr(p) % alignment) == 0);
 }
 
 // Align upwards
-static inline uintptr_t mi_align_up(uintptr_t sz, size_t alignment) {
+static inline size_t mi_align_up(size_t sz, size_t alignment) {
   mi_assert_internal(alignment != 0);
-  const uintptr_t mask = alignment - 1;
+  const size_t mask = alignment - 1;
   if ((alignment & mask) == 0) {  // power of two?
     return ((sz + mask) & ~mask);
   }
@@ -63,15 +63,27 @@ static inline uintptr_t mi_align_up(uintptr_t sz, size_t alignment) {
   }
 }
 
+// Align an address upwards
+static inline mi_addr_t mi_addr_align_up(mi_addr_t addr, size_t alignment) {
+  mi_assert_internal(alignment != 0);
+  const mi_addr_t mask = alignment - 1;
+  if ((alignment & mask) == 0) {  // power of two?
+    return ((addr + mask) & ~mask);
+  }
+  else {
+    return (((addr + mask)/alignment)*alignment);
+  }
+}
+
 // Align a pointer upwards
 static inline void* mi_align_up_ptr(const void* p, size_t alignment) {
-  return (void*)mi_align_up((uintptr_t)p, alignment);
+  return mi_ptr_with_addr(p, mi_addr_align_up(mi_addr(p), alignment));
 }
 
 // Align down
-static inline uintptr_t mi_align_down(uintptr_t sz, size_t alignment) {
+static inline size_t mi_align_down(size_t sz, size_t alignment) {
   mi_assert_internal(alignment != 0);
-  const uintptr_t mask = alignment - 1;
+  const size_t mask = alignment - 1;
   if ((alignment & mask) == 0) {  // power of two?
     return (sz & ~mask);
   }
@@ -80,13 +92,25 @@ static inline uintptr_t mi_align_down(uintptr_t sz, size_t alignment) {
   }
 }
 
+// Align an address downwards
+static inline mi_addr_t mi_addr_align_down(mi_addr_t addr, size_t alignment) {
+  mi_assert_internal(alignment != 0);
+  const mi_addr_t mask = alignment - 1;
+  if ((alignment & mask) == 0) {  // power of two?
+    return (addr & ~mask);
+  }
+  else {
+    return ((addr/alignment)*alignment);
+  }
+}
+
 // Align a pointer downwards
 static inline void* mi_align_down_ptr(const void* p, size_t alignment) {
-  return (void*)mi_align_down((uintptr_t)p, alignment);
+  return mi_ptr_with_addr(p, mi_addr_align_down(mi_addr(p), alignment));
 }
 
 // Divide upwards: `s <= mi_divide_up(s,d)*d < s+d`.
-static inline uintptr_t mi_divide_up(uintptr_t size, size_t divider) {
+static inline size_t mi_divide_up(size_t size, size_t divider) {
   mi_assert_internal(divider != 0);
   return (divider == 0 ? size : ((size + divider - 1) / divider));
 }

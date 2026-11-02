@@ -24,7 +24,7 @@
 #  define MI_ARENA_PURGE_ON_FREE 1
 #  ifdef Py_GIL_DISABLED
 #    define MI_PRIM_THREAD_ID   _Py_ThreadId
-#    define MI_CPYTHON 1
+#    define MI_QSBR 1
 
 struct mi_page_qsbr_s {
     uint64_t goal;

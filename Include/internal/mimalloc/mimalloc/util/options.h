@@ -26,18 +26,25 @@ mi_block_t*   _mi_block_next_is_corrupted(const mi_page_t* page, const mi_block_
   Options (exposed for the debugger)
 ----------------------------------------------------------- */
 typedef enum mi_option_init_e {
-  MI_OPTION_UNINIT,       // not yet initialized
+  MI_OPTION_UNINIT,       // not yet initialized (and the value is not yet set to the default)
+  MI_OPTION_PENDING,      // the value is set (to the default) but not yet read from the environment
   MI_OPTION_DEFAULTED,    // not found in the environment, use default value
   MI_OPTION_INITIALIZED   // found in environment or set explicitly
 } mi_option_init_t;
 
+// Static (read-only) option description
 typedef struct mi_option_desc_s {
-  long              value;  // the value
-  mi_option_init_t  init;   // is it initialized yet? (from the environment)
+  long              default_value; // the default value
   mi_option_t       option; // for debugging: the option index should match the option
   const char*       name;   // option name without `mimalloc_` prefix
   const char*       legacy_name; // potential legacy option name
 } mi_option_desc_t;
+
+// Current option value (stored in `_mi_process.options`)
+typedef struct mi_option_state_s {
+  long              value;  // the value
+  mi_option_init_t  init;   // is it initialized yet? (from the environment)
+} mi_option_state_t;
 
 
 #endif

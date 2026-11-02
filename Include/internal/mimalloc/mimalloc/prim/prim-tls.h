@@ -9,6 +9,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_INTERNAL_PRIM_TLS_H
 
 #include "../types.h"
+#include "../heap/process.h"
 #include "../heap/heap.h"
 #include "../heap/theap.h"
 #include "../util/threadlocal.h"
@@ -27,7 +28,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // Android,OpenBSD  : use pthread locals (MI_TLS_MODEL_PTHREADS). todo: maybe on Android MI_TLS_MODEL_LOCAL is better?
 // --------------------------------------------------------------------------
 
-static inline mi_threadid_t _mi_prim_thread_id(void);                        // get a unique id for a thread
+static inline mi_thread_id_t _mi_prim_thread_id(void);                        // get a unique id for a thread
 static inline mi_theap_t*   _mi_theap_default(void);                         // the default thread local theap
 static inline mi_theap_t*   _mi_theap_cached(void);                          // last used thread local theap using the _heap_ api
 static inline bool          _mi_thread_is_initialized(void);                 // a thread is initialized if it has a default theap
@@ -38,13 +39,13 @@ static inline mi_theap_t*   _mi_page_associated_theap_peek(const mi_page_t* page
 // Regular exports
 void          _mi_tls_slots_init(void);
 void          _mi_tls_slots_done(void);
-mi_threadid_t _mi_thread_id(void) mi_attr_noexcept;
+mi_thread_id_t _mi_thread_id(void) mi_attr_noexcept;
 void          _mi_theap_default_set(mi_theap_t* theap);
 void          _mi_theap_cached_set(mi_theap_t* theap);
 
 
 static inline bool mi_theap_matches_thread(mi_theap_t* theap) {
-  const mi_threadid_t tid = _mi_thread_id();
+  const mi_thread_id_t tid = _mi_thread_id();
   return (theap==NULL || theap->tld==NULL || theap->tld->thread_id == tid || mi_theap_is_detached(theap));
 }
 
@@ -96,11 +97,13 @@ static inline void** mi_prim_thread_pointer(void) {
   return (void**)__builtin_thread_pointer();
 }
 #elif defined(__GNUC__) && !defined(__CYGWIN__)
-  #if defined(__aarch64__)
+  #if MI_CHERI
+  #define MI_NO_THREAD_POINTER (1)
+  #elif defined(__aarch64__)
   static inline void** mi_prim_thread_pointer(void) {
     // Use a 64-bit temporary: on arm64_32 (ILP32), pointers are 32 bits but system registers are 64 bits.
     uint64_t tp;
-    #if defined(__APPLE__) // M1, issue rgb(62, 76, 62)
+    #if defined(__APPLE__) // M1, issue #343
     __asm__ ("mrs %0, tpidrro_el0\n\tbic %0, %0, #7" : "=r" (tp));
     #else
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tp));
@@ -113,7 +116,9 @@ static inline void** mi_prim_thread_pointer(void) {
     __asm__ ("mv %0, tp" : "=r" (tcb));
     return tcb;
   }
-  #elif defined(__arm__)
+  #elif defined(__arm__) /* arm32 with tpidruro */ \
+        && (__ARM_ARCH >= 7 || defined(__ARM_ARCH_6K__) || defined(__ARM_ARCH_6KZ__) || defined(__ARM_ARCH_6ZK__)) \
+        && !(defined(__ARM_ARCH_PROFILE) && __ARM_ARCH_PROFILE == 'M')
   static inline void** mi_prim_thread_pointer(void) {
     void** tcb;
     __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\n\tbic %0, %0, #3" : "=r" (tcb));
@@ -175,28 +180,28 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) {
 
 // Get a unique id for the current thread.
 #if defined(MI_PRIM_THREAD_ID)
-static inline mi_threadid_t __mi_prim_thread_id(void) {
+static inline mi_thread_id_t __mi_prim_thread_id(void) {
   return MI_PRIM_THREAD_ID();  // used for example by CPython for a free threaded build (see python/cpython#115488)
 }
 #elif !MI_NO_THREAD_POINTER
-static inline mi_threadid_t __mi_prim_thread_id(void) {
+static inline mi_thread_id_t __mi_prim_thread_id(void) {
   #if defined(__BIONIC__)
-  return (mi_threadid_t)mi_prim_tls_slot(1);
+  return (mi_thread_id_t)mi_addr(mi_prim_tls_slot(1));
   #else
-  return (mi_threadid_t)mi_prim_thread_pointer();
+  return (mi_thread_id_t)mi_addr(mi_prim_thread_pointer());
   #endif
 }
 #else
 // otherwise use portable C, taking the address of a thread local variable (this is still very fast on most platforms).
 extern mi_decl_hidden mi_decl_thread void* __mi_thread_id_helper;
-static inline mi_threadid_t __mi_prim_thread_id(void) {
-  return (uintptr_t)&__mi_thread_id_helper;
+static inline mi_thread_id_t __mi_prim_thread_id(void) {
+  return (mi_thread_id_t)mi_addr(&__mi_thread_id_helper);
 }
 #endif
 
-static inline mi_threadid_t _mi_prim_thread_id(void) {
-  const mi_threadid_t tid = __mi_prim_thread_id();
-  mi_assert_internal(tid > MI_THREADID_DETACHED);
+static inline mi_thread_id_t _mi_prim_thread_id(void) {
+  const mi_thread_id_t tid = __mi_prim_thread_id();
+  mi_assert_internal(tid > MI_THREAD_ID_DETACHED);
   mi_assert_internal((tid & MI_PAGE_FLAG_MASK) == 0);  // bottom 2 bits are clear?
   return tid;
 }
@@ -261,12 +266,9 @@ static inline mi_theap_t* __mi_theap_empty(void) {
 extern mi_decl_hidden mi_decl_thread mi_theap_t* __mi_theap_default;  // default theap to allocate from
 extern mi_decl_hidden mi_decl_thread mi_theap_t* __mi_theap_cached;   // theap from the last used heap
 
-// defined in `heap/init.c`; do not use these directly
-extern mi_decl_hidden bool _mi_process_is_initialized;  // has mi_process_init been called?
-
 static inline mi_theap_t* _mi_theap_default(void) {
   #if defined(MI_TLS_RECURSE_GUARD)
-  if mi_unlikely(!_mi_process_is_initialized) return _mi_theap_empty_get();
+  if mi_unlikely(!_mi_process.process_is_initialized) return _mi_theap_empty_get();
   #endif
   return __mi_theap_default;
 }

@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2023, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2026, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -12,11 +12,11 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim/os.h"
 #include "mimalloc/util/libc.h"
 #include "mimalloc/util/options.h"
-#include "mimalloc/heap/init.h"
+#include "mimalloc/heap/process.h"
 #include <stdio.h>   // fputs, stderr
 #include <stdlib.h>  // atexit
 
-// xbox has no console IO and cannot use LoadLibrary or GetModuleHandle
+// xbox has no console IO (and might not be able to use GetModuleHandle)
 #if !defined(WINAPI_FAMILY_PARTITION) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
 #define MI_WIN_DESKTOP  1
 #endif
@@ -94,7 +94,7 @@ typedef BOOL (__stdcall* PGetVersionExW)(LPOSVERSIONINFOW lpVersionInformation);
 
 // Load a library
 static HMODULE mi_win_loadlibrary(const wchar_t* library) {
-  #if MI_WIN_DESKTOP
+  #if 1 // used to be `MI_WIN_DESKTOP`, see #1340 and #1467
     return LoadLibraryW(library);
   #else
     return LoadPackagedLibrary(library, 0);
@@ -139,7 +139,7 @@ static bool win_enable_large_os_pages_once(size_t* large_page_size)
   err = GetLastError();
   if (ok) {
     TOKEN_PRIVILEGES tp;
-    ok = LookupPrivilegeValue(NULL, TEXT("SeLockMemoryPrivilege"), &tp.Privileges[0].Luid);
+    ok = LookupPrivilegeValueW(NULL, L"SeLockMemoryPrivilege", &tp.Privileges[0].Luid);
     err = GetLastError();
     if (ok) {
       tp.PrivilegeCount = 1;
@@ -444,7 +444,7 @@ int _mi_prim_reuse(void* addr, size_t size) {
   return 0;
 }
 
-int _mi_prim_protect(void* addr, size_t size, bool protect) {
+static int win_protect(void* addr, size_t size, bool protect) {
   #if !MI_WIN_DESKTOP && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
   ULONG oldprotect = 0;
   BOOL ok = VirtualProtectFromApp(addr, size, protect ? PAGE_NOACCESS : PAGE_READWRITE, &oldprotect);
@@ -455,9 +455,22 @@ int _mi_prim_protect(void* addr, size_t size, bool protect) {
   return (ok ? 0 : (int)GetLastError());
 }
 
-
-//---------------------------------------------
-// Huge page allocation
+int _mi_prim_guard(void* addr, size_t size, bool set, bool is_committed) {
+  if (is_committed) {
+    // protecting requires committed memory; on a set we first release the physical memory
+    // (best effort, as `MEM_RESET` fails on image memory, like the guard pages in our static data)
+    if (set) { VirtualAlloc(addr, size, MEM_RESET, PAGE_READWRITE); }
+    return win_protect(addr, size, set);
+  }
+  else if (set) {
+    // decommitting also works for (partly) reserved memory
+    bool needs_recommit;
+    return _mi_prim_decommit(addr, size, &needs_recommit);
+  }
+  else {
+    return 0;  // stays inaccessible until committed
+  }
+}
 //---------------------------------------------
 
 static void* _mi_prim_alloc_huge_os_pagesx(void* hint_addr, size_t size, int numa_node)
@@ -567,15 +580,16 @@ size_t _mi_prim_numa_node_count(void) {
 //----------------------------------------------------------------
 
 static mi_msecs_t mi_to_msecs(LARGE_INTEGER t) {
-  static LARGE_INTEGER mfreq; // = 0
-  if (mfreq.QuadPart == 0LL) {
+  int64_t ticks_per_msec = _mi_process.clock_ticks_per_msec;
+  if (ticks_per_msec == 0) {
     LARGE_INTEGER f;
     if (QueryPerformanceFrequency(&f)) {
-      mfreq.QuadPart = f.QuadPart/1000LL;
+      ticks_per_msec = f.QuadPart/1000LL;
     }
-    if (mfreq.QuadPart == 0) mfreq.QuadPart = 1;
+    if (ticks_per_msec == 0) { ticks_per_msec = 1; }
+    _mi_process.clock_ticks_per_msec = ticks_per_msec;
   }
-  return (mi_msecs_t)(t.QuadPart / mfreq.QuadPart);
+  return (mi_msecs_t)(t.QuadPart / ticks_per_msec);
 }
 
 mi_msecs_t _mi_prim_clock_now(void) {
@@ -1220,10 +1234,8 @@ extern "C" {
 #if defined(MI_SHARED_LIB) && !defined(MI_WIN_NOREDIRECT)
   #define MI_PRIM_HAS_ALLOCATOR_INIT 1
 
-  static bool mi_redirected = false;   // true if malloc redirects to mi_malloc
-
   bool _mi_is_redirected(void) {
-    return mi_redirected;
+    return _mi_process.malloc_is_redirected;
   }
 
   #ifdef __cplusplus
@@ -1232,10 +1244,10 @@ extern "C" {
   mi_decl_export void _mi_redirect_entry(DWORD reason) {
     // called on redirection; careful as this may be called before DllMain
     if (reason == DLL_PROCESS_ATTACH) {
-      mi_redirected = true;
+      _mi_process.malloc_is_redirected = true;
     }
     else if (reason == DLL_PROCESS_DETACH) {
-      mi_redirected = false;
+      _mi_process.malloc_is_redirected = false;
     }
     else if (reason == DLL_THREAD_DETACH) {
       // mi_debug_out("redirect thread detach\n");

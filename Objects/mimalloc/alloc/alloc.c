@@ -105,7 +105,7 @@ static mi_decl_forceinline mi_decl_restrict void* mi_page_malloc_zero(mi_theap_t
   mi_block_t* next = mi_block_next(page,block);
   mi_track_mem_undefined(block,sizeof(*block));
 
-  #if MI_SECURE
+  #if MI_SECURE>=2
   if (!zero) block->next = 0;  // don't leak internal data
   #endif
 
@@ -154,9 +154,10 @@ static mi_decl_forceinline mi_decl_restrict void* mi_page_malloc_zero(mi_theap_t
     if (!page->free_is_zero) {
       mi_assert_internal(bsize%MI_SIZE_SIZE == 0);
       #if !MI_PADDING
-      return // use tail-call
-      #endif
+      return mi_ptr_bounded_data(mi_memzero_block(block,bsize), size);  // use tail-call
+      #else
       mi_memzero_block(block,bsize);
+      #endif
     }
     else {
       block->next = 0;
@@ -168,8 +169,7 @@ static mi_decl_forceinline mi_decl_restrict void* mi_page_malloc_zero(mi_theap_t
   #if MI_PADDING // && !MI_TRACK_ENABLED
   mi_page_block_setup_padding(page,block,size);
   #endif
-
-  return block;
+  return mi_ptr_bounded_data(block, size - MI_PADDING_SIZE);  // bounded to the requested size (see `mi_usable_size`)
 }
 
 // extra entries for improved efficiency in `alloc/alloc-aligned.c` (and in `alloc/alloc-generic.c:mi_malloc_generic`.
@@ -490,7 +490,7 @@ void* mi_expand(void* p, size_t newsize) mi_attr_noexcept {
   const mi_page_t* const page = mi_ptr_page_validate(p,"mi_expand");
   const size_t size = _mi_page_usable_size(page,p);
   if (newsize > size) return NULL;
-  return p; // it fits
+  return mi_ptr_bounded(p, newsize); // it fits
   #endif
 }
 
@@ -528,7 +528,7 @@ static mi_decl_forceinline void* mi_theap_realloc_zero_ex(mi_theap_t* theap, voi
         // mi_track_resize(p,size,newsize)
         // if (newsize < size) { mi_track_mem_noaccess((uint8_t*)p + newsize, size - newsize); }
         if (pblock_size_post!=NULL) { *pblock_size_post = mi_page_block_size(page); }
-        return p;  // reallocation still fits and not more than 50% waste
+        return mi_ptr_bounded(p, newsize);  // reallocation still fits and not more than 50% waste
       }
     }
   }
@@ -544,9 +544,11 @@ static mi_decl_forceinline void* mi_theap_realloc_zero_ex(mi_theap_t* theap, voi
     if (zero && usable > zero_start) {
       mi_memzero_aligned((uint8_t*)newp + zero_start, usable - zero_start);
     }
+    #if !MI_CHERI  // on CHERI zero-sized blocks have zero bounds
     else if (newsize == 0) {
       ((uint8_t*)newp)[0] = 0; // work around for applications that expect zero-reallocation to be zero initialized (issue #725)
     }
+    #endif
     if mi_likely(p != NULL) {
       mi_track_mem_defined(p,copy_size);  // _mi_useable_size may be too large for byte precise memory tracking..
       mi_memcpy_aligned(newp, p, copy_size);

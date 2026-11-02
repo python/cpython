@@ -77,7 +77,7 @@ static bool mi_page_is_valid_init(mi_page_t* page) {
   mi_assert_internal(page->heap!=NULL);
   mi_theap_t* const page_theap = _mi_heap_theap_peek(page->heap);
   mi_assert_internal(page_theap == NULL || mi_page_theap(page)==page_theap ||
-                     mi_page_theap(page)->tld == NULL || mi_page_theap(page)->tld->thread_id == MI_THREADID_DETACHED);
+                     mi_page_theap(page)->tld == NULL || mi_page_theap(page)->tld->thread_id == MI_THREAD_ID_DETACHED);
 
   // const size_t bsize = mi_page_block_size(page);
   // uint8_t* start = mi_page_start(page);
@@ -109,19 +109,17 @@ static bool mi_page_is_valid_init(mi_page_t* page) {
   return true;
 }
 
-extern mi_decl_hidden bool _mi_process_is_initialized;             // has mi_process_init been called?
-
 bool _mi_page_is_valid(mi_page_t* page) {
   mi_assert_internal(mi_page_is_valid_init(page));
   #if MI_SECURE
   mi_assert_internal(page->keys[0] != 0);
   #endif
   if (!mi_page_is_abandoned(page)) {
-    //mi_assert_internal(!_mi_process_is_initialized);
+    //mi_assert_internal(!_mi_process.process_is_initialized);
     mi_assert_internal(page->heap!=NULL);
     mi_theap_t* const page_theap = _mi_heap_theap_peek(page->heap);
     mi_assert_internal(page_theap == NULL || mi_page_theap(page)==page_theap ||
-                       mi_page_theap(page)->tld == NULL || mi_page_theap(page)->tld->thread_id == MI_THREADID_DETACHED);
+                       mi_page_theap(page)->tld == NULL || mi_page_theap(page)->tld->thread_id == MI_THREAD_ID_DETACHED);
     {
       mi_page_queue_t* pq = mi_page_queue_of(page);
       mi_assert_internal(mi_page_queue_contains(pq, page));
@@ -289,7 +287,7 @@ void _mi_page_update_stats(mi_page_t* page) {
 void _mi_page_update_sample_countdown(mi_page_t* page)
 {
   mi_assert_internal(mi_page_is_owned(page));
-  // note: the threadid may not match and even be abandoned if we free multi-threaded (so we can not always use page->theap)
+  // note: the thread_id may not match and even be abandoned if we free multi-threaded (so we can not always use page->theap)
 
   // adjust count down
   const size_t alloc_count = mi_page_alloc_count(page);
@@ -736,7 +734,7 @@ void _mi_theap_collect_retired(mi_theap_t* theap, bool force) {
 #define MI_MIN_SLICES       (2)
 
 static void mi_page_free_list_extend_secure(mi_theap_t* const theap, mi_page_t* const page, const size_t bsize, const size_t extend) {
-  #if (MI_SECURE < 2)
+  #if !(MI_SECURE>=3)
   mi_assert_internal(page->free == NULL);
   mi_assert_internal(page->local_free == NULL);
   #endif
@@ -793,7 +791,7 @@ static void mi_page_free_list_extend_secure(mi_theap_t* const theap, mi_page_t* 
 
 static mi_decl_noinline void mi_page_free_list_extend( mi_page_t* const page, const size_t bsize, const size_t extend)
 {
-  #if (MI_SECURE < 2)
+  #if !(MI_SECURE>=3)
   mi_assert_internal(page->free == NULL);
   mi_assert_internal(page->local_free == NULL);
   #endif
@@ -821,7 +819,7 @@ static mi_decl_noinline void mi_page_free_list_extend( mi_page_t* const page, co
 ----------------------------------------------------------- */
 
 #define MI_MAX_EXTEND_SIZE    (8*1024)      // heuristic, one or two OS pages seems to work well.
-#if (MI_SECURE>=2)
+#if (MI_SECURE>=3)
 #define MI_MIN_EXTEND         (8*MI_SECURE) // extend at least by this many
 #else
 #define MI_MIN_EXTEND         (1)
@@ -834,7 +832,7 @@ static mi_decl_noinline void mi_page_free_list_extend( mi_page_t* const page, co
 // extra test in malloc? or cache effects?)
 bool _mi_page_extend_free(mi_theap_t* theap, mi_page_t* page) {
   mi_assert_expensive(mi_page_is_valid_init(page));
-  #if (MI_SECURE < 2)
+  #if !(MI_SECURE>=3)
   mi_assert(page->free == NULL);
   mi_assert(page->local_free == NULL);
   if (page->free != NULL) return true;
@@ -875,13 +873,10 @@ bool _mi_page_extend_free(mi_theap_t* theap, mi_page_t* page) {
     const size_t needed_size = (page->capacity + extend)*bsize;
     mi_assert_internal(needed_size <= page_size);
     size_t needed_commit = mi_align_up( mi_page_slice_offset_of(page, needed_size), mi_page_min_commit_size());
-    #if MI_SECURE>=5
-    // the previous alignup could extend the commit into the guard page; re-adjust if needed
-    const size_t page_size_commit = mi_align_up( mi_page_slice_offset_of(page, page_size), _mi_os_page_size() );
-    if (needed_commit > page_size_commit) {
-      needed_commit = page_size_commit;
+    if (page->memid.guard_end && needed_commit > mi_page_guard_end_offset(page)) {
+      // the previous alignup could extend the commit into the guard page; re-adjust if needed
+      needed_commit = mi_page_guard_end_offset(page);
     }
-    #endif
     if (needed_commit > slice_committed) {
       mi_assert_internal(((needed_commit - slice_committed) % _mi_os_page_size()) == 0);
       if (!_mi_os_commit(mi_theap_subproc(theap), mi_page_slice_start(page) + slice_committed, needed_commit - slice_committed, NULL)) {
@@ -893,11 +888,11 @@ bool _mi_page_extend_free(mi_theap_t* theap, mi_page_t* page) {
   }
 
   // and append the extend the free list
-  if (extend < MI_MIN_SLICES || MI_SECURE<2) { //!mi_option_is_enabled(mi_option_secure)) {
-    mi_page_free_list_extend(page, bsize, extend );
+  if (MI_SECURE>=3 && extend >= MI_MIN_SLICES) {
+    mi_page_free_list_extend_secure(theap, page, bsize, extend);
   }
   else {
-    mi_page_free_list_extend_secure(theap, page, bsize, extend);
+    mi_page_free_list_extend(page, bsize, extend );
   }
   // enable the new free list
   page->capacity += (uint16_t)extend;

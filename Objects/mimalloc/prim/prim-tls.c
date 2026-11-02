@@ -31,8 +31,8 @@ mi_decl_hidden mi_decl_thread mi_theap_t* __mi_theap_cached = (mi_theap_t*)&_mi_
 
 mi_decl_hidden mi_decl_thread void* __mi_thread_id_helper = NULL;
 
-mi_threadid_t _mi_thread_id(void) mi_attr_noexcept {
-  const mi_threadid_t tid = _mi_prim_thread_id();
+mi_thread_id_t _mi_thread_id(void) mi_attr_noexcept {
+  const mi_thread_id_t tid = _mi_prim_thread_id();
   mi_assert_internal( (tid & MI_PAGE_FLAG_MASK) == 0 ); // mimalloc reserves the bottom 2 bits
   return tid;
 }

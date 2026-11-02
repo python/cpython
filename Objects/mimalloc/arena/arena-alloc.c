@@ -516,8 +516,7 @@ static void mi_arenas_try_purge(bool force, bool visit_all, mi_subproc_t* subpro
   if (max_arena == 0) return;
 
   // allow only one thread to purge at a time (todo: allow concurrent purging?)
-  static mi_atomic_guard_t purge_guard;
-  mi_atomic_guard(&purge_guard)
+  mi_atomic_guard(&_mi_process.arena_purge_guard)
   {
     // increase global expire: at most one purge per delay cycle
     if (arenas_expire > now) { mi_atomic_storei64_release(&subproc->purge_expire, now + (delay/10)); }

@@ -82,6 +82,7 @@ mi_decl_nodiscard mi_decl_restrict void* mi_aligned_alloc(size_t alignment, size
   return p;
 }
 
+
 mi_decl_nodiscard void* mi_reallocarray( void* p, size_t count, size_t size ) mi_attr_noexcept {  // BSD <https://man.freebsd.org/cgi/man.cgi?query=reallocarray>
   size_t total;
   if mi_unlikely(mi_count_size_overflow(count, size, &total)) {

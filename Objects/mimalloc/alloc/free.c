@@ -134,7 +134,7 @@ static inline mi_block_t* mi_page_ptr_unalign_ex(const mi_page_t* page, const vo
     adjust = diff % block_size;
   }
   if (poffset!=NULL) { *poffset = adjust; }
-  return (mi_block_t*)((uintptr_t)p - adjust);
+  return mi_page_block_from_addr(page, mi_addr(p) - adjust);  // don't keep the user's capability
 }
 
 mi_block_t* _mi_page_ptr_unalign(const mi_page_t* page, const void* p) {
@@ -143,12 +143,11 @@ mi_block_t* _mi_page_ptr_unalign(const mi_page_t* page, const void* p) {
 
 static inline mi_block_t* mi_validate_block_from_ptr( const mi_page_t* page, const void* p ) {
   mi_assert(_mi_page_ptr_unalign(page,p) == (mi_block_t*)p); // should never be an interior pointer
-  #if MI_SECURE > 0
+  #if MI_SECURE>=2
   // in secure mode we always unalign to guard against free-ing interior pointers
   return _mi_page_ptr_unalign(page,p);
   #else
-  MI_UNUSED(page);
-  return (mi_block_t*)p;
+  return mi_page_block_from_addr(page, mi_addr(p));  // don't keep the user's capability
   #endif
 }
 
@@ -226,9 +225,9 @@ static mi_decl_forceinline bool mi_ptr_page_is_valid_ex(const void* p, const cha
   mi_page_t* page;
   #if MI_PAGE_META_SMALL_IS_ALIGNED
     if (free_small) {
-      const uintptr_t up = mi_align_down((uintptr_t)p,MI_SMALL_PAGE_SIZE);  // like this for codegen on gcc
+      const mi_addr_t up = mi_addr(p) & ~MI_AU(MI_SMALL_PAGE_SIZE-1);  // like this for codegen on gcc
       if mi_unlikely(up==0 && check_p_for_null) { return false; }
-      page = (mi_page_t*)up;
+      page = (mi_page_t*)mi_ptr_with_addr(p, up);
     }
     else
   #endif
@@ -238,8 +237,8 @@ static mi_decl_forceinline bool mi_ptr_page_is_valid_ex(const void* p, const cha
       #else
         { page = mi_ptr_page(p); }
       #endif
-      if mi_unlikely(page==NULL && check_p_for_null) {
-        #if MI_DEBUG
+      if mi_unlikely(mi_ptr_page_is_null(p,page) && check_p_for_null) {
+        #if MI_DEBUG || MI_CHERI  // on CHERI also report in release (e.g. untagged pointers)
         if (p!=NULL) { _mi_error_message(EINVAL, "%s: invalid pointer: %p\n", msg, p); }
         #endif
         return false;
@@ -295,8 +294,8 @@ static mi_decl_forceinline void mi_free_nonnull(void* p, mi_page_t* page, size_t
   mi_assert_internal(p!=NULL && page!=NULL);
   if (pblock_size!=NULL) { *pblock_size = mi_page_block_size(page); }
 
-  const mi_threadid_t ptid = mi_page_xthread_id(page);
-  const mi_threadid_t xtid = (_mi_prim_thread_id() ^ ptid);
+  const mi_thread_id_t ptid = mi_page_xthread_id(page);
+  const mi_thread_id_t xtid = (_mi_prim_thread_id() ^ ptid);
   if mi_likely(xtid == 0) {                        // `tid == mi_page_thread_id(page) && mi_page_flags(page) == 0`
     // thread-local, aligned, and not a full page
     mi_block_t* const block = mi_validate_block_from_ptr(page,p);
@@ -429,7 +428,7 @@ void mi_free_size(void* p, size_t size) mi_attr_noexcept {
 }
 
 void mi_free_size_aligned(void* p, size_t size, size_t alignment) mi_attr_noexcept {
-  mi_assert(((uintptr_t)p % alignment) == 0);
+  mi_assert((mi_addr(p) % alignment) == 0);
   // If the alignment is smaller than the `size`, then for `size <= MI_SMALL_SIZE_MAX`
   // the block must be allocated within a small page and can thus be handled safely by `mi_free_size`.
   // (since even with over-allocation the block size will be less than 2*MI_SMALL_SIZE_MAX <= MI_SMALL_OBJ_SIZE_MAX)
@@ -443,7 +442,7 @@ void mi_free_size_aligned(void* p, size_t size, size_t alignment) mi_attr_noexce
 
 void mi_free_aligned(void* p, size_t alignment) mi_attr_noexcept {
   MI_UNUSED_RELEASE(alignment);
-  mi_assert(((uintptr_t)p % alignment) == 0);
+  mi_assert((mi_addr(p) % alignment) == 0);
   mi_free(p);
 }
 
@@ -656,11 +655,11 @@ size_t _mi_page_usable_size(const mi_page_t* page, const void* p) mi_attr_noexce
   mi_assert_internal(mi_ptr_page_validate(p,"_mi_page_usable_size") == page);
   const mi_block_t* block = _mi_page_ptr_unalign(page, p); // for safety, always unalign
   if mi_likely((const void*)block==page) {
-    return mi_page_usable_size_of(page, block, false /* is guarded */);
+    return mi_ptr_bounds_limit(p, mi_page_usable_size_of(page, block, false /* is guarded */));
   }
   else {
     // split out to separate routine for improved code generation
-    return mi_page_usable_aligned_size_of(page, p, block);
+    return mi_ptr_bounds_limit(p, mi_page_usable_aligned_size_of(page, p, block));
   }
 }
 
@@ -670,10 +669,16 @@ mi_decl_nodiscard size_t mi_usable_size(const void* p) mi_attr_noexcept {
 }
 
 mi_decl_nodiscard size_t mi_thread_id_of(const void* p) mi_attr_noexcept {
-  if (p == NULL) return 0;
-  const mi_page_t* const page = mi_ptr_page(p);
-  const mi_threadid_t tid = mi_page_thread_id(page);
-  return (tid <= MI_THREADID_DETACHED ? 0 : tid);
+  const mi_page_t* const page = mi_ptr_page_validate(p,"mi_thread_id_of");
+  if (page == NULL) return 0;
+  #if MI_QSBR
+  // on qsbr we keep the last owning thread id around so we can provide it even when the page is abandoned
+  // (this is needed for cpython where the thread id gets restored this way inside object headers)
+  return mi_page_qsbr_thread_id(page);
+  #else
+  const mi_thread_id_t tid = mi_page_thread_id(page);
+  return (tid <= MI_THREAD_ID_DETACHED ? 0 : tid);
+  #endif
 }
 
 
@@ -684,7 +689,7 @@ mi_decl_nodiscard size_t mi_thread_id_of(const void* p) mi_attr_noexcept {
 // This is somewhat expensive so only enabled for secure mode 4
 // ------------------------------------------------------
 
-#if MI_SECURE>=3 && !MI_PADDING
+#if MI_SECURE>=4 && !MI_PADDING
 // linear check if the free list contains a specific element
 static bool mi_list_contains(const mi_page_t* page, const mi_block_t* list, const mi_block_t* elem, const char* list_kind) {
   const size_t max_count = page->capacity;      // can never hold more blocks than the capacity

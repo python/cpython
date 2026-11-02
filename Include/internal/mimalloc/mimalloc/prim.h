@@ -70,8 +70,14 @@ int _mi_prim_reset(void* addr, size_t size);
 // Returns error code or 0 on success. On most platforms this is a no-op.
 int _mi_prim_reuse(void* addr, size_t size);
 
-// Protect memory. Returns error code or 0 on success.
-int _mi_prim_protect(void* addr, size_t size, bool protect);
+// Set (or reset) a guard range. Returns error code or 0 on success.
+// `is_committed` is the accounted commit state of the range which is never changed by the guard:
+// - if `is_committed`, the range stays committed but becomes inaccessible (and its physical memory may be released);
+//   a reset makes the range accessible again.
+// - otherwise, the range may be reserved, decommitted, or still partly committed. After a set the range is
+//   inaccessible until it is explicitly committed (`_mi_prim_commit`), and a reset is a no-op.
+// The caller must ensure the accounted commit state does not change between a set and reset.
+int _mi_prim_guard(void* addr, size_t size, bool set, bool is_committed);
 
 // Allocate huge (1GiB) pages possibly associated with a NUMA node.
 // `is_zero` is set to true if the memory was zero initialized (as on most OS's)

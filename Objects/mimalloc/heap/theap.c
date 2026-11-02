@@ -13,6 +13,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/alloc/page.h"
 #include "mimalloc/arena/arena-alloc.h"
 #include "mimalloc/profile/sample-guarded.h"
+#include "mimalloc/profile/sample-profile.h"
 #include "mimalloc/heap/heap.h"
 #include "mimalloc/heap/theap.h"
 
@@ -222,7 +223,7 @@ static void mi_theap_options_init(mi_theap_t* theap, mi_heap_t* heap) {
   theap->allow_page_reclaim = (mi_heap_reclaim_on_free(heap) >= 0);
   theap->allow_page_abandon = (mi_option_get(mi_option_page_full_retain) >= 0); // nowadays qsbr pages can be abandoned: && !mi_heap_qsbr_is_enabled(heap));
   theap->page_full_retain = mi_option_get_clamp(mi_option_page_full_retain, -1, 32);
-  theap->is_detached = (theap->tld->thread_id == MI_THREADID_DETACHED);
+  theap->is_detached = (theap->tld->thread_id == MI_THREAD_ID_DETACHED);
 }
 
 // todo: make order of parameters consistent (but would that break compat with CPython?)
@@ -240,6 +241,8 @@ void _mi_theap_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld)
   mi_atomic_store_ptr_release(mi_subproc_t,&theap->subproc,heap->subproc);
   mi_assert_internal(theap->stats.size == sizeof(mi_stats_t));
   mi_theap_options_init(theap, heap);
+  theap->guard_front = false;
+  theap->guard_end = (MI_SECURE >= 5);  // 5 = guard page at the end of each page
 
   if (theap->tld->is_in_threadpool) {
     // if we run as part of a thread pool it is better to not arbitrarily reclaim abandoned pages into our theap.
@@ -302,10 +305,22 @@ void _mi_theap_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld)
   }
 }
 
+// Initialize a detached theap for meta data allocation
+void _mi_theap_meta_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld) {
+  _mi_theap_init(theap, heap, tld);
+  theap->allow_page_abandon = false;  // for security, don't share with other threads
+  theap->page_full_retain = 2;
+  theap->sample_rate = 0;             // no sampling for meta data
+  theap->sample_countdown = 0;
+  theap->guard_front = (MI_SECURE > 0);
+  theap->guard_end = (MI_SECURE > 0);
+  mi_theap_profile_never(theap);      // permanently exclude from profiling, see `mi_theap_profile_never`
+}
+
 mi_theap_t* _mi_theap_alloc(mi_heap_t* heap, mi_tld_t* tld) {
   mi_assert_internal(tld!=NULL);
   mi_assert_internal(heap!=NULL);
-  mi_assert_internal(tld->thread_id == MI_THREADID_DETACHED || _mi_thread_id() == tld->thread_id);
+  mi_assert_internal(tld->thread_id == MI_THREAD_ID_DETACHED || _mi_thread_id() == tld->thread_id);
   // mi_assert_internal(_mi_heap_theap_peek(heap)==NULL);  // don't access thread locals as this is called on thread init
 
   // allocate and initialize a theap
@@ -598,11 +613,11 @@ void _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page) {
   const size_t ubsize = mi_page_usable_block_size(page);
   area->reserved = page->reserved * bsize;
   area->committed = page->capacity * bsize;
-  area->blocks = mi_page_start(page);
+  area->blocks = mi_ptr_bounded_data(mi_page_start(page), area->reserved);
   area->used = mi_page_used(page);   // number of blocks in use (#553)
   area->block_size = ubsize;
   area->full_block_size = bsize;
-  area->reserved1 = page;
+  area->reserved1 = NULL;
 }
 
 static void mi_get_fast_divisor(size_t divisor, uint64_t* magic, size_t* shift) {
@@ -636,7 +651,7 @@ bool _mi_theap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi
   // optimize page with one block
   if (page->capacity == 1) {
     mi_assert_internal(mi_page_used(page) == 1 && page->free == NULL);
-    return visitor(heap, area, pstart, ubsize, arg);
+    return visitor(heap, area, mi_ptr_bounded_data(pstart, ubsize), ubsize, arg);
   }
   mi_assert(bsize <= UINT32_MAX);
 
@@ -644,7 +659,7 @@ bool _mi_theap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi
   if (mi_page_used(page) == page->capacity) {
     uint8_t* block = pstart;
     for (size_t i = 0; i < page->capacity; i++) {
-      if (!visitor(heap, area, block, ubsize, arg)) return false;
+      if (!visitor(heap, area, mi_ptr_bounded_data(block, ubsize), ubsize, arg)) return false;
       block += bsize;
     }
     return true;
@@ -652,13 +667,13 @@ bool _mi_theap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi
 
   // create a bitmap of free blocks.
   #define MI_MAX_BLOCKS   (MI_SMALL_PAGE_SIZE / sizeof(void*))
-  uintptr_t free_map[MI_MAX_BLOCKS / MI_INTPTR_BITS];
-  const uintptr_t bmapsize = mi_divide_up(page->capacity, MI_INTPTR_BITS);
-  memset(free_map, 0, bmapsize * sizeof(intptr_t));
-  if (page->capacity % MI_INTPTR_BITS != 0) {
+  size_t free_map[MI_MAX_BLOCKS / MI_SIZE_BITS];
+  const size_t bmapsize = mi_divide_up(page->capacity, MI_SIZE_BITS);
+  memset(free_map, 0, bmapsize * sizeof(size_t));
+  if (page->capacity % MI_SIZE_BITS != 0) {
     // mark left-over bits at the end as free
-    size_t shift   = (page->capacity % MI_INTPTR_BITS);
-    uintptr_t mask = (UINTPTR_MAX << shift);
+    size_t shift   = (page->capacity % MI_SIZE_BITS);
+    size_t mask    = (SIZE_MAX << shift);
     free_map[bmapsize - 1] = mask;
   }
 
@@ -681,9 +696,9 @@ bool _mi_theap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi
     size_t blockidx = mi_fast_divide(offset, magic, shift);
     mi_assert_internal(blockidx == offset / bsize);
     mi_assert_internal(blockidx < MI_MAX_BLOCKS);
-    size_t bitidx = (blockidx / MI_INTPTR_BITS);
-    size_t bit = blockidx - (bitidx * MI_INTPTR_BITS);
-    free_map[bitidx] |= ((uintptr_t)1 << bit);
+    size_t bitidx = (blockidx / MI_SIZE_BITS);
+    size_t bit = blockidx - (bitidx * MI_SIZE_BITS);
+    free_map[bitidx] |= ((size_t)1 << bit);
   }
   mi_assert_internal(page->capacity == (free_count + mi_page_used(page)));
 
@@ -695,26 +710,26 @@ bool _mi_theap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t* page, mi
   for (size_t i = 0; i < bmapsize; i++) {
     if (free_map[i] == 0) {
       // every block is in use
-      for (size_t j = 0; j < MI_INTPTR_BITS; j++) {
+      for (size_t j = 0; j < MI_SIZE_BITS; j++) {
         #if MI_DEBUG>1
         used_count++;
         #endif
-        if (!visitor(heap, area, block, ubsize, arg)) return false;
+        if (!visitor(heap, area, mi_ptr_bounded_data(block, ubsize), ubsize, arg)) return false;
         block += bsize;
       }
     }
     else {
       // visit the used blocks in the mask
-      uintptr_t m = ~free_map[i];
+      size_t m = ~free_map[i];
       while (m != 0) {
         #if MI_DEBUG>1
         used_count++;
         #endif
         size_t bitidx = mi_ctz(m);
-        if (!visitor(heap, area, block + (bitidx * bsize), ubsize, arg)) return false;
+        if (!visitor(heap, area, mi_ptr_bounded_data(block + (bitidx * bsize), ubsize), ubsize, arg)) return false;
         m &= m - 1;  // clear least significant bit
       }
-      block += bsize * MI_INTPTR_BITS;
+      block += bsize * MI_SIZE_BITS;
     }
   }
   mi_assert_internal(mi_page_used(page) == used_count);

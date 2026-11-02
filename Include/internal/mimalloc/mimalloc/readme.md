@@ -15,6 +15,7 @@ and configuration options.
 - [`alloc`](alloc): Internal allocation, freeing, and page-management interfaces.
 - [`arena`](arena): Arena management, slice allocation, and arena-backed page interfaces.
 - [`heap`](heap): Heap, thread-local heap, subprocess, initialization, and page-map interfaces.
+  Also contains [`heap/process.h`](heap/process.h) which declares (almost) all static variables.
 - [`prim`](prim): Higher-level OS memory operations and primitive thread-local access.
 - [`profile`](profile): Sampled allocation, guarded allocation, and profiler interfaces.
 - [`util`](util): Runtime utilities, options, randomness, statistics, and dynamic thread-local interfaces.

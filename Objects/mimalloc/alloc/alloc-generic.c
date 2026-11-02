@@ -17,6 +17,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/alloc/alloc.h"
 #include "mimalloc/alloc/page.h"
 #include "mimalloc/profile/sample-profile.h"
+#include "mimalloc/heap/subproc.h"
+#include "mimalloc/heap/process.h"
 #include "page-queue.h"
 #include "page.h"
 
@@ -178,7 +180,7 @@ static inline mi_page_t* mi_page_queue_lookup_free_first(mi_theap_t* theap, mi_p
   mi_page_t* page = pq->first;
   if mi_likely(page!=NULL && mi_page_free_quick_collect(page)) {
     // fast path
-    #if (MI_SECURE>=2) // in secure mode, we extend half the time to increase randomness
+    #if (MI_SECURE>=3) // in secure mode, we extend half the time to increase randomness
     if (page->capacity < page->reserved && ((_mi_theap_random_next(theap) & 1) == 1)) {
       (void)_mi_page_extend_free(theap, page);  // ok if this fails
       mi_assert_internal(mi_page_immediate_available(page));
@@ -220,7 +222,12 @@ static inline mi_page_t* mi_page_queue_find_free(mi_theap_t* theap, mi_page_queu
 // so their size is not always `> MI_LARGE_OBJ_SIZE_MAX`.
 static mi_page_t* mi_huge_page_alloc(mi_theap_t* theap, size_t size, size_t page_alignment, mi_page_queue_t* pq) {
   _mi_theap_qsbr_collect_delayed(theap);
-  const size_t block_size = _mi_os_good_alloc_size(size);
+  const size_t block_size = mi_bounds_size(_mi_os_good_alloc_size(size));
+  // on CHERI, very large blocks need a large alignment for exact bounds: use an OS aligned page then (see `mi_page_meta_in_front_block_start`)
+  const size_t bounds_align = mi_bounds_align(block_size);
+  if mi_unlikely(bounds_align >= MI_PAGE_MAX_OVERALLOC_ALIGN) {
+    page_alignment = mi_max(page_alignment, mi_max(bounds_align, 2*MI_PAGE_MAX_OVERALLOC_ALIGN));
+  }
   // mi_assert_internal(mi_bin(block_size) == MI_BIN_HUGE || page_alignment > 0);
   #if MI_HUGE_PAGE_ABANDON
   #error todo.
@@ -283,23 +290,21 @@ static mi_page_t* mi_find_page(mi_theap_t* theap, size_t size, size_t huge_align
 ----------------------------------------------------------- */
 
 // The program should only install a single deferred free handler before doing allocation.
-static _Atomic(void*) deferred_free; // is `mi_deferred_free_fun*` (but some platforms don't support atomic function pointers)
-static _Atomic(void*) deferred_arg;
-
+// The handler and argument are stored in `_mi_process.deferred_free/deferred_arg`.
 void _mi_deferred_free(mi_theap_t* theap, bool force) {
   theap->heartbeat++;
-  mi_deferred_free_fun* const fun = (mi_deferred_free_fun*)mi_atomic_load_ptr_acquire(void,&deferred_free);
+  mi_deferred_free_fun* const fun = (mi_deferred_free_fun*)mi_atomic_load_ptr_acquire(void,&_mi_process.deferred_free);
   if (fun != NULL && !theap->tld->recurse) {
     theap->tld->recurse = true;
-    void* const arg = mi_atomic_load_ptr_acquire(void,&deferred_arg);
+    void* const arg = mi_atomic_load_ptr_acquire(void,&_mi_process.deferred_arg);
     fun(force, theap->heartbeat, arg);
     theap->tld->recurse = false;
   }
 }
 
 void mi_register_deferred_free(mi_deferred_free_fun* fn, void* arg) mi_attr_noexcept {
-  mi_atomic_store_ptr_release(void,&deferred_arg, arg);
-  mi_atomic_store_ptr_release(void,&deferred_free, (void*)fn);
+  mi_atomic_store_ptr_release(void,&_mi_process.deferred_arg, arg);
+  mi_atomic_store_ptr_release(void,&_mi_process.deferred_free, (void*)fn);
 }
 
 
@@ -308,7 +313,7 @@ void mi_register_deferred_free(mi_deferred_free_fun* fn, void* arg) mi_attr_noex
 ----------------------------------------------------------- */
 static mi_theap_t* mi_theap_init(mi_theap_t* theap) {
   if mi_likely(mi_theap_is_initialized(theap)) return theap;
-  if (theap==&_mi_theap_empty_wrong) {
+  if (theap==&_mi_process.theap_empty_wrong) {
     // we were unable to allocate a theap for a first-class heap
     return NULL;
   }
@@ -329,6 +334,9 @@ static mi_theap_t* mi_malloc_generic_admin(mi_theap_t* theap)
   if mi_unlikely(theap->generic_count >= 1000) {
     theap->generic_collect_count += theap->generic_count;
     theap->generic_count = 0;
+
+    // after a fork, abandon the pages of threads that do not exist in the child (see `heap/subproc.c`)
+    _mi_fork_child_try_collect();
 
     // check if the profiler is enabled (unless this theap is permanently excluded, see `mi_theap_profile_never`)
     if (!theap->profile_never) {

@@ -14,7 +14,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "page-queue.h"
 
 /* -----------------------------------------------------------
-  Minimal alignment in machine words (i.e. `sizeof(void*)`)
+  Minimal alignment in machine words (i.e. `sizeof(size_t)`)
 ----------------------------------------------------------- */
 
 #if (MI_MAX_ALIGN_SIZE > 4*MI_SIZE_SIZE)
@@ -27,6 +27,16 @@ terms of the MIT license. A copy of the license can be found in the file
   // ok, default alignment is 1 word
 #endif
 
+// Minimal block size in machine words (a block must be able to hold a pointer)
+#if (MI_INTPTR_SIZE > MI_SIZE_SIZE)
+  #if (MI_INTPTR_SIZE > 2*MI_SIZE_SIZE) || !(defined(MI_ALIGN2W) || defined(MI_ALIGN4W))
+  #error "define the minimal block size for this platform"
+  #endif
+  #define MI_MIN_BLOCK_WSIZE  2   // as on CHERI
+#else
+  #define MI_MIN_BLOCK_WSIZE  1
+#endif
+
 
 /* -----------------------------------------------------------
   Bins
@@ -35,22 +45,22 @@ terms of the MIT license. A copy of the license can be found in the file
 // Return the bin for a given field size.
 // Returns MI_BIN_HUGE if the size is too large.
 // We use `wsize` for the size in "machine word sizes",
-// i.e. byte size == `wsize*sizeof(void*)`.
+// i.e. byte size == `wsize*sizeof(size_t)`.
 static size_t mi_bin(size_t size) {
   size_t wsize = mi_wsize_from_size(size);
-#if defined(MI_ALIGN4W)
+  #if defined(MI_ALIGN4W)
   if mi_likely(wsize <= 4) {
-    return (wsize <= 1 ? 1 : (wsize+1)&~1); // round to double word sizes
+      return (wsize <= MI_MIN_BLOCK_WSIZE ? MI_MIN_BLOCK_WSIZE : (wsize+1)&~1); // round to double word sizes
   }
-#elif defined(MI_ALIGN2W)
+  #elif defined(MI_ALIGN2W)
   if mi_likely(wsize <= 8) {
-    return (wsize <= 1 ? 1 : (wsize+1)&~1); // round to double word sizes
+      return (wsize <= MI_MIN_BLOCK_WSIZE ? MI_MIN_BLOCK_WSIZE : (wsize+1)&~1); // round to double word sizes
   }
-#else
+  #else
   if mi_likely(wsize <= 8) {
     return (wsize == 0 ? 1 : wsize);
   }
-#endif
+  #endif
   else if mi_unlikely(wsize > MI_LARGE_MAX_OBJ_WSIZE) {
     return MI_BIN_HUGE;
   }
@@ -183,12 +193,12 @@ static inline void mi_theap_queue_first_update(mi_theap_t* theap, const mi_page_
 
   // find start slot
   size_t start;
-  if (idx<=1) {
+  if (idx <= MI_MIN_BLOCK_WSIZE) {
     start = 0;
   }
   else {
     // find previous size; due to minimal alignment upto 3 previous bins may need to be skipped
-    mi_assert_internal(pq > &theap->pages[0]); // since idx > 1
+    mi_assert_internal(pq > &theap->pages[0]); // since idx > MI_MIN_BLOCK_WSIZE
     size_t bin = mi_bin(size);
     const mi_page_queue_t* prev = pq - 1;
     while( bin == mi_bin(prev->block_size) && prev > &theap->pages[0]) {

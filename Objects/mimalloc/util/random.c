@@ -135,8 +135,9 @@ static bool mi_random_is_initialized(mi_random_ctx_t* ctx) {
 void _mi_random_split(mi_random_ctx_t* ctx, mi_random_ctx_t* ctx_new) {
   mi_assert_internal(ctx != ctx_new);
   if mi_unlikely(!mi_random_is_initialized(ctx)) { _mi_random_init(ctx); }
-  const uintptr_t nonce_rnd = _mi_random_next(ctx);
-  chacha_split(ctx, (uintptr_t)ctx_new ^ nonce_rnd /*nonce*/, ctx_new);
+  else if mi_unlikely(ctx->weak) { _mi_random_init(ctx); }  // try again to get strong randomness (as it may have been unavailable early on)
+  const size_t nonce_rnd = _mi_random_next(ctx);
+  chacha_split(ctx, mi_addr(ctx_new) ^ nonce_rnd /*nonce*/, ctx_new);
 }
 
 size_t _mi_random_next(mi_random_ctx_t* ctx) {
@@ -160,8 +161,8 @@ To initialize a fresh random context.
 If we cannot get good randomness, we fall back to weak randomness based on a timer and ASLR.
 -----------------------------------------------------------------------------*/
 
-size_t _mi_os_random_weak(size_t extra_seed) {
-  size_t x = (size_t)&_mi_os_random_weak ^ extra_seed; // ASLR makes the address random
+static size_t mi_random_weak(void) {
+  size_t x = (size_t)(uintptr_t)&mi_random_weak; // ASLR makes the address random
   x ^= _mi_prim_clock_now();
   // and do a few randomization steps
   size_t max = ((x ^ (x >> 17)) & 0x0F) + 1;
@@ -172,15 +173,16 @@ size_t _mi_os_random_weak(size_t extra_seed) {
   return x;
 }
 
-static void mi_random_init_ex(mi_random_ctx_t* ctx, bool use_weak) {
+void _mi_random_init(mi_random_ctx_t* ctx) {
   uint8_t key[32];
-  if (use_weak || !_mi_prim_random_buf(key, sizeof(key))) {
+  if (!_mi_prim_random_buf(key, sizeof(key))) {
     // if we fail to get random data from the OS, we fall back to a
     // weak random source based on the current time
-    #if !defined(__wasi__)
-    if (!use_weak) { _mi_warning_message("unable to use secure randomness\n"); }
+    #if !defined(__wasi__) && !defined(__EMSCRIPTEN__)
+    static _Atomic(size_t) warned; // = 0
+    if (mi_atomic_exchange_relaxed(&warned, (size_t)1) == 0) { _mi_warning_message("unable to use secure randomness\n"); }
     #endif
-    size_t x = _mi_os_random_weak(0);
+    size_t x = mi_random_weak();
     for (size_t i = 0; i < 32; i+=4, x++) {
       x = mi_random_shuffle(x);
       key[i]   = (uint8_t)(x);
@@ -193,16 +195,8 @@ static void mi_random_init_ex(mi_random_ctx_t* ctx, bool use_weak) {
   else {
     ctx->weak = false;
   }
-  chacha_init(ctx, key, (uintptr_t)ctx /*nonce*/ );
+  chacha_init(ctx, key, mi_addr(ctx) /*nonce*/ );
   mi_memzero(key, sizeof(key));
-}
-
-void _mi_random_init(mi_random_ctx_t* ctx) {
-  mi_random_init_ex(ctx, false);
-}
-
-void _mi_random_init_weak(mi_random_ctx_t * ctx) {
-  mi_random_init_ex(ctx, true);
 }
 
 void _mi_random_reinit_if_weak(mi_random_ctx_t * ctx) {

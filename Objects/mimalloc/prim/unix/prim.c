@@ -26,7 +26,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim/os.h"
 #include "mimalloc/util/libc.h"
 #include "mimalloc/util/options.h"
-#include "mimalloc/heap/init.h"
+#include "mimalloc/heap/process.h"
 
 #include <sys/mman.h>  // mmap
 #include <unistd.h>    // sysconf, sleep
@@ -264,7 +264,7 @@ static size_t unix_detect_virtual_address_bits(void) {
       #endif
       {
         if (probe.key != -1) { // If a key is unknown to the kernel, its key field will be cleared to -1.
-          return (MI_SIZE_BITS - mi_clz((uintptr_t)probe.value));
+          return (MI_SIZE_BITS - mi_clz((size_t)probe.value));
         }
       }
     #endif
@@ -593,22 +593,28 @@ int _mi_prim_reuse(void* start, size_t size) {
   return 0;
 }
 
+// Release the physical memory of a range (while keeping it mapped)
+static int unix_madvise_release(void* start, size_t size) {
+  #if defined(__APPLE__) && defined(MADV_FREE_REUSABLE)
+  // use MADV_FREE_REUSABLE as it does immediate rss accounting (issue #1097)
+  int err = unix_madvise(start, size, MADV_FREE_REUSABLE);
+  if (err) { err = unix_madvise(start, size, MADV_DONTNEED); }
+  return err;
+  #else
+  // use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
+  return unix_madvise(start, size, MADV_DONTNEED);
+  #endif
+}
+
 int _mi_prim_decommit(void* start, size_t size, bool* needs_recommit) {
   int err = 0;
   #if 1
-    #if defined(__APPLE__) && defined(MADV_FREE_REUSABLE)
-      // decommit on macOS: use MADV_FREE_REUSABLE as it does immediate rss accounting (issue #1097)
-      err = unix_madvise(start, size, MADV_FREE_REUSABLE);
-      if (err) { err = unix_madvise(start, size, MADV_DONTNEED); }
-    #else
-      // decommit: use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
-      err = unix_madvise(start, size, MADV_DONTNEED);
-    #endif
-    #if !MI_DEBUG && MI_SECURE<=2
-      *needs_recommit = false;
-    #else
+    err = unix_madvise_release(start, size);
+    #if MI_DEBUG || MI_SECURE>=4
       *needs_recommit = true;
       mprotect(start, size, PROT_NONE);
+    #else
+      *needs_recommit = false;
     #endif
   #else
     // decommit: use mmap with MAP_FIXED and PROT_NONE to discard the existing memory (and reduce rss)
@@ -649,11 +655,26 @@ int _mi_prim_reset(void* start, size_t size) {
   return err;
 }
 
-int _mi_prim_protect(void* start, size_t size, bool protect) {
+static int unix_mprotect(void* start, size_t size, bool protect) {
   int err = mprotect(start, size, protect ? PROT_NONE : (PROT_READ | PROT_WRITE));
   if (err != 0) { err = errno; }
   unix_mprotect_hint(err);
   return err;
+}
+
+int _mi_prim_guard(void* start, size_t size, bool set, bool is_committed) {
+  if (set) {
+    // `mprotect` also works on reserved memory, so committed or not, we release the physical memory and protect
+    unix_madvise_release(start, size);  // best effort
+    return unix_mprotect(start, size, true);
+  }
+  else if (is_committed) {
+    const int err = unix_mprotect(start, size, false);
+    return (err != 0 ? err : _mi_prim_reuse(start, size));
+  }
+  else {
+    return 0;  // stays inaccessible until committed
+  }
 }
 
 
@@ -1015,13 +1036,20 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
     #ifndef GRND_NONBLOCK
     #define GRND_NONBLOCK (1)
     #endif
-    static _Atomic(uintptr_t) no_getrandom; // = 0
+    #ifndef GRND_INSECURE
+    #define GRND_INSECURE (4)
+    #endif
+    static _Atomic(size_t) no_getrandom; // = 0
     if (mi_atomic_load_acquire(&no_getrandom)==0) {
       ssize_t ret = syscall(SYS_getrandom, buf, buf_len, GRND_NONBLOCK);
+      if (ret < 0 && errno == EAGAIN) {
+        // early during boot the entropy pool may not be initialized yet; use the best available randomness (Linux 5.6+)
+        ret = syscall(SYS_getrandom, buf, buf_len, GRND_INSECURE);
+      }
       if (ret > 0) { mi_msan_unpoison(buf, (size_t)ret); }
       if (ret >= 0) return (buf_len == (size_t)ret);
-      if (errno != ENOSYS) return false;
-      mi_atomic_store_release(&no_getrandom, (uintptr_t)1); // don't call again, and fall back to /dev/urandom
+      if (errno == ENOSYS) { mi_atomic_store_release(&no_getrandom, (size_t)1); } // don't call again
+      // and fall back to /dev/urandom (which does not block early during boot)
     }
   #endif
   int flags = O_RDONLY;

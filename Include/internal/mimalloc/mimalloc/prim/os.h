@@ -30,21 +30,24 @@ bool          _mi_os_decommit(mi_subproc_t* subproc, void* addr, size_t size);
 void          _mi_os_reuse(mi_subproc_t* subproc, void* p, size_t size);
 mi_decl_nodiscard bool _mi_os_commit(mi_subproc_t* subproc, void* p, size_t size, bool* is_zero);
 mi_decl_nodiscard bool _mi_os_commit_ex(mi_subproc_t* subproc, void* addr, size_t size, bool* is_zero, size_t stat_already_committed);
-mi_decl_nodiscard bool _mi_os_protect(void* addr, size_t size);
-bool          _mi_os_unprotect(void* addr, size_t size);
+bool          _mi_os_guard(void* addr, size_t size, bool is_committed);
+bool          _mi_os_unguard(void* addr, size_t size, bool is_committed);
 bool          _mi_os_purge(mi_subproc_t* subproc, void* p, size_t size);
 bool          _mi_os_purge_ex(mi_subproc_t* subproc, void* p, size_t size, bool allow_reset, size_t stats_size, mi_commit_fun_t* commit_fun, void* commit_fun_arg);
 
 size_t        _mi_os_secure_guard_page_size(void);
 bool          _mi_os_secure_guard_page_set_at(mi_subproc_t* subproc, void* addr, mi_memid_t memid);
 bool          _mi_os_secure_guard_page_set_before(mi_subproc_t* subproc, void* addr, mi_memid_t memid);
+bool          _mi_os_secure_guard_pages_set_around(mi_subproc_t* subproc, void* addr, size_t size, mi_memid_t memid);
 bool          _mi_os_secure_guard_page_reset_at(mi_subproc_t* subproc, void* addr, mi_memid_t memid);
-bool          _mi_os_secure_guard_page_reset_before(mi_subproc_t* subproc, void* addr, mi_memid_t memid);
+bool          _mi_os_secure_guard_pages_set_within(void* area, size_t area_size, size_t offset, size_t size);
 
 int           _mi_os_numa_node(void);
 int           _mi_os_numa_node_count(void);
 
 void*         _mi_os_alloc_aligned(mi_subproc_t* subproc, size_t size, size_t alignment, bool commit, bool allow_large, mi_memid_t* memid);
+void*         _mi_os_alloc_with_guards(mi_subproc_t* subproc, size_t size, bool commit, bool allow_large, mi_memid_t* memid);
+void          _mi_os_free_with_guards(mi_subproc_t* subproc, mi_memid_t memid);
 void*         _mi_os_alloc_aligned_at_offset(mi_subproc_t* subproc, size_t size, size_t alignment, size_t align_offset, bool commit, bool allow_large, mi_memid_t* memid);
 
 void*         _mi_os_get_aligned_hint(size_t try_alignment, size_t size);

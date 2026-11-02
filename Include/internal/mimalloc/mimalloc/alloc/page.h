@@ -54,8 +54,12 @@ static inline size_t mi_page_block_size(const mi_page_t* page) {
 
 // Page start
 static inline uint8_t* mi_page_start(const mi_page_t* page) {
-  // multiplication must be done in `size_t`
-  return (uint8_t*)page + page->page_offset;
+  return page->page_start;
+}
+
+// Derive a block pointer from an address in the page; On systems with pointer provenance, this keeps the authority of the page start.
+static inline mi_block_t* mi_page_block_from_addr(const mi_page_t* page, mi_addr_t addr) {
+  return (mi_block_t*)mi_ptr_with_addr(mi_page_start(page), addr);
 }
 
 static inline size_t mi_page_size(const mi_page_t* page) {
@@ -127,6 +131,10 @@ static inline bool mi_page_meta_is_separated(const mi_page_t* page) {
     mi_assert_internal(page != mi_align_down_ptr(mi_page_start(page), MI_ARENA_SLICE_ALIGN));
     return true;
     #endif
+  #elif MI_PAGE_META_OS_IS_SEPARATED && !MI_PAGE_META_SMALL_IS_ALIGNED
+  MI_UNUSED_RELEASE(page);
+  mi_assert_internal(page != mi_align_down_ptr(mi_page_start(page), MI_ARENA_SLICE_ALIGN));
+  return true;
   #elif MI_PAGE_META_IS_SEPARATED
   // usually separated but can still be in front for direct OS allocations (due to size or alignment) or due to MI_PAGE_META_SMALL_IS_ALIGNED
   return (page->memid.memkind == MI_MEM_ARENA && page != mi_align_down_ptr(mi_page_start(page), MI_ARENA_SLICE_ALIGN));
@@ -137,6 +145,17 @@ static inline bool mi_page_meta_is_separated(const mi_page_t* page) {
 }
 
 static inline uint8_t* mi_page_slice_start(const mi_page_t* page) {
+  #if MI_CHERI
+  // derive from the arena or OS memory as both the page meta data and the page start are bounded
+  if (page->memid.memkind == MI_MEM_ARENA) {
+    const mi_memid_arena_info_t* const ainfo = &page->memid.mem.arena;
+    return (uint8_t*)ainfo->arena->start + ((size_t)ainfo->slice_index * MI_ARENA_SLICE_SIZE);
+  }
+  else {
+    void* const slice_start = (mi_page_meta_is_separated(page) ? mi_align_down_ptr(mi_page_start(page), MI_ARENA_SLICE_ALIGN) : (void*)page);
+    return (uint8_t*)mi_ptr_rederive(page->memid.mem.os.base, slice_start);
+  }
+  #else
   if (mi_page_meta_is_separated(page)) {
     // page meta info is at a separate location (at `arena->pages`)
     return (uint8_t*)mi_align_down_ptr(mi_page_start(page), MI_ARENA_SLICE_ALIGN);
@@ -145,11 +164,28 @@ static inline uint8_t* mi_page_slice_start(const mi_page_t* page) {
     // page meta info is at the start of the page slices
     return (uint8_t*)page;
   }
+  #endif
+}
+
+// Re-derive `p` in the page memory with the authority to change its protection
+static inline void* mi_page_vmem_ptr(const mi_page_t* page, void* p) {
+  #if MI_CHERI
+  return mi_ptr_rederive(mi_page_slice_start(page), p);
+  #else
+  MI_UNUSED(page);
+  return p;
+  #endif
 }
 
 // This gives the offset relative to the start slice of a page.
 static inline size_t mi_page_slice_offset_of(const mi_page_t* page, size_t offset_relative_to_page_start) {
   return (mi_page_start(page) - mi_page_slice_start(page)) + offset_relative_to_page_start;
+}
+
+// The end of the blocks relative to the slice start rounded up to the OS page size.
+// This is where the end guard page is if `page->memid.guard_end` is set.
+static inline size_t mi_page_guard_end_offset(const mi_page_t* page) {
+  return mi_align_up(mi_page_slice_offset_of(page, mi_page_size(page)), _mi_os_page_size());
 }
 
 // How much of the page is committed relative to the slice start? (or 0 if fully committed already)
@@ -253,12 +289,12 @@ static inline size_t mi_page_min_commit_size(void) {
 //-----------------------------------------------------------
 
 // Thread id of thread that owns this page (with flags in the bottom 2 bits)
-static inline mi_threadid_t mi_page_xthread_id(const mi_page_t* page) {
+static inline mi_thread_id_t mi_page_xthread_id(const mi_page_t* page) {
   return mi_atomic_load_relaxed(&((mi_page_t*)page)->xthread_id);
 }
 
 // Plain thread id of the thread that owns this page
-static inline mi_threadid_t mi_page_thread_id(const mi_page_t* page) {
+static inline mi_thread_id_t mi_page_thread_id(const mi_page_t* page) {
   return (mi_page_xthread_id(page) & ~MI_PAGE_FLAG_MASK);
 }
 
@@ -300,37 +336,71 @@ static inline void mi_page_set_has_interior_pointers(mi_page_t* page, bool has_a
   mi_page_flags_set(page, has_aligned, MI_PAGE_HAS_INTERIOR_POINTERS);
 }
 
+#if MI_QSBR
+// For qsbr, `qsbr_xthread_id` keeps the thread id of the last owning thread (so it is still available when the page is abandoned)
+// The lowest bit is set if the page is in the qsbr queue of its theap. It is only written by the owning thread.
+#define MI_PAGE_QSBR_IN_QUEUE  MI_ZU(0x01)
+
+static inline mi_thread_id_t mi_page_qsbr_xthread_id(const mi_page_t* page) {
+  return mi_atomic_load_relaxed(&((mi_page_t*)page)->qsbr_xthread_id);
+}
+
+static inline mi_thread_id_t mi_page_qsbr_thread_id(const mi_page_t* page) {
+  return (mi_page_qsbr_xthread_id(page) & ~MI_PAGE_FLAG_MASK);
+}
+
+static inline void mi_page_qsbr_set_thread_id(mi_page_t* page, mi_thread_id_t tid) {
+  mi_assert_internal((tid & MI_PAGE_FLAG_MASK) == 0);
+  const mi_thread_id_t xtid = mi_page_qsbr_xthread_id(page);
+  mi_atomic_store_relaxed(&page->qsbr_xthread_id, tid | (xtid & MI_PAGE_QSBR_IN_QUEUE));
+}
+
+static inline bool mi_page_qsbr_is_in_queue(const mi_page_t* page) {
+  return ((mi_page_qsbr_xthread_id(page) & MI_PAGE_QSBR_IN_QUEUE) != 0);
+}
+
+static inline void mi_page_qsbr_set_in_queue(mi_page_t* page, bool in_queue) {
+  const mi_thread_id_t xtid = mi_page_qsbr_xthread_id(page);
+  mi_atomic_store_relaxed(&page->qsbr_xthread_id, (in_queue ? (xtid | MI_PAGE_QSBR_IN_QUEUE) : (xtid & ~MI_PAGE_QSBR_IN_QUEUE)));
+}
+#endif
+
 static inline void mi_page_set_theap(mi_page_t* page, mi_theap_t* theap) {
   // mi_assert_internal(!mi_page_is_in_full(page));  // can happen when destroying pages on theap_destroy
   page->theap = theap;
-  const mi_threadid_t tid = (theap == NULL ? MI_THREADID_ABANDONED : theap->tld->thread_id);
+  const mi_thread_id_t tid = (theap == NULL ? MI_THREAD_ID_ABANDONED : theap->tld->thread_id);
   mi_assert_internal((tid & MI_PAGE_FLAG_MASK) == 0);
 
   // we need to use an atomic cas since a concurrent thread may still set the MI_PAGE_HAS_INTERIOR_POINTERS flag (see `alloc_aligned.c`).
-  mi_threadid_t xtid_old = mi_page_xthread_id(page);
-  mi_threadid_t xtid;
+  mi_thread_id_t xtid_old = mi_page_xthread_id(page);
+  mi_thread_id_t xtid;
   do {
     xtid = tid | (xtid_old & MI_PAGE_FLAG_MASK);
   } while (!mi_atomic_cas_weak_release(&page->xthread_id, &xtid_old, xtid));
+
+  #if MI_QSBR
+  // keep the last owning thread id around for `mi_thread_id_of`
+  if (tid > MI_THREAD_ID_DETACHED) { mi_page_qsbr_set_thread_id(page, tid); }
+  #endif
 }
 
 static inline bool mi_page_is_abandoned(const mi_page_t* page) {
   // note: the xtheap field of an abandoned theap is set to the subproc (for fast reclaim-on-free)
-  return (mi_page_thread_id(page) <= MI_THREADID_ABANDONED_MAPPED);
+  return (mi_page_thread_id(page) <= MI_THREAD_ID_ABANDONED_MAPPED);
 }
 
 static inline bool mi_page_is_abandoned_mapped(const mi_page_t* page) {
-  return (mi_page_thread_id(page) == MI_THREADID_ABANDONED_MAPPED);
+  return (mi_page_thread_id(page) == MI_THREAD_ID_ABANDONED_MAPPED);
 }
 
 static inline void mi_page_set_abandoned_mapped(mi_page_t* page) {
   mi_assert_internal(mi_page_is_abandoned(page));
-  mi_atomic_or_relaxed(&page->xthread_id, (mi_threadid_t)MI_THREADID_ABANDONED_MAPPED);
+  mi_atomic_or_relaxed(&page->xthread_id, (mi_thread_id_t)MI_THREAD_ID_ABANDONED_MAPPED);
 }
 
 static inline void mi_page_clear_abandoned_mapped(mi_page_t* page) {
   mi_assert_internal(mi_page_is_abandoned_mapped(page));
-  mi_atomic_and_relaxed(&page->xthread_id, (mi_threadid_t)MI_PAGE_FLAG_MASK);
+  mi_atomic_and_relaxed(&page->xthread_id, (mi_thread_id_t)MI_PAGE_FLAG_MASK);
 }
 
 
@@ -408,7 +478,7 @@ static inline bool mi_page_claim_ownership(mi_page_t* page) {
 
 static inline void mi_page_qsbr_unlink(mi_page_t* page) {
 #if MI_QSBR
-  if (!page->qsbr_in_queue) {
+  if (!mi_page_qsbr_is_in_queue(page)) {
     mi_assert_internal(page->qsbr_next == NULL && page->qsbr_prev == NULL);
     return;
   }
@@ -424,7 +494,7 @@ static inline void mi_page_qsbr_unlink(mi_page_t* page) {
     theap->qsbr_last = page->qsbr_prev;
   }
   page->qsbr_next = page->qsbr_prev = NULL;
-  page->qsbr_in_queue = false;
+  mi_page_qsbr_set_in_queue(page, false);
 #else
   MI_UNUSED(page);
 #endif
@@ -436,13 +506,13 @@ static inline void mi_page_qsbr_enqueue(mi_page_t* page, mi_theap_t* theap) {
   mi_assert_internal(mi_page_all_free(page));
   mi_assert_internal(mi_heap_qsbr_is_enabled(mi_page_heap(page)));
   mi_assert_internal(!mi_page_qsbr_is_clear(&page->qsbr));
-  if (page->qsbr_in_queue) return;
+  if (mi_page_qsbr_is_in_queue(page)) return;
   mi_assert_internal(page->qsbr_next == NULL && page->qsbr_prev == NULL);
   page->qsbr_prev = theap->qsbr_last;
   if (theap->qsbr_last != NULL) { theap->qsbr_last->qsbr_next = page; }
   else { theap->qsbr_first = page; }
   theap->qsbr_last = page;
-  page->qsbr_in_queue = true;
+  mi_page_qsbr_set_in_queue(page, true);
 #else
   MI_UNUSED(page);
   MI_UNUSED(theap);
@@ -460,7 +530,7 @@ static inline void _mi_page_qsbr_clear(mi_page_t* page) {
 
 static inline bool _mi_page_qsbr_is_clear(const mi_page_t* page) {
 #if MI_QSBR
-  return (!page->qsbr_in_queue && page->qsbr_next == NULL && page->qsbr_prev == NULL &&
+  return (!mi_page_qsbr_is_in_queue(page) && page->qsbr_next == NULL && page->qsbr_prev == NULL &&
           mi_page_qsbr_is_clear(&page->qsbr));
 #else
   MI_UNUSED(page);
@@ -513,29 +583,32 @@ static inline bool mi_is_in_same_page(const void* p, const void* q) {
   // return (mi_ptr_page(p) == mi_ptr_page(q));
 }
 
-static inline void* mi_ptr_decode(const void* null, const mi_encoded_t x, const uintptr_t* keys) {
-  const uintptr_t k1 = keys[0];
+// Encoding uses just the address and the decoded block is derived from the page (with `page` as the `null` value).
+// (the rotations assume `sizeof(mi_addr_t)==sizeof(size_t)`)
+static inline void* mi_ptr_decode(const mi_page_t* page, const mi_encoded_t x, const mi_addr_t* keys) {
+  const mi_addr_t k1 = keys[0];
   #if MI_PAGE_KEY_COUNT==2
-  const uintptr_t k2 = keys[1];
+  const mi_addr_t k2 = keys[1];
   #else
-  const uintptr_t k2 = mi_rotr(k1,13);
+  const mi_addr_t k2 = mi_rotr(k1,13);
   #endif
-  void* p = (void*)(mi_rotr(x - k1, k1) ^ k2);
-  return (p==null ? NULL : p);
+  const mi_addr_t addr = (mi_rotr((mi_addr_t)x - k1, k1) ^ k2);
+  if (addr == mi_addr(page)) return NULL;
+  return mi_page_block_from_addr(page, addr);
 }
 
-static inline mi_encoded_t mi_ptr_encode(const void* null, const void* p, const uintptr_t* keys) {
-  const uintptr_t k1 = keys[0];
+static inline mi_encoded_t mi_ptr_encode(const void* null, const void* p, const mi_addr_t* keys) {
+  const mi_addr_t k1 = keys[0];
   #if MI_PAGE_KEY_COUNT==2
-  const uintptr_t k2 = keys[1];
+  const mi_addr_t k2 = keys[1];
   #else
-  const uintptr_t k2 = mi_rotr(k1,13);
+  const mi_addr_t k2 = mi_rotr(k1,13);
   #endif
-  const uintptr_t x = (uintptr_t)(p==NULL ? null : p);
-  return mi_rotl(x ^ k2, k1) + k1;
+  const mi_addr_t x = mi_addr(p==NULL ? null : p);
+  return (mi_encoded_t)(mi_rotl(x ^ k2, k1) + k1);
 }
 
-static inline uint32_t mi_ptr_encode_canary(const void* null, const void* p, const uintptr_t* keys) {
+static inline uint32_t mi_ptr_encode_canary(const void* null, const void* p, const mi_addr_t* keys) {
   const uint32_t x = (uint32_t)(mi_ptr_encode(null,p,keys));
   // make the lowest byte 0 to prevent spurious read overflows which could be a security issue (issue #951)
   // also clear bit 9 which we set only when a block is freed.
@@ -554,26 +627,27 @@ static inline bool mi_ptr_decode_canary_is_freed(uint32_t canary) {
   return (canary == mi_ptr_encode_canary_freed());
 }
 
-static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* block, const uintptr_t* keys ) {
+static inline mi_block_t* mi_block_nextx( const mi_page_t* page, const mi_block_t* block, const mi_addr_t* keys ) {
   mi_track_mem_defined(block,sizeof(mi_block_t));
   mi_block_t* next;
   #if MI_ENCODE_FREELIST
-  next = (mi_block_t*)mi_ptr_decode(null, block->next, keys);
+  next = (mi_block_t*)mi_ptr_decode(page, block->next, keys);
   #else
-  MI_UNUSED(keys); MI_UNUSED(null);
-  next = (mi_block_t*)block->next;
+  MI_UNUSED(keys);
+  const mi_addr_t addr = (mi_addr_t)block->next;
+  next = (addr==0 ? NULL : mi_page_block_from_addr(page, addr));
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
   return next;
 }
 
-static inline void mi_block_set_nextx(const void* null, mi_block_t* block, const mi_block_t* next, const uintptr_t* keys) {
+static inline void mi_block_set_nextx(const void* null, mi_block_t* block, const mi_block_t* next, const mi_addr_t* keys) {
   mi_track_mem_undefined(block,sizeof(mi_block_t));
   #if MI_ENCODE_FREELIST
   block->next = mi_ptr_encode(null, next, keys);
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  block->next = (mi_encoded_t)next;
+  block->next = (mi_encoded_t)mi_addr(next);  // never store a capability in a (freed) block
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
 }

@@ -55,6 +55,10 @@ not accidentally mix pointers from different allocators).
 #define posix_memalign(p,a,n)   mi_posix_memalign(p,a,n)
 #define _posix_memalign(p,a,n)  mi_posix_memalign(p,a,n)
 
+// C23
+#define free_sized(p,n)             mi_free_sized(p,n)
+#define free_aligned_sized(p,a,n)   mi_free_aligned_sized(p,a,n)
+
 // Microsoft aligned variants
 #define _aligned_malloc(n,a)                  mi_malloc_aligned(n,a)
 #define _aligned_realloc(p,n,a)               mi_realloc_aligned(p,n,a)

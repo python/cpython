@@ -9,7 +9,8 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include "mimalloc.h"
 #include "mimalloc/prim.h"
-#include "mimalloc/heap/init.h"
+#include "mimalloc/util/libc.h"
+#include "mimalloc/heap/process.h"
 
 #include <sched.h>   // sched_yield
 #include <unistd.h>  // getentropy
@@ -62,6 +63,7 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config) {
 #include <emscripten/heap.h>  // emscripten_builtin_memalign, emscripten_builtin_free
 
 int _mi_prim_free(void* addr, size_t size) {
+  MI_UNUSED(size);
   emscripten_builtin_free(addr);
   return 0;
 }
@@ -70,6 +72,16 @@ int _mi_prim_free(void* addr, size_t size) {
 //---------------------------------------------
 // Allocation
 //---------------------------------------------
+
+// The builtin allocator aborts on OOM by default (`-sABORTING_MALLOC`), so we fail early
+// if the heap cannot grow enough (e.g. without `-sALLOW_MEMORY_GROWTH`) and let mimalloc fall back.
+// (This is conservative as the builtin allocator may still have enough free space internally.)
+static bool mi_prim_heap_has_room(size_t size, size_t alignment) {
+  const uintptr_t top = *emscripten_get_sbrk_ptr();
+  const size_t max = emscripten_get_heap_max();
+  const size_t needed = size + alignment + 64*MI_KiB;  // allow for alignment, overhead, and sbrk granularity
+  return (needed > size && top < max && needed <= max - top);
+}
 
 // Note: the `try_alignment` is just a hint and the returned pointer is not guaranteed to be aligned.
 int _mi_prim_alloc(void* hint_addr, size_t size, size_t try_alignment, bool commit, bool allow_large, bool* is_large, bool* is_zero, void** addr) {
@@ -83,6 +95,10 @@ int _mi_prim_alloc(void* hint_addr, size_t size, size_t try_alignment, bool comm
   #define MIN_EMMALLOC_ALIGN           8
   if (try_alignment < MIN_EMMALLOC_ALIGN) {
     try_alignment = MIN_EMMALLOC_ALIGN;
+  }
+  if (!mi_prim_heap_has_room(size, try_alignment)) {
+    *addr = NULL;
+    return ENOMEM;
   }
   void* p = emscripten_builtin_memalign(try_alignment, size);
   *addr = p;
@@ -120,8 +136,8 @@ int _mi_prim_reuse(void* addr, size_t size) {
   return 0;
 }
 
-int _mi_prim_protect(void* addr, size_t size, bool protect) {
-  MI_UNUSED(addr); MI_UNUSED(size); MI_UNUSED(protect);
+int _mi_prim_guard(void* addr, size_t size, bool set, bool is_committed) {
+  MI_UNUSED(addr); MI_UNUSED(size); MI_UNUSED(set); MI_UNUSED(is_committed);
   return 0;
 }
 
@@ -173,10 +189,10 @@ void _mi_prim_process_info(mi_process_info_t* pinfo)
 // Output
 //----------------------------------------------------------------
 
-#include <emscripten/console.h>
+#include <stdio.h>  // fputs
 
 void _mi_prim_out_stderr( const char* msg) {
-  emscripten_console_error(msg);
+  fputs(msg, stderr);  // not `emscripten_console_error` as that appends a newline
 }
 
 
@@ -184,11 +200,23 @@ void _mi_prim_out_stderr( const char* msg) {
 // Environment
 //----------------------------------------------------------------
 
+// Under node, host environment variables are only visible when linking with `-sNODE_HOST_ENV=1`.
+// (Define `MI_NO_GETENV` to exclude this code)
+extern char** environ;
+
 int _mi_prim_getenv(const char* name, char* result, size_t result_size) {
-  // For code size reasons, do not support environ customization for now.
-  MI_UNUSED(name);
-  MI_UNUSED(result);
-  MI_UNUSED(result_size);
+  if (name==NULL) return -1;
+  const size_t len = _mi_strlen(name);
+  if (len == 0) return -1;
+  char** env = environ;
+  if (env == NULL) return -1;  // not yet initialized; try again later
+  for (int i = 0; i < 10000 && env[i] != NULL; i++) {
+    const char* s = env[i];
+    if (_mi_strnicmp(name, s, len) == 0 && s[len] == '=') { // case insensitive
+      if (!_mi_strlcpy(result, s + len + 1, result_size)) return -1;
+      return 1;
+    }
+  }
   return 0; // not found
 }
 

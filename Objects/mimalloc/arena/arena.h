@@ -41,10 +41,19 @@ static inline size_t mi_arena_info_slices(mi_arena_t* arena) {
   return arena->info_slices;
 }
 
-// slices reserved for page meta info at the start of aligned chunks
-static inline size_t mi_arena_page_meta_aligned_slice_count(void) {
+// slices of the aligned page meta data array at the start of each aligned area
+static inline size_t mi_arena_page_meta_aligned_array_slices(void) {
   #if MI_PAGE_META_IS_ALIGNED
   return mi_divide_up(MI_PAGE_META_ALIGNED_COUNT * sizeof(mi_page_t), MI_ARENA_SLICE_SIZE);
+  #else
+  return 0;
+  #endif
+}
+
+// slices reserved at the start of each aligned area: the page meta data array (with a guard slice in front and after in secure mode)
+static inline size_t mi_arena_page_meta_aligned_slice_count(void) {
+  #if MI_PAGE_META_IS_ALIGNED
+  return (MI_ARENA_GUARD_SLICES + mi_arena_page_meta_aligned_array_slices() + MI_ARENA_GUARD_SLICES);
   #else
   return 0;
   #endif
@@ -73,8 +82,9 @@ static inline mi_arena_t* mi_arena_from_memid(mi_memid_t memid, size_t* slice_in
 // initialize the bitmap for `slice_count` slices at base (and advance the base pointer)
 static inline mi_bitmap_t* mi_arena_bitmap_init(size_t slice_count, uint8_t** base) {
   mi_bitmap_t* bitmap = (mi_bitmap_t*)(*base);
-  *base = (*base) + mi_bitmap_init(bitmap, slice_count, true /* already zero */);
-  return bitmap;
+  const size_t size = mi_bitmap_init(bitmap, slice_count, true /* already zero */);
+  *base = (*base) + size;
+  return (mi_bitmap_t*)mi_ptr_bounded_data(bitmap, size);
 }
 
 typedef bool (mi_forall_arena_fun_t)(mi_arena_t* arena, const void* arg, void** result);

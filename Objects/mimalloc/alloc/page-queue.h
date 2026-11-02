@@ -32,11 +32,11 @@ void mi_page_queue_move_to_back(mi_theap_t* theap, mi_page_queue_t* queue, mi_pa
 
 
 static inline bool mi_page_queue_is_huge(const mi_page_queue_t* pq) {
-  return (pq->block_size == (MI_LARGE_MAX_OBJ_SIZE+sizeof(uintptr_t)));
+  return (pq->block_size == (MI_LARGE_MAX_OBJ_SIZE+sizeof(size_t)));
 }
 
 static inline bool mi_page_queue_is_full(const mi_page_queue_t* pq) {
-  return (pq->block_size == (MI_LARGE_MAX_OBJ_SIZE+(2*sizeof(uintptr_t))));
+  return (pq->block_size == (MI_LARGE_MAX_OBJ_SIZE+(2*sizeof(size_t))));
 }
 
 static inline bool mi_page_queue_is_special(const mi_page_queue_t* pq) {

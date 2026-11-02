@@ -55,7 +55,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "alloc/page-queue.c"
 
 #include "heap/heap.c"
-#include "heap/init.c"
+#include "heap/process.c"
 #include "heap/page-map.c"
 #include "heap/subproc.c"
 #include "heap/theap.c"

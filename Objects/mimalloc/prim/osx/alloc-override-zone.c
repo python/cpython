@@ -7,6 +7,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include "mimalloc.h"
 #include "mimalloc/prim/os.h"
+#include "mimalloc/heap/subproc.h"
 #if defined(MI_MALLOC_OVERRIDE)
 
 #if !defined(__APPLE__)
@@ -193,11 +194,12 @@ static boolean_t intro_zone_locked(malloc_zone_t* zone) {
 }
 
 // Required whenever the zone advertises version >= 9: macOS calls this from the
-// atfork_child handler (_malloc_fork_child) without a NULL check. mimalloc keeps
-// no zone-level locks that need reinitializing after fork, so a no-op is safe.
+// atfork_child handler (_malloc_fork_child) without a NULL check.
 // Leaving it NULL makes the forked child jump to address 0 and crash in fork().
+// This runs in the child before the other libSystem child handlers (that allocate).
 static void intro_reinit_lock(malloc_zone_t* zone) {
   MI_UNUSED(zone);
+  _mi_fork_child_zone();
 }
 
 

@@ -11,11 +11,11 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/prim.h"
 #include "mimalloc/prim/os.h"
 #include "mimalloc/util/libc.h"
-#include "mimalloc/heap/init.h"
+#include "mimalloc/heap/process.h"
 
 #include <stdio.h>   // fputs
 #include <stdlib.h>  // getenv
-#include <unistd.h>  // sbrk, sleep
+#include <unistd.h>  // sbrk, sleep, getentropy
 
 //---------------------------------------------
 // Initialize
@@ -115,7 +115,7 @@ static void* mi_prim_mem_grow(size_t size, size_t try_alignment) {
     return NULL;
   }
   */
-  mi_assert_internal( p == NULL || try_alignment == 0 || (uintptr_t)p % try_alignment == 0 );
+  mi_assert_internal( p == NULL || try_alignment == 0 || mi_addr(p) % try_alignment == 0 );
   return p;
 }
 
@@ -155,8 +155,8 @@ int _mi_prim_reuse(void* addr, size_t size) {
   return 0;
 }
 
-int _mi_prim_protect(void* addr, size_t size, bool protect) {
-  MI_UNUSED(addr); MI_UNUSED(size); MI_UNUSED(protect);
+int _mi_prim_guard(void* addr, size_t size, bool set, bool is_committed) {
+  MI_UNUSED(addr); MI_UNUSED(size); MI_UNUSED(set); MI_UNUSED(is_committed);
   return 0;
 }
 
@@ -270,7 +270,7 @@ int _mi_prim_getenv(const char* name, char* result, size_t result_size) {
 //----------------------------------------------------------------
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
-  return false;
+  return (getentropy(buf, buf_len) == 0);  // uses `random_get` (and buf_len <= 256)
 }
 
 

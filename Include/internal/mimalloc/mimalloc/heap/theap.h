@@ -12,6 +12,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 size_t        _mi_theap_random_next(mi_theap_t* theap);
 void          _mi_theap_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld);
+void          _mi_theap_meta_init(mi_theap_t* theap, mi_heap_t* heap, mi_tld_t* tld);
 mi_theap_t*   _mi_theap_alloc(mi_heap_t* heap, mi_tld_t* tld);
 mi_theap_t*   _mi_theap_create(mi_heap_t* heap, mi_tld_t* tld);
 void          _mi_theap_collect_abandon(mi_theap_t* theap);
@@ -59,7 +60,7 @@ static inline mi_page_t* mi_theap_get_free_small_page(mi_theap_t* theap, size_t 
 }
 
 static inline bool mi_theap_is_detached(mi_theap_t* theap) {
-  return (theap!=NULL && theap->tld->thread_id == MI_THREADID_DETACHED);
+  return (theap!=NULL && theap->tld->thread_id == MI_THREAD_ID_DETACHED);
 }
 
 #endif

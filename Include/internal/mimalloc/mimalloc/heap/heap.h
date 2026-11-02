@@ -9,7 +9,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_INTERNAL_HEAP_H
 
 #include "../types.h"
-#include "init.h"
+#include "process.h"
 #include "subproc.h"
 
 void          _mi_heap_init(mi_heap_t* heap, mi_thread_local_t theap, mi_subproc_t* subproc, mi_arena_id_t exclusive_arena_id, bool use_qsbr);

@@ -28,6 +28,7 @@ format generation).
 #include "mimalloc/util/options.h"
 #include "mimalloc/util/stats.h"
 #include "mimalloc/profile/pprof.h"
+#include "mimalloc/heap/process.h"  // _mi_process.profile_env_profiler
 
 // ---------------------------------------------------------------------------
 // Internal API
@@ -39,7 +40,7 @@ typedef struct mi_callstack_s mi_callstack_t;
 
 static bool    mi_locations_init(mi_heap_t* heap, mi_locations_t* locations);
 static void    mi_locations_done(mi_heap_t* heap, mi_locations_t* locations);
-static mi_location_t* mi_locations_find_or_insert(mi_heap_t* heap, mi_locations_t* locations, mi_threadid_t thread_id, const mi_callstack_t* callstack, size_t callstack_hash);
+static mi_location_t* mi_locations_find_or_insert(mi_heap_t* heap, mi_locations_t* locations, mi_thread_id_t thread_id, const mi_callstack_t* callstack, size_t callstack_hash);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,7 +67,7 @@ struct mi_callstack_s {
 // `hash`/`thread_id`/`callstack` which allows a lock-free lookup of locations in the hash table.
 struct mi_location_s {
   _Atomic(struct mi_location_s*) next;  // next location in the same hash bucket (for chaining on collision);
-  mi_threadid_t     thread_id;
+  mi_thread_id_t     thread_id;
   mi_callstack_t    callstack;
   size_t            hash;         // hash of the thread_id and callstack
   int64_t           alloc_count;  // only ever written by the single (allocating) owning thread: not atomic
@@ -128,9 +129,8 @@ static int64_t mi_prim_time_secs(void);  // wall-clock seconds since the Unix ep
 #if MI_PROFILE_USE_BUILTIN   // todo: also disable profiling in secure mode?
 
 static bool mi_is_elevated_process(void);
-static mi_profiler_t* mi_profile_env_profiler;  // NULL if `MIMALLOC_PROFILE` was not set (or initialization failed)
 
-// Called once at process initialization (see `mi_process_init` in `heap/init.c`).
+// Called once at process initialization (see `mi_process_init` in `heap/process.c`).
 void _mi_pprof_profiler_init(void) {
   #if MI_PROFILE
   if (mi_is_elevated_process()) return;  // don't let an untrusted environment influence a privileged process
@@ -142,19 +142,19 @@ void _mi_pprof_profiler_init(void) {
   const size_t time_interval_secs = mi_option_get_clamp(mi_option_profile_time_interval,0,24*60*60L);  // 0 by default (no automatic interval snapshots)
   mi_profiler_t* profiler = mi_pprof_profiler_new(sample_rate, fname, alloc_interval_size, inuse_interval_size, time_interval_secs);
   if (profiler == NULL) return;
-  mi_profile_env_profiler = profiler;
+  _mi_process.profile_env_profiler = profiler;
   _mi_verbose_message("pprof profiler initialized with base file name: %s\n", fname);
   mi_profile(profiler);           // attach to the main sub-process (and any current/future heaps in it)
   mi_profiler_start(profiler);
   #endif
 }
 
-// Called once at process termination (see `mi_process_done` in `heap/init.c`).
+// Called once at process termination (see `mi_process_done` in `heap/process.c`).
 void _mi_pprof_profiler_done(void) {
   #if MI_PROFILE
-  mi_profiler_t* profiler = mi_profile_env_profiler;
+  mi_profiler_t* profiler = _mi_process.profile_env_profiler;
   if (profiler == NULL) return;
-  mi_profile_env_profiler = NULL;
+  _mi_process.profile_env_profiler = NULL;
   mi_profiler_stop(profiler);
   _mi_verbose_message("pprof profiler done\n");
   mi_profiler_snapshot(profiler);    // final snapshot so short-lived processes still get a complete profile
@@ -183,7 +183,7 @@ static mi_decl_noinline mi_location_t* mi_location_get(mi_pprof_profiler_t* prof
   const size_t depth = mi_prim_backtrace(frames, MI_MAX_BACKTRACE_DEPTH, &callstack_hash);
   if (depth==0) return NULL;
   mi_callstack_t callstack = { depth, frames };
-  const mi_threadid_t thread_id = _mi_thread_id();
+  const mi_thread_id_t thread_id = _mi_thread_id();
   mi_location_t* loc = mi_locations_find_or_insert(prof->profile_heap, &prof->locations, thread_id, &callstack, callstack_hash);
   return loc;
 }
@@ -442,7 +442,7 @@ void mi_pprof_profiler_delete(mi_profiler_t* profiler) {
 #define MI_FNV_PRIME         ((size_t)0x01000193UL)           // FNV-1a 32-bit prime
 #endif
 
-static size_t mi_location_hash(mi_threadid_t thread_id, size_t callstack_hash) {
+static size_t mi_location_hash(mi_thread_id_t thread_id, size_t callstack_hash) {
   size_t hash = MI_FNV_OFFSET_BASIS;
   const size_t prime = MI_FNV_PRIME;
   hash = (hash ^ (size_t)thread_id) * prime;
@@ -480,7 +480,7 @@ static void mi_locations_done(mi_heap_t* heap, mi_locations_t* locations) {
 }
 
 // Match a location's identifying fields; these never change after publication.
-static bool mi_location_matches(const mi_location_t* loc, size_t hash, mi_threadid_t thread_id, const mi_callstack_t* callstack) {
+static bool mi_location_matches(const mi_location_t* loc, size_t hash, mi_thread_id_t thread_id, const mi_callstack_t* callstack) {
   return (loc->hash == hash && loc->thread_id == thread_id &&
           loc->callstack.count == callstack->count &&
           (callstack->count == 0 || mi_memcmp(loc->callstack.frames, callstack->frames, callstack->count * sizeof(void*)) == 0));
@@ -493,7 +493,7 @@ static bool mi_location_matches(const mi_location_t* loc, size_t hash, mi_thread
 // is a lock-free, read-only traversal using relaxed loads; only inserting a
 // genuinely new location uses a CAS (and even then, only ever races against
 // other threads inserting *different* locations into the same bucket).
-static mi_location_t* mi_locations_find_or_insert(mi_heap_t* heap, mi_locations_t* locations, mi_threadid_t thread_id, const mi_callstack_t* callstack, size_t callstack_hash) {
+static mi_location_t* mi_locations_find_or_insert(mi_heap_t* heap, mi_locations_t* locations, mi_thread_id_t thread_id, const mi_callstack_t* callstack, size_t callstack_hash) {
   if (locations->buckets == NULL) return NULL;
   const size_t hash = mi_location_hash(thread_id, callstack_hash);
   const size_t idx = hash % locations->bucket_count;
@@ -672,7 +672,7 @@ static void mi_pprof_profiler_snapshot(mi_pprof_profiler_t* prof) {
 // Basic backtraces
 // ---------------------------------------------------------------------------
 
-#if MI_HAS_EXECINFOH || MI_HAS_LIBUNWINDH
+#if MI_HAS_EXECINFOH || MI_HAS_UNWINDH
 static size_t mi_backtrace_hash(void** frames, size_t depth) {
   size_t hash = MI_FNV_OFFSET_BASIS;
   for (size_t i = 0; i < depth; i++) {
@@ -710,20 +710,30 @@ static mi_decl_noinline size_t mi_prim_backtrace(void** buffer, size_t max_depth
   *hash = mi_backtrace_hash(buffer, depth);  // no platform-provided hash, compute our own
   return depth;
 }
-#elif MI_HAS_LIBUNWINDH
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>  // unw_backtrace
+#elif MI_HAS_UNWINDH
+#include <unwind.h>     // _Unwind_Backtrace (from the compiler's unwinder: libgcc_s or LLVM libunwind)
+typedef struct mi_unwind_state_s {
+  void** buffer;
+  size_t max_depth;
+  size_t skip;
+  size_t depth;
+} mi_unwind_state_t;
+
+static _Unwind_Reason_Code mi_unwind_frame(struct _Unwind_Context* ctx, void* arg) {
+  mi_unwind_state_t* const st = (mi_unwind_state_t*)arg;
+  const uintptr_t ip = (uintptr_t)_Unwind_GetIP(ctx);
+  if (ip == 0) return _URC_END_OF_STACK;
+  if (st->skip > 0) { st->skip--; return _URC_NO_REASON; }
+  st->buffer[st->depth++] = (void*)ip;
+  return (st->depth >= st->max_depth ? _URC_END_OF_STACK : _URC_NO_REASON);
+}
+
 static mi_decl_noinline size_t mi_prim_backtrace(void** buffer, size_t max_depth, size_t* hash) {
   // used as a fallback on platforms without `execinfo.h` (e.g. musl-based Linux like Alpine)
-  const size_t skip = 1 + MI_BACKTRACE_SKIP_FRAMES;  // +1 for `mi_prim_backtrace`'s own frame
-  if (max_depth <= skip) { *hash = 0; return 0; }
-  if (max_depth > INT_MAX) { max_depth = INT_MAX; }
-  const size_t raw_depth = (size_t)unw_backtrace(buffer, (int)(max_depth - skip));
-  if (raw_depth <= skip) { *hash = 0; return 0; }
-  const size_t depth = raw_depth - skip;
-  memmove(buffer, buffer + skip, depth * sizeof(void*));
-  *hash = mi_backtrace_hash(buffer, depth);  // no platform-provided hash, compute our own
-  return depth;
+  mi_unwind_state_t st = { buffer, max_depth, 1 + MI_BACKTRACE_SKIP_FRAMES /* +1 for `mi_prim_backtrace`'s own frame */, 0 };
+  if (max_depth > 0) { _Unwind_Backtrace(&mi_unwind_frame, &st); }
+  *hash = mi_backtrace_hash(buffer, st.depth);  // no platform-provided hash, compute our own
+  return st.depth;
 }
 #else
 static size_t mi_prim_backtrace(void** buffer, size_t max_depth, size_t* hash) {
@@ -755,7 +765,7 @@ typedef struct {
   bool                failed;  // set if an allocation failed; the mapping list is then incomplete
 } mi_pprof_modules_t;
 
-static void mi_pprof_modules_add(mi_heap_t* heap, mi_pprof_modules_t* mods, uintptr_t start, uintptr_t end, const char* path) {
+mi_decl_maybe_unused static void mi_pprof_modules_add(mi_heap_t* heap, mi_pprof_modules_t* mods, uintptr_t start, uintptr_t end, const char* path) {
   if (mods->failed) return;
   if (mods->count == mods->capacity) {
     const size_t new_capacity = (mods->capacity == 0 ? 16 : mods->capacity * 2);
@@ -1091,7 +1101,7 @@ static bool mi_pprof_snapshot_text(mi_pprof_profiler_t* prof, const char* fname)
                  (uint64_t)inuse_count, (uint64_t)inuse_bytes,
                  (uint64_t)loc->alloc_count, (uint64_t)loc->alloc_bytes);
       for (size_t j = 0; j < loc->callstack.count; j++) {
-        mi_fprintf(f, " 0x%tx", (uintptr_t)loc->callstack.frames[j]);
+        mi_fprintf(f, " 0x%tx", (size_t)(uintptr_t)loc->callstack.frames[j]);
       }
       fprintf(f, "\n");
     }

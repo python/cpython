@@ -110,14 +110,27 @@ mi_arena_id_t _mi_arena_id_none(void) {
 }
 
 mi_arena_t* _mi_arena_from_id(mi_arena_id_t id) {
+  #if MI_CHERI
+  // id's are just addresses (without provenance) so we look up the arena in the current subprocess
+  mi_arena_t* arena = NULL;
+  if (id != NULL) {
+    mi_subproc_t* const subproc = _mi_subproc();
+    const size_t count = mi_arenas_get_count(subproc);
+    for (size_t i = 0; i < count && arena == NULL; i++) {
+      mi_arena_t* const candidate = mi_arena_from_index(subproc, i);
+      if (candidate != NULL && mi_addr(candidate) == mi_addr(id)) { arena = candidate; }
+    }
+  }
+  #else
   mi_arena_t* const arena = (mi_arena_t*)id;
+  #endif
   mi_assert_internal(arena==NULL || arena->parent==NULL); // id's should never point to sub-arena's
   return arena;
 }
 
 mi_arena_id_t mi_arena_id_from_arena(mi_arena_t* arena) {
   mi_assert_internal(arena==NULL || arena->parent==NULL);
-  return (arena==NULL ? _mi_arena_id_none() : (mi_arena_id_t)arena);
+  return (arena==NULL ? _mi_arena_id_none() : (mi_arena_id_t)mi_ptr_from_addr(mi_addr(arena)));  // don't expose the arena capability
 }
 
 
@@ -141,7 +154,7 @@ size_t mi_arena_min_size(void) {
 // fixed limit for the maximum object size in an arena
 static size_t mi_arena_max_fixed_object_size(void) {
   #if MI_PAGE_META_IS_ALIGNED
-  return (MI_PAGE_META_ALIGNMENT - mi_align_up(MI_PAGE_META_ALIGNED_COUNT * sizeof(mi_page_t), MI_ARENA_SLICE_SIZE));
+  return (MI_PAGE_META_ALIGNMENT - _mi_size_of_slices(mi_arena_page_meta_aligned_slice_count()));
   #else
   return (MI_ARENA_MAX_SIZE - MI_ARENA_CHUNK_SIZE); // minus an initial chunk to accommodate meta info
   #endif
@@ -177,7 +190,7 @@ void* mi_arena_area(mi_arena_id_t arena_id, size_t* size) {
     mi_assert_internal(_mi_size_of_slices(arena->slice_count) <= arena->total_size);
     *size = arena->total_size;
   }
-  return mi_arena_start(arena);
+  return mi_ptr_bounded_data(mi_arena_start(arena), 0);  // only expose the address
 }
 
 
@@ -481,14 +494,21 @@ static bool mi_arenas_add(mi_subproc_t* subproc, mi_arena_t* arena, mi_arena_id_
 }
 
 
+// Arena memory layout:
+//   [guard slice (secure only) | aligned page meta array (if aligned) | arena info + bitmaps | guard page (secure only) | slices...]
+// Other `MI_PAGE_META_ALIGNMENT` aligned areas start with: [guard slice | aligned page meta array | guard slice] (see `mi_arena_page_meta_aligned_slice_count`).
+static size_t mi_arena_info_offset(void) {
+  return _mi_size_of_slices(MI_ARENA_GUARD_SLICES + mi_arena_page_meta_aligned_array_slices());
+}
+
 static mi_arena_t* mi_arena_info(void* area) {
-  return (mi_arena_t*)((uint8_t*)area + _mi_size_of_slices(mi_arena_page_meta_aligned_slice_count()));
+  return (mi_arena_t*)mi_ptr_bounded_data((uint8_t*)area + mi_arena_info_offset(), sizeof(mi_arena_t));
 }
 
 static size_t mi_arena_info_slices_needed(size_t slice_count, size_t* bitmap_base) {
   if (slice_count == 0) slice_count = MI_BCHUNK_BITS;
   mi_assert_internal((slice_count % MI_BCHUNK_BITS) == 0);
-  const size_t base_size = _mi_size_of_slices(mi_arena_page_meta_aligned_slice_count()) + mi_align_up(sizeof(mi_arena_t), MI_BCHUNK_SIZE);
+  const size_t base_size = mi_arena_info_offset() + mi_align_up(sizeof(mi_arena_t), MI_BCHUNK_SIZE);
   const size_t bitmaps_count = 4 + MI_ARENA_BIN_COUNT; // commit, dirty, purge, pages, and abandoned
   const size_t bitmaps_size = bitmaps_count * mi_bitmap_size(slice_count, NULL) + mi_bbitmap_size(slice_count, NULL); // + free
   #if MI_PAGE_META_IS_SEPARATED && !MI_PAGE_META_IS_ALIGNED
@@ -508,8 +528,9 @@ static size_t mi_arena_info_slices_needed(size_t slice_count, size_t* bitmap_bas
 
 static mi_bbitmap_t* mi_arena_bbitmap_init(mi_subproc_t* subproc, size_t slice_count, uint8_t** base) {
   mi_bbitmap_t* bbitmap = (mi_bbitmap_t*)(*base);
-  *base = (*base) + mi_bbitmap_init(subproc, bbitmap, slice_count, true /* already zero */);
-  return bbitmap;
+  const size_t size = mi_bbitmap_init(subproc, bbitmap, slice_count, true /* already zero */);
+  *base = (*base) + size;
+  return (mi_bbitmap_t*)mi_ptr_bounded_data(bbitmap, size);
 }
 
 
@@ -539,16 +560,17 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
   // }
 
   // commit & zero if needed
+  // the arena meta data (aligned page meta of the first area, and the arena info) is between the leading guard slice and the trailing guard page (in secure mode)
+  uint8_t* const meta_start = (uint8_t*)start + _mi_size_of_slices(MI_ARENA_GUARD_SLICES);
+  const size_t meta_size = _mi_size_of_slices(info_slices - MI_ARENA_GUARD_SLICES) - _mi_os_secure_guard_page_size();
   if (!memid.initially_committed) {
-    size_t commit_size = _mi_size_of_slices(info_slices);
-    // leave a guard OS page decommitted at the end?
-    if (!memid.is_pinned) { commit_size -= _mi_os_secure_guard_page_size(); }
+    // leave the guards decommitted
     bool ok = false;
     if (commit_fun != NULL) {
-      ok = (*commit_fun)(true /* commit */, start, commit_size, NULL, commit_fun_arg);
+      ok = (*commit_fun)(true /* commit */, meta_start, meta_size, NULL, commit_fun_arg);
     }
     else {
-      ok = _mi_os_commit(subproc, start, commit_size, NULL);
+      ok = _mi_os_commit(subproc, meta_start, meta_size, NULL);
     }
     if (!ok) {
       _mi_warning_message("unable to commit meta-data for OS memory");
@@ -556,12 +578,12 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
     }
   }
   else if (!memid.is_pinned) {
-    // if MI_SECURE, set a guard page at the end of the arena info
+    // Set guard pages before and after the arena meta data
     // todo: this does not respect the commit_fun as the memid is of external memory
-    _mi_os_secure_guard_page_set_before(subproc, (uint8_t*)start + _mi_size_of_slices(info_slices), memid);
+    _mi_os_secure_guard_pages_set_around(subproc, meta_start, meta_size, memid);
   }
   if (!memid.initially_zero) {
-    mi_memzero(start, _mi_size_of_slices(info_slices) - _mi_os_secure_guard_page_size());
+    mi_memzero(meta_start, meta_size);
   }
 
   // init
@@ -595,7 +617,7 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
     arena->pages_main.pages_abandoned[i] = mi_arena_bitmap_init(slice_count, &base);
   }
   #if MI_PAGE_META_IS_SEPARATED && !MI_PAGE_META_IS_ALIGNED
-  arena->pages_meta = (mi_page_t*)base;
+  arena->pages_meta = (mi_page_t*)mi_ptr_bounded_data(base, slice_count * sizeof(mi_page_t));
   base += (slice_count * sizeof(mi_page_t));
   #else
   arena->pages_meta = NULL;
@@ -616,6 +638,13 @@ static mi_arena_t* mi_arena_initialize(mi_subproc_t* subproc, void* start,
       }
       mi_bbitmap_unsafe_setN(arena->slices_free, start_idx, count);
     }
+    #if MI_ARENA_GUARD_SLICES > 0
+    // guard the page meta data of the other aligned areas (if not committed, the guard slices are never committed)
+    if (i > 0 && start_idx <= arena->slice_count && memid.initially_committed && !memid.is_pinned) {
+      uint8_t* const page_meta_start = (uint8_t*)start + _mi_size_of_slices(i + MI_ARENA_GUARD_SLICES);
+      _mi_os_secure_guard_pages_set_around(subproc, page_meta_start, _mi_size_of_slices(mi_arena_page_meta_aligned_array_slices()), memid);
+    }
+    #endif
   }
   #else
   mi_bbitmap_unsafe_setN(arena->slices_free, info_slices /* start */, arena->slice_count - info_slices);

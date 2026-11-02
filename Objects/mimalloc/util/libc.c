@@ -199,17 +199,17 @@ int _mi_getenv(const char* name, char* result, size_t result_size) {
 // If it returns `true`, the caller should call `_mi_atomic_once_release` after performing the action.
 // Other threads (than the initial thread that entered) will block until `_mi_atomic_once_release` has been called.
 bool _mi_atomic_once_enter(mi_atomic_once_t* once) {
-  const uintptr_t once_tid = mi_atomic_load_acquire(&once->tid);
+  const size_t once_tid = mi_atomic_load_acquire(&once->tid);
   if mi_likely(once_tid == 1) {
     return false; // already executed
   }
-  const mi_threadid_t current_tid = _mi_thread_id();
+  const mi_thread_id_t current_tid = _mi_thread_id();
   if (once_tid == current_tid) {
     return false; // recursive invocation; don't block on ourselves
   }
 
   mi_lock_acquire(&once->lock);
-  uintptr_t expected = 0;
+  size_t expected = 0;
   if (mi_atomic_cas_strong_acq_rel(&once->tid, &expected, current_tid)) {  // could use atomic_load/store as well
     return true;  // should execute and release
   }
@@ -441,7 +441,7 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
         uintmax_t x = 0;
         if (c == 'x' || c == 'u') {
           if (numtype == 'z')       x = va_arg(args, size_t);
-          else if (numtype == 't')  x = va_arg(args, uintptr_t); // unsigned ptrdiff_t
+          else if (numtype == 't')  x = va_arg(args, size_t);   // unsigned ptrdiff_t
           else if (numtype == 'L')  x = va_arg(args, unsigned long long);
           else if (numtype == 'l')  x = va_arg(args, unsigned long);
           else if (numtype == '8')  x = va_arg(args, uint64_t);
@@ -450,13 +450,13 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
         }
         else if (c == 'p') {
           void* const p = va_arg(args, void*);
-          x = (uintptr_t)p;
+          x = mi_addr(p);
           mi_outs("0x", &out, end);
           start = out;
           width = (width >= 2 ? width - 2 : 0);
         }
         if (width == 0 && (c == 'x' || c == 'p')) {
-          if (c == 'p')   { width = 2 * (x <= UINT32_MAX ? 4 : ((x >> 16) <= UINT32_MAX ? 6 : sizeof(void*))); }
+          if (c == 'p')   { width = 2 * (x <= UINT32_MAX ? 4 : ((x >> 16) <= UINT32_MAX ? 6 : sizeof(size_t))); }
           if (width == 0) { width = 2; }
           if (alignright) { fill = '0'; }
         }
@@ -465,7 +465,7 @@ int _mi_vsnprintf(char* buf, size_t bufsize, const char* fmt, va_list args) {
       else if (c == 'i' || c == 'd') {
         // signed
         intmax_t x = 0;
-        if (numtype == 'z')       x = va_arg(args, intptr_t );
+        if (numtype == 'z')       x = va_arg(args, ptrdiff_t);  // signed size_t
         else if (numtype == 't')  x = va_arg(args, ptrdiff_t);
         else if (numtype == 'L')  x = va_arg(args, long long);
         else if (numtype == 'l')  x = va_arg(args, long);

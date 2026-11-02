@@ -248,21 +248,16 @@ static inline bool mi_bitmap_find(mi_bitmap_t* bitmap, size_t tseq, size_t n, si
   note: the compiler will fully inline the indirect function call
 -------------------------------------------------------------------------------- */
 
-typedef struct mi_claim_fun_data_s {
-  mi_arena_t*   arena;
-} mi_claim_fun_data_t;
-
 static bool mi_bitmap_try_find_and_claim_visit(mi_bitmap_t* bitmap, size_t chunk_idx, size_t n, size_t* pidx, void* arg1, void* arg2)
 {
   mi_assert_internal(n==1); MI_UNUSED(n);
   mi_claim_fun_t* claim_fun = (mi_claim_fun_t*)arg1;
-  mi_claim_fun_data_t* claim_data = (mi_claim_fun_data_t*)arg2;
   size_t cidx;
   if mi_likely(mi_bchunk_try_find_and_clear(&bitmap->chunks[chunk_idx], &cidx)) {
     const size_t slice_index = (chunk_idx * MI_BCHUNK_BITS) + cidx;
     mi_assert_internal(slice_index < mi_bitmap_max_bits(bitmap));
     bool keep_set = true;
-    if ((*claim_fun)(slice_index, claim_data->arena, &keep_set)) {
+    if ((*claim_fun)(slice_index, arg2, &keep_set)) {
       // success!
       mi_assert_internal(!keep_set);
       *pidx = slice_index;
@@ -288,10 +283,9 @@ static bool mi_bitmap_try_find_and_claim_visit(mi_bitmap_t* bitmap, size_t chunk
 // Find a set bit in the bitmap and try to atomically clear it and claim it.
 // (Used to find pages in the pages_abandoned bitmaps.)
 mi_decl_nodiscard bool mi_bitmap_try_find_and_claim(mi_bitmap_t* bitmap, size_t tseq, size_t* pidx,
-  mi_claim_fun_t* claim, mi_arena_t* arena )
+  mi_claim_fun_t* claim, void* arg )
 {
-  mi_claim_fun_data_t claim_data = { arena };
-  return mi_bitmap_find(bitmap, tseq, 1, pidx, &mi_bitmap_try_find_and_claim_visit, (void*)claim, &claim_data);
+  return mi_bitmap_find(bitmap, tseq, 1, pidx, &mi_bitmap_try_find_and_claim_visit, (void*)claim, arg);
 }
 
 

@@ -22,8 +22,8 @@ fi
 # the update brings in are good. The tag must be a mimalloc release with a
 # mimalloc-<tag>-source.tar.gz asset; the SHA-256 is listed next to the asset
 # on the GitHub release page.
-expected_mimalloc_tag="v3.6.0"
-expected_mimalloc_sha256="05b45988f07a940831ad156f10b0aeb84805b1f030004488939efe08f718b4c7"
+expected_mimalloc_tag="v3.6.1"
+expected_mimalloc_sha256="7321fbe8e3d2bb447cba127603c44450db0d8ef35e8240bb4a56a7455eba0a68"
 
 objects_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cpython_dir="$(realpath "$objects_dir/../..")"
