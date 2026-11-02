@@ -95,7 +95,11 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
-      <NoEntryPoint>true</NoEntryPoint>
+      <!--
+      The ASan runtime thunks need the CRT to be initialized, so keep the
+      default entry point when building with AddressSanitizer.
+      -->
+      <NoEntryPoint Condition="$(EnableASAN) != 'true'">true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
