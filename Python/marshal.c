@@ -737,9 +737,10 @@ w_tie_set_items(w_set_item *items, Py_ssize_t count, size_t first, WFILE *p)
                remembered it, and it cannot be written again. */
             continue;
         }
-        uintptr_t w = (uintptr_t)entry->value;
-        assert(!(w & (W_ENTRY_ACTIVE | W_ENTRY_TIED)));
-        assert((w >> W_ENTRY_SHIFT) - first < (size_t)count);
+        assert(!((uintptr_t)entry->value & (W_ENTRY_ACTIVE | W_ENTRY_TIED)));
+        assert(
+            ((uintptr_t)entry->value >> W_ENTRY_SHIFT) - first < (size_t)count
+        );
         entry->value = (void *)value;
     }
 }
