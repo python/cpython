@@ -392,8 +392,7 @@ class DirCompareTestCase(unittest.TestCase):
 class DirCmpImplementationTests(unittest.TestCase):
     def setUp(self):
         cm = os_helper.temp_dir()
-        tmpdir = cm.__enter__()
-        self.addCleanup(cm.__exit__, None, None, None)
+        tmpdir = self.enterContext(os_helper.temp_dir())
 
         self.base_test_dir = os.path.join(tmpdir, 'test_filecmp_working_dir')
         os.makedirs(self.base_test_dir, exist_ok=True)
