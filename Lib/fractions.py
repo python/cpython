@@ -402,7 +402,8 @@ class Fraction(numbers.Rational):
         # proved that a rational number is a best upper or lower
         # approximation to x if, and only if, it is a convergent or
         # semiconvergent of the (unique shortest) continued fraction
-        # associated to x.
+        # associated to x.  See e.g. Continued Fractions by A. Ya.
+        # Khinchin (1964), Theorem 15.
         #
         # To find a best rational approximation with denominator <= M,
         # we find the best upper and lower approximations with
