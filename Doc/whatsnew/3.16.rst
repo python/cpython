@@ -1384,6 +1384,9 @@ New features
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
+* Add the :ref:`PyUnicodeWriter API <PyUnicodeWriter>` to the limited C API.
+  (Contributed by Victor Stinner in :gh:`161172`.)
+
 Porting to Python 3.16
 ----------------------
 

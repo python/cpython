@@ -1,0 +1,2 @@
+Add the :ref:`PyUnicodeWriter API <PyUnicodeWriter>` to the limited C API.
+Patch by Victor Stinner.
