@@ -117,11 +117,6 @@ class TestFreeThreading:
         self.assertIsNone(wr())
 
     def test_lingering_task_different_thread_finalized(self) -> None:
-        # When a thread exits with pending tasks, PyThreadState_Clear() moves
-        # them onto interp->asyncio_tasks_head. Unregistering those tasks from
-        # later threads (which may reuse the exited thread's OS thread ID) or
-        # during PyThreadState_Clear() while all_tasks() walks the task lists
-        # must not corrupt the shared list.
         tls = threading.local()
 
         async def never_finishes():
@@ -138,14 +133,12 @@ class TestFreeThreading:
         def worker(batches):
             loop = asyncio.new_event_loop()
             loop.set_task_factory(self.factory)
-            # Tasks held in thread-local storage are cleared by PyThreadState_Clear
-            # after llist_concat moves tstate->asyncio_tasks_head to interp.
+
             tls_tasks = make_pending_tasks(loop, 8)
             for task in tls_tasks:
                 task.get_coro().close()
             tls.tasks = tls_tasks
-            # Tasks returned in batches stay alive until a subsequent worker
-            # thread (often reusing this thread's OS thread ID) unregisters them.
+
             batches.append((loop, make_pending_tasks(loop, 8)))
 
         stop = threading.Event()
