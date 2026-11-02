@@ -431,7 +431,9 @@ locks, critical sections or atomic operations in an extension.
    operations is synchronized internally, so the program is free of data races
    even though it loses updates.
 
-To use it, build a free-threaded interpreter with TSan enabled::
+To use it, build a free-threaded interpreter with TSan enabled:
+
+.. code-block:: shell
 
     ./configure --disable-gil --with-thread-sanitizer --with-pydebug
     make
@@ -452,7 +454,9 @@ checked.
 Then run your tests with the TSan interpreter, using several threads that
 exercise the same objects.  When a race is found, TSan prints the conflicting
 accesses with stack traces and a summary line.  For example, for an extension
-function that increments a global variable without synchronization::
+function that increments a global variable without synchronization:
+
+.. code-block:: none
 
     WARNING: ThreadSanitizer: data race (pid=36446)
       Write of size 8 at 0x00010f1f8108 by thread T2:
