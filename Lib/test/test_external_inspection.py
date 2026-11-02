@@ -2041,29 +2041,25 @@ while True:
                 except RuntimeError:
                     continue
                 break
-
-            def sample_names():
+            # The unwinder can attach before the main loop starts.
+            _get_stack_trace_with_retry(
+                unwinder,
+                condition=lambda trace: trace[0].threads and any(
+                    frame.funcname == "leaf"
+                    for frame in trace[0].threads[0].frame_info
+                ),
+            )
+            samples = 0
+            for _ in range(10_000):
                 try:
                     threads = unwinder.get_stack_trace()[0].threads
                 except TRANSIENT_ERRORS:
-                    return None
+                    continue
                 if not threads:
-                    return None
-                names = [frame.funcname for frame in threads[0].frame_info]
+                    continue
+                frames = threads[0].frame_info
+                names = [frame.funcname for frame in frames]
                 if "leaf" not in names:
-                    return None
-                return names
-
-            # Wait until the target is running leaf(): the unwinder can
-            # attach before the main loop starts on slow builds.
-            for _ in busy_retry(SHORT_TIMEOUT):
-                if sample_names() is not None:
-                    break
-
-            samples = 0
-            for _ in range(10_000):
-                names = sample_names()
-                if names is None:
                     continue
                 samples += 1
                 self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
