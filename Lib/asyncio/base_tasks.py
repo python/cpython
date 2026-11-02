@@ -42,8 +42,12 @@ def _task_get_stack(task, limit):
     elif hasattr(task._coro, 'ag_frame'):
         # case 3: async generators
         f = task._coro.ag_frame
+    # gh-161178: async gens should not be missed
+    elif not task.done() and hasattr(task._coro, 'aga_gen'):
+        # case 4: pending async generator operations
+        f = task._coro.aga_gen.ag_frame
     else:
-        # case 4: unknown objects
+        # case 5: unknown objects
         f = None
     if f is not None:
         while f is not None:
