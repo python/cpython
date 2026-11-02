@@ -1,0 +1,3 @@
+:func:`imaplib.Time2Internaldate` now raises :exc:`ValueError` instead of
+:exc:`IndexError` when passed an empty string, consistent with its documented
+behaviour for strings that are not of a known type.
