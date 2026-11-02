@@ -213,9 +213,9 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(queue._getters), 0)
 
-    async def test_get_can_break_fifo_order_with_pending_getters(self):
+    async def test_get_item_when_exists_a_woken_getter(self):
         # See gh-83055, prevents inappropriate get items because of
-        # pending getters or a woken getter.
+        # a woken getter.
         async def _get(q, results):
             item = await q.get()
             results.append(item)
@@ -228,41 +228,45 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
         for _ in range(g):
             asyncio.create_task(_get(q, results))
         await asyncio.sleep(0.0)
+        # queue Full: 0 item in queue, 3 tasks into the _getters, 0 woken getter
+        self.assertEqual(q.qsize(), 0)
+        self.assertEqual(len(q._getters), g)
+        self.assertEqual(q._woken_getter, 0)
 
         await q.put(n:=n+1)
         g -= 1
-
-        # queue Empty: 1 item in queue, 2 tasks into the _getters, 1 woken getter
-        self.assertEqual(len(q._getters), g)
+        # queue Full: 1 item in queue, 2 tasks into the _getters, 1 woken getter
         self.assertEqual(q.qsize(), maxsize)
-        self.assertTrue(q._woken_getter)
+        self.assertEqual(len(q._getters), g)
+        self.assertEqual(q._woken_getter, 1)
 
         await q.put(n:=n+1)
         g -= 1
-
-        # queue full: 1 item in queue, 2 task into the _getters,
+        # queue full: 1 item in queue, 1 task into the _getters,
         # 1 item in transit
+        self.assertEqual(q.qsize(), maxsize)
         self.assertEqual(len(q._getters), g)
-        self.assertEqual(q.qsize(), 1)
-        self.assertTrue(q._woken_getter)
+        self.assertEqual(q._woken_getter, 1)
 
-        with self.assertRaises(asyncio.QueueWithPendingTasks):
+        msg = "At least a woken getter task is waiting"
+        with self.assertRaisesRegex(asyncio.QueueEmpty, expected_regex=msg):
             await q.get()
 
         await q.put(n:=n+1)
         g -= 1
         # queue full: 1 item in queue, 0 item waiting into the _getters,
         # 1 item in transit
-        with self.assertRaises(asyncio.QueueWithPendingTasks):
+        with self.assertRaisesRegex(asyncio.QueueEmpty, expected_regex=msg):
             q.get_nowait()
 
+        self.assertEqual(q.qsize(), maxsize)
         self.assertEqual(len(q._getters), 0)
-        self.assertEqual(q.qsize(), 1)
-        self.assertTrue(q._woken_getter)
+        self.assertEqual(q._woken_getter, 1)
 
         # This is the end
         await asyncio.sleep(0.0)
         self.assertListEqual(results, list(range(1, n+1)))
+        self.assertEqual(q._woken_getter, 0)
         self.assertTrue(q.empty())
 
 
@@ -485,7 +489,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_put_can_break_fifo_order_with_pending_putters(self):
         # See gh-83055, prevents inappropriate get items because of
-        # pending getters or a woken getter.
+        # a woken getter. Can break the FIFO order of the queue.
         maxsize = 1
         q = asyncio.Queue(maxsize)
         n = 3
@@ -496,20 +500,23 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         g = n
 
         # Queue full: 1 item in queue, 2 items waiting into the _putters
+        self.assertEqual(q.qsize(), maxsize)
         self.assertEqual(len(q._putters), g-maxsize)
-        self.assertFalse(q._woken_putter)
+        self.assertEqual(q._woken_putter, 0)
 
         item = await q.get()
         results.append(item)
         g -= 1
         # queue empty: 0 item in queue, 1 item into the _putters,
         # 1 item in transit
+        self.assertEqual(q.qsize(), 0)
         self.assertEqual(len(q._putters), g-maxsize)
-        self.assertTrue(q._woken_putter)
+        self.assertEqual(q._woken_putter, 1)
 
         # queue is empty, but put_nowait fails,
         self.assertTrue(q.empty())
-        with self.assertRaises(asyncio.QueueWithPendingTasks):
+        msg = 'At least a woken putter task is waiting'
+        with self.assertRaisesRegex(asyncio.QueueFull, expected_regex=msg):
             q.put_nowait(n+1)
 
         # get an another item
@@ -519,12 +526,13 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
         # Queue empty: 0 item in queue, 0 item into the _putters,
         # 1 item in transit
+        self.assertEqual(q.qsize(), 0)
         self.assertEqual(len(q._putters), g-maxsize)
-        self.assertTrue(q._woken_putter)
+        self.assertEqual(q._woken_putter, 1)
 
         # queue is empty, but put fails,
         self.assertTrue(q.empty())
-        with self.assertRaises(asyncio.QueueWithPendingTasks):
+        with self.assertRaisesRegex(asyncio.QueueFull, expected_regex=msg):
             await q.put(n+1)
 
         # get an another item
@@ -534,8 +542,9 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         g -= 1
         # Queue empty: 0 item in queue, 0 item into the _putters,
         # 0 item in transit
+        self.assertEqual(q.qsize(), 0)
         self.assertEqual(len(q._putters), 0)
-        self.assertFalse(q._woken_putter)
+        self.assertEqual(q._woken_putter, 0)
 
         # This is the end
         self.assertListEqual(results, list(range(1, n+1)))
