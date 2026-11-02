@@ -585,18 +585,15 @@ static int
 e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     double x;
-    char buf[sizeof(short)];
     if (!PyArg_Parse(v, "d;array item must be float", &x)) {
-        return -1;
-    }
-    if (PyFloat_Pack2(x, buf, PY_LITTLE_ENDIAN) < 0) {
         return -1;
     }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        memcpy(ap->ob_item + sizeof(short)*i, buf, sizeof(buf));
+        return PyFloat_Pack2(x, ap->ob_item + sizeof(short)*i,
+                             PY_LITTLE_ENDIAN);
     }
     return 0;
 }
@@ -611,17 +608,14 @@ static int
 f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     double x;
-    char buf[sizeof(float)];
     if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
-    if (PyFloat_Pack4(x, buf, PY_LITTLE_ENDIAN) < 0) {
-        return -1;
-    }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        memcpy(ap->ob_item + sizeof(float)*i, buf, sizeof(buf));
+        return PyFloat_Pack4(x, ap->ob_item + sizeof(float)*i,
+                             PY_LITTLE_ENDIAN);
     }
     return 0;
 }
@@ -659,21 +653,25 @@ static int
 cf_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
     Py_complex x;
-    char f[8];
 
     if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
-        return -1;
-    }
-    if (PyFloat_Pack4(x.real, f, PY_LITTLE_ENDIAN) < 0
-        || PyFloat_Pack4(x.imag, f + sizeof(float), PY_LITTLE_ENDIAN) < 0)
-    {
         return -1;
     }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0) {
-        memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
+        char f[8];
+        int ret = PyFloat_Pack4(x.real, f, PY_LITTLE_ENDIAN);
+
+        if (ret) {
+            return ret;
+        }
+        ret = PyFloat_Pack4(x.imag, f + sizeof(float), PY_LITTLE_ENDIAN);
+        if (!ret) {
+            memcpy(ap->ob_item + i*sizeof(f), &f, sizeof(f));
+        }
+        return ret;
     }
     return 0;
 }
@@ -825,6 +823,8 @@ getarrayitem(PyObject *op, Py_ssize_t i)
     return (*ap->ob_descr->getitem)(ap, i);
 }
 
+static int array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh);
+
 static int
 ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 {
@@ -834,8 +834,6 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
-    if ((*self->ob_descr->setitem)(self, -1, v) < 0)
-        return -1;
 
     if (array_resize(self, n+1) == -1)
         return -1;
@@ -852,7 +850,11 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
         memmove(items + (where+1)*self->ob_descr->itemsize,
             items + where*self->ob_descr->itemsize,
             (n-where)*self->ob_descr->itemsize);
-    return (*self->ob_descr->setitem)(self, where, v);
+    if ((*self->ob_descr->setitem)(self, where, v) < 0) {
+        array_del_slice(self, where, where+1);
+        return -1;
+    }
+    return 0;
 }
 
 /* Methods */
