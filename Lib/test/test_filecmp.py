@@ -535,7 +535,7 @@ class DirCmpImplementationTests(unittest.TestCase):
 
             with support.captured_stdout() as mock_stdout:
                 dc.report()
-            
+
         output = mock_stdout.getvalue()
         self.assertIn("Common funny cases", output)
         self.assertIn("Trouble with common files", output)
