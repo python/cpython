@@ -1,2 +1,0 @@
-Avoid a crash when a :class:`queue.SimpleQueue` subclass finalizer adds an
-item after construction fails.

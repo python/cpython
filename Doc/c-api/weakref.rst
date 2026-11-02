@@ -106,7 +106,7 @@ as much as it can.
    This function is intended for internal use only. Do not access or modify
    the weak reference list through the returned pointer.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15.2
 
 
 .. c:function:: void PyUnstable_Object_ClearWeakRefsNoCallbacks(PyObject *object)

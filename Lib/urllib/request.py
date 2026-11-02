@@ -1093,7 +1093,11 @@ class AbstractDigestAuthHandler:
             # prompting for the information. Crap. This isn't great
             # but it's better than the current 'repeat until recursion
             # depth exceeded' approach <wink>
-            raise HTTPError(req.full_url, 401, "digest auth failed",
+            if auth_header.lower() == 'proxy-authenticate':
+                code = 407
+            else:
+                code = 401
+            raise HTTPError(req.full_url, code, "digest auth failed",
                             headers, None)
         else:
             self.retried += 1
@@ -1144,7 +1148,13 @@ class AbstractDigestAuthHandler:
         if H is None:
             return None
 
-        user, pw = self.passwd.find_user_password(realm, req.full_url)
+        # proxy auth is looked up by the proxy's authority
+        # req.host, set by Request.set_proxy()
+        if self.auth_header == 'Proxy-Authorization':
+            authority = req.host
+        else:
+            authority = req.full_url
+        user, pw = self.passwd.find_user_password(realm, authority)
         if user is None:
             return None
 
@@ -1154,10 +1164,15 @@ class AbstractDigestAuthHandler:
         else:
             entdig = None
 
+        # The digest-uri is the request-target as sent on the request line:
+        # the path, or the absolute URL when the request goes through an
+        # HTTP proxy.  RFC 7616, Section 3.4 allows both.  An empty path is
+        # sent as '/' by http.client, so use the same here.
+
+        uri = req.selector or '/'
+
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.get_method(),
-                        # XXX selector: what about proxies and full urls
-                        req.selector)
+        A2 = "%s:%s" % (req.get_method(), uri)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
         if qop is None:
@@ -1179,8 +1194,7 @@ class AbstractDigestAuthHandler:
         # XXX should the partial digests be encoded too?
 
         base = 'username="%s", realm="%s", nonce="%s", uri="%s", ' \
-               'response="%s"' % (user, realm, nonce, req.selector,
-                                  respdig)
+               'response="%s"' % (user, realm, nonce, uri, respdig)
         if opaque:
             base += ', opaque="%s"' % opaque
         if entdig:

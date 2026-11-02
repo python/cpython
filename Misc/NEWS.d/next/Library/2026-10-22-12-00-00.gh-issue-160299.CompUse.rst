@@ -1,2 +1,0 @@
-Fix :meth:`symtable.Symbol.is_referenced` for local and nonlocal symbols in
-function scopes when their only uses are in inlined comprehensions.

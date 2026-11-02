@@ -703,9 +703,9 @@ For example, here is a set of lowercase letters::
 At run time, this corresponds roughly to calling this function::
 
    def make_lowercase_set(iterable):
-       result = set(iterable)
+       result = set()
        for x in iterable:
-           result.append(x.lower())
+           result.add(x.lower())
        return result
 
    make_lowercase_set(['a', 'A', 'b', 'C'])
@@ -726,7 +726,7 @@ At run time, this corresponds roughly to::
            result[func.__name__] = func
        return result
 
-   iterable([print, hex, any])
+   make_dict_mapping_names_to_functions([print, hex, any])
 
 As in other kinds of dictionary displays, the same key may be specified
 multiple times.

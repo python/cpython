@@ -1,2 +1,0 @@
-Fix a crash when a :mod:`ctypes` structure subclass cannot be created due
-to an allocation failure.

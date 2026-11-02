@@ -1,2 +1,0 @@
-Fix a crash in free-threaded builds when :func:`codecs.unregister` is
-called concurrently.

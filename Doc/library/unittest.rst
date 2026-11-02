@@ -994,7 +994,7 @@ Test cases
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
-   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
+   | <TestCase.assertNoLogs>`                                | *logger* with minimum *level*        |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)

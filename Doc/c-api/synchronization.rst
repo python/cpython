@@ -269,7 +269,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    A :term:`soft deprecated` alias to :c:expr:`long long`, the integer
    type used for the timeout argument of :c:func:`PyThread_acquire_lock_timed`.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15.2
 
 .. c:var:: const long long PY_TIMEOUT_MAX
 

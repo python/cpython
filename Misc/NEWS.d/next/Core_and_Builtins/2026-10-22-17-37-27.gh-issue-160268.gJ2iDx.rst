@@ -1,3 +1,0 @@
-Fix a crash in :mod:`tokenize` when a mismatched closing bracket follows the
-opening brace of an f-string or t-string replacement field, as in ``f'{]a'``.
-It now raises the same "unmatched" error as the parser.

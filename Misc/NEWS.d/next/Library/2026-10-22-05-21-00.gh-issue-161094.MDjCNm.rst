@@ -1,0 +1,4 @@
+Fix :func:`zipfile.is_zipfile` raising :exc:`ValueError` instead of returning
+``False`` for a file-like object, such as :class:`io.BytesIO`, whose end of
+central directory record places the central directory before the start of the
+file.

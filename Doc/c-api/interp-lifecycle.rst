@@ -51,7 +51,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetVersion`
-  * :c:func:`Py_IsInitialized`
 
 * Utilities:
 
@@ -762,7 +761,7 @@ deleted. This can be done using interpreter views.
 
    An opaque view of an interpreter.
 
-   This is a thread-safe way to access an interpreter that may have be
+   This is a thread-safe way to access an interpreter that may be
    finalizing or already destroyed.
 
    .. versionadded:: 3.15

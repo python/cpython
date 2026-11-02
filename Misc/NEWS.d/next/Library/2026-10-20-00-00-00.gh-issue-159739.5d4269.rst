@@ -1,1 +1,0 @@
-Fix a double free if remote unwinder initialization runs out of memory.

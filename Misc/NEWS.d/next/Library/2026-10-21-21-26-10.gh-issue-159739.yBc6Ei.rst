@@ -1,1 +1,0 @@
-Fix a possible crash in :class:`abc.ABCMeta` instance checks when a subclass-checking callback changes the instance’s class.

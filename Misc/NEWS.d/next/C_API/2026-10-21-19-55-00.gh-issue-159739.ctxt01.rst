@@ -1,2 +1,0 @@
-Avoid a crash if a context watcher is cleared while other context watchers
-are being notified.
