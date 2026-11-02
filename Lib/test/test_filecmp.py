@@ -427,6 +427,9 @@ class DirCmpImplementationTests(unittest.TestCase):
         Path(self.dir_diff, 'file2').write_text('An extra file.\n')
         Path(self.dir_diff_file, 'file2').write_text('Different contents.\n')
 
+    def tearDown(self):
+        filecmp.clear_cache()
+
     # Test dircmp behavior when os.stat raises OSError on specific files.
     # Structure contains 'error_trigger_file.txt' in both directories.
     def test_dircmp_os_errors_in_processing(self):
