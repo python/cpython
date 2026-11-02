@@ -269,7 +269,7 @@ Decompression objects support the following methods and attributes:
 .. method:: Decompress.decompress(data, /, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
-   corresponding to at least part of the data in *string*.  This data should be
+   corresponding to at least part of *data*.  This data should be
    concatenated to the output produced by any preceding calls to the
    :meth:`decompress` method.  Some of the input data may be preserved in internal
    buffers for later processing.
