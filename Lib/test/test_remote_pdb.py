@@ -835,6 +835,41 @@ class PdbClientTestCase(unittest.TestCase):
         )
 
 
+@requires_subprocess()
+class SignalListenerTestCase(unittest.TestCase):
+    def test_interrupt_socket_is_not_half_closed(self):
+        # gh-160683: half-closing leaves the connection in FIN_WAIT_2, which
+        # Windows tears down after 120 seconds, so a session that has been
+        # idle that long loses its interrupt channel.
+        # The listener thread is kept alive by an atexit callback and cannot be
+        # joined, so start it in a subprocess to leave this interpreter's
+        # thread bookkeeping untouched.
+        with closing(socket.socket()) as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen(1)
+            listener.settimeout(SHORT_TIMEOUT)
+            code = textwrap.dedent(f"""
+                import sys
+                from pdb import _PdbServer
+
+                _PdbServer._start_signal_listener({listener.getsockname()})
+                sys.stdin.read()
+            """)
+            with subprocess.Popen(
+                [sys.executable, "-c", code], stdin=subprocess.PIPE
+            ) as process:
+                with closing(listener.accept()[0]) as conn:
+                    conn.settimeout(1.0)
+                    try:
+                        data = conn.recv(1024)
+                    except TimeoutError:
+                        pass
+                    else:
+                        self.fail(
+                            f"interrupt socket returned {data!r} instead of staying open"
+                        )
+
+
 class RemotePdbTestCase(unittest.TestCase):
     """Tests for the _PdbServer class."""
 
