@@ -2041,6 +2041,14 @@ while True:
                 except RuntimeError:
                     continue
                 break
+            # The unwinder can attach before the main loop starts.
+            _get_stack_trace_with_retry(
+                unwinder,
+                condition=lambda trace: trace[0].threads and any(
+                    frame.funcname == "leaf"
+                    for frame in trace[0].threads[0].frame_info
+                ),
+            )
             samples = 0
             for _ in range(10_000):
                 try:
