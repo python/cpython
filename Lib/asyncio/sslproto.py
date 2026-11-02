@@ -115,7 +115,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
             self._closed = True
             self._ssl_protocol._start_shutdown()
         else:
-            self._ssl_protocol = None
+            self._ssl_protocol._release_ssl()
 
     def __del__(self, _warnings=warnings):
         if not self._closed:
@@ -326,6 +326,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._outgoing = ssl.MemoryBIO()
         self._state = SSLProtocolState.UNWRAPPED
         self._conn_lost = 0  # Set when connection_lost called
+        self._ssl_release_pending = False
         if call_connection_made:
             self._app_state = AppProtocolState.STATE_INIT
         else:
@@ -382,6 +383,20 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._app_transport_created = True
         return self._app_transport
 
+    def _release_ssl(self):
+        # Called when the app closes an already closed transport.  The app
+        # transport can outlive the connection, e.g. when the app protocol
+        # keeps a reference to it, so it should not keep the SSL object and
+        # context alive.  The shutdown still needs them until the connection
+        # is lost.
+        if self._transport is not None or not self._conn_lost:
+            self._ssl_release_pending = True
+            return
+        self._sslobj = None
+        self._sslcontext = None
+        self._extra.pop('ssl_object', None)
+        self._extra.pop('sslcontext', None)
+
     def _is_transport_closing(self):
         return self._transport is not None and self._transport.is_closing()
 
@@ -430,6 +445,8 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._handshake_timeout_handle:
             self._handshake_timeout_handle.cancel()
             self._handshake_timeout_handle = None
+        if self._ssl_release_pending:
+            self._release_ssl()
 
     def get_buffer(self, n):
         want = n

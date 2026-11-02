@@ -289,6 +289,48 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # should not raise
         self.assertIsNone(transp.write(b'data'))
 
+    def test_close_after_connection_lost(self):
+        # gh-160964: closing the transport after the connection is lost,
+        # e.g. from the app's connection_lost(), must keep it usable but
+        # release the SSL object and context.
+        ssl_proto = self.ssl_protocol()
+        self.connection_made(ssl_proto)
+        transp = ssl_proto._app_transport
+        self.assertIsNotNone(transp.get_extra_info('ssl_object'))
+        self.assertIsNotNone(transp.get_extra_info('sslcontext'))
+        ssl_proto.connection_lost(None)
+        transp.close()
+
+        self.assertIsNone(ssl_proto._sslobj)
+        self.assertIsNone(ssl_proto._sslcontext)
+        self.assertIsNone(transp.get_extra_info('ssl_object'))
+        self.assertIsNone(transp.get_extra_info('sslcontext'))
+        # should not raise
+        self.assertTrue(transp.is_closing())
+        self.assertIsNone(transp.write(b'data'))
+        self.assertEqual(transp.get_write_buffer_size(), 0)
+        new_app_proto = asyncio.Protocol()
+        transp.set_protocol(new_app_proto)
+        self.assertIs(transp.get_protocol(), new_app_proto)
+        transp.close()
+
+    def test_close_twice_during_shutdown(self):
+        # The shutdown still needs the SSL object: it is released only once
+        # the connection is lost.
+        ssl_proto = self.ssl_protocol()
+        self.connection_made(ssl_proto)
+        transp = ssl_proto._app_transport
+        transp.close()
+        transp.close()
+        self.assertIsNotNone(ssl_proto._sslobj)
+        self.assertIsNotNone(transp.get_extra_info('ssl_object'))
+
+        ssl_proto.connection_lost(None)
+        self.assertIsNone(ssl_proto._sslobj)
+        self.assertIsNone(ssl_proto._sslcontext)
+        self.assertIsNone(transp.get_extra_info('ssl_object'))
+        self.assertIsNone(transp.get_extra_info('sslcontext'))
+
     def test_pause_reading_if_ssl_replies_are_not_read(self):
         # Output which OpenSSL produces on its own while reading (alerts,
         # KeyUpdate, ...) must not pile up if the peer does not read it.
