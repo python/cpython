@@ -1,2 +1,0 @@
-Fix a rare flakiness in ``test_staggered_race_with_eager_tasks`` in
-``test_asyncio``.
