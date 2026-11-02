@@ -68,6 +68,7 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
+    // thread id of the thread where this task was created
     uint64_t task_tstate_id;
 #endif
 } TaskObj;
@@ -2207,10 +2208,14 @@ unregister_task(TaskObj *task)
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
+    // check if we are in the same thread
+    // if so, we can avoid locking
     if (task->task_tstate_id == tstate->id && !tstate->_status.finalizing) {
         unregister_task_safe(task);
     }
     else {
+        // we are in a different thread
+        // stop the world then check and remove the task
         _PyEval_StopTheWorld(tstate->interp);
         unregister_task_safe(task);
         _PyEval_StartTheWorld(tstate->interp);
