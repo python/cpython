@@ -1,1 +1,0 @@
-Use Sphinx 9.1.1 to build the Python documentation.
