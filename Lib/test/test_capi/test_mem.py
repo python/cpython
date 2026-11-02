@@ -1,3 +1,4 @@
+import os
 import re
 import textwrap
 import unittest
@@ -188,10 +189,12 @@ class PyMemDefaultTests(PyMemDebugTests):
                      'need address sanitizer')
 class AddressSanitizerTests(unittest.TestCase):
     def test_buffer_overflow(self):
+        asan_options = os.environ.get('ASAN_OPTIONS', '')
         with support.SuppressCrashReport():
             out = assert_python_failure(
                 '-c', 'import _testcapi; _testcapi.pymem_buffer_overflow()',
                 PYTHONMALLOC='malloc',
+                ASAN_OPTIONS=f'{asan_options}:log_path=stderr',
             )
         self.assertIn(b'AddressSanitizer', out.err)
 

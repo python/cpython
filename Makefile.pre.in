@@ -25,6 +25,13 @@ MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
+# Objects and libraries of the bootstrap modules (Modules/Setup.bootstrap)
+# only. These are the only static modules linked into the build helper
+# programs (Programs/_freeze_module, _bootstrap_python), so that other
+# builtin modules (Modules/Setup.local, MODULE_BUILDTYPE=static) may depend
+# on products of those helpers (frozen modules, getpath).
+BOOTSTRAP_MODOBJS= _BOOTSTRAP_MODOBJS_
+BOOTSTRAP_MODLIBS= _BOOTSTRAP_MODLIBS_
 
 # === Variables set by configure
 VERSION=	@VERSION@
@@ -50,6 +57,7 @@ GITBRANCH=	@GITBRANCH@
 PGO_PROF_GEN_FLAG=@PGO_PROF_GEN_FLAG@
 PGO_PROF_USE_FLAG=@PGO_PROF_USE_FLAG@
 LLVM_PROF_MERGER=@LLVM_PROF_MERGER@
+LLVM_PROF_SHOW=@LLVM_PROF_SHOW@
 LLVM_PROF_FILE=@LLVM_PROF_FILE@
 LLVM_PROF_ERR=@LLVM_PROF_ERR@
 DTRACE=         @DTRACE@
@@ -217,6 +225,12 @@ IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 BUILD_DETAILS=@BUILD_DETAILS@
 
+# visionOS Deployment target is *actually* used during the build, by the
+# compiler shims; export.
+XROS_DEPLOYMENT_TARGET=@XROS_DEPLOYMENT_TARGET@
+@EXPORT_XROS_DEPLOYMENT_TARGET@export XROS_DEPLOYMENT_TARGET
+
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 
@@ -352,10 +366,13 @@ COVERAGE_REPORT_OPTIONS=--rc lcov_branch_coverage=1 --branch-coverage --title "C
 
 ##########################################################################
 # Modules
-MODULE_OBJS=	\
-		Modules/config.o \
+MODULE_OBJS_COMMON=	\
 		Modules/main.o \
 		Modules/gcmodule.o
+
+MODULE_OBJS=	\
+		Modules/config.o \
+		$(MODULE_OBJS_COMMON)
 
 IO_H=		Modules/_io/_iomodule.h
 
@@ -375,6 +392,7 @@ IO_OBJS=	\
 MIMALLOC_HEADERS= \
 	$(srcdir)/Include/internal/pycore_mimalloc.h \
 	$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc-stats.h \
 	$(srcdir)/Include/internal/mimalloc/mimalloc/atomic.h \
 	$(srcdir)/Include/internal/mimalloc/mimalloc/internal.h \
 	$(srcdir)/Include/internal/mimalloc/mimalloc/prim.h \
@@ -390,6 +408,7 @@ PEGEN_OBJS=		\
 		Parser/pegen_errors.o \
 		Parser/action_helpers.o \
 		Parser/parser.o \
+		Parser/parser_invalid.o \
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
@@ -434,6 +453,7 @@ PARSER_HEADERS= \
 
 PYTHON_OBJS=	\
 		Python/_contextvars.o \
+		Python/_strptime.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
@@ -604,6 +624,19 @@ LIBRARY_OBJS=	\
 		Modules/getpath.o \
 		Python/frozen.o
 
+# objects that get linked into the build helper programs
+# (Programs/_freeze_module, _bootstrap_python): the core, plus the bootstrap
+# modules only (see BOOTSTRAP_MODOBJS). Does not include frozen modules nor
+# getpath, which the helpers are used to build.
+BOOTSTRAP_LIBRARY_OBJS=	\
+		Modules/getbuildinfo_bootstrap.o \
+		$(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		Modules/config_bootstrap.o \
+		$(MODULE_OBJS_COMMON) \
+		$(BOOTSTRAP_MODOBJS)
+
 LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 
 ##########################################################################
@@ -618,6 +651,7 @@ DTRACE_DEPS = \
 # pyexpat's expat library
 
 LIBEXPAT_OBJS= \
+		Modules/expat/xcs.o \
 		Modules/expat/xmlparse.o \
 		Modules/expat/xmlrole.o \
 		Modules/expat/xmltok.o
@@ -638,7 +672,7 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/pyexpatns.h \
 		Modules/expat/siphash.h \
 		Modules/expat/utf8tab.h \
-		Modules/expat/xcsinc.c \
+		Modules/expat/xcs.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h \
@@ -848,6 +882,7 @@ profile-run-stamp:
 	@ # FIXME: can't run for a cross build
 	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
+	$(LLVM_PROF_SHOW)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
@@ -969,9 +1004,12 @@ clinic: check-clean-src
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
+# Objects linked into the interpreter only, not into libpython.
+PLATFORM_MAIN_OBJS=	@PLATFORM_MAIN_OBJS@
+
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+$(BUILDPYTHON):	Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -1015,7 +1053,7 @@ libpython3.so:	libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
@@ -1049,7 +1087,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
 		-current_version $(VERSION) \
-		-framework CoreFoundation $(LIBS);
+		-framework CoreFoundation $(MODLIBS) $(LIBS);
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
@@ -1070,7 +1108,7 @@ $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
 		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
 		-current_version $(VERSION) \
-		-framework CoreFoundation $(LIBS);
+		-framework CoreFoundation $(MODLIBS) $(LIBS);
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(PYTHONFRAMEWORKDIR)/Info.plist
 
 # This rule builds the Cygwin Python DLL and import library if configured
@@ -1117,6 +1155,20 @@ web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
 	fi
 	cp python.mjs web_example/python.mjs
 	cp python.wasm web_example/python.wasm
+
+WEB_EMBED_TEST_DIR=$(EMSCRIPTEN_DIR)/web_embed_test
+
+# Linked like an embedder would: against libpython.a, without $(LINKFORSHARED)
+# and so without -sMAIN_MODULE or the interpreter's -sEXPORTED_FUNCTIONS.
+web_embed_test/main.js: $(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(ZIP_STDLIB)
+	@mkdir -p web_embed_test
+	$(LINKCC) $(PY_STDMODULE_CFLAGS) $(PY_CORE_EXE_LDFLAGS) -O2 -g0 -o $@ \
+		$(WEB_EMBED_TEST_DIR)/main.c $(LIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) \
+		-sALLOW_MEMORY_GROWTH -sSTACK_SIZE=5MB \
+		--preload-file $(ZIP_STDLIB)@/lib/stdlib.zip
+
+.PHONY: web_embed_test
+web_embed_test: web_embed_test/main.js
 
 .PHONY: web_example
 web_example: web_example/python.mjs web_example/python.worker.mjs web_example/index.html web_example/server.py web_example/$(ZIP_STDLIB)
@@ -1451,6 +1503,9 @@ PYTHON_HEADERS= \
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
+Modules/expat/xcs.o: $(srcdir)/Modules/expat/xcs.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xcs.c
+
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
 
@@ -1581,7 +1636,7 @@ Modules/Setup.bootstrap: $(srcdir)/Modules/Setup.bootstrap.in config.status
 Modules/Setup.stdlib: $(srcdir)/Modules/Setup.stdlib.in config.status
 	./config.status $@
 
-Makefile Modules/config.c: Makefile.pre \
+Makefile Modules/config.c Modules/config_bootstrap.c: Makefile.pre \
 				$(srcdir)/Modules/config.c.in \
 				$(MAKESETUP) \
 				$(srcdir)/Modules/Setup \
@@ -1592,9 +1647,9 @@ Makefile Modules/config.c: Makefile.pre \
 				-s Modules \
 				Modules/Setup.local \
 				Modules/Setup.stdlib \
-				Modules/Setup.bootstrap \
+				-b Modules/Setup.bootstrap \
 				$(srcdir)/Modules/Setup
-	@mv config.c Modules
+	@mv config.c config_bootstrap.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
 .PHONY: regen-test-frozenmain
@@ -1615,8 +1670,8 @@ regen-re: $(BUILDPYTHON)
 	# using Tools/build/generate_re_casefix.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
-Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_testembed: Programs/_testembed.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_DEPS)
+	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run Programs/_freeze_module.py
@@ -1629,9 +1684,9 @@ BOOTSTRAP_HEADERS = \
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
-_bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(LIBRARY_OBJS_OMIT_FROZEN) \
-		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(MODLIBS) $(SYSLIBS)
+_bootstrap_python: $(BOOTSTRAP_LIBRARY_OBJS) Programs/_bootstrap_python.o Modules/getpath.o Modules/Setup.local
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ $(BOOTSTRAP_LIBRARY_OBJS) \
+		Programs/_bootstrap_python.o Modules/getpath.o $(LIBS) $(BOOTSTRAP_MODLIBS) $(SYSLIBS)
 	# Dummy pybuilddir.txt  is needed for _bootstrap_python to be runnable
 	@echo "none" > ./pybuilddir.txt
 
@@ -1649,6 +1704,9 @@ _bootstrap_python: $(LIBRARY_OBJS_OMIT_FROZEN) Programs/_bootstrap_python.o Modu
 #
 # Standard build process:
 # 1) compile minimal core objects for Py_Compile*() and PyMarshal_Write*().
+#    Only the bootstrap modules (Modules/Setup.bootstrap) are part of these
+#    objects (see BOOTSTRAP_LIBRARY_OBJS), so other builtin modules may
+#    depend on the output of the following steps.
 # 2) build Programs/_freeze_module binary.
 # 3) create frozen module headers for importlib and getpath.
 # 4) build _bootstrap_python binary.
@@ -1721,8 +1779,8 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
-Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(BOOTSTRAP_LIBRARY_OBJS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(BOOTSTRAP_LIBRARY_OBJS) $(LIBS) $(BOOTSTRAP_MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
@@ -1875,11 +1933,24 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(DTRACE_OBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	$(CC) -c $(PY_CORE_CFLAGS) $(GETBUILDINFO_CFLAGS) \
+	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+
+# Separate object for the build helper programs: it must not depend on
+# $(MODOBJS), which may in turn depend on the helpers' output.
+Modules/getbuildinfo_bootstrap.o: $(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		$(MODULE_OBJS_COMMON) \
+		$(BOOTSTRAP_MODOBJS) \
+		$(srcdir)/Modules/getbuildinfo.c
+	$(CC) -c $(PY_CORE_CFLAGS) $(GETBUILDINFO_CFLAGS) \
+	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+
+GETBUILDINFO_CFLAGS= \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
 	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
-	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
-	      -o $@ $(srcdir)/Modules/getbuildinfo.c
+	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\""
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
@@ -1956,6 +2027,7 @@ regen-pegen:
 		$(srcdir)/Grammar/Tokens \
 		-o $(srcdir)/Parser/parser.c.new
 	$(UPDATE_FILE) --create $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) --create $(srcdir)/Parser/parser_invalid.c $(srcdir)/Parser/parser_invalid.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -2080,9 +2152,12 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
 		$(srcdir)/Objects/mimalloc/alloc-posix.c \
 		$(srcdir)/Objects/mimalloc/arena.c \
+		$(srcdir)/Objects/mimalloc/arena-abandon.c \
 		$(srcdir)/Objects/mimalloc/bitmap.c \
+		$(srcdir)/Objects/mimalloc/free.c \
 		$(srcdir)/Objects/mimalloc/heap.c \
 		$(srcdir)/Objects/mimalloc/init.c \
+		$(srcdir)/Objects/mimalloc/libc.c \
 		$(srcdir)/Objects/mimalloc/options.c \
 		$(srcdir)/Objects/mimalloc/os.c \
 		$(srcdir)/Objects/mimalloc/page.c \
@@ -2091,6 +2166,7 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/segment-map.c \
 		$(srcdir)/Objects/mimalloc/stats.c \
 		$(srcdir)/Objects/mimalloc/prim/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/emscripten/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
 		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c
@@ -2242,7 +2318,7 @@ regen-slots: Python/slots.toml
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_slots.py \
 		--generate-all
 
-$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Modules/config_bootstrap.o Programs/python.o $(PLATFORM_MAIN_OBJS): $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -2283,30 +2359,31 @@ testuniversal: all
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Run the test suite on the iOS simulator. Must be run on a macOS machine with
-# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# Run the test suite on an Apple Mobile (i.e., iOS/tvOS/watchOS/visionOS)
+# device simulator. Must be run on a macOS machine with a full Xcode install
+# that has an SE-class simulator available for the chosen platform.
 # This must be run *after* a `make install` has completed the build. The
 # testbed is configured for the framework name used to configure the build;
 # that name is expected to be `Python`, optionally followed by uppercased ABI
 # flags (e.g., `PythonT`).
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
+XCFOLDER:=AppleTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
-	@if test "$(MACHDEP)" != "ios"; then \
-		echo "Cannot run the iOS testbed for a non-iOS build."; \
+	@if test "$(MACHDEP)" != "ios" -a "$(MACHDEP)" != "tvos" -a "$(MACHDEP)" != "visionos" -a "$(MACHDEP)" != "watchos" ; then \
+		echo "Cannot run the Apple mobile testbed for a $(MACHDEP) build."; \
 		exit 1;\
 	fi
-	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
-		echo "Cannot run the iOS testbed for non-simulator builds."; \
+	@if test "$(findstring simulator,$(MULTIARCH))" != "simulator"; then \
+		echo "Cannot run the Apple mobile testbed for non-simulator builds."; \
 		exit 1;\
 	fi
 	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
-		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		echo "Cannot find a finalized Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
 
 	# Clone the testbed project into the XCFOLDER
-	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
+	$(PYTHON_FOR_BUILD) $(srcdir)/Platforms/Apple/testbed clone --platform $(MACHDEP) --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
 	# Run the testbed project
 	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W --pythoninfo
@@ -2924,8 +3001,11 @@ inclinstall:
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
 	@if test "$(INSTALL_MIMALLOC)" = "yes"; then \
-		echo $(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
-		$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
+		for i in $(srcdir)/Include/internal/mimalloc/*.h; \
+		do \
+			echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc; \
+			$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc; \
+		done; \
 		for i in $(srcdir)/Include/internal/mimalloc/mimalloc/*.h; \
 		do \
 			echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc/mimalloc; \
@@ -2965,6 +3045,9 @@ libainstall: all scripts
 			fi; \
 		fi; \
 		$(INSTALL_DATA) Programs/python.o $(DESTDIR)$(LIBPL)/python.o; \
+		for i in $(PLATFORM_MAIN_OBJS); do \
+			$(INSTALL_DATA) $$i $(DESTDIR)$(LIBPL); \
+		done; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
@@ -3279,7 +3362,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
-	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
+	-rm -rf web_example web_embed_test python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
@@ -3321,7 +3404,7 @@ clean: clean-profile clean-jit-stencils
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
-		config.cache config.log pyconfig.h Modules/config.c
+		config.cache config.log pyconfig.h Modules/config.c Modules/config_bootstrap.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -rf Platforms/Apple/iOS/Frameworks
@@ -3457,7 +3540,7 @@ MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_
 MODULE__HMAC_LDEPS=$(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
-MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
+MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_openssl_mem.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl/distrusted_spki.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__TESTLIMITEDCAPI_DEPS=$(srcdir)/Modules/_testlimitedcapi/testcapi_long.h $(srcdir)/Modules/_testlimitedcapi/parts.h $(srcdir)/Modules/_testlimitedcapi/util.h
 MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h $(srcdir)/Parser/tokenizer/source.h $(srcdir)/Parser/tokenizer/types.h $(srcdir)/Python/ceval.h $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_cases.c.h

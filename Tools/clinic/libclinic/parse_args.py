@@ -6,7 +6,7 @@ from libclinic import fail, warn, unspecified, Sentinels
 from libclinic.function import (
     Function, Parameter, ParamTuple,
     count_required, group_to_variable_name, permute_optional_groups,
-    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT,
+    GETTER, SETTER, SETTER_AND_DELETER, METHOD_INIT, METHOD_NEW, SLOT,
     ACCESSORS, SETTERS)
 from libclinic.converter import CConverter
 from libclinic.converters import (
@@ -141,6 +141,14 @@ PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
 PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
     static int
     {c_basename}({self_type}{self_name}, PyObject *arg, void *Py_UNUSED(context))
+""")
+PARSER_PROTOTYPE_SLOT: Final[str] = libclinic.normalize_snippet("""
+    static {return_type}
+    {c_basename}({self_type}{self_name})
+""")
+PARSER_PROTOTYPE_SLOT_ARGS: Final[str] = libclinic.normalize_snippet("""
+    static {return_type}
+    {c_basename}({self_type}{self_name}, {parser_parameters})
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
@@ -393,8 +401,11 @@ class ParseArgsCodeGen:
                 and not self.is_new_or_init())
 
     def use_simple_return(self) -> bool:
+        if self.func.critical_section:
+            return False
+        # A slot function returns the result of the impl unchanged.
         return (self.func.return_converter.type == 'PyObject *'
-                and not self.func.critical_section)
+                or self.func.kind is SLOT)
 
     def use_pyobject_self(self) -> bool:
         return self.self_parameter_converter.use_pyobject_self(self.func)
@@ -407,6 +418,19 @@ class ParseArgsCodeGen:
 
         if self.is_new_or_init() and not self.func.docstring:
             pass
+        elif self.func.kind is SLOT:
+            # A slot function is not stored in a PyMethodDef and has no
+            # docstring (the DSL parser rejects one).  It returns what its
+            # slot declares.
+            assert not self.func.docstring
+            assert self.func.slot is not None
+            self.methoddef_define = ''
+            return_type = self.func.slot.return_type
+            if not return_type.endswith('*'):
+                return_type += ' '
+            self.return_value_declaration = (
+                f"{return_type}{{parser_retval}} = "
+                f"{self.func.slot.error_value};")
         elif self.func.kind is GETTER:
             # Only an accessor compiled conditionally announces itself.
             self.methoddef_define = (GETTERDEF_PROTOTYPE_DEFINE
@@ -481,6 +505,18 @@ class ParseArgsCodeGen:
             libclinic.normalize_snippet(parsearg, indent=8),
             libclinic.normalize_snippet("}}", indent=4),
         ])
+
+    def parse_slot(self) -> None:
+        """Generate the slot function.
+
+        It does not parse anything: it forwards its arguments to the impl
+        and, with @critical_section, holds the lock while doing so.
+        """
+        if self.parameters:
+            self.parser_prototype = PARSER_PROTOTYPE_SLOT_ARGS
+        else:
+            self.parser_prototype = PARSER_PROTOTYPE_SLOT
+        self.finish_parser_body([])
 
     def parse_accessor(self) -> None:
         """Generate the code of a getter or a setter."""
@@ -1554,19 +1590,22 @@ class ParseArgsCodeGen:
         return d2
 
     def _vectorcall_type_check(self) -> list[str]:
-        """Assert `type` is the one type this vectorcall was generated for.
+        """Check dispatch function hasn't changed.
 
-        The generated code is only correct for that type: __init__ calls
-        tp_new with no arguments, then the impl.  tp_vectorcall is not
-        inherited, so subclasses never reach it; the assert catches C code
-        installing the function on a second type.
+        The generated code is only correct for a type whose tp_new / tp_init is
+        the parser this vectorcall shadows.
         """
         func = self.func
-        # The DSL parser rejects @vectorcall without a class and type object.
-        assert func.cls is not None
-        assert func.cls.type_object
+        if func.kind is METHOD_INIT:
+            check = f"_PyType_CAST(type)->tp_init == {func.c_basename}"
+        elif func.kind is METHOD_NEW:
+            check = f"_PyType_CAST(type)->tp_new == {func.c_basename}"
+        else:
+            raise AssertionError(
+                f"Unhandled function kind for vectorcall: {func.kind!r}"
+            )
         return [libclinic.normalize_snippet(f"""
-            assert(Py_Is(_PyType_CAST(type), {func.cls.type_object}));
+            assert({check});
             /* Make sure the type object is immutable: the generated
              * vectorcall doesn't deal e.g. with users reassigning __init__. */
             assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -1706,6 +1745,19 @@ class ParseArgsCodeGen:
         parser_code.extend(self._vectorcall_positional(arity_checked=True))
         self.vectorcall_body(*parser_code)
 
+    def parse_vectorcall_no_args(self) -> None:
+        """No keyword or positional arguments."""
+        parser_code = self._vectorcall_type_check()
+        self.codegen.add_include('pycore_modsupport.h',
+                                 '_PyArg_NoPositionalStack()')
+        parser_code.append(libclinic.normalize_snippet("""
+            if (!_PyArg_NoPositionalStack("{name}", nargs) ||
+                !_PyArg_NoKwnames("{name}", kwnames)) {{
+                goto exit;
+            }}
+            """, indent=4))
+        self.vectorcall_body(*parser_code)
+
     def parse_vectorcall(self) -> None:
         """Generate the vectorcall entry point for __new__ / __init__.
 
@@ -1713,11 +1765,11 @@ class ParseArgsCodeGen:
         """
         # Branches ordered to mirror parse_args().  The DSL parser rejects
         # @vectorcall with optional groups, and METH_O never applies to
-        # __new__/__init__. They always have arguments.
+        # __new__/__init__.
         assert not self.has_option_groups()
         assert not self.use_meth_o()
         if not self.parameters and not self.varpos and not self.var_keyword:
-            raise NotImplementedError("No argument vectorcall")
+            self.parse_vectorcall_no_args()
         elif self.var_keyword is not None:
             self.parse_vectorcall_kw_required()
         elif self.pos_only == len(self.parameters):
@@ -1744,7 +1796,9 @@ class ParseArgsCodeGen:
         # previous call to parser_body. this is used for an awful hack.
         self.parser_body_fields: tuple[str, ...] = ()
 
-        if self.func.kind in ACCESSORS:
+        if self.func.kind is SLOT:
+            self.parse_slot()
+        elif self.func.kind in ACCESSORS:
             self.parse_accessor()
         elif not self.parameters and not self.varpos and not self.var_keyword:
             self.parse_no_args()

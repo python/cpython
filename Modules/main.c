@@ -286,6 +286,7 @@ pymain_run_command(wchar_t *command)
     }
 
     if (PySys_Audit("cpython.run_command", "O", unicode) < 0) {
+        Py_DECREF(unicode);
         return pymain_exit_err_print();
     }
 
@@ -847,7 +848,6 @@ pymain_free(void)
     _PyPathConfig_ClearGlobal();
     _Py_ClearArgcArgv();
     _PyRuntime_Finalize();
-    _Py_GetVersion_Fini();
 }
 
 
