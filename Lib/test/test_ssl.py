@@ -2801,8 +2801,14 @@ class SSLObjectTests(unittest.TestCase):
         with self.assertRaises(ssl.SSLCertVerificationError) as cm:
             connected_bio_pair(client_context, server_context,
                                DISTRUSTED_SPKI_HOSTNAME)
-        # X509_V_ERR_CERT_REJECTED
-        self.assertEqual(cm.exception.verify_code, 28)
+        if IS_AWS_LC:
+            # gh-160736: AWS-LC has its own SPKI denylist.  It fails the
+            # chain before _ssl's verify callback sees the certificate,
+            # so the library's error is kept: X509_V_ERR_CERT_REVOKED.
+            self.assertEqual(cm.exception.verify_code, 23)
+        else:
+            # Rejected by _ssl's verify callback: X509_V_ERR_CERT_REJECTED
+            self.assertEqual(cm.exception.verify_code, 28)
 
     def test_sni_callback_context_released_and_callback_raises(self):
         # Variant of the test below without a HelloRetryRequest: the callback
