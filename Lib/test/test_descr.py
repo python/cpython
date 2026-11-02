@@ -815,6 +815,15 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class X(int(), C):
                 pass
 
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_type_with_null_new_metaclass(self):
+        metaclass = _testcapi.HeapCTypeMetaclassNullNew
+        base = _testcapi.pytype_fromspec_meta(metaclass)
+
+        # Exercise type_new's metaclass selection path, not a direct call.
+        with self.assertRaisesRegex(TypeError, r"cannot create '.*' instances"):
+            type("Derived", (base,), {})
+
     def test_module_subclasses(self):
         # Testing Python subclass of module...
         log = []
@@ -2222,10 +2231,22 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         def swallow(*args): pass
         def format_impl(self, spec):
             return "hello"
+        def do_eq(obj):
+            return obj == 1
+        def do_ne(obj):
+            return obj != 1
+        def do_lt(obj):
+            return obj < 1
+        def do_le(obj):
+            return obj <= 1
+        def do_gt(obj):
+            return obj > 1
+        def do_ge(obj):
+            return obj >= 1
 
-        # It would be nice to have every special method tested here, but I'm
-        # only listing the ones I can remember outside of typeobject.c, since it
-        # does it right.
+        # It would be nice to have every special method tested here.
+        # gh-131151: the rich comparison operators used to clear any exception
+        # raised by a descriptor's __get__.
         specials = [
             ("__bytes__", bytes, hello, set(), {}),
             ("__reversed__", reversed, empty_seq, set(), {}),
@@ -2246,6 +2267,12 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
+            ("__eq__", do_eq, return_true, set(), {}),
+            ("__ne__", do_ne, return_true, set(), {}),
+            ("__lt__", do_lt, return_true, set(), {}),
+            ("__le__", do_le, return_true, set(), {}),
+            ("__gt__", do_gt, return_true, set(), {}),
+            ("__ge__", do_ge, return_true, set(), {}),
             ]
 
         class Checker(object):
@@ -3396,7 +3423,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         from _io import FileIO
         def check(descr, what):
             self.assertEqual(descr.__doc__, what)
-        check(FileIO.closed, "True if the file is closed") # getset descriptor
+        check(FileIO.closed, "True if the file is closed.") # getset descriptor
         check(complex.real, "the real part of a complex number") # member descriptor
 
     def test_doc_descriptor(self):
@@ -3765,6 +3792,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
@@ -5113,6 +5141,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):

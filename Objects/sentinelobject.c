@@ -14,6 +14,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *name;
     PyObject *module;
+    PyObject *repr;
 } sentinelobject;
 
 #define sentinelobject_CAST(op) \
@@ -46,7 +47,7 @@ caller(void)
 }
 
 static PyObject *
-sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module)
+sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module, PyObject *repr)
 {
     assert(PyUnicode_Check(name));
 
@@ -56,6 +57,7 @@ sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module)
     }
     self->name = Py_NewRef(name);
     self->module = Py_NewRef(module);
+    self->repr = Py_XNewRef(repr);
     _PyObject_GC_TRACK(self);
     return (PyObject *)self;
 }
@@ -66,37 +68,56 @@ sentinel.__new__ as sentinel_new
 
     name: object(subclass_of='&PyUnicode_Type')
     /
+    *
+    repr: object = None
 [clinic start generated code]*/
 
 static PyObject *
-sentinel_new_impl(PyTypeObject *type, PyObject *name)
-/*[clinic end generated code: output=4af55c6048bed30d input=3ab75704f39c119c]*/
+sentinel_new_impl(PyTypeObject *type, PyObject *name, PyObject *repr)
+/*[clinic end generated code: output=1eb7fab52e57d8c8 input=28cab6c468997b35]*/
 {
+    if (repr == Py_None) {
+        repr = NULL;
+    }
+    else if (!PyUnicode_Check(repr)) {
+        _PyArg_BadArgument("sentinel", "argument 'repr'", "str or None", repr);
+        return NULL;
+    }
     PyObject *module = caller();
-    PyObject *self = sentinel_new_with_module(type, name, module);
+    PyObject *self = sentinel_new_with_module(type, name, module, repr);
     Py_DECREF(module);
     return self;
 }
 
 PyObject *
-PySentinel_New(const char *name, const char *module_name)
+PySentinel_New(const char *name, const char *module_name, const char *repr)
 {
     PyObject *name_obj = PyUnicode_FromString(name);
     if (name_obj == NULL) {
         return NULL;
+    }
+    PyObject *repr_obj = NULL;
+    if (repr != NULL) {
+        repr_obj = PyUnicode_FromString(repr);
+        if (repr_obj == NULL) {
+            Py_DECREF(name_obj);
+            return NULL;
+        }
     }
     PyObject *module_obj = module_name == NULL
         ? Py_None
         : PyUnicode_FromString(module_name);
     if (module_obj == NULL) {
         Py_DECREF(name_obj);
+        Py_XDECREF(repr_obj);
         return NULL;
     }
 
     PyObject *sentinel = sentinel_new_with_module(
-        &PySentinel_Type, name_obj, module_obj);
+        &PySentinel_Type, name_obj, module_obj, repr_obj);
     Py_DECREF(module_obj);
     Py_DECREF(name_obj);
+    Py_XDECREF(repr_obj);
     return sentinel;
 }
 
@@ -106,6 +127,7 @@ sentinel_clear(PyObject *op)
     sentinelobject *self = sentinelobject_CAST(op);
     Py_CLEAR(self->name);
     Py_CLEAR(self->module);
+    Py_CLEAR(self->repr);
     return 0;
 }
 
@@ -123,6 +145,7 @@ sentinel_traverse(PyObject *op, visitproc visit, void *arg)
     sentinelobject *self = sentinelobject_CAST(op);
     Py_VISIT(self->name);
     Py_VISIT(self->module);
+    Py_VISIT(self->repr);
     return 0;
 }
 
@@ -130,6 +153,9 @@ static PyObject *
 sentinel_repr(PyObject *op)
 {
     sentinelobject *self = sentinelobject_CAST(op);
+    if (self->repr != NULL) {
+        return Py_NewRef(self->repr);
+    }
     return Py_NewRef(self->name);
 }
 
@@ -161,7 +187,7 @@ static PyMethodDef sentinel_methods[] = {
 
 static PyMemberDef sentinel_members[] = {
     {"__name__", Py_T_OBJECT_EX, offsetof(sentinelobject, name), Py_READONLY},
-    {"__module__", Py_T_OBJECT_EX, offsetof(sentinelobject, module), Py_READONLY},
+    {"__module__", Py_T_OBJECT_EX, offsetof(sentinelobject, module), 0},
     {NULL}
 };
 
@@ -170,7 +196,7 @@ static PyNumberMethods sentinel_as_number = {
 };
 
 PyDoc_STRVAR(sentinel_doc,
-"sentinel(name, /)\n"
+"sentinel(name, /, *, repr=None)\n"
 "--\n\n"
 "Create a unique sentinel object with the given name.");
 

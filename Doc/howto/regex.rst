@@ -4,8 +4,6 @@
   Regular expression HOWTO
 ****************************
 
-:Author: A.M. Kuchling <amk@amk.ca>
-
 .. TODO:
    Document lookbehind assertions
    Better way of displaying a RE, a string, and what it matches

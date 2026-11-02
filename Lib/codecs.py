@@ -93,7 +93,7 @@ class CodecInfo(tuple):
 
     def __new__(cls, encode, decode, streamreader=None, streamwriter=None,
         incrementalencoder=None, incrementaldecoder=None, name=None,
-        *, _is_text_encoding=None):
+        *, _is_text_encoding=None, _expat_decoding_table=None):
         self = tuple.__new__(cls, (encode, decode, streamreader, streamwriter))
         self.name = name
         self.encode = encode
@@ -104,6 +104,8 @@ class CodecInfo(tuple):
         self.streamreader = streamreader
         if _is_text_encoding is not None:
             self._is_text_encoding = _is_text_encoding
+        if _expat_decoding_table is not None:
+            self._expat_decoding_table = _expat_decoding_table
         return self
 
     def __repr__(self):
@@ -400,9 +402,10 @@ class StreamWriter(Codec):
         pass
 
     def seek(self, offset, whence=0):
-        self.stream.seek(offset, whence)
+        # reset() may write to the stream: call it at the old position.
         if whence == 0 and offset == 0:
             self.reset()
+        self.stream.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -739,10 +742,11 @@ class StreamReaderWriter:
         self.writer.reset()
 
     def seek(self, offset, whence=0):
-        self.stream.seek(offset, whence)
-        self.reader.reset()
+        # writer.reset() may write to the stream: call it at the old position.
         if whence == 0 and offset == 0:
             self.writer.reset()
+        self.stream.seek(offset, whence)
+        self.reader.reset()
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -862,8 +866,8 @@ class StreamRecoder:
     def seek(self, offset, whence=0):
         # Seeks must be propagated to both the readers and writers
         # as they might need to reset their internal buffers.
-        self.reader.seek(offset, whence)
         self.writer.seek(offset, whence)
+        self.reader.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):

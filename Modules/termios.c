@@ -21,12 +21,6 @@
 #  include <sys/termio.h>
 #endif
 
-// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-// is defined, so we define it here.
-#if defined(__sgi)
-#  define CTRL(c) ((c)&037)
-#endif
-
 // We could do better. Check bpo-32660
 #if defined(__sun)
 #  include <sys/filio.h>
@@ -312,6 +306,7 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
 }
 
 /*[clinic input]
+@permit_long_summary
 termios.tcdrain
 
     fd: fildes
@@ -322,7 +317,7 @@ Wait until all output written to file descriptor fd has been transmitted.
 
 static PyObject *
 termios_tcdrain_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=5fd86944c6255955 input=c99241b140b32447]*/
+/*[clinic end generated code: output=5fd86944c6255955 input=d1557e60b5ec66c5]*/
 {
     termiosmodulestate *state = PyModule_GetState(module);
     int r;
@@ -474,7 +469,6 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 termios.tcsetwinsize
 
     fd: fildes
@@ -484,12 +478,13 @@ termios.tcsetwinsize
 Set the tty winsize for file descriptor fd.
 
 The winsize to be set is taken from the winsize argument, which
-is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
+is a two-item tuple (ws_row, ws_col) like the one returned by
+tcgetwinsize().
 [clinic start generated code]*/
 
 static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
-/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=9a163c4e06fc4a41]*/
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=efc9beb16d06382a]*/
 {
     if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,

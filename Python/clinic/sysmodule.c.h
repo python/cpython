@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -92,13 +93,8 @@ sys_audit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("audit", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t event_length;
-    event = PyUnicode_AsUTF8AndSize(args[0], &event_length);
+    event = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (event == NULL) {
-        goto exit;
-    }
-    if (strlen(event) != (size_t)event_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
@@ -687,6 +683,78 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys_set_asyncgen_hooks__doc__,
+"set_asyncgen_hooks($module, /, firstiter=<unrepresentable>,\n"
+"                   finalizer=<unrepresentable>)\n"
+"--\n"
+"\n"
+"Set a finalizer for async generators objects.");
+
+#define SYS_SET_ASYNCGEN_HOOKS_METHODDEF    \
+    {"set_asyncgen_hooks", _PyCFunction_CAST(sys_set_asyncgen_hooks), METH_FASTCALL|METH_KEYWORDS, sys_set_asyncgen_hooks__doc__},
+
+static PyObject *
+sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
+                            PyObject *finalizer);
+
+static PyObject *
+sys_set_asyncgen_hooks(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(firstiter), &_Py_ID(finalizer), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"firstiter", "finalizer", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_asyncgen_hooks",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *firstiter = NULL;
+    PyObject *finalizer = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        firstiter = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    finalizer = args[1];
+skip_optional_pos:
+    return_value = sys_set_asyncgen_hooks_impl(module, firstiter, finalizer);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
 "get_asyncgen_hooks($module, /)\n"
 "--\n"
@@ -930,6 +998,71 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     return_value = sys_set_int_max_str_digits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_getsizeof__doc__,
+"getsizeof($module, /, object, default=<unrepresentable>)\n"
+"--\n"
+"\n"
+"Return the size of object in bytes.");
+
+#define SYS_GETSIZEOF_METHODDEF    \
+    {"getsizeof", _PyCFunction_CAST(sys_getsizeof), METH_FASTCALL|METH_KEYWORDS, sys_getsizeof__doc__},
+
+static PyObject *
+sys_getsizeof_impl(PyObject *module, PyObject *o, PyObject *dflt);
+
+static PyObject *
+sys_getsizeof(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(object), &_Py_ID(default), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"object", "default", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "getsizeof",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *o;
+    PyObject *dflt = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    o = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    dflt = args[1];
+skip_optional_pos:
+    return_value = sys_getsizeof_impl(module, o, dflt);
 
 exit:
     return return_value;
@@ -1367,7 +1500,8 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "\n"
 "Dump stats to file, and clears the stats.\n"
 "\n"
-"Return False if no statistics were not dumped because stats gathering was off.");
+"Return False if no statistics were not dumped because stats gathering\n"
+"was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
@@ -1437,13 +1571,8 @@ sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t backend_length;
-    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    backend = _PyUnicode_AsUTF8NoNUL(arg);
     if (backend == NULL) {
-        goto exit;
-    }
-    if (strlen(backend) != (size_t)backend_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = sys_activate_stack_trampoline_impl(module, backend);
@@ -1515,16 +1644,16 @@ PyDoc_STRVAR(sys_remote_exec__doc__,
 "Executes a file containing Python code in a given remote Python process.\n"
 "\n"
 "This function returns immediately, and the code will be executed by the\n"
-"target process\'s main thread at the next available opportunity, similarly\n"
-"to how signals are handled. There is no interface to determine when the\n"
-"code has been executed. The caller is responsible for making sure that\n"
-"the file still exists whenever the remote process tries to read it and that\n"
-"it hasn\'t been overwritten.\n"
+"target process\'s main thread at the next available opportunity,\n"
+"similarly to how signals are handled.  There is no interface to\n"
+"determine when the code has been executed.  The caller is responsible\n"
+"for making sure that the file still exists whenever the remote process\n"
+"tries to read it and that it hasn\'t been overwritten.\n"
 "\n"
-"The remote process must be running a CPython interpreter of the same major\n"
-"and minor version as the local process. If either the local or remote\n"
-"interpreter is pre-release (alpha, beta, or release candidate) then the\n"
-"local and remote interpreters must be the same exact version.\n"
+"The remote process must be running a CPython interpreter of the same\n"
+"major and minor version as the local process.  If either the local or\n"
+"remote interpreter is pre-release (alpha, beta, or release candidate)\n"
+"then the local and remote interpreters must be the same exact version.\n"
 "\n"
 "Args:\n"
 "     pid (int): The process ID of the target Python process.\n"
@@ -1886,8 +2015,8 @@ PyDoc_STRVAR(sys_set_lazy_imports__doc__,
 "\n"
 "The mode parameter must be one of the following strings:\n"
 "- \"all\": All top-level imports become potentially lazy\n"
-"- \"none\": All lazy imports are suppressed (even explicitly marked ones)\n"
-"- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are lazy\n"
+"- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are\n"
+"  lazy\n"
 "\n"
 "In addition to the mode, lazy imports can be controlled via the filter\n"
 "provided to sys.set_lazy_imports_filter");
@@ -1951,7 +2080,6 @@ PyDoc_STRVAR(sys_get_lazy_imports__doc__,
 "Gets the global lazy imports mode.\n"
 "\n"
 "Returns \"all\" if all top level imports are potentially lazy.\n"
-"Returns \"none\" if all explicitly marked lazy imports are suppressed.\n"
 "Returns \"normal\" if only explicitly marked imports are lazy.");
 
 #define SYS_GET_LAZY_IMPORTS_METHODDEF    \
@@ -2089,4 +2217,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=ba849b6e4b9f1ba3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbca81c5072bd0e8 input=a9049054013a1b77]*/

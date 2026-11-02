@@ -40,5 +40,39 @@ class TestPickleFreeThreading(unittest.TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    def test_pickle_dumps_with_concurrent_list_mutations(self):
+        # gh-149816: Pickling a list while another thread mutates it
+        # used to be a UAF in free-threaded mode. batch_list_exact()
+        # used PyList_GET_ITEM (borrowed) followed by Py_INCREF, and a
+        # concurrent replace/pop could free the item between those two
+        # operations.
+        shared = [list(range(20)) for _ in range(50)]
+
+        def dumper():
+            for _ in range(1000):
+                try:
+                    pickle.dumps(shared)
+                except (RuntimeError, IndexError):
+                    pass
+
+        def mutator():
+            for i in range(1000):
+                idx = i % 50
+                shared[idx] = list(range(i % 20))
+                if i % 10 == 0:
+                    try:
+                        shared.pop()
+                    except IndexError:
+                        pass
+                    shared.append([i])
+
+        threads = []
+        for _ in range(10):
+            threads.append(threading.Thread(target=dumper))
+        threads.append(threading.Thread(target=mutator))
+
+        with threading_helper.start_threads(threads):
+            pass
+
 if __name__ == "__main__":
     unittest.main()

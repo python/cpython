@@ -6,9 +6,6 @@
 Instrumenting CPython with DTrace and SystemTap
 ===============================================
 
-:author: David Malcolm
-:author: Łukasz Langa
-
 DTrace and SystemTap are monitoring tools, each providing a way to inspect
 what the processes on a computer system are doing.  They both use
 domain-specific languages allowing a user to write scripts which:
@@ -460,7 +457,7 @@ available:
 
 .. object:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
-   This probe point is the converse of ``python.function.return``, and
+   This probe point is the converse of ``python.function.entry``, and
    indicates that execution of a Python function has ended (either via
    ``return``, or via an exception).  It is only triggered for pure-Python
    (bytecode) functions.

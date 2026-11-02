@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
+#include "pycore_wasm_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_gc.h"            // _PyObject_GC_TRACK()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -266,12 +266,6 @@ _Py_REF_IS_MERGED(Py_ssize_t ob_ref_shared)
     return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_MERGED;
 }
 
-static inline int
-_Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
-{
-    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
-}
-
 // Merge the local and shared reference count fields and add `extra` to the
 // refcount when merging.
 Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
@@ -290,8 +284,6 @@ static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags) & feature) != 0;
 }
-
-extern void _PyType_InitCache(PyInterpreterState *interp);
 
 extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
@@ -836,9 +828,14 @@ _PyObject_IS_GC(PyObject *obj)
             && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
-// Fast inlined version of PyObject_Hash()
-static inline Py_hash_t
-_PyObject_HashFast(PyObject *op)
+// Fast inlined version of PyObject_Hash(). Dictionaries are very
+// likely to include string keys (class and instance attributes,
+// json, ...) so we include a fast path for strings.
+// This function should not be used in a collection if str is not
+// very likely, since it is slower than PyObject_Hash() on types
+// other than str. See gh-137759.
+static inline Py_ALWAYS_INLINE Py_hash_t
+_PyObject_HashDictKey(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
         Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);
@@ -873,7 +870,8 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
     return (type->tp_weaklistoffset != 0);
 }
 
-extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+// Export for 'array' shared extension.
+PyAPI_FUNC(PyObject*) _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
@@ -959,7 +957,8 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
-PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self);
+PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method,
+                                              _PyStackRef *self);
 
 // Calls the method named `attr` on `self`, but does not set an exception if
 // the attribute does not exist.
@@ -977,27 +976,6 @@ extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 // Pickle support.
 // Export for '_datetime' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
-
-/* C function call trampolines to mitigate bad function pointer casts.
- *
- * Typical native ABIs ignore additional arguments or fill in missing
- * values with 0/NULL in function pointer cast. Compilers do not show
- * warnings when a function pointer is explicitly casted to an
- * incompatible type.
- *
- * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
- * function signature checks. Argument count, types, and return type must
- * match.
- *
- * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
- */
-#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    (meth)((self), (args))
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    (meth)((self), (args), (kw))
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 // Export these 2 symbols for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;

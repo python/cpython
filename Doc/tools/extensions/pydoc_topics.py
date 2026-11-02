@@ -70,6 +70,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "lambda",
     "lazy",
     "lists",
+    "match",
     "naming",
     "nonlocal",
     "numbers",

@@ -202,12 +202,12 @@ def main():
             if args.quiet:
                 parser.exit(1)
             else:
-                parser.exit(1, error.msg)
+                parser.exit(1, error.msg + '\n')
         except OSError as error:
             if args.quiet:
                 parser.exit(1)
             else:
-                parser.exit(1, str(error))
+                parser.exit(1, str(error) + '\n')
 
 
 if __name__ == "__main__":
