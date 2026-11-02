@@ -1113,7 +1113,7 @@ Linker options
 
    This option does nothing if ``--enable-shared`` is not used.
 
-   The default (when ``-enable-shared`` is used) is to link the Python
+   The default (when ``--enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
    .. versionadded:: 3.15

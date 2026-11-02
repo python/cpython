@@ -2565,8 +2565,8 @@ changes, or look through the Subversion logs for all the details.
   for the statement being timed and for the setup code.
   Two convenience functions were added for creating
   :class:`~timeit.Timer` instances:
-  ``repeat(stmt, setup, time, repeat, number)`` and
-  ``timeit(stmt, setup, time, number)`` create an instance and call
+  ``repeat(stmt, setup, timer, repeat, number)`` and
+  ``timeit(stmt, setup, timer, number)`` create an instance and call
   the corresponding method. (Contributed by Erik Demaine;
   :issue:`1533909`.)
 
