@@ -251,8 +251,10 @@ class Bdb:
     @contextmanager
     def set_enterframe(self, frame):
         self.enterframe = frame
-        yield
-        self.enterframe = None
+        try:
+            yield
+        finally:
+            self.enterframe = None
 
     def trace_dispatch(self, frame, event, arg):
         """Dispatch a trace function for debugged frames based on the event.
