@@ -1736,6 +1736,74 @@ class TestSSL(test_utils.TestCase):
         with self.tcp_server(server) as srv:
             loop.run_until_complete(client(srv.addr))
 
+    def test_shutdown_timeout_after_eof_from_not_reading_peer(self):
+        # ssl_shutdown_timeout also applies when the peer has sent EOF,
+        # before or after close(), but does not read what is still queued.
+        loop = self.loop
+        filled = threading.Event()
+        done = threading.Event()
+
+        def server(sock):
+            sslctx = self._create_server_ssl_context(
+                test_utils.ONLYCERT,
+                test_utils.ONLYKEY
+            )
+            sock = sslctx.wrap_socket(sock, server_side=True)
+            filled.wait(support.SHORT_TIMEOUT)
+            # sending EOF here, and never reading
+            sock.shutdown(socket.SHUT_WR)
+            done.wait(support.SHORT_TIMEOUT)
+            sock.close()
+
+        class Protocol(asyncio.Protocol):
+            def __init__(self):
+                self.fut = asyncio.Future(loop=loop)
+                self.paused = False
+
+            def pause_writing(self):
+                self.paused = True
+
+            def resume_writing(self):
+                self.paused = False
+
+            def connection_lost(self, exc):
+                if not self.fut.done():
+                    self.fut.set_result(exc)
+
+        async def client(addr, close):
+            ctx = self._create_client_ssl_context()
+            tr, pr = await loop.create_connection(
+                Protocol, *addr, ssl=ctx,
+                ssl_shutdown_timeout=0.1)
+            try:
+                # Write until the transport cannot pass any more on to the
+                # peer; how much the kernel accepts varies by platform.
+                chunk = bytes(support.SOCK_MAX_SIZE)
+                for _ in range(16):
+                    if pr.paused:
+                        break
+                    tr.write(chunk)
+                    await asyncio.sleep(0)
+                else:
+                    self.fail('the transport never paused writing')
+                if close:
+                    tr.close()
+                filled.set()
+                async with asyncio.timeout(support.SHORT_TIMEOUT):
+                    exc = await pr.fut
+            finally:
+                filled.set()
+                done.set()
+                tr.abort()
+            self.assertIsInstance(exc, TimeoutError)
+
+        for close in (True, False):
+            with self.subTest(close_before_eof=close):
+                filled.clear()
+                done.clear()
+                with self.tcp_server(server) as srv:
+                    loop.run_until_complete(client(srv.addr, close))
+
 
 ###############################################################################
 # Socket Testing Utilities

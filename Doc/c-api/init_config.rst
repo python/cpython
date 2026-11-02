@@ -116,15 +116,14 @@ Error Handling
 
    Get the *config* exit code.
 
-   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
-   * Return ``0`` if *config* has no exit code set.
+   Return ``0`` and leave *\*exitcode* unchanged.
 
-   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
-   code if the ``parse_argv`` option is non-zero.
+   In Python 3.15, :c:func:`Py_InitializeFromInitConfig` sets an exit code if a
+   command line option wants to exit Python. This is no longer the case in
+   Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
+   This function became useless.
 
-   An exit code can be set when parsing the command line failed (exit
-   code ``2``) or when a command line option asks to display the command
-   line help (exit code ``0``).
+   .. deprecated:: 3.16
 
 
 Get Options
@@ -168,7 +167,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -247,10 +246,11 @@ Initialize Python
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
-   * Set an exit code in *config* and return ``-1`` if Python wants to
-     exit.
 
-   See ``PyInitConfig_GetExitcode()`` for the exit code case.
+   .. versionchanged:: 3.16
+      The function no longer sets an exit code if a command line option wants
+      to exit Python. Instead, the option is now processed in
+      :c:func:`Py_RunMain`.
 
 
 .. _pyinitconfig-opts:
@@ -623,7 +623,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function now replaces :data:`sys.flags` (create a new object),
       instead of modifying :data:`sys.flags` in-place.
 
@@ -690,9 +690,6 @@ Example of customized Python always running in isolated mode::
 
     exception:
         PyConfig_Clear(&config);
-        if (PyStatus_IsExit(status)) {
-            return status.exitcode;
-        }
         /* Display the error message and exit the process with
            non-zero exit code */
         Py_ExitStatusException(status);
@@ -758,6 +755,8 @@ PyStatus
 
       Exit code. Argument passed to ``exit()``.
 
+      .. deprecated:: 3.16
+
    .. c:member:: const char *err_msg
 
       Error message.
@@ -788,6 +787,11 @@ PyStatus
 
       Exit Python with the specified exit code.
 
+      .. deprecated:: 3.16
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
+
    Functions to handle a status:
 
    .. c:function:: int PyStatus_Exception(PyStatus status)
@@ -802,6 +806,11 @@ PyStatus
    .. c:function:: int PyStatus_IsExit(PyStatus status)
 
       Is the result an exit?
+
+      .. deprecated:: 3.16
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
 
    .. c:function:: void Py_ExitStatusException(PyStatus status)
 
@@ -831,7 +840,7 @@ Example::
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
-        PyMem_Free(ptr);
+        PyMem_RawFree(ptr);
         return 0;
     }
 
@@ -880,9 +889,9 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
-      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): use ``mimalloc``, a fast
         malloc replacement.
-      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): use ``mimalloc``, a fast
         malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
 
 
@@ -1430,6 +1439,10 @@ PyConfig
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
 
+      See also :c:func:`PyUnicode_EncodeFSDefault` and
+      :ref:`related functions <capi-filesystem-encoding>`
+      for encoding paths at runtime.
+
    .. c:member:: wchar_t* filesystem_errors
 
       :term:`Filesystem error handler <filesystem encoding and error handler>`:
@@ -1935,7 +1948,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 

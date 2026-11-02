@@ -1244,6 +1244,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             await waiter
         except:
             transport.close()
+            waiter = None
             raise
 
         return transport, protocol
@@ -1381,6 +1382,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
+            waiter = None
             raise
 
         return ssl_protocol._app_transport
@@ -1497,7 +1499,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 raise exceptions[0]
 
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the socket yet, so close it.
+            sock.close()
+            raise
         waiter = self.create_future()
         transport = self._make_datagram_transport(
             sock, protocol, r_addr, waiter)
@@ -1714,7 +1721,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_read_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
@@ -1730,7 +1742,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_write_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 

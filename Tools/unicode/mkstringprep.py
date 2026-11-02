@@ -1,10 +1,6 @@
 import re
-import os
 import unicodedata as unicodedata_current
 from unicodedata import ucd_3_2_0 as unicodedata_320
-
-FILENAME = "Tools/unicode/data/rfc3454.txt"
-URL = "https://www.rfc-editor.org/rfc/rfc3454.txt"
 
 def gen_category(cats):
     for i in range(0, 0x110000):
@@ -52,15 +48,7 @@ def compact_set(l):
 
 ############## Read the tables in the RFC #######################
 
-try:
-    data_file = open(FILENAME, encoding='utf-8')
-except FileNotFoundError:
-    import urllib.request
-    os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
-    urllib.request.urlretrieve(URL, filename=FILENAME)
-    data_file = open(FILENAME, encoding='utf-8')
-
-with data_file:
+with open("Tools/unicode/data/rfc3454.txt", encoding='utf-8') as data_file:
     data = data_file.readlines()
 
 tables = []

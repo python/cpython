@@ -6,7 +6,7 @@
 
 **Source code:** :source:`Lib/tkinter/systray.py`
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 --------------
 
