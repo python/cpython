@@ -391,7 +391,6 @@ class DirCompareTestCase(unittest.TestCase):
 
 class DirCmpImplementationTests(unittest.TestCase):
     def setUp(self):
-        cm = os_helper.temp_dir()
         tmpdir = self.enterContext(os_helper.temp_dir())
 
         self.base_test_dir = os.path.join(tmpdir, 'test_filecmp_working_dir')
