@@ -1,0 +1,4 @@
+Speed up parsing ASCII month and weekday names, 12-hour clocks, UTC offsets,
+numeric format aliases, and ordinal and week dates with :func:`time.strptime`,
+:meth:`datetime.date.strptime`, :meth:`datetime.time.strptime`, and
+:meth:`datetime.datetime.strptime`.
