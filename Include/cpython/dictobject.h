@@ -107,6 +107,6 @@ PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);
 // Create a frozendict. Create an empty dictionary if iterable is NULL.
 PyAPI_FUNC(PyObject*) PyFrozenDict_New(PyObject *iterable);
 
-// Create a frozendict from existing `PyDictObject`.
+// Create a frozendict from existing dict.
 // Transfers existing keys and values.
 PyAPI_FUNC(PyObject*) PyDict_AsFrozenDictAndClear(PyObject *dict);

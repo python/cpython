@@ -628,10 +628,10 @@ class CAPITest(unittest.TestCase):
 
         class DictSubtype(dict): ...
 
-        d = DictSubtype({'x': 123})
+        d = DictSubtype(x=123)
         f = as_frozendict(d)
         self.assertIs(type(f), frozendict)
-        self.assertEqual(f, frozendict({'x': 123}))
+        self.assertEqual(f, frozendict(x=123))
         self.assertIs(type(d), DictSubtype)
         self.assertEqual(d, DictSubtype({}))
 
