@@ -24,6 +24,9 @@
     <ClInclude Include="..\Modules\expat\asciitab.h">
       <Filter>Header Files\expat</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\expat\entities.h">
+      <Filter>Header Files\expat</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\expat\expat.h">
       <Filter>Header Files\expat</Filter>
     </ClInclude>
