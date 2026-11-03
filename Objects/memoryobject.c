@@ -2401,30 +2401,41 @@ PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
     }
 
     PyListObject *list = _PyList_CAST(writer);
-    Py_ssize_t old_writer_size = Py_SIZE(list);
+    Py_ssize_t old_size = Py_SIZE(list);
 
     const char *ptr = view->buf;
     const Py_ssize_t shape = view->shape ? view->shape[0] : view->len;
     const Py_ssize_t strides = view->strides ? view->strides[0] : view->itemsize;
     const Py_ssize_t *suboffsets = view->suboffsets;
 
+    Py_ssize_t new_size = old_size + shape;
+    if (new_size > list->allocated) {
+        if (_PyListWriter_Resize(writer, new_size) < 0) {
+            return -1;
+        }
+    }
+    else {
+        Py_SET_SIZE(list, new_size);
+    }
+
     for (Py_ssize_t i = 0; i < shape; ptr += strides, i++) {
         const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
+
         PyObject *item = unpack_single(NULL, xptr, fmt);
         if (item == NULL) {
+            Py_SET_SIZE(list, old_size + i);
             goto error;
         }
-        if (PyListWriter_AppendSteal(writer, item) < 0) {
-            goto error;
-        }
+
+        _PyListWriter_SET_ITEM_STEAL(writer, old_size + i, item);
     }
     return 0;
 
 error:
-    if (Py_SIZE(list) != old_writer_size) {
+    if (Py_SIZE(list) != old_size) {
         // On error, reset the writer to its previous state:
         // discard added items
-        _PyListWriter_ResetSize(writer, old_writer_size);
+        _PyListWriter_ResetSize(writer, old_size);
     }
     return -1;
 }

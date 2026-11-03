@@ -304,7 +304,7 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
    If consuming *iterable* raises an exception, the writer is restored to its
-   previous state: added items are discarded.
+   previous state: discard added items.
 
 .. c:function:: int PyListWriter_ExtendArray(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
 
@@ -330,6 +330,8 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
+   On error, the writer is restored to its previous state: discard added items.
+
 .. c:function:: int PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *view)
 
    Add values from a buffer.
@@ -338,3 +340,5 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   On error, the writer is restored to its previous state: discard added items.

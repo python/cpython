@@ -4449,7 +4449,7 @@ PyListWriter_Create(Py_ssize_t size)
     // since the list object is not tracked by the GC, and the writer caller
     // must initialize all items.
 
-#ifdef Py_DEBUG
+#if _PyListWriter_INIT_ITEMS
     // In debug mode, set all items to NULL to be able to check that they are
     // non-NULL in PyListWriter_Finish().
     if (1 <= size) {
@@ -4498,7 +4498,7 @@ PyListWriter_Finish(PyListWriter *writer)
         // it's left unchanged on memory allocation failure.
     }
 
-#ifdef Py_DEBUG
+#if _PyListWriter_INIT_ITEMS
     // Make sure that all items have been initialized
     Py_ssize_t size = Py_SIZE(list);
     PyObject **list_items = list->ob_item;
@@ -4513,13 +4513,21 @@ PyListWriter_Finish(PyListWriter *writer)
 }
 
 
-static int
-listwriter_resize(PyListWriter *writer, Py_ssize_t new_size)
+int
+_PyListWriter_Resize(PyListWriter *writer, Py_ssize_t new_size)
 {
     PyListObject *list = _PyList_CAST(writer);
+    Py_ssize_t old_size = Py_SIZE(list);
 
     // On Free Threading, it can call _PyObject_GC_SET_SHARED() on the list
-    return list_resize(list, new_size);
+    int res = list_resize(list, new_size);
+#if _PyListWriter_INIT_ITEMS
+    if (res == 0 && new_size > old_size) {
+        memset(&list->ob_item[old_size], 0,
+               (new_size - old_size) * sizeof(PyObject*));
+    }
+#endif
+    return res;
 }
 
 
@@ -4529,19 +4537,19 @@ PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
     assert(listwriter_check_consistency(writer));
     PyListObject *list = _PyList_CAST(writer);
 
-    Py_ssize_t len = Py_SIZE(list);
+    Py_ssize_t index = Py_SIZE(list);
     Py_ssize_t allocated = list->allocated;
-    if (len < allocated) {
-        list->ob_item[len] = item;
-        Py_SET_SIZE(list, len + 1);
+    if (index < allocated) {
+        Py_SET_SIZE(list, index + 1);
+        list->ob_item[index] = item;
         return 0;
     }
 
-    if (listwriter_resize(writer, len + 1) < 0) {
+    if (_PyListWriter_Resize(writer, index + 1) < 0) {
         Py_DECREF(item);
         return -1;
     }
-    list->ob_item[len] = item;
+    _PyListWriter_SET_ITEM_STEAL(writer, index, item);
     return 0;
 }
 
@@ -4568,7 +4576,7 @@ _PyListWriter_ResetSize(PyListWriter *writer, Py_ssize_t size)
     PyObject **items = list->ob_item;
     for (Py_ssize_t i = size; i < new_size; i++) {
         Py_DECREF(items[i]);
-#ifdef Py_DEBUG
+#if _PyListWriter_INIT_ITEMS
         items[i] = NULL;
 #endif
     }
@@ -4652,10 +4660,9 @@ listwriter_extend_array(PyListWriter *writer,
 
     PyListObject *list = _PyList_CAST(writer);
     Py_ssize_t size = Py_SIZE(list);
-    Py_ssize_t allocated = list->allocated;
     Py_ssize_t new_size = size + nitem;
-    if (new_size > allocated) {
-        if (listwriter_resize(writer, new_size) < 0) {
+    if (new_size > list->allocated) {
+        if (_PyListWriter_Resize(writer, new_size) < 0) {
             if (steal) {
                 for (Py_ssize_t i = 0; i < nitem; i++) {
                     Py_DECREF(items[i]);
