@@ -34,9 +34,6 @@ from .readline import _get_reader, multiline_input, append_history_file
 
 
 # Called with submitted input before execution, except for REPL commands.
-# Final auto-indentation is removed; the return value is ignored.
-# Ordinary exceptions are labelled and displayed without changing sys.last_* or
-# stopping execution. KeyboardInterrupt cancels submission; SystemExit exits.
 statement_submitted_hook = None
 
 
