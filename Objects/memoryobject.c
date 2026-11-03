@@ -2303,6 +2303,24 @@ tolist_base(PyMemoryViewObject *self, const char *ptr, const Py_ssize_t *shape,
     return lst;
 }
 
+static int
+tolistwriter(PyListWriter *writer, PyMemoryViewObject *self, const char *ptr,
+             const Py_ssize_t *shape, const Py_ssize_t *strides,
+             const Py_ssize_t *suboffsets, const char *fmt)
+{
+    for (Py_ssize_t i = 0; i < shape[0]; ptr+=strides[0], i++) {
+        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
+        PyObject *item = unpack_single(self, xptr, fmt);
+        if (item == NULL) {
+            return -1;
+        }
+        if (PyListWriter_AppendSteal(writer, item) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /* Unpack a multi-dimensional array into a nested list.
    Assumption: ndim >= 1. */
 static PyObject *
@@ -2373,6 +2391,26 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
                           fmt);
     }
 }
+
+
+int
+_PyMemoryView_ToListWriter(PyObject *mview, PyListWriter *writer)
+{
+    assert(PyMemoryView_Check(mview));
+    PyMemoryViewObject *self = (PyMemoryViewObject *)mview;
+    const Py_buffer *view = &self->view;
+    assert(view->ndim == 1);
+
+    const char *fmt = adjust_fmt(view);
+    if (fmt == NULL) {
+        return -1;
+    }
+
+    return tolistwriter(writer, self, view->buf, view->shape,
+                        view->strides, view->suboffsets,
+                        fmt);
+}
+
 
 /*[clinic input]
 memoryview.tobytes

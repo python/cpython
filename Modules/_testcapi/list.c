@@ -365,6 +365,30 @@ writer_from_format_error(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
+// Test PyListWriter_FromBuffer() error
+static PyObject*
+writer_from_buffer(PyObject *self_raw, PyObject *obj)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_buffer view;
+    int flags = PyBUF_FORMAT | PyBUF_ND | PyBUF_STRIDES;
+    if (PyObject_GetBuffer(obj, &view, flags) < 0) {
+        return NULL;
+    }
+
+    int res = PyListWriter_FromBuffer(self->writer, &view);
+    PyBuffer_Release(&view);
+    if (res < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 // Test PyListWriter_Finish()
 static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
@@ -404,6 +428,7 @@ static PyMethodDef writer_methods[] = {
     {"from_format_i", _PyCFunction_CAST(writer_from_format_i), METH_O},
     {"from_format_i16", _PyCFunction_CAST(writer_from_format_i16), METH_O},
     {"from_format_error", _PyCFunction_CAST(writer_from_format_error), METH_NOARGS},
+    {"from_buffer", _PyCFunction_CAST(writer_from_buffer), METH_O},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */

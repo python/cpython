@@ -1,3 +1,4 @@
+import array
 import threading
 import unittest
 from collections import UserList
@@ -460,7 +461,7 @@ class ListWriterTests(unittest.TestCase):
         # Test PyListWriter_ExtendArraySteal()
         self.check_extend('extend_array_steal')
 
-    def test_build_value(self):
+    def test_from_format(self):
         # Test PyListWriter_FromFormat()
 
         # Allocate a small array on the stack (1 item)
@@ -482,6 +483,17 @@ class ListWriterTests(unittest.TestCase):
             writer.from_format_error()
         writer.append("after")
         self.list_equal(writer.finish(), ["before", "after"])
+
+    def test_from_buffer(self):
+        # Test PyListWriter_FromBuffer()
+        writer = self.create_writer(0)
+        writer.from_buffer(memoryview(b'abc'))
+        self.list_equal(writer.finish(), [97, 98, 99])
+
+        numbers = array.array('d', [1.5, 3.0, 5.0])
+        writer = self.create_writer(0)
+        writer.from_buffer(memoryview(numbers))
+        self.list_equal(writer.finish(), [1.5, 3.0, 5.0])
 
     def test_empty(self):
         list_get_allocated = _testcapi._list_get_allocated
