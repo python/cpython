@@ -1966,6 +1966,29 @@ foo
             html
         )
 
+    @requires_docstrings
+    def test_html_for_repl_examples(self):
+        def a_fn_with_repl_example():
+            """Do something.
+
+            Example:
+
+                >>> a_fn_with_repl_example()
+                ... # comment
+                result
+            Done.
+            """
+            pass
+
+        html = pydoc.HTMLDoc().document(a_fn_with_repl_example)
+        self.assertIn(
+            'Example:<pre class="repl">'
+            '<span class="prompt">&gt;&gt;&gt; </span>a_fn_with_repl_example()\n'
+            '<span class="prompt">... </span># comment\n'
+            'result</pre>Done.',
+            html
+        )
+
     def test_module_none(self):
         # Issue #128772
         from test.test_pydoc import module_none

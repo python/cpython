@@ -125,14 +125,24 @@ section section {
 .docstring {
     white-space: pre-wrap;
     margin: 0.3em 0;
+    max-width: 50em;
 }
 
-pre.topic, pre.keyword {
+pre.topic, pre.keyword, pre.repl {
     background-color: var(--block-background-color);
     border: 1px solid var(--block-border-color);
     border-radius: 3px;
     padding: 0.5em 0.8em;
     overflow-x: auto;
+}
+
+pre.repl {
+    font-size: inherit;
+    margin: 0.5em 0;
+}
+
+.prompt {
+    color: var(--muted-color);
 }
 
 /* Documented names (functions, methods, data) */
