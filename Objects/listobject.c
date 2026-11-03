@@ -4562,6 +4562,7 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
     PyListObject *self = _PyList_CAST(writer);
     assert(_PyObject_CAST(self) != iterable);
 
+    Py_ssize_t old_size = Py_SIZE(self);
     int res;
     if (PyList_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION(iterable);
@@ -4602,6 +4603,20 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
     else {
         res = list_extend_iter_lock_held(self, iterable);
     }
+
+    if (res < 0 && Py_SIZE(self) != old_size) {
+        // On error, reset the writer to its previous state
+        Py_ssize_t new_size = Py_SIZE(self);
+        Py_SET_SIZE(self, old_size);
+        PyObject **items = self->ob_item;
+        for (Py_ssize_t i = old_size; i < new_size; i++) {
+            Py_DECREF(items[i]);
+#ifdef Py_DEBUG
+            items[i] = NULL;
+#endif
+        }
+    }
+
     return res;
 }
 

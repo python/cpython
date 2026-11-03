@@ -428,6 +428,30 @@ class ListWriterTests(unittest.TestCase):
         # Test PyListWriter_Extend()
         self.check_extend('extend')
 
+        class IterError:
+            def __init__(self):
+                self.index = 1
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                value = self.index
+                self.index += 1
+                if value >= 3:
+                    raise ValueError("iter error")
+                return value
+
+        # On error, restore the writer to its previous state
+        iterable = IterError()
+        writer = self.create_writer(0)
+        writer.append("before")
+        with self.assertRaisesRegex(ValueError, "iter error"):
+            writer.extend(iterable)
+        self.assertEqual(iterable.index, 4)
+        writer.append("after")
+        self.list_equal(writer.finish(), ["before", "after"])
+
     def test_extend_array(self):
         # Test PyListWriter_ExtendArray()
         self.check_extend('extend_array')
