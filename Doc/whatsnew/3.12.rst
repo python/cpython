@@ -1885,6 +1885,8 @@ New Features
 
   (Contributed by Petr Viktorin in :gh:`101101`.)
 
+.. _whatsnew312-pep697:
+
 * :pep:`697`: Add an API for extending types whose instance memory layout is
   opaque:
 
