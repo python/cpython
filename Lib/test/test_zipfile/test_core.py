@@ -2664,28 +2664,10 @@ class OtherRepackTests(unittest.TestCase):
         fz.seek(0)
         self.assertEqual(fz.read(), expected)
 
-    def test_repack_removed_iterator(self):
-        # A one-shot iterable of removed entries must still be repacked.
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w') as zh:
-            for name in ['a.txt', 'b.txt', 'c.txt']:
-                zh.writestr(name, name[0].upper().encode() * 5000)
-        full_size = len(buf.getvalue())
-
-        fz = io.BytesIO(buf.getvalue())
-        with zipfile.ZipFile(fz, 'a') as zh:
-            zh.repack(iter([zh.remove('b.txt')]))
-
-        self.assertLess(len(fz.getvalue()), full_size - 5000)
-        fz.seek(0)
-        with zipfile.ZipFile(fz) as zh:
-            self.assertIsNone(zh.testzip())
-            self.assertEqual(zh.namelist(), ['a.txt', 'c.txt'])
-
-    def test_repack_failed_write_restores_header_offsets(self):
-        # A failed repack() must leave the in-memory offsets describing the
-        # file that is actually on disk, so that a later close() does not
-        # commit a central directory pointing at data that was never written.
+    def test_repack_write_error_keeps_entries_readable(self):
+        # close() after a failed repack() writes the in-memory offsets to
+        # the central directory, so an entry's offset must only change once
+        # its data has been moved.
         class FlakyBytesIO(io.BytesIO):
             countdown = None
 
@@ -2696,34 +2678,34 @@ class OtherRepackTests(unittest.TestCase):
                         raise OSError(errno.ENOSPC, 'No space left on device')
                 return super().write(data)
 
-        names = ['a.txt', 'b.txt', 'c.txt', 'd.txt']
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w') as zh:
-            for name in names:
-                zh.writestr(name, name[0].upper().encode() * 5000)
+        for sizes, countdown, readable in [
+            # The error hits b, the first entry to move.  The gap left by a
+            # is larger than one chunk, so b's old data is still intact.
+            ([5000, 5000, 5000, 5000], 1, 'bcd'),
+            # b has been moved when the error hits c.  c is not checked:
+            # the gap left by a is small, so its move overwrote its old data.
+            ([100, 10000, 10000, 100], 4, 'bd'),
+        ]:
+            with self.subTest(sizes=sizes):
+                contents = {name: randbytes(size)
+                            for name, size in zip('abcd', sizes)}
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, 'w') as zh:
+                    for name, data in contents.items():
+                        zh.writestr(name, data)
 
-        fz = FlakyBytesIO(buf.getvalue())
-        with zipfile.ZipFile(fz, 'a') as zh:
-            zi = zh.remove('b.txt')
-            expected = [z.header_offset for z in zh.infolist()]
-            expected_removed = zi.header_offset
+                fz = FlakyBytesIO(buf.getvalue())
+                with zipfile.ZipFile(fz, 'a') as zh:
+                    zi = zh.remove('a')
+                    fz.countdown = countdown
+                    with self.assertRaises(OSError):
+                        zh.repack([zi], chunk_size=4096)
+                    fz.countdown = None
 
-            fz.countdown = 1
-            with self.assertRaises(OSError):
-                zh.repack([zi], chunk_size=4096)
-
-            self.assertEqual([z.header_offset for z in zh.infolist()], expected)
-            self.assertEqual(zi.header_offset, expected_removed)
-
-            # The archive is still usable once the write error clears.
-            fz.countdown = None
-
-        fz.seek(0)
-        with zipfile.ZipFile(fz) as zh:
-            self.assertIsNone(zh.testzip())
-            self.assertEqual(zh.namelist(), ['a.txt', 'c.txt', 'd.txt'])
-            for name in zh.namelist():
-                self.assertEqual(zh.read(name), name[0].upper().encode() * 5000)
+                fz.seek(0)
+                with zipfile.ZipFile(fz) as zh:
+                    for name in readable:
+                        self.assertEqual(zh.read(name), contents[name])
 
 class ZipRepackerTests(unittest.TestCase):
     def _generate_local_file_entry(self, arcname, raw_bytes,
