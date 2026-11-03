@@ -4629,6 +4629,11 @@ listwriter_extend_array(PyListWriter *writer,
     assert(listwriter_check_consistency(writer));
     assert(nitem >= 0);
 
+    if (nitem == 0) {
+        // Fast path. Avoid also memcpy(dst, src, 0) undefined behavior below.
+        return 0;
+    }
+
     PyListObject *list = _PyList_CAST(writer);
     Py_ssize_t size = Py_SIZE(list);
     Py_ssize_t allocated = list->allocated;
