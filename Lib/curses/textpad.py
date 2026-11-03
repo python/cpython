@@ -2,6 +2,7 @@
 
 import curses
 import curses.ascii
+import unicodedata
 
 def rectangle(win, uly, ulx, lry, lrx):
     """Draw a rectangle with corners at the provided upper-left
@@ -49,6 +50,8 @@ class Textbox:
         self._update_max_yx()
         self.stripspaces = 1
         self.lastcmd = None
+        # Whether the last command typed a character into the lower-right cell.
+        self._corner_typed = False
         win.keypad(1)
 
     def _update_max_yx(self):
@@ -88,6 +91,8 @@ class Textbox:
         self._update_max_yx()
         (y, x) = self.win.getyx()
         backyx = None
+        corner_typed = self._corner_typed
+        self._corner_typed = False
         while True:
             if self.insert_mode:
                 # The displaced cell, as a complexchar so addch() can rewrite it
@@ -99,8 +104,28 @@ class Textbox:
                 # scrollable window).
                 if isinstance(ch, int):
                     self.win.insch(self._decode(ch), ch & curses.A_ATTRIBUTES)
+                elif (isinstance(ch, str)
+                      and unicodedata.category(ch) in ('Mn', 'Me')):
+                    if not corner_typed and x > 0:
+                        # The cursor was moved here: attach the combining
+                        # character to the preceding one, as elsewhere.
+                        self.win.addch(ch)
+                        break
+                    # Attach it to the character typed into this cell.
+                    cell = self.win.in_wch()
+                    try:
+                        cell = curses.complexchar(str(cell) + ch,
+                                                  cell.attr, cell.pair)
+                    except TypeError:
+                        # The cell is full; drop it, as addch() does.
+                        pass
+                    else:
+                        self.win.insch(cell)
                 else:
                     self.win.insch(ch)
+                if backyx is None:
+                    # insch() leaves the cursor on the typed character.
+                    self._corner_typed = True
                 break
             # Pass the character as text: an integer is a byte, which addch()
             # takes as a code point on a wide build.
@@ -108,8 +133,10 @@ class Textbox:
                 self.win.addch(self._decode(ch), ch & curses.A_ATTRIBUTES)
             else:
                 self.win.addch(ch)
-            # In insert mode keep shifting cells right until a blank one.
-            if not self.insert_mode or not str(oldch).isprintable():
+            # In insert mode keep shifting cells right until a blank one.  A
+            # combining character joins the previous cell without taking one.
+            if (not self.insert_mode or not str(oldch).isprintable()
+                    or self.win.getyx() == (y, x)):
                 break
             ch = oldch
             (y, x) = self.win.getyx()
@@ -135,6 +162,7 @@ class Textbox:
         elif self._printable_key(ch):
             self._insert_printable_char(ch)
             return 1
+        self._corner_typed = False
         if ch == curses.ascii.SOH:                             # ^a
             self.win.move(y, 0)
         elif ch in (curses.ascii.STX,curses.KEY_LEFT,

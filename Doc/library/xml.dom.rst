@@ -707,7 +707,7 @@ inherits properties from :class:`Node`.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: Document.createComment(data)
@@ -756,6 +756,12 @@ inherits properties from :class:`Node`.
    Return the element with the given ID, or ``None``.
    Only attributes declared as being of type ID in the DTD
    or by :meth:`Element.setIdAttribute` are searched.
+   If several elements have the same ID, the first one
+   in document order is returned.
+
+   .. versionchanged:: next
+      Previously, which of the elements with the same ID was returned
+      was unspecified and could change between calls.
 
 
 .. method:: Document.getElementsByTagName(tagName)
@@ -1299,7 +1305,7 @@ Its children are the replacement text of the entity, and are read-only.
 Parsers may expand entity references,
 so such a node only occurs in a document if it was created explicitly.
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 
 .. _dom-exceptions:

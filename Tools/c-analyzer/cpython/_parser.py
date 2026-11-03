@@ -63,7 +63,6 @@ EXCLUDED = format_conf_lines([
     'Python/dynload_hpux.c',           # dl.h
     'Python/emscripten_signal.c',
     'Python/emscripten_syscalls.c',
-    'Python/emscripten_trampoline_inner.c',
     'Python/thread_pthread.h',
     'Python/thread_pthread_stubs.h',
 
@@ -319,7 +318,7 @@ MAX_SIZES = {
     _abs('Modules/_remote_debugging/*.h'): (20_000, 1000),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/_testclinic.c'): (20_000, 400),
-    _abs('Modules/expat/expat.h'): (10_000, 400),
+    _abs('Modules/expat/expat.h'): (10_000, 500),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
@@ -335,6 +334,8 @@ MAX_SIZES = {
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),
     _abs('Include/internal/pycore_global_strings.h'): (5_000, 1000),
     _abs('Include/internal/pycore_runtime_init_generated.h'): (5_000, 1000),
+    _abs('Include/internal/pycore_unicodeobject_generated.h'): (100_000, 1500),
+    _abs('Python/Python-ast.c'): (20_000, 500),
     _abs('Python/deepfreeze/*.c'): (20_000, 500),
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),

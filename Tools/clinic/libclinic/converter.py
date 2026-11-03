@@ -8,7 +8,7 @@ import libclinic
 from libclinic import fail
 from libclinic import Sentinels, unspecified, unknown, NULL
 from libclinic.codegen import CRenderData, Include, TemplateDict
-from libclinic.function import Function, Parameter
+from libclinic.function import Function, Parameter, SETTERS
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -275,6 +275,11 @@ class CConverter(metaclass=CConverterAutoRegister):
     else:  # pragma: no cover
         pass
 
+    @classmethod
+    def dsl_name(cls) -> str:
+        """The name of the converter in the DSL, e.g. 'object'."""
+        return cls.__name__.removesuffix('_converter')
+
     def converter_init(self) -> None:
         pass
 
@@ -485,6 +490,16 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def bad_argument(self, displayname: str, expected: str, *, limited_capi: bool, expected_literal: bool = True) -> str:
         assert '"' not in expected
+        if self.function.kind in SETTERS:
+            # The value of an attribute, not an argument of a function.
+            if expected_literal:
+                return (f'PyErr_Format(PyExc_TypeError, '
+                        f'"attribute \'{{{{name}}}}\' must be {expected}, not %T", '
+                        f'{{argname}});')
+            else:
+                return (f'PyErr_Format(PyExc_TypeError, '
+                        f'"attribute \'{{{{name}}}}\' must be %s, not %T", '
+                        f'"{expected}", {{argname}});')
         if limited_capi:
             if expected_literal:
                 return (f'PyErr_Format(PyExc_TypeError, '

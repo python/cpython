@@ -7,7 +7,7 @@ from _symtable import (
     DEF_NONLOCAL, DEF_LOCAL,
     DEF_PARAM, DEF_TYPE_PARAM, DEF_FREE_CLASS,
     DEF_IMPORT, DEF_BOUND, DEF_ANNOT,
-    DEF_COMP_ITER, DEF_COMP_CELL,
+    DEF_COMP_ITER,
     SCOPE_OFF, SCOPE_MASK,
     FREE, LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL
 )
@@ -56,6 +56,7 @@ class SymbolTableType(StrEnum):
     TYPE_ALIAS = "type alias"
     TYPE_PARAMETERS = "type parameters"
     TYPE_VARIABLE = "type variable"
+    INLINED_COMPREHENSION = "inlined comprehension"
 
 
 class SymbolTable:
@@ -98,6 +99,8 @@ class SymbolTable:
             return SymbolTableType.TYPE_PARAMETERS
         if self._table.type == _symtable.TYPE_TYPE_VARIABLE:
             return SymbolTableType.TYPE_VARIABLE
+        if self._table.type == _symtable.TYPE_INLINED_COMPREHENSION:
+            return SymbolTableType.INLINED_COMPREHENSION
         assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
@@ -151,8 +154,10 @@ class SymbolTable:
             flags = self._table.symbols[name]
             namespaces = self.__check_children(name)
             module_scope = (self._table.name == "top")
+            inlined = (self._table.type == _symtable.TYPE_INLINED_COMPREHENSION)
             sym = self._symbols[name] = Symbol(name, flags, namespaces,
-                                               module_scope=module_scope)
+                                               module_scope=module_scope,
+                                               inlined_comprehension=inlined)
         return sym
 
     def get_symbols(self):
@@ -246,12 +251,14 @@ class Class(SymbolTable):
 
 class Symbol:
 
-    def __init__(self, name, flags, namespaces=None, *, module_scope=False):
+    def __init__(self, name, flags, namespaces=None, *, module_scope=False,
+                 inlined_comprehension=False):
         self.__name = name
         self.__flags = flags
         self.__scope = _get_scope(flags)
         self.__namespaces = namespaces or ()
         self.__module_scope = module_scope
+        self.__inlined_comprehension = inlined_comprehension
 
     def __repr__(self):
         flags_str = '|'.join(self._flags_str())
@@ -345,7 +352,7 @@ class Symbol:
     def is_comp_cell(self):
         """Return *True* if the symbol is a cell in an inlined comprehension.
         """
-        return bool(self.__flags & DEF_COMP_CELL)
+        return self.is_cell() and self.__inlined_comprehension
 
     def is_namespace(self):
         """Returns *True* if name binding introduces new namespace.

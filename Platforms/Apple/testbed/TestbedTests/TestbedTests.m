@@ -1,5 +1,5 @@
 #import <XCTest/XCTest.h>
-#import <Python/Python.h>
+#import <Python{{abiflags}}/Python.h>
 
 @interface TestbedTests : XCTestCase
 

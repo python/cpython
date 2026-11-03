@@ -1,1 +1,0 @@
-:func:`shutil.copyfile` now raises :exc:`~shutil.SpecialFileError` for sockets and device files.

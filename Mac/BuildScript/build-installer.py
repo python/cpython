@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.5.8",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz",
-              checksum="a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2",
+              name="OpenSSL 3.5.9",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+              checksum="603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -1402,7 +1402,10 @@ def patchFile(inPath, outPath):
     data = data.replace('$FULL_VERSION', getFullVersion())
     data = data.replace('$VERSION', getVersion())
     data = data.replace('$MACOSX_DEPLOYMENT_TARGET', ''.join((DEPTARGET, ' or later')))
-    data = data.replace('$ARCHITECTURES', ", ".join(universal_opts_map[UNIVERSALARCHS]))
+    archs = universal_opts_map[UNIVERSALARCHS]
+    data = data.replace('$ARCHITECTURES', ", ".join(archs))
+    data = data.replace('$ARCHITECTURE_NOUN',
+                        "architecture" if len(archs) == 1 else "architectures")
     data = data.replace('$INSTALL_SIZE', installSize())
     data = data.replace('$THIRD_PARTY_LIBS', "\\\n".join(THIRD_PARTY_LIBS))
 

@@ -664,9 +664,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                                            subclass);
         goto end;
     }
+    /* A subclass check can change the instance's actual type. */
+    Py_INCREF(subtype);
     result = PyObject_CallMethodOneArg(self, &_Py_ID(__subclasscheck__),
                                        subclass);
     if (result == NULL) {
+        Py_DECREF(subtype);
         goto end;
     }
 
@@ -684,6 +687,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     default:
         Py_UNREACHABLE();
     }
+    Py_DECREF(subtype);
 
 end:
     Py_XDECREF(impl);
