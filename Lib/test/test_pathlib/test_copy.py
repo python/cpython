@@ -177,7 +177,6 @@ class CopyFileobjFallbackTest(unittest.TestCase):
                     # must fall back to another copy method instead of failing.
                     import errno
                     import tempfile
-
         import unittest.mock
             from pathlib import _os as pathlib_os
         def failing_ficlone(source_fd, target_fd):
