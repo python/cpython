@@ -32,12 +32,13 @@ PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
     (((min) <= (nargs) && (nargs) <= (max)) \
      || _PyArg_CheckPositional((funcname), (nargs), (min), (max)))
 
-extern PyObject ** _Py_VaBuildStack(
+extern int _Py_VaBuildArray(
+    PyObject ***array,
+    Py_ssize_t *size,
     PyObject **small_stack,
     Py_ssize_t small_stack_len,
     const char *format,
-    va_list va,
-    Py_ssize_t *p_nargs);
+    va_list va);
 
 extern PyObject* _PyModule_CreateInitialized(PyModuleDef*, int apiver);
 

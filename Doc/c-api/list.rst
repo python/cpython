@@ -320,3 +320,12 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    instead of copying references.
 
    On error, all *items* references are also cleared.
+
+.. c:function:: int PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
+
+   Add values using :ref:`building values format <arg-parsing>`.
+
+   Example adding 3 integers: ``PyListWriter_FromFormat(writer, "iii", 1, 2, 3)``.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.

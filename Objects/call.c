@@ -517,12 +517,6 @@ static PyObject *
 _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
                          const char *format, va_list va)
 {
-    PyObject* small_stack[_PY_FASTCALL_SMALL_STACK];
-    const Py_ssize_t small_stack_len = Py_ARRAY_LENGTH(small_stack);
-    PyObject **stack;
-    Py_ssize_t nargs, i;
-    PyObject *result;
-
     if (callable == NULL) {
         return null_error(tstate);
     }
@@ -531,12 +525,17 @@ _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
         return _PyObject_CallNoArgsTstate(tstate, callable);
     }
 
-    stack = _Py_VaBuildStack(small_stack, small_stack_len,
-                             format, va, &nargs);
-    if (stack == NULL) {
+    PyObject* small_stack[_PY_FASTCALL_SMALL_STACK];
+    PyObject **stack;
+    Py_ssize_t nargs;
+    if (_Py_VaBuildArray(&stack, &nargs,
+                         small_stack, Py_ARRAY_LENGTH(small_stack),
+                         format, va) < 0) {
         return NULL;
     }
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
+
+    PyObject *result;
     if (nargs == 1 && PyTuple_Check(stack[0])) {
         /* Special cases for backward compatibility:
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
@@ -553,7 +552,7 @@ _PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
                                             stack, nargs, NULL);
     }
 
-    for (i = 0; i < nargs; ++i) {
+    for (Py_ssize_t i = 0; i < nargs; ++i) {
         Py_DECREF(stack[i]);
     }
     if (stack != small_stack) {
@@ -640,14 +639,18 @@ callmethod(PyThreadState *tstate, PyObject *obj, PyObject *name,
 
     /* Build the positional arguments from the format string. */
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    Py_ssize_t nargs = 0;
-    PyObject **built = NULL;
+    PyObject **built;
+    Py_ssize_t nargs;
     if (format != NULL && *format != '\0') {
-        built = _Py_VaBuildStack(small_stack, _PY_FASTCALL_SMALL_STACK,
-                                 format, va, &nargs);
-        if (built == NULL) {
+        if (_Py_VaBuildArray(&built, &nargs,
+                             small_stack, _PY_FASTCALL_SMALL_STACK,
+                             format, va) < 0) {
             goto exit;
         }
+    }
+    else {
+        built = NULL;
+        nargs = 0;
     }
 
     /* Backward compat: a single tuple from "O" is unpacked. */

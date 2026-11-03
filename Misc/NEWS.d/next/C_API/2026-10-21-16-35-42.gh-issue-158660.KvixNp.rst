@@ -11,5 +11,6 @@ created list. Add functions:
 * :c:func:`PyListWriter_Extend`
 * :c:func:`PyListWriter_ExtendArray`
 * :c:func:`PyListWriter_ExtendArraySteal`
+* :c:func:`PyListWriter_FromFormat`
 
 Patch by Victor Stinner.

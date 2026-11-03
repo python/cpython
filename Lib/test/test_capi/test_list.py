@@ -460,6 +460,29 @@ class ListWriterTests(unittest.TestCase):
         # Test PyListWriter_ExtendArraySteal()
         self.check_extend('extend_array_steal')
 
+    def test_build_value(self):
+        # Test PyListWriter_FromFormat()
+
+        # Allocate a small array on the stack (1 item)
+        writer = self.create_writer(0)
+        writer.from_format_i(123)
+        self.list_equal(writer.finish(), [123])
+
+        # Allocate an array on the heap (16 items)
+        items = tuple(range(100, 100+16))
+        writer = self.create_writer(0)
+        writer.from_format_i16(items)
+        self.list_equal(writer.finish(), items)
+
+        # Test error: call PyListWriter_FromFormat(writer, "iiO", 1, 2, NULL).
+        # First items before the error must not be added.
+        writer = self.create_writer(0)
+        writer.append("before")
+        with self.assertRaises(SystemError):
+            writer.from_format_error()
+        writer.append("after")
+        self.list_equal(writer.finish(), ["before", "after"])
+
     def test_empty(self):
         list_get_allocated = _testcapi._list_get_allocated
         empty_tuple = ()

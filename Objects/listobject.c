@@ -4674,3 +4674,29 @@ PyListWriter_ExtendArraySteal(PyListWriter *writer,
 {
     return listwriter_extend_array(writer, items, nitem, 1);
 }
+
+
+int
+PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
+{
+    PyObject* small_array[8];
+    Py_ssize_t size;
+    PyObject **array;
+
+    va_list vargs;
+    va_start(vargs, format);
+    int res = _Py_VaBuildArray(
+        &array, &size,
+        small_array, Py_ARRAY_LENGTH(small_array),
+        format, vargs);
+    va_end(vargs);
+    if (res < 0) {
+        return -1;
+    }
+
+    res = PyListWriter_ExtendArraySteal(writer, array, size);
+    if (array != small_array) {
+        PyMem_Free(array);
+    }
+    return res;
+}

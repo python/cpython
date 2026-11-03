@@ -1323,6 +1323,7 @@ New features
   * :c:func:`PyListWriter_Extend`
   * :c:func:`PyListWriter_ExtendArray`
   * :c:func:`PyListWriter_ExtendArraySteal`
+  * :c:func:`PyListWriter_FromFormat`
 
   (Contributed by Victor Stinner in :gh:`158660`.)
 

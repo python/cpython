@@ -77,3 +77,7 @@ PyAPI_FUNC(int) PyListWriter_ExtendArraySteal(
     PyListWriter *writer,
     PyObject *const *items,
     Py_ssize_t nitem);
+PyAPI_FUNC(int) PyListWriter_FromFormat(
+    PyListWriter *writer,
+    const char *format,
+    ...);
