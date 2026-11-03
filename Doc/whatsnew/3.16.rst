@@ -148,6 +148,15 @@ asyncio
   :class:`asyncio.Runner` class constructor.
   (Contributed by Andrew Svetlov in :gh:`128289`.)
 
+* The event loop now runs callbacks scheduled by other callbacks eagerly,
+  within a small time and count budget, before polling for I/O again.
+  This speeds up code that resolves futures or wakes tasks in chains.
+  The limits can be changed with the new :meth:`loop.set_settings()
+  <asyncio.loop.set_settings>` method and :class:`asyncio.EventLoopSettings`
+  class.  ``asyncio.sleep(0)`` ends eager processing in the current
+  iteration.  See :ref:`asyncio-eager-callbacks`.
+  (Contributed by Andrew Svetlov in :gh:`160760`.)
+
 
 bdb
 ---
@@ -1268,6 +1277,13 @@ Porting to Python 3.16
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* :mod:`asyncio` event loops now run callbacks scheduled by other callbacks
+  eagerly, before polling for I/O again.  Code or tests that rely on the
+  exact order of callbacks relative to I/O events may need updating; eager
+  processing can be disabled with ``loop.set_settings(asyncio.EventLoopSettings(
+  eager_max_time=0, eager_max_callbacks=0))``.
+  (Contributed by Andrew Svetlov in :gh:`160760`.)
 
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and

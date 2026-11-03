@@ -264,6 +264,10 @@ class ProactorTests(WindowsEventsTestCase):
         sock.close()
 
     def test_client_pipe_stat(self):
+        # The probes rely on the pipe server creating the next pipe
+        # instance between them, which eager processing would postpone.
+        self.loop.set_settings(asyncio.EventLoopSettings(
+            eager_max_time=0, eager_max_callbacks=0))
         res = self.loop.run_until_complete(self._test_client_pipe_stat())
         self.assertEqual(res, 'done')
 

@@ -511,6 +511,9 @@ Sleeping
    Setting the delay to 0 provides an optimized path to allow other
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
+   It also ends :ref:`eager callback processing <asyncio-eager-callbacks>`
+   in the current iteration of the loop, so the task resumes only after
+   the loop has polled for I/O.
 
    .. _asyncio_example_sleep:
 
@@ -537,6 +540,10 @@ Sleeping
 
    .. versionchanged:: 3.13
       Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
+
+   .. versionchanged:: next
+      A delay of 0 or less ends eager callback processing in the current
+      iteration of the event loop.
 
 
 Running tasks concurrently
@@ -798,8 +805,8 @@ Timeouts
        as measured by the event loop's clock:
 
        - If ``when`` is ``None``, the timeout will never trigger.
-       - If ``when < loop.time()``, the timeout will trigger on the next
-         iteration of the event loop.
+       - If ``when < loop.time()``, the timeout will trigger as soon as
+         possible, like a callback scheduled with :meth:`loop.call_soon`.
 
         .. method:: when() -> float | None
 
@@ -1436,7 +1443,7 @@ Task object
       otherwise, return ``True``.
 
       The method arranges for a :exc:`CancelledError` exception to be thrown
-      into the wrapped coroutine on the next cycle of the event loop.
+      into the wrapped coroutine the next time the task runs.
 
       The coroutine then has a chance to clean up or even deny the
       request by suppressing the exception with a :keyword:`try` ...

@@ -21,6 +21,7 @@ import weakref
 from types import GenericAlias
 
 from . import base_tasks
+from . import constants
 from . import coroutines
 from . import events
 from . import exceptions
@@ -193,7 +194,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """Request that this task cancel itself.
 
         This arranges for a CancelledError to be thrown into the
-        wrapped coroutine on the next cycle through the event loop.
+        wrapped coroutine the next time the task runs.
         The coroutine then has a chance to clean up or even deny
         the request using try/except/finally.
 
@@ -718,6 +719,12 @@ def __sleep0():
 async def sleep(delay, result=None):
     """Coroutine that completes after a given time (in seconds)."""
     if delay <= 0:
+        loop = events._get_running_loop()
+        if loop is not None:
+            try:
+                loop._eager_state = constants.EAGER_BREAK
+            except AttributeError:
+                pass
         await __sleep0()
         return result
 
