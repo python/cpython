@@ -510,6 +510,13 @@ Doc/library/importlib.resources.rst       @jaraco @warsaw @FFY00
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
 
+# IO
+Doc/library/io.rst            @cmaloney
+Lib/_pyio.py                  @cmaloney
+Lib/io.py                     @cmaloney
+Lib/test/test_io/             @cmaloney
+Modules/_io/                  @cmaloney
+
 # Itertools
 Doc/library/itertools.rst     @rhettinger
 Lib/test/test_itertools.py    @rhettinger
