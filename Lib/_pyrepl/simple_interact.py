@@ -171,7 +171,7 @@ def run_multiline_interactive_console(
 
             if statement_submitted_hook is not None:
                 try:
-                    statement_submitted_hook(statement)
+                    statement_submitted_hook(_strip_final_indent(statement))
                 except Exception:
                     console.showtraceback()
 
