@@ -527,7 +527,14 @@ class IocpProactor:
         ov.AcceptEx(listener.fileno(), conn.fileno())
 
         def finish_accept(trans, key, ov):
-            ov.getresult()
+            try:
+                ov.getresult()
+            except OSError as exc:
+                conn.close()
+                # The peer reset the connection before it was accepted.
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    raise ConnectionResetError(*exc.args)
+                raise
             # Use SO_UPDATE_ACCEPT_CONTEXT so getsockname() etc work.
             buf = struct.pack('@P', listener.fileno())
             conn.setsockopt(socket.SOL_SOCKET,
@@ -542,6 +549,9 @@ class IocpProactor:
             except exceptions.CancelledError:
                 conn.close()
                 raise
+            except ConnectionResetError:
+                # Reported to the caller through the future.
+                pass
 
         future = self._register(ov, listener, finish_accept)
         coro = accept_coro(future, conn)
