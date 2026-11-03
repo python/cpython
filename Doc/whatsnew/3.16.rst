@@ -1384,6 +1384,10 @@ New features
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
+* Add new functions :c:func:`PyUnicode_DecodeUnicodeEscapeStateful` and
+  :c:func:`PyUnicode_DecodeRawUnicodeEscapeStateful` to the limited C API.
+  (Contributed by Serhiy Storchaka in :issue:`45472`.)
+
 Porting to Python 3.16
 ----------------------
 
