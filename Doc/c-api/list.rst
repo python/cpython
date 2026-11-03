@@ -330,11 +330,11 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
-.. c:function:: int PyListWriter_FromBuffer(PyListWriter *writer, PyBuffer *view)
+.. c:function:: int PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *view)
 
    Add values from a buffer.
 
-   *buffer* must have 1 dimension.
+   *view* must have 1 dimension.
 
    On success, return ``0``.
    On error, set an exception, leave the writer unchanged, and return ``-1``.

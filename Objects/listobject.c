@@ -4709,17 +4709,17 @@ PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
 
 
 int
-PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *buf)
+PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *view)
 {
     extern int _PyMemoryView_ToListWriter(PyObject *self,
                                           PyListWriter *writer);
 
-    if (buf->ndim != 1) {
+    if (view->ndim != 1) {
         PyErr_SetString(PyExc_ValueError, "require a buffer of 1 dimension");
         return -1;
     }
 
-    PyObject *mview = PyMemoryView_FromBuffer(buf);
+    PyObject *mview = PyMemoryView_FromBuffer(view);
     if (mview == NULL) {
         return -1;
     }
