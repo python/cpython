@@ -30,6 +30,11 @@ import http.client
 
 support.requires_working_socket(module=True)
 
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)
@@ -1782,6 +1787,7 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_proxy_digest_auth(self):
         # gh-60299: ProxyDigestAuthHandler must look up credentials using
         # the proxy's authority
@@ -1845,6 +1851,7 @@ class HandlerTests(unittest.TestCase):
         auth = http_handler.requests[1].get_header("Proxy-authorization")
         self.assertIn('uri="%s"' % request_url, auth)
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_digest_auth_uses_full_url(self):
         # The non-proxy case must keep using the full request URL (not
         # just the host) for the password lookup, so that sub-URI realm
@@ -2353,12 +2360,6 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
-
-
-skip_libssl_fips_mode = unittest.skipIf(
-    support.is_libssl_fips_mode(),
-    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
-)
 
 
 class TestDigestAuthAlgorithms(unittest.TestCase):
