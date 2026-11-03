@@ -191,7 +191,7 @@ following just after ``#include <Python.h>``::
    #error "abi3t define is not set!"
    #endif
 
-This should not result in an "``abi3t`` define is not set" error.
+This should result in a different error than "``abi3t`` define is not set". (If you get no error at all, either the module is already ported or you're not compiling the code you changed.)
 
 .. seealso::
 
