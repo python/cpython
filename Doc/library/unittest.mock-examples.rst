@@ -481,7 +481,7 @@ You can stack up multiple patch decorators using this pattern::
 When you nest patch decorators the mocks are passed in to the decorated
 function in the same order they applied (the normal *Python* order that
 decorators are applied). This means from the bottom up, so in the example
-above the mock for ``test_module.ClassName2`` is passed in first.
+above the mock for ``package.module.ClassName2`` is passed in first.
 
 There is also :func:`patch.dict` for setting values in a dictionary just
 during a scope and restoring the dictionary to its original state when the test

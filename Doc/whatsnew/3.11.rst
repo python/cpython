@@ -1904,11 +1904,11 @@ C APIs pending removal are
 * :meth:`!importlib.abc.PathEntryFinder.find_loader`
 * :meth:`!importlib.abc.PathEntryFinder.find_module`
 * :meth:`!importlib.machinery.BuiltinImporter.find_module`
-* :meth:`!importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`!importlib.machinery.BuiltinImporter.module_repr`
 * :meth:`!importlib.machinery.FileFinder.find_loader`
 * :meth:`!importlib.machinery.FileFinder.find_module`
 * :meth:`!importlib.machinery.FrozenImporter.find_module`
-* :meth:`!importlib.machinery.FrozenLoader.module_repr`
+* :meth:`!importlib.machinery.FrozenImporter.module_repr`
 * :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
 * :func:`!importlib.util.module_for_loader`
