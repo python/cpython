@@ -1732,11 +1732,7 @@ Glossary
       A class that :func:`issubclass` and :func:`isinstance` treat as a
       subclass of an :term:`abstract base class` even though it does not
       inherit from it.  A class is made a virtual subclass by registering
-      it with the ABC's :meth:`~abc.ABCMeta.register` method.  An ABC can
-      also recognize classes without registration by overriding
-      :meth:`~abc.ABCMeta.__subclasshook__`.  The ABC does not appear in
-      the virtual subclass's :term:`MRO`, and none of the ABC's methods are
-      inherited.
+      it with the ABC's :meth:`~abc.ABCMeta.register` method.
 
    walrus operator
       A light-hearted way to refer to the :ref:`assignment expression
