@@ -164,6 +164,9 @@ Here is the :class:`Header` class description:
          >>> from email.header import decode_header, make_header
          >>> str(make_header(decode_header('=?utf-8?q?Caf=C3=A9?=')))
          'Café'
+         
+         Alternatively, messages parsed with the :data:`email.policy.default`
+         policy decode their headers automatically.
 
       .. versionchanged:: 3.2
          Added handling for the ``'unknown-8bit'`` charset.
