@@ -48,7 +48,7 @@ struct mi_heap_qsbr_s {
 // Use 16 KiB pages instead of the default 64 KiB in 64-bit platforms.
 // TODO: 32-bit platforms may need tuning too.
 #  if SIZEOF_VOID_P == 8
-#    define MI_SEGMENT_SLICE_SHIFT 14
+#    define MI_ARENA_SLICE_SHIFT 14
 #  endif
 #ifdef Py_DEBUG
 #  define MI_DEBUG 2
