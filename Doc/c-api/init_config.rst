@@ -157,6 +157,8 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
 
    *\*value* can be set to ``NULL`` if the option is an optional string and the
    option is unset.
+   Optional strings are documented with the type ``str | None`` in the
+   :ref:`Configuration Options <pyinitconfig-opts>` table.
 
    On success, the string must be released with ``free(value)`` if it's not
    ``NULL``.
