@@ -436,9 +436,9 @@ through all other variables that refer to it.::
    >>> rgba = rgb
    >>> id(rgb) == id(rgba)  # they reference the same object
    True
-   >>> rgba.append("Alph")
+   >>> rgba.append("Alpha")
    >>> rgb
-   ["Red", "Green", "Blue", "Alph"]
+   ["Red", "Green", "Blue", "Alpha"]
 
 All slice operations return a new list containing the requested elements.  This
 means that the following slice returns a
