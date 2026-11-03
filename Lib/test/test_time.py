@@ -561,6 +561,31 @@ class TimeTestCase(unittest.TestCase):
                 del environ['TZ']
             time.tzset()
 
+        #  verify the libc-backed values against localtime() under a controlled timezone.
+        old_tz = os.environ.get("TZ")
+        try:
+            os.environ["TZ"] = "America/Vancouver"
+            time.tzset()
+
+            local_time = time.localtime()
+
+            self.assertEqual(
+                time.tzname[0],
+                local_time.tm_zone
+            )
+
+            self.assertEqual(
+                time.timezone,
+                -time.gmtime(time.mktime(local_time)).tm_gmtoff
+            )
+
+        finally:
+            if old_tz is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = old_tz
+            time.tzset()
+
     def test_insane_timestamps(self):
         # It's possible that some platform maps time_t to double,
         # and that this test will fail there.  This test should
