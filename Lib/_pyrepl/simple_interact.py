@@ -33,23 +33,10 @@ import warnings
 from .readline import _get_reader, multiline_input, append_history_file
 
 
-# Called with the complete statement, which may span multiple lines, after the
-# user submits it but before it is executed. The hook is not called for PyREPL
-# commands such as ``clear``. Exceptions raised by the hook are labelled and
-# displayed without changing sys.last_* or preventing the statement from running.
-# Its return value is ignored.
-# External tools such as IDEs can install a hook to augment the behavior of the
-# REPL.
-#
-# For example, an IDE can mark the start of command execution:
-#
-#     from _pyrepl import simple_interact
-#
-#     simple_interact.statement_submitted_hook = lambda x: print("\x1b]633;C\x07", end="")
-#
-# In the REPL:
-#     >>> print("Hello, world!")
-#     \x1b]633;C\x07Hello, world!
+# Called with submitted input before execution, except for REPL commands.
+# Final auto-indentation is removed; the return value is ignored.
+# Ordinary exceptions are labelled and displayed without changing sys.last_* or
+# stopping execution. KeyboardInterrupt cancels submission; SystemExit exits.
 statement_submitted_hook = None
 
 
