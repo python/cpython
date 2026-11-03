@@ -336,10 +336,7 @@ get_warnings_context_filters(PyInterpreterState *interp)
     return context_filters;
 }
 
-/* Store a new reference to 'value' in the warnings state field '*ptr',
-   unless it is already stored there.  Other threads may be using the old
-   value without holding a reference, so on the free-threaded build it is
-   released only after a safe point. */
+/* Store 'value' in the warnings state field '*ptr'. */
 static void
 update_state_ref(PyObject **ptr, PyObject *value)
 {
@@ -348,17 +345,19 @@ update_state_ref(PyObject **ptr, PyObject *value)
     }
 #ifdef Py_GIL_DISABLED
     PyObject *old = _Py_atomic_exchange_ptr(ptr, Py_NewRef(value));
+    // Readers (get_state_ref()) don't hold a reference to the old value.
     _PyObject_XDecRefDelayed(old);
 #else
     Py_XSETREF(*ptr, Py_NewRef(value));
 #endif
 }
 
-/* Return a new reference to the warnings state field '*ptr'.  The value
-   cannot be freed between the load and the incref, see update_state_ref(). */
+/* Return a new reference to the warnings state field '*ptr'. */
 static PyObject *
 get_state_ref(PyObject **ptr)
 {
+    // Safe without holding a reference: the attached thread cannot reach a
+    // QSBR quiescent state before the incref, see update_state_ref().
     return Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(*ptr));
 }
 
@@ -617,8 +616,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 }
 
 
-/* Returns 1 if 'registry' is stamped with filters 'version', 0 if not, -1
-   on error. */
+/* Returns 1 if 'registry' is stamped with 'version', 0 if not, -1 on error. */
 static int
 registry_version_matches(PyObject *registry, Py_ssize_t version)
 {
@@ -648,15 +646,9 @@ set_registry_version(PyObject *registry, Py_ssize_t version)
     return rc;
 }
 
-/* Validate the version stamp of 'registry', a dict of warnings already
-   shown.  Its entries are only valid for the filters version it is stamped
-   with.  'version' is the filters version the caller searched the filters
-   with.  If the stamp differs and 'version' is still the current version,
-   clear the registry and stamp it with 'version'.  If 'version' is stale,
-   leave the registry alone: the caller's result predates the filter change
-   and must not be recorded.
-
-   Returns 1 if the registry can be used, 0 if not, -1 on error. */
+/* Make 'registry' usable for filters 'version', clearing it if it is stamped
+   with a different version.  Returns 1 if it can be used, 0 if 'version' is
+   no longer current, -1 on error. */
 static int
 check_registry_version(PyInterpreterState *interp, PyObject *registry,
                        Py_ssize_t version)
@@ -669,6 +661,7 @@ check_registry_version(PyInterpreterState *interp, PyObject *registry,
         return rc;
     }
     if (version != FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version)) {
+        // The caller's filter search is stale, don't record its result.
         return 0;
     }
 
@@ -707,8 +700,8 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     return rc;
 }
 
-/* Set 'key' in 'registry' unless it is already present.  Returns 1 if it
-   was present, 0 if it was set, -1 on error. */
+/* Returns 1 if 'key' was already in 'registry', 0 if it was added, -1 on
+   error. */
 static int
 registry_add(PyObject *registry, PyObject *key)
 {
@@ -719,11 +712,9 @@ registry_add(PyObject *registry, PyObject *key)
     return rc;
 }
 
-/* Record that a warning was shown, based on a search of filters 'version'.
-   'key' and 'altkey' (either may be NULL) are set in 'registry'.  If one of
-   them is already present, another thread showed the warning first and it
-   must not be shown again.  Nothing is recorded if 'version' is stale.
-   Returns 0 if the warning should be shown, 1 if not, -1 on error. */
+/* Record 'key' and 'altkey' (either may be NULL) in 'registry' for filters
+   'version'.  Returns 0 if the warning should be shown, 1 if it was already
+   recorded, -1 on error. */
 static int
 record_warning(PyInterpreterState *interp, PyObject *registry,
                PyObject *key, PyObject *altkey, Py_ssize_t version)
@@ -740,10 +731,9 @@ record_warning(PyInterpreterState *interp, PyObject *registry,
             rc = registry_add(registry, altkey);
         }
         if (rc >= 0) {
-            /* Another thread may have cleared the registry and stamped it
-            with a newer version before our keys were written, making them look
-            valid for the new filters.  Detect this by checking the stamp again
-            and invalidating the registry if it changed. */
+            /* The critical section may have been suspended while the keys
+               were added, letting another thread clear and re-stamp the
+               registry.  If so, invalidate it. */
             int match = registry_version_matches(registry, version);
             if (match < 0 ||
                 (match == 0 && set_registry_version(registry, -1) < 0))
@@ -936,17 +926,14 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     if (key == NULL)
         goto cleanup;
 
-    /* The warnings lock is not taken here.  Filters are searched under a
-       critical section on the filters list and the registries are checked
-       and updated under a critical section on the registry.  'version' is
-       the filters version used for the search, so that a result computed
-       from filters that have since changed is never recorded. */
+    /* The warnings lock is not held.  'version' ties the registry updates
+       to the filters searched; a result from filters that changed since is
+       never recorded. */
     WarningsState *st = warnings_get_state(interp);
     Py_ssize_t version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
 
     if ((registry != NULL) && (registry != Py_None)) {
-        /* Compute the hash now (it is cached by the tuple) so that a user
-           __hash__ does not run inside the registry critical section. */
+        /* Hash outside the registry critical section (tuples cache it). */
         if (PyObject_Hash(key) == -1)
             goto cleanup;
         rc = already_warned(interp, registry, key, version);
