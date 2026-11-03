@@ -258,35 +258,39 @@ ascii_case_bits(size_t x, size_t ge, size_t gt)
 }
 
 static inline Py_ALWAYS_INLINE void
-ascii_case_word(char *result, const char *cptr, size_t ge, size_t gt)
+ascii_case_word(char *result, const char *cptr, Py_ssize_t i,
+                size_t ge, size_t gt)
 {
     size_t x;
-    memcpy(&x, cptr, sizeof(x));
+    memcpy(&x, cptr + i, sizeof(x));
     x ^= ascii_case_bits(x, ge, gt);
-    memcpy(result, &x, sizeof(x));
+    memcpy(result + i, &x, sizeof(x));
 }
 
-/* Requires len >= SIZEOF_SIZE_T.  The last word, converted first, may
-   overlap the others; converting a byte twice is harmless.  Not inlined,
-   so that short strings skip its setup.  The loop indexes whole words,
-   counting by one, with its constants computed outside it: MSVC only
-   vectorizes it in this form, and it stays as short as before where
-   nothing vectorizes it. */
+/* Requires len >= SIZEOF_SIZE_T.  The last word may overlap the one before
+   it; converting a byte twice is harmless.  Not inlined, so that short
+   strings skip its setup. */
 static Py_NO_INLINE void
 ascii_case_words(char *result, const char *cptr, Py_ssize_t len,
                  unsigned char first)
 {
-    typedef char word[SIZEOF_SIZE_T];
-    word *rw = (word *)result;
-    const word *cw = (const word *)cptr;
     const size_t ones = (size_t)-1 / 0xff;
     size_t ge = (0x80 - first) * ones, gt = (0x80 - first - 26) * ones;
-    Py_ssize_t i, n = (Py_ssize_t)((size_t)(len - 1) / SIZEOF_SIZE_T);
-    ascii_case_word(result + len - SIZEOF_SIZE_T, cptr + len - SIZEOF_SIZE_T,
-                    ge, gt);
+    Py_ssize_t i;
+#if defined(_MSC_VER) && !defined(__clang__)
+    /* MSVC only vectorizes loops that count by one; elsewhere such a loop
+       gets post-indexed accesses, slow on Apple cores.  Dividing unsigned
+       avoids an idiv in code optimized for size. */
+    Py_ssize_t n = (size_t)(len - 1) / SIZEOF_SIZE_T;
     for (i = 0; i < n; i++) {
-        ascii_case_word(rw[i], cw[i], ge, gt);
+        ascii_case_word(result, cptr, i * SIZEOF_SIZE_T, ge, gt);
     }
+#else
+    for (i = 0; i < len - SIZEOF_SIZE_T; i += SIZEOF_SIZE_T) {
+        ascii_case_word(result, cptr, i, ge, gt);
+    }
+#endif
+    ascii_case_word(result, cptr, len - SIZEOF_SIZE_T, ge, gt);
 }
 
 PyDoc_STRVAR_shared(_Py_lower__doc__,
