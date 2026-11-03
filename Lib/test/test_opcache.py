@@ -28,15 +28,22 @@ def have_dict_key_versions():
 
 
 class TestBase(unittest.TestCase):
+    @staticmethod
+    def _specialized_names(f):
+        # A specialization folded into KIND_OP shows up as KIND_OP with the
+        # kind's name in the argrepr, e.g. "KIND_OP 0 [BINARY_OP_ADD_INT]".
+        names = set()
+        for instruction in dis.get_instructions(f, adaptive=True):
+            names.add(instruction.opname)
+            if instruction.opname == "KIND_OP":
+                names.add(instruction.argrepr.rsplit("[", 1)[-1].rstrip("]"))
+        return names
+
     def assert_specialized(self, f, opname):
-        instructions = dis.get_instructions(f, adaptive=True)
-        opnames = {instruction.opname for instruction in instructions}
-        self.assertIn(opname, opnames)
+        self.assertIn(opname, self._specialized_names(f))
 
     def assert_no_opcode(self, f, opname):
-        instructions = dis.get_instructions(f, adaptive=True)
-        opnames = {instruction.opname for instruction in instructions}
-        self.assertNotIn(opname, opnames)
+        self.assertNotIn(opname, self._specialized_names(f))
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):

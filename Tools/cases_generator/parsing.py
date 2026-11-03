@@ -301,6 +301,7 @@ class InstDef(Node):
 class Macro(Node):
     name: str
     uops: list[UOp]
+    annotations: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -508,6 +509,11 @@ class Parser(PLexer):
 
     @contextual
     def macro_def(self) -> Macro | None:
+        # annotation* macro(NAME) = uop + ... ;
+        # Only the kind annotations are meaningful on a macro.
+        annotations = []
+        while anno := self.expect(lx.ANNOTATION):
+            annotations.append(anno.text)
         if tkn := self.expect(lx.MACRO):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
@@ -515,7 +521,7 @@ class Parser(PLexer):
                         if self.expect(lx.EQUALS):
                             if uops := self.uops():
                                 self.require(lx.SEMI)
-                                res = Macro(tkn.text, uops)
+                                res = Macro(tkn.text, uops, annotations)
                                 return res
         return None
 

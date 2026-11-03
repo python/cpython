@@ -22,7 +22,11 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
+    emit_to,
+    always_true,
 )
+from lexer import Token
 from cwriter import CWriter
 from typing import TextIO
 from stack import Local, Stack, StackError, get_stack_effect, Storage
@@ -209,6 +213,97 @@ def generate_tier1_labels(
         emitter.emit_tokens(label, storage, None)
         emitter.emit("\n\n")
 
+class KindEmitter(Emitter):
+    """Emitter for specializations folded into KIND_OP: a failed guard
+    re-dispatches to the family's generic instruction instead of jumping to
+    its PREDICTED label."""
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        assert inst is not None
+        assert inst.family is not None
+        self.emit(f"KIND_OP_DEOPT({inst.family.name});\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    exit_if = deopt_if
+
+
+def write_instruction_body(
+    inst: Instruction, out: CWriter, emitter: Emitter
+) -> None:
+    """The uops of an instruction, from the cache size check to DISPATCH()."""
+    if inst.family is not None:
+        out.emit(
+            f"static_assert({inst.family.size} == {inst.size-1}"
+            ', "incorrect cache size");\n'
+        )
+    declare_variables(inst, out)
+    offset = 1  # The instruction itself
+    stack = Stack()
+    reachable = True
+    for part in inst.parts:
+        if part.properties.records_value:
+            continue
+        # Only emit braces if more than one uop
+        insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+        reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
+    out.start_line()
+    if reachable:
+        stack.flush(out)
+        out.emit("DISPATCH();\n")
+
+
+def write_kind_op(analysis: Analysis, out: CWriter) -> None:
+    """KIND_OP: one instruction whose cases are the folded specializations.
+    The kind replaces the adaptive counter in the first cache entry; the
+    instruction otherwise keeps the cache layout of its family."""
+    emitter = KindEmitter(out, analysis.labels)
+    kind_op = analysis.instructions["KIND_OP"]
+    out.emit("\n")
+    out.emit("TARGET(KIND_OP) {\n")
+    out.emit("#if _Py_TAIL_CALL_INTERP\n")
+    out.emit("int opcode = KIND_OP;\n")
+    out.emit("(void)(opcode);\n")
+    out.emit("#endif\n")
+    out.emit("_Py_CODEUNIT* const this_instr = next_instr;\n")
+    out.emit("(void)this_instr;\n")
+    out.emit("frame->instr_ptr = next_instr;\n")
+    out.emit(f"next_instr += {kind_op.size};\n")
+    out.emit("INSTRUCTION_STATS(KIND_OP);\n")
+    out.emit("uint16_t kind = read_u16(&this_instr[1].cache) >> KIND_OP_KIND_SHIFT;\n")
+    out.emit("assert(kind < KIND_OP_NKINDS);\n")
+    out.emit("switch (kind) {\n")
+    for inst in analysis.kinds:
+        assert inst.family is not None
+        out.emit(f"case KIND_{inst.name}: {{\n")
+        out.emit("// The instruction is as long as its family's generic instruction.\n")
+        out.emit(f"next_instr = this_instr + 1 + INLINE_CACHE_ENTRIES_{inst.family.name};\n")
+        write_instruction_body(inst, out, emitter)
+        out.start_line()
+        out.emit("}\n")
+    out.emit("default:\n")
+    out.emit("Py_UNREACHABLE();\n")
+    out.emit("}\n")
+    out.start_line()
+    out.emit("}")
+    out.emit("\n")
+
+
 def get_popped(inst: Instruction, analysis: Analysis) -> str:
     stack = get_stack_effect(inst)
     return (-stack.base_offset).to_c()
@@ -220,6 +315,9 @@ def generate_tier1_cases(
     emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
+        if name == "KIND_OP" and analysis.kinds:
+            write_kind_op(analysis, out)
+            continue
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
         popped = get_popped(inst, analysis)

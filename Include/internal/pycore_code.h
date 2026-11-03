@@ -160,6 +160,25 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
+/* TO_BOOL_SIZED: types whose truthiness is a size field at a fixed offset. */
+typedef struct {
+    PyTypeObject *type;
+    uint16_t offset;
+} _PyToBoolSizedDescr;
+
+enum _PyToBoolSizedKind {
+    TO_BOOL_SIZED_DICT = 0,
+    TO_BOOL_SIZED_FROZENDICT,
+    TO_BOOL_SIZED_TUPLE,
+    TO_BOOL_SIZED_BYTES,
+    TO_BOOL_SIZED_BYTEARRAY,
+    TO_BOOL_SIZED_SET,
+    TO_BOOL_SIZED_FROZENSET,
+    TO_BOOL_SIZED_NKINDS,
+};
+
+PyAPI_DATA(const _PyToBoolSizedDescr) _PyToBoolSized_Table[TO_BOOL_SIZED_NKINDS];
+
 typedef struct {
     _Py_BackoffCounter counter;
 } _PyContainsOpCache;
@@ -516,6 +535,50 @@ typedef struct {
     PyTypeObject *lhs_type;
     PyTypeObject *rhs_type;
 } _PyBinaryOpSpecializationDescr;
+
+/* Kinds for BINARY_OP_INPLACE. Bit 0 selects the mutated operand
+   (0 = left, 1 = right); the kinds for one operator are consecutive. */
+enum _PyBinaryOpInplaceKind {
+    INPLACE_FLOAT_ADD_L = 0,
+    INPLACE_FLOAT_ADD_R,
+    INPLACE_FLOAT_SUB_L,
+    INPLACE_FLOAT_SUB_R,
+    INPLACE_FLOAT_MUL_L,
+    INPLACE_FLOAT_MUL_R,
+    INPLACE_FLOAT_TRUEDIV_L,
+    INPLACE_FLOAT_TRUEDIV_R,
+    INPLACE_INT_ADD_L,
+    INPLACE_INT_ADD_R,
+    INPLACE_INT_SUB_L,
+    INPLACE_INT_SUB_R,
+    INPLACE_INT_MUL_L,
+    INPLACE_INT_MUL_R,
+    INPLACE_NKINDS,
+};
+#define INPLACE_FIRST_INT_KIND INPLACE_INT_ADD_L
+
+/* KIND_OP: one generic specialized instruction shared by several
+   instruction families. Specializations marked `kind_op` in bytecodes.c have
+   no opcode of their own; the cases generator emits them as cases of KIND_OP
+   and numbers them (KIND_<NAME> in pycore_opcode_metadata.h). The kind takes
+   the place of the adaptive counter in the first cache entry, so the
+   instruction keeps the cache layout of its family. _PyKindOp_Deopt[kind] is
+   the generic instruction KIND_OP re-dispatches to when a guard fails. */
+/* KIND_OP keeps its kind in the high bits of the adaptive counter's value
+   field and a miss counter in the low bits, so that a specialization folded
+   into KIND_OP survives sporadic misses like an ordinary specialized
+   instruction does: a miss runs the generic instruction once and counts
+   down through ADVANCE_ADAPTIVE_COUNTER; when the misses run out, the
+   instruction goes back to its adaptive form and re-specializes on the
+   operands it has then. */
+#define KIND_OP_MISS_BITS 6
+#define KIND_OP_MISS_MASK ((1 << KIND_OP_MISS_BITS) - 1)
+#define KIND_OP_MISS_COOLDOWN ADAPTIVE_COOLDOWN_VALUE
+#define KIND_OP_KIND_SHIFT (BACKOFF_BITS + KIND_OP_MISS_BITS)
+#define KIND_OP_MAX_KINDS (1 << (16 - KIND_OP_KIND_SHIFT))
+#define _PyKindOp_Kind(instr) ((instr)[1].cache >> KIND_OP_KIND_SHIFT)
+#define _PyKindOp_Counter(kind, backoff) \
+    MAKE_VALUE_AND_BACKOFF(((kind) << KIND_OP_MISS_BITS) | KIND_OP_MISS_COOLDOWN, (backoff))
 
 /* Comparison bit masks. */
 

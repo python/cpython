@@ -234,6 +234,8 @@ annotations = {
     "tier1",
     "tier2",
     "no_save_ip",
+    "kind_op",
+    "kind_candidate",
 }
 
 __all__ = []

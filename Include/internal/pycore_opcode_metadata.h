@@ -298,6 +298,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case JUMP_NO_INTERRUPT:
             return 0;
+        case KIND_OP:
+            return 0;
         case LIST_APPEND:
             return 2 + (oparg-1);
         case LIST_EXTEND:
@@ -793,6 +795,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case JUMP_NO_INTERRUPT:
             return 0;
+        case KIND_OP:
+            return 0;
         case LIST_APPEND:
             return 1 + (oparg-1);
         case LIST_EXTEND:
@@ -1025,15 +1029,16 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
 enum InstructionFormat {
     INSTR_FMT_IB = 1,
     INSTR_FMT_IBC = 2,
-    INSTR_FMT_IBC00 = 3,
-    INSTR_FMT_IBC000 = 4,
-    INSTR_FMT_IBC0000 = 5,
-    INSTR_FMT_IBC00000000 = 6,
-    INSTR_FMT_IX = 7,
-    INSTR_FMT_IXC = 8,
-    INSTR_FMT_IXC00 = 9,
-    INSTR_FMT_IXC000 = 10,
-    INSTR_FMT_IXC0000 = 11,
+    INSTR_FMT_IBC0 = 3,
+    INSTR_FMT_IBC00 = 4,
+    INSTR_FMT_IBC000 = 5,
+    INSTR_FMT_IBC0000 = 6,
+    INSTR_FMT_IBC00000000 = 7,
+    INSTR_FMT_IX = 8,
+    INSTR_FMT_IXC = 9,
+    INSTR_FMT_IXC00 = 10,
+    INSTR_FMT_IXC000 = 11,
+    INSTR_FMT_IXC0000 = 12,
 };
 
 #define IS_VALID_OPCODE(OP) \
@@ -1226,6 +1231,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_BACKWARD_NO_JIT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [KIND_OP] = { true, INSTR_FMT_IBC0, HAS_ARG_FLAG },
     [LIST_APPEND] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [LIST_EXTEND] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1549,6 +1555,34 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
+/* Specializations dispatched by KIND_OP. The kind replaces the adaptive
+   counter in the first cache entry. The pseudo-opcodes let specialize.c
+   name a kind like an opcode: specialize() maps them to KIND_OP. */
+#define KIND_OP_NKINDS 2
+#define KIND_OP_PSEUDO_BASE 512
+#define IS_KIND_OP_PSEUDO_OPCODE(OP) ((OP) >= KIND_OP_PSEUDO_BASE)
+#define KIND_BINARY_OP_INPLACE 0
+#define KIND_TO_BOOL_SIZED 1
+#define BINARY_OP_INPLACE (KIND_OP_PSEUDO_BASE + KIND_BINARY_OP_INPLACE)
+#define TO_BOOL_SIZED (KIND_OP_PSEUDO_BASE + KIND_TO_BOOL_SIZED)
+PyAPI_DATA(const uint8_t) _PyKindOp_Deopt[2];
+PyAPI_DATA(const char *) _PyKindOp_Name[2];
+extern const struct opcode_macro_expansion _PyKindOp_macro_expansion[2];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyKindOp_Deopt[2] = {
+    [KIND_BINARY_OP_INPLACE] = BINARY_OP,
+    [KIND_TO_BOOL_SIZED] = TO_BOOL,
+};
+const char *_PyKindOp_Name[2] = {
+    [KIND_BINARY_OP_INPLACE] = "BINARY_OP_INPLACE",
+    [KIND_TO_BOOL_SIZED] = "TO_BOOL_SIZED",
+};
+const struct opcode_macro_expansion _PyKindOp_macro_expansion[2] = {
+    [KIND_BINARY_OP_INPLACE] = { .nuops = 2, .uops = { { _GUARD_BINARY_OP_INPLACE, 1, 1 }, { _BINARY_OP_INPLACE, 1, 1 } } },
+    [KIND_TO_BOOL_SIZED] = { .nuops = 1, .uops = { { _TO_BOOL_SIZED, 1, 1 } } },
+};
+#endif // NEED_OPCODE_METADATA
+
 PyAPI_DATA(const char) *_PyOpcode_OpName[267];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[267] = {
@@ -1683,6 +1717,7 @@ const char *_PyOpcode_OpName[267] = {
     [JUMP_IF_FALSE] = "JUMP_IF_FALSE",
     [JUMP_IF_TRUE] = "JUMP_IF_TRUE",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
+    [KIND_OP] = "KIND_OP",
     [LIST_APPEND] = "LIST_APPEND",
     [LIST_EXTEND] = "LIST_EXTEND",
     [LOAD_ATTR] = "LOAD_ATTR",
@@ -1800,6 +1835,7 @@ const char *_PyOpcode_OpName[267] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
+    [KIND_OP] = 2,
     [RESUME] = 1,
     [TO_BOOL] = 3,
     [STORE_SUBSCR] = 1,
@@ -1828,7 +1864,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [117] = 117,
     [118] = 118,
     [119] = 119,
     [120] = 120,
@@ -1979,6 +2014,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_BACKWARD_NO_JIT] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
+    [KIND_OP] = KIND_OP,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
     [LOAD_ATTR] = LOAD_ATTR,
@@ -2089,7 +2125,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 117: \
     case 118: \
     case 119: \
     case 120: \

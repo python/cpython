@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field
 import itertools
 import lexer
 import parser
@@ -271,6 +272,9 @@ class Instruction:
     is_target: bool = False
     family: Optional["Family"] = None
     opcode: int = -1
+    # >= 0 for a kind instruction: a specialization that has no opcode of
+    # its own and is dispatched by KIND_OP on this kind number.
+    kind: int = -1
 
     @property
     def properties(self) -> Properties:
@@ -346,6 +350,61 @@ class Analysis:
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
+    # Specializations folded into KIND_OP, indexed by kind number.
+    kinds: list[Instruction] = field(default_factory=list)
+
+
+KIND_ANNOTATIONS = ("kind_op", "kind_candidate")
+
+
+def kind_fold_level() -> int:
+    """How aggressively annotated specializations are folded into KIND_OP.
+
+    KIND_OPS=0 (or none): every annotated specialization gets its own opcode.
+    KIND_OPS=1 (default): `kind_op` specializations become kinds.
+    KIND_OPS=2 (or all): `kind_candidate` specializations become kinds too.
+    """
+    value = os.environ.get("KIND_OPS", "1").strip().lower()
+    if value in ("0", "none", "off"):
+        return 0
+    if value in ("2", "all"):
+        return 2
+    return 1
+
+
+def fold_kind_instructions(
+    instructions: dict[str, Instruction],
+    annotations: dict[str, list[str]],
+) -> list[Instruction]:
+    """Remove the specializations that are folded into KIND_OP from the
+    instruction table (so that they get no opcode, target or metadata entry)
+    and return them in kind order. They keep their family, which is the
+    instruction KIND_OP re-dispatches to when a guard fails."""
+    level = kind_fold_level()
+    kinds: list[Instruction] = []
+    for name in sorted(instructions):
+        annos = annotations.get(name, [])
+        fold = ("kind_op" in annos and level >= 1) or (
+            "kind_candidate" in annos and level >= 2
+        )
+        if not fold:
+            continue
+        inst = instructions[name]
+        if inst.family is None or inst.family.name == name:
+            raise analysis_error(
+                f"kind instruction {name} must be a member of a family", inst.where
+            )
+        kinds.append(inst)
+    if kinds and "KIND_OP" not in instructions:
+        raise analysis_error(
+            "kind instructions need an instruction named KIND_OP", kinds[0].where
+        )
+    for number, inst in enumerate(kinds):
+        del instructions[inst.name]
+        assert inst.family is not None
+        inst.family.members.remove(inst)
+        inst.kind = number
+    return kinds
 
 
 def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
@@ -1370,6 +1429,16 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
     for uop in uops.values():
         uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
+    kind_annotations: dict[str, list[str]] = {}
+    for node in forest:
+        match node:
+            case parser.Macro():
+                kind_annotations[node.name] = node.annotations
+            case parser.InstDef(name):
+                if node.kind == "inst":
+                    kind_annotations[node.name] = node.annotations
+            case _:
+                pass
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
     # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
     # as it is the wrong size, but we need it to maintain an
@@ -1378,9 +1447,10 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
         inst.family = families["BINARY_OP"]
         families["BINARY_OP"].members.append(inst)
+    kinds = fold_kind_instructions(instructions, kind_annotations)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented, kinds
     )
 
 

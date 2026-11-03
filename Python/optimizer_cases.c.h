@@ -480,6 +480,13 @@
             break;
         }
 
+        case _TO_BOOL_SIZED: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case _REPLACE_WITH_TRUE: {
             JitOptRef value;
             JitOptRef res;
@@ -1020,6 +1027,20 @@
             stack_pointer[-1] = l;
             stack_pointer[0] = r;
             stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _GUARD_BINARY_OP_INPLACE: {
+            break;
+        }
+
+        case _BINARY_OP_INPLACE: {
+            JitOptRef res;
+            res = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

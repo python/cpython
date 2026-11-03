@@ -594,6 +594,120 @@ gen_try_set_executing(PyGenObject *gen)
     return false;
 }
 
+// BINARY_OP_INPLACE helpers (tier 1).
+// MSVC does not inline Py_REFCNT() inside the eval loop, so read the field
+// directly in the default build.
+#ifdef Py_GIL_DISABLED
+#  define BINARY_OP_INPLACE_IS_UNIQUE(o) _PyObject_IsUniquelyReferenced(o)
+#else
+#  define BINARY_OP_INPLACE_IS_UNIQUE(o) ((o)->ob_refcnt == 1)
+#endif
+
+// One case of the kind switch: mutate TGT_O in place, hand TGT back as the
+// result and release the other operand.
+#define BINARY_OP_INPLACE_FLOAT_CASE(KIND, TGT_O, TGT, OTH, OP, TARGET)    \
+    case KIND:                                                            \
+        ((PyFloatObject *)(TGT_O))->ob_fval =                             \
+            ((PyFloatObject *)_left_o)->ob_fval OP                        \
+            ((PyFloatObject *)_right_o)->ob_fval;                         \
+        (TARGET) = (TGT);                                                 \
+        PyStackRef_CLOSE_SPECIALIZED((OTH), _PyFloat_ExactDealloc);       \
+        break;
+
+// Float true division: a zero divisor raises, nothing is mutated.
+#define BINARY_OP_INPLACE_TRUEDIV_CASE(KIND, TGT_O, TGT, OTH, TARGET, ZDIV) \
+    case KIND: {                                                          \
+        double _divisor = ((PyFloatObject *)_right_o)->ob_fval;           \
+        if (_divisor == 0.0) {                                            \
+            (ZDIV) = 1;                                                   \
+            break;                                                        \
+        }                                                                 \
+        ((PyFloatObject *)(TGT_O))->ob_fval =                             \
+            ((PyFloatObject *)_left_o)->ob_fval / _divisor;               \
+        (TARGET) = (TGT);                                                 \
+        PyStackRef_CLOSE_SPECIALIZED((OTH), _PyFloat_ExactDealloc);       \
+        break;                                                            \
+    }
+
+// Compact int value without the helper call MSVC would emit for
+// _PyLong_CompactValue inside the eval loop.
+#define BINARY_OP_INPLACE_COMPACT_VALUE(o)                                \
+    ((Py_ssize_t)(1 - (Py_ssize_t)(((PyLongObject *)(o))->long_value.lv_tag & SIGN_MASK)) \
+     * (Py_ssize_t)((PyLongObject *)(o))->long_value.ob_digit[0])
+
+// Compact int op: the result must stay a single digit and must not be a
+// small int (those are canonical immortal objects). Otherwise decline and
+// let the generic instruction allocate.
+#define BINARY_OP_INPLACE_INT_CASE(KIND, TGT_O, TGT, OTH, OP, TARGET, OK)  \
+    case KIND: {                                                          \
+        Py_ssize_t _ires = BINARY_OP_INPLACE_COMPACT_VALUE(_left_o) OP    \
+                           BINARY_OP_INPLACE_COMPACT_VALUE(_right_o);     \
+        if (_PY_IS_SMALL_INT(_ires)                                       \
+            || (twodigits)((stwodigits)_ires) + PyLong_MASK               \
+                >= (twodigits)PyLong_MASK + PyLong_BASE) {                \
+            (OK) = 0;                                                     \
+            break;                                                        \
+        }                                                                 \
+        ((PyLongObject *)(TGT_O))->long_value.lv_tag =                    \
+            TAG_FROM_SIGN_AND_SIZE(_ires < 0 ? -1 : 1, 1);                \
+        ((PyLongObject *)(TGT_O))->long_value.ob_digit[0] =               \
+            (digit)(_ires < 0 ? -_ires : _ires);                          \
+        (TARGET) = (TGT);                                                 \
+        PyStackRef_CLOSE_SPECIALIZED((OTH), _PyLong_ExactDealloc);        \
+        break;                                                            \
+    }
+
+#define BINARY_OP_INPLACE_SWITCH(kind, left, right, TARGET, OK, ZDIV)      \
+    do {                                                                  \
+        PyObject *_left_o = PyStackRef_AsPyObjectBorrow(left);            \
+        PyObject *_right_o = PyStackRef_AsPyObjectBorrow(right);          \
+        switch (kind) {                                                   \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_ADD_L, _left_o, left, right, +, TARGET)  \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_ADD_R, _right_o, right, left, +, TARGET) \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_SUB_L, _left_o, left, right, -, TARGET)  \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_SUB_R, _right_o, right, left, -, TARGET) \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_MUL_L, _left_o, left, right, *, TARGET)  \
+        BINARY_OP_INPLACE_FLOAT_CASE(INPLACE_FLOAT_MUL_R, _right_o, right, left, *, TARGET) \
+        BINARY_OP_INPLACE_TRUEDIV_CASE(INPLACE_FLOAT_TRUEDIV_L, _left_o, left, right, TARGET, ZDIV)  \
+        BINARY_OP_INPLACE_TRUEDIV_CASE(INPLACE_FLOAT_TRUEDIV_R, _right_o, right, left, TARGET, ZDIV) \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_ADD_L, _left_o, left, right, +, TARGET, OK)  \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_ADD_R, _right_o, right, left, +, TARGET, OK) \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_SUB_L, _left_o, left, right, -, TARGET, OK)  \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_SUB_R, _right_o, right, left, -, TARGET, OK) \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_MUL_L, _left_o, left, right, *, TARGET, OK)  \
+        BINARY_OP_INPLACE_INT_CASE(INPLACE_INT_MUL_R, _right_o, right, left, *, TARGET, OK) \
+        default:                                                          \
+            Py_UNREACHABLE();                                             \
+        }                                                                 \
+    } while (0)
+
+// KIND_OP: a failed guard re-executes the instruction as its family's
+// generic instruction. The kind shares the counter slot with a miss counter
+// (see KIND_OP_MISS_BITS): the generic instruction's ADVANCE_ADAPTIVE_COUNTER
+// counts each miss down and, once the misses run out, the instruction goes
+// back to its adaptive form with a triggering counter so that it
+// re-specializes on the operands that missed -- the same life cycle as an
+// ordinary specialized instruction.
+#define KIND_OP_DEOPT(BASE)                                               \
+    do {                                                                  \
+        uint16_t _kind_vb = read_u16(&this_instr[1].cache);               \
+        if (((_kind_vb >> BACKOFF_BITS) & KIND_OP_MISS_MASK) == 0) {      \
+            /* Out of misses: back to the adaptive instruction, with its  \
+               counter triggering so that it re-specializes right away   \
+               on the operands that just missed. */                       \
+            FT_ATOMIC_STORE_UINT16_RELAXED(                               \
+                this_instr[1].counter.value_and_backoff,                  \
+                MAKE_VALUE_AND_BACKOFF(0, _kind_vb & BACKOFF_MASK));      \
+            FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, (BASE));   \
+        }                                                                 \
+        /* Otherwise the generic instruction runs once and its             \
+           ADVANCE_ADAPTIVE_COUNTER counts the miss down. */              \
+        opcode = (BASE);                                                  \
+        next_instr = this_instr;                                          \
+        PRE_DISPATCH_GOTO();                                              \
+        DISPATCH_GOTO();                                                  \
+    } while (0)
+
 // Macro for inplace float binary ops (tier 2 only).
 // Mutates the uniquely-referenced TARGET operand in place.
 // TARGET must be either left or right.

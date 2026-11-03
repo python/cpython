@@ -17,6 +17,7 @@ from opcode import (
     _special_method_names,
     _specializations,
     _specialized_opmap,
+    _kind_ops,
 )
 
 from _opcode import get_executor
@@ -35,6 +36,8 @@ SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure', 'annotate')
 
 ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
+KIND_OP = opmap['KIND_OP']
+_KIND_OP_KIND_SHIFT = 9  # BACKOFF_BITS + KIND_OP_MISS_BITS
 IMPORT_NAME = opmap['IMPORT_NAME']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
 LOAD_SMALL_INT = opmap['LOAD_SMALL_INT']
@@ -804,6 +807,12 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
             argval, argrepr = arg_resolver.get_argval_argrepr(op, arg, offset)
         else:
             argval, argrepr = arg, repr(arg)
+        if op == KIND_OP and offset + 3 < len(code):
+            # The kind sits in the high bits of the first cache entry, above
+            # the backoff bits and the miss counter (KIND_OP_KIND_SHIFT).
+            kind = (code[offset + 2] | (code[offset + 3] << 8)) >> _KIND_OP_KIND_SHIFT
+            if kind < len(_kind_ops):
+                argrepr = f"{argrepr} [{_kind_ops[kind]}]" if argrepr else _kind_ops[kind]
 
         caches = _get_cache_size(_all_opname[deop])
         # Advance the co_positions iterator:

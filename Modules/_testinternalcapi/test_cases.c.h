@@ -6167,7 +6167,7 @@
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyJit_EnterExecutorShouldStopTracing(og_opcode)) {
-                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]]) {
+                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]] && og_opcode != KIND_OP) {
                         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                     }
                     opcode = og_opcode;
@@ -6185,7 +6185,7 @@
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
-                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] && opcode != KIND_OP) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
                 DISPATCH_GOTO();
@@ -7712,7 +7712,7 @@
                 JUMP_TO_LABEL(error);
             }
             next_instr = this_instr;
-            if (_PyOpcode_Caches[next_opcode]) {
+            if (_PyOpcode_Caches[next_opcode] && next_opcode != KIND_OP) {
                 PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
             }
             assert(next_opcode > 0 && next_opcode < 256);
@@ -7798,7 +7798,7 @@
                     DISPATCH();
                 }
             }
-            if (_PyOpcode_Caches[original_opcode]) {
+            if (_PyOpcode_Caches[original_opcode] && original_opcode != KIND_OP) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
                 PAUSE_ADAPTIVE_COUNTER(cache->counter);
             }
@@ -8571,6 +8571,116 @@
             INSTRUCTION_STATS(JUMP_FORWARD);
             JUMPBY(oparg);
             DISPATCH();
+        }
+
+        TARGET(KIND_OP) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = KIND_OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 3;
+            INSTRUCTION_STATS(KIND_OP);
+            uint16_t kind = read_u16(&this_instr[1].cache) >> KIND_OP_KIND_SHIFT;
+            assert(kind < KIND_OP_NKINDS);
+            switch (kind) {
+                case KIND_BINARY_OP_INPLACE: {
+                    // The instruction is as long as its family's generic instruction.
+                    next_instr = this_instr + 1 + INLINE_CACHE_ENTRIES_BINARY_OP;
+                    static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
+                    _PyStackRef left;
+                    _PyStackRef right;
+                    _PyStackRef res;
+                    /* Skip 1 cache entry */
+                    // _GUARD_BINARY_OP_INPLACE
+                    {
+                        right = stack_pointer[-1];
+                        left = stack_pointer[-2];
+                        uint16_t kind = read_u16(&this_instr[2].cache);
+                        _PyStackRef target = (kind & 1) ? right : left;
+                        if (!PyStackRef_RefcountOnObject(target)) {
+                            KIND_OP_DEOPT(BINARY_OP);
+                        }
+                        PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                        PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                        if (kind < INPLACE_FIRST_INT_KIND) {
+                            if (!PyFloat_CheckExact(left_o)) {
+                                KIND_OP_DEOPT(BINARY_OP);
+                            }
+                            if (!PyFloat_CheckExact(right_o)) {
+                                KIND_OP_DEOPT(BINARY_OP);
+                            }
+                        }
+                        else {
+                            if (!_PyLong_CheckExactAndCompact(left_o)) {
+                                KIND_OP_DEOPT(BINARY_OP);
+                            }
+                            if (!_PyLong_CheckExactAndCompact(right_o)) {
+                                KIND_OP_DEOPT(BINARY_OP);
+                            }
+                        }
+                        if (!BINARY_OP_INPLACE_IS_UNIQUE(PyStackRef_AsPyObjectBorrow(target))) {
+                            KIND_OP_DEOPT(BINARY_OP);
+                        }
+                    }
+                    /* Skip -1 cache entry */
+                    // _BINARY_OP_INPLACE
+                    {
+                        uint16_t kind = read_u16(&this_instr[2].cache);
+                        _PyStackRef target;
+                        int inplace_ok = 1;
+                        int zero_division = 0;
+                        BINARY_OP_INPLACE_SWITCH(kind, left, right, target, inplace_ok, zero_division);
+                        if (!inplace_ok) {
+                            KIND_OP_DEOPT(BINARY_OP);
+                        }
+                        if (zero_division) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
+                            _PyFrame_StackPointerValidate(frame);
+                            PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
+                            _PyFrame_StackPointerInvalidate(frame);
+                            JUMP_TO_LABEL(error);
+                        }
+                        STAT_INC(BINARY_OP, hit);
+                        res = target;
+                    }
+                    /* Skip 3 cache entries */
+                    stack_pointer[-2] = res;
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    DISPATCH();
+                }
+                case KIND_TO_BOOL_SIZED: {
+                    // The instruction is as long as its family's generic instruction.
+                    next_instr = this_instr + 1 + INLINE_CACHE_ENTRIES_TO_BOOL;
+                    static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
+                    _PyStackRef value;
+                    _PyStackRef res;
+                    /* Skip 1 cache entry */
+                    value = stack_pointer[-1];
+                    uint16_t kind = read_u16(&this_instr[2].cache);
+                    PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+                    const _PyToBoolSizedDescr *d = &_PyToBoolSized_Table[kind];
+                    if (Py_TYPE(value_o) != d->type) {
+                        KIND_OP_DEOPT(TO_BOOL);
+                    }
+                    STAT_INC(TO_BOOL, hit);
+                    Py_ssize_t size = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                        *(Py_ssize_t *)((char *)value_o + d->offset));
+                    res = size ? PyStackRef_True : PyStackRef_False;
+                    stack_pointer[-1] = res;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    PyStackRef_CLOSE(value);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    /* Skip 1 cache entry */
+                    DISPATCH();
+                }
+                default:
+                Py_UNREACHABLE();
+            }
         }
 
         TARGET(LIST_APPEND) {

@@ -60,6 +60,13 @@ def generate_specialized_opmap(analysis: Analysis, out: CWriter) -> None:
     out.emit(")\n\n")
 
 
+def generate_kind_ops(analysis: Analysis, out: CWriter) -> None:
+    out.emit("_kind_ops = (\n")
+    for inst in analysis.kinds:
+        out.emit(f'    "{inst.name}",\n')
+    out.emit(")\n\n")
+
+
 def generate_opmap(analysis: Analysis, out: CWriter) -> None:
     specialized = get_specialized(analysis)
     out.emit("opmap = frozendict(\n")
@@ -76,6 +83,7 @@ def generate_py_metadata(
     out = CWriter(outfile, 0, False)
     generate_specializations(analysis, out)
     generate_specialized_opmap(analysis, out)
+    generate_kind_ops(analysis, out)
     generate_opmap(analysis, out)
     out.emit(f"HAVE_ARGUMENT = {analysis.have_arg}\n")
     out.emit(f"MIN_INSTRUMENTED_OPCODE = {analysis.min_instrumented}\n")

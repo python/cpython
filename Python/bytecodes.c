@@ -489,6 +489,7 @@ dummy_func(
             TO_BOOL_INT,
             TO_BOOL_LIST,
             TO_BOOL_NONE,
+            TO_BOOL_SIZED,
             TO_BOOL_STR,
         };
 
@@ -513,7 +514,7 @@ dummy_func(
 
         macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
 
-        inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
+        kind_candidate inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             EXIT_IF(!PyStackRef_BoolCheck(value));
             STAT_INC(TO_BOOL, hit);
         }
@@ -526,7 +527,7 @@ dummy_func(
             DEAD(value);
         }
 
-        macro(TO_BOOL_INT) =
+        kind_candidate macro(TO_BOOL_INT) =
             _GUARD_TOS_EXACT_INT + unused/1 + unused/2 + _TO_BOOL_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
@@ -544,7 +545,7 @@ dummy_func(
             EXIT_IF(!PySlice_Check(o));
         }
 
-        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST + POP_TOP;
+        kind_candidate macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST + POP_TOP;
 
         op(_TO_BOOL_LIST, (value -- res, v)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
@@ -555,7 +556,7 @@ dummy_func(
             DEAD(value);
         }
 
-        inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
+        kind_candidate inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
             EXIT_IF(!PyStackRef_IsNone(value));
             DEAD(value);
@@ -587,8 +588,26 @@ dummy_func(
             DEAD(value);
         }
 
-        macro(TO_BOOL_STR) =
+        kind_candidate macro(TO_BOOL_STR) =
             _GUARD_TOS_UNICODE + unused/1 + unused/2 + _TO_BOOL_STR + _POP_TOP_UNICODE;
+
+        // One opcode for every type whose truthiness is a Py_ssize_t size
+        // field at a fixed offset: dict and frozendict (ma_used), tuple,
+        // bytes and bytearray (ob_size), set and frozenset (used). `kind`
+        // indexes _PyToBoolSized_Table, which holds the type to guard on
+        // and the offset of the size field.
+        op(_TO_BOOL_SIZED, (kind/1, value -- res)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            const _PyToBoolSizedDescr *d = &_PyToBoolSized_Table[kind];
+            EXIT_IF(Py_TYPE(value_o) != d->type);
+            STAT_INC(TO_BOOL, hit);
+            Py_ssize_t size = FT_ATOMIC_LOAD_SSIZE_RELAXED(
+                *(Py_ssize_t *)((char *)value_o + d->offset));
+            res = size ? PyStackRef_True : PyStackRef_False;
+            PyStackRef_CLOSE(value);
+        }
+
+        kind_op macro(TO_BOOL_SIZED) = unused/1 + _TO_BOOL_SIZED + unused/1;
 
         op(_REPLACE_WITH_TRUE, (value -- res, v)) {
             res = PyStackRef_True;
@@ -596,7 +615,7 @@ dummy_func(
             DEAD(value);
         }
 
-        macro(TO_BOOL_ALWAYS_TRUE) =
+        kind_candidate macro(TO_BOOL_ALWAYS_TRUE) =
             unused/1 +
             _RECORD_TOS_TYPE +
             _GUARD_TYPE_VERSION +
@@ -632,6 +651,7 @@ dummy_func(
             BINARY_OP_SUBSCR_GETITEM,
             BINARY_OP_INPLACE_ADD_UNICODE,
             BINARY_OP_EXTEND,
+            BINARY_OP_INPLACE,
         };
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
@@ -706,13 +726,13 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(BINARY_OP_MULTIPLY_INT) =
+        kind_candidate macro(BINARY_OP_MULTIPLY_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_MULTIPLY_INT + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(BINARY_OP_ADD_INT) =
+        kind_candidate macro(BINARY_OP_ADD_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_ADD_INT + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(BINARY_OP_SUBTRACT_INT) =
+        kind_candidate macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         // Inplace compact int ops: mutate the uniquely-referenced operand
@@ -842,12 +862,57 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(BINARY_OP_MULTIPLY_FLOAT) =
+        kind_candidate macro(BINARY_OP_MULTIPLY_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_MULTIPLY_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
-        macro(BINARY_OP_ADD_FLOAT) =
+        kind_candidate macro(BINARY_OP_ADD_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_ADD_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
-        macro(BINARY_OP_SUBTRACT_FLOAT) =
+        kind_candidate macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
+
+        // In-place binary ops for tier 1. A single opcode: `kind` (a uint16
+        // in the cache, see _PyBinaryOpInplaceKind) selects the operator and
+        // the operand that is mutated. The mutated operand must be an owned
+        // stack reference (not borrowed from a local) to a uniquely
+        // referenced object, which the specializer checks when it picks the
+        // kind and the guard re-checks at runtime.
+        op(_GUARD_BINARY_OP_INPLACE, (kind/1, left, right -- left, right)) {
+            _PyStackRef target = (kind & 1) ? right : left;
+            EXIT_IF(!PyStackRef_RefcountOnObject(target));
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            if (kind < INPLACE_FIRST_INT_KIND) {
+                EXIT_IF(!PyFloat_CheckExact(left_o));
+                EXIT_IF(!PyFloat_CheckExact(right_o));
+            }
+            else {
+                EXIT_IF(!_PyLong_CheckExactAndCompact(left_o));
+                EXIT_IF(!_PyLong_CheckExactAndCompact(right_o));
+            }
+            EXIT_IF(!BINARY_OP_INPLACE_IS_UNIQUE(PyStackRef_AsPyObjectBorrow(target)));
+        }
+
+        op(_BINARY_OP_INPLACE, (kind/1, left, right -- res)) {
+            _PyStackRef target;
+            int inplace_ok = 1;
+            int zero_division = 0;
+            // The switch lives in ceval_macros.h: the DSL does not accept
+            // switch statements. It mutates the target in place and closes
+            // the other operand.
+            BINARY_OP_INPLACE_SWITCH(kind, left, right, target, inplace_ok, zero_division);
+            // A compact int result that is a small int or needs more than
+            // one digit: nothing was mutated, use the generic instruction.
+            DEOPT_IF(!inplace_ok);
+            if (zero_division) {
+                PyErr_SetString(PyExc_ZeroDivisionError, "division by zero");
+                ERROR_NO_POP();
+            }
+            STAT_INC(BINARY_OP, hit);
+            res = target;
+            INPUTS_DEAD();
+        }
+
+        kind_op macro(BINARY_OP_INPLACE) =
+            unused/1 + _GUARD_BINARY_OP_INPLACE + rewind/-1 + _BINARY_OP_INPLACE + unused/3;
 
         // Inplace float ops: mutate the uniquely-referenced left operand
         // instead of allocating a new float. Tier 2 only.
@@ -966,7 +1031,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(BINARY_OP_ADD_UNICODE) =
+        kind_candidate macro(BINARY_OP_ADD_UNICODE) =
             _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE + _POP_TOP_UNICODE + _POP_TOP_UNICODE;
 
         // This is a subtle one. We write NULL to the local
@@ -1139,7 +1204,7 @@ dummy_func(
 
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
-        macro(BINARY_OP_SUBSCR_LIST_INT) =
+        kind_candidate macro(BINARY_OP_SUBSCR_LIST_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res, ls, ss)) {
@@ -1169,7 +1234,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(BINARY_OP_SUBSCR_LIST_SLICE) =
+        kind_candidate macro(BINARY_OP_SUBSCR_LIST_SLICE) =
             _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE + POP_TOP + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res, ls, ss)) {
@@ -1190,7 +1255,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(BINARY_OP_SUBSCR_STR_INT) =
+        kind_candidate macro(BINARY_OP_SUBSCR_STR_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_COMPACT_ASCII + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + _POP_TOP_UNICODE;
 
         op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
@@ -1212,7 +1277,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectBorrow(res_o);
         }
 
-        macro(BINARY_OP_SUBSCR_USTR_INT) =
+        kind_candidate macro(BINARY_OP_SUBSCR_USTR_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_USTR_INT + _POP_TOP_INT + _POP_TOP_UNICODE;
 
         op(_BINARY_OP_SUBSCR_USTR_INT, (str_st, sub_st -- res, s, i)) {
@@ -1245,7 +1310,7 @@ dummy_func(
             EXIT_IF(!PyTuple_CheckExact(o));
         }
 
-        macro(BINARY_OP_SUBSCR_TUPLE_INT) =
+        kind_candidate macro(BINARY_OP_SUBSCR_TUPLE_INT) =
             _GUARD_TOS_INT +
             _GUARD_NOS_TUPLE +
             _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS +
@@ -1312,7 +1377,7 @@ dummy_func(
             EXIT_IF(!PyFrozenDict_CheckExact(o));
         }
 
-        macro(BINARY_OP_SUBSCR_DICT) =
+        kind_candidate macro(BINARY_OP_SUBSCR_DICT) =
             _RECORD_NOS_TYPE +
             _GUARD_NOS_DICT_SUBSCRIPT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
@@ -1417,7 +1482,7 @@ dummy_func(
 
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
-        macro(STORE_SUBSCR_LIST_INT) =
+        kind_candidate macro(STORE_SUBSCR_LIST_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
         op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
@@ -1451,7 +1516,7 @@ dummy_func(
             Py_DECREF(old_value);
         }
 
-        macro(STORE_SUBSCR_DICT) =
+        kind_candidate macro(STORE_SUBSCR_DICT) =
             _RECORD_NOS_TYPE +
             _GUARD_NOS_DICT_STORE_SUBSCRIPT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
 
@@ -2040,7 +2105,7 @@ dummy_func(
 
         macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
-        macro(UNPACK_SEQUENCE_TWO_TUPLE) =
+        kind_candidate macro(UNPACK_SEQUENCE_TWO_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TWO_TUPLE;
 
         op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
@@ -2073,7 +2138,7 @@ dummy_func(
             _PyStolenTuple_Free(seq_o);
         }
 
-        macro(UNPACK_SEQUENCE_TUPLE) =
+        kind_candidate macro(UNPACK_SEQUENCE_TUPLE) =
             _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
 
         op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
@@ -2102,7 +2167,7 @@ dummy_func(
             _PyStolenTuple_Free(seq_o);
         }
 
-        macro(UNPACK_SEQUENCE_LIST) =
+        kind_candidate macro(UNPACK_SEQUENCE_LIST) =
             _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST;
 
         op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
@@ -3221,13 +3286,13 @@ dummy_func(
 
         macro(COMPARE_OP) = _SPECIALIZE_COMPARE_OP + _COMPARE_OP;
 
-        macro(COMPARE_OP_FLOAT) =
+        kind_candidate macro(COMPARE_OP_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/1 + _COMPARE_OP_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
 
-        macro(COMPARE_OP_INT) =
+        kind_candidate macro(COMPARE_OP_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/1 + _COMPARE_OP_INT + _POP_TOP_INT + _POP_TOP_INT;
 
-        macro(COMPARE_OP_STR) =
+        kind_candidate macro(COMPARE_OP_STR) =
             _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/1 + _COMPARE_OP_STR + _POP_TOP_UNICODE + _POP_TOP_UNICODE;
 
         op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
@@ -3346,7 +3411,7 @@ dummy_func(
             EXIT_IF(!PyFrozenSet_CheckExact(o));
         }
 
-        macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET + POP_TOP + POP_TOP;
+        kind_candidate macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET + POP_TOP + POP_TOP;
 
         op(_CONTAINS_OP_SET, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -3365,7 +3430,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        macro(CONTAINS_OP_DICT) = _GUARD_TOS_ANY_DICT + unused/1 + _CONTAINS_OP_DICT + POP_TOP + POP_TOP;
+        kind_candidate macro(CONTAINS_OP_DICT) = _GUARD_TOS_ANY_DICT + unused/1 + _CONTAINS_OP_DICT + POP_TOP + POP_TOP;
 
         op(_CONTAINS_OP_DICT, (left, right -- b, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -3547,6 +3612,18 @@ dummy_func(
             COPY, TO_BOOL, POP_JUMP_IF_TRUE,
         ];
 
+        // KIND_OP: one generic specialized instruction shared by several
+        // instruction families. Specializations annotated `kind_op` (and,
+        // with KIND_OPS=2 at regen time, `kind_candidate`) have no opcode of
+        // their own: the cases generator emits them as cases of this
+        // instruction, dispatched on the kind stored in the first cache
+        // entry in place of the adaptive counter. The body below is only
+        // used when no specialization is folded.
+        tier1 inst(KIND_OP, (unused/1, unused/1 -- )) {
+            (void)oparg;
+            Py_UNREACHABLE();
+        }
+
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -3556,7 +3633,7 @@ dummy_func(
                 int og_oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyJit_EnterExecutorShouldStopTracing(og_opcode)) {
-                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]]) {
+                    if (_PyOpcode_Caches[_PyOpcode_Deopt[og_opcode]] && og_opcode != KIND_OP) {
                         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                     }
                     opcode = og_opcode;
@@ -3576,7 +3653,7 @@ dummy_func(
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
-                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] && opcode != KIND_OP) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
                 DISPATCH_GOTO();
@@ -5930,7 +6007,7 @@ dummy_func(
                     DISPATCH();
                 }
             }
-            if (_PyOpcode_Caches[original_opcode]) {
+            if (_PyOpcode_Caches[original_opcode] && original_opcode != KIND_OP) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
                 /* Prevent the underlying instruction from specializing
                 * and overwriting the instrumentation. */
@@ -5946,7 +6023,7 @@ dummy_func(
                 tstate, frame, this_instr);
             ERROR_IF(next_opcode < 0);
             next_instr = this_instr;
-            if (_PyOpcode_Caches[next_opcode]) {
+            if (_PyOpcode_Caches[next_opcode] && next_opcode != KIND_OP) {
                 PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
             }
             assert(next_opcode > 0 && next_opcode < 256);
