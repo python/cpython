@@ -401,6 +401,15 @@ class TestStatementSubmittedHook(unittest.TestCase):
         hook.assert_called_once_with(statement)
         self.assertEqual(output, f"{escape_sequence}statement executed\n")
 
+    def test_hook_receives_input_without_final_auto_indent(self):
+        statement = "if True:\n    x = 1\n    "
+        hook = MagicMock()
+
+        _, namespace = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with("if True:\n    x = 1\n")
+        self.assertEqual(namespace["x"], 1)
+
     @force_not_colorized
     def test_hook_exception_is_displayed(self):
         hook = MagicMock(side_effect=RuntimeError("hook error"))
