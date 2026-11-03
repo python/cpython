@@ -2790,6 +2790,29 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 self.assertEqual(actual, expected)
                 self.assertEqual(sign(actual), sign(expected))
 
+    def test_sqrtprod_helper_function_subnormal_products(self):
+        # gh-161259: accuracy was lost when x * y is subnormal.
+        # The reference scales the inputs by an exact power of two so that
+        # the product is a normal float.
+        scale = 2.0**600
+        for x, y in [
+            (2e-200, 2e-124),
+            (1e-160, 3e-150),
+            (3e-170, 7e-140),
+            (1e-160, 1e-135),
+        ]:
+            expected = math.sqrt((scale * x) * (scale * y)) / scale
+            actual = statistics._sqrtprod(x, y)
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                self.assertAlmostEqual(actual / expected, 1.0, delta=2**-50)
+
+    def test_correlation_tiny_inputs(self):
+        # gh-161259: correlation() is scale-invariant, even when the
+        # intermediate sums of squares are tiny.
+        x = [1e-100, 2e-100, 3e-100]
+        y = [1e-62, 2e-62, 3e-62]
+        self.assertAlmostEqual(statistics.correlation(x, y), 1.0)
+
     @requires_IEEE_754
     @skip_if_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
