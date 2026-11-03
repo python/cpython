@@ -459,6 +459,27 @@ class TestStatementSubmittedHook(unittest.TestCase):
                     else:
                         self.assertFalse(hasattr(sys, name))
 
+    def test_hook_keyboard_interrupt_cancels_submission(self):
+        hook = MagicMock(side_effect=[KeyboardInterrupt, None])
+
+        output, namespace = self._run_interactive(["x = 1", "y = 2"], hook)
+
+        self.assertIn("\nKeyboardInterrupt\n", output)
+        self.assertNotIn("Error in statement_submitted_hook:", output)
+        self.assertNotIn("x", namespace)
+        self.assertEqual(namespace["y"], 2)
+        self.assertEqual(hook.call_count, 2)
+
+    def test_hook_system_exit_exits_repl(self):
+        hook = MagicMock(side_effect=SystemExit(42))
+        statement = "raise SystemExit(99)"
+
+        with self.assertRaises(SystemExit) as caught:
+            self._run_interactive([statement, "x = 1"], hook)
+
+        self.assertEqual(caught.exception.code, 42)
+        hook.assert_called_once_with(statement)
+
     def test_hook_return_value_is_ignored(self):
         hook = MagicMock(return_value=True)
 
