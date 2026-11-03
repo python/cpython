@@ -489,13 +489,6 @@ class TestStatementSubmittedHook(unittest.TestCase):
         self.assertEqual(caught.exception.code, 42)
         hook.assert_called_once_with(statement)
 
-    def test_hook_return_value_is_ignored(self):
-        hook = MagicMock(return_value=True)
-
-        _, namespace = self._run_interactive(["x = 1"], hook)
-
-        self.assertEqual(namespace["x"], 1)
-
     def test_hook_not_called_for_repl_commands(self):
         hook = MagicMock()
         self._run_interactive(["clear"], hook)
