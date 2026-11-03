@@ -1,0 +1,3 @@
+Fix the ``iconv`` codecs losing the shift state across calls to the
+incremental decoder and the stream reader, which decoded a stateful
+encoding wrongly when the input was split into chunks.
