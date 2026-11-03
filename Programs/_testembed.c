@@ -1720,9 +1720,17 @@ static int test_initconfig_api(void)
         goto error;
     }
 
+    // Set an integer option
     if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
         goto error;
     }
+
+    // Get an integer option
+    int64_t value;
+    if (PyInitConfig_GetInt(config, "hash_seed", &value) < 0) {
+        goto error;
+    }
+    assert(value == 10);
 
     if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
         goto error;
@@ -1732,6 +1740,14 @@ static int test_initconfig_api(void)
     if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
         goto error;
     }
+
+    // Get a non-empty string
+    char *str;
+    if (PyInitConfig_GetStr(config, "program_name", &str) < 0) {
+        goto error;
+    }
+    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
+    free(str);
 
     // Set a UTF-8 string (pycache_prefix)
     if (PyInitConfig_SetStr(config, "pycache_prefix",
@@ -1743,6 +1759,27 @@ static int test_initconfig_api(void)
     char* xoptions[] = {"faulthandler"};
     if (PyInitConfig_SetStrList(config, "xoptions",
                                 Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
+        goto error;
+    }
+
+    // Get a string list
+    char **items;
+    size_t length;
+    if (PyInitConfig_GetStrList(config, "xoptions", &length, &items) < 0) {
+        goto error;
+    }
+    assert(length == 1);
+    assert(strcmp(items[0], "faulthandler") == 0);
+    PyInitConfig_FreeStrList(length, items);
+
+    // Get an optional string (which is NULL).
+    if (PyInitConfig_GetStr(config, "prefix", &str) < 0) {
+        goto error;
+    }
+    assert(str == NULL);
+
+    // Set an optional string to NULL explicitly (must not crash).
+    if (PyInitConfig_SetStr(config, "prefix", NULL) < 0) {
         goto error;
     }
 
