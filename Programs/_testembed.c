@@ -1725,13 +1725,6 @@ static int test_initconfig_api(void)
         goto error;
     }
 
-    // Get an integer option
-    int64_t value;
-    if (PyInitConfig_GetInt(config, "hash_seed", &value) < 0) {
-        goto error;
-    }
-    assert(value == 10);
-
     if (PyInitConfig_SetInt(config, "perf_profiling", 2) < 0) {
         goto error;
     }
@@ -1740,14 +1733,6 @@ static int test_initconfig_api(void)
     if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
         goto error;
     }
-
-    // Get a non-empty string
-    char *str;
-    if (PyInitConfig_GetStr(config, "program_name", &str) < 0) {
-        goto error;
-    }
-    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
-    free(str);
 
     // Set a UTF-8 string (pycache_prefix)
     if (PyInitConfig_SetStr(config, "pycache_prefix",
@@ -1761,22 +1746,6 @@ static int test_initconfig_api(void)
                                 Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
         goto error;
     }
-
-    // Get a string list
-    char **items;
-    size_t length;
-    if (PyInitConfig_GetStrList(config, "xoptions", &length, &items) < 0) {
-        goto error;
-    }
-    assert(length == 1);
-    assert(strcmp(items[0], "faulthandler") == 0);
-    PyInitConfig_FreeStrList(length, items);
-
-    // Get an optional string (which is NULL).
-    if (PyInitConfig_GetStr(config, "prefix", &str) < 0) {
-        goto error;
-    }
-    assert(str == NULL);
 
     // Set an optional string to NULL explicitly (must not crash).
     if (PyInitConfig_SetStr(config, "prefix", NULL) < 0) {
@@ -1815,6 +1784,7 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_HasOption(config, "verbose") == 1);
     assert(PyInitConfig_HasOption(config, "utf8_mode") == 1);
     assert(PyInitConfig_HasOption(config, "non-existent") == 0);
+    assert(PyInitConfig_HasOption(config, "") == 0);
 
     // test PyInitConfig_GetInt()
     assert(initconfig_getint(config, "dev_mode") == 0);
@@ -1826,7 +1796,7 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_SetInt(config, "utf8_mode", 0) == 0);
     assert(initconfig_getint(config, "utf8_mode") == 0);
 
-    // test PyInitConfig_GetStr()
+    // test PyInitConfig_GetStr() on an optional string (can be NULL)
     char *str;
     assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
     assert(str == NULL);
@@ -1852,8 +1822,11 @@ static int test_initconfig_get_api(void)
 
     // Setting hash_seed sets use_hash_seed
     assert(initconfig_getint(config, "use_hash_seed") == 0);
+    assert(initconfig_getint(config, "hash_seed") == 0);
+
     assert(PyInitConfig_SetInt(config, "hash_seed", 123) == 0);
     assert(initconfig_getint(config, "use_hash_seed") == 1);
+    assert(initconfig_getint(config, "hash_seed") == 123);
 
     // Setting module_search_paths sets module_search_paths_set
     assert(initconfig_getint(config, "module_search_paths_set") == 0);
@@ -1862,6 +1835,7 @@ static int test_initconfig_get_api(void)
                                    Py_ARRAY_LENGTH(paths), paths) == 0);
     assert(initconfig_getint(config, "module_search_paths_set") == 1);
 
+    PyInitConfig_Free(config);
     return 0;
 }
 
