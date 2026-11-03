@@ -25,6 +25,16 @@ module pyexpat
 
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
+#if XML_COMBINED_VERSION >= 20900
+#  define EXPAT_GetCurrentLineNumber XML_GetCurrentLineNumber64
+#  define EXPAT_GetCurrentColumnNumber XML_GetCurrentColumnNumber64
+#  define EXPAT_GetCurrentByteIndex XML_GetCurrentByteIndex64
+#else
+#  define EXPAT_GetCurrentLineNumber XML_GetCurrentLineNumber
+#  define EXPAT_GetCurrentColumnNumber XML_GetCurrentColumnNumber
+#  define EXPAT_GetCurrentByteIndex XML_GetCurrentByteIndex
+#endif
+
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
@@ -148,9 +158,10 @@ set_xml_error_attr_code(PyObject *err, enum XML_Error code)
  * false on an exception.
  */
 static int
-set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
+set_xml_error_attr_location(PyObject *err, const char *name,
+                            unsigned long long value)
 {
-    PyObject *v = PyLong_FromSize_t((size_t)value);
+    PyObject *v = PyLong_FromUnsignedLongLong(value);
     int ok = v != NULL && PyObject_SetAttrString(err, name, v) != -1;
     Py_XDECREF(v);
     return ok;
@@ -159,15 +170,16 @@ set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
 
 static PyObject *
 set_xml_error(pyexpat_state *state,
-              enum XML_Error code, XML_Size lineno, XML_Size column,
+              enum XML_Error code,
+              unsigned long long lineno, unsigned long long column,
               const char *errmsg)
 {
     PyObject *arg;
     if (errmsg == NULL) {
         arg = PyUnicode_FromFormat(
-            "%s: line %zu, column %zu",
+            "%s: line %llu, column %llu",
             XML_ErrorString(code),
-            (size_t)lineno, (size_t)column
+            lineno, column
         );
     }
     else {
@@ -194,8 +206,10 @@ set_xml_error(pyexpat_state *state,
     do {                                                            \
         XML_Parser parser = SELF->itself;                           \
         assert(parser != NULL);                                     \
-        XML_Size lineno = XML_GetCurrentLineNumber(parser);         \
-        XML_Size column = XML_GetCurrentColumnNumber(parser);       \
+        unsigned long long lineno                                   \
+            = EXPAT_GetCurrentLineNumber(parser);                   \
+        unsigned long long column                                   \
+            = EXPAT_GetCurrentColumnNumber(parser);                 \
         (void)set_xml_error(state, CODE, lineno, column, ERRMSG);   \
     } while (0)
 
@@ -303,7 +317,9 @@ call_with_frame(const char *funcname, int lineno, PyObject* func, PyObject* args
 {
     PyObject *res;
 
+    Py_INCREF(func);
     res = PyObject_Call(func, args, NULL);
+    Py_DECREF(func);
     if (res == NULL) {
         _PyTraceback_Add(funcname, __FILE__, lineno);
         XML_StopParser(self->itself, XML_FALSE);
@@ -343,19 +359,25 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     if (!have_handler(self, CharacterData))
         return -1;
 
-    args = PyTuple_New(1);
-    if (args == NULL)
-        return -1;
-    temp = (conv_string_len_to_unicode(buffer, len));
+    /* Copy the buffer before tuple allocation can trigger a GC callback. */
+    temp = conv_string_len_to_unicode(buffer, len);
     if (temp == NULL) {
-        Py_DECREF(args);
         flag_error(self);
         XML_SetCharacterDataHandler(self->itself,
                                     noop_character_data_handler);
         return -1;
     }
+    args = PyTuple_New(1);
+    if (args == NULL) {
+        Py_DECREF(temp);
+        return -1;
+    }
     PyTuple_SET_ITEM(args, 0, temp);
     /* temp is now a borrowed reference; consider it unused. */
+    if (!have_handler(self, CharacterData)) {
+        Py_DECREF(args);
+        return 0;
+    }
     self->in_callback = 1;
     temp = call_with_frame("CharacterData", __LINE__,
                            self->handlers[CharacterData], args, self);
@@ -375,12 +397,13 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
 static int
 flush_character_buffer(xmlparseobject *self)
 {
-    int rc;
     if (self->buffer == NULL || self->buffer_used == 0)
         return 0;
-    rc = call_character_handler(self, self->buffer, self->buffer_used);
+    int len = self->buffer_used;
+    /* The callback may change buffering or install a new handler, which
+       also flushes. Do not expose the same pending data a second time. */
     self->buffer_used = 0;
-    return rc;
+    return call_character_handler(self, self->buffer, len);
 }
 
 static void
@@ -391,27 +414,22 @@ my_CharacterDataHandler(void *userData, const XML_Char *data, int len)
     if (PyErr_Occurred())
         return;
 
-    if (self->buffer == NULL)
+    if (self->buffer != NULL &&
+        len > (self->buffer_size - self->buffer_used)) {
+        if (flush_character_buffer(self) < 0)
+            return;
+        /* The callback may replace the handler or disable buffering. */
+        if (!have_handler(self, CharacterData))
+            return;
+    }
+    if (self->buffer == NULL ||
+        len > (self->buffer_size - self->buffer_used)) {
         call_character_handler(self, data, len);
+    }
     else {
-        if (len > (self->buffer_size - self->buffer_used)) {
-            if (flush_character_buffer(self) < 0)
-                return;
-            /* handler might have changed; drop the rest on the floor
-             * if there isn't a handler anymore
-             */
-            if (!have_handler(self, CharacterData))
-                return;
-        }
-        if (len > self->buffer_size) {
-            call_character_handler(self, data, len);
-            self->buffer_used = 0;
-        }
-        else {
-            memcpy(self->buffer + self->buffer_used,
-                   data, len * sizeof(XML_Char));
-            self->buffer_used += len;
-        }
+        memcpy(self->buffer + self->buffer_used,
+               data, len * sizeof(XML_Char));
+        self->buffer_used += len;
     }
 }
 
@@ -442,7 +460,9 @@ my_StartElementHandler(void *userData,
                 max += 2;
         }
         /* Build the container. */
-        if (self->ordered_attributes)
+        /* Intern-dictionary comparisons can change the mode mid-loop. */
+        int ordered_attributes = self->ordered_attributes;
+        if (ordered_attributes)
             container = PyList_New(max);
         else
             container = PyDict_New();
@@ -465,7 +485,7 @@ my_StartElementHandler(void *userData,
                 Py_DECREF(n);
                 return;
             }
-            if (self->ordered_attributes) {
+            if (ordered_attributes) {
                 PyList_SET_ITEM(container, i, n);
                 PyList_SET_ITEM(container, i+1, v);
             }
@@ -491,6 +511,10 @@ my_StartElementHandler(void *userData,
             return;
         }
         /* Container is now a borrowed reference; ignore it. */
+        if (!have_handler(self, StartElement)) {
+            Py_DECREF(args);
+            return;
+        }
         self->in_callback = 1;
         rv = call_with_frame("StartElement", __LINE__,
                              self->handlers[StartElement], args, self);
@@ -545,6 +569,10 @@ my_ ## NAME ## Handler PARAMS {                     \
     PyObject *args = Py_BuildValue PARSE_FORMAT;    \
     if (args == NULL) {                             \
         flag_error(self);                           \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    if (!have_handler(self, NAME)) {                \
+        Py_DECREF(args);                            \
         return RETURN_VARIABLE;                     \
     }                                               \
     self->in_callback = 1;                          \
@@ -695,6 +723,9 @@ my_ElementDeclHandler(void *userData,
             flag_error(self);
             goto finally;
         }
+        if (!have_handler(self, ElementDecl)) {
+            goto finally;
+        }
         self->in_callback = 1;
         rv = call_with_frame("ElementDecl", __LINE__,
                              self->handlers[ElementDecl], args, self);
@@ -806,6 +837,18 @@ VOID_HANDLER(StartDoctypeDecl,
 
 VOID_HANDLER(EndDoctypeDecl, (void *userData), ("()"))
 
+/* check that the current function is not called from within a handler */
+#define CHECK_NOT_IN_HANDLER(PARSER, FUNCNAME)              \
+    do {                                                    \
+        if (PARSER->in_callback) {                          \
+            PyErr_SetString(PyExc_RuntimeError,             \
+                            "cannot call " FUNCNAME "() "   \
+                            "from within a handler");       \
+            return NULL;                                    \
+        }                                                   \
+    } while (0)
+
+
 /* ---------------------------------------------------------------- */
 /*[clinic input]
 class pyexpat.xmlparser "xmlparseobject *" "&Xmlparsetype"
@@ -886,6 +929,9 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
 /*[clinic end generated code: output=8faffe07fe1f862a input=f8f3ba4eadf837e5]*/
 {
+    // avoid re-entrant calls to XML_Parse()
+    CHECK_NOT_IN_HANDLER(self, "Parse");
+
     const char *s;
     Py_ssize_t slen;
     Py_buffer view;
@@ -987,6 +1033,9 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
                                  PyObject *file)
 /*[clinic end generated code: output=34780a094c8ca3ae input=c96030cf5e4f577e]*/
 {
+    // avoid re-entrant calls to XML_GetBuffer() or XML_ParseBuffer()
+    CHECK_NOT_IN_HANDLER(self, "ParseFile");
+
     int rv = 1;
     PyObject *readmethod = NULL;
 
@@ -1095,13 +1144,20 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 /*[clinic end generated code: output=a88026d683fc22cc input=2d605aaa9edbb415]*/
 {
     if (self->in_callback) {
+#if XML_COMBINED_VERSION >= 20900
+        int64_t offset;
+        uint64_t size;
+        const char *buffer
+            = XML_GetInputContext64(self->itself, &offset, &size);
+#else
         int offset, size;
         const char *buffer
             = XML_GetInputContext(self->itself, &offset, &size);
+#endif
 
         if (buffer != NULL)
             return PyBytes_FromStringAndSize(buffer + offset,
-                                              size - offset);
+                                              (Py_ssize_t)(size - offset));
         else
             Py_RETURN_NONE;
     }
@@ -1797,20 +1853,20 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
     return 0;
 }
 
-#define INT_GETTER(name)                                                \
+#define INT_GETTER(name, func)                                          \
     static PyObject *                                                   \
     xmlparse_##name##_getter(PyObject *op, void *Py_UNUSED(closure))    \
     {                                                                   \
         xmlparseobject *self = xmlparseobject_CAST(op);                 \
-        return PyLong_FromLong((long)XML_Get##name(self->itself));      \
+        return PyLong_FromLongLong((long long)func(self->itself));      \
     }
-INT_GETTER(ErrorCode)
-INT_GETTER(ErrorLineNumber)
-INT_GETTER(ErrorColumnNumber)
-INT_GETTER(ErrorByteIndex)
-INT_GETTER(CurrentLineNumber)
-INT_GETTER(CurrentColumnNumber)
-INT_GETTER(CurrentByteIndex)
+INT_GETTER(ErrorCode, XML_GetErrorCode)
+INT_GETTER(ErrorLineNumber, EXPAT_GetCurrentLineNumber)
+INT_GETTER(ErrorColumnNumber, EXPAT_GetCurrentColumnNumber)
+INT_GETTER(ErrorByteIndex, EXPAT_GetCurrentByteIndex)
+INT_GETTER(CurrentLineNumber, EXPAT_GetCurrentLineNumber)
+INT_GETTER(CurrentColumnNumber, EXPAT_GetCurrentColumnNumber)
+INT_GETTER(CurrentByteIndex, EXPAT_GetCurrentByteIndex)
 
 #undef INT_GETTER
 
@@ -2599,8 +2655,11 @@ pyexpat_exec(PyObject *mod)
     capi->MICRO_VERSION = XML_MICRO_VERSION;
     capi->ErrorString = XML_ErrorString;
     capi->GetErrorCode = XML_GetErrorCode;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     capi->GetErrorColumnNumber = XML_GetErrorColumnNumber;
     capi->GetErrorLineNumber = XML_GetErrorLineNumber;
+_Py_COMP_DIAG_POP
     capi->Parse = XML_Parse;
     capi->ParserCreate_MM = XML_ParserCreate_MM;
     capi->ParserFree = XML_ParserFree;

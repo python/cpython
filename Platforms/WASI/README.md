@@ -132,7 +132,7 @@ python3 Platforms/WASI build --quiet --logdir cross-build/logs
 ```
 
 
-### Packaging
+### Releasing
 
 The `package` command is used to gather all the files necessary to make a
 release and place them in an archive:
@@ -157,6 +157,16 @@ Both `package` and `gather` require a completed build and delete the entire
 existing `dist/` directory before gathering files.
 
 There is no command just to archive the gathered files.
+
+To do a release build from `build` to `package`, you can use the `release`
+command:
+
+```shell
+python3 Platforms/WASI release
+```
+
+Any release-specific build flags will be set via `release`. It will also run
+`clean`.
 
 
 ### Paths
@@ -279,10 +289,16 @@ posix.uname_result(
 
 ### C code
 
-WASI SDK defines several built-in macros. You can dump a full list of built-ins
-with ``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
+The following built-in macros identify WebAssembly targets and environments.
+For WASI SDK, you can dump a full list of built-ins with
+`/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null`.
 
-* WebAssembly ``__wasm__`` (also ``__wasm``)
-* wasm32 ``__wasm32__`` (also ``__wasm32``)
-* wasm64 ``__wasm64__``
-* WASI ``__wasi__``
+#### Shared with Emscripten
+
+- WebAssembly target: `__wasm__` (also `__wasm`)
+- wasm32 target: `__wasm32__` (also `__wasm32`)
+- wasm64 target: `__wasm64__`
+
+#### Unique to WASI
+
+- WASI environment: `__wasi__`

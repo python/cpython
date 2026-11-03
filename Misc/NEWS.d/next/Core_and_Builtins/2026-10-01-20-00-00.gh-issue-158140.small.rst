@@ -1,2 +1,0 @@
-Resolve lazily imported sibling submodules independently, so accessing one
-does not import another merely because its declaration came last.

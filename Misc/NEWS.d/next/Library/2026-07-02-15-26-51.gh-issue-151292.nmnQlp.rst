@@ -1,3 +1,0 @@
-Fix ``profiling.sampling --binary`` leaving unreadable profile files when
-the binary format reaches a size limit. Preserve collected samples when the
-writer can still finalize safely. Patch by Maurycy Pawłowski-Wieroński.

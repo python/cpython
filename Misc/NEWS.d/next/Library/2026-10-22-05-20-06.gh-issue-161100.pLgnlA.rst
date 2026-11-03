@@ -1,0 +1,3 @@
+Fix :attr:`!ipaddress.IPv6Interface.is_unspecified` returning ``False`` for
+the IPv4-mapped address ``::ffff:0.0.0.0``.  It now gives the same result as
+:attr:`ipaddress.IPv6Address.is_unspecified`.

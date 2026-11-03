@@ -85,6 +85,39 @@ class CProfileTest(ProfileTest):
             profiler_with_evil_timer.clear()
             self.assertEqual(cm.unraisable.exc_type, RuntimeError)
 
+    def test_external_timer_result_reentry(self):
+        import _lsprof
+
+        class Ticks:
+            def __index__(self):
+                profiler.clear()
+                return 0
+
+        profiler = _lsprof.Profiler(Ticks, timeunit=1)
+        with support.catch_unraisable_exception() as cm:
+            profiler.enable()
+            try:
+                (lambda: None)()
+            finally:
+                profiler.disable()
+            self.assertIs(cm.unraisable.exc_type, RuntimeError)
+
+    def test_external_timer_reinitializes_profiler(self):
+        import _lsprof
+
+        def timer():
+            profiler.__init__()
+            return 0
+
+        profiler = _lsprof.Profiler(timer)
+        with support.catch_unraisable_exception() as cm:
+            profiler.enable()
+            try:
+                (lambda: None)()
+            finally:
+                profiler.disable()
+            self.assertIs(cm.unraisable.exc_type, RuntimeError)
+
     def test_enable_in_external_timer(self):
         # gh-157639: Enabling the profiler from an external timer should not crash
         import _lsprof
