@@ -1795,10 +1795,9 @@ FutureIter_dealloc(PyObject *it)
 }
 
 static PySendResult
-FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
+FutureIter_am_send_lock_held(FutureObj *fut, PyObject **result)
 {
     PyObject *res;
-    FutureObj *fut = it->future;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     *result = NULL;
@@ -1829,11 +1828,24 @@ FutureIter_am_send(PyObject *op,
                    PyObject **result)
 {
     futureiterobject *it = (futureiterobject*)op;
+
+    FutureObj *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = (FutureObj*)Py_XNewRef(it->future);
+    Py_END_CRITICAL_SECTION();
+
+    if (fut == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        *result = NULL;
+        return PYGEN_ERROR;
+    }
+
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
-    Py_BEGIN_CRITICAL_SECTION(it->future);
-    res = FutureIter_am_send_lock_held(it, result);
+    Py_BEGIN_CRITICAL_SECTION(fut);
+    res = FutureIter_am_send_lock_held(fut, result);
     Py_END_CRITICAL_SECTION();
+    Py_DECREF(fut);
     return res;
 }
 
@@ -1927,7 +1939,9 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
         goto fail;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_CLEAR(self->future);
+    Py_END_CRITICAL_SECTION();
 
     PyErr_Restore(type, val, tb);
 
@@ -1940,19 +1954,22 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     return NULL;
 }
 
+static PyObject *
+FutureIter_close(PyObject *self, PyObject *arg)
+{
+    futureiterobject *it = (futureiterobject*)self;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_CLEAR(it->future);
+    Py_END_CRITICAL_SECTION();
+    Py_RETURN_NONE;
+}
+
 static int
 FutureIter_clear(PyObject *op)
 {
     futureiterobject *it = (futureiterobject*)op;
     Py_CLEAR(it->future);
     return 0;
-}
-
-static PyObject *
-FutureIter_close(PyObject *self, PyObject *arg)
-{
-    (void)FutureIter_clear(self);
-    Py_RETURN_NONE;
 }
 
 static int
@@ -1971,6 +1988,22 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyObject *
+FutureIter_get_fi_future(PyObject *op, void *Py_UNUSED(closure))
+{
+    futureiterobject *it = (futureiterobject*)op;
+    PyObject *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = it->future ? Py_NewRef(it->future) : Py_None;
+    Py_END_CRITICAL_SECTION();
+    return fut;
+}
+
+static PyGetSetDef FutureIter_getsetlist[] = {
+    {"fi_future", FutureIter_get_fi_future, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyType_Slot FutureIter_slots[] = {
     {Py_tp_dealloc, FutureIter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1979,6 +2012,7 @@ static PyType_Slot FutureIter_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, FutureIter_iternext},
     {Py_tp_methods, FutureIter_methods},
+    {Py_tp_getset, FutureIter_getsetlist},
 
     // async methods
     {Py_am_send, FutureIter_am_send},
@@ -2769,7 +2803,12 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 {
     if (self->task_name) {
         if (PyLong_CheckExact(self->task_name)) {
-            PyObject *name = PyUnicode_FromFormat("Task-%S", self->task_name);
+            // Formatting can run arbitrary code (e.g. a GC finalizer that logs
+            // and re-enters get_name()), which may replace self->task_name.
+            // Hold a strong reference to the counter while formatting it.
+            PyObject *counter = Py_NewRef(self->task_name);
+            PyObject *name = PyUnicode_FromFormat("Task-%S", counter);
+            Py_DECREF(counter);
             if (name == NULL) {
                 return NULL;
             }

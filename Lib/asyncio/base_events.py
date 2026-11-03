@@ -432,7 +432,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
-        self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
         # The preserved state of async generator hooks.
@@ -1244,6 +1243,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             await waiter
         except:
             transport.close()
+            waiter = None
             raise
 
         return transport, protocol
@@ -1381,6 +1381,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
+            waiter = None
             raise
 
         return ssl_protocol._app_transport
@@ -2055,7 +2056,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         now = self.time()
         # Ensure that `end_time` is strictly increasing
         # when the clock resolution is too small.
-        end_time = now + max(self._clock_resolution, math.ulp(now))
+        end_time = now + max(constants.CLOCK_RESOLUTION, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

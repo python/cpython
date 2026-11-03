@@ -1,2 +1,0 @@
-Fix a hang of the IDLE Shell when code run under the debugger raises
-:exc:`KeyboardInterrupt`.

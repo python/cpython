@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_io_FileIO__dealloc_warn__doc__,
 "_dealloc_warn($self, source, /)\n"
@@ -134,13 +135,8 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("FileIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t mode_length;
-        mode = PyUnicode_AsUTF8AndSize(fastargs[1], &mode_length);
+        mode = _PyUnicode_AsUTF8NoNUL(fastargs[1]);
         if (mode == NULL) {
-            goto exit;
-        }
-        if (strlen(mode) != (size_t)mode_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -625,4 +621,4 @@ exit:
 
 #define _IO_FILEIO__BLKSIZE_GETSETDEF {"_blksize", (getter)_io_FileIO__blksize_get, (setter)NULL, _io_FileIO__blksize__doc__},
 
-/*[clinic end generated code: output=6ad45da113899288 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8d6d338bfd0a58f input=a9049054013a1b77]*/

@@ -64,6 +64,8 @@
 #   on all platforms.)
 # - abi3t_opaque: In abi3t, this struct is opaque (as if `struct_abi_kind`
 #   was 'opaque' and `members` was missing).
+# - is_static_inline_function: for `macro`: actually implemented as a static
+#   inline function, rather than a macro.
 
 # Removing items from this file is generally not allowed, and additions should
 # be considered with that in mind. See the devguide for exact rules:
@@ -1872,6 +1874,22 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+# Python 3.2 macros
+
+[macro.Py_CLEAR]
+    added = '3.2'
+[macro.Py_DECREF]
+    added = '3.2'
+[macro.Py_INCREF]
+    added = '3.2'
+    is_static_inline_function = true
+[macro.Py_XDECREF]
+    added = '3.2'
+    is_static_inline_function = true
+[macro.Py_XINCREF]
+    added = '3.2'
+    is_static_inline_function = true
+
 
 ### Python 3.3 ##############################################################
 
@@ -2225,6 +2243,15 @@
 [function.PyObject_GC_IsTracked]
     added = '3.9'
 
+# Python 3.9 macros
+
+[macro.Py_SET_REFCNT]
+    added = '3.9'
+    is_static_inline_function = true
+[macro.Py_SET_TYPE]
+    added = '3.9'
+    is_static_inline_function = true
+
 
 ### Python 3.10 #############################################################
 
@@ -2451,7 +2478,7 @@
     added = '3.12'
 [function.PyObject_VectorcallMethod]
     added = '3.12'
-[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
+[const.PY_VECTORCALL_ARGUMENTS_OFFSET]
     added = '3.12'
 [typedef.getbufferproc]
     added = '3.12'
@@ -2883,4 +2910,8 @@
 ### Python 3.16 #############################################################
 
 [function.Py_HashBuffer]
+    added = '3.16'
+[macro.Py_SETREF]
+    added = '3.16'
+[macro.Py_XSETREF]
     added = '3.16'

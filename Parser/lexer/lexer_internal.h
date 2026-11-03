@@ -40,14 +40,11 @@ tok_nextc(struct tok_state *tok)
             return EOF;
         }
     }
-    assert(tok->cur >= tok->source.base_offset);
-    assert(tok->cur - tok->source.base_offset < tok->source.len);
     if (tok->cur - tok->line_start >= INT_MAX) {
         tok->done = E_COLUMNOVERFLOW;
         return EOF;
     }
-    return Py_CHARMASK(
-        tok->source.bytes[tok->cur++ - tok->source.base_offset]);
+    return _PyTok_SourceByte(&tok->source, tok->cur++);
 }
 
 /* Return -1 on error, otherwise whether the line is blank. */
@@ -66,7 +63,8 @@ int _PyLexer_close_ftstring_expr(
 void _PyLexer_mark_ftstring_debug(struct tok_state *, ftstring_state *);
 int _PyLexer_check_string_prefixes(struct tok_state *, int, int, int, int, int);
 int _PyLexer_scan_number(struct tok_state *, struct token *, int, int);
-int _PyLexer_scan_fstring_start(struct tok_state *, struct token *, int);
+int _PyLexer_scan_fstring_start(
+    struct tok_state *, struct token *, int, ftstring_kind);
 int _PyLexer_scan_string(struct tok_state *, struct token *, int);
 int _PyLexer_get_normal(struct tok_state *, ftstring_state *, struct token *);
 int _PyLexer_get_ftstring(struct tok_state *, ftstring_state *, struct token *);

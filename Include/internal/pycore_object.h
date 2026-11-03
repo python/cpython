@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
+#include "pycore_wasm_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_gc.h"            // _PyObject_GC_TRACK()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -976,27 +976,6 @@ extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 // Pickle support.
 // Export for '_datetime' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
-
-/* C function call trampolines to mitigate bad function pointer casts.
- *
- * Typical native ABIs ignore additional arguments or fill in missing
- * values with 0/NULL in function pointer cast. Compilers do not show
- * warnings when a function pointer is explicitly casted to an
- * incompatible type.
- *
- * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
- * function signature checks. Argument count, types, and return type must
- * match.
- *
- * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
- */
-#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    (meth)((self), (args))
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    (meth)((self), (args), (kw))
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 // Export these 2 symbols for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
