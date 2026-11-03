@@ -28,8 +28,8 @@
 """Read from and write to tar format archives.
 """
 
-__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
+# Original author: Lars Gustäbel (lars@gustaebel.de)
+# Credits: Gustavo Niemeyer, Niels Gustäbel, Richard Townsend.
 
 #---------
 # Imports
@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+lazy import warnings
 
 try:
     import pwd
@@ -665,13 +666,15 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, name, blockinfo=None):
+    def __init__(self, fileobj, offset, size, name, blockinfo=None,
+            exception=OSError):
         self.fileobj = fileobj
         self.offset = offset
         self.size = size
         self.position = 0
         self.name = name
         self.closed = False
+        self.exception = exception
 
         if blockinfo is None:
             blockinfo = [(0, size)]
@@ -748,7 +751,10 @@ class _FileInFile(object):
             length = min(size, stop - self.position)
             if data:
                 self.fileobj.seek(offset + (self.position - start))
-                b = self.fileobj.read(length)
+                try:
+                    b = self.fileobj.read(length)
+                except self.exception as e:
+                    raise ReadError(f"invalid compressed data: {e}") from e
                 if len(b) != length:
                     raise ReadError("unexpected end of data")
                 buf += b
@@ -771,7 +777,8 @@ class ExFileObject(io.BufferedReader):
 
     def __init__(self, tarfile, tarinfo):
         fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
-                tarinfo.size, tarinfo.name, tarinfo.sparse)
+                tarinfo.size, tarinfo.name, tarinfo.sparse,
+                exception=tarfile.exception)
         super().__init__(fileobj)
 #class ExFileObject
 
@@ -848,6 +855,12 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
         raise OutsideDestinationError(member, target_path)
+    # A link member named after the destination directory itself
+    # would replace it with a (sym)link, redirecting the destination
+    # for all subsequent members.
+    if ((member.islnk() or member.issym())
+            and os.path.normpath(name) == os.curdir):
+        raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
     if mode is not None:
@@ -883,11 +896,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            # A link member that resolves to the destination directory itself
-            # would replace it with a (sym)link, redirecting the destination
-            # for all subsequent members.
-            if target_path == dest_path:
-                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
@@ -1133,7 +1141,7 @@ class TarInfo(object):
         # be represented in ASCII encoding.
         for name, hname, length in (
                 ("name", "path", LENGTH_NAME), ("linkname", "linkpath", LENGTH_LINK),
-                ("uname", "uname", 32), ("gname", "gname", 32)):
+                ("uname", "uname", 31), ("gname", "gname", 31)):
 
             if hname in pax_headers:
                 # The pax header has priority.
@@ -1177,6 +1185,9 @@ class TarInfo(object):
         else:
             buf = b""
 
+        # The owner names in the base header must be NUL-terminated.
+        info["uname"] = info["uname"][:31]
+        info["gname"] = info["gname"][:31]
         return buf + self._create_header(info, USTAR_FORMAT, "ascii", "replace")
 
     @classmethod
@@ -1801,6 +1812,12 @@ class TarFile(object):
 
     fileobject = ExFileObject   # The file-object for extractfile().
 
+    exception = OSError         # The exception raised by the underlying
+                                 # fileobj.read() on corrupt compressed
+                                 # data past the header (see gzopen() etc.
+                                 # for the more specific exception types
+                                 # used by each compression format).
+
     extraction_filter = None    # The default filter for extraction.
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
@@ -2046,6 +2063,7 @@ class TarFile(object):
 
         try:
             from gzip import GzipFile
+            import zlib
         except ImportError:
             raise CompressionError("gzip module is not available") from None
 
@@ -2068,6 +2086,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = zlib.error
         return t
 
     @classmethod
@@ -2124,6 +2143,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = LZMAError
         return t
 
     @classmethod
@@ -2159,6 +2179,7 @@ class TarFile(object):
             fileobj.close()
             raise
         t._extfileobj = False
+        t.exception = ZstdError
         return t
 
     # All *open() methods are registered here.
@@ -2437,11 +2458,14 @@ class TarFile(object):
             raise ValueError("fileobj not provided for non zero-size regular file")
 
         tarinfo = copy.copy(tarinfo)
-
+        # get current offset
+        tarinfo.offset = self.offset
         buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
         self.offset += len(buf)
+        # add original offset to block size
         bufsize=self.copybufsize
+        tarinfo.offset_data = self.offset
         # If there's data to follow, append it.
         if fileobj is not None:
             copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
@@ -2710,6 +2734,13 @@ class TarFile(object):
             self.makeunknown(tarinfo, targetpath)
         else:
             self.makefile(tarinfo, targetpath)
+
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
 
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)
@@ -3236,11 +3267,13 @@ def main():
 
 
 def __getattr__(name):
-    if name == "version":
-        from warnings import _deprecated
-
-        _deprecated("version", remove=(3, 20))
-        return "0.9.0"  # Do not change
+    if name in ("version", "__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "version": "0.9.0",
+            "__author__": "Lars Gust\u00e4bel (lars@gustaebel.de)",
+            "__credits__": "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend.",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

@@ -15,9 +15,8 @@ colorizers for on-screen displays.
 
 To simplify token stream handling, all :ref:`operator <operators>` and
 :ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
-the generic :data:`~token.OP` token type.  The exact
-type can be determined by checking the ``exact_type`` property on the
-:term:`named tuple` returned from :func:`tokenize.tokenize`.
+the generic :data:`~token.OP` token type.
+The :attr:`TokenInfo.exact_type` property gives the exact token type.
 
 
 .. warning::
@@ -40,25 +39,10 @@ The primary entry point is a :term:`generator`:
    :meth:`io.IOBase.readline` method of file objects.  Each call to the
    function should return one line of input as bytes.
 
-   The generator produces 5-tuples with these members: the token type; the
-   token string; a 2-tuple ``(srow, scol)`` of ints specifying the row and
-   column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of
-   ints specifying the row and column where the token ends in the source; and
-   the line on which the token was found. The line passed (the last tuple item)
-   is the *physical* line.  The 5 tuple is returned as a :term:`named tuple`
-   with the field names:
-   ``type string start end line``.
-
-   The returned :term:`named tuple` has an additional property named
-   ``exact_type`` that contains the exact operator type for
-   :data:`~token.OP` tokens.  For all other token types ``exact_type``
-   equals the named tuple ``type`` field.
+   The generator produces :class:`TokenInfo` objects.
 
    .. versionchanged:: 3.1
-      Added support for named tuples.
-
-   .. versionchanged:: 3.3
-      Added support for ``exact_type``.
+      Changed to yield :class:`TokenInfo` objects instead of plain tuples.
 
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
@@ -71,8 +55,77 @@ The primary entry point is a :term:`generator`:
    a single line of input. However, :func:`generate_tokens` expects *readline*
    to return a str object rather than bytes.
 
-   The result is an iterator yielding named tuples, exactly like
+   The result is an iterator yielding :class:`TokenInfo` objects, exactly like
    :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
+
+.. class:: TokenInfo(type, string, start, end, line)
+
+   A :term:`named tuple` describing a token. It has five fields and an
+   additional :attr:`exact_type` property.
+
+   .. versionadded:: 3.1
+
+   .. attribute:: type
+
+      An integer identifying the token type, as defined by the constants in
+      :mod:`token`, such as :data:`~token.NAME` and :data:`~token.STRING`.
+      Operators and delimiters have type :data:`~token.OP`; use
+      :attr:`exact_type` for their specific token type.
+
+   .. attribute:: string
+
+      The token text as a :class:`str`.
+      For :data:`~token.STRING` tokens, this includes the quotes, any prefix,
+      and escape sequences, without evaluating them.
+
+      For an :data:`~token.ENCODING` token, this is the encoding name.
+      Tokens inserted without corresponding source text can have an empty
+      string. In :data:`~token.FSTRING_MIDDLE` and
+      :data:`~token.TSTRING_MIDDLE` tokens, doubled braces are replaced by
+      single braces.
+
+   .. attribute:: start
+
+      A 2-tuple ``(srow, scol)`` of ints specifying the inclusive start
+      position of the token in the source. Rows are numbered from 1 and
+      columns from 0. Columns count Unicode code points; a tab counts as
+      one column, without expanding it to a tab stop.
+
+      For an :data:`~token.ENCODING` token, this is ``(0, 0)``.
+
+   .. attribute:: end
+
+      A 2-tuple ``(erow, ecol)`` of ints specifying the exclusive end
+      position of the token. Rows are numbered from 1 and columns from 0.
+      For a token spanning multiple lines, *erow* is the final row and
+      *ecol* is the column on that row.
+
+      For example, the name ``spam`` at the beginning of the first line
+      has :attr:`start` equal to ``(1, 0)`` and :attr:`end` equal to ``(1, 4)``.
+
+      For an :data:`~token.ENCODING` token, this is ``(0, 0)``.
+      A :data:`~token.NEWLINE` or :data:`~token.NL` token inserted at the end
+      of input without a final newline can have an end column one beyond
+      the source text.
+
+   .. attribute:: line
+
+      A :class:`str` containing the full source line on which
+      the token was found, including surrounding text and the line terminator
+      if present. For a token spanning multiple lines, this can contain
+      several source lines. It is empty for :data:`~token.ENCODING` and
+      :data:`~token.ENDMARKER` tokens.
+
+   .. attribute:: exact_type
+
+      An integer identifying the specific operator type for
+      :data:`~token.OP` tokens, as defined by the constants in :mod:`token`.
+      For all other token types, this equals :attr:`type`.
+      For example, a ``+`` token has :attr:`type` equal to :data:`~token.OP`
+      and :attr:`exact_type` equal to :data:`~token.PLUS`.
+
+      .. versionadded:: 3.3
+
 
 All constants from the :mod:`token` module are also exported from
 :mod:`!tokenize`.

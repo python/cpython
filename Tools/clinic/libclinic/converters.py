@@ -8,7 +8,7 @@ import libclinic
 from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
 from libclinic.function import (
     Function, Parameter,
-    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW, SLOT,
     ACCESSORS)
 from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
@@ -1197,7 +1197,7 @@ def correct_name_for_self(
         f: Function,
         parser: bool = False
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT} | ACCESSORS:
+    if f.kind in {CALLABLE, METHOD_INIT, SLOT} | ACCESSORS:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"

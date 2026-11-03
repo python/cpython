@@ -565,10 +565,15 @@ class OtherFileTests:
                     self.assertEqual(f.writable(), True)
                     if sys.platform != "darwin" and \
                        'bsd' not in sys.platform and \
-                       not sys.platform.startswith(('sunos', 'aix')):
-                        # Somehow /dev/tty appears seekable on some BSDs
+                       not sys.platform.startswith(('sunos', 'aix')) and \
+                       not is_wasi:
+                        # Somehow /dev/tty appears seekable on some BSDs and
+                        # WASI.
                         self.assertEqual(f.seekable(), False)
-                    self.assertEqual(f.isatty(), True)
+                    if not is_wasi:
+                        # wasi-libc special-cases stdin to be a TTY, but
+                        # nothing else is supported.
+                        self.assertEqual(f.isatty(), True)
                     f.close()
         finally:
             os.unlink(TESTFN)

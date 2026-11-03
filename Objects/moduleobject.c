@@ -992,6 +992,10 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
     }
     else {
         const char *filename = PyUnicode_AsUTF8AndSize(filenameobj, &size);
+        if (filename == NULL) {
+            Py_DECREF(filenameobj);
+            return -1;
+        }
         assert(size >= 0);
         if (size > maxlen) {
             size = -1;

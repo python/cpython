@@ -578,7 +578,13 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
-        self._cur_task = current_task()
+        # The iterator may be created outside of a running event loop and
+        # then driven with loop.run_until_complete(), in which case there
+        # is no current task to record as the waiter.
+        if events._get_running_loop() is loop:
+            self._cur_task = current_task(loop)
+        else:
+            self._cur_task = None
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
@@ -630,7 +636,11 @@ class _AsCompletedIterator:
         # Wait for the next future to be done and return it unless resolve is
         # set, in which case return either the result of the future or raise
         # an exception.
-        f = await self._done.get()
+        try:
+            f = await self._done.get()
+        except:
+            self._todo_left += 1
+            raise
         if f is None:
             # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError

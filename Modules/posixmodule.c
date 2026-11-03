@@ -31,6 +31,7 @@
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -307,13 +308,6 @@
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
-#endif
-
-
-#if !defined(_MSC_VER) && defined(__sgi) && _COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char *ctermid_r(char *);
 #endif
 
 
@@ -722,6 +716,7 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyWarnings_BeforeFork(interp);
 }
 
 void
@@ -791,6 +786,9 @@ PyOS_AfterFork_Child(void)
     // Reinitialize it before any executor cleanup can unregister JIT code.
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
+
+    // Thread-state cleanup can run finalizers that issue warnings.
+    _PyWarnings_AfterFork(tstate->interp);
 
     reset_remotedebug_data(tstate);
 
@@ -3675,6 +3673,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
                      "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
         return NULL;
     }
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
+    }
 
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
@@ -5670,8 +5671,9 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, -1);
-    if (PyBytes_Check(path->object))
+    if (result != NULL && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 exit:
     PyMem_Free(mountpath);
@@ -8367,7 +8369,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
-                "spawnv() arg 2 first element cannot be empty");
+                "spawnve() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
@@ -10089,13 +10091,13 @@ os.getppid
 Return the parent's process id.
 
 If the parent process has already exited, Windows machines will still
-return its id; others systems will return the id of the 'init' proces
+return its id; other systems will return the id of the 'init' process
 (1).
 [clinic start generated code]*/
 
 static PyObject *
 os_getppid_impl(PyObject *module)
-/*[clinic end generated code: output=43b2a946a8c603b4 input=e17c1de18f41316b]*/
+/*[clinic end generated code: output=43b2a946a8c603b4 input=158cc6dd661d54d9]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -12452,7 +12454,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (!PySequence_Check(buffers)) {
         PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
+            "preadv() arg 2 must be a sequence");
         return -1;
     }
 

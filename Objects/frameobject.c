@@ -2121,19 +2121,20 @@ frame___sizeof___impl(PyFrameObject *self)
     return PyLong_FromSsize_t(res);
 }
 
+/*[clinic input]
+@critical_section
+frame.__repr__
+[clinic start generated code]*/
+
 static PyObject *
-frame_repr(PyObject *op)
+frame_repr_impl(PyFrameObject *self)
+/*[clinic end generated code: output=6dc361d24ba61076 input=cea0fd14e4749a55]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(f);
-    int lineno = PyFrame_GetLineNumber(f);
-    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
-    result = PyUnicode_FromFormat(
+    int lineno = PyFrame_GetLineNumber(self);
+    PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
+    return PyUnicode_FromFormat(
         "<frame at %p, file %R, line %d, code %S>",
-        f, code->co_filename, lineno, code->co_name);
-    Py_END_CRITICAL_SECTION();
-    return result;
+        self, code->co_filename, lineno, code->co_name);
 }
 
 static PyMethodDef frame_methods[] = {
