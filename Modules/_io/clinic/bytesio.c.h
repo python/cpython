@@ -511,6 +511,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+bytesio_iternext_impl(bytesio *self);
+
+static PyObject *
+bytesio_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytesio_iternext_impl((bytesio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_seek__doc__,
 "seek($self, pos, whence=0, /)\n"
 "--\n"
@@ -780,4 +795,4 @@ _io_BytesIO___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 #define _IO_BYTESIO_CLOSED_GETSETDEF {"closed", (getter)_io_BytesIO_closed_get, (setter)NULL, _io_BytesIO_closed__doc__},
 
-/*[clinic end generated code: output=a3dc7a416dae6ae9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a2bc96c358d6e240 input=a9049054013a1b77]*/

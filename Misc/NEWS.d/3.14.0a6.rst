@@ -1398,11 +1398,13 @@ Python 3.18:
   replace ``_PyUnicodeWriter_WriteSubstring(&writer, str, start, end)`` with
   :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
 * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
-  replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-  :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str, size)`` with
+  :c:func:`PyUnicodeWriter_WriteUTF8(writer, str, size) <PyUnicodeWriter_WriteUTF8>`.
 * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
-  replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
-  :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str, size)`` by
+  decoding the string with :c:func:`PyUnicode_DecodeLatin1`, writing the
+  result with :c:func:`PyUnicodeWriter_WriteStr`, and releasing the result
+  with :c:func:`Py_DECREF`.
 * :c:func:`!_PyUnicodeWriter_Prepare`: (no replacement).
 * :c:func:`!_PyUnicodeWriter_PrepareKind`: (no replacement).
 

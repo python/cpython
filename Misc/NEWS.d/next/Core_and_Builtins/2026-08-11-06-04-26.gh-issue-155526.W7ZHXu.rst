@@ -1,3 +1,0 @@
-Fix spurious :exc:`OverflowError` for ``abs(nanj)`` in case :c:data:`errno` was
-previously set to :c:macro:`!ERANGE` by some library call.
-Patch by Sergey B Kirpichev.

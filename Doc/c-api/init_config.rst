@@ -123,7 +123,7 @@ Error Handling
    Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
    This function became useless.
 
-   .. deprecated:: next
+   .. deprecated:: 3.16
 
 
 Get Options
@@ -167,7 +167,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -247,7 +247,7 @@ Initialize Python
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function no longer sets an exit code if a command line option wants
       to exit Python. Instead, the option is now processed in
       :c:func:`Py_RunMain`.
@@ -623,7 +623,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function now replaces :data:`sys.flags` (create a new object),
       instead of modifying :data:`sys.flags` in-place.
 
@@ -755,7 +755,7 @@ PyStatus
 
       Exit code. Argument passed to ``exit()``.
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
 
    .. c:member:: const char *err_msg
 
@@ -787,7 +787,7 @@ PyStatus
 
       Exit Python with the specified exit code.
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
          :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
          now processed in :c:func:`Py_RunMain`.
@@ -807,7 +807,7 @@ PyStatus
 
       Is the result an exit?
 
-      .. deprecated:: next
+      .. deprecated:: 3.16
          :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
          command line option wants to exit Python. Instead, the option is
          now processed in :c:func:`Py_RunMain`.
@@ -840,7 +840,7 @@ Example::
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
-        PyMem_Free(ptr);
+        PyMem_RawFree(ptr);
         return 0;
     }
 
@@ -889,9 +889,9 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
-      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): use ``mimalloc``, a fast
         malloc replacement.
-      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): use ``mimalloc``, a fast
         malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
 
 
@@ -1439,6 +1439,10 @@ PyConfig
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
 
+      See also :c:func:`PyUnicode_EncodeFSDefault` and
+      :ref:`related functions <capi-filesystem-encoding>`
+      for encoding paths at runtime.
+
    .. c:member:: wchar_t* filesystem_errors
 
       :term:`Filesystem error handler <filesystem encoding and error handler>`:
@@ -1944,7 +1948,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 

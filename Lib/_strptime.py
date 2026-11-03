@@ -386,6 +386,8 @@ class TimeRE(dict):
             't': r'\s*',
             '%': '%',
         }
+        for n in range(1, 7):
+            mapping[f'{n}f'] = rf"(?P<f>[0-9]{{{n}}})"
         if self.locale_time.LC_alt_digits is None:
             for d in 'dmyCHIMS':
                 mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d

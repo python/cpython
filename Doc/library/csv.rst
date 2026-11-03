@@ -333,7 +333,7 @@ The :mod:`!csv` module defines the following classes:
       A tie is broken in the order ``'\r\n'``, ``'\n'``, ``'\r'``,
       so a sample without a complete line gives ``'\r\n'``.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          The dialect is now deduced by trial parsing
          and the results may differ from those of earlier Python versions.
          The *escapechar* and *lineterminator* parameters can now be detected,
@@ -552,7 +552,7 @@ Dialects support :func:`copy.replace`,
 which returns a copy of the dialect
 with the specified formatting parameters replaced.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Added support for :func:`copy.replace`.
 
 .. _reader-objects:

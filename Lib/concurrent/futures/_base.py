@@ -1,7 +1,7 @@
 # Copyright 2009 Brian Quinlan. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 import collections
 import logging
@@ -726,6 +726,7 @@ class _MapResultIterator:
             try:
                 raise exc
             finally:
+                # avoid a ref cycle where exc is captured in its traceback
                 exc = None
         return value
 

@@ -327,6 +327,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, resize, a, -1)
         self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
+        a = ([1], [2], [3])
+        self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, resize, a, -1)
+        self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
         # refcount > 1
         a = (1, 2, 3)
         self.assertRaises(SystemError, resize, a, 3, False)

@@ -102,7 +102,7 @@ assemble_free(struct assembler *a)
 
 static inline void
 write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytesWriter_GetData(a->a_except_table_writer);
+    unsigned char *p = PyBytesWriter_GetData(a->a_except_table_writer);
     p[a->a_except_table_off++] = byte;
 }
 

@@ -189,6 +189,16 @@ and the backup file remains around; by default, the extension is ``'.bak'`` and
 it is deleted when the output file is closed.  In-place filtering is disabled
 when standard input is read.
 
+The output file is created exclusively: if something else creates a file or
+symbolic link with the name of the input file after it has been moved to the
+backup file, :exc:`FileExistsError` is raised.  If the output file cannot be
+created, the backup file is kept.  In-place filtering of files in a directory
+that other, untrusted users can modify is not supported.
+
+.. versionchanged:: next
+   The output file is now created exclusively, and the backup file is no
+   longer deleted if the output file cannot be created.
+
 
 The two following opening hooks are provided by this module:
 
