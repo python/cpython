@@ -5,6 +5,10 @@ from collections import UserList
 from test import support
 from test.support import import_helper
 from test.support import threading_helper
+try:
+    import _testbuffer
+except ImportError:
+    _testbuffer = None
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
@@ -429,6 +433,7 @@ class ListWriterTests(unittest.TestCase):
         # Test PyListWriter_Extend()
         self.check_extend('extend')
 
+    def test_extend_iter_error(self):
         class IterError:
             def __init__(self):
                 self.index = 1
@@ -443,7 +448,8 @@ class ListWriterTests(unittest.TestCase):
                     raise ValueError("iter error")
                 return value
 
-        # On error, restore the writer to its previous state
+        # On error, restore the writer to its previous state:
+        # discard added items
         iterable = IterError()
         writer = self.create_writer(0)
         writer.append("before")
@@ -494,6 +500,33 @@ class ListWriterTests(unittest.TestCase):
         writer = self.create_writer(0)
         writer.from_buffer(memoryview(numbers))
         self.list_equal(writer.finish(), [1.5, 3.0, 5.0])
+
+    def test_from_buffer_memoryerror(self):
+        # Inject MemoryError in the middle of the array: reset the writer
+        # to its previous state, discard added float objects
+        numbers = array.array('d', [2.0] * 128)
+        view = memoryview(numbers)
+        writer = self.create_writer(0)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm(start=len(numbers) // 2):
+                writer.from_buffer(view)
+        self.list_equal(writer.finish(), [])
+
+    @unittest.skipIf(_testbuffer is None, 'need _testbuffer')
+    def test_from_buffer_ndarray(self):
+        # PyListWriter_FromBuffer() requires 1 dimension
+        array_0d = _testbuffer.ndarray(ord(b"a"), format='B',
+                                       shape=(), strides=())
+        array_2d = _testbuffer.ndarray(list(b"abcdefgh"), format='B',
+                                       shape=(4, 2), strides=(2, 1))
+
+        for array in (array_0d, array_2d):
+            with self.subTest(array=array):
+                writer = self.create_writer(0)
+                errmsg = 'require a buffer of 1 dimension, got 2 dimentions'
+                with self.assertRaisesRegex(ValueError, errmsg):
+                    writer.from_buffer(array_2d)
+                self.list_equal(writer.finish(), [])
 
     def test_empty(self):
         list_get_allocated = _testcapi._list_get_allocated

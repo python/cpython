@@ -83,4 +83,4 @@ PyAPI_FUNC(int) PyListWriter_FromFormat(
     ...);
 PyAPI_FUNC(int) PyListWriter_FromBuffer(
     PyListWriter *writer,
-    Py_buffer *buf);
+    const Py_buffer *buf);

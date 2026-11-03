@@ -12,6 +12,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_list.h"          // _PyListWriter_ResetSize()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
@@ -1842,7 +1843,9 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     unsigned char uc;
     void *p;
 
-    CHECK_RELEASED_AGAIN(self);
+    if (self != NULL) {
+        CHECK_RELEASED_AGAIN(self);
+    }
 
 #if PY_LITTLE_ENDIAN
     int endian = 1;
@@ -2303,24 +2306,6 @@ tolist_base(PyMemoryViewObject *self, const char *ptr, const Py_ssize_t *shape,
     return lst;
 }
 
-static int
-tolistwriter(PyListWriter *writer, PyMemoryViewObject *self, const char *ptr,
-             const Py_ssize_t *shape, const Py_ssize_t *strides,
-             const Py_ssize_t *suboffsets, const char *fmt)
-{
-    for (Py_ssize_t i = 0; i < shape[0]; ptr+=strides[0], i++) {
-        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
-        PyObject *item = unpack_single(self, xptr, fmt);
-        if (item == NULL) {
-            return -1;
-        }
-        if (PyListWriter_AppendSteal(writer, item) < 0) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
 /* Unpack a multi-dimensional array into a nested list.
    Assumption: ndim >= 1. */
 static PyObject *
@@ -2394,21 +2379,54 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 
 
 int
-_PyMemoryView_ToListWriter(PyObject *mview, PyListWriter *writer)
+PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
 {
-    assert(PyMemoryView_Check(mview));
-    PyMemoryViewObject *self = (PyMemoryViewObject *)mview;
-    const Py_buffer *view = &self->view;
-    assert(view->ndim == 1);
-
-    const char *fmt = adjust_fmt(view);
-    if (fmt == NULL) {
+    if (view->ndim != 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "require a buffer of 1 dimension, got %i dimentions",
+                     view->ndim);
         return -1;
     }
 
-    return tolistwriter(writer, self, view->buf, view->shape,
-                        view->strides, view->suboffsets,
-                        fmt);
+    const char *fmt;
+    if (view->format != NULL) {
+        fmt = adjust_fmt(view);
+        if (fmt == NULL) {
+            return -1;
+        }
+    }
+    else {
+        // Same default value than init_shared_values()
+        fmt = "B";
+    }
+
+    PyListObject *list = _PyList_CAST(writer);
+    Py_ssize_t old_writer_size = Py_SIZE(list);
+
+    const char *ptr = view->buf;
+    const Py_ssize_t shape = view->shape ? view->shape[0] : view->len;
+    const Py_ssize_t strides = view->strides ? view->strides[0] : view->itemsize;
+    const Py_ssize_t *suboffsets = view->suboffsets;
+
+    for (Py_ssize_t i = 0; i < shape; ptr += strides, i++) {
+        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
+        PyObject *item = unpack_single(NULL, xptr, fmt);
+        if (item == NULL) {
+            goto error;
+        }
+        if (PyListWriter_AppendSteal(writer, item) < 0) {
+            goto error;
+        }
+    }
+    return 0;
+
+error:
+    if (Py_SIZE(list) != old_writer_size) {
+        // On error, reset the writer to its previous state:
+        // discard added items
+        _PyListWriter_ResetSize(writer, old_writer_size);
+    }
+    return -1;
 }
 
 

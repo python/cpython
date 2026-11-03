@@ -4553,6 +4553,28 @@ PyListWriter_Append(PyListWriter *writer, PyObject *item)
 }
 
 
+void
+_PyListWriter_ResetSize(PyListWriter *writer, Py_ssize_t size)
+{
+    assert(listwriter_check_consistency(writer));
+    PyListObject *list = _PyList_CAST(writer);
+
+    Py_ssize_t new_size = Py_SIZE(list);
+    assert(0 <= size && size <= new_size);
+
+    Py_SET_SIZE(list, size);
+
+    // Discard added items
+    PyObject **items = list->ob_item;
+    for (Py_ssize_t i = size; i < new_size; i++) {
+        Py_DECREF(items[i]);
+#ifdef Py_DEBUG
+        items[i] = NULL;
+#endif
+    }
+}
+
+
 // Similar to _list_extend() but don't lock the writer list.
 // If you update this function, update also _list_extend().
 int
@@ -4605,16 +4627,9 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
     }
 
     if (res < 0 && Py_SIZE(self) != old_size) {
-        // On error, reset the writer to its previous state
-        Py_ssize_t new_size = Py_SIZE(self);
-        Py_SET_SIZE(self, old_size);
-        PyObject **items = self->ob_item;
-        for (Py_ssize_t i = old_size; i < new_size; i++) {
-            Py_DECREF(items[i]);
-#ifdef Py_DEBUG
-            items[i] = NULL;
-#endif
-        }
+        // On error, reset the writer to its previous state:
+        // discard added items
+        _PyListWriter_ResetSize(writer, old_size);
     }
 
     return res;
@@ -4704,27 +4719,5 @@ PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
     if (array != small_array) {
         PyMem_Free(array);
     }
-    return res;
-}
-
-
-int
-PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *view)
-{
-    extern int _PyMemoryView_ToListWriter(PyObject *self,
-                                          PyListWriter *writer);
-
-    if (view->ndim != 1) {
-        PyErr_SetString(PyExc_ValueError, "require a buffer of 1 dimension");
-        return -1;
-    }
-
-    PyObject *mview = PyMemoryView_FromBuffer(view);
-    if (mview == NULL) {
-        return -1;
-    }
-
-    int res = _PyMemoryView_ToListWriter(mview, writer);
-    Py_DECREF(mview);
     return res;
 }

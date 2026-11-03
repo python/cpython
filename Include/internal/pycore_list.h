@@ -79,6 +79,10 @@ union _PyStackRef;
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef *src, Py_ssize_t n);
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
+extern void _PyListWriter_ResetSize(
+    PyListWriter *writer,
+    Py_ssize_t size);
+
 #ifdef __cplusplus
 }
 #endif
