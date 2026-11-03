@@ -21,12 +21,6 @@
 #  include <sys/termio.h>
 #endif
 
-// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-// is defined, so we define it here.
-#if defined(__sgi)
-#  define CTRL(c) ((c)&037)
-#endif
-
 // We could do better. Check bpo-32660
 #if defined(__sun)
 #  include <sys/filio.h>

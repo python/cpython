@@ -1,7 +1,7 @@
 # Copyright 2009 Brian Quinlan. All Rights Reserved.
 # Licensed to PSF under a Contributor Agreement.
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 import collections
 import logging
@@ -723,7 +723,11 @@ class _MapResultIterator:
     def __next__(self):
         value, exc = next(self.gen)
         if exc is not None:
-            raise exc
+            try:
+                raise exc
+            finally:
+                # avoid a ref cycle where exc is captured in its traceback
+                exc = None
         return value
 
     def close(self):

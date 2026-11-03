@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="776" height="340"
+     viewBox="0 0 776 340" role="img" aria-labelledby="title description">
+  <title id="title">Parts of a pathlib path</title>
+  <desc id="description">
+    For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
+    PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
+    p.stem is 'grail.tar', and p.suffix is '.gz'.
+  </desc>
+  <style>
+    .background { fill: #fff; }
+    .stem { color: #0072b2; }
+    .suffix { color: #b54700; }
+    .parent { color: #925180; }
+    .name { color: #00785a; }
+    text {
+      font-family: "DejaVu Sans Mono", monospace;
+    }
+    .path {
+      font-size: 28px;
+      fill: #202b36;
+    }
+    .label {
+      font-size: 22px;
+      fill: currentColor;
+    }
+    .connector {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: butt;
+      stroke-linejoin: round;
+    }
+  </style>
+  <!-- An explicit background preserves contrast in readers that override
+       page colors without applying the documentation theme to images. -->
+  <rect class="background" width="776" height="340"/>
+  <!-- Each character occupies a 24-unit cell. -->
+  <text class="path" text-anchor="middle" y="180"
+        x="52 76 100 124 148 172 196 220 244 268 292 316 340 364 388 412 436 460 484 508 532 556">/srv/holy/grail.tar.gz</text>
+
+  <!-- Stem and suffix use blue and orange, separated by a half-cell gap. -->
+  <g class="connector stem">
+    <path d="M 280 140 H 490"/>
+    <path d="M 340 140 V 51 Q 340 45 346 45 H 608"/>
+  </g>
+  <g class="connector suffix">
+    <path d="M 502 140 H 568"/>
+    <path d="M 532 140 V 97 Q 532 91 538 91 H 608"/>
+  </g>
+
+  <!-- Parent and name below the path, excluding the separating slash. -->
+  <g class="connector parent">
+    <path d="M 40 204 H 256"/>
+    <path d="M 148 204 V 291 Q 148 297 154 297 H 608"/>
+  </g>
+  <g class="connector name">
+    <path d="M 280 204 H 568"/>
+    <path d="M 412 204 V 245 Q 412 251 418 251 H 608"/>
+  </g>
+
+  <g class="label">
+    <text x="628" y="52" class="stem">p.stem</text>
+    <text x="628" y="98" class="suffix">p.suffix</text>
+    <text x="628" y="258" class="name">p.name</text>
+    <text x="628" y="304" class="parent">p.parent</text>
+  </g>
+</svg>

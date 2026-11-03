@@ -960,10 +960,11 @@ libmpdec
 --------
 
 The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
-is built using an included copy of the libmpdec
-library unless the build is configured ``--with-system-libmpdec``::
+uses the libmpdec library if made available by the operating system.
+Additionally, the Windows and macOS installers for Python include a copy
+of the libmpdec library, so we include a copy of the libmpdec license here::
 
-   Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
+   Copyright (c) 2008-2024 Stefan Krah. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -1033,7 +1034,7 @@ mimalloc
 
 MIT License::
 
-   Copyright (c) 2018-2021 Microsoft Corporation, Daan Leijen
+   Copyright (c) 2018-2025 Microsoft Corporation, Daan Leijen
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal

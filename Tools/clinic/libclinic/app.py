@@ -15,7 +15,7 @@ from libclinic.dsl_parser import DSLParser
 if TYPE_CHECKING:
     from libclinic.clanguage import CLanguage
     from libclinic.function import (
-        Module, Function, ClassDict, ModuleDict)
+        Module, Function, Property, ClassDict, ModuleDict)
     from libclinic.codegen import DestinationDict
 
 
@@ -103,6 +103,8 @@ impl_definition block
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        # The attributes implemented by accessors, in the order of definition.
+        self.properties: list[Property] = []
         self.codegen = CodeGen(self.limited_capi)
 
         self.line_prefix = self.line_suffix = ''
@@ -122,7 +124,9 @@ impl_definition block
             'methoddef_define': d('file'),
             'impl_prototype': d('file'),
             'parser_prototype': d('suppress'),
+            'parser_helper': d('file'),
             'parser_definition': d('file'),
+            'vectorcall_definition': d('file'),
             'cpp_endif': d('file'),
             'methoddef_ifndef': d('file', 1),
             'impl_definition': d('block'),
@@ -194,6 +198,10 @@ impl_definition block
                 parser = self.parsers[dsl_name]
                 parser.parse(block)
             printer.print_block(block)
+
+        # The entry of an attribute is composed of all its accessors, so it
+        # is rendered when the whole file is parsed.
+        self.language.render_properties(self)
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():

@@ -1,0 +1,2 @@
+:mod:`!_blake2`: Ensure that BLAKE-2 objects are correctly initialized
+before being tracked by the garbage collector. Patch by Bénédikt Tran.

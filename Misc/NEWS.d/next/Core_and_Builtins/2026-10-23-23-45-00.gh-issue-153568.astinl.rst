@@ -1,0 +1,2 @@
+Speed up :func:`ast.parse` and reduce the memory used by AST nodes by storing
+node attributes as inline values instead of a separate per-node dictionary.

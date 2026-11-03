@@ -1,1 +1,0 @@
-Add :data:`os.RWF_NOSIGNAL` constant for Linux 6.18+.
