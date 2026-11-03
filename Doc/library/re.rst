@@ -993,8 +993,8 @@ Flags
           ASCII
 
    Make ``\w``, ``\W``, ``\b``, ``\B``, ``\d``, ``\D``, ``\s`` and ``\S``,
-   and the ``\p{...}`` properties matched with the same categories, perform
-   ASCII-only matching instead of full Unicode matching.  This is only
+   and the ``\p{...}`` properties matched with the same categories,
+   perform ASCII-only matching instead of full Unicode matching.  This is only
    meaningful for Unicode (str) patterns, and is ignored for bytes patterns.
 
    Corresponds to the inline flag ``(?a)``.
