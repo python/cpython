@@ -1460,8 +1460,9 @@ descriptor_set_wrapped_attribute(PyObject *oobj, PyObject *name, PyObject *value
         return 0;
     }
     else {
+        int result = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
-        return PyDict_SetItem(dict, name, value);
+        return result;
     }
 }
 

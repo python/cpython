@@ -28,8 +28,8 @@
 """Read from and write to tar format archives.
 """
 
-__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
+# Original author: Lars Gustäbel (lars@gustaebel.de)
+# Credits: Gustavo Niemeyer, Niels Gustäbel, Richard Townsend.
 
 #---------
 # Imports
@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+lazy import warnings
 
 try:
     import pwd
@@ -854,6 +855,12 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
         raise OutsideDestinationError(member, target_path)
+    # A link member named after the destination directory itself
+    # would replace it with a (sym)link, redirecting the destination
+    # for all subsequent members.
+    if ((member.islnk() or member.issym())
+            and os.path.normpath(name) == os.curdir):
+        raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
     if mode is not None:
@@ -889,11 +896,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            # A link member that resolves to the destination directory itself
-            # would replace it with a (sym)link, redirecting the destination
-            # for all subsequent members.
-            if target_path == dest_path:
-                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
@@ -2733,6 +2735,13 @@ class TarFile(object):
         else:
             self.makefile(tarinfo, targetpath)
 
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
+
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)
             if not tarinfo.issym():
@@ -3258,11 +3267,13 @@ def main():
 
 
 def __getattr__(name):
-    if name == "version":
-        from warnings import _deprecated
-
-        _deprecated("version", remove=(3, 20))
-        return "0.9.0"  # Do not change
+    if name in ("version", "__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "version": "0.9.0",
+            "__author__": "Lars Gust\u00e4bel (lars@gustaebel.de)",
+            "__credits__": "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend.",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
