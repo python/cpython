@@ -1349,7 +1349,7 @@ make_new_set_untracked(PyTypeObject *type, PyObject *iterable)
 {
     assert(PyType_Check(type));
 
-    // Initialize PySetObject members to 0/NULL
+    // fields are zero-initialized by _PyType_AllocNoTrack
     PySetObject *so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
     if (so == NULL) {
         return NULL;
