@@ -137,7 +137,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
 
         if (!opt->name) {
             if (error) {
-                fprintf(stderr, "Unknown option: %ls\n", argv[getopt->index - 1]);
+                fprintf(stderr, "Invalid option '%ls'\n", argv[getopt->index - 1]);
             }
             return '_';
         }
@@ -160,7 +160,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
     wchar_t *ptr = wcschr(SHORT_OPTS, option);
     if (ptr == NULL) {
         if (error) {
-            fprintf(stderr, "Unknown option: -%lc\n", option);
+            fprintf(stderr, "Invalid option '-%lc'\n", option);
         }
         return '_';
     }

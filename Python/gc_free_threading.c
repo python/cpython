@@ -470,6 +470,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
                 continue;
             }
 
+            gc_visit_stackref(f->f_funcobj);
             gc_visit_stackref(f->f_executable);
             while (top != f->localsplus) {
                 --top;
@@ -866,6 +867,10 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
             }
 
             _PyStackRef *top = f->stackpointer;
+            if (gc_visit_stackref_mark_alive(args, f->f_funcobj) < 0) {
+                err = -1;
+                goto exit;
+            }
             if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
                 err = -1;
                 goto exit;

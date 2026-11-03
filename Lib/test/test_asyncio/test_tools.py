@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from asyncio import tools
@@ -1464,6 +1465,77 @@ class TestAsyncioToolsBasic(unittest.TestCase):
         ]
         result = tools.build_async_tree(input_)
         self.assertEqual(result, expected)
+
+    def test_deep_task_chain(self):
+        # gh-159168
+        n = sys.getrecursionlimit()
+        input_ = [
+            AwaitedInfo(
+                thread_id=1,
+                awaited_by=[
+                    TaskInfo(
+                        task_id=i,
+                        task_name=f"Task-{i}",
+                        coroutine_stack=[],
+                        awaited_by=[
+                            CoroInfo(
+                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                task_name=i - 1
+                            )
+                        ] if i > 1 else []
+                    )
+                    for i in range(1, n + 1)
+                ]
+            )
+        ]
+        tree = tools.build_async_tree(input_)
+        self.assertEqual(len(tree[0]), 2 * n - 1)
+        self.assertEqual(tree[0][-1], " " * 8 * (n - 1) + f"└── (T) Task-{n}")
+
+    def test_cycle_below_task(self):
+        # gh-159168
+        input_ = [
+            AwaitedInfo(
+                thread_id=1,
+                awaited_by=[
+                    TaskInfo(
+                        task_id=1,
+                        task_name="Task-1",
+                        coroutine_stack=[],
+                        awaited_by=[]
+                    ),
+                    TaskInfo(
+                        task_id=2,
+                        task_name="Task-2",
+                        coroutine_stack=[],
+                        awaited_by=[
+                            CoroInfo(
+                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                task_name=1
+                            ),
+                            CoroInfo(
+                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                task_name=3
+                            )
+                        ]
+                    ),
+                    TaskInfo(
+                        task_id=3,
+                        task_name="Task-3",
+                        coroutine_stack=[],
+                        awaited_by=[
+                            CoroInfo(
+                                call_stack=[FrameInfo("f", "", LocationInfo(0))],
+                                task_name=2
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+        with self.assertRaises(tools.CycleFoundException) as ctx:
+            tools.build_async_tree(input_)
+        self.assertEqual(ctx.exception.cycles, [[2, 3, 2]])
 
     def test_multiple_cycles_same_node(self):
         input_ = [

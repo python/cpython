@@ -361,11 +361,13 @@ ENCODER(hz)
                 NEXT_OUT(2);
                 state->c[CN_STATE_OFFSET] = 0;
             }
-            WRITEBYTE1((unsigned char)c);
-            NEXT(1, 1);
             if (c == '~') {
-                WRITEBYTE1('~');
-                NEXT_OUT(1);
+                WRITEBYTE2('~', '~');
+                NEXT(1, 2);
+            }
+            else {
+                WRITEBYTE1((unsigned char)c);
+                NEXT(1, 1);
             }
             continue;
         }

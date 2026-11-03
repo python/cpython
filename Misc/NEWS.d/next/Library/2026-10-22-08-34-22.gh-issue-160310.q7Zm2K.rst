@@ -1,0 +1,4 @@
+Fix quadratic time complexity of :func:`gzip.decompress`,
+:func:`bz2.decompress`, :func:`lzma.decompress` and
+:func:`compression.zstd.decompress` on data consisting of many concatenated
+members.

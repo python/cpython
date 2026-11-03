@@ -5299,6 +5299,22 @@ class AbstractPicklerUnpicklerObjectTests:
             self.assertNotEqual(first_pickled, second_pickled)
             self.assertEqual(first_pickled, third_pickled)
 
+    def test_clear_unpickler_memo(self):
+        value = [b'repeated'] * 2
+        data = pickle.dumps(value, protocol=4)
+        unpickler = self.unpickler_class(io.BytesIO(data * 2))
+        self.assertEqual(unpickler.load(), value)
+        unpickler.memo.clear()
+        self.assertEqual(unpickler.load(), value)
+
+    def test_clear_unpickler_memo_sparse(self):
+        # Store None at index 1000, then retrieve it in a second record.
+        unpickler = self.unpickler_class(io.BytesIO(b'Np1000\n.g1000\n.'))
+        self.assertIsNone(unpickler.load())
+        unpickler.memo.clear()
+        with self.assertRaises(pickle.UnpicklingError):
+            unpickler.load()
+
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.
         data = ["abcdefg", "abcdefg", 44]

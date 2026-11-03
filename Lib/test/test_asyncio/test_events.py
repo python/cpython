@@ -27,6 +27,7 @@ if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
+from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
@@ -1202,12 +1203,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -1232,12 +1234,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_match_failed(self):
@@ -1268,10 +1271,14 @@ class EventLoopTestsMixin:
                 with self.assertRaisesRegex(ssl.CertificateError, regex):
                     self.loop.run_until_complete(f_c)
 
-        # close connection
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
+
         # transport is None because TLS ALERT aborted the handshake
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -2308,7 +2315,7 @@ class EventLoopTestsMixin:
         # of the clock used by the kernel. Tolerate a few useless calls on
         # these platforms.
         self.assertLessEqual(self.loop._run_once_counter, 20,
-            {'clock_resolution': self.loop._clock_resolution,
+            {'clock_resolution': constants.CLOCK_RESOLUTION,
              'selector': self.loop._selector.__class__.__name__})
 
     def test_remove_fds_after_closing(self):

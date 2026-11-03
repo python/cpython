@@ -193,7 +193,7 @@ There are a few functions specific to Python functions.
 
    .. versionadded:: 3.12
 
-    - ``PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME``
+    - ``PyFunction_EVENT_MODIFY_QUALNAME``
 
    .. versionadded:: 3.15
 

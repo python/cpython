@@ -174,7 +174,7 @@ should_immortalize_constant(PyObject *v)
                 _Py_IsImmortal(slice->step));
     }
     return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
-            PyComplex_Check(v) || PyBytes_CheckExact(v));
+            PyComplex_CheckExact(v) || PyBytes_CheckExact(v));
 }
 #endif
 

@@ -1,0 +1,3 @@
+Reduce memory usage during compilation by reordering the fields of the
+internal basic block structure to reduce padding.
+Patch by Shamil Abdulaev.

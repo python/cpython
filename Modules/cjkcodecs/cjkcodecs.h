@@ -237,6 +237,7 @@ add_mappings(cjkcodecs_module_state *st)                            \
     st->num_mappings = NUM;                                         \
     st->mapping_list = PyMem_Calloc(NUM, sizeof(struct dbcs_map));  \
     if (st->mapping_list == NULL) {                                 \
+        PyErr_NoMemory();                                           \
         return -1;                                                  \
     }
 
@@ -261,6 +262,7 @@ add_codecs(cjkcodecs_module_state *st)                          \
     st->num_codecs = NUM;                                       \
     st->codec_list = PyMem_Calloc(NUM, sizeof(MultibyteCodec)); \
     if (st->codec_list == NULL) {                               \
+        PyErr_NoMemory();                                       \
         return -1;                                              \
     }
 
