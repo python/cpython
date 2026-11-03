@@ -1,5 +1,6 @@
 from test import support
 from test.support import warnings_helper
+import os
 import decimal
 import enum
 import fractions
@@ -576,8 +577,14 @@ class TimeTestCase(unittest.TestCase):
 
             self.assertEqual(
                 time.timezone,
-                -time.gmtime(time.mktime(local_time)).tm_gmtoff
+                -local_time.tm_gmtoff
             )
+            result = time.strptime(time.strftime('%Z'), '%Z')
+            self.assertEqual(result.tm_year, 1900)
+            self.assertEqual(result.tm_mon, 1)
+            self.assertEqual(result.tm_mday, 1)
+            self.assertequal(result.tm_isdst, 0)
+
 
         finally:
             if old_tz is None:
