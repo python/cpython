@@ -15,6 +15,7 @@ from ctypes import (CDLL, PyDLL, ArgumentError,
                     c_long, c_ulong,
                     c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
+from ctypes.util import struct
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
@@ -167,6 +168,71 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, LPINT.from_param, c_short*3)
         self.assertRaises(TypeError, LPINT.from_param, c_long*3)
         self.assertRaises(TypeError, LPINT.from_param, c_uint*3)
+
+    def test_pointer_as_parameter(self):
+        class Wrapper:
+            def __init__(self, param):
+                self._as_parameter_ = param
+
+        p_int = POINTER(c_int)
+
+        # Implicit byref() of a wrapped instance
+        v = c_int(42)
+        x = p_int.from_param(Wrapper(v))
+        self.assertIs(x._obj, v)
+
+        # Wrapped pointer
+        p = pointer(c_int(99))
+        self.assertIs(p_int.from_param(Wrapper(p)), p)
+
+        # Wrapped byref()
+        p_int.from_param(Wrapper(byref(c_int(7))))
+
+        # Wrapped array
+        a = (c_int * 3)()
+        self.assertIs(p_int.from_param(Wrapper(a)), a)
+
+        @struct
+        class Base:
+            x: c_int
+
+        class Derived(Base):
+            pass
+
+        p_base = POINTER(Base)
+
+        # Pointer upcast of a wrapped pointer and a wrapped instance.
+        d = Derived()
+        pd = pointer(d)
+        self.assertIs(p_base.from_param(Wrapper(pd)), pd)
+        self.assertIs(p_base.from_param(Wrapper(d))._obj, d)
+
+        # Nested _as_parameter_.
+        self.assertIs(p_int.from_param(Wrapper(Wrapper(Wrapper(v))))._obj, v)
+
+        # None is still accepted.
+        self.assertIsNone(p_int.from_param(Wrapper(None)))
+
+        # Type mismatches are still rejected.
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(c_short(1)))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(pointer(c_short(1))))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(byref(c_short(1))))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper((c_short * 3)()))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(object()))
+
+        # End-to-end through a function call.  The c_int must stay alive
+        # while the returned pointer is used.
+        func = CDLL(_ctypes_test.__file__)._testfunc_p_p
+        func.restype = p_int
+        func.argtypes = [p_int]
+        v = c_int(123)
+        result = func(Wrapper(v))
+        self.assertEqual(result.contents.value, 123)
 
     def test_noctypes_argtype(self):
         func = CDLL(_ctypes_test.__file__)._testfunc_p_p

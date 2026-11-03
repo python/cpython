@@ -173,6 +173,9 @@ PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
 extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
 extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
+#ifdef HAVE_FORK
+extern void _PyRecursiveMutex_at_fork_reinit(_PyRecursiveMutex *m, int owned);
+#endif
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while

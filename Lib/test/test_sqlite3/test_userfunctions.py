@@ -720,7 +720,7 @@ class AggregateTests(unittest.TestCase):
 
     def test_agg_keyword_args(self):
         with self.assertRaisesRegex(TypeError,
-                'takes exactly 3 positional arguments'):
+                'takes no keyword arguments'):
             self.con.create_aggregate("test", 1, aggregate_class=AggrText)
 
 
@@ -767,7 +767,7 @@ class AuthorizerTests(unittest.TestCase):
 
     def test_authorizer_keyword_args(self):
         with self.assertRaisesRegex(TypeError,
-                'takes exactly 1 positional argument'):
+                'takes no keyword arguments'):
             self.con.set_authorizer(authorizer_callback=lambda: None)
 
 

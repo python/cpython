@@ -25,8 +25,9 @@ your Python code is then packaged as a standalone bundle that can be
 distributed via the iOS App Store.
 
 If you're looking to experiment for the first time with writing an iOS app in
-Python, projects such as `BeeWare <https://beeware.org>`__ and `Kivy
-<https://kivy.org>`__ will provide a much more approachable user experience.
+Python, projects such as `BeeWare <https://beeware.org>`__, `Kivy
+<https://kivy.org>`__, and `Flet <https://flet.dev/>`__ will provide a much more
+approachable user experience.
 These projects manage the complexities associated with getting an iOS project
 running, so you only need to deal with the Python code itself.
 
@@ -141,6 +142,13 @@ should ensure these stub binaries are on your path.
 
 Installing Python on iOS
 ========================
+
+The official iOS release artefact is a framework build, distributed as an
+``XCFramework``; this is the configuration described in the rest of this
+document, and the only one that supports binary extension modules. Static
+builds, where ``libpython`` and every extension module are linked directly into
+the app binary, are also possible, with limitations; see
+:source:`Platforms/Apple/iOS/README.md` for details.
 
 Tools for building iOS apps
 ---------------------------

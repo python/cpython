@@ -19,6 +19,10 @@
 #include <zstd.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 /* ============================================================================
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
@@ -235,6 +239,7 @@ writer_flush_buffer(BinaryWriter *writer)
                 return -1;
             }
 
+            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
             if (output.pos > 0) {
                 if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
                     return -1;
@@ -371,6 +376,7 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
     }
 
     if (writer->string_count >= UINT32_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
         PyErr_SetString(PyExc_OverflowError,
             "too many strings for binary format");
         return -1;
@@ -380,6 +386,9 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
                                   (void **)&writer->string_lengths,
                                   &writer->string_capacity,
                                   sizeof(char *), sizeof(size_t)) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                writer->state = BINARY_WRITER_LIMIT_REACHED;
+            }
             return -1;
         }
     }
@@ -390,6 +399,7 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
         return -1;
     }
     if ((uintmax_t)str_len > UINT32_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
         PyErr_Format(PyExc_OverflowError,
             "string length %zd exceeds binary format maximum %u",
             str_len, UINT32_MAX);
@@ -438,12 +448,16 @@ writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *ind
     }
 
     if (writer->frame_count >= UINT32_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
         PyErr_SetString(PyExc_OverflowError,
             "too many frames for binary format");
         return -1;
     }
     if (GROW_ARRAY(writer->frame_entries, writer->frame_count,
                    writer->frame_capacity, FrameEntry) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            writer->state = BINARY_WRITER_LIMIT_REACHED;
+        }
         return -1;
     }
 
@@ -487,6 +501,7 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     }
 
     if (writer->thread_count >= UINT32_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
         PyErr_SetString(PyExc_OverflowError,
             "too many threads for binary format");
         return NULL;
@@ -496,6 +511,9 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
                                               &writer->thread_capacity,
                                               sizeof(ThreadEntry));
         if (!new_entries) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                writer->state = BINARY_WRITER_LIMIT_REACHED;
+            }
             return NULL;
         }
         writer->thread_entries = new_entries;
@@ -728,7 +746,8 @@ write_sample_with_encoding(BinaryWriter *writer, ThreadEntry *entry,
 
 BinaryWriter *
 binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compression_type,
-                     uint64_t start_time_us)
+                     uint64_t start_time_us, int profiling_mode,
+                     int capture_features)
 {
     BinaryWriter *writer = PyMem_Calloc(1, sizeof(BinaryWriter));
     if (!writer) {
@@ -739,6 +758,8 @@ binary_writer_create(PyObject *path, uint64_t sample_interval_us, int compressio
     writer->start_time_us = start_time_us;
     writer->sample_interval_us = sample_interval_us;
     writer->compression_type = compression_type;
+    writer->profiling_mode = profiling_mode;
+    writer->capture_features = capture_features;
 
     writer->write_buffer = PyMem_Malloc(WRITE_BUFFER_SIZE);
     if (!writer->write_buffer) {
@@ -925,6 +946,12 @@ static int
 process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
                       uint32_t interpreter_id, uint64_t timestamp_us)
 {
+    if (writer->total_samples == UINT64_MAX) {
+        writer->state = BINARY_WRITER_LIMIT_REACHED;
+        PyErr_SetString(PyExc_OverflowError, "too many samples for binary format");
+        return -1;
+    }
+
     PyObject *thread_id_obj = PyStructSequence_GET_ITEM(thread_info, 0);
     PyObject *status_obj = PyStructSequence_GET_ITEM(thread_info, 1);
     PyObject *frame_list = PyStructSequence_GET_ITEM(thread_info, 2);
@@ -947,7 +974,6 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
 
     /* Calculate timestamp delta */
     uint64_t delta = timestamp_us - entry->prev_timestamp;
-    entry->prev_timestamp = timestamp_us;
 
     /* Process frames and build current stack */
     uint32_t curr_stack[MAX_STACK_DEPTH];
@@ -1003,6 +1029,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
         entry->prev_stack_depth = curr_depth;
     }
 
+    entry->prev_timestamp = timestamp_us;
     writer->total_samples++;
     return 0;
 }
@@ -1022,15 +1049,16 @@ binary_writer_write_sample(BinaryWriter *writer, PyObject *stack_frames, uint64_
         PyObject *interp_id_obj = PyStructSequence_GET_ITEM(interp_info, 0);
         PyObject *threads = PyStructSequence_GET_ITEM(interp_info, 1);
 
-        unsigned long interp_id_long = PyLong_AsUnsignedLong(interp_id_obj);
-        if (interp_id_long == (unsigned long)-1 && PyErr_Occurred()) {
+        unsigned long long interp_id_long = PyLong_AsUnsignedLongLong(interp_id_obj);
+        if (interp_id_long == (unsigned long long)-1 && PyErr_Occurred()) {
             return -1;
         }
         /* Bounds check: interpreter_id is stored as uint32_t in binary format */
         if (interp_id_long > UINT32_MAX) {
+            writer->state = BINARY_WRITER_LIMIT_REACHED;
             PyErr_Format(PyExc_OverflowError,
-                "interpreter_id %lu exceeds maximum value %lu",
-                interp_id_long, (unsigned long)UINT32_MAX);
+                "interpreter_id %llu exceeds maximum value %u",
+                interp_id_long, UINT32_MAX);
             return -1;
         }
         uint32_t interpreter_id = (uint32_t)interp_id_long;
@@ -1081,6 +1109,7 @@ binary_writer_finalize(BinaryWriter *writer)
                 return -1;
             }
 
+            _Py_MSAN_UNPOISON(writer->zstd.compressed_buffer, output.pos);
             if (output.pos > 0) {
                 if (fwrite_checked_allow_threads(writer->zstd.compressed_buffer, output.pos, writer->fp) < 0) {
                     return -1;
@@ -1202,6 +1231,12 @@ binary_writer_finalize(BinaryWriter *writer)
     uint64_t frame_table_offset_u64 = (uint64_t)frame_table_offset;
     uint32_t thread_count_u32 = (uint32_t)writer->thread_count;
     uint32_t compression_type_u32 = (uint32_t)writer->compression_type;
+    uint32_t profiling_config_u32 = (uint32_t)(writer->profiling_mode + 1);
+    if (writer->capture_features >= 0) {
+        profiling_config_u32 |= PROFILING_CONFIG_FEATURES_KNOWN;
+        profiling_config_u32 |= (uint32_t)writer->capture_features
+            << PROFILING_CONFIG_FEATURES_SHIFT;
+    }
 
     uint8_t header[FILE_HEADER_SIZE] = {0};
     uint32_t magic = BINARY_FORMAT_MAGIC;
@@ -1218,6 +1253,7 @@ binary_writer_finalize(BinaryWriter *writer)
     memcpy(header + HDR_OFF_STR_TABLE, &string_table_offset_u64, HDR_SIZE_STR_TABLE);
     memcpy(header + HDR_OFF_FRAME_TABLE, &frame_table_offset_u64, HDR_SIZE_FRAME_TABLE);
     memcpy(header + HDR_OFF_COMPRESSION, &compression_type_u32, HDR_SIZE_COMPRESSION);
+    memcpy(header + HDR_OFF_CONFIG, &profiling_config_u32, HDR_SIZE_CONFIG);
     if (fwrite_checked_allow_threads(header, FILE_HEADER_SIZE, writer->fp) < 0) {
         return -1;
     }

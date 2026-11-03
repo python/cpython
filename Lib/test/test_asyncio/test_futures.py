@@ -712,6 +712,10 @@ class BaseFutureTests:
             self.fail('StopIteration was expected')
         self.assertEqual(result, (1, 2))
 
+    def test_future_iter_fut(self):
+        fut = self._new_future(loop=self.loop)
+        self.assertIs(iter(fut).fi_future, fut)
+
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)
@@ -762,6 +766,24 @@ class BaseFutureTests:
         f = self._new_future(loop=self.loop)
         with self.assertRaises(RuntimeError, msg="is already initialized"):
             f.__init__(loop=self.loop)
+
+    def test_futureiter_send_after_throw_no_crash(self):
+        fut = self._new_future(loop=self.loop)
+        it = fut.__await__()
+        next(it)
+        with self.assertRaises(RuntimeError):
+            it.throw(RuntimeError)
+        with self.assertRaises(StopIteration):
+            it.send(None)
+
+    def test_futureiter_send_after_close_no_crash(self):
+        fut = self._new_future(loop=self.loop)
+        it = fut.__await__()
+        next(it)
+        it.close()
+        with self.assertRaises(StopIteration):
+            it.send(None)
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')

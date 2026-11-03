@@ -4,6 +4,11 @@
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 
+/*[clinic input]
+class namespace "_PyNamespaceObject *" "&_PyNamespace_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0c19150c7306c8cf]*/
+
 #include <stddef.h>               // offsetof()
 
 
@@ -14,6 +19,8 @@ typedef struct {
 
 #define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
 #define _PyNamespace_Check(op) PyObject_TypeCheck((op), &_PyNamespace_Type)
+
+#include "clinic/namespaceobject.c.h"
 
 
 static PyMemberDef namespace_members[] = {
@@ -224,13 +231,18 @@ namespace_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 
-static PyObject *
-namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    if (!_PyArg_NoPositional("__replace__", args)) {
-        return NULL;
-    }
+/*[clinic input]
+namespace.__replace__
 
+    **changes: dict
+
+Return a copy with the specified attributes replaced.
+[clinic start generated code]*/
+
+static PyObject *
+namespace___replace___impl(_PyNamespaceObject *self, PyObject *changes)
+/*[clinic end generated code: output=16bc56d7900c95ba input=c34d09667d34e300]*/
+{
     PyObject *result = PyObject_CallNoArgs((PyObject *)Py_TYPE(self));
     if (!result) {
         return NULL;
@@ -249,11 +261,9 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(result);
         return NULL;
     }
-    if (kwargs) {
-        if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0) {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, changes) < 0) {
+        Py_DECREF(result);
+        return NULL;
     }
     return result;
 }
@@ -262,9 +272,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
-    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
-        "Return a copy of the namespace object with new values for the specified attributes.")},
+    NAMESPACE___REPLACE___METHODDEF
     {NULL,         NULL}  // sentinel
 };
 
