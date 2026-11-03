@@ -212,9 +212,7 @@ static PyObject *
 make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
 {
     assert(PySet_CheckExact(set));
-    if (!_PyObject_IsUniquelyReferenced(set)) {
-        return PyFrozenSet_New(set);
-    }
+    assert(_PyObject_IsUniquelyReferenced(set));
     return _PySet_Freeze(set);
 }
 
