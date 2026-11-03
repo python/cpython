@@ -1,2 +1,2 @@
-:func:`!__lazy_import__` now accepts ``None`` for *globals* and *locals*,
-matching its signature and :func:`__import__`.
+:func:`!__lazy_import__` now treats ``None`` for *globals* and *locals* the
+same as omitting them, matching its signature.
