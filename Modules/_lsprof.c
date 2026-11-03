@@ -1031,6 +1031,9 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return -1;
     }
+    if (timer == Py_None) {
+        timer = NULL;
+    }
     self->externalTimerUnit = timeunit;
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
