@@ -160,6 +160,17 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
+typedef struct {
+    _Py_BackoffCounter counter;
+    uint16_t kind;
+} _PyUnaryNegativeCache;
+
+#define INLINE_CACHE_ENTRIES_UNARY_NEGATIVE CACHE_ENTRIES(_PyUnaryNegativeCache)
+
+enum _PyUnaryNegativeInplaceKind {
+    UNARY_NEGATIVE_INPLACE_FLOAT = 0,
+};
+
 /* TO_BOOL_SIZED: types whose truthiness is a size field at a fixed offset. */
 typedef struct {
     PyTypeObject *type;
@@ -345,6 +356,7 @@ PyAPI_FUNC(void) _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *in
 PyAPI_FUNC(void) _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg);
 PyAPI_FUNC(void) _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_UnaryNegative(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
 PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
 PyAPI_FUNC(void) _Py_Specialize_CallFunctionEx(_PyStackRef func_st, _Py_CODEUNIT *instr);

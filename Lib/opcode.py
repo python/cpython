@@ -56,6 +56,10 @@ _cache_format = frozendict(
         module_keys_version=1,
         builtin_keys_version=1,
     ),
+    UNARY_NEGATIVE=frozendict(
+        counter=1,
+        kind=1,
+    ),
     BINARY_OP=frozendict(
         counter=1,
         descr=4,

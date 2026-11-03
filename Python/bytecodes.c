@@ -450,7 +450,40 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        macro(UNARY_NEGATIVE) = _UNARY_NEGATIVE + POP_TOP;
+        family(UNARY_NEGATIVE, INLINE_CACHE_ENTRIES_UNARY_NEGATIVE) = {
+            UNARY_NEGATIVE_INPLACE,
+        };
+
+        specializing op(_SPECIALIZE_UNARY_NEGATIVE, (counter/1, value -- value)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_UnaryNegative(value, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            OPCODE_DEFERRED_INC(UNARY_NEGATIVE);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        macro(UNARY_NEGATIVE) = _SPECIALIZE_UNARY_NEGATIVE + unused/1 + _UNARY_NEGATIVE + POP_TOP;
+
+        // Negate a uniquely referenced operand in place. `kind` is reserved
+        // for more types; only floats for now.
+        op(_UNARY_NEGATIVE_INPLACE, (kind/1, value -- res)) {
+            (void)kind;
+            assert(kind == UNARY_NEGATIVE_INPLACE_FLOAT);
+            EXIT_IF(!PyStackRef_RefcountOnObject(value));
+            PyObject *val_o = PyStackRef_AsPyObjectBorrow(value);
+            EXIT_IF(!PyFloat_CheckExact(val_o));
+            EXIT_IF(!BINARY_OP_INPLACE_IS_UNIQUE(val_o));
+            STAT_INC(UNARY_NEGATIVE, hit);
+            ((PyFloatObject *)val_o)->ob_fval = -((PyFloatObject *)val_o)->ob_fval;
+            res = value;
+            DEAD(value);
+        }
+
+        kind_op macro(UNARY_NEGATIVE_INPLACE) = unused/1 + _UNARY_NEGATIVE_INPLACE;
 
         op(_UNARY_NEGATIVE, (value -- res, v)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
@@ -652,6 +685,13 @@ dummy_func(
             BINARY_OP_INPLACE_ADD_UNICODE,
             BINARY_OP_EXTEND,
             BINARY_OP_INPLACE,
+            BINARY_OP_TRUEDIV_FLOAT,
+            BINARY_OP_FLOOR_DIVIDE_INT,
+            BINARY_OP_REMAINDER_INT,
+            BINARY_OP_LSHIFT_INT,
+            BINARY_OP_RSHIFT_INT,
+            BINARY_OP_SUBSCR_BYTES_INT,
+            BINARY_OP_SUBSCR_BYTEARRAY_INT,
         };
 
         op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
@@ -914,6 +954,172 @@ dummy_func(
         kind_op macro(BINARY_OP_INPLACE) =
             unused/1 + _GUARD_BINARY_OP_INPLACE + rewind/-1 + _BINARY_OP_INPLACE + unused/3;
 
+        // Float true division (tier 1 counterpart of the tier 2 uop above,
+        // for operands that are not uniquely referenced).
+        kind_op macro(BINARY_OP_TRUEDIV_FLOAT) =
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_TRUEDIV_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
+
+        // Compact int floor division and remainder (Python semantics: the
+        // result takes the sign of the divisor). A zero divisor deopts.
+        op(_BINARY_OP_FLOOR_DIVIDE_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+            EXIT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            Py_ssize_t a = _PyLong_CompactValue((PyLongObject *)left_o);
+            Py_ssize_t b = _PyLong_CompactValue((PyLongObject *)right_o);
+            EXIT_IF(b == 0);
+            Py_ssize_t q = a / b;
+            if ((a % b != 0) && ((a < 0) != (b < 0))) {
+                q--;
+            }
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = PyLong_FromSsize_t(q);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        kind_op macro(BINARY_OP_FLOOR_DIVIDE_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_FLOOR_DIVIDE_INT + _POP_TOP_INT + _POP_TOP_INT;
+
+        op(_BINARY_OP_REMAINDER_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+            EXIT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            Py_ssize_t a = _PyLong_CompactValue((PyLongObject *)left_o);
+            Py_ssize_t b = _PyLong_CompactValue((PyLongObject *)right_o);
+            EXIT_IF(b == 0);
+            Py_ssize_t m = a % b;
+            if (m != 0 && ((m < 0) != (b < 0))) {
+                m += b;
+            }
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = PyLong_FromSsize_t(m);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        kind_op macro(BINARY_OP_REMAINDER_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_REMAINDER_INT + _POP_TOP_INT + _POP_TOP_INT;
+
+        // Compact int shifts. A left shift by more than 32 bits, or by a
+        // negative count, deopts; the product below cannot overflow since
+        // a compact value has at most 30 significant bits.
+        op(_BINARY_OP_LSHIFT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+            EXIT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            Py_ssize_t a = _PyLong_CompactValue((PyLongObject *)left_o);
+            Py_ssize_t b = _PyLong_CompactValue((PyLongObject *)right_o);
+            EXIT_IF((size_t)b > 32 || sizeof(Py_ssize_t) < 8);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = PyLong_FromSsize_t(a * ((Py_ssize_t)1 << b));
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        kind_op macro(BINARY_OP_LSHIFT_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_LSHIFT_INT + _POP_TOP_INT + _POP_TOP_INT;
+
+        op(_BINARY_OP_RSHIFT_INT, (left, right -- res, l, r)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
+            EXIT_IF(!_PyLong_BothAreCompact((PyLongObject *)left_o, (PyLongObject *)right_o));
+            Py_ssize_t a = _PyLong_CompactValue((PyLongObject *)left_o);
+            Py_ssize_t b = _PyLong_CompactValue((PyLongObject *)right_o);
+            EXIT_IF(b < 0);
+            Py_ssize_t shifted;
+            if (b >= (Py_ssize_t)(8 * sizeof(Py_ssize_t) - 1)) {
+                shifted = a < 0 ? -1 : 0;
+            }
+            else {
+                shifted = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, a, b);
+            }
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = PyLong_FromSsize_t(shifted);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            l = left;
+            r = right;
+            INPUTS_DEAD();
+        }
+
+        kind_op macro(BINARY_OP_RSHIFT_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_RSHIFT_INT + _POP_TOP_INT + _POP_TOP_INT;
+
+        // bytes[int] and bytearray[int]: the byte as a small int.
+        op(_GUARD_NOS_BYTES, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyBytes_CheckExact(o));
+        }
+
+        op(_GUARD_NOS_BYTEARRAY, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyByteArray_CheckExact(o));
+        }
+
+        op(_BINARY_OP_SUBSCR_BYTES_INT, (bytes_st, sub_st -- res, b, i)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *bytes = PyStackRef_AsPyObjectBorrow(bytes_st);
+            assert(PyLong_CheckExact(sub));
+            assert(PyBytes_CheckExact(bytes));
+            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            EXIT_IF(PyBytes_GET_SIZE(bytes) <= index);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = _PyLong_FromUnsignedChar((unsigned char)PyBytes_AS_STRING(bytes)[index]);
+            b = bytes_st;
+            i = sub_st;
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectBorrow(res_o);
+        }
+
+        kind_op macro(BINARY_OP_SUBSCR_BYTES_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_BYTES + unused/5 + _BINARY_OP_SUBSCR_BYTES_INT + _POP_TOP_INT + POP_TOP;
+
+        op(_BINARY_OP_SUBSCR_BYTEARRAY_INT, (ba_st, sub_st -- res, b, i)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *ba = PyStackRef_AsPyObjectBorrow(ba_st);
+            assert(PyLong_CheckExact(sub));
+            assert(PyByteArray_CheckExact(ba));
+            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            EXIT_IF(PyByteArray_GET_SIZE(ba) <= index);
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o = _PyLong_FromUnsignedChar((unsigned char)PyByteArray_AS_STRING(ba)[index]);
+            b = ba_st;
+            i = sub_st;
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectBorrow(res_o);
+        }
+
+        kind_op macro(BINARY_OP_SUBSCR_BYTEARRAY_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_BYTEARRAY + unused/5 + _BINARY_OP_SUBSCR_BYTEARRAY_INT + _POP_TOP_INT + POP_TOP;
+
         // Inplace float ops: mutate the uniquely-referenced left operand
         // instead of allocating a new float. Tier 2 only.
         // The optimizer sets l to a borrowed value so the following _POP_TOP_FLOAT
@@ -969,7 +1175,7 @@ dummy_func(
 
         // Float true division --- not specialized at tier 1, emitted by the
         // tier 2 optimizer when both operands are known floats.
-        tier2 op(_BINARY_OP_TRUEDIV_FLOAT, (left, right -- res, l, r)) {
+        op(_BINARY_OP_TRUEDIV_FLOAT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -1459,6 +1665,7 @@ dummy_func(
         family(STORE_SUBSCR, INLINE_CACHE_ENTRIES_STORE_SUBSCR) = {
             STORE_SUBSCR_DICT,
             STORE_SUBSCR_LIST_INT,
+            STORE_SUBSCR_BYTEARRAY_INT,
         };
 
         specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
@@ -1484,6 +1691,26 @@ dummy_func(
 
         kind_candidate macro(STORE_SUBSCR_LIST_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
+
+        // bytearray[int] = int, both index and value in range.
+        op(_STORE_SUBSCR_BYTEARRAY_INT, (value, ba_st, sub_st -- )) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            PyObject *ba = PyStackRef_AsPyObjectBorrow(ba_st);
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            assert(PyLong_CheckExact(sub));
+            assert(PyByteArray_CheckExact(ba));
+            EXIT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject*)sub));
+            EXIT_IF(!PyLong_CheckExact(value_o) || !_PyLong_IsNonNegativeCompact((PyLongObject*)value_o));
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            Py_ssize_t byte = ((PyLongObject*)value_o)->long_value.ob_digit[0];
+            EXIT_IF(PyByteArray_GET_SIZE(ba) <= index || byte > 255);
+            STAT_INC(STORE_SUBSCR, hit);
+            PyByteArray_AS_STRING(ba)[index] = (char)byte;
+            DECREF_INPUTS();
+        }
+
+        kind_op macro(STORE_SUBSCR_BYTEARRAY_INT) =
+            _GUARD_TOS_INT + _GUARD_NOS_BYTEARRAY + unused/1 + _STORE_SUBSCR_BYTEARRAY_INT;
 
         op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
@@ -2080,6 +2307,8 @@ dummy_func(
             UNPACK_SEQUENCE_TWO_TUPLE,
             UNPACK_SEQUENCE_TUPLE,
             UNPACK_SEQUENCE_LIST,
+            UNPACK_SEQUENCE_STEAL_TWO_TUPLE,
+            UNPACK_SEQUENCE_STEAL_TUPLE,
         };
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
@@ -2169,6 +2398,64 @@ dummy_func(
 
         kind_candidate macro(UNPACK_SEQUENCE_LIST) =
             _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST;
+
+        // Unpack a tuple that is only referenced from the stack (a fresh
+        // return value, typically): steal its items and free the shell
+        // (tier 1 counterpart of _UNPACK_SEQUENCE_UNIQUE_*). A shared tuple
+        // takes the increfing path, so only a type or length mismatch deopts.
+        op(_UNPACK_SEQUENCE_STEAL_TWO_TUPLE, (seq -- val1, val0)) {
+            assert(oparg == 2);
+            PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            EXIT_IF(PyTuple_GET_SIZE(seq_o) != 2);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            int owned = PyStackRef_RefcountOnObject(seq);
+            seq_o = PyStackRef_AsPyObjectSteal(seq);
+            if (owned && BINARY_OP_INPLACE_IS_UNIQUE(seq_o)) {
+                val0 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 0));
+                val1 = PyStackRef_FromPyObjectSteal(PyTuple_GET_ITEM(seq_o, 1));
+                PyObject_GC_UnTrack(seq_o);
+                _PyStolenTuple_Free(seq_o);
+            }
+            else {
+                val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
+                val1 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 1));
+                if (owned) {
+                    Py_DECREF(seq_o);
+                }
+            }
+        }
+
+        kind_op macro(UNPACK_SEQUENCE_STEAL_TWO_TUPLE) =
+            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_STEAL_TWO_TUPLE;
+
+        op(_UNPACK_SEQUENCE_STEAL_TUPLE, (seq -- values[oparg])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
+            assert(PyTuple_CheckExact(seq_o));
+            EXIT_IF(PyTuple_GET_SIZE(seq_o) != oparg);
+            STAT_INC(UNPACK_SEQUENCE, hit);
+            int owned = PyStackRef_RefcountOnObject(seq);
+            seq_o = PyStackRef_AsPyObjectSteal(seq);
+            PyObject **items = _PyTuple_ITEMS(seq_o);
+            if (owned && BINARY_OP_INPLACE_IS_UNIQUE(seq_o)) {
+                for (int i = oparg; --i >= 0; ) {
+                    *values++ = PyStackRef_FromPyObjectSteal(items[i]);
+                }
+                PyObject_GC_UnTrack(seq_o);
+                _PyStolenTuple_Free(seq_o);
+            }
+            else {
+                for (int i = oparg; --i >= 0; ) {
+                    *values++ = PyStackRef_FromPyObjectNew(items[i]);
+                }
+                if (owned) {
+                    Py_DECREF(seq_o);
+                }
+            }
+        }
+
+        kind_op macro(UNPACK_SEQUENCE_STEAL_TUPLE) =
+            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_STEAL_TUPLE;
 
         op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);

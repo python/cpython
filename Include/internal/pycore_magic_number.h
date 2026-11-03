@@ -304,7 +304,7 @@ Known values:
     Python 3.16a1 3704 (Replace DELETE_ATTR with PUSH_NULL; STORE_ATTR)
     Python 3.16a1 3705 (Add INTRINSIC_ADD_CONDITIONAL_ANNOTATION)
     Python 3.16a1 3706 (Add INTRINSIC_MATCH_CLASS_ISINSTANCE)
-    Python 3.16a1 3707 (Add KIND_OP)
+    Python 3.16a1 3707 (Add KIND_OP, inline cache for UNARY_NEGATIVE)
 
     Python 3.17 will start with 3750
 

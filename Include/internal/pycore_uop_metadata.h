@@ -84,6 +84,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
     [_POP_ITER] = HAS_ESCAPES_FLAG,
     [_END_SEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_UNARY_NEGATIVE_INPLACE] = HAS_EXIT_FLAG,
     [_UNARY_NEGATIVE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_UNARY_NEGATIVE_FLOAT_INPLACE] = 0,
     [_UNARY_NOT] = 0,
@@ -123,6 +124,14 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_PURE_FLAG,
     [_GUARD_BINARY_OP_INPLACE] = HAS_EXIT_FLAG,
     [_BINARY_OP_INPLACE] = HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_FLOOR_DIVIDE_INT] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_BINARY_OP_REMAINDER_INT] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_BINARY_OP_LSHIFT_INT] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_BINARY_OP_RSHIFT_INT] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_NOS_BYTES] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_BYTEARRAY] = HAS_EXIT_FLAG,
+    [_BINARY_OP_SUBSCR_BYTES_INT] = HAS_EXIT_FLAG,
+    [_BINARY_OP_SUBSCR_BYTEARRAY_INT] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_FLOAT_INPLACE] = 0,
     [_BINARY_OP_SUBTRACT_FLOAT_INPLACE] = 0,
     [_BINARY_OP_MULTIPLY_FLOAT_INPLACE] = 0,
@@ -160,6 +169,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LIST_APPEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
     [_SET_ADD] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_STORE_SUBSCR_BYTEARRAY_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SUBSCR_DICT_KNOWN_HASH] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -188,6 +198,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE] = 0,
     [_UNPACK_SEQUENCE_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_UNIQUE_TUPLE] = HAS_ARG_FLAG,
+    [_UNPACK_SEQUENCE_STEAL_TWO_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_UNPACK_SEQUENCE_STEAL_TUPLE] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_SEQUENCE_LIST] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_UNPACK_EX] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -891,6 +903,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 3, _END_SEND_r31 },
         },
     },
+    [_UNARY_NEGATIVE_INPLACE] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _UNARY_NEGATIVE_INPLACE_r01 },
+            { 1, 1, _UNARY_NEGATIVE_INPLACE_r11 },
+            { 2, 2, _UNARY_NEGATIVE_INPLACE_r22 },
+            { 3, 3, _UNARY_NEGATIVE_INPLACE_r33 },
+        },
+    },
     [_UNARY_NEGATIVE] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -1242,6 +1263,78 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_BINARY_OP_FLOOR_DIVIDE_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_FLOOR_DIVIDE_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_REMAINDER_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_REMAINDER_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_LSHIFT_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_LSHIFT_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_RSHIFT_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_RSHIFT_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_GUARD_NOS_BYTES] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_BYTES_r02 },
+            { 2, 1, _GUARD_NOS_BYTES_r12 },
+            { 2, 2, _GUARD_NOS_BYTES_r22 },
+            { 3, 3, _GUARD_NOS_BYTES_r33 },
+        },
+    },
+    [_GUARD_NOS_BYTEARRAY] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_BYTEARRAY_r02 },
+            { 2, 1, _GUARD_NOS_BYTEARRAY_r12 },
+            { 2, 2, _GUARD_NOS_BYTEARRAY_r22 },
+            { 3, 3, _GUARD_NOS_BYTEARRAY_r33 },
+        },
+    },
+    [_BINARY_OP_SUBSCR_BYTES_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_SUBSCR_BYTES_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
+    [_BINARY_OP_SUBSCR_BYTEARRAY_INT] = {
+        .best = { 2, 2, 2, 2 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 3, 2, _BINARY_OP_SUBSCR_BYTEARRAY_INT_r23 },
+            { -1, -1, -1 },
+        },
+    },
     [_BINARY_OP_ADD_FLOAT_INPLACE] = {
         .best = { 0, 1, 2, 2 },
         .entries = {
@@ -1575,6 +1668,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 0, 3, _STORE_SUBSCR_r30 },
         },
     },
+    [_STORE_SUBSCR_BYTEARRAY_INT] = {
+        .best = { 3, 3, 3, 3 },
+        .entries = {
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { 0, 3, _STORE_SUBSCR_BYTEARRAY_INT_r30 },
+        },
+    },
     [_STORE_SUBSCR_LIST_INT] = {
         .best = { 3, 3, 3, 3 },
         .entries = {
@@ -1823,6 +1925,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _UNPACK_SEQUENCE_UNIQUE_TUPLE_r10 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_UNPACK_SEQUENCE_STEAL_TWO_TUPLE] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 2, 1, _UNPACK_SEQUENCE_STEAL_TWO_TUPLE_r12 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_UNPACK_SEQUENCE_STEAL_TUPLE] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 0, 1, _UNPACK_SEQUENCE_STEAL_TUPLE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -4093,6 +4213,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_END_FOR_r10] = _END_FOR,
     [_POP_ITER_r20] = _POP_ITER,
     [_END_SEND_r31] = _END_SEND,
+    [_UNARY_NEGATIVE_INPLACE_r01] = _UNARY_NEGATIVE_INPLACE,
+    [_UNARY_NEGATIVE_INPLACE_r11] = _UNARY_NEGATIVE_INPLACE,
+    [_UNARY_NEGATIVE_INPLACE_r22] = _UNARY_NEGATIVE_INPLACE,
+    [_UNARY_NEGATIVE_INPLACE_r33] = _UNARY_NEGATIVE_INPLACE,
     [_UNARY_NEGATIVE_r12] = _UNARY_NEGATIVE,
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r02] = _UNARY_NEGATIVE_FLOAT_INPLACE,
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r12] = _UNARY_NEGATIVE_FLOAT_INPLACE,
@@ -4217,6 +4341,20 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_BINARY_OP_INPLACE_r22] = _GUARD_BINARY_OP_INPLACE,
     [_GUARD_BINARY_OP_INPLACE_r33] = _GUARD_BINARY_OP_INPLACE,
     [_BINARY_OP_INPLACE_r21] = _BINARY_OP_INPLACE,
+    [_BINARY_OP_FLOOR_DIVIDE_INT_r23] = _BINARY_OP_FLOOR_DIVIDE_INT,
+    [_BINARY_OP_REMAINDER_INT_r23] = _BINARY_OP_REMAINDER_INT,
+    [_BINARY_OP_LSHIFT_INT_r23] = _BINARY_OP_LSHIFT_INT,
+    [_BINARY_OP_RSHIFT_INT_r23] = _BINARY_OP_RSHIFT_INT,
+    [_GUARD_NOS_BYTES_r02] = _GUARD_NOS_BYTES,
+    [_GUARD_NOS_BYTES_r12] = _GUARD_NOS_BYTES,
+    [_GUARD_NOS_BYTES_r22] = _GUARD_NOS_BYTES,
+    [_GUARD_NOS_BYTES_r33] = _GUARD_NOS_BYTES,
+    [_GUARD_NOS_BYTEARRAY_r02] = _GUARD_NOS_BYTEARRAY,
+    [_GUARD_NOS_BYTEARRAY_r12] = _GUARD_NOS_BYTEARRAY,
+    [_GUARD_NOS_BYTEARRAY_r22] = _GUARD_NOS_BYTEARRAY,
+    [_GUARD_NOS_BYTEARRAY_r33] = _GUARD_NOS_BYTEARRAY,
+    [_BINARY_OP_SUBSCR_BYTES_INT_r23] = _BINARY_OP_SUBSCR_BYTES_INT,
+    [_BINARY_OP_SUBSCR_BYTEARRAY_INT_r23] = _BINARY_OP_SUBSCR_BYTEARRAY_INT,
     [_BINARY_OP_ADD_FLOAT_INPLACE_r03] = _BINARY_OP_ADD_FLOAT_INPLACE,
     [_BINARY_OP_ADD_FLOAT_INPLACE_r13] = _BINARY_OP_ADD_FLOAT_INPLACE,
     [_BINARY_OP_ADD_FLOAT_INPLACE_r23] = _BINARY_OP_ADD_FLOAT_INPLACE,
@@ -4307,6 +4445,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_LIST_APPEND_r10] = _LIST_APPEND,
     [_SET_ADD_r10] = _SET_ADD,
     [_STORE_SUBSCR_r30] = _STORE_SUBSCR,
+    [_STORE_SUBSCR_BYTEARRAY_INT_r30] = _STORE_SUBSCR_BYTEARRAY_INT,
     [_STORE_SUBSCR_LIST_INT_r32] = _STORE_SUBSCR_LIST_INT,
     [_STORE_SUBSCR_DICT_r31] = _STORE_SUBSCR_DICT,
     [_STORE_SUBSCR_DICT_KNOWN_HASH_r31] = _STORE_SUBSCR_DICT_KNOWN_HASH,
@@ -4355,6 +4494,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE_r13] = _UNPACK_SEQUENCE_UNIQUE_THREE_TUPLE,
     [_UNPACK_SEQUENCE_TUPLE_r10] = _UNPACK_SEQUENCE_TUPLE,
     [_UNPACK_SEQUENCE_UNIQUE_TUPLE_r10] = _UNPACK_SEQUENCE_UNIQUE_TUPLE,
+    [_UNPACK_SEQUENCE_STEAL_TWO_TUPLE_r12] = _UNPACK_SEQUENCE_STEAL_TWO_TUPLE,
+    [_UNPACK_SEQUENCE_STEAL_TUPLE_r10] = _UNPACK_SEQUENCE_STEAL_TUPLE,
     [_UNPACK_SEQUENCE_LIST_r10] = _UNPACK_SEQUENCE_LIST,
     [_UNPACK_EX_r10] = _UNPACK_EX,
     [_STORE_ATTR_r20] = _STORE_ATTR,
@@ -4935,10 +5076,14 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_ADD_UNICODE_r23] = "_BINARY_OP_ADD_UNICODE_r23",
     [_BINARY_OP_EXTEND] = "_BINARY_OP_EXTEND",
     [_BINARY_OP_EXTEND_r23] = "_BINARY_OP_EXTEND_r23",
+    [_BINARY_OP_FLOOR_DIVIDE_INT] = "_BINARY_OP_FLOOR_DIVIDE_INT",
+    [_BINARY_OP_FLOOR_DIVIDE_INT_r23] = "_BINARY_OP_FLOOR_DIVIDE_INT_r23",
     [_BINARY_OP_INPLACE] = "_BINARY_OP_INPLACE",
     [_BINARY_OP_INPLACE_r21] = "_BINARY_OP_INPLACE_r21",
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_BINARY_OP_INPLACE_ADD_UNICODE_r21] = "_BINARY_OP_INPLACE_ADD_UNICODE_r21",
+    [_BINARY_OP_LSHIFT_INT] = "_BINARY_OP_LSHIFT_INT",
+    [_BINARY_OP_LSHIFT_INT_r23] = "_BINARY_OP_LSHIFT_INT_r23",
     [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
     [_BINARY_OP_MULTIPLY_FLOAT_r03] = "_BINARY_OP_MULTIPLY_FLOAT_r03",
     [_BINARY_OP_MULTIPLY_FLOAT_r13] = "_BINARY_OP_MULTIPLY_FLOAT_r13",
@@ -4963,6 +5108,14 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r03] = "_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r03",
     [_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r13] = "_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r13",
     [_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r23] = "_BINARY_OP_MULTIPLY_INT_INPLACE_RIGHT_r23",
+    [_BINARY_OP_REMAINDER_INT] = "_BINARY_OP_REMAINDER_INT",
+    [_BINARY_OP_REMAINDER_INT_r23] = "_BINARY_OP_REMAINDER_INT_r23",
+    [_BINARY_OP_RSHIFT_INT] = "_BINARY_OP_RSHIFT_INT",
+    [_BINARY_OP_RSHIFT_INT_r23] = "_BINARY_OP_RSHIFT_INT_r23",
+    [_BINARY_OP_SUBSCR_BYTEARRAY_INT] = "_BINARY_OP_SUBSCR_BYTEARRAY_INT",
+    [_BINARY_OP_SUBSCR_BYTEARRAY_INT_r23] = "_BINARY_OP_SUBSCR_BYTEARRAY_INT_r23",
+    [_BINARY_OP_SUBSCR_BYTES_INT] = "_BINARY_OP_SUBSCR_BYTES_INT",
+    [_BINARY_OP_SUBSCR_BYTES_INT_r23] = "_BINARY_OP_SUBSCR_BYTES_INT_r23",
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = "_BINARY_OP_SUBSCR_CHECK_FUNC",
     [_BINARY_OP_SUBSCR_CHECK_FUNC_r23] = "_BINARY_OP_SUBSCR_CHECK_FUNC_r23",
     [_BINARY_OP_SUBSCR_DICT] = "_BINARY_OP_SUBSCR_DICT",
@@ -5493,6 +5646,16 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r13] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r13",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r23] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r23",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r33] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r33",
+    [_GUARD_NOS_BYTEARRAY] = "_GUARD_NOS_BYTEARRAY",
+    [_GUARD_NOS_BYTEARRAY_r02] = "_GUARD_NOS_BYTEARRAY_r02",
+    [_GUARD_NOS_BYTEARRAY_r12] = "_GUARD_NOS_BYTEARRAY_r12",
+    [_GUARD_NOS_BYTEARRAY_r22] = "_GUARD_NOS_BYTEARRAY_r22",
+    [_GUARD_NOS_BYTEARRAY_r33] = "_GUARD_NOS_BYTEARRAY_r33",
+    [_GUARD_NOS_BYTES] = "_GUARD_NOS_BYTES",
+    [_GUARD_NOS_BYTES_r02] = "_GUARD_NOS_BYTES_r02",
+    [_GUARD_NOS_BYTES_r12] = "_GUARD_NOS_BYTES_r12",
+    [_GUARD_NOS_BYTES_r22] = "_GUARD_NOS_BYTES_r22",
+    [_GUARD_NOS_BYTES_r33] = "_GUARD_NOS_BYTES_r33",
     [_GUARD_NOS_COMPACT_ASCII] = "_GUARD_NOS_COMPACT_ASCII",
     [_GUARD_NOS_COMPACT_ASCII_r02] = "_GUARD_NOS_COMPACT_ASCII_r02",
     [_GUARD_NOS_COMPACT_ASCII_r12] = "_GUARD_NOS_COMPACT_ASCII_r12",
@@ -6109,6 +6272,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_STORE_SLICE_r30] = "_STORE_SLICE_r30",
     [_STORE_SUBSCR] = "_STORE_SUBSCR",
     [_STORE_SUBSCR_r30] = "_STORE_SUBSCR_r30",
+    [_STORE_SUBSCR_BYTEARRAY_INT] = "_STORE_SUBSCR_BYTEARRAY_INT",
+    [_STORE_SUBSCR_BYTEARRAY_INT_r30] = "_STORE_SUBSCR_BYTEARRAY_INT_r30",
     [_STORE_SUBSCR_DICT] = "_STORE_SUBSCR_DICT",
     [_STORE_SUBSCR_DICT_r31] = "_STORE_SUBSCR_DICT_r31",
     [_STORE_SUBSCR_DICT_KNOWN_HASH] = "_STORE_SUBSCR_DICT_KNOWN_HASH",
@@ -6211,6 +6376,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r02] = "_UNARY_NEGATIVE_FLOAT_INPLACE_r02",
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r12] = "_UNARY_NEGATIVE_FLOAT_INPLACE_r12",
     [_UNARY_NEGATIVE_FLOAT_INPLACE_r23] = "_UNARY_NEGATIVE_FLOAT_INPLACE_r23",
+    [_UNARY_NEGATIVE_INPLACE] = "_UNARY_NEGATIVE_INPLACE",
+    [_UNARY_NEGATIVE_INPLACE_r01] = "_UNARY_NEGATIVE_INPLACE_r01",
+    [_UNARY_NEGATIVE_INPLACE_r11] = "_UNARY_NEGATIVE_INPLACE_r11",
+    [_UNARY_NEGATIVE_INPLACE_r22] = "_UNARY_NEGATIVE_INPLACE_r22",
+    [_UNARY_NEGATIVE_INPLACE_r33] = "_UNARY_NEGATIVE_INPLACE_r33",
     [_UNARY_NOT] = "_UNARY_NOT",
     [_UNARY_NOT_r01] = "_UNARY_NOT_r01",
     [_UNARY_NOT_r11] = "_UNARY_NOT_r11",
@@ -6222,6 +6392,10 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_UNPACK_SEQUENCE_r10] = "_UNPACK_SEQUENCE_r10",
     [_UNPACK_SEQUENCE_LIST] = "_UNPACK_SEQUENCE_LIST",
     [_UNPACK_SEQUENCE_LIST_r10] = "_UNPACK_SEQUENCE_LIST_r10",
+    [_UNPACK_SEQUENCE_STEAL_TUPLE] = "_UNPACK_SEQUENCE_STEAL_TUPLE",
+    [_UNPACK_SEQUENCE_STEAL_TUPLE_r10] = "_UNPACK_SEQUENCE_STEAL_TUPLE_r10",
+    [_UNPACK_SEQUENCE_STEAL_TWO_TUPLE] = "_UNPACK_SEQUENCE_STEAL_TWO_TUPLE",
+    [_UNPACK_SEQUENCE_STEAL_TWO_TUPLE_r12] = "_UNPACK_SEQUENCE_STEAL_TWO_TUPLE_r12",
     [_UNPACK_SEQUENCE_TUPLE] = "_UNPACK_SEQUENCE_TUPLE",
     [_UNPACK_SEQUENCE_TUPLE_r10] = "_UNPACK_SEQUENCE_TUPLE_r10",
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
@@ -6341,6 +6515,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _END_SEND:
             return 3;
+        case _UNARY_NEGATIVE_INPLACE:
+            return 1;
         case _UNARY_NEGATIVE:
             return 1;
         case _UNARY_NEGATIVE_FLOAT_INPLACE:
@@ -6419,6 +6595,22 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _BINARY_OP_INPLACE:
             return 2;
+        case _BINARY_OP_FLOOR_DIVIDE_INT:
+            return 2;
+        case _BINARY_OP_REMAINDER_INT:
+            return 2;
+        case _BINARY_OP_LSHIFT_INT:
+            return 2;
+        case _BINARY_OP_RSHIFT_INT:
+            return 2;
+        case _GUARD_NOS_BYTES:
+            return 0;
+        case _GUARD_NOS_BYTEARRAY:
+            return 0;
+        case _BINARY_OP_SUBSCR_BYTES_INT:
+            return 2;
+        case _BINARY_OP_SUBSCR_BYTEARRAY_INT:
+            return 2;
         case _BINARY_OP_ADD_FLOAT_INPLACE:
             return 2;
         case _BINARY_OP_SUBTRACT_FLOAT_INPLACE:
@@ -6493,6 +6685,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _STORE_SUBSCR:
             return 3;
+        case _STORE_SUBSCR_BYTEARRAY_INT:
+            return 3;
         case _STORE_SUBSCR_LIST_INT:
             return 3;
         case _STORE_SUBSCR_DICT:
@@ -6548,6 +6742,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _UNPACK_SEQUENCE_TUPLE:
             return 1;
         case _UNPACK_SEQUENCE_UNIQUE_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_STEAL_TWO_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_STEAL_TUPLE:
             return 1;
         case _UNPACK_SEQUENCE_LIST:
             return 1;

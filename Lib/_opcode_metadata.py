@@ -7,6 +7,8 @@ _specializations = frozendict(
             "RESUME_CHECK",
             "RESUME_CHECK_JIT",
     ),
+    UNARY_NEGATIVE=(
+    ),
     TO_BOOL=(
             "TO_BOOL_ALWAYS_TRUE",
             "TO_BOOL_BOOL",
@@ -227,8 +229,19 @@ _specialized_opmap = frozendict(
 )
 
 _kind_ops = (
+        "BINARY_OP_FLOOR_DIVIDE_INT",
         "BINARY_OP_INPLACE",
+        "BINARY_OP_LSHIFT_INT",
+        "BINARY_OP_REMAINDER_INT",
+        "BINARY_OP_RSHIFT_INT",
+        "BINARY_OP_SUBSCR_BYTEARRAY_INT",
+        "BINARY_OP_SUBSCR_BYTES_INT",
+        "BINARY_OP_TRUEDIV_FLOAT",
+        "STORE_SUBSCR_BYTEARRAY_INT",
         "TO_BOOL_SIZED",
+        "UNARY_NEGATIVE_INPLACE",
+        "UNPACK_SEQUENCE_STEAL_TUPLE",
+        "UNPACK_SEQUENCE_STEAL_TWO_TUPLE",
 )
 
 opmap = frozendict(

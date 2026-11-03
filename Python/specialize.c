@@ -1650,6 +1650,12 @@ _Py_Specialize_StoreSubscr(_PyStackRef container_st, _PyStackRef sub_st, _Py_COD
         specialize(instr, STORE_SUBSCR_DICT);
         return;
     }
+    if (container_type == &PyByteArray_Type
+        && PyLong_CheckExact(sub) && _PyLong_IsNonNegativeCompact((PyLongObject *)sub))
+    {
+        specialize(instr, STORE_SUBSCR_BYTEARRAY_INT);
+        return;
+    }
     SPECIALIZATION_FAIL(STORE_SUBSCR, store_subscr_fail_kind(container, sub));
     unspecialize(instr);
 }
@@ -2499,6 +2505,38 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 if (specialize_binary_op_inplace(instr, lhs_st, rhs_st, INPLACE_FLOAT_TRUEDIV_L)) {
                     return;
                 }
+                specialize(instr, BINARY_OP_TRUEDIV_FLOAT);
+                return;
+            }
+            break;
+        case NB_FLOOR_DIVIDE:
+        case NB_INPLACE_FLOOR_DIVIDE:
+        case NB_REMAINDER:
+        case NB_INPLACE_REMAINDER:
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)
+                && !_PyLong_IsZero((PyLongObject *)rhs))
+            {
+                int floor_div = (oparg == NB_FLOOR_DIVIDE || oparg == NB_INPLACE_FLOOR_DIVIDE);
+                specialize(instr, floor_div ? BINARY_OP_FLOOR_DIVIDE_INT : BINARY_OP_REMAINDER_INT);
+                return;
+            }
+            break;
+        case NB_LSHIFT:
+        case NB_INPLACE_LSHIFT:
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)
+                && (size_t)_PyLong_CompactValue((PyLongObject *)rhs) <= 32 && sizeof(Py_ssize_t) >= 8)
+            {
+                specialize(instr, BINARY_OP_LSHIFT_INT);
+                return;
+            }
+            break;
+        case NB_RSHIFT:
+        case NB_INPLACE_RSHIFT:
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)
+                && !_PyLong_IsNegative((PyLongObject *)rhs))
+            {
+                specialize(instr, BINARY_OP_RSHIFT_INT);
+                return;
             }
             break;
         case NB_SUBSCR:
@@ -2509,6 +2547,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 }
                 if (PyTuple_CheckExact(lhs)) {
                     specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
+                    return;
+                }
+                if (PyBytes_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_BYTES_INT);
+                    return;
+                }
+                if (PyByteArray_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_BYTEARRAY_INT);
                     return;
                 }
                 if (PyUnicode_CheckExact(lhs) && _PyLong_IsNonNegativeCompact((PyLongObject*)rhs)) {
@@ -2678,6 +2724,16 @@ _Py_Specialize_UnpackSequence(_PyStackRef seq_st, _Py_CODEUNIT *instr, int oparg
         if (PyTuple_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
             unspecialize(instr);
+            return;
+        }
+        /* A tuple that is only referenced from the stack (a fresh return
+           value, typically) can give up its items without refcount traffic.
+           The handler falls back to increfing when a later tuple is shared. */
+        if (PyStackRef_RefcountOnObject(seq_st) &&
+            _PyObject_IsUniquelyReferenced(seq))
+        {
+            specialize(instr, oparg == 2 ? UNPACK_SEQUENCE_STEAL_TWO_TUPLE
+                                         : UNPACK_SEQUENCE_STEAL_TUPLE);
             return;
         }
         if (PyTuple_GET_SIZE(seq) == 2) {
@@ -3006,6 +3062,26 @@ failure:
     return;
 success:
     specialize(instr, specialized_op);
+}
+
+Py_NO_INLINE void
+_Py_Specialize_UnaryNegative(_PyStackRef value_st, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[UNARY_NEGATIVE] == INLINE_CACHE_ENTRIES_UNARY_NEGATIVE);
+    _PyUnaryNegativeCache *cache = (_PyUnaryNegativeCache *)(instr + 1);
+    PyObject *value = PyStackRef_AsPyObjectBorrow(value_st);
+    if (kind_specialization_enabled() &&
+        PyFloat_CheckExact(value) &&
+        PyStackRef_RefcountOnObject(value_st) &&
+        _PyObject_IsUniquelyReferenced(value))
+    {
+        cache->kind = UNARY_NEGATIVE_INPLACE_FLOAT;
+        specialize(instr, UNARY_NEGATIVE_INPLACE);
+        return;
+    }
+    SPECIALIZATION_FAIL(UNARY_NEGATIVE, SPEC_FAIL_OTHER);
+    unspecialize(instr);
 }
 
 #ifdef Py_STATS
