@@ -1,8 +1,8 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
+#include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_object.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -42,7 +42,6 @@ typedef struct {
     PyObject *readnl;
     PyObject *writenl;
 
-    PyObject *weakreflist;
     _PyIO_State *module_state;
 } stringio;
 
@@ -701,7 +700,7 @@ stringio_dealloc(PyObject *op)
     }
     PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(op);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1144,7 +1143,6 @@ static PyGetSetDef stringio_getset[] = {
 };
 
 static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
     {NULL},
 };
 

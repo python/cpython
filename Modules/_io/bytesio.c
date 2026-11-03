@@ -5,7 +5,6 @@
 #include "pycore_object.h"
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
-#include "pycore_weakref.h"           // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>                   // offsetof()
 #include "_iomodule.h"
@@ -21,7 +20,6 @@ typedef struct {
     PyObject *buf;
     Py_ssize_t pos;
     Py_ssize_t string_size;
-    PyObject *weakreflist;
     Py_ssize_t exports;
 #ifdef Py_GIL_DISABLED
     int buf_shared;
@@ -1094,7 +1092,7 @@ bytesio_dealloc(PyObject *op)
     }
     Py_CLEAR(self->buf);
     PyObject_ClearManagedDict(op);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1242,7 +1240,6 @@ static struct PyMethodDef bytesio_methods[] = {
 };
 
 static PyMemberDef bytesio_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(bytesio, weakreflist), Py_READONLY},
     {NULL}
 };
 

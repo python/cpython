@@ -14,7 +14,6 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
@@ -33,7 +32,6 @@ class _io._RawIOBase "PyObject *" "clinic_state()->PyRawIOBase_Type"
 typedef struct {
     PyObject_HEAD
 
-    PyObject *weakreflist;
 } iobase;
 
 #define iobase_CAST(op) ((iobase *)(op))
@@ -413,7 +411,7 @@ iobase_dealloc(PyObject *op)
     }
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     PyObject_ClearManagedDict(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -905,7 +903,6 @@ static PyGetSetDef iobase_getset[] = {
 };
 
 static struct PyMemberDef iobase_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(iobase, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -928,7 +925,8 @@ PyType_Spec _Py_iobase_spec = {
     .name = "_io._IOBase",
     .basicsize = sizeof(iobase),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT),
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT |
+              Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = iobase_slots,
 };
 

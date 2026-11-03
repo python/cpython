@@ -16,7 +16,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -731,7 +730,6 @@ struct textio
     /* Cache raw object if it's a FileIO object */
     PyObject *raw;
 
-    PyObject *weakreflist;
 
     _PyIO_State *state;
 };
@@ -1555,7 +1553,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -3536,7 +3534,6 @@ static PyMemberDef textiowrapper_members[] = {
     {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
     {NULL}
 };
 

@@ -1038,12 +1038,12 @@ class CBytesIOTest(PyBytesIOTest):
     @support.cpython_only
     def test_sizeof(self):
         if support.Py_GIL_DISABLED:
-            basesize = support.calcobjsize('P2nPni')
+            basesize = support.calcobjsize('P2nni')
         else:
-            basesize = support.calcobjsize('P2nPn')
+            basesize = support.calcobjsize('P2nn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
-        # sys.getsizeof() includes the managed dict pre-header
+        # sys.getsizeof() includes the managed dict and weakref pre-header
         basesize += 2 * struct.calcsize('P')
         check(io.BytesIO(), basesize )
         n = 1000  # use a variable to prevent constant folding
