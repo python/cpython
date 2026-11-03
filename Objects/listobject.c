@@ -4621,7 +4621,8 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 }
 
 
-static int
+// Force inlining to optimize "if (steal)" at build time
+static inline Py_ALWAYS_INLINE int
 listwriter_extend_array(PyListWriter *writer,
                         PyObject *const *items, Py_ssize_t nitem,
                         int steal)
