@@ -3,6 +3,7 @@ import copy
 import operator
 import pickle
 import struct
+import tracemalloc
 import unittest
 import plistlib
 import os
@@ -723,19 +724,33 @@ class TestPlistlib(unittest.TestCase):
         }
 
         for fmt in ALL_FORMATS:
+            for sort_keys in (False, True):
+                with self.subTest(fmt=fmt, sort_keys=sort_keys):
+                    data = plistlib.dumps(
+                        pl, fmt=fmt, skipkeys=True, sort_keys=sort_keys)
+
+                    pl2 = plistlib.loads(data)
+                    self.assertEqual(pl2, {'snake': 'aWord'})
+
+                    fp = BytesIO()
+                    plistlib.dump(
+                        pl, fp, fmt=fmt, skipkeys=True, sort_keys=sort_keys)
+                    data = fp.getvalue()
+                    pl2 = plistlib.loads(fp.getvalue())
+                    self.assertEqual(pl2, {'snake': 'aWord'})
+
+    def test_skipkeys_with_sort_keys_mixed_types(self):
+        # gh-145856: skipkeys=True + sort_keys=True with mixed key types
+        # used to raise TypeError because the sort ran before the filter.
+        pl = {1: 'a', 'z': 'b', 'a': 'c'}
+
+        for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(
-                    pl, fmt=fmt, skipkeys=True, sort_keys=False)
-
-                pl2 = plistlib.loads(data)
-                self.assertEqual(pl2, {'snake': 'aWord'})
-
-                fp = BytesIO()
-                plistlib.dump(
-                    pl, fp, fmt=fmt, skipkeys=True, sort_keys=False)
-                data = fp.getvalue()
-                pl2 = plistlib.loads(fp.getvalue())
-                self.assertEqual(pl2, {'snake': 'aWord'})
+                    pl, fmt=fmt, skipkeys=True, sort_keys=True)
+                pl2 = plistlib.loads(data, dict_type=collections.OrderedDict)
+                self.assertEqual(dict(pl2), {'z': 'b', 'a': 'c'})
+                self.assertEqual(list(pl2.keys()), ['a', 'z'])
 
     def test_tuple_members(self):
         pl = {
@@ -1022,6 +1037,25 @@ class TestBinaryPlistlib(unittest.TestCase):
             with self.subTest(x=x):
                 data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
                 self.assertLess(len(data), 1100, repr(data))
+
+    def test_dump_large_container_memory(self):
+        # Writing a large container should not leave memory proportional
+        # to its size allocated after the call returns.
+        if not tracemalloc.is_tracing():
+            tracemalloc.start()
+            self.addCleanup(tracemalloc.stop)
+        n = 20_000
+        for make in (lambda n: [True] * n,
+                     lambda n: dict.fromkeys(map(str, range(n)), True)):
+            x = make(n)
+            with self.subTest(type=type(x).__name__):
+                # Warm up with a slightly smaller container, so that
+                # memory kept by free lists is not counted.
+                plistlib.dumps(make(n - 1), fmt=plistlib.FMT_BINARY)
+                before, _ = tracemalloc.get_traced_memory()
+                plistlib.dumps(x, fmt=plistlib.FMT_BINARY)
+                after, _ = tracemalloc.get_traced_memory()
+                self.assertLess(after - before, n)
 
     def test_identity(self):
         for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',

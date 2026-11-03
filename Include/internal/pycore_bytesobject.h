@@ -75,6 +75,35 @@ PyAPI_FUNC(PyObject *) _PyBytes_Repeat(PyObject *self, Py_ssize_t n);
 */
 #define _PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
+extern int _PyBytes_ResizeKeepOnError(PyObject **pv, Py_ssize_t newsize);
+
+#ifndef NDEBUG
+extern int _PyBytes_IsMutable(PyObject *obj);
+#endif
+
+#ifdef Py_DEBUG
+extern void _PyBytes_CheckOverflow(
+    PyObject *op,
+    void *addr,
+    const char *type_name);
+#endif
+
+
+// Return the cached hash value, or -1 if not cached yet.
+static inline Py_hash_t
+_PyBytes_GET_CACHED_HASH(PyBytesObject *self)
+{
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&self->ob_shash);
+#else
+    return self->ob_shash;
+#endif
+_Py_COMP_DIAG_POP
+}
+
+
 /* --- PyBytesWriter ------------------------------------------------------ */
 
 struct PyBytesWriter {

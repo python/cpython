@@ -1,0 +1,3 @@
+Fix a crash in :class:`dict` and :meth:`dict.update` in the
+:term:`free-threaded build` when another thread concurrently mutates a list
+used as a key/value pair. Patch by Christian Aurich Zanettini Martins.

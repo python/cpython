@@ -208,10 +208,15 @@ class BasicWrapTestCase(unittest.TestCase):
             ctypes.c_void_p,
             ctypes.c_int,  # PyCSimpleType
             POINT,  # CDataType
+            POINTER(c_int),  # PyCPointerType
         ):
             with self.subTest(c_type=c_type):
                 with self.assertRaises(RecursionError):
                     c_type.from_param(a)
+
+        function = CDLL(_ctypes_test.__file__)._testfunc_p_p
+        with self.assertRaisesRegex(ArgumentError, 'RecursionError'):
+            function(a)
 
 
 class AsParamWrapper:

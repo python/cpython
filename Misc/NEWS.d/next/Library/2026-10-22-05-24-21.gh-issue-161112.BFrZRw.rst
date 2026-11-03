@@ -1,0 +1,3 @@
+Fix :func:`shutil.make_archive` adding the zip archive being created to itself
+when it is written inside the directory being archived or a symbolic link in
+that directory refers to it.
