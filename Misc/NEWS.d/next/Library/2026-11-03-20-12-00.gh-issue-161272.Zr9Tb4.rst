@@ -1,0 +1,5 @@
+Fix an off-by-one in the pure Python implementation of
+:meth:`io.IOBase.readlines` (``_pyio``): it now stops reading only once the
+total size of the lines read *exceeds* *hint*, as documented and as the C
+implementation does.  Previously one line fewer was returned when that total
+was exactly *hint*.

@@ -319,6 +319,24 @@ class IOTest:
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
 
+    def test_readlines_hint(self):
+        # gh-161272: reading stops only once the total size of the lines
+        # read *exceeds* hint, not when it is equal to it.
+        all_lines = [b"a\n", b"bb\n", b"ccc\n", b"dddd\n"]
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.writelines(all_lines)
+        for hint, expected in ((1, all_lines[:1]), (2, all_lines[:2]),
+                               (3, all_lines[:2]), (5, all_lines[:3]),
+                               (9, all_lines), (100, all_lines),
+                               (0, all_lines), (-1, all_lines)):
+            with self.subTest(hint=hint):
+                with self.open(os_helper.TESTFN, "rb") as f:
+                    self.assertEqual(f.readlines(hint), expected)
+        with self.open(os_helper.TESTFN, "rb") as f:
+            self.assertEqual(f.readlines(), all_lines)
+        with self.open(os_helper.TESTFN, "r", encoding="ascii") as f:
+            self.assertEqual(f.readlines(2), ["a\n", "bb\n"])
+
     def test_readline_limit_with_short_read(self):
         class Reader(self.IOBase):
             data = b"abcdef"

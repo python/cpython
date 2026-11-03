@@ -576,7 +576,7 @@ class IOBase(metaclass=abc.ABCMeta):
         for line in self:
             lines.append(line)
             n += len(line)
-            if n >= hint:
+            if n > hint:
                 break
         return lines
 
