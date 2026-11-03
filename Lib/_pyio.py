@@ -1470,7 +1470,11 @@ class BufferedRandom(BufferedWriter, BufferedReader):
     def truncate(self, pos=None):
         if pos is None:
             pos = self.tell()
-        # Use seek to flush the read buffer.
+        # Use seek to flush the read buffer and to rewind the raw stream, as
+        # _io's buffered_flush_and_rewind_unlocked() does.  Without this a
+        # read after truncate() can still return data that was truncated
+        # away.
+        self.seek(self.tell())
         return BufferedWriter.truncate(self, pos)
 
     def read(self, size=None):

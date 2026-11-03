@@ -1410,6 +1410,17 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
         self.assertEqual(bufio.write(b"BB"), 2) # the write buffer increases
         self.assertEqual(bufio.truncate(), 4)
 
+    def test_read_after_truncate(self):
+        # gh-161271: truncate() must drop the read-ahead buffer, so that a
+        # read after it cannot return data that is no longer in the stream.
+        raw = self.BytesIO(b"A" * 10)
+        bufio = self.tp(raw, 100)
+        self.assertEqual(bufio.read(2), b"AA")  # the read buffer gets filled
+        self.assertEqual(bufio.truncate(0), 0)
+        self.assertEqual(bufio.tell(), 2)
+        self.assertEqual(bufio.read(), b"")
+        self.assertEqual(raw.getvalue(), b"")
+
     def test_misbehaved_io(self):
         BufferedReaderTest.test_misbehaved_io(self)
         BufferedWriterTest.test_misbehaved_io(self)

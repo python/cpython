@@ -1,0 +1,4 @@
+Fix the pure Python implementation of :class:`io.BufferedRandom` (``_pyio``):
+:meth:`!truncate` now drops the read-ahead buffer and rewinds the raw stream,
+as the C implementation does, so that a read after :meth:`!truncate` no longer
+returns data that was truncated away.
