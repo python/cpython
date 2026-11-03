@@ -137,7 +137,6 @@ static int
 py_list_resize(PyListObject *self, Py_ssize_t newsize)
 {
     size_t new_allocated, target_bytes;
-    Py_ssize_t allocated = self->allocated;
 
     /* This over-allocates proportional to the list size, making room
      * for additional growth.  The over-allocation is mild, but is
@@ -159,11 +158,12 @@ py_list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0)
         new_allocated = 0;
 
-    assert(newsize > allocated || new_allocated < (size_t)allocated);
+    assert(newsize > self->allocated || new_allocated < (size_t)self->allocated);
 
     ensure_shared_on_resize(self);
 
 #ifdef Py_GIL_DISABLED
+    Py_ssize_t allocated = self->allocated;
     _PyListArray *array = list_allocate_array(new_allocated);
     if (array == NULL) {
         PyErr_NoMemory();
