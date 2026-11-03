@@ -144,6 +144,11 @@ Tuple Objects
    ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
+   While tuple objects are usually immutable in Python, this special C API
+   allows mutating a tuple object in-place. The returned tuple object can still
+   be mutated using :c:func:`PyTuple_SetItem`; except if *newsize* is zero in
+   which case it returns the immutable empty tuple.
+
 
 .. _struct-sequence-objects:
 

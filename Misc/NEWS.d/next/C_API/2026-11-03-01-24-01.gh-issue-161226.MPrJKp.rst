@@ -1,0 +1,2 @@
+:c:func:`_PyTuple_Resize` now returns a copy if the hash value was already
+computed. Patch by Victor Stinner.

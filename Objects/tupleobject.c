@@ -1015,49 +1015,12 @@ PyTypeObject PyTuple_Type = {
     ._tp_iteritem = tuple_iteritem,
 };
 
-/* The following function breaks the notion that tuples are immutable:
-   it changes the size of a tuple.  We get away with this only if there
-   is only one module referencing the object.  You can also think of it
-   as creating a new tuple object and destroying the old one, only more
-   efficiently.  In any case, don't use this if the tuple may already be
-   known to some other part of the code. */
 
-int
-_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+static int
+tuple_resize_inplace(PyObject **pv, Py_ssize_t newsize)
 {
-    PyTupleObject *v;
-    PyTupleObject *sv;
-    Py_ssize_t i;
-    Py_ssize_t oldsize;
+    PyTupleObject *v = (PyTupleObject *) *pv;
 
-    v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
-        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
-        *pv = 0;
-        Py_XDECREF(v);
-        PyErr_BadInternalCall();
-        return -1;
-    }
-
-    oldsize = Py_SIZE(v);
-    if (oldsize == newsize) {
-        return 0;
-    }
-    if (newsize == 0) {
-        Py_DECREF(v);
-        *pv = tuple_get_empty();
-        return 0;
-    }
-    if (oldsize == 0) {
-#ifdef Py_DEBUG
-        assert(v == &_Py_SINGLETON(tuple_empty));
-#endif
-        /* The empty tuple is statically allocated so we never
-           resize it in-place. */
-        Py_DECREF(v);
-        *pv = PyTuple_New(newsize);
-        return *pv == NULL ? -1 : 0;
-    }
     /* Check for overflow */
     if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
                 sizeof(PyObject *))) / sizeof(PyObject *)) {
@@ -1074,32 +1037,107 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_ForgetReference((PyObject *) v);
 #endif
     /* DECREF items deleted by shrinkage */
-    for (i = newsize; i < oldsize; i++) {
+    Py_ssize_t oldsize = Py_SIZE(v);
+    for (Py_ssize_t i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
     _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
-    sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
+
+    PyTupleObject *sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
         *pv = NULL;
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
         /* The failed reallocation leaves the original items owned by v. */
-        i = oldsize;
+        Py_ssize_t i = oldsize;
         while (--i >= 0) {
             Py_XDECREF(v->ob_item[i]);
         }
         PyObject_GC_Del(v);
         return -1;
     }
+
     _Py_NewReferenceNoTotal((PyObject *) sv);
     /* Zero out items added by growing */
-    if (newsize > oldsize)
+    if (newsize > oldsize) {
         memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
+               sizeof(sv->ob_item[0]) * (newsize - oldsize));
+    }
+
     *pv = (PyObject *) sv;
     _PyObject_GC_TRACK(sv);
     return 0;
+}
+
+
+/* The following function breaks the notion that tuples are immutable:
+   it changes the size of a tuple.  We get away with this only if there
+   is only one module referencing the object.  You can also think of it
+   as creating a new tuple object and destroying the old one, only more
+   efficiently.  In any case, don't use this if the tuple may already be
+   known to some other part of the code. */
+
+int
+_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+{
+    PyTupleObject *v = (PyTupleObject *) *pv;
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
+        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
+        *pv = 0;
+        Py_XDECREF(v);
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    Py_ssize_t oldsize = Py_SIZE(v);
+    if (oldsize == newsize) {
+        return 0;
+    }
+
+    if (newsize == 0) {
+        *pv = tuple_get_empty();
+        Py_DECREF(v);
+        return 0;
+    }
+
+    if (oldsize == 0) {
+#ifdef Py_DEBUG
+        assert(v == &_Py_SINGLETON(tuple_empty));
+#endif
+        /* The empty tuple is statically allocated so we never
+           resize it in-place. */
+        *pv = PyTuple_New(newsize);
+        Py_DECREF(v);
+        return *pv == NULL ? -1 : 0;
+    }
+
+    // gh-161226: Return a copy if the hash value was already computed
+    if (v->ob_hash != -1) {
+        PyTupleObject *new_tuple = tuple_alloc(newsize);
+        if (new_tuple == NULL) {
+            *pv = NULL;
+            Py_DECREF(v);
+            return -1;
+        }
+        // Copy items
+        Py_ssize_t copy = Py_MIN(oldsize, newsize);
+        for (Py_ssize_t i = 0; i < copy; i++) {
+            new_tuple->ob_item[i] = Py_NewRef(v->ob_item[i]);
+        }
+        if (newsize > oldsize) {
+            // Set new items to NULL
+            memset(&new_tuple->ob_item[oldsize], 0,
+                   (newsize - oldsize) * sizeof(new_tuple->ob_item[0]));
+        }
+        _PyObject_GC_TRACK(new_tuple);
+
+        *pv = _PyObject_CAST(new_tuple);
+        Py_DECREF(v);
+        return 0;
+    }
+
+    return tuple_resize_inplace(pv, newsize);
 }
 
 /*********************** Tuple Iterator **************************/
