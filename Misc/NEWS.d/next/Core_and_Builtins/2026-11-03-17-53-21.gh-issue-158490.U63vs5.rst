@@ -1,0 +1,2 @@
+Fix :class:`frozenset` of a set comprehension in a class annotation or type
+alias freezing a set that a trace function or debugger still references.
