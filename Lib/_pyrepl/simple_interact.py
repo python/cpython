@@ -35,8 +35,9 @@ from .readline import _get_reader, multiline_input, append_history_file
 
 # Called with the complete statement, which may span multiple lines, after the
 # user submits it but before it is executed. The hook is not called for PyREPL
-# commands such as ``clear``. Exceptions raised by the hook are displayed but
-# do not prevent the statement from running. Its return value is ignored.
+# commands such as ``clear``. Exceptions raised by the hook are labelled and
+# displayed without changing sys.last_* or preventing the statement from running.
+# Its return value is ignored.
 # External tools such as IDEs can install a hook to augment the behavior of the
 # REPL.
 #
@@ -172,8 +173,9 @@ def run_multiline_interactive_console(
             if statement_submitted_hook is not None:
                 try:
                     statement_submitted_hook(_strip_final_indent(statement))
-                except Exception:
-                    console.showtraceback()
+                except Exception as exc:
+                    console.write("Error in statement_submitted_hook:\n")
+                    console._excepthook(type(exc), exc, exc.__traceback__)
 
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import ANY, MagicMock, patch
 from textwrap import dedent
 
-from test.support import force_not_colorized
+from test.support import force_colorized, force_not_colorized
 
 from _pyrepl import simple_interact
 from _pyrepl.console import InteractiveColoredConsole
@@ -407,8 +407,57 @@ class TestStatementSubmittedHook(unittest.TestCase):
 
         output, namespace = self._run_interactive(["x = 1"], hook)
 
+        self.assertIn(
+            "Error in statement_submitted_hook:\n"
+            "Traceback (most recent call last):\n",
+            output,
+        )
+        self.assertIn("statement_submitted_hook(", output)
         self.assertIn("RuntimeError: hook error", output)
         self.assertEqual(namespace["x"], 1)
+
+    @force_colorized
+    def test_hook_exception_is_colorized(self):
+        def hook(statement):
+            raise RuntimeError("hook error")
+
+        output, namespace = self._run_interactive(["x = 1"], hook)
+
+        self.assertIn("Error in statement_submitted_hook:\n", output)
+        self.assertRegex(output, r"\x1b\[[0-9;]+m")
+        self.assertIn("hook error", output)
+        self.assertEqual(namespace["x"], 1)
+
+    @force_not_colorized
+    def test_hook_exception_preserves_last_exception(self):
+        try:
+            raise ValueError("previous user error")
+        except ValueError as exc:
+            previous_exception = exc
+
+        last_attributes = {
+            "last_exc": previous_exception,
+            "last_type": type(previous_exception),
+            "last_value": previous_exception,
+            "last_traceback": previous_exception.__traceback__,
+        }
+        for initialized in (True, False):
+            with self.subTest(initialized=initialized), contextlib.ExitStack() as stack:
+                for name, value in last_attributes.items():
+                    stack.enter_context(patch.object(sys, name, value, create=True))
+                    if not initialized:
+                        delattr(sys, name)
+
+                hook = MagicMock(side_effect=RuntimeError("hook error"))
+                output, namespace = self._run_interactive(["x = 1"], hook)
+
+                self.assertIn("RuntimeError: hook error", output)
+                self.assertEqual(namespace["x"], 1)
+                for name, value in last_attributes.items():
+                    if initialized:
+                        self.assertIs(getattr(sys, name), value)
+                    else:
+                        self.assertFalse(hasattr(sys, name))
 
     def test_hook_return_value_is_ignored(self):
         hook = MagicMock(return_value=True)
