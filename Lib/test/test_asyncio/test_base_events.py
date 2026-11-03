@@ -181,7 +181,6 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop = base_events.BaseEventLoop()
         self.loop._selector = mock.Mock()
         self.loop._selector.select.return_value = ()
-        self.loop._process_events = mock.Mock()
         self.set_event_loop(self.loop)
 
     def test_not_implemented(self):
@@ -195,8 +194,8 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(
             NotImplementedError,
             self.loop._make_datagram_transport, m, m)
-        #self.assertRaises(
-        #    NotImplementedError, self.loop._process_events, [])
+        self.assertRaises(
+            NotImplementedError, self.loop._process_events, [])
         self.assertRaises(
             NotImplementedError, self.loop._write_to_self)
         self.assertRaises(

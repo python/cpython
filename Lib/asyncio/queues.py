@@ -175,9 +175,6 @@ class Queue(mixins._LoopBoundMixin):
         If no free slot is immediately available, raise QueueFull.
 
         Raises QueueShutDown if the queue has been shut down.
-
-        Raises QueueWithPendingTasks if there are pending putters
-        or a woken putter is about to put an item into the queue.
         """
         if self._is_shutdown:
             raise QueueShutDown
