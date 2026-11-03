@@ -1,0 +1,4 @@
+:meth:`datetime.time.fromisoformat` and
+:meth:`datetime.datetime.fromisoformat` now reject stray text between the
+time and a UTC offset. The C implementation previously accepted strings
+that the pure-Python implementation rejected.

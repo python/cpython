@@ -1,15 +1,19 @@
 import io
+import textwrap
 import unittest
+from pathlib import Path, PurePath
 from unittest import mock
 
 from test import test_tools
+from test.support import os_helper
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
     from pegen import grammar as grammar_module
+    from pegen.build import build_parser, included_output_files
     from pegen.c_generator import CParserGenerator
     from pegen.c_generator_file import CParserEmitter
-    from pegen.grammar import NamedItem, RuleKind
+    from pegen.grammar import GrammarError, NamedItem, RuleKind
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, parse_string
 
@@ -33,7 +37,7 @@ class TestCGenerator(unittest.TestCase):
             explicit[void*]: NAME
         """)
         generator.rules["explicit"].type = "void *"
-        start, implicit, explicit = generator.prepare("example.gram").rules
+        start, implicit, explicit = generator.prepare(PurePath("example.gram")).rules
 
         self.assertIsNone(implicit.signature.return_type)
         self.assertEqual(explicit.signature.return_type, "void *")
@@ -49,7 +53,7 @@ class TestCGenerator(unittest.TestCase):
         self.assertEqual(call.function, "_PyPegen_lookahead")
         generator = self.make_generator("start: &explicit\nexplicit[void*]: NAME\n")
         with self.assertRaisesRegex(RuntimeError, "return type is incompatible"):
-            generator.prepare("example.gram")
+            generator.prepare(PurePath("example.gram"))
 
     def test_parser_plan_does_not_depend_on_compilation_state(self):
         generator = self.make_generator("""
@@ -59,11 +63,11 @@ class TestCGenerator(unittest.TestCase):
             @modulename 'sample'
             @bytecode '1'
             start[mod_ty]: expr_without_invalid 'pass' "zsoft" "asoft" ('bb' | 'aa')* ENDMARKER
-            expr_without_invalid[expr_ty] (memo): name=expr [NUMBER] { name }
+            expr_without_invalid[expr_ty] (memo, fastpath=custom_fastpath): name=expr [NUMBER] { name }
             expr[expr_ty]: expr '+' NAME | NAME
         """)
         generator.debug = True
-        parser = generator.prepare("some/path/example.gram")
+        parser = generator.prepare(PurePath("some/path/example.gram"))
         expected = self.emit_parser(parser)
 
         self.assertEqual(generator.file.getvalue(), "")
@@ -82,6 +86,8 @@ class TestCGenerator(unittest.TestCase):
             rule.name = "changed"
             rule.type = "changed_type"
             rule.flags = frozenset()
+            rule.memo = False
+            rule.fastpath = None
             rule.rhs.alts[0].action = "changed_action"
             rule.rhs.alts.clear()
         generator.rules.clear()
@@ -101,12 +107,12 @@ class TestCGenerator(unittest.TestCase):
             other: name_var=NUMBER name_var=NAME { name_var_1 }
         """
         generator = self.make_generator(source)
-        parser = generator.prepare("example.gram")
+        parser = generator.prepare(PurePath("example.gram"))
         expected = self.emit_parser(parser)
 
         self.assertEqual(self.emit_parser(parser), expected)
-        self.assertEqual(generator.prepare("example.gram"), parser)
-        other = self.make_generator(source).prepare("example.gram")
+        self.assertEqual(generator.prepare(PurePath("example.gram")), parser)
+        other = self.make_generator(source).prepare(PurePath("example.gram"))
         self.assertEqual(other, parser)
         self.assertEqual(self.emit_parser(other), expected)
         self.assertEqual(expected.count("expr_ty name_var_1;"), 2)
@@ -118,7 +124,7 @@ class TestCGenerator(unittest.TestCase):
             start: prefix ':' NAME | prefix ':' NUMBER | NAME | prefix '=' NAME
             prefix[expr_ty] (memo): NAME
         """)
-        parser = generator.prepare("example.gram")
+        parser = generator.prepare(PurePath("example.gram"))
         start = parser.rules[0]
         prefix, = start.prefixes
         self.assertEqual(prefix.type, "expr_ty")
@@ -126,7 +132,7 @@ class TestCGenerator(unittest.TestCase):
             self.assertIn("!p->call_invalid_rules", alt.calls[0].expression())
             self.assertIn(prefix.result, alt.calls[0].expression())
         self.assertEqual(start.alternatives[3].calls[0].expression(), "prefix_rule(p)")
-        self.assertEqual(generator.prepare("example.gram"), parser)
+        self.assertEqual(generator.prepare(PurePath("example.gram")), parser)
         expected = self.emit_parser(parser)
         generator.rules.clear()
         generator.all_rules.clear()
@@ -137,7 +143,7 @@ class TestCGenerator(unittest.TestCase):
             start: prefix ':' NAME | prefix ':' NUMBER
             prefix (memo): NAME?
         """)
-        start = generator.prepare("example.gram").rules[0]
+        start = generator.prepare(PurePath("example.gram")).rules[0]
         self.assertEqual(start.prefixes, ())
         for alt in start.alternatives:
             self.assertEqual(alt.calls[0].expression(), "prefix_rule(p)")
@@ -148,11 +154,11 @@ class TestCGenerator(unittest.TestCase):
             start: NAME ENDMARKER
         """)
         with self.assertRaisesRegex(KeyError, "missing"):
-            generator.generate("example.gram")
+            generator.generate(PurePath("example.gram"))
         self.assertEqual(generator.file.getvalue(), "")
 
     def test_empty_keyword_tables(self):
-        parser = self.make_generator("start: NAME ENDMARKER\n").prepare("example.gram")
+        parser = self.make_generator("start: NAME ENDMARKER\n").prepare(PurePath("example.gram"))
         source = self.emit_parser(parser)
 
         self.assertEqual(parser.keyword_groups, ())
@@ -195,9 +201,9 @@ class TestCGenerator(unittest.TestCase):
                 grammar_module, "SIMPLE_STR", simple
             ):
                 generator = self.make_generator(source)
-                expected = generator.prepare("example.gram").rules
+                expected = generator.prepare(PurePath("example.gram")).rules
                 with mock.patch.object(grammar_module, "SIMPLE_STR", not simple):
-                    actual = generator.prepare("example.gram").rules
+                    actual = generator.prepare(PurePath("example.gram")).rules
                 self.assertEqual(len(actual), len(expected))
                 for old, new in zip(expected, actual):
                     self.assertEqual(old.signature, new.signature)
@@ -232,7 +238,7 @@ class TestCGenerator(unittest.TestCase):
                         start: {item} {{ _PyPegen_dummy_name(p) }}
                         invalid_example: NAME
                     """)
-                    start = generator.prepare("example.gram").rules[0]
+                    start = generator.prepare(PurePath("example.gram")).rules[0]
                     self.assertEqual(
                         start.alternatives[0].requires_invalid_rules,
                         requires_invalid_rules,
@@ -243,7 +249,7 @@ class TestCGenerator(unittest.TestCase):
             start: Mixed LPAR ENDMARKER
             Mixed[expr_ty]: NAME
         """)
-        start, mixed = generator.prepare("example.gram").rules
+        start, mixed = generator.prepare(PurePath("example.gram")).rules
         self.assertEqual(mixed.signature.return_type, "expr_ty")
         for call, name in zip(start.alternatives[0].calls, ("Mixed", "LPAR")):
             with self.subTest(name=name):
@@ -275,6 +281,154 @@ class TestCGenerator(unittest.TestCase):
 
         self.assertEqual(lowerer.prepare_rule(atom).signature.return_type, "expr_ty")
         self.assertEqual(lowerer.prepare_rule(start), expected)
+
+    def test_keywords_are_numbered_once(self):
+        generator = self.make_generator("""
+            start: keywords | "soft" "soft"
+            keywords: 'if' NAME | 'if' NUMBER | 'else' NAME | 'pass' | 'else' 'pass'
+        """)
+        generator.prepare(PurePath("example.gram"))
+        self.assertEqual(generator.keywords, {"if": 500, "else": 501, "pass": 502})
+        self.assertEqual(generator.soft_keywords, {"soft"})
+
+
+class TestIncludedCFiles(unittest.TestCase):
+    def setUp(self):
+        self.tmp_dir = self.enterContext(os_helper.temp_dir())
+
+    def write(self, name, source):
+        path = Path(self.tmp_dir, name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(source))
+        return path
+
+    def generate(self, grammar_file):
+        grammar, _, _ = build_parser(grammar_file)
+        output = io.StringIO()
+        included = {source: io.StringIO() for source in {
+            rule.source for rule in grammar.rules.values() if rule.source is not None
+        }}
+        generator = CParserGenerator(
+            grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, output,
+            included_files=included,
+        )
+        generator.generate(grammar_file)
+        return output.getvalue(), {
+            source.name: file.getvalue() for source, file in included.items()
+        }
+
+    def test_included_rules_go_to_their_own_file(self):
+        main = self.write("main.gram", """\
+            @include "extra.gram"
+            start: item+ NEWLINE
+            item: NAME ('+' | '-') | invalid_item
+            """)
+        self.write("extra.gram", """\
+            invalid_item: NUMBER ('+' | '-') item
+            """)
+        root, included = self.generate(main)
+        extra = included["extra.gram"]
+
+        self.assertTrue(root.startswith("// @generated by pegen from main.gram\n"))
+        self.assertTrue(extra.startswith("// @generated by pegen from extra.gram\n"))
+        # Each rule is defined in the C file of its grammar file, and only
+        # the root file has the keyword tables and the trailer.
+        self.assertIn("\nstart_rule(Parser *p)\n{", root)
+        self.assertNotIn("\ninvalid_item_rule(Parser *p)\n{", root)
+        self.assertIn("\ninvalid_item_rule(Parser *p)\n{", extra)
+        self.assertNotIn("\nitem_rule(Parser *p)\n{", extra)
+        self.assertIn("reserved_keywords", root)
+        self.assertNotIn("reserved_keywords", extra)
+        self.assertIn("_PyPegen_parse", root)
+        self.assertNotIn("_PyPegen_parse", extra)
+        # Rule type ids stay unique across the files.
+        self.assertIn("#define start_type 1000\n", root)
+        self.assertIn("#define item_type 1001\n", root)
+        self.assertIn("#define invalid_item_type 1002\n", extra)
+        # Rules called across files are not static and get a prefixed
+        # linker name; the others stay static.
+        for output in root, extra:
+            self.assertIn("#define item_rule _PyPegen_item_rule\n", output)
+            self.assertIn("#define invalid_item_rule _PyPegen_invalid_item_rule\n", output)
+            self.assertNotIn("_PyPegen_start_rule", output)
+        self.assertIn("static asdl_seq *_loop1_", root)
+        self.assertIn("static void *\nstart_rule(Parser *p)", root)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nitem_rule(Parser *p)", root)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\ninvalid_item_rule(Parser *p)", extra)
+        # A helper for an identical subexpression is not shared between
+        # files: each one has its own static copy.
+        self.assertIn("static void *_tmp_", root)
+        self.assertIn("static void *_tmp_", extra)
+
+    def test_trailer_can_call_rules_of_included_files(self):
+        # The default trailer calls start_rule().
+        main = self.write("main.gram", """\
+            @include "rules.gram"
+            item: NAME
+            """)
+        self.write("rules.gram", "start: item+ NEWLINE\n")
+        root, included = self.generate(main)
+        rules = included["rules.gram"]
+        self.assertIn("return start_rule(p);", root)
+        for output in root, rules:
+            self.assertIn("#define start_rule _PyPegen_start_rule\n", output)
+            self.assertIn("\nPy_LOCAL_SYMBOL void *start_rule(Parser *p);\n", output)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nstart_rule(Parser *p)\n{", rules)
+
+    def test_actions_can_call_rules_of_included_files(self):
+        main = self.write("main.gram", """\
+            @include "extra.gram"
+            start: NAME NEWLINE { extra_rule(p) }
+            """)
+        self.write("extra.gram", "extra: NAME\n")
+        root, included = self.generate(main)
+        extra = included["extra.gram"]
+        for output in root, extra:
+            self.assertIn("#define extra_rule _PyPegen_extra_rule\n", output)
+            self.assertIn("\nPy_LOCAL_SYMBOL void *extra_rule(Parser *p);\n", output)
+        self.assertIn("\nPy_LOCAL_SYMBOL void *\nextra_rule(Parser *p)\n{", extra)
+
+    def test_without_includes_all_rules_are_static(self):
+        main = self.write("main.gram", """\
+            start: item NEWLINE
+            item: NAME
+            """)
+        root, included = self.generate(main)
+        self.assertEqual(included, {})
+        self.assertNotIn("Rules shared", root)
+        self.assertNotIn("_PyPegen_item_rule", root)
+        self.assertIn("static void *\nitem_rule(Parser *p)", root)
+
+    def test_included_output_files(self):
+        main = self.write("main.gram", """\
+            @include "extra.gram"
+            @include "sub/more.rules.gram"
+            @include "a/same.gram"
+            @include "b/same.gram"
+            start: extra more one two NEWLINE
+            """)
+        self.write("extra.gram", "extra: NAME\n")
+        self.write("sub/more.rules.gram", "more: NAME\n")
+        self.write("a/same.gram", "one: NAME\n")
+        self.write("b/same.gram", "two: NAME\n")
+        grammar, _, _ = build_parser(main)
+        out = Path("out", "parser.c.new")
+        self.assertEqual(included_output_files(grammar, out), {
+            Path("extra.gram"): Path("out", "parser_extra.c.new"),
+            Path("sub", "more.rules.gram"): Path("out", "sub", "parser_more.rules.c.new"),
+            Path("a", "same.gram"): Path("out", "a", "parser_same.c.new"),
+            Path("b", "same.gram"): Path("out", "b", "parser_same.c.new"),
+        })
+
+    def test_included_output_files_outside_output_directory(self):
+        main = self.write("grammar/main.gram", """\
+            @include "../outside.gram"
+            start: outside NEWLINE
+            """)
+        self.write("outside.gram", "outside: NAME\n")
+        grammar, _, _ = build_parser(main)
+        with self.assertRaisesRegex(GrammarError, "would be outside the output directory"):
+            included_output_files(grammar, Path("parser.c"))
 
 
 if __name__ == "__main__":

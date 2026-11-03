@@ -297,7 +297,7 @@ Decompression objects support the following methods and attributes:
 .. method:: Decompress.decompress(data, /, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
-   corresponding to at least part of the data in *string*.  This data should be
+   corresponding to at least part of *data*.  This data should be
    concatenated to the output produced by any preceding calls to the
    :meth:`decompress` method.  Some of the input data may be preserved in internal
    buffers for later processing.
@@ -487,11 +487,14 @@ the following constants:
 
    The version string of the zlib library actually loaded by the interpreter.
 
+   Prefer :const:`!zlib_version` over its :const:`!ZLIB_RUNTIME_VERSION` alias.
+
    .. versionadded:: 3.3
       The :const:`!ZLIB_RUNTIME_VERSION` constant.
 
    .. versionadded:: 3.16
-      The :const:`!zlib_version` alias.
+      The :const:`!zlib_version` constant; :const:`!ZLIB_RUNTIME_VERSION` is now
+      an alias for it.
 
 
 .. data:: ZLIB_VERSION_INFO

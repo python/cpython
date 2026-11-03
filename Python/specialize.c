@@ -1011,7 +1011,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
         fail = true;
     }
-    else if (Py_TYPE(owner)->tp_getattro == PyModule_Type.tp_getattro) {
+    else if (PyModule_CheckExact(owner)) {
         fail = specialize_module_load_attr(owner, instr, name);
     }
     else if (PyType_Check(owner)) {
@@ -2345,7 +2345,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
 
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    if (instr->op.code == BINARY_OP_EXTEND) {
+    if (FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code) == BINARY_OP_EXTEND) {
         write_ptr(cache->external_cache, NULL);
     }
 
@@ -2951,7 +2951,8 @@ _Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
 void
 _Py_Specialize_Resume(_Py_CODEUNIT *instr, PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    if (tstate->tracing == 0 && instr->op.code == RESUME) {
+    if (tstate->tracing == 0 &&
+        FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code) == RESUME) {
         if (tstate->interp->jit) {
             PyCodeObject *co = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (co != NULL &&

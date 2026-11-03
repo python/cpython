@@ -112,7 +112,7 @@ The module defines the following items:
    The *compresslevel* argument is an integer from ``0`` to ``9`` controlling
    the level of compression; ``1`` is fastest and produces the least
    compression, and ``9`` is slowest and produces the most compression. ``0``
-   is no compression. The default is ``9``.
+   is no compression. The default is ``6``.
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
    is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970. Set
@@ -306,6 +306,13 @@ Once executed the :mod:`!gzip` module keeps the input file(s).
 
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
+
+.. versionchanged:: next
+
+   An existing output file is removed and created anew instead of being
+   opened for writing, so a symbolic link at that name is replaced rather
+   than followed.  Like :program:`gzip`, the output file is created with the
+   permission bits of the input file.
 
 Command-line options
 ^^^^^^^^^^^^^^^^^^^^

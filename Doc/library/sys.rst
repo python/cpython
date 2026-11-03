@@ -299,7 +299,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    you might bind it to a function that expects additional arguments
    (positional and/or keyword).  The built-in ``breakpoint()`` function passes
    its ``*args`` and ``**kws`` straight through.  Whatever
-   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+   ``breakpointhook()`` returns is returned from ``breakpoint()``.
 
    The default implementation first consults the environment variable
    :envvar:`PYTHONBREAKPOINT`.  If that is set to ``"0"`` then this function
@@ -592,8 +592,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    particular, ``sys.exit("some error message")`` is a quick way to exit a
    program when an error occurs.
 
-   Since :func:`exit` ultimately "only" raises an exception, it will only exit
-   the process when called from the main thread, and the exception is not
+   Since :func:`~sys.exit` ultimately "only" raises an exception, it will only
+   exit the process when called from the main thread, and the exception is not
    intercepted. Cleanup actions specified by :keyword:`finally` clauses of
    :keyword:`try` statements are honored, and it is possible to intercept the
    exit attempt at an outer level.
@@ -678,6 +678,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
         - :option:`-X context_aware_warnings <-X>` and
           :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
+      * - .. attribute:: flags.lazy_imports
+        - :option:`-X lazy_imports <-X>` and :envvar:`PYTHON_LAZY_IMPORTS`
+          (``1`` for ``all``, ``-1`` otherwise; not changed by
+          :func:`set_lazy_imports`)
+
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -713,6 +718,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.14
       Added the ``context_aware_warnings`` attribute.
+
+   .. versionchanged:: 3.15
+      Added the ``lazy_imports`` attribute.
 
 
 .. data:: float_info
@@ -2431,6 +2439,26 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.2
 
+
+.. data:: EXIT_SUCCESS
+
+    An int you can use to indicate your program ended gracefully.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_SUCCESS)
+
+    .. versionadded:: 3.16
+
+.. data:: EXIT_FAILURE
+
+    An int you can use to indicate your program encountered an error.
+
+    .. code-block:: python
+
+        sys.exit(sys.EXIT_FAILURE)
+
+    .. versionadded:: 3.16
 
 .. rubric:: Citations
 

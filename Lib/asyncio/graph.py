@@ -65,6 +65,14 @@ def _build_graph_for_future(
             # A native async generator or duck-type compatible iterator
             st.append(FrameCallGraphEntry(coro.ag_frame))
             coro = coro.ag_await
+        elif hasattr(coro, 'gi_yieldfrom'):
+            # A generator, e.g. returned by __await__ or @types.coroutine
+            if coro.gi_frame is not None:
+                st.append(FrameCallGraphEntry(coro.gi_frame))
+            coro = coro.gi_yieldfrom
+        elif hasattr(coro, 'aga_gen'):
+            # An asend()/athrow() awaitable: step over it to its generator
+            coro = coro.aga_gen
         else:
             break
 

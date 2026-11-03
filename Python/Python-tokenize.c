@@ -19,7 +19,6 @@ get_tokenize_state(PyObject *module) {
     get_tokenize_state(PyType_GetModuleByDef(type, &_tokenizemodule))
 
 #include "pycore_runtime.h"
-#include "clinic/Python-tokenize.c.h"
 
 /*[clinic input]
 module _tokenizer
@@ -38,6 +37,8 @@ typedef struct
     Py_ssize_t last_lineno;
     Py_ssize_t byte_col_offset_diff;
 } tokenizeriterobject;
+
+#include "clinic/Python-tokenize.c.h"
 
 /*[clinic input]
 @classmethod
@@ -228,17 +229,21 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
     return 0;
 }
 
-static PyObject *
-tokenizeriter_next(PyObject *op)
-{
-    tokenizeriterobject *it = (tokenizeriterobject*)op;
-    PyObject* result = NULL;
+/*[clinic input]
+@critical_section
+_tokenizer.tokenizeriter.__next__ as tokenizeriter_next
+[clinic start generated code]*/
 
-    Py_BEGIN_CRITICAL_SECTION(it);
+static PyObject *
+tokenizeriter_next_impl(tokenizeriterobject *self)
+/*[clinic end generated code: output=745c9c646781ff45 input=66f70c965ba8ccfe]*/
+{
+    tokenizeriterobject *it = self;
+    PyObject* result = NULL;
 
     if (it->done) {
         PyErr_SetString(PyExc_StopIteration, "EOF");
-        goto unlock;
+        return NULL;
     }
 
     struct token token;
@@ -324,9 +329,6 @@ exit:
     if (type == ENDMARKER) {
         it->done = 1;
     }
-
-unlock:;
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 
