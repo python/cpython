@@ -2990,7 +2990,7 @@ New features in the C API
   The function is also added to the Limited C API.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
-* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
+* Add a new :ref:`PyUnicodeWriter API <pyunicodewriter>` to create a Python :class:`str`
   object, with the following functions:
 
   * :c:func:`PyUnicodeWriter_Create`
