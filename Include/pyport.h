@@ -550,6 +550,11 @@ extern "C" {
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
+#ifdef _Py_TESTCEXT_NO_TYPEOF
+   // Exercise fallback implementations in test_cext.
+#  undef _Py_TYPEOF
+#endif
+
 
 /* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
