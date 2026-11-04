@@ -1726,17 +1726,48 @@ _textiowrapper_writeflush(textio *self)
     self->pending_bytes = NULL;
     Py_DECREF(pending);
 
-    PyObject *ret;
-    do {
-        ret = buffer_callmethod_onearg(self, &_Py_ID(write), b);
-    } while (ret == NULL && _PyIO_trap_eintr());
+    while (1) {
+        PyObject *ret;
+        do {
+            ret = buffer_callmethod_onearg(self, &_Py_ID(write), b);
+        } while (ret == NULL && _PyIO_trap_eintr());
+        if (ret == NULL) {
+            goto error;
+        }
+        if (ret == Py_None) {
+            Py_DECREF(ret);
+            PyErr_SetString(PyExc_BlockingIOError, "write returned None");
+            goto error;
+        }
+        Py_ssize_t n = PyNumber_AsSsize_t(ret, PyExc_OverflowError);
+        Py_DECREF(ret);
+        if (n == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        Py_ssize_t len = PyBytes_GET_SIZE(b);
+        if (n <= 0 || n > len) {
+            PyErr_SetString(PyExc_OSError,
+                            "write() returned incorrect number of bytes");
+            goto error;
+        }
+        if (n == len) {
+            break;
+        }
+        PyObject *remaining = PyBytes_FromStringAndSize(
+            PyBytes_AS_STRING(b) + n, len - n);
+        if (remaining == NULL) {
+            goto error;
+        }
+        Py_SETREF(b, remaining);
+    }
     Py_DECREF(b);
+    return 0;
+
+error:
     // NOTE: We cleared buffer but we don't know how many bytes are actually written
     // when an error occurred.
-    if (ret == NULL)
-        return -1;
-    Py_DECREF(ret);
-    return 0;
+    Py_DECREF(b);
+    return -1;
 }
 
 /* Return borrowed Py_None on success, or NULL on error. */
