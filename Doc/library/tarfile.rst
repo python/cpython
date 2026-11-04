@@ -1169,8 +1169,8 @@ reused in custom filters:
     symbolic links.
 
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
-    that link to absolute paths or to paths with a drive
-    (e.g. ``C:foo`` on Windows), or ones that link outside the destination.
+    that link to absolute paths or to paths with a drive,
+    or ones that link outside the destination.
 
     This raises :class:`~tarfile.AbsoluteLinkError` or
     :class:`~tarfile.LinkOutsideDestinationError`.
