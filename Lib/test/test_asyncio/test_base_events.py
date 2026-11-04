@@ -2517,6 +2517,17 @@ class TestSelectorUtils(test_utils.TestCase):
             sock.setblocking(False)
             self.check_set_nodelay(sock)
 
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'need socket.TCP_NODELAY')
+    def test_set_nodelay_error(self):
+        # gh-161076: a failing setsockopt() must not break transport creation.
+        sock = mock.Mock(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                         proto=socket.IPPROTO_TCP)
+        sock.setsockopt.side_effect = OSError(errno.EINVAL, 'Invalid argument')
+        base_events._set_nodelay(sock)
+        sock.setsockopt.assert_called_once_with(
+            socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
 
 
 if __name__ == '__main__':
