@@ -675,7 +675,7 @@ class BasicTest(BaseTest):
         link = os.path.join(self.env_dir, 'link')
         os.symlink(target, link)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'Unable to create directory'):
             venv.create(link, clear=True)
         # The symlink target and its content are left untouched.
         self.assertTrue(os.path.islink(link))
@@ -687,7 +687,7 @@ class BasicTest(BaseTest):
         with open(target, 'wb') as f:
             f.write(b'Still here?')
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'Unable to create directory'):
             venv.create(target, clear=True)
         self.assertTrue(os.path.isfile(target))
 
