@@ -4,9 +4,6 @@
 .. module:: fractions
    :synopsis: Rational numbers.
 
-.. moduleauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
-.. sectionauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
-
 **Source code:** :source:`Lib/fractions.py`
 
 --------------
@@ -109,7 +106,7 @@ a single number, or from a string.
    .. versionchanged:: 3.12
       :class:`Fraction` instances now support float-style formatting, with
       presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
-      and ``"%""``.
+      and ``"%"``.
 
    .. versionchanged:: 3.13
       Formatting of :class:`Fraction` instances without a presentation type

@@ -1,1 +1,0 @@
-Fixes a crash in ``ga_repr_items_list`` function.

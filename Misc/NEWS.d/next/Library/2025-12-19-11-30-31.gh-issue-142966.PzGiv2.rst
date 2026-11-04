@@ -1,1 +1,0 @@
-Fix :func:`!ctypes.POINTER.set_type` not updating the format string to match the type.

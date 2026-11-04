@@ -36,7 +36,7 @@ Execution of Python signal handlers
 A Python signal handler does not get executed inside the low-level (C) signal
 handler.  Instead, the low-level signal handler sets a flag which tells the
 :term:`virtual machine` to execute the corresponding Python signal handler
-at a later point(for example at the next :term:`bytecode` instruction).
+at a later point (for example, at the next :term:`bytecode` instruction).
 This has consequences:
 
 * It makes little sense to catch synchronous errors like :const:`SIGFPE` or
@@ -68,6 +68,11 @@ the synchronization primitives from the :mod:`threading` module instead.
 
 Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
 
+.. warning::
+
+   Synchronization primitives such as :class:`threading.Lock` should not be used
+   within signal handlers.  Doing so can lead to unexpected deadlocks.
+
 
 Module contents
 ---------------
@@ -92,13 +97,13 @@ The signal module defines three enums:
 
 .. class:: Handlers
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_DFL` and :const:`SIG_IGN`.
 
    .. versionadded:: 3.5
 
 .. class:: Sigmasks
 
-   :class:`enum.IntEnum` collection the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
+   :class:`enum.IntEnum` collection of the constants :const:`SIG_BLOCK`, :const:`SIG_UNBLOCK` and :const:`SIG_SETMASK`.
 
    .. availability:: Unix.
 
@@ -224,6 +229,8 @@ The variables defined in the :mod:`!signal` module are:
 .. data:: SIGSTOP
 
    Stop executing (cannot be caught or ignored).
+
+   .. availability:: Unix.
 
 .. data:: SIGSTKFLT
 
@@ -597,8 +604,8 @@ The :mod:`!signal` module defines the following functions:
 
       See the man page :manpage:`siginterrupt(3)` for further information.
 
-   Note that installing a signal handler with :func:`signal` will reset the
-   restart behaviour to interruptible by implicitly calling
+   Note that installing a signal handler with :func:`~signal.signal` will reset
+   the restart behaviour to interruptible by implicitly calling
    :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
@@ -620,7 +627,7 @@ The :mod:`!signal` module defines the following functions:
    see the :ref:`description in the type hierarchy <frame-objects>` or see the
    attribute descriptions in the :mod:`inspect` module).
 
-   On Windows, :func:`signal` can only be called with :const:`SIGABRT`,
+   On Windows, :func:`~signal.signal` can only be called with :const:`SIGABRT`,
    :const:`SIGFPE`, :const:`SIGILL`, :const:`SIGINT`, :const:`SIGSEGV`,
    :const:`SIGTERM`, or :const:`SIGBREAK`.
    A :exc:`ValueError` will be raised in any other case.

@@ -1,7 +1,7 @@
 .. _profiling-tracing:
 
 ****************************************************
-:mod:`profiling.tracing` --- Deterministic profiler
+:mod:`!profiling.tracing` --- Deterministic profiler
 ****************************************************
 
 .. module:: profiling.tracing
@@ -17,7 +17,7 @@
 
 --------------
 
-The :mod:`profiling.tracing` module provides deterministic profiling of Python
+The :mod:`!profiling.tracing` module provides deterministic profiling of Python
 programs. It monitors every function call, function return, and exception event,
 recording precise timing for each. This approach provides exact call counts and
 complete visibility into program execution, making it ideal for development and
@@ -79,7 +79,7 @@ Command-line interface
 
 .. program:: profiling.tracing
 
-The :mod:`profiling.tracing` module can be invoked as a script to profile
+The :mod:`!profiling.tracing` module can be invoked as a script to profile
 another script or module:
 
 .. code-block:: shell-session
@@ -311,7 +311,7 @@ this latency, which can make them appear slower than they actually are. This
 error is typically less than one clock tick per call but can become
 significant for functions called many times.
 
-The :mod:`profiling.tracing` module (and its ``cProfile`` alias) is
+The :mod:`!profiling.tracing` module (and its ``cProfile`` alias) is
 implemented as a C extension with low overhead, so these timing issues are
 less pronounced than with the deprecated pure Python :mod:`profile` module.
 

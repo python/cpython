@@ -39,6 +39,13 @@ class Mailbox:
         self._path = os.path.abspath(os.path.expanduser(path))
         self._factory = factory
 
+    def __enter__(self):
+        self.lock()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def add(self, message):
         """Add message and return assigned key."""
         raise NotImplementedError('Method must be implemented by subclass')
@@ -1488,6 +1495,7 @@ class Babyl(_singlefileMailbox):
                 vis_buffer = io.BytesIO()
                 vis_generator = email.generator.BytesGenerator(vis_buffer, False, 0)
                 vis_generator.flatten(message.get_visible())
+                vis_buffer.seek(0)
                 while True:
                     line = vis_buffer.readline()
                     self._file.write(line.replace(b'\n', linesep))

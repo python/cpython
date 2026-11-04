@@ -21,6 +21,12 @@ extern int _PySys_SetIntMaxStrDigits(int maxdigits);
 
 extern int _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path);
 
+extern void _PySys_FormatV(
+    PyObject *key,
+    FILE *fp,
+    const char *format,
+    va_list va);
+
 #ifdef __cplusplus
 }
 #endif

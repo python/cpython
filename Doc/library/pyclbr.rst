@@ -4,8 +4,6 @@
 .. module:: pyclbr
    :synopsis: Supports information extraction for a Python module browser.
 
-.. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 **Source code:** :source:`Lib/pyclbr.py`
 
 --------------

@@ -1,2 +1,0 @@
-Fix data races in the free-threaded build when reading frame object attributes
-while another thread is executing the frame.

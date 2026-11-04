@@ -16,6 +16,7 @@ from test.support import (
     SHORT_TIMEOUT,
     reap_children,
     requires_remote_subprocess_debugging,
+    sleeping_retry,
 )
 
 # Guard imports that require _remote_debugging module.
@@ -84,29 +85,46 @@ def _readline_with_timeout(file_obj, timeout):
     return result[0]
 
 
-def _wait_for_process_ready(proc, timeout):
-    # Wait for a subprocess to be ready using polling instead of fixed sleep.
-    # Returns True if process is ready, False if it exited or timeout.
-    deadline = time.time() + timeout
-    poll_interval = 0.01
+def _wait_for_process_exec(proc, name, timeout):
+    # Wait until a child process calls exec() to replace the forked process
+    # executable. Raise AssertionError on timeout.
+    for _ in sleeping_retry(timeout, max_delay=0.1):
+        exe = os.readlink(f"/proc/{proc.pid}/exe")
+        if os.path.basename(exe) == name:
+            break
 
-    while time.time() < deadline:
-        if proc.poll() is not None:
-            return False
 
-        try:
-            if sys.platform == "linux":
-                if os.path.exists(f"/proc/{proc.pid}/exe"):
-                    return True
-            else:
-                return True
-        except OSError:
-            pass
+@unittest.skipIf(
+    _build_child_profiler_args is None,
+    "profiling.sampling.cli unavailable",
+)
+class TestChildProfilerArgBuilder(unittest.TestCase):
+    """Tests for child profiler CLI argument construction."""
 
-        time.sleep(poll_interval)
-        poll_interval = min(poll_interval * 2, 0.1)
+    def test_build_child_profiler_args_diff_flamegraph(self):
+        """Test child args use the real --diff-flamegraph flag."""
+        args = argparse.Namespace(
+            sample_interval_usec=1000,
+            duration=None,
+            all_threads=False,
+            realtime_stats=False,
+            native=False,
+            gc=True,
+            opcodes=False,
+            async_aware=False,
+            mode="wall",
+            format="diff_flamegraph",
+            diff_baseline="baseline.bin",
+        )
 
-    return proc.poll() is None
+        child_args = _build_child_profiler_args(args)
+
+        self.assertIn("--diff-flamegraph", child_args)
+        self.assertNotIn("--diff_flamegraph", child_args)
+
+        flag_index = child_args.index("--diff-flamegraph")
+        self.assertGreater(len(child_args), flag_index + 1)
+        self.assertEqual(child_args[flag_index + 1], "baseline.bin")
 
 
 @requires_remote_subprocess_debugging()
@@ -601,17 +619,13 @@ class TestIsPythonProcess(unittest.TestCase):
         """Test that a non-Python subprocess is not detected as Python."""
         # Start a non-Python subprocess (sleep command)
         proc = subprocess.Popen(
-            ["sleep", "10"],
+            ["sleep", "60"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
         try:
-            # Wait for process to be ready using polling
-            self.assertTrue(
-                _wait_for_process_ready(proc, SHORT_TIMEOUT),
-                f"Process {proc.pid} should be ready within {SHORT_TIMEOUT}s",
-            )
+            _wait_for_process_exec(proc, "sleep", SHORT_TIMEOUT)
 
             self.assertFalse(
                 is_python_process(proc.pid),

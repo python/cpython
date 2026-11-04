@@ -1,2 +1,0 @@
-Fix potential deadlock when using critical sections during stop-the-world
-pauses in the free-threaded build.

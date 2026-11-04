@@ -59,6 +59,18 @@ the :mod:`glob` module.)
    Return a normalized absolutized version of the pathname *path*. On most
    platforms, this is equivalent to calling ``normpath(join(os.getcwd(), path))``.
 
+   On Windows the path is normalized by the operating system,
+   therefore the result can differ from ``normpath(join(os.getcwd(), path))``.
+   A drive-relative path is resolved against the current directory
+   of the specified drive, and the drive letter is capitalized.
+   Trailing dots and spaces are stripped.
+   For example::
+
+      >>> os.path.abspath('c:spam')
+      'C:\\Temp\\spam'
+      >>> os.path.abspath('c:/temp/spam. . .')
+      'c:\\temp\\spam'
+
    .. seealso:: :func:`os.path.join` and :func:`os.path.normpath`.
 
    .. versionchanged:: 3.6
@@ -120,7 +132,7 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. deprecated:: next
+   .. deprecated:: 3.15
       Deprecated in favor of :func:`os.path.commonpath` for path prefixes.
       The :func:`os.path.commonprefix` function is being deprecated due to
       having a misleading name and module. The function is not safe to use for
@@ -435,6 +447,9 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
+   The returned path uses the case reported by the operating system,
+   which can differ from the case of *path*,
+   in particular the drive letter is capitalized.
 
    By default, the path is evaluated up to the first component that does not
    exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.

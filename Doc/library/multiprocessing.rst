@@ -100,10 +100,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
-The arguments to :class:`Process` usually need to be unpickleable from within
-the child process. If you tried typing the above example directly into a REPL it
-could lead to an :exc:`AttributeError` in the child process trying to locate the
-*f* function in the ``__main__`` module.
+The arguments to :class:`Process` usually need to be picklable so they can be
+passed to the child process. If you tried typing the above example directly
+into a REPL it could lead to an :exc:`AttributeError` in the child process
+trying to locate the *f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -160,10 +160,20 @@ to start a process.  These *start methods* are
     No unnecessary resources are inherited.
 
     Available on POSIX platforms which support passing file descriptors over
-    Unix pipes such as Linux.  The default on those.
+    Unix pipes such as Linux.  The default on those, unless there is no
+    writable temporary directory (see :func:`tempfile.gettempdir`), which
+    the fork server requires; *spawn* is the default in that case.
 
     .. versionchanged:: 3.14
        This became the default start method on POSIX platforms.
+
+    .. versionchanged:: 3.16
+       *spawn* is now the default start method when there is no writable
+       temporary directory, for example on a read-only file system.
+       Previously *forkserver* remained the default there and starting a
+       process failed with an :exc:`OSError`.  The default is determined
+       when it is first needed rather than when :mod:`!multiprocessing`
+       is imported.  See :gh:`155717`.
 
 .. versionchanged:: 3.4
    *spawn* added on all POSIX platforms, and *forkserver* added for
@@ -279,7 +289,7 @@ processes:
           p.join()
 
    Queues are thread and process safe.
-   Any object put into a :mod:`~multiprocessing` queue will be serialized.
+   Any object put into a :mod:`!multiprocessing` queue will be serialized.
 
 **Pipes**
 
@@ -932,7 +942,8 @@ For an example of the usage of queues for interprocess communication see
    standard library's :mod:`queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`queue.Queue` except for
-   :meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join`.
+   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`, and
+   :meth:`~queue.Queue.shutdown`.
 
    .. method:: qsize()
 
@@ -1222,7 +1233,7 @@ Miscellaneous
 
    Set the path of the Python interpreter to use when starting a child process.
    (By default :data:`sys.executable` is used).  Embedders will probably need to
-   do some thing like ::
+   do something like ::
 
       set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
@@ -1257,7 +1268,7 @@ Miscellaneous
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *on_error* parameter.
 
 .. function:: set_start_method(method, force=False)
@@ -1335,12 +1346,12 @@ Connection objects are usually created using
       Note that multiple connection objects may be polled at once by
       using :func:`multiprocessing.connection.wait`.
 
-   .. method:: send_bytes(buffer[, offset[, size]])
+   .. method:: send_bytes(buf[, offset[, size]])
 
       Send byte data from a :term:`bytes-like object` as a complete message.
 
-      If *offset* is given then data is read from that position in *buffer*.  If
-      *size* is given then that many bytes will be read from buffer.  Very large
+      If *offset* is given then data is read from that position in *buf*.  If
+      *size* is given then that many bytes will be read from *buf*.  Very large
       buffers (approximately 32 MiB+, though it depends on the OS) may raise a
       :exc:`ValueError` exception
 
@@ -1360,18 +1371,18 @@ Connection objects are usually created using
          alias of :exc:`OSError`.
 
 
-   .. method:: recv_bytes_into(buffer[, offset])
+   .. method:: recv_bytes_into(buf[, offset])
 
-      Read into *buffer* a complete message of byte data sent from the other end
+      Read into *buf* a complete message of byte data sent from the other end
       of the connection and return the number of bytes in the message.  Blocks
       until there is something to receive.  Raises
       :exc:`EOFError` if there is nothing left to receive and the other end was
       closed.
 
-      *buffer* must be a writable :term:`bytes-like object`.  If
+      *buf* must be a writable :term:`bytes-like object`.  If
       *offset* is given then the message will be written into the buffer from
       that position.  Offset must be a non-negative integer less than the
-      length of *buffer* (in bytes).
+      length of *buf* (in bytes).
 
       If the buffer is too short then a :exc:`BufferTooShort` exception is
       raised and the complete message is available as ``e.args[0]`` where ``e``
@@ -1722,16 +1733,19 @@ inherited by child processes.
    Note that *lock* is a keyword only argument.
 
    Note that an array of :data:`ctypes.c_char` has *value* and *raw*
-   attributes which allow one to use it to store and retrieve strings.
+   attributes which can both be used to store and retrieve byte strings.
+   While *raw* allows interaction with a :class:`bytes` object the full size of
+   the array, reading *value* will terminate after a null byte, like most
+   programming languages handle strings.
 
 
-The :mod:`multiprocessing.sharedctypes` module
-""""""""""""""""""""""""""""""""""""""""""""""
+The :mod:`!multiprocessing.sharedctypes` module
+"""""""""""""""""""""""""""""""""""""""""""""""
 
 .. module:: multiprocessing.sharedctypes
    :synopsis: Allocate ctypes objects from shared memory.
 
-The :mod:`multiprocessing.sharedctypes` module provides functions for allocating
+The :mod:`!multiprocessing.sharedctypes` module provides functions for allocating
 :mod:`ctypes` objects from shared memory which can be inherited by child
 processes.
 
@@ -2448,10 +2462,11 @@ with the :class:`Pool` class.
    the process which created the pool.
 
    .. warning::
-      :class:`multiprocessing.pool` objects have internal resources that need to be
-      properly managed (like any other resource) by using the pool as a context manager
-      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
-      can lead to the process hanging on finalization.
+      :class:`~multiprocessing.pool.Pool` objects have internal resources that
+      need to be properly managed (like any other resource) by using the pool as
+      a context manager or by calling :meth:`close` and :meth:`terminate`
+      manually. Failure to do this can lead to the process hanging on
+      finalization.
 
       Note that it is **not correct** to rely on the garbage collector to destroy the pool
       as CPython does not assure that the finalizer of the pool will be called
@@ -2473,7 +2488,7 @@ with the :class:`Pool` class.
       duration of the Pool's work queue. A frequent pattern found in other
       systems (such as Apache, mod_wsgi, etc) to free resources held by
       workers is to allow a worker within a pool to complete only a set
-      amount of work before being exiting, being cleaned up and a new
+      amount of work before exiting, being cleaned up and a new
       process spawned to replace the old one. The *maxtasksperchild*
       argument to the :class:`Pool` exposes this ability to the end user.
 
@@ -2532,9 +2547,9 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
-   .. method:: imap(func, iterable[, chunksize])
+   .. method:: imap(func, iterable, chunksize=1, *, buffersize=None)
 
-      A lazier version of :meth:`.map`.
+      An iterator-based version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
@@ -2546,11 +2561,26 @@ with the :class:`Pool` class.
       ``next(timeout)`` will raise :exc:`multiprocessing.TimeoutError` if the
       result cannot be returned within *timeout* seconds.
 
-   .. method:: imap_unordered(func, iterable[, chunksize])
+      The *iterable* is collected immediately rather than lazily, unless a
+      *buffersize* is specified to limit the number of submitted tasks whose
+      results have not yet been yielded. If the buffer is full, iteration over
+      the *iterables* pauses until a result is yielded from the buffer.
+      To fully utilize pool's capacity when using this feature,
+      set *buffersize* at least to the number of processes in pool
+      (to consume *iterable* as you go), or even higher
+      (to prefetch the next ``N=buffersize-processes`` arguments).
+
+      .. versionchanged:: 3.16
+         Added the *buffersize* parameter.
+
+   .. method:: imap_unordered(func, iterable, chunksize=1, *, buffersize=None)
 
       The same as :meth:`imap` except that the ordering of the results from the
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
+
+      .. versionchanged:: 3.16
+         Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
 
@@ -2658,7 +2688,7 @@ Usually message passing between processes is done using queues or by using
 :class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
-However, the :mod:`multiprocessing.connection` module allows some extra
+However, the :mod:`!multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
 with sockets or Windows named pipes.  It also has support for *digest
 authentication* using the :mod:`hmac` module, and for polling
@@ -2916,6 +2946,16 @@ between themselves.
 
 Suitable authentication keys can also be generated by using :func:`os.urandom`.
 
+This authentication protects :class:`Listener` and :func:`Client` connections,
+which are reachable by address.  It is not applied to the anonymous pipes
+created by :func:`~multiprocessing.Pipe` or used internally by
+:class:`~multiprocessing.Queue`.
+:mod:`multiprocessing` treats all local processes running as the same user as
+trusted; on most operating systems such processes can access each other's pipe
+file descriptors regardless.  Applications that require isolation between
+processes of the same user must arrange it at the operating-system level --
+for example, by running workers under a different user account or in a sandbox.
+
 
 Logging
 ^^^^^^^
@@ -2965,18 +3005,18 @@ Below is an example session with logging turned on::
 For a full table of logging levels, see the :mod:`logging` module.
 
 
-The :mod:`multiprocessing.dummy` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :mod:`!multiprocessing.dummy` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: multiprocessing.dummy
    :synopsis: Dumb wrapper around threading.
 
-:mod:`multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
+:mod:`!multiprocessing.dummy` replicates the API of :mod:`!multiprocessing` but is
 no more than a wrapper around the :mod:`threading` module.
 
 .. currentmodule:: multiprocessing.pool
 
-In particular, the ``Pool`` function provided by :mod:`multiprocessing.dummy`
+In particular, the ``Pool`` function provided by :mod:`!multiprocessing.dummy`
 returns an instance of :class:`ThreadPool`, which is a subclass of
 :class:`Pool` that supports all the same method calls but uses a pool of
 worker threads rather than worker processes.
