@@ -1087,9 +1087,15 @@ class RawConfigParser(MutableMapping):
             value = self._interpolation.before_write(self, section_name, key, value)
             if value is not None or not self._allow_no_value:
                 # Convert all possible line-endings into '\n\t'
-                value = delimiter + str(value).replace('\r\n', '\n').replace(
-                    '\r', '\n'
-                ).replace('\n', '\n\t')
+                str_value = str(value).replace('\r\n', '\n').replace('\r', '\n')
+                for continuation in str_value.split('\n')[1:]:
+                    if continuation and continuation[0] in ' \t':
+                        raise InvalidWriteError(
+                            f"Cannot write value for key {key!r}; "
+                            f"continuation line has leading whitespace "
+                            f"that would be silently stripped on read-back"
+                        )
+                value = delimiter + str_value.replace('\n', '\n\t')
             else:
                 value = ""
             fp.write(f"{key}{value}\n")

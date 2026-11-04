@@ -2498,6 +2498,14 @@ class InvalidInputTestCase(unittest.TestCase):
             cfg.write(output)
         output.close()
 
+    def test_leading_whitespace_in_multiline_value(self):
+        cfg = configparser.ConfigParser()
+        cfg.add_section('section1')
+        cfg.set('section1', 'key', 'line1\n\tline2')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
 
 class ReDoSTestCase(unittest.TestCase):
     """Regression tests for quadratic regex backtracking (gh-146333)."""

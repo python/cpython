@@ -1,0 +1,3 @@
+:mod:`configparser` now raises :exc:`~configparser.InvalidWriteError` when
+writing a value whose continuation lines contain leading whitespace, since
+that whitespace would be silently stripped on read-back.
