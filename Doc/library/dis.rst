@@ -395,9 +395,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *adaptive* parameter works as it does in :func:`dis`.
+   The *adaptive* parameter works as it does in :func:`~dis.dis`.
 
-   The *show_jit* parameter works as it does in :func:`dis`.
+   The *show_jit* parameter works as it does in :func:`~dis.dis`.
 
    .. versionadded:: 3.4
 
