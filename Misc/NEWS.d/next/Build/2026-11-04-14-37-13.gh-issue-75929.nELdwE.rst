@@ -1,0 +1,3 @@
+Fix ``configure`` function checks reporting false negatives when ``CFLAGS``
+contains ``-Werror`` with ``-Wall``, which hid functions such as
+:func:`os.fchdir`, :func:`os.fsync` and :func:`os.fdatasync`.
