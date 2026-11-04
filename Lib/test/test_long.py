@@ -204,7 +204,33 @@ class LongTest(unittest.TestCase):
         self.check_division(710031681576388032, 26769404391308)
         self.check_division(1933622614268221, 30212853348836)
 
+    @support.requires_IEEE_754
+    def test_intradigit_shift(self):
+        # Unit tests for v_lshift and v_rshift in longobject.c.
+        # These two functions are not used by Python << and >>,
+        # exercise them via float conversion and true division.
 
+        # Full limb values.
+        two_limbs = (1 << (2 * SHIFT)) - 1
+        three_limbs = (1 << (3 * SHIFT)) - 1
+        four_limbs = (1 << (4 * SHIFT)) - 1
+        # Multi-limb (not compact) but bit_length() still <= 55.
+        bits50 = (1 << 50) - 1
+
+        # _PyLong_Frexp (float(n)):
+        # v_lshift if n.bit_length() <= 55, else v_rshift.
+        self.check_float_conversion(bits50)
+        self.check_float_conversion(two_limbs)
+        self.check_float_conversion(four_limbs)
+        self.check_float_conversion(10**40)
+
+        # long_true_divide (a / b):
+        # - (a.bit_length() - b.bit_length()) <= 55  => v_lshift,
+        # - (a.bit_length() - b.bit_length()) > 55   => v_rshift.
+        self.check_truediv(three_limbs, two_limbs)
+        self.check_truediv(four_limbs, two_limbs)
+        self.check_truediv(four_limbs, three_limbs)
+        self.check_truediv(10**40, 10**20)
 
     def test_karatsuba(self):
         digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
