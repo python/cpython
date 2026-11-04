@@ -139,6 +139,8 @@ get_handler(int i)
 Py_LOCAL_INLINE(PyObject *)
 swap_handler(int i, PyObject *func)
 {
+    /* The slot is updated with an atomic operation so that
+       PyErr_SetInterrupt() stays async-signal-safe. */
     PyObject *old = _Py_atomic_exchange_ptr(&Handlers[i].func,
                                             Py_XNewRef(func));
     PyObject *result = Py_XNewRef(old);
