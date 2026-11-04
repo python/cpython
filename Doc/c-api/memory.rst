@@ -7,10 +7,6 @@
 Memory Management
 *****************
 
-.. sectionauthor:: Vladimir Marangozov <Vladimir.Marangozov@inrialpes.fr>
-
-
-
 .. _memoryoverview:
 
 Overview
@@ -81,7 +77,7 @@ memory footprint as a whole. Consequently, under certain circumstances, the
 Python memory manager may or may not trigger appropriate actions, like garbage
 collection, memory compaction or other preventive procedures. Note that by using
 the C library allocator as shown in the previous example, the allocated memory
-for the I/O buffer escapes completely the Python memory manager.
+for the I/O buffer completely escapes the Python memory manager.
 
 .. seealso::
 
@@ -161,7 +157,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -208,8 +204,11 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
-The :ref:`default memory allocator <default-memory-allocators>` uses the
-:ref:`pymalloc memory allocator <pymalloc>`.
+In the GIL-enabled build (default build) the
+:ref:`default memory allocator <default-memory-allocators>` uses the
+:ref:`pymalloc memory allocator <pymalloc>`, whereas in the
+:term:`free-threaded build`, the default is the
+:ref:`mimalloc memory allocator <mimalloc>` instead.
 
 .. warning::
 
@@ -218,6 +217,11 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 .. versionchanged:: 3.6
 
    The default allocator is now pymalloc instead of system :c:func:`malloc`.
+
+.. versionchanged:: 3.13
+
+   In the :term:`free-threaded <free threading>` build, the default allocator
+   is now :ref:`mimalloc <mimalloc>`.
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
@@ -231,7 +235,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -344,7 +348,9 @@ memory from the Python heap.
     the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
 
 The :ref:`default object allocator <default-memory-allocators>` uses the
-:ref:`pymalloc memory allocator <pymalloc>`.
+:ref:`pymalloc memory allocator <pymalloc>`.  In the
+:term:`free-threaded <free threading>` build, the default is the
+:ref:`mimalloc memory allocator <mimalloc>` instead.
 
 .. warning::
 
@@ -362,7 +368,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -424,14 +430,18 @@ Default Memory Allocators
 
 Default memory allocators:
 
-===============================  ====================  ==================  =====================  ====================
-Configuration                    Name                  PyMem_RawMalloc     PyMem_Malloc           PyObject_Malloc
-===============================  ====================  ==================  =====================  ====================
-Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
-Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
-Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
-Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
-===============================  ====================  ==================  =====================  ====================
+===================================  =======================  ====================  ======================  ======================
+Configuration                        Name                     PyMem_RawMalloc       PyMem_Malloc            PyObject_Malloc
+===================================  =======================  ====================  ======================  ======================
+Release build                        ``"pymalloc"``           ``malloc``            ``pymalloc``            ``pymalloc``
+Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug    ``pymalloc`` + debug    ``pymalloc`` + debug
+Release build, without pymalloc      ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Release build, with ASan or MSan     ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, with ASan or MSan       ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``            ``mimalloc``
+Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug    ``mimalloc`` + debug
+===================================  =======================  ====================  ======================  ======================
 
 Legend:
 
@@ -439,11 +449,14 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
-* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
-  allocator will be used if mimalloc support isn't available.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
+* "with ASan or MSan": sanitizer build as configured using the
+  :option:`--with-address-sanitizer`,
+  :option:`--with-hwaddress-sanitizer`, and/or
+  :option:`--with-memory-sanitizer` option.
 
 .. _customize-memory-allocators:
 
@@ -698,9 +711,11 @@ This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
-Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
-uncover low level bugs within the C code.
+The pymalloc allocator is disabled by default when Python is built with
+a sanitizer which does not track pymalloc allocations
+(:option:`--with-address-sanitizer`, :option:`--with-hwaddress-sanitizer`,
+:option:`--with-memory-sanitizer`).
+Use :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to enable pymalloc.
 
 Customize pymalloc Arena Allocator
 ----------------------------------
@@ -737,9 +752,27 @@ The mimalloc allocator
 
 .. versionadded:: 3.13
 
-Python supports the mimalloc allocator when the underlying platform support is available.
-mimalloc "is a general purpose allocator with excellent performance characteristics.
-Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
+Python supports the `mimalloc <https://github.com/microsoft/mimalloc/>`__
+allocator when the underlying platform support is available.
+mimalloc is a general purpose allocator with excellent performance
+characteristics, initially developed by Daan Leijen for the runtime systems
+of the Koka and Lean languages.
+
+Unlike :ref:`pymalloc <pymalloc>`, which is optimized for small objects (512
+bytes or fewer), mimalloc handles allocations of any size.
+
+In the :term:`free-threaded <free threading>` build, mimalloc is the default
+and **required** allocator for the :c:macro:`PYMEM_DOMAIN_MEM` and
+:c:macro:`PYMEM_DOMAIN_OBJ` domains.  It cannot be disabled in free-threaded
+builds.  The free-threaded build uses per-thread mimalloc heaps, which allows
+allocation and deallocation to proceed without locking in most cases.
+
+In the default (non-free-threaded) build, mimalloc is available but not the
+default allocator.  It can be selected at runtime using
+:envvar:`PYTHONMALLOC`\ ``=mimalloc`` (or ``mimalloc_debug`` to include
+:ref:`debug hooks <pymem-debug-hooks>`).  It can be disabled at build time
+using the :option:`--without-mimalloc` configure option, but this option
+cannot be combined with :option:`--disable-gil`.
 
 tracemalloc C API
 =================

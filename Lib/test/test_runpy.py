@@ -217,6 +217,25 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         # Package without __main__.py
         self.expect_import_error("multiprocessing")
 
+    def test_invalid_names_set_name_attribute(self):
+        cases = [
+            # (mod_name, expected_name)  -- comment indicates raise site
+            ("nonexistent_runpy_test_module",
+                "nonexistent_runpy_test_module"),    # spec is None
+            ("sys.imp.eric", "sys.imp.eric"),        # find_spec error
+            (".relative_name", ".relative_name"),    # relative name rejected
+            ("sys", "sys"),                          # builtin: no code object
+            ("multiprocessing", "multiprocessing"),  # package without __main__
+        ]
+        for mod_name, expected_name in cases:
+            with self.subTest(mod_name=mod_name):
+                try:
+                    run_module(mod_name)
+                except ImportError as exc:
+                    self.assertEqual(exc.name, expected_name)
+                else:
+                    self.fail("Expected ImportError for %r" % mod_name)
+
     def test_library_module(self):
         self.assertEqual(run_module("runpy")["__name__"], "runpy")
 
@@ -713,6 +732,17 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             script_name = self._make_test_script(script_dir, mod_name)
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
+
+    def test_directory_error_sets_name_attribute(self):
+        with temp_dir() as script_dir:
+            self._make_test_script(script_dir, 'not_main')
+            try:
+                run_path(script_dir)
+            except ImportError as exc:
+                self.assertEqual(exc.name, '__main__')
+            else:
+                self.fail("Expected ImportError for directory without "
+                          "__main__.py")
 
     def test_zipfile(self):
         with temp_dir() as script_dir:

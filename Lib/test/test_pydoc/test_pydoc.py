@@ -19,6 +19,7 @@ import typing
 import unittest
 import unittest.mock
 import urllib.parse
+import urllib.request
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
@@ -228,10 +229,13 @@ expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
 
 # output pattern for missing module
-missing_pattern = '''\
-No Python documentation found for %r.
-Use help() to get the interactive help utility.
-Use help(str) for help on the str class.'''.replace('\n', os.linesep)
+def missing_pattern(name, dunder=False):
+    dunderhelp = "Use help('specialnames') for a list of special names for which help is available.\n" if dunder else ""
+    return ('''\
+No help entry found for %r.
+%sUse help() to get the interactive help utility.
+Use help(str) for help on the str class.
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % (name, dunderhelp, *sys.version_info[:2])).replace('\n', os.linesep)
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ModuleNotFoundError: No module named %r"
@@ -369,7 +373,7 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    html = html.replace("<dd>", "\n")
+    html = re.sub(r"<dd\b[^>]*>", "\n", html)
     html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
@@ -429,7 +433,7 @@ class PydocDocTest(unittest.TestCase):
         expected_lines = [line.strip() for line in expected_lines if line]
         self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
-        mod_url = urllib.parse.quote(mod_file)
+        mod_url = urllib.request.pathname2url(mod_file)
         self.assertIn(mod_url, result)
         self.assertIn(mod_file, result)
         self.assertIn(doc_loc, result)
@@ -522,9 +526,33 @@ class PydocDocTest(unittest.TestCase):
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
         result = str(run_pydoc_fail(missing_module), 'ascii')
-        expected = missing_pattern % missing_module
+        expected = missing_pattern(missing_module)
         self.assertEqual(expected, result,
             "documentation for missing module found")
+
+    def test_dunder_help(self):
+        def get_main_output(topic):
+            return run_pydoc(topic).split(b'Related help topics:')[0].strip()
+
+        # check that each dunder method maps to a help topic that includes its
+        # name
+        for name in pydoc.Helper.dunders:
+            self.assertIn(name.encode('ascii'), get_main_output(name))
+
+        # check that right-hand and in-place versions match
+        self.assertEqual(get_main_output('__add__'), get_main_output('__radd__'))
+        self.assertEqual(get_main_output('__add__'), get_main_output('__iadd__'))
+
+    def test_dunder_main(self):
+        self.assertEqual(run_pydoc('__main__').splitlines(False)[0],
+                         '"__main__" — Top-level code environment'.encode('utf-8'))
+        self.assertEqual(run_pydoc('__name__').splitlines(False)[0],
+                         '''"__name__ == '__main__'"'''.encode('utf-8'))
+
+    def test_dunder_not_here(self):
+        result = str(run_pydoc_fail("__dict__"), 'ascii')
+        expected = missing_pattern("__dict__", dunder=True)
+        self.assertEqual(expected, result)
 
     @requires_docstrings
     def test_not_ascii(self):
@@ -535,7 +563,7 @@ class PydocDocTest(unittest.TestCase):
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
         result = str(run_pydoc_fail(missing_module), 'ascii')
-        expected = missing_pattern % missing_module.strip()
+        expected = missing_pattern(missing_module.strip())
         self.assertEqual(expected, result)
 
     def test_stripid(self):
@@ -689,10 +717,10 @@ class PydocDocTest(unittest.TestCase):
         self.assertNotIn('Built-in subclasses', text)
 
     def test_fail_help_cli(self):
-        elines = (missing_pattern % 'abd').splitlines()
+        elines = (missing_pattern("abd")).splitlines()
         with spawn_python("-c" "help()") as proc:
             out, _ = proc.communicate(b"abd")
-            olines = out.decode().splitlines()[-9:-6]
+            olines = out.decode().splitlines()[-10:-6]
             olines[0] = olines[0].removeprefix('help> ')
             self.assertEqual(elines, olines)
 
@@ -700,7 +728,7 @@ class PydocDocTest(unittest.TestCase):
         with StringIO() as buf:
             helper = pydoc.Helper(output=buf)
             helper.help("abd")
-            expected = missing_pattern % "abd"
+            expected = missing_pattern("abd")
             self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -762,6 +790,8 @@ class PydocDocTest(unittest.TestCase):
         run_pydoc_for_request('keywords', 'Here is a list of the Python keywords.')
         # test for "symbols"
         run_pydoc_for_request('symbols', 'Here is a list of the punctuation symbols')
+        # test for "specialnames"
+        run_pydoc_for_request('specialnames', 'Here is a list of special names')
         # test for "topics"
         run_pydoc_for_request('topics', 'Here is a list of available topics.')
         # test for "modules" skipped, see test_modules()
@@ -1024,6 +1054,31 @@ class PydocDocTest(unittest.TestCase):
             synopsis_cached = pydoc.synopsis(cached_path, {})
             self.assertIsNone(synopsis_cached)
 
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'requires undecodable file names')
+    def test_html_doc_undecodable_path(self):
+        # gh-69371: the path of the module is not encodable in UTF-8.
+        with os_helper.temp_cwd() as test_dir:
+            subdir = os.path.join(os.fsencode(test_dir),
+                                  os_helper.TESTFN_UNDECODABLE)
+            try:
+                os.mkdir(subdir)
+            except OSError:
+                self.skipTest('undecodable paths are not supported')
+            with open(os.path.join(subdir, b'undecodable_mod.py'), 'w') as f:
+                f.write('"""Module docstring."""\n')
+            with import_helper.DirsOnSysPath(os.fsdecode(subdir)):
+                mod = import_helper.import_fresh_module('undecodable_mod')
+                doc = pydoc.HTMLDoc().docmodule(mod)
+                with captured_stdout():
+                    pydoc.writedoc(mod)
+            # The link contains the percent-encoded path...
+            path = inspect.getabsfile(mod)
+            self.assertIn(urllib.request.pathname2url(path), doc)
+            # ...and the page can be written and served as UTF-8.
+            with open('undecodable_mod.html', encoding='utf-8') as f:
+                self.assertIn('undecodable_mod', f.read())
+
     def test_splitdoc_with_description(self):
         example_string = "I Am A Doc\n\n\nHere is my description"
         self.assertEqual(pydoc.splitdoc(example_string),
@@ -1244,6 +1299,71 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
 
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
+
+    @requires_docstrings
+    def test_long_summaries(self):
+        from . import longsummary
+        doc = pydoc.render_doc(longsummary)
+        doc = clean_text(doc)
+        self.assertEqual(doc, '''Python Library Documentation: module test.test_pydoc.longsummary in test.test_pydoc
+
+NAME
+    test.test_pydoc.longsummary
+
+CLASSES
+    builtins.object
+        C
+
+    class C(builtins.object)
+     |  This is a class summary that consists of a very long single line,
+     |  exceeding the recommended PEP 8 limit.
+     |
+     |  The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  Methods defined here:
+     |
+     |  meth(self)
+     |      This is a method summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Readonly properties defined here:
+     |
+     |  prop
+     |      This is a property summary that consists of a very long single line,
+     |      exceeding the recommended PEP 8 limit.
+     |
+     |      The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+     |
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |
+     |  __dict__
+     |      dictionary for instance variables
+     |
+     |  __weakref__
+     |      list of weak references to the object
+
+FUNCTIONS
+    func(self)
+        This is a function summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+DATA
+    data = <test.test_pydoc.longsummary.C object>
+        This is a data summary that consists of a very long single line,
+        exceeding the recommended PEP 8 limit.
+
+        The rest of the docstring body, separated from the summary by a blank line, can also contain very long lines.
+
+FILE
+    %s
+
+''' % inspect.getabsfile(longsummary))
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
@@ -1848,7 +1968,7 @@ foo
 
         html = pydoc.HTMLDoc().document(coro_function)
         self.assertIn(
-            'async <a name="-coro_function"><strong>coro_function',
+            'async <a id="-coro_function"><strong>coro_function',
             html)
 
     def test_async_generator_annotation(self):
@@ -1860,7 +1980,7 @@ foo
 
         html = pydoc.HTMLDoc().document(an_async_generator)
         self.assertIn(
-            'async <a name="-an_async_generator"><strong>an_async_generator',
+            'async <a id="-an_async_generator"><strong>an_async_generator',
             html)
 
     @requires_docstrings
@@ -2026,7 +2146,7 @@ class PydocFodderTest(unittest.TestCase):
         doc = pydoc.HTMLDoc()
         result = doc.docmodule(pydocfodder)
         result = html2text(result)
-        lines = self.getsection(result, ' Functions', None)
+        lines = self.getsection(result, 'Functions', None)
         # function alias
         self.assertIn(' global_func_alias = global_func(x, y)', lines)
         self.assertIn(' A_staticmethod(x, y)', lines)
@@ -2172,7 +2292,7 @@ class TestHelper(unittest.TestCase):
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
-                         sorted(keyword.kwlist))
+                         sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session
@@ -2370,7 +2490,7 @@ class TestInternalUtilities(unittest.TestCase):
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
-    def test__get_version(self):
+    def test__get_metadata(self):
         import json
         import warnings
 
@@ -2386,15 +2506,25 @@ class TestInternalUtilities(unittest.TestCase):
         doc = pydoc.Doc()
         with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
             warnings.simplefilter("always")
-            version = doc._get_version(json)
+            version = doc._get_metadata(json, '__version__')
             self.assertEqual(version, "2.0.9")
+            author = doc._get_metadata(json, '__author__')
+            self.assertEqual(author, "Bob Ippolito <bob@redivi.com>")
             self.assertEqual(len(w), 0)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            version = doc._get_version(module)
+            version = doc._get_metadata(module, '__version__')
             self.assertEqual(version, "1.2.3")
             self.assertEqual(len(w), 1)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, pydoc, "__author__", "__date__", "__credits__",
+            remove=(3, 20),
+        )
 
 
 def setUpModule():

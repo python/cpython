@@ -322,6 +322,16 @@ class Family:
     size: str
     members: list[Instruction]
 
+    def get_member_record_names(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        names: list[str] = []
+        for member in self.members:
+            for part in member.parts:
+                if part.properties.records_value and part.name not in seen:
+                    seen.add(part.name)
+                    names.append(part.name)
+        return tuple(names)
+
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
 
@@ -470,64 +480,6 @@ def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     return res
 
 
-#def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
-    #"""Look for PyStackRef_FromPyObjectNew() calls"""
-
-    #def in_frame_push(idx: int) -> bool:
-        #for tkn in reversed(node.block.tokens[: idx - 1]):
-            #if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
-                #return False
-            #if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
-                #return True
-        #return False
-
-    #refs: dict[lexer.Token, str | None] = {}
-    #for idx, tkn in enumerate(node.block.tokens):
-        #if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
-            #continue
-
-        #if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
-            #if in_frame_push(idx):
-                ## PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
-                #refs[tkn] = None
-                #continue
-            #raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
-
-        #lhs = find_assignment_target(node, idx - 1)
-        #if len(lhs) == 0:
-            #raise analysis_error(
-                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            #)
-
-        #if lhs[0].kind == "TIMES" or any(
-            #t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
-        #):
-            ## Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
-            ## Assume that they are visible to the GC.
-            #refs[tkn] = None
-            #continue
-
-        #if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            #raise analysis_error(
-                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            #)
-
-        #name = lhs[0].text
-        #match = (
-            #any(var.name == name for var in node.inputs)
-            #or any(var.name == name for var in node.outputs)
-        #)
-        #if not match:
-            #raise analysis_error(
-                #f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
-                #tkn,
-            #)
-
-        #refs[tkn] = name
-
-    #return refs
-
-
 def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
@@ -599,6 +551,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
+    "PyStackRef_DupImmortal",
     "PyStackRef_False",
     "PyStackRef_FromPyObjectBorrow",
     "PyStackRef_FromPyObjectNew",
@@ -616,6 +569,9 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_RefcountOnObject",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyBytes_GET_SIZE",
+    "PyDict_GET_SIZE",
+    "PySet_GET_SIZE",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -643,6 +599,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_PushUnchecked",
     "_PyFrame_SetStackPointer",
     "_PyFrame_StackPush",
+    "_PyFrame_StackAssertInvalid",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
     "gen_try_set_executing",
@@ -714,7 +671,10 @@ NON_ESCAPING_FUNCTIONS = (
     "trigger_backoff_counter",
     "_PyThreadState_PopCStackRefSteal",
     "doesnt_escape",
-
+    "_Py_GatherStats_GetIter",
+    "_PyStolenTuple_Free",
+    "PyObject_GC_UnTrack",
+    "_PyErr_ExceptionMatches",
 )
 
 
@@ -953,6 +913,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_GetRef")
         or variable_used(op, "PyCell_SetTakeRef")
         or variable_used(op, "PyCell_SwapTakeRef")
+        or variable_used(op, "_PyCell_GetStackRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")
@@ -989,7 +950,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        sync_sp=variable_used(op, "SYNC_SP"),
+        sync_sp=variable_used(op, "SYNC_SP") or variable_used(op, "SAVE_STACK") or variable_used(op, "RELOAD_STACK"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=variable_used(op, "GETLOCAL") and not has_free,
@@ -1130,7 +1091,7 @@ def add_macro(
     macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
 ) -> None:
     parts: list[Part] = []
-    first = True
+    seen_real_uop = False
     for part in macro.uops:
         match part:
             case parser.OpName():
@@ -1142,12 +1103,15 @@ def add_macro(
                             f"No Uop named {part.name}", macro.tokens[0]
                         )
                     uop = uops[part.name]
-                    if uop.properties.records_value and not first:
-                        raise analysis_error(
-                            f"Recording uop {part.name} must be first in macro",
-                            macro.tokens[0])
+                    if uop.properties.records_value:
+                        if seen_real_uop:
+                            raise analysis_error(
+                                f"Recording uop {part.name} must precede all "
+                                f"non-recording, non-specializing uops in macro",
+                                macro.tokens[0])
+                    elif "specializing" not in uop.annotations:
+                        seen_real_uop = True
                     parts.append(uop)
-                    first = False
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:

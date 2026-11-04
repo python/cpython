@@ -1,0 +1,5 @@
+Fix crashes and debug-build assertion failures in the :term:`free-threaded
+build` when iterating over a split dictionary while another thread deletes
+entries or clears it. Publish insertion-order updates atomically so readers
+cannot observe an increased size before the corresponding order entry is
+initialized.

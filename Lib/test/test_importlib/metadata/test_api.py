@@ -54,9 +54,8 @@ class APITests(
     def test_prefix_not_matched(self):
         prefixes = 'p', 'pkg', 'pkg.'
         for prefix in prefixes:
-            with self.subTest(prefix):
-                with self.assertRaises(PackageNotFoundError):
-                    distribution(prefix)
+            with self.subTest(prefix), self.assertRaises(PackageNotFoundError):
+                distribution(prefix)
 
     def test_for_top_level(self):
         tests = [
@@ -77,9 +76,9 @@ class APITests(
         ]
         for pkg_name, expect_content in tests:
             with self.subTest(pkg_name):
-                top_level = [
+                top_level = next(
                     path for path in files(pkg_name) if path.name == 'top_level.txt'
-                ][0]
+                )
                 self.assertEqual(top_level.read_text(), expect_content)
 
     def test_entry_points(self):
@@ -133,6 +132,36 @@ class APITests(
     def test_entry_points_missing_group(self):
         assert entry_points(group='missing') == ()
 
+    def test_entry_points_invalid_value_in_other_group(self):
+        """
+        An invalid value in one group should not prevent entry points
+        in other groups from being selected.
+        """
+        alt_site_dir = self.fixtures.enter_context(fixtures.tmp_path())
+        self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
+        alt_pkg = {
+            "invalid_entry_points-1.0.0.dist-info": {
+                "METADATA": """
+                Name: invalid-entry-points
+                Version: 1.0.0
+                """,
+                "entry_points.txt": """
+                [selected]
+                valid = mod:main
+
+                [unselected]
+                invalid = invalid-name
+            """,
+            },
+        }
+        fixtures.build_files(alt_pkg, alt_site_dir)
+
+        assert [ep.name for ep in entry_points(group='selected')] == ['valid']
+
+        # the invalid value is still rejected when the entry point is used
+        with self.assertRaises(ValueError):
+            entry_points(group='unselected')['invalid'].load()
+
     def test_entry_points_allows_no_attributes(self):
         ep = entry_points().select(group='entries', name='main')
         with self.assertRaises(AttributeError):
@@ -182,7 +211,7 @@ class APITests(
                 file.read_text()
 
     def test_file_hash_repr(self):
-        util = [p for p in files('distinfo-pkg') if p.name == 'mod.py'][0]
+        util = next(p for p in files('distinfo-pkg') if p.name == 'mod.py')
         self.assertRegex(repr(util.hash), '<FileHash mode: sha256 value: .*>')
 
     def test_files_dist_info(self):
@@ -317,33 +346,31 @@ class InvalidateCache(unittest.TestCase):
 
 
 class PreparedTests(unittest.TestCase):
-    def test_normalize(self):
-        tests = [
-            # Simple
-            ("sample", "sample"),
-            # Mixed case
-            ("Sample", "sample"),
-            ("SAMPLE", "sample"),
-            ("SaMpLe", "sample"),
-            # Separator conversions
-            ("sample-pkg", "sample_pkg"),
-            ("sample.pkg", "sample_pkg"),
-            ("sample_pkg", "sample_pkg"),
-            # Multiple separators
-            ("sample---pkg", "sample_pkg"),
-            ("sample___pkg", "sample_pkg"),
-            ("sample...pkg", "sample_pkg"),
-            # Mixed separators
-            ("sample-._pkg", "sample_pkg"),
-            ("sample_.-pkg", "sample_pkg"),
-            # Complex
-            ("Sample__Pkg-name.foo", "sample_pkg_name_foo"),
-            ("Sample__Pkg.name__foo", "sample_pkg_name_foo"),
-            # Uppercase with separators
-            ("SAMPLE-PKG", "sample_pkg"),
-            ("Sample.Pkg", "sample_pkg"),
-            ("SAMPLE_PKG", "sample_pkg"),
-        ]
-        for name, expected in tests:
-            with self.subTest(name=name):
-                self.assertEqual(Prepared.normalize(name), expected)
+    @fixtures.parameterize(
+        # Simple
+        dict(input='sample', expected='sample'),
+        # Mixed case
+        dict(input='Sample', expected='sample'),
+        dict(input='SAMPLE', expected='sample'),
+        dict(input='SaMpLe', expected='sample'),
+        # Separator conversions
+        dict(input='sample-pkg', expected='sample_pkg'),
+        dict(input='sample.pkg', expected='sample_pkg'),
+        dict(input='sample_pkg', expected='sample_pkg'),
+        # Multiple separators
+        dict(input='sample---pkg', expected='sample_pkg'),
+        dict(input='sample___pkg', expected='sample_pkg'),
+        dict(input='sample...pkg', expected='sample_pkg'),
+        # Mixed separators
+        dict(input='sample-._pkg', expected='sample_pkg'),
+        dict(input='sample_.-pkg', expected='sample_pkg'),
+        # Complex
+        dict(input='Sample__Pkg-name.foo', expected='sample_pkg_name_foo'),
+        dict(input='Sample__Pkg.name__foo', expected='sample_pkg_name_foo'),
+        # Uppercase with separators
+        dict(input='SAMPLE-PKG', expected='sample_pkg'),
+        dict(input='Sample.Pkg', expected='sample_pkg'),
+        dict(input='SAMPLE_PKG', expected='sample_pkg'),
+    )
+    def test_normalize(self, input, expected):
+        self.assertEqual(Prepared.normalize(input), expected)

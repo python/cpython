@@ -40,6 +40,20 @@ def grep(text, io=None, flist=None):
     dialog.open(text, searchphrase, io)
 
 
+def default_glob(path):
+    """Return the initial "In files:" pattern for a file path (gh-80504).
+
+    Always include a full directory so that grep output shows which
+    directory was searched.
+    """
+    dir, base = os.path.split(path)
+    dir = os.path.abspath(dir)  # An empty dir becomes the current directory.
+    head, tail = os.path.splitext(base)
+    if not tail:
+        tail = ".py"
+    return os.path.join(dir, "*" + tail)
+
+
 def walk_error(msg):
     "Handle os.walk error."
     print(msg)
@@ -103,11 +117,7 @@ class GrepDialog(SearchDialogBase):
             path = io.filename or ""
         else:
             path = ""
-        dir, base = os.path.split(path)
-        head, tail = os.path.splitext(base)
-        if not tail:
-            tail = ".py"
-        self.globvar.set(os.path.join(dir, "*" + tail))
+        self.globvar.set(default_glob(path))
 
     def create_entries(self):
         "Create base entry widgets and add widget for search path."

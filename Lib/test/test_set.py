@@ -188,7 +188,10 @@ class TestJointOps:
         self.assertEqual(type(i), self.basetype)
         self.assertRaises(PassThru, self.s.symmetric_difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference, [[]])
-        for C in set, frozenset, dict.fromkeys, str, list, tuple:
+        constructors = (set, frozenset,
+                        dict.fromkeys, frozendict.fromkeys,
+                        str, list, tuple)
+        for C in constructors:
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('cdc')), set('abd'))
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('efgfe')), set('abcefg'))
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('ccb')), set('a'))
@@ -1587,6 +1590,14 @@ class TestOnlySetsDict(TestOnlySetsInBinaryOps, unittest.TestCase):
     def setUp(self):
         self.set   = set((1, 2, 3))
         self.other = {1:2, 3:4}
+        self.otherIsIterable = True
+
+#------------------------------------------------------------------------------
+
+class TestOnlySetsFrozenDict(TestOnlySetsInBinaryOps, unittest.TestCase):
+    def setUp(self):
+        self.set   = set((1, 2, 3))
+        self.other = frozendict({1:2, 3:4})
         self.otherIsIterable = True
 
 #------------------------------------------------------------------------------

@@ -6,11 +6,6 @@
 Defining Extension Types: Tutorial
 **********************************
 
-.. sectionauthor:: Michael Hudson <mwh@python.net>
-.. sectionauthor:: Dave Kuhlman <dkuhlman@rexx.com>
-.. sectionauthor:: Jim Fulton <jim@zope.com>
-
-
 Python allows the writer of a C extension module to define new types that
 can be manipulated from Python code, much like the built-in :class:`str`
 and :class:`list` types.  The code for all extension types follows a
@@ -898,7 +893,7 @@ function::
 Before calling :c:func:`PyType_Ready`, the type structure must have the
 :c:member:`~PyTypeObject.tp_base` slot filled in.  When we are deriving an
 existing type, it is not necessary to fill out the :c:member:`~PyTypeObject.tp_alloc`
-slot with :c:func:`PyType_GenericNew` -- the allocation function from the base
+slot with :c:func:`PyType_GenericAlloc` -- the allocation function from the base
 type will be inherited.
 
 After that, calling :c:func:`PyType_Ready` and adding the type object to the

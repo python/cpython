@@ -4,9 +4,6 @@
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats
 
-.. moduleauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-.. sectionauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
-
 **Source code:** :source:`Lib/mailbox.py`
 
 --------------
@@ -18,6 +15,12 @@ accessing and manipulating on-disk mailboxes and the messages they contain.
 :class:`~email.message.Message` class with format-specific state and behavior.
 Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
+.. warning::
+
+   The :mod:`!mailbox` module is designed for use in trusted environments,
+   where data from untrusted sources is never passed to the module's API
+   calls and only trusted users have access to the filesystems accessible
+   to the module.
 
 .. seealso::
 
@@ -77,6 +80,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       messages in the file or making any changes by adding or deleting a
       message.  Failing to lock the mailbox runs the risk of losing messages or
       corrupting the entire mailbox.
+
+   The :class:`!Mailbox` class supports the :keyword:`with` statement.  When used
+   as a context manager, :class:`!Mailbox` calls :meth:`lock` when the context is entered,
+   returns the mailbox object as the context object, and at context end calls :meth:`close`,
+   thereby releasing the lock.
+
+   .. versionchanged:: 3.15
+      Support for the :keyword:`with` statement was added.
 
    :class:`!Mailbox` instances have the following methods:
 
@@ -489,7 +500,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: set_info(key, info)
 
       Set the info of the message corresponding to *key* to *info*.
-      Calling ``some_mailbox.set_info(key, flags)`` is similar to ::
+      Calling ``some_mailbox.set_info(key, info)`` is similar to ::
 
          one_message = some_mailbox.get_message(key)
          one_message.set_info(info)
@@ -1736,6 +1747,6 @@ due to malformed messages in the mailbox::
                inbox.unlock()
                break               # Found destination, so stop looking.
 
-   for box in boxes.itervalues():
+   for box in boxes.values():
        box.close()
 

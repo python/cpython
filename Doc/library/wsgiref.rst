@@ -4,9 +4,6 @@
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
 
-.. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
-.. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
-
 **Source code:** :source:`Lib/wsgiref`
 
 --------------

@@ -277,7 +277,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         return hostname, port
 
 
-_UNSPECIFIED = ['not specified']
+_UNSPECIFIED = sentinel("_UNSPECIFIED", repr="<not specified>")
 _MISSING_AS_NONE_DEFAULT = False
 
 class _ResultBase:
@@ -544,8 +544,8 @@ def _check_bracketed_netloc(netloc):
 # Valid bracketed hosts are defined in
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
-    if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
+    if hostname.startswith(('v', 'V')):
+        if not re.match(r"\A[vV][a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
