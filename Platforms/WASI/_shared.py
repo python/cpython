@@ -179,6 +179,13 @@ class Context:
         return wasi_sdk_path
 
     @functools.cached_property
+    def configure_args(self):
+        args = getattr(self, "_args", [])
+        if self.release:
+            args.extend(["--without-static-libpython"])
+        return args
+
+    @functools.cached_property
     def log_path(self):
         if self._log_path is not None:
             if not (path := self._log_path).is_absolute():
@@ -205,6 +212,27 @@ class Context:
     @functools.cached_property
     def archive_dir(self):
         return self.dist_path / self.archive_stem
+
+    @functools.cached_property
+    def archive_path(self):
+        return self.dist_path / f"{self.archive_stem}.tar.xz"
+
+    @functools.cached_property
+    def dist_python_interpreter(self):
+        version = self.python_version(debug_ok=True)
+        return self.archive_dir / "bin" / f"python{version}.wasmtime"
+
+    def python_version(self, debug_ok=False):
+        """Calculate the M.N part of Python's version.
+
+        If *debug_ok* is True, then "d" is appended as appropriate.
+        """
+        major = self.wasi_build_version["major"]
+        minor = self.wasi_build_version["minor"]
+        version = f"{major}.{minor}"
+        if debug_ok and "d" in self.wasi_build_details["abi"]["flags"]:
+            version += "d"
+        return version
 
 
 def log(emoji, message, *, spacing=None):

@@ -1,0 +1,2 @@
+Add ``test`` and ``buildbottest`` commands to :file:`Platforms/WASI` for CI
+and Buildbot use, respectively.

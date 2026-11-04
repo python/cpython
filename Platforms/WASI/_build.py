@@ -144,8 +144,7 @@ def call(command, *, context=None, quiet=False, **kwargs):
 def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
     configure = [os.path.relpath(context.checkout / "configure", working_dir)]
-    if context.args:
-        configure.extend(context.args)
+    configure.extend(context.configure_args)
 
     call(configure, context=context)
 
@@ -247,8 +246,7 @@ def configure_wasi_python(context, working_dir):
     ]
     if context.is_debug:
         configure.append("--with-pydebug")
-    if context.args:
-        configure.extend(context.args)
+    configure.extend(context.configure_args)
     call(
         configure,
         env=updated_env(env_additions | wasi_sdk_env(context)),
