@@ -104,6 +104,16 @@ class TrivialTests(unittest.TestCase):
         self.assertEqual(err.errno, -2)
         self.assertEqual(err.strerror, 'Name or service not known')
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_URLError_OSError_attributes_winerror(self):
+        # gh-50720: OSError(errno, strerror, filename, winerror):
+        # on Windows the constructor derives errno from winerror.
+        os_error = OSError(0, "The system cannot find the path specified", None, 3)
+
+        err = urllib.error.URLError(os_error)
+        self.assertEqual(err.winerror, 3)
+        self.assertEqual(err.strerror, os_error.strerror)
+
 
 class RequestHdrsTests(unittest.TestCase):
 
@@ -1937,6 +1947,120 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
 
+    def check_digest_auth(self, headers, realm):
+        with self.subTest(headers=headers):
+            opener = OpenerDirector()
+            password_manager = MockPasswordManager()
+            auth_handler = urllib.request.HTTPDigestAuthHandler(
+                password_manager)
+            auth_handler.add_password(realm, "http://acme.example.com/",
+                                      "wile", "coyote")
+            body = '\r\n'.join(headers) + '\r\n\r\n'
+            http_handler = MockHTTPHandlerRedirect(401, body)
+            opener.add_handler(auth_handler)
+            opener.add_handler(http_handler)
+            opener.open("http://acme.example.com/protected")
+            self.assertEqual(password_manager.target_realm, realm)
+            auth = http_handler.requests[1].unredirected_hdrs["Authorization"]
+            self.assertStartsWith(auth, "Digest ")
+            self.assertIn(f'realm="{realm}"', auth)
+            self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
+            self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
+
+    def test_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth, auth-int", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", '
+                  f'opaque="5ccc069c403ebaf9f0171e9517f40e41"')
+        basic = 'Basic realm="basic@example.com"'
+        other = 'Otherscheme xxx'
+
+        # Multiple challenges per header.
+        for challenges in (
+            digest,
+            f'{basic}, {digest}',
+            f'{digest}, {basic}',
+            f'{other}, {digest}',
+            f'{basic}, {digest}, {other}',
+        ):
+            self.check_digest_auth([f'WWW-Authenticate: {challenges}'], realm)
+
+        # Multiple headers: one challenge per header.
+        for challenges in (
+            [basic, digest],
+            [digest, basic],
+            [other, digest],
+        ):
+            headers = [f'WWW-Authenticate: {challenge}'
+                       for challenge in challenges]
+            self.check_digest_auth(headers, realm)
+
+    def test_digest_auth_handler_ignores_basic_challenge(self):
+        # Leave Basic challenges to HTTPBasicAuthHandler, even when an
+        # unsupported scheme is present as well.
+        for headers in (
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos, Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos\r\n'
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.HTTPDigestAuthHandler(None))
+                opener.add_handler(MockHTTPHandlerRedirect(401, headers))
+                self.assertIsNone(opener.open("http://www.example.com"))
+
+    def test_digest_auth_parse_challenges(self):
+        parse = AbstractDigestAuthHandler()._parse_challenges
+        self.assertEqual(list(parse('')), [])
+        self.assertEqual(list(parse('Digest realm="a"')),
+                         [('Digest', 'Digest realm="a"')])
+        # Commas and quotes inside a quoted string do not split challenges.
+        self.assertEqual(
+            list(parse(r'Digest realm="a, Basic realm=\"b\"", nonce="n", '
+                       r'Basic realm="c"')),
+            [('Digest', r'Digest realm="a, Basic realm=\"b\"", nonce="n"'),
+             ('Basic', 'Basic realm="c"')])
+        # Whitespace around "=" does not start a new challenge.
+        self.assertEqual(
+            list(parse('Digest realm = "a", nonce = "n", Basic realm="b"')),
+            [('Digest', 'Digest realm = "a", nonce = "n"'),
+             ('Basic', 'Basic realm="b"')])
+        self.assertEqual(
+            list(parse('Negotiate, Bearer abc==, Digest realm="a",, ')),
+            [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
+             ('Digest', 'Digest realm="a"')])
+
+    def test_proxy_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"')
+        basic = 'Basic realm="basic@example.com"'
+        for headers in (
+            [f'Proxy-Authenticate: {basic}, {digest}'],
+            [f'Proxy-Authenticate: {basic}', f'Proxy-Authenticate: {digest}'],
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.ProxyHandler(
+                    dict(http="proxy.example.com:3128")))
+                password_manager = MockPasswordManager()
+                auth_handler = urllib.request.ProxyDigestAuthHandler(
+                    password_manager)
+                auth_handler.add_password(realm, "proxy.example.com:3128",
+                                          "wile", "coyote")
+                body = '\r\n'.join(headers) + '\r\n\r\n'
+                http_handler = MockHTTPHandlerRedirect(407, body)
+                opener.add_handler(auth_handler)
+                opener.add_handler(http_handler)
+                opener.open("http://acme.example.com/protected")
+                self.assertEqual(password_manager.target_realm, realm)
+                auth = http_handler.requests[1].unredirected_hdrs[
+                    "Proxy-authorization"]
+                self.assertStartsWith(auth, "Digest ")
+                self.assertIn(f'realm="{realm}"', auth)
     def test_digest_auth_failure_code(self):
         # gh-53852: a failed proxy digest auth must report 407, not 401.
         headers = http.client.HTTPMessage()
