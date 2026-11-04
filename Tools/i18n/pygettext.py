@@ -819,8 +819,7 @@ def main():
 
     # xgettext requires at least one input file
     if not args:
-        print("pygettext: no input file given\n"
-              "Try 'pygettext --help' for more information.",
+        print("No input file given",
               file=sys.stderr)
         sys.exit(1)
 

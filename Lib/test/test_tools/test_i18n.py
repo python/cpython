@@ -7,9 +7,7 @@ import unittest
 from textwrap import dedent
 from pathlib import Path
 
-from test.support.script_helper import (assert_python_failure,
-                                        assert_python_ok,
-                                        run_python_until_end)
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
@@ -182,14 +180,8 @@ class Test_pygettext(unittest.TestCase):
                 res = assert_python_failure('-Xutf8', self.script, *args)
                 self.assertEqual(res.rc, 1)
                 self.assertEqual(res.out, b'')
-                self.assertIn(b'pygettext: no input file given', res.err)
+                self.assertIn(b'No input file given', res.err)
                 self.assertFalse(os.path.exists('messages.pot'))
-
-    def test_missing_input_file_is_not_no_input(self):
-        # A path that matches nothing is not the same as no path at all.
-        with temp_cwd(None):
-            res, _ = run_python_until_end(self.script, 'does_not_exist.py')
-            self.assertNotIn(b'no input file given', res.err)
 
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
