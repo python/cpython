@@ -9,6 +9,7 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_llist.h"         // struct llist_node
+#include "pycore_object_stack.h"  // _PyObjectStack
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_structs.h"       // PyHamtObject
@@ -235,6 +236,9 @@ struct _gc_runtime_state {
 #endif
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
+    // Untracked immortal frames and generators whose references must remain
+    // visible to GC. Access requires the GIL or a stop-the-world pause.
+    _PyObjectStack immortal_frames;
     struct gc_stats *generation_stats;
 #ifdef Py_GIL_DISABLED
     /* Protects generation_stats between gc_get_stats_impl() (reader) and

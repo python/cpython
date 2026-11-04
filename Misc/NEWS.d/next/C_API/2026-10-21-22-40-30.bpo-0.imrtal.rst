@@ -1,0 +1,2 @@
+Add :c:func:`PyUnstable_Immortalize` to make objects immortal even if they are
+already shared across threads.

@@ -12,6 +12,7 @@
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object.h"
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
+#include "pycore_object_stack.h"  // _PyObjectStack_Clear()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
@@ -1919,6 +1920,8 @@ _PyGC_Fini(PyInterpreterState *interp)
         finalize_unlink_gc_head(&gcstate->generations[i].head);
     }
     finalize_unlink_gc_head(&gcstate->permanent_generation.head);
+    // Release the registry's storage, leaving the immortal objects alive.
+    _PyObjectStack_Clear(&gcstate->immortal_frames);
 }
 
 /* for debugging */

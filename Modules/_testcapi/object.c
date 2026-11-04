@@ -246,6 +246,16 @@ test_py_set_immortal(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+py_immortalize(PyObject *self, PyObject *op)
+{
+    int result = PyUnstable_Immortalize(op);
+    if (result < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(result);
+}
+
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -360,6 +370,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_py_set_immortal", test_py_set_immortal, METH_NOARGS},
+    {"py_immortalize", py_immortalize, METH_O},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
     {"decref_freed_object", decref_freed_object, METH_NOARGS},
