@@ -660,14 +660,14 @@ Glossary
    .. index:: single: generator function
 
    generator function
-      A function which returns a :term:`generator` object.  It looks like a
+      A function which returns a :term:`generator iterator`.  It looks like a
       normal function except that it contains :keyword:`yield` expressions
       for producing a series of values usable in a :keyword:`for`\-loop or
       that can be retrieved one at a time with the :func:`next` function.
       See :ref:`yieldexpr`.
 
    generator iterator
-      An object created by a :term:`generator function` or a
+      An :term:`iterator` created by a :term:`generator function` or a
       :term:`generator expression`.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the

@@ -73,8 +73,14 @@ The formal grammar for an expression statement is:
 
 .. note::
 
-   The formal grammar includes a special case for a single :keyword:`!yield`
-   expression, without parentheses around it.
+   .. raw:: html
+
+      <!-- Keep old HTML IDs working -->
+      <span id='the-yield-statement'></span>
+      <span id='yield'></span>
+
+   The formal grammar for expression statements includes a special case
+   for a single :keyword:`!yield` expression, without parentheses around it.
    This is sometimes called a :dfn:`yield statement`.
    For complete documentation of :keyword:`!yield` semantics, see
    the :ref:`yieldexpr` section.

@@ -962,6 +962,12 @@ Once an iterator's :meth:`~iterator.__next__` method raises
 Implementations that do not obey this property are deemed broken.
 
 
+.. index::
+   single: generator
+   single: generator iterator
+   single: generator function
+
+.. _generator-iterators:
 .. _generator-types:
 
 Generator types
