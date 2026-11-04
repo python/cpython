@@ -1968,6 +1968,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_initconfig_api", config, preconfig,
                                api=API_ISOLATED, ignore_stderr=True)
 
+    def test_initconfig_set_errors(self):
+        self.run_embedded_interpreter("test_initconfig_set_errors")
+
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")
 
