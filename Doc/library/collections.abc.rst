@@ -112,10 +112,9 @@ of three ways.
 Collections Abstract Base Classes
 ---------------------------------
 
-The collections module offers the following :term:`ABCs <abstract base class>`:
-
-The "Abstract Methods" column lists all required abstract methods,
-including those inherited from parent classes.
+The collections module offers the following :term:`ABCs <abstract base class>`,
+where the "Abstract Methods" column lists all required abstract methods,
+including those inherited from parent classes:
 
 .. tabularcolumns:: |l|L|L|L|
 
