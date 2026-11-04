@@ -30,6 +30,11 @@ import http.client
 
 support.requires_working_socket(module=True)
 
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)
@@ -1782,6 +1787,7 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_proxy_digest_auth(self):
         # gh-60299: ProxyDigestAuthHandler must look up credentials using
         # the proxy's authority
@@ -1845,6 +1851,7 @@ class HandlerTests(unittest.TestCase):
         auth = http_handler.requests[1].get_header("Proxy-authorization")
         self.assertIn('uri="%s"' % request_url, auth)
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_digest_auth_uses_full_url(self):
         # The non-proxy case must keep using the full request URL (not
         # just the host) for the password lookup, so that sub-URI realm
@@ -1967,6 +1974,7 @@ class HandlerTests(unittest.TestCase):
             self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
             self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
 
+    @skip_libssl_fips_mode
     def test_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
@@ -2032,6 +2040,7 @@ class HandlerTests(unittest.TestCase):
             [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
              ('Digest', 'Digest realm="a"')])
 
+    @skip_libssl_fips_mode
     def test_proxy_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
@@ -2353,12 +2362,6 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
-
-
-skip_libssl_fips_mode = unittest.skipIf(
-    support.is_libssl_fips_mode(),
-    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
-)
 
 
 class TestDigestAuthAlgorithms(unittest.TestCase):
