@@ -573,6 +573,9 @@ extern "C" {
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
@@ -596,6 +599,9 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_NO_SANITIZE_FUNCTION
+#  define _Py_NO_SANITIZE_FUNCTION
 #endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)
