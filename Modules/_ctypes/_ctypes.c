@@ -5535,9 +5535,9 @@ Simple_bool_impl(CDataObject *self)
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return -1;
     }
-    assert(info); /* Cannot be NULL for CDataObject instances */
+    assert(info != NULL);
 
-    /* Only look at the value, not at extra space added by resize(). */
+    assert(info->size <= self->b_size);
     for (Py_ssize_t i = 0; i < info->size; i++) {
         if (self->b_ptr[i]) {
             return 1;
