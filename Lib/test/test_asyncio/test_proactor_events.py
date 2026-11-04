@@ -868,6 +868,26 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
         self.assertTrue(m_log.error.called)
 
+    def test_create_server_connection_reset(self):
+        # gh-93821: a peer resetting its connection before it is accepted
+        # must not close the listening socket.
+        pf = mock.Mock()
+        call_soon = self.loop.call_soon = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop._start_serving(pf, self.sock)
+        loop = call_soon.call_args[0][0]
+
+        for exc in ConnectionResetError, ConnectionAbortedError:
+            with self.subTest(exc=exc):
+                call_soon.reset_mock()
+                fut = mock.Mock()
+                fut.result.side_effect = exc()
+                loop(fut)
+                self.assertFalse(self.sock.close.called)
+                self.assertFalse(self.loop.call_exception_handler.called)
+                call_soon.assert_called_once_with(loop)
+
     def test_create_server_cancel(self):
         pf = mock.Mock()
         call_soon = self.loop.call_soon = mock.Mock()
