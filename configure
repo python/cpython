@@ -27190,7 +27190,7 @@ fi
 printf "%s\n" "$ac_cv_header_time_tz_globals" >&6; }
 if test $ac_cv_header_time_tz_globals = yes; then
 
-printf "%s\n" "#define HAVE_TIMEZONE_GLOBALS 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_TIMEZONE_GLOBALS 1" >>confdefs.h
 
 fi
 

@@ -6557,7 +6557,7 @@ AC_CACHE_CHECK([for time.h that defines timezone, daylight and tzname variables]
     [ac_cv_header_time_tz_globals=no])
   ])
 if test $ac_cv_header_time_tz_globals = yes; then
-  AC_DEFINE([HAVE_TIMEZONE_GLOBALS], [1],
+  AC_DEFINE([_Py_HAVE_TIMEZONE_GLOBALS], [1],
     [Define if time.h declares the timezone, daylight and tzname variables.])
 fi
 

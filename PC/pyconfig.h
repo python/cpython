@@ -430,7 +430,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_DIRECT_H 1
 
 /* Define if time.h declares the timezone, daylight and tzname variables. */
-#define HAVE_TIMEZONE_GLOBALS 1
+#define _Py_HAVE_TIMEZONE_GLOBALS 1
 
 /* Define if you have dirent.h.  */
 /* #define DIRENT 1 */

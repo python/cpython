@@ -1622,9 +1622,6 @@
 /* Define to 1 if you have the 'times' function. */
 #undef HAVE_TIMES
 
-/* Define if time.h declares the timezone, daylight and tzname variables. */
-#undef HAVE_TIMEZONE_GLOBALS
-
 /* Define to 1 if you have the 'tmpfile' function. */
 #undef HAVE_TMPFILE
 
@@ -2176,6 +2173,9 @@
 
 /* Define if you have the 'tanpi' function. */
 #undef _Py_HAVE_TANPI
+
+/* Define if time.h declares the timezone, daylight and tzname variables. */
+#undef _Py_HAVE_TIMEZONE_GLOBALS
 
 /* Thread stack size set by the linker (in bytes). */
 #undef _Py_LINKER_THREAD_STACK_SIZE
