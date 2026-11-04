@@ -140,8 +140,6 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
-// sizeof(PyObject) in PySlot below is incompatible with opaque PyObject
-#ifndef Py_TARGET_ABI3T
 Py_NO_INLINE static void
 pyclear_strict_aliasing(PyTypeObject **a, PyTypeObject **b)
 {
@@ -175,7 +173,6 @@ test_setref_strict_aliasing(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg
 {
     PySlot slots[] = {
         PySlot_PTR_STATIC(Py_tp_name, STR(MODULE_NAME) ".setref_type"),
-        PySlot_PTR_STATIC(Py_tp_basicsize, sizeof(PyObject)),
         PySlot_PTR_STATIC(Py_tp_flags, Py_TPFLAGS_DEFAULT),
         PySlot_END
     };
@@ -222,7 +219,6 @@ test_setref_strict_aliasing(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg
 
     Py_RETURN_NONE;
 }
-#endif  // !Py_TARGET_ABI3T
 
 
 static PyObject *
@@ -451,9 +447,7 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 static PyMethodDef module_methods[] = {
     {"add", test_add, METH_VARARGS, test_add_doc},
     {"test_macros", test_macros, METH_NOARGS, _Py_NULL},
-#ifndef Py_TARGET_ABI3T
     {"test_setref_strict_aliasing", test_setref_strict_aliasing, METH_NOARGS, _Py_NULL},
-#endif
     {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
 #ifdef __cplusplus
