@@ -3354,7 +3354,8 @@ PyFrozenSetWriter_Update(PyFrozenSetWriter *writer, PyObject *iterable)
 }
 
 
-static inline int
+// Force inlining to optimize "if (steal)" at build time
+static inline Py_ALWAYS_INLINE int
 frozensetwriter_update_array(PyFrozenSetWriter *writer,
                              PyObject *const *items, Py_ssize_t nitem,
                              int steal)

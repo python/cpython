@@ -103,9 +103,7 @@ writer_dealloc(PyObject *self_raw)
 {
     WriterObject *self = (WriterObject *)self_raw;
     PyTypeObject *tp = Py_TYPE(self);
-    if (self->writer) {
-        PyFrozenSetWriter_Discard(self->writer);
-    }
+    PyFrozenSetWriter_Discard(self->writer);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
