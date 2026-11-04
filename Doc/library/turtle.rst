@@ -553,7 +553,7 @@ Move and draw
 
    Stamp a copy of the turtle shape onto the canvas and return its id. The
    stamp is placed at the current turtle position. The returned id can be
-   used to delete the stamp again with :func:`clearstamp`.
+   used to delete the stamp with :func:`clearstamp`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1378,8 +1378,9 @@ Appearance
 
 .. function:: get_shapepoly()
 
-   Return the current shape polygon as a tuple of coordinate pairs. This can
-   be used to define a new shape or components of a compound shape.
+   Return the points that form the outline of the current turtle shape
+   as a tuple of ``(x, y)`` coordinate pairs. These points can be used
+   to define a new shape or parts of a :ref:`compound shape <compound-shapes>`
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2162,7 +2163,7 @@ Screen-only methods
    is the path of the file to create. It must end with ``".ps"`` or
    ``".eps"``. If a file with that name already exists, a
    :exc:`FileExistsError` is raised, unless *overwrite* is ``True``.
-   *overwrite* must be given by name.
+   *overwrite* must be given by name, as in ``overwrite=True``.
 
    .. doctest::
       :skipif: _tkinter is None

@@ -1534,7 +1534,7 @@ class TurtleScreen(TurtleScreenBase):
         filename is the path of the file to create. It must end with
         ".ps" or ".eps". If a file with that name already exists, a
         FileExistsError is raised, unless overwrite is True. overwrite
-        must be given by name.
+        must be given by name, as in overwrite=True.
 
         Arguments:
             filename -- a string
@@ -3018,8 +3018,8 @@ class RawTurtle(TPen, TNavigator):
         tilt angle of the turtle shape into four numbers: t11 and t12 form
         its first row, t21 and t22 its second. If none of them are given,
         return the current matrix as a tuple of four numbers. Otherwise
-        set the given elements and update stretchfactor, shearfactor and
-        tiltangle accordingly. t11 * t22 - t12 * t21 must not be zero,
+        set the given elements and update stretch factors, shear factor and
+        tilt angle accordingly. t11 * t22 - t12 * t21 must not be zero,
         otherwise an error is raised.
 
         Arguments:
@@ -3068,7 +3068,8 @@ class RawTurtle(TPen, TNavigator):
                                                            for (x, y) in poly]
 
     def get_shapepoly(self):
-        """Return the current shape polygon as a tuple of coordinate pairs.
+        """Return the points that form the outline of the current turtle shape
+        as a tuple of (x, y) coordinate pairs.
 
         This can be used to define a new shape or components of a compound
         shape.
@@ -3141,7 +3142,7 @@ class RawTurtle(TPen, TNavigator):
         """Stamp a copy of the turtle shape onto the canvas and return its id.
 
         The stamp is placed at the current turtle position. The returned
-        id can be used to delete the stamp again with clearstamp().
+        id can be used to delete the stamp with clearstamp().
 
         Example (for a Turtle instance named turtle):
             >>> turtle.color("blue")
