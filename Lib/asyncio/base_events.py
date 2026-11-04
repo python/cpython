@@ -195,7 +195,13 @@ if hasattr(socket, 'TCP_NODELAY'):
         if (sock.family in {socket.AF_INET, socket.AF_INET6} and
                 sock.type == socket.SOCK_STREAM and
                 sock.proto == socket.IPPROTO_TCP):
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            except OSError:
+                # TCP_NODELAY is only a latency optimization.  It can fail
+                # on a connection already reset by the peer (e.g. EINVAL
+                # on macOS); the error will surface on the next I/O.
+                pass
 else:
     def _set_nodelay(sock):
         pass
