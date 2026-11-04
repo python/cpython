@@ -527,6 +527,9 @@ static inline void
 _Py_atomic_store_int8_release(int8_t *obj, int8_t value);
 
 static inline void
+_Py_atomic_store_uint8_release(uint8_t *obj, uint8_t value);
+
+static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
@@ -582,7 +585,7 @@ static inline void _Py_atomic_fence_release(void);
 #  define Py_ATOMIC_GCC_H
 #  include "pyatomic_gcc.h"
 #  undef Py_ATOMIC_GCC_H
-#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
+#elif _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #  define Py_ATOMIC_STD_H
 #  include "pyatomic_std.h"
 #  undef Py_ATOMIC_STD_H

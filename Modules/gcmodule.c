@@ -7,6 +7,7 @@
 #include "Python.h"
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
 
 typedef struct _gc_runtime_state GCState;
@@ -116,7 +117,7 @@ gc_set_debug_impl(PyObject *module, int flags)
 /*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
 {
     GCState *gcstate = get_gc_state();
-    gcstate->debug = flags;
+    FT_ATOMIC_STORE_INT_RELAXED(gcstate->debug, flags);
     Py_RETURN_NONE;
 }
 
@@ -131,7 +132,7 @@ gc_get_debug_impl(PyObject *module)
 /*[clinic end generated code: output=91242f3506cd1e50 input=91a101e1c3b98366]*/
 {
     GCState *gcstate = get_gc_state();
-    return gcstate->debug;
+    return FT_ATOMIC_LOAD_INT_RELAXED(gcstate->debug);
 }
 
 /*[clinic input]
@@ -221,9 +222,12 @@ gc_get_count_impl(PyObject *module)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     struct _gc_thread_state *gc = &tstate->gc;
 
-    // Flush the local allocation count to the global count
-    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
-    gc->alloc_count = 0;
+    // Don't flush: record_allocation() checks the threshold only when it fills.
+    int young = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+    young += (int)gc->alloc_count;
+    if (young < 0) {
+        young = 0;
+    }
 #endif
 
 #ifndef Py_GIL_DISABLED
@@ -233,7 +237,7 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 #else
     return Py_BuildValue("(iii)",
-                         _Py_atomic_load_int_relaxed(&gcstate->young.count),
+                         young,
                          gcstate->old[0].count,
                          gcstate->old[1].count);
 #endif

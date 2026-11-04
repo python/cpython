@@ -1069,6 +1069,8 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
         self.assertIn('UTF8=ACCEPT', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE UTF8=ACCEPT']))
         typ, _ = client.enable('UTF8=ACCEPT')
         self.assertEqual(typ, 'OK')
 
@@ -1087,6 +1089,8 @@ class NewIMAPTestsMixin:
         self.assertNotIn('ENABLE', client.capabilities)
         client.authenticate('MYAUTH', lambda x: b'fake')
         self.assertIn('ENABLE', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE']))
 
     def test_greeting_capabilities(self):
         # Capabilities advertised in the greeting are used directly,
@@ -1100,6 +1104,8 @@ class NewIMAPTestsMixin:
         client, server = self._setup(GreetingHandler)
         self.assertEqual(client.capabilities, ('IMAP4REV1', 'ENABLE'))
         self.assertFalse(getattr(server, 'capability_queried', False))
+        # The greeting is not a response to a command, so it is consumed.
+        self.assertEqual(client.response('CAPABILITY'), ('CAPABILITY', [None]))
 
     def test_login_requery_capabilities(self):
         # If the server does not advertise capabilities after login,
@@ -2790,13 +2796,10 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(imaplib, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, imaplib, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

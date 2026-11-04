@@ -77,3 +77,19 @@ _Py_gitidentifier(void)
         gitid = GITBRANCH;
     return gitid;
 }
+
+
+// Check if Python was built with NDEBUG macro defined or not. Implement the
+// function in Modules/getbuildinfo.c so it's built with the same compiler
+// flags than the Python core C code.
+//
+// Export the function for '_testlimitedcapi' shared extension.
+PyAPI_FUNC(int)
+_Py_GetBuiltWithAssert(void)
+{
+#ifdef NDEBUG
+    return 0;
+#else
+    return 1;
+#endif
+}

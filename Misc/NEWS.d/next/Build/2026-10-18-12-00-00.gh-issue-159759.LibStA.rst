@@ -1,0 +1,4 @@
+Fix the ``libpython.static`` path in :pep:`739` ``build-details.json``, which
+pointed to a file that is not installed when building with
+:option:`--enable-shared`, and no longer list a static library for framework
+builds, which do not install one.
