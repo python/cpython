@@ -47,12 +47,20 @@ class TestCTest(CTest):
                          '_json')
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, json, "__version__", "__author__", remove=(3, 20),
+        )
+
+
 def load_tests(loader, _, pattern):
     suite = unittest.TestSuite()
     for mod in (json, json.encoder, json.decoder):
         suite.addTest(doctest.DocTestSuite(mod))
     suite.addTest(TestPyTest('test_pyjson'))
     suite.addTest(TestCTest('test_cjson'))
+    suite.addTests(loader.loadTestsFromTestCase(TestModule))
 
     pkg_dir = os.path.dirname(__file__)
     return support.load_package_tests(pkg_dir, loader, suite, pattern)

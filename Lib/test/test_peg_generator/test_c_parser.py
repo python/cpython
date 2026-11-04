@@ -18,6 +18,7 @@ if support.check_cflags_pgo():
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.build import build_parser
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
         parse_string,
@@ -99,12 +100,19 @@ class TestCParser(unittest.TestCase):
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
         with contextlib.ExitStack() as stack:
-            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
-            sitepackages = subprocess.check_output(
-                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
-                text=True,
-            ).strip()
-            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
+
+            def get_sysconfig_path(name):
+                # Force UTF-8 to emit the non-ASCII venv path in any locale.
+                return subprocess.check_output(
+                    [python_exe, "-X", "utf8", "-c",
+                     f"import sysconfig; print(sysconfig.get_path({name!r}))"],
+                    encoding="utf-8",
+                ).strip()
+
+            platlib_path = get_sysconfig_path("platlib")
+            purelib_path = get_sysconfig_path("purelib")
+            stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
     @support.requires_venv_with_pip()
@@ -132,11 +140,43 @@ class TestCParser(unittest.TestCase):
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
+        self.run_extension_test(test_source)
+
+    def run_extension_test(self, test_source):
         test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
         assert_python_ok(
             "-c",
             TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
         )
+
+    def test_prefix_reuses_position(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+            | prefix '=' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name', 'one two : 3', 'one two = 3'],
+            invalid_cases=['one = 3', 'one two = name', 'one two :'],
+        )
+        """)
+
+    def test_prefix_respects_cut(self) -> None:
+        grammar_source = """
+        start:
+            | prefix ':' ~ NAME NEWLINE? ENDMARKER
+            | prefix ':' NUMBER NEWLINE? ENDMARKER
+        prefix (memo): NAME NAME
+        """
+        self.run_test(grammar_source, """
+        self.check_input_strings_for_grammar(
+            valid_cases=['one two : name'],
+            invalid_cases=['one two : 3'],
+        )
+        """)
 
     def test_c_parser(self) -> None:
         grammar_source = """
@@ -200,6 +240,21 @@ class TestCParser(unittest.TestCase):
         valid_cases = ["foo 34"]
         invalid_cases = ["foo bar"]
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_optional_gather_with_invalid_separator(self) -> None:
+        grammar_source = """
+        start: 'prefix' guard_without_invalid NAME NEWLINE ENDMARKER
+        guard_without_invalid:
+            | [invalid_separator.(NAME NAME)+] { _PyPegen_dummy_name(p) }
+        invalid_separator: '+'
+        """
+        test_source = """
+        self.check_input_strings_for_grammar(
+            valid_cases=["prefix hello", "prefix a b hello", "prefix a b + c d hello"],
+            invalid_cases=["prefix", "prefix a b"],
+        )
         """
         self.run_test(grammar_source, test_source)
 
@@ -352,9 +407,9 @@ class TestCParser(unittest.TestCase):
         grammar_source = """
         start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
-                                _PyAST_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
+                                _PyAST_ImportFrom(c->v.Name.id, d, 0, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
-                                _PyAST_ImportFrom(NULL, c, 1, EXTRA) }
+                                _PyAST_ImportFrom(NULL, c, 1, 0, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
@@ -365,6 +420,173 @@ class TestCParser(unittest.TestCase):
             expected_ast = ast.parse(stmt)
             actual_ast = parse.parse_string(stmt, mode=1)
             self.assertEqual(ast_dump(expected_ast), ast_dump(actual_ast))
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_alternative_variable_bindings(self) -> None:
+        grammar_source = """
+        start[mod_ty]: a=stmt NEWLINE ENDMARKER {
+            _PyAST_Module((asdl_stmt_seq *)_PyPegen_singleton_seq(p, a), NULL, p->arena) }
+        stmt[stmt_ty]:
+            | &NAME NAME name_var[expr_ty]=NAME NUMBER? {
+                _PyAST_Expr(name_var_1, EXTRA) }
+            | &NUMBER name_var=NUMBER name_var[expr_ty]=NAME {
+                _PyAST_Expr(name_var_1, EXTRA) }
+        """
+        test_source = """
+        for source in ("first second", "first second 42", "42 second"):
+            actual = parse.parse_string(source, mode=1)
+            self.assertEqual(len(actual.body), 1)
+            self.assertIsInstance(actual.body[0], ast.Expr)
+            self.assertIsInstance(actual.body[0].value, ast.Name)
+            self.assertEqual(actual.body[0].value.id, "second")
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable (checked_without_invalid '+' | checked_without_invalid after | after) NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        checked_without_invalid (memo): "value" ~ NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable value name +",  # Successful rule return.
+            "enable value name tail",  # Memoized return after backtracking.
+            "enable fallback",  # Failed rule return.
+            "enable value",  # Early return through a cut.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_rule_fastpath(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+
+        static int
+        number_fastpath(Parser *p, void *result)
+        {
+            assert(p->call_invalid_rules == 0);
+            expr_ty number = _PyPegen_number_token(p);
+            if (number != NULL) {
+                *(void **)result = number;
+                return 1;
+            }
+            if (_PyPegen_expect_token(p, LPAR)) {
+                p->error_indicator = 1;
+                PyErr_SetString(PyExc_ValueError, "fastpath error");
+            }
+            if (p->error_indicator) {
+                *(void **)result = NULL;
+                return 1;
+            }
+            return 0;
+        }
+        '''
+        start: enable value_without_invalid after NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        value_without_invalid (memo, fastpath=number_fastpath): NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar(
+            valid_cases=['enable 42 tail', 'enable name tail'],
+            invalid_cases=['enable + tail', 'enable 42'],
+        )
+        with self.assertRaisesRegex(ValueError, 'fastpath error'):
+            parse.parse_string('enable ( tail', mode=0)
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_left_recursive_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable (expr_without_invalid after | after) NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        expr_without_invalid:
+            | expr_without_invalid '+' NAME { CHECK_INVALID(0) }
+            | NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) } | NUMBER { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable name tail",
+            "enable name + other + last tail",
+            "enable fallback",  # Backtrack past a successful recursive rule.
+            "enable 42",  # The recursive rule has no successful alternative.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_nested_rule_cleanup(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+        '''
+        start: enable outer_without_invalid after NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        outer_without_invalid:
+            | inner_without_invalid '+' { CHECK_INVALID(0) }
+            | inner_without_invalid inside { CHECK_INVALID(0) }
+            | inside { CHECK_INVALID(0) }
+        inner_without_invalid (memo): 'value' NAME { CHECK_INVALID(0) }
+        inside: NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar([
+            "enable value name + tail",  # Restore the enclosing disabled state.
+            "enable value name middle tail",  # Restore it on a memoized return.
+            "enable fallback tail",  # Restore it when the inner rule fails.
+        ])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_repetition_result_order(self) -> None:
+        grammar_source = """
+        start[mod_ty]: a=statements NEWLINE ENDMARKER {
+            _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]:
+            | 'repeat0' a=stmt* { (asdl_stmt_seq*)a }
+            | 'repeat1' a=stmt+ { (asdl_stmt_seq*)a }
+            | 'gather' a=','.stmt+ { (asdl_stmt_seq*)a }
+        stmt[stmt_ty]: a=NAME { _PyAST_Expr(a, EXTRA) }
+        """
+        test_source = """
+        for mode, separator in (("repeat0", " "), ("repeat1", " "), ("gather", ",")):
+            for count in (1, 2, 5, 17):
+                with self.subTest(mode=mode, count=count):
+                    names = ["name" + str(index) for index in range(count)]
+                    result = parse.parse_string(mode + " " + separator.join(names), mode=1)
+                    self.assertEqual([stmt.value.id for stmt in result.body], names)
+        result = parse.parse_string("repeat0", mode=1)
+        self.assertEqual(result.body, [])
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_repetition_action_errors(self) -> None:
+        grammar_source = """
+        start: ('repeat0' item* | 'repeat1' item+ | 'gather' ','.item+) NEWLINE ENDMARKER
+        item: NAME | 'fail' { PyTuple_New(-1) }
+        """
+        test_source = """
+        for mode, separator in (("repeat0", " "), ("repeat1", " "), ("gather", ",")):
+            for items in (("fail",), ("first", "second", "fail")):
+                with self.subTest(mode=mode, items=items):
+                    with self.assertRaises(SystemError):
+                        parse.parse_string(mode + " " + separator.join(items), mode=0)
+            parse.parse_string(mode + " first", mode=0)
         """
         self.run_test(grammar_source, test_source)
 
@@ -387,10 +609,10 @@ class TestCParser(unittest.TestCase):
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
         the_ast = parse.parse_string(stmt, mode=1)
-        self.assertTrue(ast_dump(the_ast).startswith(
+        self.assertStartsWith(ast_dump(the_ast),
             "Module(body=[With(items=[withitem(context_expr=Name(id='a', ctx=Load()), optional_vars=Name(id='b', ctx=Store())), "
             "withitem(context_expr=Name(id='c', ctx=Load()), optional_vars=Name(id='d', ctx=Store()))]"
-        ))
+        )
         """
         self.run_test(grammar_source, test_source)
 
@@ -496,6 +718,36 @@ class TestCParser(unittest.TestCase):
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
         """
         self.run_test(grammar_source, test_source)
+
+    def test_included_grammar_file(self) -> None:
+        # The rules of an included grammar file are compiled from a separate
+        # C file, in the same subdirectory as the grammar file; rules call
+        # each other across the two files.
+        grammar_dir = self.enterContext(os_helper.temp_dir())
+        with open(os.path.join(grammar_dir, "main.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                @include "errors/invalid.gram"
+                start: stmt+ NEWLINE? ENDMARKER
+                stmt: invalid_stmt | NAME '=' expr
+                expr: NAME | NUMBER
+                """))
+        os.mkdir(os.path.join(grammar_dir, "errors"))
+        with open(os.path.join(grammar_dir, "errors", "invalid.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                invalid_stmt: expr '==' expr { RAISE_SYNTAX_ERROR("use '=' to assign") }
+                """))
+        grammar, _, _ = build_parser(Path(grammar_dir, "main.gram"))
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
+        self.assertTrue(os.path.exists(os.path.join("errors", "parse_invalid.c")))
+        self.run_extension_test("""
+        self.check_input_strings_for_grammar(
+            valid_cases=["a = b", "a = 1"],
+            invalid_cases=["a =", "a == "],
+        )
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a == b", mode=0)
+        self.assertIn("use '=' to assign", str(e.exception))
+        """)
 
     def test_forced(self) -> None:
         grammar_source = """

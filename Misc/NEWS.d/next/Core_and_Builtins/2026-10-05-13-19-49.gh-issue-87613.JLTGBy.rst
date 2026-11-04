@@ -1,0 +1,2 @@
+Speed up :class:`bytes` and :class:`bytearray` construction by adding
+:ref:`vectorcall` support.

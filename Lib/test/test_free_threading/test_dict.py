@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -74,6 +74,7 @@ class TestDict(TestCase):
             last = -1
             while True:
                 if CUR == last:
+                    time.sleep(0.001)
                     continue
                 elif CUR == OBJECT_COUNT:
                     break
@@ -142,41 +143,450 @@ class TestDict(TestCase):
             for ref in thread_list:
                 self.assertIsNone(ref())
 
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-    def test_dict_version(self):
-        dict_version = _testcapi.dict_version
+    def test_racing_get_set_dict(self):
+        """Races getting and setting a dict should be thread safe"""
         THREAD_COUNT = 10
-        DICT_COUNT = 10000
-        lists = []
-        writers = []
+        barrier = Barrier(THREAD_COUNT)
+        def work(d):
+            barrier.wait()
+            for _ in range(1000):
+                d[10] = 0
+                d.get(10, None)
+                _ = d[10]
 
-        def writer_func(thread_list):
-            for i in range(DICT_COUNT):
-                thread_list.append(dict_version({}))
+        d = {}
+        worker_threads = []
+        for ii in range(THREAD_COUNT):
+            worker_threads.append(Thread(target=work, args=[d]))
+        for t in worker_threads:
+            t.start()
+        for t in worker_threads:
+            t.join()
 
-        for x in range(THREAD_COUNT):
-            thread_list = []
-            lists.append(thread_list)
-            writer = Thread(target=partial(writer_func, thread_list))
-            writers.append(writer)
 
-        for writer in writers:
-            writer.start()
+    def test_racing_set_object_dict(self):
+        """Races assigning to __dict__ should be thread safe"""
+        class C: pass
+        class MyDict(dict): pass
+        for cyclic in (False, True):
+            f = C()
+            f.__dict__ = {"foo": 42}
+            THREAD_COUNT = 10
 
-        for writer in writers:
-            writer.join()
+            def writer_func(l):
+                for i in range(1000):
+                    if cyclic:
+                        other_d = {}
+                    d = MyDict({"foo": 100})
+                    if cyclic:
+                        d["x"] = other_d
+                        other_d["bar"] = d
+                    l.append(weakref.ref(d))
+                    f.__dict__ = d
 
-        total_len = 0
-        values = set()
-        for thread_list in lists:
-            for v in thread_list:
-                if v in values:
-                    print('dup', v, (v/4096)%256)
-                values.add(v)
-            total_len += len(thread_list)
-        versions = set(dict_version for thread_list in lists for dict_version in thread_list)
-        self.assertEqual(len(versions), THREAD_COUNT*DICT_COUNT)
+            def reader_func():
+                for i in range(1000):
+                    f.foo
 
+            lists = []
+            readers = []
+            writers = []
+            for x in range(THREAD_COUNT):
+                thread_list = []
+                lists.append(thread_list)
+                writer = Thread(target=partial(writer_func, thread_list))
+                writers.append(writer)
+
+            for x in range(THREAD_COUNT):
+                reader = Thread(target=partial(reader_func))
+                readers.append(reader)
+
+            for writer in writers:
+                writer.start()
+            for reader in readers:
+                reader.start()
+
+            for writer in writers:
+                writer.join()
+
+            for reader in readers:
+                reader.join()
+
+            f.__dict__ = {}
+            gc.collect()
+            gc.collect()
+
+            count = 0
+            ids = set()
+            for thread_list in lists:
+                for i, ref in enumerate(thread_list):
+                    if ref() is None:
+                        continue
+                    count += 1
+                    ids.add(id(ref()))
+                    count += 1
+
+            self.assertEqual(count, 0)
+
+    def test_racing_replace_inline_values_and_lookup(self):
+        # gh-160496: replacing an unmaterialized __dict__ clears inline
+        # values while attribute lookup can still read them without a lock.
+        class C:
+            pass
+
+        objects = [C() for _ in range(1000)]
+        for obj in objects:
+            obj.x = [0]
+
+        # Inline values are invalidated only once per object, so synchronize
+        # the threads for each fresh instance without accessing its __dict__.
+        barrier = Barrier(2)
+        observed = []
+
+        def writer():
+            for obj in objects:
+                barrier.wait()
+                obj.__dict__ = {"x": [1]}
+                barrier.wait()
+
+        def reader():
+            for obj in objects:
+                barrier.wait()
+                observed.append(getattr(obj, "x", None))
+                barrier.wait()
+
+        threading_helper.run_concurrently([writer, reader])
+        for value in observed:
+            self.assertIn(value, ([0], [1]))
+        for obj in objects:
+            self.assertEqual(obj.x, [1])
+
+    def test_racing_object_get_set_dict(self):
+        e = Exception()
+
+        def writer():
+            for i in range(10000):
+                e.__dict__ = {1:2}
+
+        def reader():
+            for i in range(10000):
+                e.__dict__
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_racing_watch_unwatch_dict(self):
+        # gh-148393: race between PyDict_Watch / PyDict_Unwatch
+        # and concurrent dict mutation reading _ma_watcher_tag.
+        wid = _testcapi.add_dict_watcher(0)
+        try:
+            d = {}
+            ITERS = 1000
+
+            def writer():
+                for i in range(ITERS):
+                    d[i] = i
+                    del d[i]
+
+            def watcher():
+                for _ in range(ITERS):
+                    _testcapi.watch_dict(wid, d)
+                    _testcapi.unwatch_dict(wid, d)
+
+            threading_helper.run_concurrently([writer, watcher])
+        finally:
+            _testcapi.clear_dict_watcher(wid)
+
+    def test_racing_split_dict_clear_and_lookup(self):
+        class C:
+            pass
+
+        keys = [f"a{i}" for i in range(16)]
+
+        def make_split_nonembedded():
+            inst = C()
+            for key in keys:
+                setattr(inst, key, keys.index(key))
+            # dict.copy() of a split instance dict yields a split table
+            # with non-embedded values
+            return inst.__dict__.copy()
+
+        d = make_split_nonembedded()
+
+        def clearer():
+            for _ in range(1000):
+                d.clear()
+                d.update(make_split_nonembedded())
+
+        def reader():
+            for _ in range(1000):
+                for k in keys:
+                    d.get(k)
+
+        threading_helper.run_concurrently([clearer, reader, reader])
+
+    def test_racing_embedded_values_clear_and_lookup(self):
+        class C:
+            pass
+
+        obj = C()
+        def writer():
+            for _ in range(1000):
+                obj.x = 1
+                obj.y = 2
+                obj.z = 3
+                obj.__dict__.clear()
+
+        def reader():
+            for _ in range(1000):
+                obj.__dict__.get('x')
+
+        threading_helper.run_concurrently([writer, reader, reader])
+
+    def test_racing_split_dict_iteration_and_delete(self):
+        # Each reader owns its iterator. Mortal values exercise reference
+        # acquisition as well as the concurrent clearing of value slots.
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        obj = C()
+        for i, name in enumerate(names):
+            setattr(obj, name, [i])
+        d = obj.__dict__
+
+        def delattr_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    delattr(obj, name)
+                    setattr(obj, name, [i])
+
+        def delitem_writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    del d[name]
+                    d[name] = [i]
+
+        def clear_writer():
+            for _ in range(50):
+                d.clear()
+                for i, name in enumerate(names):
+                    setattr(obj, name, [i])
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for writer in (delattr_writer, delitem_writer, clear_writer):
+            for view in (d.values, d.items, d.keys):
+                with self.subTest(writer=writer.__name__, view=view.__name__):
+                    threading_helper.run_concurrently(
+                        [writer, partial(reader, view), partial(reader, view)])
+                    self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
+    def test_racing_nonembedded_split_dict_iteration_and_delete(self):
+        class C:
+            pass
+
+        names = [f"a{i}" for i in range(8)]
+        # Populate shared keys without populating the copied dict's order
+        # array, so the writer also initializes previously unused order bytes.
+        template = C()
+        for i, name in enumerate(names):
+            setattr(template, name, [i])
+
+        def writer():
+            for _ in range(50):
+                for i, name in enumerate(names):
+                    d.pop(name, None)
+                    d[name] = [i]
+
+        def reader(view):
+            for _ in range(200):
+                try:
+                    for _ in view():
+                        pass
+                except RuntimeError:
+                    pass
+
+        for view_name in ("values", "items", "keys"):
+            with self.subTest(view=view_name):
+                obj = C()
+                obj.a0 = [0]
+                # Copying a split dict gives it heap-backed values.
+                d = obj.__dict__.copy()
+                view = getattr(d, view_name)
+                threading_helper.run_concurrently(
+                    [writer, partial(reader, view), partial(reader, view)])
+                self.assertEqual(d, {name: [i] for i, name in enumerate(names)})
+
+    def test_racing_dict_update_and_method_lookup(self):
+        # gh-144295: test race between dict modifications and method lookups.
+        # Uses BytesIO because the race requires a type without Py_TPFLAGS_INLINE_VALUES
+        # for the _PyDict_GetMethodStackRef code path.
+        import io
+        obj = io.BytesIO()
+
+        def writer():
+            for _ in range(10000):
+                obj.x = 1
+                del obj.x
+
+        def reader():
+            for _ in range(10000):
+                obj.getvalue()
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
+
+    def test_getstate_race_with_shared_keys(self):
+        box = [None]
+        enter = Barrier(2)
+        leave = Barrier(2)
+
+        def reader():
+            for _ in range(1000):
+                enter.wait()
+                box[0].__getstate__()
+                leave.wait()
+
+        def writer():
+            for i in range(1000):
+                box[0] = type(f"C{i}", (), {})()
+                enter.wait()
+                setattr(box[0], str(i), 1)
+                leave.wait()
+
+        threading_helper.run_concurrently([reader, writer])
+
+    def test_racing_dealloc_and_split_dict_resize(self):
+        # gh-158198: an object's inline-values __dict__ escapes to another
+        # thread, which converts it to a combined table (by adding a non-str
+        # key) while the owning thread drops the last reference to the object.
+        NATTRS = 20
+
+        class C:
+            def __init__(self):
+                for i in range(NATTRS):
+                    setattr(self, f"a{i}", i)
+
+        def make_pair():
+            slot = [None]
+            done = Event()
+
+            def owner():
+                try:
+                    for j in range(2000):
+                        o = C()
+                        for i in range(NATTRS):
+                            self.assertEqual(getattr(o, f"a{i}"), i)
+                        slot[0] = o.__dict__
+                        for _ in range(j % 16):
+                            pass
+                        del o
+                finally:
+                    done.set()
+
+            def converter():
+                while not done.is_set():
+                    d = slot[0]
+                    if d is not None:
+                        d[0] = 0
+                        slot[0] = None
+
+            return [owner, converter]
+
+        threading_helper.run_concurrently(make_pair() + make_pair())
+
+    def test_racing_dict_update_and_method_lookup_with_inline_values(self):
+        # gh-149816: sub-case 108
+        # The race below checks that a detached dict is still valid
+        # when racing setattr with __dict__ replacement
+        class Target:
+            pass
+
+        def appender(obj: Target, start: Barrier, iter_times: int) -> None:
+            start.wait()
+            index = 0
+            for _ in range(iter_times):
+                setattr(obj, f"probe_{index}", index)
+                index += 1
+                time.sleep(0)
+
+        def replacer(obj: Target, start: Barrier, iter_times: int, churn_size: int) -> None:
+            start.wait()
+            for _ in range(iter_times):
+                old_dict = obj.__dict__
+                obj.__dict__ = {}
+                del old_dict
+                time.sleep(0)
+                # create a list of dicts to trigger a realloc of the dict's table
+                # and ensure that the old dict is not used after it is deleted
+                realloc_trigger_list = [{"k": j} for j in range(churn_size)]
+                del realloc_trigger_list
+
+        def race(iter_times: int,
+                 churn_size: int,
+                 appender_threads: int,
+                 replacer_threads: int) -> None:
+            obj = Target()
+            setattr(obj, "origin", 0)
+            _ = obj.__dict__  # Access __dict__ to ensure it's initialized
+
+            start = Barrier(appender_threads + replacer_threads)
+            threads = []
+            for _ in range(appender_threads):
+                threads.append(Thread(target=appender, args=(obj, start, iter_times),
+                                      name="appender"))
+            for _ in range(replacer_threads):
+                threads.append(Thread(target=replacer, args=(obj, start, iter_times, churn_size),
+                                      name="replacer"))
+
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads(threads):
+                    pass
+                if cm.exc_type is not None:
+                    raise cm.exc_value
+
+        ITER_TIMES = 2_000
+        APPENDER_THREADS = 8
+        REPLACER_THREADS = 8
+        CHURN_SIZE = 512
+        race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
+
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
 
 if __name__ == "__main__":
     unittest.main()

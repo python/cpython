@@ -1,1 +1,0 @@
-Raise error on certain technically valid but pathological ISO 8601 strings passed to :meth:`datetime.time.fromisoformat` that were previously parsed incorrectly.

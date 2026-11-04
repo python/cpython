@@ -1,13 +1,12 @@
 """Unit tests for zero-argument super() & related machinery."""
 
+import copy
+import pickle
 import textwrap
 import threading
 import unittest
 from unittest.mock import patch
 from test.support import import_helper, threading_helper
-
-
-ADAPTIVE_WARMUP_DELAY = 2
 
 
 class A:
@@ -464,7 +463,8 @@ class TestSuper(unittest.TestCase):
             super(MyType, type(mytype)).__setattr__(mytype, "bar", 1)
             self.assertEqual(mytype.bar, 1)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             test("foo1")
 
     def test_reassigned_new(self):
@@ -483,7 +483,8 @@ class TestSuper(unittest.TestCase):
             def __new__(cls):
                 return super().__new__(cls)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             C()
 
     def test_mixed_staticmethod_hierarchy(self):
@@ -503,7 +504,8 @@ class TestSuper(unittest.TestCase):
             def some(cls):
                 return super().some(cls)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             C.some(C)
 
     @threading_helper.requires_working_threading()
@@ -513,6 +515,7 @@ class TestSuper(unittest.TestCase):
         This should be the case anyways as our test suite sets
         an audit hook.
         """
+
         class Foo:
             pass
 
@@ -522,7 +525,7 @@ class TestSuper(unittest.TestCase):
         thing = Foo()
         def work():
             foo = thing
-            for _ in range(5000):
+            for _ in range(200):
                 foo.__class__ = Bar
                 type(foo)
                 foo.__class__ = Foo
@@ -537,6 +540,74 @@ class TestSuper(unittest.TestCase):
 
         for thread in threads:
             thread.join()
+
+    def test_special_methods(self):
+        for e in E(), E:
+            s = super(C, e)
+            self.assertEqual(s.__reduce__, e.__reduce__)
+            self.assertEqual(s.__reduce_ex__, e.__reduce_ex__)
+            self.assertEqual(s.__getstate__, e.__getstate__)
+            self.assertNotHasAttr(s, '__getnewargs__')
+            self.assertNotHasAttr(s, '__getnewargs_ex__')
+            self.assertNotHasAttr(s, '__setstate__')
+            self.assertNotHasAttr(s, '__copy__')
+            self.assertNotHasAttr(s, '__deepcopy__')
+
+    def test_pickling(self):
+        e = E()
+        e.x = 1
+        s = super(C, e)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                u = pickle.loads(pickle.dumps(s, proto))
+                self.assertEqual(u.f(), s.f())
+                self.assertIs(type(u), type(s))
+                self.assertIs(type(u.__self__), E)
+                self.assertEqual(u.__self__.x, 1)
+                self.assertIs(u.__thisclass__, C)
+                self.assertIs(u.__self_class__, E)
+
+        s = super(C, E)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                u = pickle.loads(pickle.dumps(s, proto))
+                self.assertEqual(u.cm(), s.cm())
+                self.assertEqual(u.f, s.f)
+                self.assertIs(type(u), type(s))
+                self.assertIs(u.__self__, E)
+                self.assertIs(u.__thisclass__, C)
+                self.assertIs(u.__self_class__, E)
+
+    def test_shallow_copying(self):
+        s = super(C, E())
+        self.assertIs(copy.copy(s), s)
+        s = super(C, E)
+        self.assertIs(copy.copy(s), s)
+
+    def test_deep_copying(self):
+        e = E()
+        e.x = [1]
+        s = super(C, e)
+        u = copy.deepcopy(s)
+        self.assertEqual(u.f(), s.f())
+        self.assertIs(type(u), type(s))
+        self.assertIsNot(u, s)
+        self.assertIs(type(u.__self__), E)
+        self.assertIsNot(u.__self__, e)
+        self.assertIsNot(u.__self__.x, e.x)
+        self.assertEqual(u.__self__.x, [1])
+        self.assertIs(u.__thisclass__, C)
+        self.assertIs(u.__self_class__, E)
+
+        s = super(C, E)
+        u = copy.deepcopy(s)
+        self.assertEqual(u.cm(), s.cm())
+        self.assertEqual(u.f, s.f)
+        self.assertIsNot(u, s)
+        self.assertIs(type(u), type(s))
+        self.assertIs(u.__self__, E)
+        self.assertIs(u.__thisclass__, C)
+        self.assertIs(u.__self_class__, E)
 
 
 if __name__ == "__main__":

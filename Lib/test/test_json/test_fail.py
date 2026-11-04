@@ -100,8 +100,27 @@ class TestFail:
     def test_not_serializable(self):
         import sys
         with self.assertRaisesRegex(TypeError,
-                'Object of type module is not JSON serializable'):
+                'Object of type module is not JSON serializable') as cm:
             self.dumps(sys)
+        self.assertNotHasAttr(cm.exception, '__notes__')
+
+        with self.assertRaises(TypeError) as cm:
+            self.dumps([1, [2, 3, sys]])
+        self.assertEqual(cm.exception.__notes__,
+                         ['when serializing list item 2',
+                          'when serializing list item 1'])
+
+        with self.assertRaises(TypeError) as cm:
+            self.dumps((1, (2, 3, sys)))
+        self.assertEqual(cm.exception.__notes__,
+                         ['when serializing tuple item 2',
+                          'when serializing tuple item 1'])
+
+        with self.assertRaises(TypeError) as cm:
+            self.dumps({'a': {'b': sys}})
+        self.assertEqual(cm.exception.__notes__,
+                         ["when serializing dict item 'b'",
+                          "when serializing dict item 'a'"])
 
     def test_truncated_input(self):
         test_cases = [
@@ -124,6 +143,13 @@ class TestFail:
         test_cases += [
             ('"', 'Unterminated string starting at', 0),
             ('"spam', 'Unterminated string starting at', 0),
+        ]
+        # A complete \uXXXX escape at end of input leaves it unterminated.
+        test_cases += [
+            (r'"\u0041', 'Unterminated string starting at', 0),
+            (r'"\ud834', 'Unterminated string starting at', 0),
+            (r'"\ud834\udd1e', 'Unterminated string starting at', 0),
+            (r'{"a": "\u0041', 'Unterminated string starting at', 6),
         ]
         for data, msg, idx in test_cases:
             with self.assertRaises(self.JSONDecodeError) as cm:

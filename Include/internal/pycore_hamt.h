@@ -5,6 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_structs.h"       // PyHamtNode
 
 /*
 HAMT tree is shaped by hashes of keys. Every group of 5 bits of a hash denotes
@@ -32,28 +33,6 @@ extern PyTypeObject _PyHamtItems_Type;
 /* other API */
 
 #define PyHamt_Check(o) Py_IS_TYPE((o), &_PyHamt_Type)
-
-
-/* Abstract tree node. */
-typedef struct {
-    PyObject_HEAD
-} PyHamtNode;
-
-
-/* An HAMT immutable mapping collection. */
-typedef struct {
-    PyObject_HEAD
-    PyHamtNode *h_root;
-    PyObject *h_weakreflist;
-    Py_ssize_t h_count;
-} PyHamtObject;
-
-
-typedef struct {
-    PyObject_VAR_HEAD
-    uint32_t b_bitmap;
-    PyObject *b_array[1];
-} PyHamtNode_Bitmap;
 
 
 /* A struct to hold the state of depth-first traverse of the tree.

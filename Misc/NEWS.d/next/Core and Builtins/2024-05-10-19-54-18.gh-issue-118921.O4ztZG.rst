@@ -1,1 +1,0 @@
-Add ``copy()`` method for ``FrameLocalsProxy`` which returns a snapshot ``dict`` for local variables.

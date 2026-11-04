@@ -256,7 +256,7 @@ class StackViewerTest(unittest.TestCase):
         flist = None
         master_window = self.root
         sv = debugger.StackViewer(master_window, flist, gui)
-        self.assertTrue(hasattr(sv, 'stack'))
+        self.assertHasAttr(sv, 'stack')
 
     def test_load_stack(self):
         # Test the .load_stack() method against a fixed test stack.

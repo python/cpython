@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_fstat_noraise()
 #include "pycore_initconfig.h"
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _PyRuntime
 
@@ -22,7 +23,10 @@
 #    include <sys/random.h>       // getrandom()
 #  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
-#    include <sys/syscall.h>      // SYS_getrandom
+#    include <sys/syscall.h>      // __NR_getrandom, SYS_getrandom
+#    if !defined(SYS_getrandom) && defined(__NR_getrandom)
+#      define SYS_getrandom __NR_getrandom
+#    endif
 #  endif
 #endif
 
@@ -125,9 +129,6 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
             n = getrandom(dest, n, flags);
         }
 #else
-        /* On Linux, use the syscall() function because the GNU libc doesn't
-           expose the Linux getrandom() syscall yet. See:
-           https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
             n = syscall(SYS_getrandom, dest, n, flags);
@@ -199,7 +200,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 
    getentropy() is retried if it failed with EINTR: interrupted by a signal. */
 
-#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
+#if defined(__APPLE__) && _Py__has_attribute(availability)
 static int
 py_getentropy(char *buffer, Py_ssize_t size, int raise)
         __attribute__((availability(macos,introduced=10.12)))

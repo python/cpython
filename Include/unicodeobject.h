@@ -64,13 +64,9 @@ Copyright (c) Corporation for National Research Initiatives.
 #error Must define SIZEOF_WCHAR_T
 #endif
 
+/* Soft-deprecated defines */
 #define Py_UNICODE_SIZE SIZEOF_WCHAR_T
-
-/* If wchar_t can be used for UCS-4 storage, set Py_UNICODE_WIDE.
-   Otherwise, Unicode strings are stored as UCS-2 (with limited support
-   for UTF-16) */
-
-#if Py_UNICODE_SIZE >= 4
+#if SIZEOF_WCHAR_T >= 4
 #define Py_UNICODE_WIDE
 #endif
 
@@ -341,63 +337,10 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
     const char *errors          /* error handling */
     );
 
-/* Decode a Unicode object unicode and return the result as Python
-   object.
-
-   This API is DEPRECATED. The only supported standard encoding is rot13.
-   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
-   that decode from str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Decode a Unicode object unicode and return the result as Unicode
-   object.
-
-   This API is DEPRECATED. The only supported standard encoding is rot13.
-   Use PyCodec_Decode() to decode with rot13 and non-standard codecs
-   that decode from str to str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Encodes a Unicode object and returns the result as Python
-   object.
-
-   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
-   since all standard encodings (except rot13) encode str to bytes.
-   Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
-   that encode form str to non-bytes. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
 /* Encodes a Unicode object and returns the result as Python string
    object. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
-    PyObject *unicode,          /* Unicode object */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Encodes a Unicode object and returns the result as Unicode
-   object.
-
-   This API is DEPRECATED.  The only supported standard encodings is rot13.
-   Use PyCodec_Encode() to encode with rot13 and non-standard codecs
-   that encode from str to str. */
-
-Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
@@ -966,6 +909,10 @@ PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
 PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyUnicode_Equal(PyObject *str1, PyObject *str2);
+#endif
+
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
@@ -1007,7 +954,59 @@ PyAPI_FUNC(int) PyUnicode_Contains(
 
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
-/* === Characters Type APIs =============================================== */
+
+/* === Public PyUnicodeWriter API ========================================= */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+typedef struct PyUnicodeWriter PyUnicodeWriter;
+
+PyAPI_FUNC(PyUnicodeWriter*) PyUnicodeWriter_Create(Py_ssize_t length);
+PyAPI_FUNC(void) PyUnicodeWriter_Discard(PyUnicodeWriter *writer);
+PyAPI_FUNC(PyObject*) PyUnicodeWriter_Finish(PyUnicodeWriter *writer);
+
+PyAPI_FUNC(int) PyUnicodeWriter_WriteChar(
+    PyUnicodeWriter *writer,
+    Py_UCS4 ch);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
+    PyUnicodeWriter *writer,
+    const char *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteASCII(
+    PyUnicodeWriter *writer,
+    const char *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
+    PyUnicodeWriter *writer,
+    const wchar_t *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
+    PyUnicodeWriter *writer,
+    const Py_UCS4 *str,
+    Py_ssize_t size);
+
+PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
+    PyUnicodeWriter *writer,
+    PyObject *obj);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteRepr(
+    PyUnicodeWriter *writer,
+    PyObject *obj);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteSubstring(
+    PyUnicodeWriter *writer,
+    PyObject *str,
+    Py_ssize_t start,
+    Py_ssize_t end);
+PyAPI_FUNC(int) PyUnicodeWriter_Format(
+    PyUnicodeWriter *writer,
+    const char *format,
+    ...);
+PyAPI_FUNC(int) PyUnicodeWriter_DecodeUTF8Stateful(
+    PyUnicodeWriter *writer,
+    const char *str,            /* UTF-8 encoded string */
+    Py_ssize_t size,            /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed */
+#endif  // !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H

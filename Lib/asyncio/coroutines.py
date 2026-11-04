@@ -1,7 +1,6 @@
-__all__ = 'iscoroutinefunction', 'iscoroutine'
+__all__ = ('iscoroutine',)
 
 import collections.abc
-import inspect
 import os
 import sys
 import types
@@ -11,16 +10,6 @@ def _is_debug_mode():
     # See: https://docs.python.org/3/library/asyncio-dev.html#asyncio-debug-mode.
     return sys.flags.dev_mode or (not sys.flags.ignore_environment and
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
-
-
-# A marker for iscoroutinefunction.
-_is_coroutine = object()
-
-
-def iscoroutinefunction(func):
-    """Return True if func is a decorated coroutine function."""
-    return (inspect.iscoroutinefunction(func) or
-            getattr(func, '_is_coroutine', None) is _is_coroutine)
 
 
 # Prioritize native coroutine check to speed-up

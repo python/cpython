@@ -1,11 +1,13 @@
 "Test , coverage 17%."
 
 from idlelib import iomenu
+import os
 import unittest
+from unittest import mock
 from test.support import requires
-from tkinter import Tk
+from tkinter import Tk, TclVersion
 from idlelib.editor import EditorWindow
-from idlelib import util
+from idlelib import macosx, util
 from idlelib.idle_test.mock_idle import Func
 
 # Fail if either tokenize.open and t.detect_encoding does not exist.
@@ -23,21 +25,31 @@ class IOBindingTest(unittest.TestCase):
         cls.root = Tk()
         cls.root.withdraw()
         cls.editwin = EditorWindow(root=cls.root)
-        cls.io = iomenu.IOBinding(cls.editwin)
+        cls.io = cls.editwin.io
 
     @classmethod
     def tearDownClass(cls):
-        cls.io.close()
         cls.editwin._close()
         del cls.editwin
         cls.root.update_idletasks()
-        for id in cls.root.tk.call('after', 'info'):
+        for id in cls.root.after_info():
             cls.root.after_cancel(id)  # Need for EditorWindow.
         cls.root.destroy()
         del cls.root
 
     def test_init(self):
         self.assertIs(self.io.editwin, self.editwin)
+
+    def test_defaultfilename_tilde(self):
+        # gh-59568: escape a leading tilde for Tcl older than 9.
+        io = self.io
+        with mock.patch.object(io, 'filename', os.path.join('dir', '~file.py')):
+            dirname, base = io.defaultfilename()
+        self.assertEqual(dirname, 'dir')
+        if TclVersion < 9 and not macosx.isAquaTk():
+            self.assertEqual(base, os.path.join(os.curdir, '~file.py'))
+        else:
+            self.assertEqual(base, '~file.py')
 
     def test_fixnewlines_end(self):
         eq = self.assertEqual

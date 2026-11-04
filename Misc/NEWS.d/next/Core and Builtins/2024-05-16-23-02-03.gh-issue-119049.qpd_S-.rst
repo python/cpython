@@ -1,2 +1,0 @@
-Fix displaying the source line for warnings created by the C API if the
-:mod:`warnings` module had not yet been imported.
