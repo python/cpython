@@ -1974,6 +1974,7 @@ class HandlerTests(unittest.TestCase):
             self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
             self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
 
+    @skip_libssl_fips_mode
     def test_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
@@ -2039,6 +2040,7 @@ class HandlerTests(unittest.TestCase):
             [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
              ('Digest', 'Digest realm="a"')])
 
+    @skip_libssl_fips_mode
     def test_proxy_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
