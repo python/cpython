@@ -475,8 +475,8 @@ Dictionary objects
    This is the same as ``PyDict_Merge(a, b, 1)`` in C.
 
    Similar to ``a.update(b)`` in Python except that :c:func:`PyDict_Update`
-   doesn't fall back to the iterating over a sequence of key value pairs if the
-   second argument has no "keys" attribute.
+   doesn't not support a sequence of key value pairs as *b* parameter.
+   Use :c:func:`PyDict_MergeFromSeq2` in this case.
 
    Return ``0`` on success or ``-1`` if an exception was raised.
 
