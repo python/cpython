@@ -3,5 +3,5 @@ On platforms where libc provides the ``timezone``, ``daylight`` and
 :data:`time.tzname` are now taken from libc instead of being guessed from
 samples of the local time in January and July.  This fixes stale values for
 zones whose rules change during the year, such as ``America/Vancouver`` in
-2026.  :data:`time.altzone` now equals :data:`time.timezone` for zones without
-DST when libc does not provide ``altzone``.
+2026.  :data:`time.altzone` now equals :data:`time.timezone` for zones
+without DST when libc does not provide ``altzone``.
