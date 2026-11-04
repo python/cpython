@@ -816,18 +816,6 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
     return (PyWeakReference **)((char *)op + offset);
 }
 
-// Fast inlined version of PyType_IS_GC()
-#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
-
-// Fast inlined version of PyObject_IS_GC()
-static inline int
-_PyObject_IS_GC(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    return (_PyType_IS_GC(type)
-            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
-}
-
 // Fast inlined version of PyObject_Hash(). Dictionaries are very
 // likely to include string keys (class and instance attributes,
 // json, ...) so we include a fast path for strings.

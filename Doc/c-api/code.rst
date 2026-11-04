@@ -315,9 +315,9 @@ may change without deprecation warnings.
 
    Return a new opaque index value used to adding data to code objects.
 
-   You generally call this function once (per interpreter) and use the result
-   with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
-   data on individual code objects.
+   You generally call this function once (per interpreter). Use the result with
+   :c:func:`PyUnstable_Code_GetExtra` and :c:func:`PyUnstable_Code_SetExtra`
+   to manipulate data on individual code objects.
 
    If *free* is not ``NULL``: when a code object is deallocated,
    *free* will be called on non-``NULL`` data stored under the new index.
