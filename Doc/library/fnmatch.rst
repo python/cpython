@@ -46,8 +46,10 @@ module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
-Unless stated otherwise, "filename string" and "pattern string" either refer to
-:class:`str` or ``ISO-8859-1`` encoded :class:`bytes` objects. Note that the
+Unless stated otherwise, "filename string" and "pattern string" refer to
+:class:`str` or ``ISO-8859-1`` encoded :class:`bytes` objects.
+In addition to filename strings, :func:`.filter` and :func:`.filterfalse`
+accept :term:`path-like objects <path-like object>` in *names*. Note that the
 functions documented below do not allow to mix a :class:`!bytes` pattern with
 a :class:`!str` filename, and vice-versa.
 
@@ -85,28 +87,26 @@ functions: :func:`~fnmatch.fnmatch`, :func:`fnmatchcase`, :func:`.filter`,
 
 .. function:: filter(names, pat)
 
-   Construct a list from those elements of the :term:`iterable` of filenames
-   *names* that match the pattern string *pat*.
+   Construct a list from those elements of the :term:`iterable` of filename
+   strings *names* that match the pattern string *pat*.
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
 
-   The filenames may be strings or path-like objects. Each filename is
-   normalized using :func:`os.path.normcase` for matching; the original
-   objects are preserved in the returned list.
+   .. versionchanged:: next
+      Added support for path-like objects in *names*.
 
 
 .. function:: filterfalse(names, pat)
 
-   Construct a list from those elements of the :term:`iterable` of filenames
-   *names* that do not match the pattern string *pat*.
+   Construct a list from those elements of the :term:`iterable` of filename
+   strings *names* that do not match the pattern string *pat*.
    It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
    but implemented more efficiently.
 
-   The filenames may be strings or path-like objects. Each filename is
-   normalized using :func:`os.path.normcase` for matching; the original
-   objects are preserved in the returned list.
-
    .. versionadded:: 3.14
+
+   .. versionchanged:: next
+      Added support for path-like objects in *names*.
 
 
 .. function:: translate(pat)

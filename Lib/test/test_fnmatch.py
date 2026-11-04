@@ -332,6 +332,16 @@ class FilterTestCase(unittest.TestCase):
         self.assertRaises(TypeError, filter, ['test'], b'*')
         self.assertRaises(TypeError, filter, [b'test'], '*')
 
+
+    def test_mix_bytes_str_pathlike(self):
+        path = pathlib.Path("test")
+        self.assertRaises(TypeError, filter, [path], b'*')
+        self.assertRaises(TypeError, filter, [path, b'test'], '*')
+        self.assertRaises(TypeError, filter, [b'test', path], '*')
+        self.assertRaises(TypeError, filter, [path, 'test'], b'*')
+        self.assertRaises(TypeError, filter, ['test', path], b'*')
+        self.assertEqual(filter([path, 'other'], 'te*'), [path])
+
     def test_case(self):
         self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),
                          ['Test.py', 'Test.PL'] if IGNORECASE else ['Test.py'])
@@ -359,6 +369,16 @@ class FilterFalseTestCase(unittest.TestCase):
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filterfalse, ['test'], b'*')
         self.assertRaises(TypeError, filterfalse, [b'test'], '*')
+
+
+    def test_mix_bytes_str_pathlike(self):
+        path = pathlib.Path("test")
+        self.assertRaises(TypeError, filterfalse, [path], b'*')
+        self.assertRaises(TypeError, filterfalse, [path, b'test'], '*')
+        self.assertRaises(TypeError, filterfalse, [b'test', path], '*')
+        self.assertRaises(TypeError, filterfalse, [path, 'test'], b'*')
+        self.assertRaises(TypeError, filterfalse, ['test', path], b'*')
+        self.assertEqual(filterfalse([path, 'other'], 'te*'), ['other'])
 
     def test_case(self):
         self.assertEqual(filterfalse(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),
