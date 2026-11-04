@@ -193,7 +193,7 @@ test_setref_strict_aliasing(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg
         return NULL;
     }
     first_refcnt = Py_REFCNT(first);
-    second_refcnt = Py_REFCNT(first);
+    second_refcnt = Py_REFCNT(second);
 
     // Both pointer arguments alias. The assignment makes first the old value
     // that Py_SETREF() must release before storing second.
