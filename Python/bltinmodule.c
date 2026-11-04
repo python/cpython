@@ -566,65 +566,37 @@ typedef struct {
 
 #define _filterobject_CAST(op)      ((filterobject *)(op))
 
+/*[clinic input]
+class filter "filterobject *" "&PyFilter_Type"
+@vectorcall
+@classmethod
+filter.__new__ as filter_new
+
+    function as func: object
+    iterable as seq: object
+    /
+
+Return an iterator over items of iterable where function(item) is true.
+
+If function is None, return the items that are true.
+[clinic start generated code]*/
+
 static PyObject *
-filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+filter_new_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
+/*[clinic end generated code: output=2134a9f0032a6037 input=57836123a59c4d91]*/
 {
-    PyObject *func, *seq;
-    PyObject *it;
-    filterobject *lz;
-
-    if ((type == &PyFilter_Type || type->tp_init == PyFilter_Type.tp_init) &&
-        !_PyArg_NoKeywords("filter", kwds))
+    PyObject *it = PyObject_GetIter(seq);
+    if (it == NULL) {
         return NULL;
+    }
 
-    if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
-        return NULL;
-
-    /* Get iterator. */
-    it = PyObject_GetIter(seq);
-    if (it == NULL)
-        return NULL;
-
-    /* create filterobject structure */
-    lz = (filterobject *)type->tp_alloc(type, 0);
+    filterobject *lz = (filterobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(it);
         return NULL;
     }
 
     lz->func = Py_NewRef(func);
-    lz->it = it;
-
-    return (PyObject *)lz;
-}
-
-static PyObject *
-filter_vectorcall(PyObject *type, PyObject * const*args,
-                size_t nargsf, PyObject *kwnames)
-{
-    PyTypeObject *tp = _PyType_CAST(type);
-    if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("filter", nargs, 2, 2)) {
-        return NULL;
-    }
-
-    PyObject *it = PyObject_GetIter(args[1]);
-    if (it == NULL) {
-        return NULL;
-    }
-
-    filterobject *lz = (filterobject *)tp->tp_alloc(tp, 0);
-
-    if (lz == NULL) {
-        Py_DECREF(it);
-        return NULL;
-    }
-
-    lz->func = Py_NewRef(args[0]);
     lz->it = it;
 
     return (PyObject *)lz;
@@ -699,14 +671,6 @@ static PyMethodDef filter_methods[] = {
     {NULL,           NULL}           /* sentinel */
 };
 
-PyDoc_STRVAR(filter_doc,
-"filter(function, iterable, /)\n\
---\n\
-\n\
-Return an iterator yielding those items of iterable for which\n\
-function(item) is true.  If function is None, return the items that\n\
-are true.");
-
 PyTypeObject PyFilter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "filter",                           /* tp_name */
@@ -730,7 +694,7 @@ PyTypeObject PyFilter_Type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    filter_doc,                         /* tp_doc */
+    filter_new__doc__,                  /* tp_doc */
     filter_traverse,                    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -749,7 +713,7 @@ PyTypeObject PyFilter_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     filter_new,                         /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = filter_vectorcall
+    .tp_vectorcall = filter_vectorcall,
 };
 
 
@@ -3139,41 +3103,45 @@ typedef struct {
 
 #define _zipobject_CAST(op)     ((zipobject *)(op))
 
+/*[clinic input]
+class zip "zipobject *" "&PyZip_Type"
+@vectorcall
+@classmethod
+zip.__new__ as zip_new
+
+    *iterables: array
+    strict: bool = False
+
+Iterate over several iterables in parallel, yielding tuples.
+
+The zip object yields n-length tuples, where n is the number of
+iterables passed as positional arguments to zip().  The i-th element
+in every tuple comes from the i-th iterable argument to zip().  This
+continues until the shortest argument is exhausted.
+
+If strict is true and one of the arguments is exhausted before the
+others, raise a ValueError.
+
+   >>> list(zip('abcdefg', range(3), range(4)))
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]
+[clinic start generated code]*/
+
 static PyObject *
-zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
+             Py_ssize_t iterables_length, int strict)
+/*[clinic end generated code: output=5e1a30829ce1f6ab input=4bd8e6a24e4bfb2e]*/
 {
     zipobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    Py_ssize_t tuplesize;
-    int strict = 0;
-
-    if (kwds) {
-        PyObject *empty = PyTuple_New(0);
-        if (empty == NULL) {
-            return NULL;
-        }
-        static char *kwlist[] = {"strict", NULL};
-        int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:zip", kwlist, &strict);
-        Py_DECREF(empty);
-        if (!parsed) {
-            return NULL;
-        }
-    }
-
-    /* args must be a tuple */
-    assert(PyTuple_Check(args));
-    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
-    ittuple = PyTuple_New(tuplesize);
+    ittuple = PyTuple_New(iterables_length);
     if (ittuple == NULL)
         return NULL;
-    for (i=0; i < tuplesize; ++i) {
-        PyObject *item = PyTuple_GET_ITEM(args, i);
-        PyObject *it = PyObject_GetIter(item);
+    for (i=0; i < iterables_length; ++i) {
+        PyObject *it = PyObject_GetIter(iterables[i]);
         if (it == NULL) {
             Py_DECREF(ittuple);
             return NULL;
@@ -3182,12 +3150,12 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     /* create a result holder */
-    result = PyTuple_New(tuplesize);
+    result = PyTuple_New(iterables_length);
     if (result == NULL) {
         Py_DECREF(ittuple);
         return NULL;
     }
-    for (i=0 ; i < tuplesize ; i++) {
+    for (i=0 ; i < iterables_length ; i++) {
         PyTuple_SET_ITEM(result, i, Py_NewRef(Py_None));
     }
 
@@ -3199,7 +3167,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     lz->ittuple = ittuple;
-    lz->tuplesize = tuplesize;
+    lz->tuplesize = iterables_length;
     lz->result = result;
     lz->strict = strict;
 
@@ -3345,21 +3313,6 @@ static PyMethodDef zip_methods[] = {
     {NULL}  /* sentinel */
 };
 
-PyDoc_STRVAR(zip_doc,
-"zip(*iterables, strict=False)\n\
---\n\
-\n\
-The zip object yields n-length tuples, where n is the number of\n\
-iterables passed as positional arguments to zip().  The i-th element\n\
-in every tuple comes from the i-th iterable argument to zip().  This\n\
-continues until the shortest argument is exhausted.\n\
-\n\
-If strict is true and one of the arguments is exhausted before the\n\
-others, raise a ValueError.\n\
-\n\
-   >>> list(zip('abcdefg', range(3), range(4)))\n\
-   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]");
-
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "zip",                              /* tp_name */
@@ -3383,7 +3336,7 @@ PyTypeObject PyZip_Type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    zip_doc,                            /* tp_doc */
+    zip_new__doc__,                     /* tp_doc */
     zip_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
@@ -3402,6 +3355,7 @@ PyTypeObject PyZip_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     zip_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = zip_vectorcall,
 };
 
 
