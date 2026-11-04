@@ -509,7 +509,7 @@ class TimeTestCase(unittest.TestCase):
         try:
             # Make sure we can switch to UTC time and results are correct
             # Note that unknown timezones default to UTC.
-            # Note that altzone is undefined in UTC, as there is no DST
+            # Note that altzone equals timezone in UTC, as there is no DST
             environ['TZ'] = eastern
             time.tzset()
             environ['TZ'] = utc
@@ -519,6 +519,7 @@ class TimeTestCase(unittest.TestCase):
                 )
             self.assertEqual(time.daylight, 0)
             self.assertEqual(time.timezone, 0)
+            self.assertEqual(time.altzone, 0)
             self.assertEqual(time.localtime(xmas2002).tm_isdst, 0)
 
             # Make sure we can switch to US/Eastern

@@ -1854,7 +1854,7 @@ error:
     return NULL;
 }
 
-#ifndef HAVE_DECL_TZNAME
+#ifndef HAVE_TIMEZONE_GLOBALS
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1875,7 +1875,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
-#endif // !HAVE_DECL_TZNAME
+#endif // !HAVE_TIMEZONE_GLOBALS
 
 static int
 init_timezone(PyObject *m)
@@ -1904,7 +1904,7 @@ init_timezone(PyObject *m)
 
     And I'm lazy and hate C so nyer.
      */
-#ifdef HAVE_DECL_TZNAME
+#ifdef HAVE_TIMEZONE_GLOBALS
     PyObject *otz0, *otz1;
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
@@ -1913,7 +1913,9 @@ init_timezone(PyObject *m)
 #ifdef HAVE_ALTZONE
     ADD_INT("altzone", altzone);
 #else
-    ADD_INT("altzone", _Py_timezone-3600);
+    /* libc does not provide the DST offset.  Assume a one hour shift when
+       the zone has DST, otherwise use the standard offset. */
+    ADD_INT("altzone", _Py_daylight ? _Py_timezone - 3600 : _Py_timezone);
 #endif
     ADD_INT("daylight", _Py_daylight);
 #ifdef MS_WINDOWS
@@ -1942,7 +1944,7 @@ init_timezone(PyObject *m)
     if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
-#else // !HAVE_DECL_TZNAME
+#else // !HAVE_TIMEZONE_GLOBALS
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;
     struct tm p;
@@ -1987,7 +1989,7 @@ init_timezone(PyObject *m)
     if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
-#endif // !HAVE_DECL_TZNAME
+#endif // !HAVE_TIMEZONE_GLOBALS
 #undef ADD_INT
 
     if (PyErr_Occurred()) {

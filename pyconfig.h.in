@@ -1622,6 +1622,9 @@
 /* Define to 1 if you have the 'times' function. */
 #undef HAVE_TIMES
 
+/* Define if time.h declares the timezone, daylight and tzname variables. */
+#undef HAVE_TIMEZONE_GLOBALS
+
 /* Define to 1 if you have the 'tmpfile' function. */
 #undef HAVE_TMPFILE
 
