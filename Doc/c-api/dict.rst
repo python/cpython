@@ -474,6 +474,10 @@ Dictionary objects
 
    This is the same as ``PyDict_Merge(a, b, 1)`` in C.
    Return ``0`` on success or ``-1`` if an exception was raised.
+   
+   Similar to ``a.update(b)`` in Python except that :c:func:`PyDict_Update`
+   doesn't fall back to the iterating over a sequence of key value pairs if the
+   second argument has no "keys" attribute.
 
    .. note::
 
