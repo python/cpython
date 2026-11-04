@@ -9,6 +9,7 @@ import threading
 import time
 
 from .collector import Collector, filter_internal_frames
+from .module_utils import extract_module_name, get_python_path_info
 from .opcode_utils import get_opcode_info, format_opcode
 try:
     from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION, THREAD_STATUS_MAIN_THREAD
@@ -143,6 +144,8 @@ class GeckoCollector(Collector):
         self.skip_idle = skip_idle
         self.opcodes_enabled = opcodes
         self.start_time = time.monotonic() * 1000  # milliseconds since start
+
+        self._path_info = get_python_path_info()
 
         # Global string table (shared across all threads)
         self.global_strings = ["(root)"]  # Start with root
@@ -643,9 +646,41 @@ class GeckoCollector(Collector):
         resource_types = resource_table["type"]
 
         resource_idx = len(resource_names)
-        resource_name = (
-            os.path.basename(filename) if "/" in filename else filename
+        norm_filename = (
+            filename.replace("\\", "/") if "\\" in filename else filename
         )
+        if not norm_filename or norm_filename.startswith("<"):
+            resource_name = filename
+        else:
+            module_name, module_type = extract_module_name(
+                norm_filename, self._path_info
+            )
+            if module_type != "other":
+                resource_name = module_name
+            else:
+                is_abs = norm_filename.startswith("/") or (
+                    len(norm_filename) > 1 and norm_filename[1] == ":"
+                )
+                if is_abs:
+                    parts = norm_filename.rstrip("/").rsplit("/", 2)
+                    if len(parts) >= 2:
+                        parent = parts[-2]
+                        basename = parts[-1]
+                        if (
+                            basename == "__init__.py"
+                            and parent
+                            and not parent.endswith(":")
+                        ):
+                            resource_name = parent
+                        elif parent and not parent.endswith(":"):
+                            resource_name = f"{parent}/{basename}"
+                        else:
+                            resource_name = basename
+                    else:
+                        resource_name = os.path.basename(filename) or filename
+                else:
+                    resource_name = module_name
+
         name_idx = self._intern_string(resource_name)
 
         resource_libs.append(None)
