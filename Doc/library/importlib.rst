@@ -4,9 +4,6 @@
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
 
-.. moduleauthor:: Brett Cannon <brett@python.org>
-.. sectionauthor:: Brett Cannon <brett@python.org>
-
 .. versionadded:: 3.1
 
 **Source code:** :source:`Lib/importlib/__init__.py`
@@ -17,7 +14,7 @@
 Introduction
 ------------
 
-The purpose of the :mod:`importlib` package is three-fold.
+The purpose of the :mod:`!importlib` package is three-fold.
 
 One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
@@ -215,8 +212,8 @@ Functions
       in unexpected behavior. It's recommended to use the :class:`threading.Lock`
       or other synchronization primitives for thread-safe module reloading.
 
-:mod:`importlib.abc` -- Abstract base classes related to import
----------------------------------------------------------------
+:mod:`!importlib.abc` -- Abstract base classes related to import
+----------------------------------------------------------------
 
 .. module:: importlib.abc
     :synopsis: Abstract base classes related to import
@@ -226,7 +223,7 @@ Functions
 --------------
 
 
-The :mod:`importlib.abc` module contains all of the core abstract base classes
+The :mod:`!importlib.abc` module contains all of the core abstract base classes
 used by :keyword:`import`. Some subclasses of the core abstract base classes
 are also provided to help in implementing the core ABCs.
 
@@ -275,6 +272,28 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of :data:`NotImplemented`.
 
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`MetaPathFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generally be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: 3.15
+
 
 .. class:: PathEntryFinder
 
@@ -307,6 +326,28 @@ ABC hierarchy::
       :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
 
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      Raises :exc:`ValueError` if *parent* is not a package module.
+
+      .. warning::
+         This method can potentially yield a very large number of objects, and
+         it may carry out IO operations when computing these values.
+
+         Because of this, it will generally be desirable to compute the result
+         values on-the-fly, as they are needed. As such, the returned object is
+         only guaranteed to be an :class:`iterable <collections.abc.Iterable>`,
+         instead of a :class:`list` or other
+         :class:`collection <collections.abc.Collection>` type.
+
+      .. versionadded:: 3.15
+
 
 .. class:: Loader
 
@@ -314,11 +355,11 @@ ABC hierarchy::
     See :pep:`302` for the exact definition for a loader.
 
     Loaders that wish to support resource reading should implement a
-    :meth:`get_resource_reader` method as specified by
+    :meth:`!get_resource_reader` method as specified by
     :class:`importlib.resources.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
-       Introduced the optional :meth:`get_resource_reader` method.
+       Introduced the optional :meth:`!get_resource_reader` method.
 
    .. versionchanged:: 3.15
       Removed the ``load_module()`` method.
@@ -596,8 +637,8 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
-:mod:`importlib.machinery` -- Importers and path hooks
-------------------------------------------------------
+:mod:`!importlib.machinery` -- Importers and path hooks
+-------------------------------------------------------
 
 .. module:: importlib.machinery
     :synopsis: Importers and path hooks
@@ -676,7 +717,8 @@ find and load modules.
 
     .. versionchanged:: 3.5
        As part of :pep:`489`, the builtin importer now implements
-       :meth:`Loader.create_module` and :meth:`Loader.exec_module`
+       :meth:`Loader.create_module <importlib.abc.Loader.create_module>`
+       and :meth:`Loader.exec_module <importlib.abc.Loader.exec_module>`
 
 
 .. class:: FrozenImporter
@@ -689,7 +731,8 @@ find and load modules.
     instantiation.
 
     .. versionchanged:: 3.4
-       Gained :meth:`~Loader.create_module` and :meth:`~Loader.exec_module`
+       Gained :meth:`~importlib.abc.Loader.create_module` and
+       :meth:`~importlib.abc.Loader.exec_module`
        methods.
 
 
@@ -1112,8 +1155,8 @@ find and load modules.
       Path to the ``.fwork`` file for the extension module.
 
 
-:mod:`importlib.util` -- Utility code for importers
----------------------------------------------------
+:mod:`!importlib.util` -- Utility code for importers
+----------------------------------------------------
 
 .. module:: importlib.util
     :synopsis: Utility code for importers
@@ -1139,8 +1182,8 @@ an :term:`importer`.
    with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
    value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
    The ``cpython-32`` string comes from the current magic tag (see
-   :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
-   :exc:`NotImplementedError` will be raised).
+   :attr:`sys.implementation.cache_tag <sys.implementation>`; if it is not
+   defined then :exc:`NotImplementedError` will be raised).
 
    The *optimization* parameter is used to specify the optimization level of the
    bytecode file. An empty string represents no optimization, so
@@ -1172,7 +1215,7 @@ an :term:`importer`.
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
    to :pep:`3147` or :pep:`488` format, a :exc:`ValueError` is raised. If
-   :attr:`sys.implementation.cache_tag` is not defined,
+   :attr:`sys.implementation.cache_tag <sys.implementation>` is not defined,
    :exc:`NotImplementedError` is raised.
 
    .. versionadded:: 3.4
@@ -1222,7 +1265,8 @@ an :term:`importer`.
    If **name** is for a submodule (contains a dot), the parent module is
    automatically imported.
 
-   **name** and **package** work the same as for :func:`import_module`.
+   **name** and **package** work the same as for
+   :func:`importlib.import_module`.
 
    .. versionadded:: 3.4
 
@@ -1252,7 +1296,8 @@ an :term:`importer`.
    A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
    instance based on a loader.  The parameters have the same meaning as they do
    for ModuleSpec.  The function uses available :term:`loader` APIs, such as
-   :meth:`InspectLoader.is_package`, to fill in any missing
+   :meth:`InspectLoader.is_package
+   <importlib.abc.InspectLoader.is_package>`, to fill in any missing
    information on the spec.
 
    .. versionadded:: 3.4

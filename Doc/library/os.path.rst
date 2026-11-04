@@ -36,7 +36,7 @@ the :mod:`glob` module.)
 
    Since different operating systems have different path name conventions, there
    are several versions of this module in the standard library.  The
-   :mod:`os.path` module is always the path module suitable for the operating
+   :mod:`!os.path` module is always the path module suitable for the operating
    system Python is running on, and therefore usable for local paths.  However,
    you can also import and use the individual modules if you want to manipulate
    a path that is *always* in one of the different formats.  They all have the
@@ -58,6 +58,18 @@ the :mod:`glob` module.)
 
    Return a normalized absolutized version of the pathname *path*. On most
    platforms, this is equivalent to calling ``normpath(join(os.getcwd(), path))``.
+
+   On Windows the path is normalized by the operating system,
+   therefore the result can differ from ``normpath(join(os.getcwd(), path))``.
+   A drive-relative path is resolved against the current directory
+   of the specified drive, and the drive letter is capitalized.
+   Trailing dots and spaces are stripped.
+   For example::
+
+      >>> os.path.abspath('c:spam')
+      'C:\\Temp\\spam'
+      >>> os.path.abspath('c:/temp/spam. . .')
+      'c:\\temp\\spam'
 
    .. seealso:: :func:`os.path.join` and :func:`os.path.normpath`.
 
@@ -97,15 +109,17 @@ the :mod:`glob` module.)
 
 .. function:: commonprefix(list, /)
 
-   Return the longest path prefix (taken character-by-character) that is a
-   prefix of all paths in  *list*.  If *list* is empty, return the empty string
+   Return the longest string prefix (taken character-by-character) that is a
+   prefix of all strings in *list*.  If *list* is empty, return the empty string
    (``''``).
 
-   .. note::
+   .. warning::
 
       This function may return invalid paths because it works a
-      character at a time.  To obtain a valid path, see
-      :func:`commonpath`.
+      character at a time.
+      If you need a **common path prefix**, then the algorithm
+      implemented in this function is not secure. Use
+      :func:`commonpath` for finding a common path prefix.
 
       ::
 
@@ -117,6 +131,14 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. deprecated:: 3.15
+      Deprecated in favor of :func:`os.path.commonpath` for path prefixes.
+      The :func:`os.path.commonprefix` function is being deprecated due to
+      having a misleading name and module. The function is not safe to use for
+      path prefixes despite being included in a module about path manipulation,
+      meaning it is easy to accidentally introduce path traversal
+      vulnerabilities into Python programs by using this function.
 
 
 .. function:: dirname(path, /)
@@ -425,6 +447,9 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating
    system). On Windows, this function will also resolve MS-DOS (also called 8.3)
    style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
+   The returned path uses the case reported by the operating system,
+   which can differ from the case of *path*,
+   in particular the drive letter is capitalized.
 
    By default, the path is evaluated up to the first component that does not
    exist, is a symlink loop, or whose evaluation raises :exc:`OSError`.

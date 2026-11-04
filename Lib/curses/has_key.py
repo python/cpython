@@ -7,7 +7,7 @@ import _curses
 
 # Table mapping curses keys to the terminfo capability name
 
-_capability_names = {
+_capability_names = frozendict({
     _curses.KEY_A1: 'ka1',
     _curses.KEY_A3: 'ka3',
     _curses.KEY_B2: 'kb2',
@@ -157,7 +157,7 @@ _capability_names = {
     _curses.KEY_SUSPEND: 'kspd',
     _curses.KEY_UNDO: 'kund',
     _curses.KEY_UP: 'kcuu1'
-    }
+    })
 
 def has_key(ch):
     if isinstance(ch, str):
@@ -170,7 +170,7 @@ def has_key(ch):
 
     #Check the current terminal description for that capability;
     #if present, return true, else return false.
-    if _curses.tigetstr( capability_name ):
+    if _curses.tigetstr(capability_name):
         return True
     else:
         return False

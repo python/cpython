@@ -21,6 +21,7 @@ tree but are maintained separately and are available from
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
 * `python-docs-theme <https://pypi.org/project/python-docs-theme/>`_
+* `sphinx-linklint <https://pypi.org/project/sphinx-linklint/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
@@ -57,6 +58,8 @@ Available make targets are:
 * "venv", which creates a virtual environment with all necessary tools
   installed.
 
+* "lock", which regenerates the pinned dependencies in ``pylock.toml``.
+
 * "html", which builds standalone HTML files for offline viewing.
 
 * "htmlview", which re-uses the "html" builder, but then opens the main page
@@ -79,6 +82,9 @@ Available make targets are:
 
 * "text", which builds a plain text file for each source file.
 
+* "texinfo", which builds Texinfo source files as input to ``makeinfo`` to
+  produce Info documents.
+
 * "epub", which builds an EPUB document, suitable to be viewed on e-book
   readers.
 
@@ -96,6 +102,10 @@ Available make targets are:
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
   ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
+
+* "doctest", which runs doctests in the documentation.
+
+* "gettext", which generates gettext message catalog templates.
 
 * "check", which checks for frequent markup errors.
 

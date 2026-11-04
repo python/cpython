@@ -28,6 +28,8 @@ DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 def uop_cache_info(uop: Uop) -> list[str] | None:
     if uop.name == "_SPILL_OR_RELOAD":
         return None
+    if uop.properties.records_value:
+        return None
     default = "{ -1, -1, -1 },\n"
     table_size = MAX_CACHED_REGISTER + 1
     entries = [ default ] * table_size
@@ -96,7 +98,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n\n")
     out.emit("const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {\n");
     for uop in analysis.uops.values():
-        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
+        if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super() and not uop.properties.records_value:
             for inputs, outputs, _ in get_uop_cache_depths(uop):
                 out.emit(f"[{uop.name}_r{inputs}{outputs}] = {uop.name},\n")
     out.emit("};\n\n")
@@ -110,8 +112,9 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
         if uop.is_viable() and uop.properties.tier != 1 and not uop.is_super():
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
-            for inputs, outputs, _ in get_uop_cache_depths(uop):
-                out.emit(f'[{uop.name}_r{inputs}{outputs}] = "{uop.name}_r{inputs}{outputs}",\n')
+            if not uop.properties.records_value:
+                for inputs, outputs, _ in get_uop_cache_depths(uop):
+                    out.emit(f'[{uop.name}_r{inputs}{outputs}] = "{uop.name}_r{inputs}{outputs}",\n')
     out.emit("};\n")
     out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
     out.emit("switch(opcode) {\n")
@@ -131,7 +134,6 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("}\n")
     out.emit("}\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
-
 
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO

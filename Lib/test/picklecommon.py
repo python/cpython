@@ -17,6 +17,11 @@ class E(C):
     def __getinitargs__(self):
         return ()
 
+# For test_load_bad_constructor
+class BadConstructor:
+    def __init__(self, *args):
+        raise TypeError("bad constructor")
+
 import __main__
 __main__.C = C
 C.__module__ = "__main__"
@@ -24,6 +29,8 @@ __main__.D = D
 D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
+__main__.BadConstructor = BadConstructor
+BadConstructor.__module__ = "__main__"
 
 # Simple mutable object.
 class Object(object):
@@ -263,6 +270,17 @@ myclasses = [MyInt, MyLong, MyFloat,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
 
+try:
+    frozendict
+except NameError:
+    # Python 3.14 and older
+    pass
+else:
+    class MyFrozenDict(dict):
+        sample = frozendict({"a": 1, "b": 2})
+    myclasses.append(MyFrozenDict)
+
+
 # For test_newobj_overridden_new
 class MyIntWithNew(int):
     def __new__(cls, value):
@@ -388,3 +406,48 @@ class PyMethodsTest:
 class Subclass(tuple):
     class Nested(str):
         pass
+
+# For test_private_methods
+class PrivateMethods:
+    def __init__(self, value):
+        self.value = value
+
+    def __private_method(self):
+        return self.value
+
+    def get_method(self):
+        return self.__private_method
+
+    @classmethod
+    def get_unbound_method(cls):
+        return cls.__private_method
+
+    @classmethod
+    def __private_classmethod(cls):
+        return 43
+
+    @classmethod
+    def get_classmethod(cls):
+        return cls.__private_classmethod
+
+    @staticmethod
+    def __private_staticmethod():
+        return 44
+
+    @classmethod
+    def get_staticmethod(cls):
+        return cls.__private_staticmethod
+
+# For test_private_nested_classes
+class PrivateNestedClasses:
+    @classmethod
+    def get_nested(cls):
+        return cls.__Nested
+
+    class __Nested:
+        @classmethod
+        def get_nested2(cls):
+            return cls.__Nested2
+
+        class __Nested2:
+            pass

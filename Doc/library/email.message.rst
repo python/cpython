@@ -3,9 +3,6 @@
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
-.. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
-.. sectionauthor:: R. David Murray <rdmurray@bitdance.com>,
-                   Barry A. Warsaw <barry@python.org>
 
 **Source code:** :source:`Lib/email/message.py`
 
@@ -14,7 +11,7 @@
 .. versionadded:: 3.6 [1]_
 
 The central class in the :mod:`email` package is the :class:`EmailMessage`
-class, imported from the :mod:`email.message` module.  It is the base class for
+class, imported from the :mod:`!email.message` module.  It is the base class for
 the :mod:`email` object model.  :class:`EmailMessage` provides the core
 functionality for setting and querying header fields, for accessing message
 bodies, and for creating or modifying structured messages.
@@ -636,7 +633,7 @@ message objects.
    .. method:: make_mixed(boundary=None)
 
       Convert a non-``multipart``, a ``multipart/related``, or a
-      ``multipart-alternative`` into a ``multipart/mixed``, moving any existing
+      ``multipart/alternative`` into a ``multipart/mixed``, moving any existing
       :mailheader:`Content-` headers and payload into a (new) first part of the
       ``multipart``.  If *boundary* is specified, use it as the boundary string
       in the multipart, otherwise leave the boundary to be automatically

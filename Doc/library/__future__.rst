@@ -15,7 +15,7 @@ before the release in which the feature becomes standard.
 
 While these future statements are given additional special meaning by the
 Python compiler, they are still executed like any other import statement and
-the :mod:`__future__` exists and is handled by the import system the same way
+the :mod:`!__future__` exists and is handled by the import system the same way
 any other Python module would be. This design serves three purposes:
 
 * To avoid confusing existing tools that analyze import statements and expect to
@@ -23,17 +23,17 @@ any other Python module would be. This design serves three purposes:
 
 * To document when incompatible changes were introduced, and when they will be
   --- or were --- made mandatory.  This is a form of executable documentation, and
-  can be inspected programmatically via importing :mod:`__future__` and examining
+  can be inspected programmatically via importing :mod:`!__future__` and examining
   its contents.
 
 * To ensure that :ref:`future statements <future>` run under releases prior to
-  Python 2.1 at least yield runtime exceptions (the import of :mod:`__future__`
+  Python 2.1 at least yield runtime exceptions (the import of :mod:`!__future__`
   will fail, because there was no module of that name prior to 2.1).
 
 Module Contents
 ---------------
 
-No feature description will ever be deleted from :mod:`__future__`. Since its
+No feature description will ever be deleted from :mod:`!__future__`. Since its
 introduction in Python 2.1 the following features have found their way into the
 language using this mechanism:
 

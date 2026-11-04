@@ -9,7 +9,8 @@ from ._text import FoldedCase
 class RawPolicy(email.policy.EmailPolicy):
     def fold(self, name, value):
         folded = self.linesep.join(
-            textwrap.indent(value, prefix=' ' * 8, predicate=lambda line: True)
+            textwrap
+            .indent(value, prefix=' ' * 8, predicate=lambda line: True)
             .lstrip()
             .splitlines()
         )
@@ -53,7 +54,7 @@ class Message(email.message.Message):
     <BLANKLINE>
     """
 
-    multiple_use_keys = set(
+    multiple_use_keys = frozenset(
         map(
             FoldedCase,
             [

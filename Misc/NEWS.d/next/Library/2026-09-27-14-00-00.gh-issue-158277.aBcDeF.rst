@@ -1,0 +1,3 @@
+Fix :mod:`sqlite3` CLI completer to include view columns in
+column-name completion.
+

@@ -1,6 +1,0 @@
-Fixed a bug in the folding of comments when flattening an email message
-using a modern email policy. Comments consisting of a very long sequence of
-non-foldable characters could trigger a forced line wrap that omitted the
-required leading space on the continuation line, causing the remainder of
-the comment to be interpreted as a new header field. This enabled header
-injection with carefully crafted inputs.
