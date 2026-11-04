@@ -311,6 +311,22 @@ class BaseTestUUID:
 
         self.assertEqual(repr(CustomUUID(int=1)), "CustomUUID('custom uuid')")
 
+    def test_bad_hex_error_message(self):
+        # A hex string that does not hold exactly 32 hex digits raises the
+        # same error message in the C and Python implementations.
+        for text in ('',
+                     '1234567812345678123456781234567',
+                     '123456781234567812345678123456789',
+                     '{123456781234567812345678123456789}',
+                     '12345678-1234-5678-1234-567812345678-9',
+                     '12345678-1234-5678-1234-56781234567',
+                     '12345678-1234-5678-1234-5678123456'):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError) as cm:
+                    self.uuid.UUID(text)
+                self.assertEqual(str(cm.exception),
+                                 'badly formed hexadecimal UUID string')
+
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)
