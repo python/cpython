@@ -1288,10 +1288,10 @@ Primaries
 Primaries represent the most tightly bound operations of the language.
 They are:
 
-- Bare :ref:`atoms <atoms>`
-- :ref:`Attribute references <attribute-references>`, such as ``math.pi``
-- :ref:`Subscriptions and slicings <subscriptions>`, such as ``names[0]``
-- :ref:`Calls <calls>`, such as ``print()``
+- bare :ref:`atoms <atoms>`,
+- :ref:`attribute references <attribute-references>`, such as ``math.pi``,
+- :ref:`subscriptions and slicings <subscriptions>`, such as ``names[0]``, and
+- :ref:`calls <calls>`, such as ``print()``.
 
 The formal syntax of primaries is:
 
@@ -1322,12 +1322,10 @@ For example::
 
    >>> import math
 
-   >>> # get the `pi` attribute of the `math` module
-   >>> math.pi
+   >>> math.pi  # get the `pi` attribute of the `math` module
    3.141592653589793
 
-   >>> # get the `real` part of a complex number
-   >>> (3 + 2j).real
+   >>> (3 + 2j).real  # get the `real` part of a complex number
    3.0
 
 At runtime, the primary expression is evaluated, and the result's
@@ -1337,17 +1335,19 @@ By default, :meth:`!__getattribute__` looks attributes up
 in several places, such as the object's :term:`instance dictionary`,
 its type's attributes and descriptors, and the type's
 :meth:`~object.__getattr__` method, if any.
-Typically, this method returns the same object each time it's called
-with a given object and name, or it raises :exc:`AttributeError` if
-the attribute is not found.
+Typically, :meth:`!__getattribute__` raises :exc:`AttributeError` if
+the attribute is not found, and it returns the same object each time
+it's called with a given object and name.
 However, the method is called each time an attribute access is evaluated,
-and it can return a differerent object each time.
+and it can raise different errors or return a differerent object each time.
 
-To customize the behavior of attribute references on a class you define,
-it is typically easier to add a descriptor (for example, using :class:`property`)
-or to override :meth:`~object.__getattr__`, rather than override
-:meth:`!__getattribute__` itself.
-See :ref:`attribute-access` for details.
+.. note::
+
+   When customizing the behavior of attribute references on a class you define,
+   consider adding a descriptor (for example, using :class:`property`)
+   or overriding :meth:`~object.__getattr__`, rather than replacing the entire
+   attribute lookup mechanism by overriding :meth:`!__getattribute__` itself.
+   See :ref:`attribute-access` for details.
 
 Attribute references may also be used as targets in
 :ref:`assignment <assignment>` or :ref:`deletion <del>` statements.
@@ -1370,6 +1370,11 @@ instead of :meth:`~object.__getattribute__`.
    >>> del obj.color  # delete the `color` attribute on `obj`
    >>> obj
    namespace()
+
+   >>> del obj.color  # delete an attribute that doesn't exist any more
+   Traceback (most recent call last):
+      ...
+   AttributeError: 'types.SimpleNamespace' object has no attribute 'color'
 
 
 The formal grammar of attribute references is:
