@@ -19,13 +19,7 @@
 
 import termios
 
-
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import cast
-else:
-    cast = lambda typ, val: val
+from typing import cast
 
 
 class TermState:

@@ -198,7 +198,7 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 static inline PyDateTime_CAPI *
 _PyDateTime_IMPORT(void) {
-    PyDateTime_CAPI *val = _Py_atomic_load_ptr(&PyDateTimeAPI);
+    PyDateTime_CAPI *val = (PyDateTime_CAPI *)_Py_atomic_load_ptr(&PyDateTimeAPI);
     if (val == NULL) {
         PyDateTime_CAPI *capi = (PyDateTime_CAPI *)PyCapsule_Import(
             PyDateTime_CAPSULE_NAME, 0);

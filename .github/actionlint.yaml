@@ -1,8 +1,11 @@
-self-hosted-runner:
-  # Pending https://github.com/rhysd/actionlint/pull/615
-  labels: ["windows-2025-vs2026"]
-
 config-variables: null
+
+# Pending release of actionlint > 1.7.12 for ubuntu-26.04* support:
+# https://github.com/rhysd/actionlint/pull/683
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
 
 paths:
   .github/workflows/**/*.yml:

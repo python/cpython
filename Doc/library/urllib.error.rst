@@ -4,9 +4,6 @@
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
 
-.. moduleauthor:: Jeremy Hylton <jeremy@alum.mit.edu>
-.. sectionauthor:: Senthil Kumaran <orsenthil@gmail.com>
-
 **Source code:** :source:`Lib/urllib/error.py`
 
 --------------
@@ -29,6 +26,11 @@ The following exceptions are raised by :mod:`!urllib.error` as appropriate:
    .. versionchanged:: 3.3
       :exc:`URLError` used to be a subtype of :exc:`IOError`, which is now an
       alias of :exc:`OSError`.
+
+   .. versionchanged:: 3.16
+      The :attr:`~OSError.errno` and :attr:`~OSError.strerror` attributes are
+      now set from :attr:`reason` when it is an :exc:`OSError`. On Windows,
+      :attr:`~OSError.winerror` is set as well.
 
 
 .. exception:: HTTPError(url, code, msg, hdrs, fp)

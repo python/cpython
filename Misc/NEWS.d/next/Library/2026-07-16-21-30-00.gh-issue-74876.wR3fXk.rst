@@ -1,0 +1,8 @@
+Weak references (:class:`weakref.ref`), :class:`weakref.WeakMethod`,
+:class:`weakref.WeakSet`, :class:`weakref.WeakValueDictionary` and
+:class:`weakref.WeakKeyDictionary` can now be pickled
+if the weakly referenced objects are strongly referenced
+elsewhere in the same pickle;
+otherwise pickling raises :exc:`pickle.PicklingError`.
+:class:`weakref.WeakMethod` and :class:`weakref.WeakSet`
+can now also be copied.

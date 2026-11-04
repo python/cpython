@@ -1,6 +1,0 @@
-If we are specializing to ``LOAD_GLOBAL_MODULE`` or ``LOAD_ATTR_MODULE``, try
-to enable deferred reference counting for the value, if the object is owned by
-a different thread.  This applies to the free-threaded build only and should
-improve scaling of multi-threaded programs. Note that when deferred reference
-counting is enabled, the object will be deallocated by the GC, rather than by
-:c:func:`Py_DECREF`.

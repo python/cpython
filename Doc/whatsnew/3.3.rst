@@ -919,12 +919,12 @@ abstract methods. The recommended approach to declaring abstract descriptors is
 now to provide :attr:`!__isabstractmethod__` as a dynamically updated
 property. The built-in descriptors have been updated accordingly.
 
-* :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-  with :func:`abc.abstractmethod` instead.
-* :class:`abc.abstractclassmethod` has been deprecated, use
-  :class:`classmethod` with :func:`abc.abstractmethod` instead.
-* :class:`abc.abstractstaticmethod` has been deprecated, use
-  :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+* :deco:`abc.abstractproperty` has been deprecated, use :deco:`property`
+  with :deco:`abc.abstractmethod` instead.
+* :deco:`abc.abstractclassmethod` has been deprecated, use
+  :deco:`classmethod` with :deco:`abc.abstractmethod` instead.
+* :deco:`abc.abstractstaticmethod` has been deprecated, use
+  :deco:`staticmethod` with :deco:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`.)
 
@@ -1390,7 +1390,7 @@ ftplib
 functools
 ---------
 
-The :func:`functools.lru_cache` decorator now accepts a ``typed`` keyword
+The :deco:`functools.lru_cache` decorator now accepts a ``typed`` keyword
 argument (that defaults to ``False`` to ensure that it caches values of
 different types that compare equal in separate cache slots.  (Contributed
 by Raymond Hettinger in :issue:`13227`.)
@@ -2244,12 +2244,12 @@ Deprecated Python modules, functions and methods
 * The :func:`!os.stat_float_times` function is deprecated.
 * :mod:`abc` module:
 
-  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-    with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractclassmethod` has been deprecated, use
-    :class:`classmethod` with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+  * :deco:`abc.abstractproperty` has been deprecated, use :deco:`property`
+    with :deco:`abc.abstractmethod` instead.
+  * :deco:`abc.abstractclassmethod` has been deprecated, use
+    :deco:`classmethod` with :deco:`abc.abstractmethod` instead.
+  * :deco:`abc.abstractstaticmethod` has been deprecated, use
+    :deco:`staticmethod` with :deco:`abc.abstractmethod` instead.
 
 * :mod:`importlib` package:
 

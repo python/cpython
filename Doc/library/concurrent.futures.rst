@@ -61,11 +61,18 @@ Executor Objects
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
-      *timeout* can be an int or a float.  If *timeout* is not specified or
+      *timeout* can be an int or a float.
+      It cancels all future calls of *fn* and closes the iterator.
+      If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
+      It does not cancel future calls of *fn*.
+
+      The returned iterator has method :meth:`!close` which cancels all
+      future calls of *fn* and discards the results of already finished calls
+      if they are available.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
       into a number of chunks which it submits to the pool as separate
@@ -81,6 +88,10 @@ Executor Objects
 
       .. versionchanged:: 3.14
          Added the *buffersize* parameter.
+
+      .. versionchanged:: 3.16
+         The returned iterator is no longer automatically closed if a *fn*
+         call raises an exception.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -119,7 +130,7 @@ Executor Objects
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
       .. versionchanged:: 3.9
-         Added *cancel_futures*.
+         Added the *cancel_futures* parameter.
 
 
 ThreadPoolExecutor
@@ -156,10 +167,13 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future)
+   future = executor.submit(wait_on_future)
+   # Note: calling future.result() would also cause a deadlock because
+   # the single worker thread is already waiting for wait_on_future().
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', \
+                              initializer=None, initargs=(), **ctxkwargs)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -176,6 +190,18 @@ And::
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
+
+   *ctxkwargs* is a mapping of additional keyword arguments passed to
+   :meth:`prepare_context`, allowing customization of the worker execution
+   context.
+
+   .. classmethod:: prepare_context(initializer, initargs)
+
+      Setting up the necessary context for creating worker instances in a
+      pool-based executor (for example, in a concurrent environment like
+      threads or interpreters).
+
+      .. versionadded:: 3.14
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -205,6 +231,10 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionchanged:: 3.14
+      Added *ctxkwargs* to pass additional arguments to :meth:`prepare_context`
+      class method.
 
 
 .. _threadpoolexecutor-example:
@@ -294,7 +324,8 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', \
+                                   initializer=None, initargs=())
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -354,7 +385,9 @@ per :class:`multiprocessing.Process` apply when using :meth:`~Executor.submit`
 and :meth:`~Executor.map` on a :class:`ProcessPoolExecutor`. A function defined
 in a REPL or a lambda should not be expected to work.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, \
+                               initializer=None, initargs=(), \
+                               max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -383,11 +416,6 @@ in a REPL or a lambda should not be expected to work.
    a max is specified, the "spawn" multiprocessing start method will be used by
    default in absence of a *mp_context* parameter. This feature is incompatible
    with the "fork" start method.
-
-   .. note::
-      Bugs have been reported when using the *max_tasks_per_child* feature that
-      can result in the :class:`ProcessPoolExecutor` hanging in some
-      circumstances. Follow its eventual resolution in :gh:`115634`.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
@@ -423,6 +451,11 @@ in a REPL or a lambda should not be expected to work.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. versionchanged:: 3.16
+      Fixed a deadlock (:gh:`115634`) where the executor could hang after
+      a worker process exited upon reaching its *max_tasks_per_child*
+      limit while tasks remained queued.
 
    .. method:: terminate_workers()
 

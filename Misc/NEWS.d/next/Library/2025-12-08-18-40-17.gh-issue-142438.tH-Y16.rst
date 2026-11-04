@@ -1,2 +1,0 @@
-Fix _decimal builds configured with EXTRA_FUNCTIONALITY by correcting the
-Context.apply wrapper to pass the right argument.

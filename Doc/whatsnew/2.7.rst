@@ -1267,7 +1267,7 @@ changes, or look through the Subversion logs for all the details.
   uploads thanks to an added *rest* parameter (patch by Pablo Mouzo;
   :issue:`6845`.)
 
-* New class decorator: :func:`~functools.total_ordering` in the :mod:`functools`
+* New class decorator: :deco:`~functools.total_ordering` in the :mod:`functools`
   module takes a class that defines an :meth:`~object.__eq__` method and one of
   :meth:`~object.__lt__`, :meth:`~object.__le__`, :meth:`~object.__gt__`, or :meth:`~object.__ge__`,
   and generates the missing comparison methods.  Since the

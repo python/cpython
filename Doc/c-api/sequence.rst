@@ -67,7 +67,7 @@ Sequence Protocol
    Assign object *v* to the *i*\ th element of *o*.  Raise an exception
    and return ``-1`` on failure; return ``0`` on success.  This
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
-   not* steal a reference to *v*.
+   not* ":term:`steal`" a reference to *v*.
 
    If *v* is ``NULL``, the element is deleted, but this feature is
    deprecated in favour of using :c:func:`PySequence_DelItem`.
@@ -109,9 +109,8 @@ Sequence Protocol
 
    Alias for :c:func:`PySequence_Contains`.
 
-   .. deprecated:: 3.14
-      The function is :term:`soft deprecated` and should no longer be used to
-      write new code.
+   .. soft-deprecated:: 3.14
+      The function should no longer be used to write new code.
 
 
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)

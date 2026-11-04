@@ -1,0 +1,4 @@
+Speed up :meth:`asyncio.StreamReader.readline` and
+:meth:`asyncio.StreamReader.readuntil` when the data is already buffered,
+and stop :meth:`~asyncio.StreamReader.readuntil` with a tuple of separators from
+scanning the whole buffer on every call.

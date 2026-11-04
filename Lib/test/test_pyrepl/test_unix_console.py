@@ -1,20 +1,21 @@
 import errno
 import itertools
 import os
+import select
 import signal
-import subprocess
 import sys
 import threading
 import unittest
 from functools import partial
-from test import support
-from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper, threading_helper
+from _colorize import ANSIColors
+from test.support import force_color, os_helper, force_not_colorized_test_class
+from test.support import is_android, is_apple_mobile, is_wasm32
+from test.support import threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
 
-from .support import handle_all_events, code_to_events
+from .support import handle_all_events, code_to_events, more_lines
 
 try:
     from _pyrepl.console import Event
@@ -102,12 +103,70 @@ handle_events_unix_console_height_3 = partial(
 @patch("os.write")
 @force_not_colorized_test_class
 class TestConsole(TestCase):
+    @staticmethod
+    def _prepare_reader_with_prompts(console, **kwargs):
+        from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+
+        config = ReadlineConfig(
+            readline_completer=kwargs.pop("readline_completer", None)
+        )
+        reader = ReadlineAlikeReader(console=console, config=config)
+        reader.paste_mode = False
+        for key, val in kwargs.items():
+            setattr(reader, key, val)
+        return reader
+
+    def test_colorized_multiline_typing_does_not_redraw_previous_line(self, _os_write):
+        def prepare_reader_with_prompts(console, **kwargs):
+            reader = self._prepare_reader_with_prompts(console, **kwargs)
+            reader.more_lines = partial(more_lines, namespace=None)
+            return reader
+
+        with force_color(True):
+            events = itertools.chain(
+                code_to_events("def foo():"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("x = 1"),
+                [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+                code_to_events("y"),
+            )
+            _, con = handle_all_events(
+                events,
+                prepare_console=unix_console,
+                prepare_reader=prepare_reader_with_prompts,
+            )
+            con.restore()
+
+        self.assertNotIn(
+            call(ANY, b" \x1b[0m    x \x1b[0m=\x1b[0m "),
+            _os_write.mock_calls,
+        )
+        self.assertIn(call(ANY, b"y"), _os_write.mock_calls)
+
     def test_no_newline(self, _os_write):
         code = "1"
         events = code_to_events(code)
         _, con = handle_events_unix_console(events)
         self.assertNotIn(call(ANY, b'\n'), _os_write.mock_calls)
         con.restore()
+
+    def test_reset_on_finish(self, _os_write):
+        # gh-152068: finish() must emit the ANSI reset sequence so any
+        # active color does not leak past the prompt.
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        con.finish()
+        _os_write.assert_any_call(ANY, ANSIColors.RESET.encode(con.encoding))
+        con.restore()
+
+    def test_reset_on_restore(self, _os_write):
+        # gh-152068: restore() must emit the ANSI reset sequence.
+        code = "1"
+        events = code_to_events(code)
+        _, con = handle_events_unix_console(events)
+        con.restore()
+        _os_write.assert_any_call(ANY, ANSIColors.RESET.encode(con.encoding))
 
     def test_newline(self, _os_write):
         code = "\n"
@@ -252,8 +311,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_short_unix_console(events)
 
-        console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (2, 80))
 
         def same_reader(_):
             return reader
@@ -288,8 +346,7 @@ class TestConsole(TestCase):
         events = itertools.chain(code_to_events(code))
         reader, console = handle_events_unix_console_height_3(events)
 
-        console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(side_effect=lambda: (1, 80))
 
         def same_reader(_):
             return reader
@@ -370,33 +427,92 @@ class TestUnixConsoleEIOHandling(TestCase):
         # EIO error should be handled gracefully in restore()
         console.restore()
 
-    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
-    def test_repl_eio(self):
-        # Use the pty-based approach to simulate EIO error
-        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
 
-        proc = script_helper.spawn_python(
-            "-S", script_path,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+try:
+    import pty
+    import termios as _termios
+except ImportError:
+    pty = None
 
-        ready_line = proc.stdout.readline().strip()
-        if ready_line != "READY" or proc.poll() is not None:
-            self.fail("Child process failed to start properly")
 
-        os.kill(proc.pid, signal.SIGUSR1)
-        # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
-        self.assertEqual(
-            proc.returncode,
-            1,
-            f"Expected EIO/ENXIO error, got return code {proc.returncode}",
-        )
-        self.assertTrue(
-            (
-                "Got EIO:" in err
-                or "Got ENXIO:" in err
-            ),
-            f"Expected EIO/ENXIO error message in stderr: {err}",
-        )
+@unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
+@unittest.skipUnless(pty, "requires pty")
+@unittest.skipIf(is_android or is_apple_mobile or is_wasm32,
+                 "pty is not available on this platform")
+class TestUnixConsoleInputHook(TestCase):
+    # gh-152907: the console must restore cooked output (OPOST) around
+    # input-hook calls, then re-enter raw mode.
+
+    def test_input_hook_output_is_cooked(self):
+        master_fd, slave_fd = pty.openpty()
+        self.addCleanup(os.close, master_fd)
+
+        # tcsetattr(TCSADRAIN) blocks on some platforms (e.g. macOS) while the
+        # master still holds unread output, so empty it before each mode switch.
+        def drain():
+            out = b""
+            while select.select([master_fd], [], [], 0)[0]:
+                try:
+                    data = os.read(master_fd, 4096)
+                except OSError:
+                    break
+                if not data:
+                    break
+                out += data
+            return out
+
+        # Start from a cooked terminal so there are saved flags to restore.
+        attr = _termios.tcgetattr(slave_fd)
+        attr[1] |= _termios.OPOST | _termios.ONLCR
+        _termios.tcsetattr(slave_fd, _termios.TCSANOW, attr)
+
+        console = UnixConsole(slave_fd, slave_fd, term="xterm")
+        console.prepare()
+        try:
+            drain()  # discard prepare()'s own setup sequences
+            # pyrepl's own rendering runs with OPOST cleared.
+            self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
+
+            observed = {}
+
+            def fake_hook():
+                observed["oflag"] = _termios.tcgetattr(slave_fd)[1]
+                os.write(slave_fd, b"line1\nline2\n")
+                observed["output"] = drain()
+                return 0
+
+            with patch("_pyrepl.unix_console.posix") as mock_posix:
+                mock_posix._is_inputhook_installed.return_value = True
+                mock_posix._inputhook.side_effect = fake_hook
+                hook = console.input_hook
+                self.assertIsNotNone(hook)
+                self.assertEqual(hook(), 0)
+
+            # The hook ran with cooked output (OPOST on)...
+            self.assertTrue(observed["oflag"] & _termios.OPOST)
+            # ...and raw mode was restored afterwards.
+            self.assertFalse(_termios.tcgetattr(slave_fd)[1] & _termios.OPOST)
+            # The tty translated the hook's bare '\n' into '\r\n'.
+            self.assertEqual(observed["output"], b"line1\r\nline2\r\n")
+        finally:
+            # restore() writes and only then switches modes, so there is no
+            # point left to drain from here; keep the master empty elsewhere.
+            stop = threading.Event()
+
+            def pump():
+                while not stop.is_set():
+                    if select.select([master_fd], [], [], 0.05)[0]:
+                        try:
+                            if not os.read(master_fd, 4096):
+                                break
+                        except OSError:
+                            break
+
+            pump_thread = threading.Thread(target=pump)
+            pump_thread.start()
+            try:
+                console.restore()
+            finally:
+                stop.set()
+                pump_thread.join()
+                os.close(slave_fd)

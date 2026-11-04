@@ -1,4 +1,0 @@
-:mod:`~email.generator.BytesGenerator` will now refuse to serialize (write) headers
-that are unsafely folded or delimited; see
-:attr:`~email.policy.Policy.verify_generated_headers`. (Contributed by Bas
-Bloemsaat and Petr Viktorin in :gh:`121650`).

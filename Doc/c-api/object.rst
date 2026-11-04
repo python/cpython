@@ -363,6 +363,8 @@ Object Protocol
    representation on success, ``NULL`` on failure.  This is the equivalent of the
    Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
 
+   If argument is ``NULL``, return the string ``'<NULL>'``.
+
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
       does not silently discard an active exception.
@@ -377,6 +379,8 @@ Object Protocol
    a string similar to that returned by :c:func:`PyObject_Repr` in Python 2.
    Called by the :func:`ascii` built-in function.
 
+   If argument is ``NULL``, return the string ``'<NULL>'``.
+
    .. index:: string; PyObject_Str (C function)
 
 
@@ -386,6 +390,8 @@ Object Protocol
    representation on success, ``NULL`` on failure.  This is the equivalent of the
    Python expression ``str(o)``.  Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
+
+   If argument is ``NULL``, return the string ``'<NULL>'``.
 
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
@@ -401,6 +407,8 @@ Object Protocol
    expression ``bytes(o)``, when *o* is not an integer.  Unlike ``bytes(o)``,
    a TypeError is raised when *o* is an integer instead of a zero-initialized
    bytes object.
+
+   If argument is ``NULL``, return the :class:`bytes` object ``b'<NULL>'``.
 
 
 .. c:function:: int PyObject_IsSubclass(PyObject *derived, PyObject *cls)
@@ -801,3 +809,20 @@ Object Protocol
    cannot fail.
 
    .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_SetImmortal(PyObject *op)
+
+   Marks the object *op* :term:`immortal`. The argument should be uniquely referenced by
+   the calling thread. This is intended to be used for reducing reference counting contention
+   in the :term:`free-threaded build` for objects which are shared across threads.
+
+   This is a one-way process: objects can only be made immortal; they cannot be
+   made mortal once again. Immortal objects do not participate in reference counting
+   and will never be garbage collected. If the object is GC-tracked, it is untracked.
+
+   This function is intended to be used soon after *op* is created, by the code that
+   creates it, such as in the object's :c:member:`~PyTypeObject.tp_new` slot.
+   Returns 1 if the object was made immortal and returns 0 if it was not.
+   This function cannot fail.
+
+   .. versionadded:: 3.15

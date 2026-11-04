@@ -38,3 +38,7 @@ ignore = [
 "generate_{re_casefix,sre_constants,token}.py" = [
     "UP031",  # Use format specifiers instead of percent format
 ]
+"generate_slots.py" = [
+    "I001",   # Import block is un-sorted
+    "ISC003", # Explicitly concatenated string
+]

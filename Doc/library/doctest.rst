@@ -4,11 +4,6 @@
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.
 
-.. moduleauthor:: Tim Peters <tim@python.org>
-.. sectionauthor:: Tim Peters <tim@python.org>
-.. sectionauthor:: Moshe Zadka <moshez@debian.org>
-.. sectionauthor:: Edward Loper <edloper@users.sourceforge.net>
-
 **Source code:** :source:`Lib/doctest.py`
 
 --------------
@@ -1166,6 +1161,12 @@ from text files and modules with doctests:
 
    .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
+
+   .. versionchanged:: 3.16
+      Report every example, as in verbose mode, if the test runner reports
+      more than the test names, i.e. its
+      :attr:`~unittest.TestResult.verbosity` is 3 or higher (for example
+      with ``python -m unittest -vv``).
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
 of :class:`!doctest.DocTestCase` instances, and :class:`!DocTestCase` is a

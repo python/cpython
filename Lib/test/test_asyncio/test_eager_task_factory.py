@@ -13,7 +13,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class EagerTaskFactoryLoopTests:
@@ -217,7 +217,9 @@ class EagerTaskFactoryLoopTests:
         # See https://github.com/python/cpython/issues/124309
 
         async def fail():
-            await asyncio.sleep(0)
+            # Raise without suspending: staggered_race() cancels unfinished
+            # coroutines once another one wins, so yielding first could turn
+            # this into a CancelledError when the event loop is busy.
             raise ValueError("no good")
 
         async def blocked():

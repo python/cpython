@@ -84,7 +84,7 @@ function showNavigationMenu(button, items, title) {
 
         item.appendChild(funcDiv);
         item.appendChild(createElement('div', 'callee-menu-file', linkData.file));
-        item.addEventListener('click', () => window.location.href = linkData.link);
+        item.addEventListener('click', () => navigateToLine(linkData.link));
         menu.appendChild(item);
     });
 
@@ -105,7 +105,7 @@ function handleNavigationClick(button, e) {
 
     const navData = button.getAttribute('data-nav');
     if (navData) {
-        window.location.href = JSON.parse(navData).link;
+        navigateToLine(JSON.parse(navData).link);
         return;
     }
 
@@ -117,11 +117,29 @@ function handleNavigationClick(button, e) {
     }
 }
 
+function restartLineHighlight(target) {
+    target.style.animation = 'none';
+    // Force style recalculation so restoring the animation restarts it.
+    void target.offsetWidth;
+    target.style.animation = '';
+}
+
+function navigateToLine(link) {
+    const url = new URL(link, window.location.href);
+
+    if (url.href === window.location.href) {
+        scrollToTargetLine();
+    } else {
+        window.location.href = link;
+    }
+}
+
 function scrollToTargetLine() {
     if (!window.location.hash) return;
     const target = document.querySelector(window.location.hash);
     if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        restartLineHighlight(target);
     }
 }
 
@@ -202,23 +220,6 @@ function applyLineColors() {
 // ============================================================================
 // Toggle Controls
 // ============================================================================
-
-function updateToggleUI(toggleId, isOn) {
-    const toggle = document.getElementById(toggleId);
-    if (toggle) {
-        const track = toggle.querySelector('.toggle-track');
-        const labels = toggle.querySelectorAll('.toggle-label');
-        if (isOn) {
-            track.classList.add('on');
-            labels[0].classList.remove('active');
-            labels[1].classList.add('active');
-        } else {
-            track.classList.remove('on');
-            labels[0].classList.add('active');
-            labels[1].classList.remove('active');
-        }
-    }
-}
 
 function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;

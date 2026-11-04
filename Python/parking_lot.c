@@ -10,6 +10,18 @@
 
 #include <stdbool.h>
 
+#if defined(_Py_USE_SEMAPHORES) && defined(CLOCK_MONOTONIC) && !defined(_Py_THREAD_SANITIZER)
+#  ifdef HAVE_SEM_CLOCKWAIT
+#    define _Py_SEM_CLOCKWAIT_AVAILABLE 1
+#  elif defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+/* Older glibc headers do not declare sem_clockwait. A weak reference allows
+   such builds to use monotonic waits on newer runtimes. */
+extern int sem_clockwait(sem_t *, clockid_t, const struct timespec *)
+    __attribute__((weak));
+#    define _Py_SEM_CLOCKWAIT_AVAILABLE (sem_clockwait != NULL)
+#  endif
+#endif
+
 
 typedef struct {
     // The mutex protects the waiter queue and the num_waiters counter.
@@ -61,7 +73,9 @@ _PySemaphore_Init(_PySemaphore *sema)
         NULL    //  unnamed
     );
     if (!sema->platform_sem) {
-        Py_FatalError("parking_lot: CreateSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: CreateSemaphore failed (error: %u)",
+            GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     if (sem_init(&sema->platform_sem, /*pshared=*/0, /*value=*/0) < 0) {
@@ -141,32 +155,35 @@ _PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
     }
     else {
         _Py_FatalErrorFormat(__func__,
-            "unexpected error from semaphore: %u (error: %u)",
-            wait, GetLastError());
+            "unexpected error from semaphore: %u (error: %u, handle: %p)",
+            wait, GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
     if (timeout >= 0) {
         struct timespec ts;
 
-#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT) && !defined(_Py_THREAD_SANITIZER)
-        PyTime_t now;
-        // silently ignore error: cannot report error to the caller
-        (void)PyTime_MonotonicRaw(&now);
-        PyTime_t deadline = _PyTime_Add(now, timeout);
-        _PyTime_AsTimespec_clamp(deadline, &ts);
+#ifdef _Py_SEM_CLOCKWAIT_AVAILABLE
+        if (_Py_SEM_CLOCKWAIT_AVAILABLE) {
+            PyTime_t now;
+            // Silently ignore error: cannot report error to the caller.
+            (void)PyTime_MonotonicRaw(&now);
+            PyTime_t deadline = _PyTime_Add(now, timeout);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
 
-        err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
-#else
-        PyTime_t now;
-        // silently ignore error: cannot report error to the caller
-        (void)PyTime_TimeRaw(&now);
-        PyTime_t deadline = _PyTime_Add(now, timeout);
-
-        _PyTime_AsTimespec_clamp(deadline, &ts);
-
-        err = sem_timedwait(&sema->platform_sem, &ts);
+            err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
+        }
+        else
 #endif
+        {
+            PyTime_t now;
+            // Silently ignore error: cannot report error to the caller.
+            (void)PyTime_TimeRaw(&now);
+            PyTime_t deadline = _PyTime_Add(now, timeout);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
+
+            err = sem_timedwait(&sema->platform_sem, &ts);
+        }
     }
     else {
         err = sem_wait(&sema->platform_sem);
@@ -230,7 +247,9 @@ _PySemaphore_Wakeup(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
-        Py_FatalError("parking_lot: ReleaseSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: ReleaseSemaphore failed (error: %u, handle: %p)",
+            GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err = sem_post(&sema->platform_sem);
