@@ -1,0 +1,4 @@
+Fix cross builds with ``--enable-shared`` when the target uses a different C
+library than the build machine, such as musl from glibc. The build Python is
+no longer run with ``RUNSHARED``, which could make it load the target's
+``libpython``.
