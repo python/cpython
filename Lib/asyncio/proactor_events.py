@@ -892,6 +892,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)
+            except (ConnectionResetError, ConnectionAbortedError):
+                # The peer closed the connection before it was accepted.
+                # The listening socket is still usable: keep accepting.
+                if self._debug:
+                    logger.debug("Accept failed on socket %r",
+                                 sock, exc_info=True)
+                self.call_soon(loop)
             except OSError as exc:
                 if sock.fileno() != -1:
                     self.call_exception_handler({
