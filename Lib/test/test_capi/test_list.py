@@ -493,23 +493,24 @@ class ListWriterTests(unittest.TestCase):
     def test_from_buffer(self):
         # Test PyListWriter_FromBuffer()
         writer = self.create_writer(0)
-        writer.from_buffer(memoryview(b'abc'))
-        self.list_equal(writer.finish(), [97, 98, 99])
+        mview = memoryview(b'abc')
+        writer.from_buffer(mview)
+        self.list_equal(writer.finish(), mview.tolist())
 
         numbers = array.array('d', [1.5, 3.0, 5.0])
         writer = self.create_writer(0)
         writer.from_buffer(memoryview(numbers))
-        self.list_equal(writer.finish(), [1.5, 3.0, 5.0])
+        self.list_equal(writer.finish(), numbers.tolist())
 
     def test_from_buffer_memoryerror(self):
         # Inject MemoryError in the middle of the array: reset the writer
         # to its previous state, discard added float objects
         numbers = array.array('d', [2.0] * 128)
-        view = memoryview(numbers)
+        mview = memoryview(numbers)
         writer = self.create_writer(0)
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm(start=len(numbers) // 2):
-                writer.from_buffer(view)
+                writer.from_buffer(mview)
         self.list_equal(writer.finish(), [])
 
     @unittest.skipIf(_testbuffer is None, 'need _testbuffer')
