@@ -971,15 +971,15 @@ _io_BytesIO___getstate___impl(bytesio *self)
 
     if (initvalue == NULL)
         return NULL;
-    dict = PyObject_GenericGetDict((PyObject *)self, NULL);
-    if (dict == NULL) {
-        Py_DECREF(initvalue);
-        return NULL;
-    }
-    if (PyDict_GET_SIZE(dict) == 0) {
-        Py_SETREF(dict, Py_NewRef(Py_None));
+    if (_PyObject_IsInstanceDictEmpty((PyObject *)self)) {
+        dict = Py_NewRef(Py_None);
     }
     else {
+        dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
         Py_SETREF(dict, PyDict_Copy(dict));
         if (dict == NULL) {
             Py_DECREF(initvalue);
