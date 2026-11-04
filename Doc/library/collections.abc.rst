@@ -115,6 +115,7 @@ The collections module offers the following :term:`ABCs <abstract base class>`:
 
 ============================== ====================== ======================= ====================================================
 ABC                            Inherits from          Abstract Methods        Mixin Methods
+                                                      (including inherited)
 ============================== ====================== ======================= ====================================================
 :class:`Container` [1]_                               ``__contains__``
 :class:`Hashable` [1]_                                ``__hash__``
