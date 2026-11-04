@@ -1735,9 +1735,9 @@ _textiowrapper_writeflush(textio *self)
             goto error;
         }
         if (ret == Py_None) {
+            /* Some legacy writers return None after writing all the data. */
             Py_DECREF(ret);
-            PyErr_SetString(PyExc_BlockingIOError, "write returned None");
-            goto error;
+            break;
         }
         Py_ssize_t n = PyNumber_AsSsize_t(ret, PyExc_OverflowError);
         Py_DECREF(ret);

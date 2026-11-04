@@ -1032,10 +1032,16 @@ class TextIOWrapperTest:
             self.assertEqual(txt.write('a\u20acb'), 3)
             self.assertEqual(b''.join(raw._write_stack), b'a\xe2\x82\xacb')
 
+    def test_rawio_write_none(self):
+        raw = self.MockRawIO()
+        raw.write = raw._write_stack.append
+        with self.TextIOWrapper(raw, encoding='ascii', write_through=True) as txt:
+            self.assertEqual(txt.write('abc'), 3)
+            self.assertEqual(raw._write_stack, [b'abc'])
+
     def test_rawio_write_invalid_result(self):
         for result, error in ((0, OSError), (-1, OSError), (4, OSError),
-                              (None, BlockingIOError), ('1', TypeError),
-                              (1.5, TypeError)):
+                              ('1', TypeError), (1.5, TypeError)):
             with self.subTest(result=result):
                 raw = self.MockRawIO()
                 raw.write = lambda b: result

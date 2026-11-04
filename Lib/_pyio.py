@@ -2311,7 +2311,8 @@ class TextIOWrapper(TextIOBase):
         while True:
             n = self.buffer.write(b)
             if n is None:
-                raise BlockingIOError("write returned None")
+                # Some legacy writers return None after writing all the data.
+                break
             if n < 0 or n > len(b) or (n == 0 and b):
                 raise OSError("write() returned incorrect number of bytes")
             b = b[n:]
