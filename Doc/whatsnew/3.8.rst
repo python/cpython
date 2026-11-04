@@ -908,9 +908,10 @@ for :deco:`property`, :deco:`classmethod`, and :deco:`staticmethod`::
 io
 --
 
-In development mode (:option:`-X` ``env``) and in :ref:`debug build <debug-build>`, the
-:class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
-fails. The exception is ignored silently by default in release build.
+In development mode (:option:`-X` ``dev``) and in
+:ref:`debug build <debug-build>`, the :class:`io.IOBase` finalizer now logs the
+exception if the ``close()`` method fails. The exception is ignored silently
+by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 

@@ -8369,7 +8369,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
-                "spawnv() arg 2 first element cannot be empty");
+                "spawnve() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
@@ -10091,13 +10091,13 @@ os.getppid
 Return the parent's process id.
 
 If the parent process has already exited, Windows machines will still
-return its id; others systems will return the id of the 'init' proces
+return its id; other systems will return the id of the 'init' process
 (1).
 [clinic start generated code]*/
 
 static PyObject *
 os_getppid_impl(PyObject *module)
-/*[clinic end generated code: output=43b2a946a8c603b4 input=e17c1de18f41316b]*/
+/*[clinic end generated code: output=43b2a946a8c603b4 input=158cc6dd661d54d9]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -12454,7 +12454,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (!PySequence_Check(buffers)) {
         PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
+            "preadv() arg 2 must be a sequence");
         return -1;
     }
 

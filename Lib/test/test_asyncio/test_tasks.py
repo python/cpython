@@ -335,6 +335,40 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(runner())
 
+    def test_get_stack_async_generator(self):
+        # gh-161178
+        async def gen():
+            try:
+                yield
+            except ValueError:
+                pass
+            finally:
+                await asyncio.sleep(0)
+            yield
+
+        async def runner(method, args):
+            agen = gen()
+            await anext(agen)
+            task = self.new_task(self.loop, getattr(agen, method)(*args))
+            await asyncio.sleep(0)
+            frame = agen.ag_frame
+            stack = task.get_stack()
+            await task
+            try:
+                self.assertEqual(stack, [frame])
+                self.assertEqual(task.get_stack(), [])
+            finally:
+                await agen.aclose()
+
+        for method, args in (
+            ('__anext__', ()),
+            ('asend', (None,)),
+            ('athrow', (ValueError(),)),
+            ('aclose', ()),
+        ):
+            with self.subTest(method=method):
+                self.loop.run_until_complete(runner(method, args))
+
     def test_task_repr(self):
         self.loop.set_debug(False)
 
