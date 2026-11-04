@@ -561,8 +561,8 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
         PyObject *_tmp_old_dst; \
-        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_DECREF(_tmp_old_dst); \
     } while (0)
@@ -592,8 +592,8 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
         PyObject *_tmp_old_dst; \
-        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_XDECREF(_tmp_old_dst); \
     } while (0)
