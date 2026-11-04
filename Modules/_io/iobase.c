@@ -902,10 +902,6 @@ static PyGetSetDef iobase_getset[] = {
     {NULL}
 };
 
-static struct PyMemberDef iobase_members[] = {
-    {NULL},
-};
-
 
 static PyType_Slot iobase_slots[] = {
     {Py_tp_dealloc, iobase_dealloc},
@@ -915,7 +911,6 @@ static PyType_Slot iobase_slots[] = {
     {Py_tp_iter, iobase_iter},
     {Py_tp_iternext, iobase_iternext},
     {Py_tp_methods, iobase_methods},
-    {Py_tp_members, iobase_members},
     {Py_tp_getset, iobase_getset},
     {Py_tp_finalize, iobase_finalize},
     {0, NULL},

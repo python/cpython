@@ -2740,10 +2740,6 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {NULL, NULL}
 };
 
-static PyMemberDef bufferedrwpair_members[] = {
-    {NULL}
-};
-
 static PyGetSetDef bufferedrwpair_getset[] = {
     _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
     {NULL}
@@ -2755,7 +2751,6 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {Py_tp_traverse, bufferedrwpair_traverse},
     {Py_tp_clear, bufferedrwpair_clear},
     {Py_tp_methods, bufferedrwpair_methods},
-    {Py_tp_members, bufferedrwpair_members},
     {Py_tp_getset, bufferedrwpair_getset},
     {Py_tp_init, _io_BufferedRWPair___init__},
     {0, NULL},

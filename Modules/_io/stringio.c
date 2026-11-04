@@ -1142,10 +1142,6 @@ static PyGetSetDef stringio_getset[] = {
     {NULL}
 };
 
-static struct PyMemberDef stringio_members[] = {
-    {NULL},
-};
-
 static PyType_Slot stringio_slots[] = {
     {Py_tp_dealloc, stringio_dealloc},
     {Py_tp_doc, (void *)_io_StringIO___init____doc__},
@@ -1153,7 +1149,6 @@ static PyType_Slot stringio_slots[] = {
     {Py_tp_clear, stringio_clear},
     {Py_tp_iternext, stringio_iternext},
     {Py_tp_methods, stringio_methods},
-    {Py_tp_members, stringio_members},
     {Py_tp_getset, stringio_getset},
     {Py_tp_init, _io_StringIO___init__},
     {Py_tp_new, stringio_new},

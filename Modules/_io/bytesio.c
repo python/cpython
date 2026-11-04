@@ -1239,10 +1239,6 @@ static struct PyMethodDef bytesio_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-static PyMemberDef bytesio_members[] = {
-    {NULL}
-};
-
 static PyType_Slot bytesio_slots[] = {
     {Py_tp_dealloc, bytesio_dealloc},
     {Py_tp_doc, (void *)_io_BytesIO___init____doc__},
@@ -1251,7 +1247,6 @@ static PyType_Slot bytesio_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, bytesio_iternext},
     {Py_tp_methods, bytesio_methods},
-    {Py_tp_members, bytesio_members},
     {Py_tp_getset, bytesio_getsetlist},
     {Py_tp_init, _io_BytesIO___init__},
     {Py_tp_new, bytesio_new},
