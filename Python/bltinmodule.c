@@ -311,7 +311,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
-    if (globals == NULL) {
+    if (globals == NULL || globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (globals == NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -320,7 +320,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
             return NULL;
         }
     }
-    if (locals == NULL) {
+    if (locals == NULL || locals == Py_None) {
         locals = globals;
     }
 
