@@ -12,6 +12,12 @@ Byte Array Objects
 
    This subtype of :c:type:`PyObject` represents a Python bytearray object.
 
+   .. impl-detail::
+
+      The internal buffer of :c:type:`PyByteArrayObject` always includes an
+      extra trailing null byte for compatibility with null terminated C
+      strings.  This extra byte is not counted in :c:func:`PyByteArray_Size`
+      nor in the *len* arguments of the functions below.
 
 .. c:var:: PyTypeObject PyByteArray_Type
 
@@ -44,6 +50,10 @@ Direct API functions
 
    On failure, return ``NULL`` with an exception set.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytearray object is being created.
+
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
@@ -58,6 +68,10 @@ Direct API functions
 
    On failure, return ``NULL`` with an exception set.
 
+   .. note::
+      If the object implements the buffer protocol, then the buffer
+      must not be mutated while the bytearray object is being created.
+
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
 
@@ -69,6 +83,9 @@ Direct API functions
    Return the contents of *bytearray* as a char array after checking for a
    ``NULL`` pointer.  The returned array always has an extra
    null byte appended.
+
+   .. note::
+      It is not thread-safe to mutate the bytearray object while using the returned char array.
 
 
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
@@ -88,6 +105,9 @@ These macros trade safety for speed and they don't check pointers.
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
    Similar to :c:func:`PyByteArray_AsString`, but without error checking.
+
+   .. note::
+      It is not thread-safe to mutate the bytearray object while using the returned char array.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)

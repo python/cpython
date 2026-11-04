@@ -1,0 +1,4 @@
+Fix the ``uu`` codec decoder taking any line that starts with ``begin``, such
+as ``beginning of the report``, as the header of the encoded data. Like the
+:mod:`email` package, it now requires ``begin`` followed by an octal mode and
+skips other lines as leading text.

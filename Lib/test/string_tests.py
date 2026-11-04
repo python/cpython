@@ -102,6 +102,43 @@ class BaseTest:
         teststrings = [self.fixtype(ts) for ts in teststrings]
         return teststrings
 
+    def test_add(self):
+        s = self.fixtype('ab')
+        self.assertEqual(s + self.fixtype(''), s)
+        self.assertEqual(self.fixtype('') + s, s)
+        self.assertEqual(s + self.fixtype('cd'), self.fixtype('abcd'))
+
+    def test_mul(self):
+        s = self.fixtype('ab')
+        self.assertEqual(s*0, self.fixtype(''))
+        self.assertEqual(0*s, self.fixtype(''))
+        self.assertEqual(s*1, s)
+        self.assertEqual(1*s, s)
+        self.assertEqual(s*2, self.fixtype('abab'))
+        self.assertEqual(2*s, self.fixtype('abab'))
+
+        class subclass(self.type2test):
+            pass
+        s = subclass(self.fixtype('ab'))
+        r = s*1
+        self.assertEqual(r, s)
+        self.assertIsNot(r, s)
+
+    def _assert_cmp(self, a, b, r):
+        self.assertIs(a == b, r == 0)
+        self.assertIs(a != b, r != 0)
+        self.assertIs(a > b, r > 0)
+        self.assertIs(a <= b, r <= 0)
+        self.assertIs(a < b, r < 0)
+        self.assertIs(a >= b, r >= 0)
+
+    def test_cmp(self):
+        a = self.fixtype('ab')
+        self._assert_cmp(a, a, 0)
+        self._assert_cmp(a, self.fixtype('ab'), 0)
+        self._assert_cmp(a, self.fixtype('a'), 1)
+        self._assert_cmp(a, self.fixtype('ac'), -1)
+
     def test_count(self):
         self.checkequal(3, 'aaa', 'count', 'a')
         self.checkequal(0, 'aaa', 'count', 'b')
@@ -1304,6 +1341,7 @@ class StringLikeTest(BaseTest):
                                     slice(start, stop, step))
 
     def test_mul(self):
+        super().test_mul()
         self.checkequal('', 'abc', '__mul__', -1)
         self.checkequal('', 'abc', '__mul__', 0)
         self.checkequal('abc', 'abc', '__mul__', 1)

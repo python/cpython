@@ -257,6 +257,50 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+dict_as_frozendict_and_clear(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyDict_AsFrozenDictAndClear(obj);
+}
+
+
+static PyObject *
+frozendict_check(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyFrozenDict_Check(obj));
+}
+
+static PyObject *
+frozendict_checkexact(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyFrozenDict_CheckExact(obj));
+}
+
+static PyObject *
+anydict_check(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyAnyDict_Check(obj));
+}
+
+static PyObject *
+anydict_checkexact(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyAnyDict_CheckExact(obj));
+}
+
+
+static PyObject *
+frozendict_new(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyFrozenDict_New(obj);
+}
+
 
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
@@ -269,6 +313,12 @@ static PyMethodDef test_methods[] = {
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"dict_as_frozendict_and_clear", dict_as_frozendict_and_clear, METH_O},
+    {"frozendict_check", frozendict_check, METH_O},
+    {"frozendict_checkexact", frozendict_checkexact, METH_O},
+    {"anydict_check", anydict_check, METH_O},
+    {"anydict_checkexact", anydict_checkexact, METH_O},
+    {"frozendict_new", frozendict_new, METH_O},
     {NULL},
 };
 

@@ -340,6 +340,15 @@ class FutureTests(BaseTestCase):
             self.assertEqual(result, expected)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        for mod in (futures, futures.process, futures.thread):
+            with self.subTest(mod=mod.__name__):
+                support.check_deprecated_module_attributes(
+                    self, mod, "__author__", remove=(3, 20),
+                )
+
+
 def setUpModule():
     setup_module()
 

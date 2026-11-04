@@ -23,8 +23,6 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os
@@ -68,6 +66,7 @@ def _clear_screen():
     reader.scheduled_commands.append("clear_screen")
 
 
+# Keep this in sync with _pyrepl.utils.COMMANDS
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
@@ -83,7 +82,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except Exception:
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
@@ -135,9 +134,14 @@ def run_multiline_interactive_console(
                 sys.stdout.flush()
             except Exception:
                 pass
-
-            ps1 = getattr(sys, "ps1", ">>> ")
-            ps2 = getattr(sys, "ps2", "... ")
+            try:
+                ps1 = str(getattr(sys, "ps1", ">>> "))
+            except Exception:
+                ps1 = ">>> "
+            try:
+                ps2 = str(getattr(sys, "ps2", "... "))
+            except Exception:
+                ps2 = "... "
             try:
                 statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
@@ -161,7 +165,7 @@ def run_multiline_interactive_console(
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
-            r.dirty = True
+            r.invalidate_full()
             r.refresh()
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()

@@ -17,6 +17,11 @@ class E(C):
     def __getinitargs__(self):
         return ()
 
+# For test_load_bad_constructor
+class BadConstructor:
+    def __init__(self, *args):
+        raise TypeError("bad constructor")
+
 import __main__
 __main__.C = C
 C.__module__ = "__main__"
@@ -24,6 +29,8 @@ __main__.D = D
 D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
+__main__.BadConstructor = BadConstructor
+BadConstructor.__module__ = "__main__"
 
 # Simple mutable object.
 class Object(object):
@@ -262,6 +269,17 @@ myclasses = [MyInt, MyLong, MyFloat,
              MyComplex,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
+
+try:
+    frozendict
+except NameError:
+    # Python 3.14 and older
+    pass
+else:
+    class MyFrozenDict(dict):
+        sample = frozendict({"a": 1, "b": 2})
+    myclasses.append(MyFrozenDict)
+
 
 # For test_newobj_overridden_new
 class MyIntWithNew(int):
