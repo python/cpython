@@ -547,7 +547,8 @@ Configuration Options
      - ``bool``
      - Read-only
 
-The type ``str | None`` means that a string can be ``NULL``.
+The type ``str | None`` means that the option is an optional string which can
+be set to ``NULL``.
 
 Visibility:
 
