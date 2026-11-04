@@ -893,7 +893,7 @@ function::
 Before calling :c:func:`PyType_Ready`, the type structure must have the
 :c:member:`~PyTypeObject.tp_base` slot filled in.  When we are deriving an
 existing type, it is not necessary to fill out the :c:member:`~PyTypeObject.tp_alloc`
-slot with :c:func:`PyType_GenericNew` -- the allocation function from the base
+slot with :c:func:`PyType_GenericAlloc` -- the allocation function from the base
 type will be inherited.
 
 After that, calling :c:func:`PyType_Ready` and adding the type object to the

@@ -370,7 +370,8 @@ HTTPConnection Objects
    proxy server).
 
    The *headers* argument should be a mapping of extra HTTP headers to send with
-   the CONNECT request.
+   the CONNECT request. Non-string header values are converted to strings via
+   :func:`str`.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
    <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``

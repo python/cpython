@@ -655,8 +655,7 @@ StatisticDiff
    .. attribute:: count_diff
 
       Difference of number of memory blocks between the old and the new
-      snapshots (``int``): ``0`` if the memory blocks have been allocated in
-      the new snapshot.
+      snapshots (``int``).
 
    .. attribute:: size
 
@@ -666,8 +665,7 @@ StatisticDiff
    .. attribute:: size_diff
 
       Difference of total size of memory blocks in bytes between the old and
-      the new snapshots (``int``): ``0`` if the memory blocks have been
-      allocated in the new snapshot.
+      the new snapshots (``int``).
 
    .. attribute:: traceback
 

@@ -1,0 +1,4 @@
+Raise an error in :class:`lzma.LZMAFile`, :func:`lzma.decompress`,
+:class:`bz2.BZ2File` and :func:`bz2.decompress` for a damaged ``.xz`` or bzip2
+stream that follows another stream, instead of silently ignoring it and
+everything after it as trailing data.

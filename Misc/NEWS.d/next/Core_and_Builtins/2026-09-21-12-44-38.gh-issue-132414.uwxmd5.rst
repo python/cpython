@@ -1,0 +1,4 @@
+Quote the invalid option in the error message for an unknown command-line
+option: ``Invalid option '-z'`` instead of ``Unknown option: -z``. A stray
+space, as passed by a shebang line like ``#!/usr/bin/python3 -q -i``, is now
+reported as ``Invalid option '- '``.
