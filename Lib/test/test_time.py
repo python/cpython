@@ -583,7 +583,7 @@ class TimeTestCase(unittest.TestCase):
             self.assertEqual(result.tm_year, 1900)
             self.assertEqual(result.tm_mon, 1)
             self.assertEqual(result.tm_mday, 1)
-            self.assertequal(result.tm_isdst, 0)
+            self.assertEqual(result.tm_isdst, 0)
 
 
         finally:
