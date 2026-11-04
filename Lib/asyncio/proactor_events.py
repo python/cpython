@@ -166,7 +166,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 try:
                     self._sock.shutdown(socket.SHUT_RDWR)
-                except ConnectionResetError:
+                except ConnectionError:
+                    # The connection is already gone.
                     # The peer has already reset the connection.
                     pass
             self._sock.close()
