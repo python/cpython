@@ -1,1 +1,1 @@
-Optimize shifts of large :class:`int` values.
+Speed up :func:`float` conversion and true division of large :class:`int` values.
