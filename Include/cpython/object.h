@@ -344,7 +344,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF(_tmp_old_dst); \
+        Py_DECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
 #define Py_SETREF(dst, src) \
@@ -352,14 +352,15 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         auto _tmp_dst_ptr = &(dst); \
         auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF(_tmp_old_dst); \
+        Py_DECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #else
 #define Py_SETREF(dst, src) \
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_old_dst; \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_DECREF(_tmp_old_dst); \
     } while (0)
@@ -374,7 +375,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF(_tmp_old_dst); \
+        Py_XDECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
 #define Py_XSETREF(dst, src) \
@@ -382,14 +383,15 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         auto _tmp_dst_ptr = &(dst); \
         auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF(_tmp_old_dst); \
+        Py_XDECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #else
 #define Py_XSETREF(dst, src) \
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_old_dst; \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_XDECREF(_tmp_old_dst); \
     } while (0)
