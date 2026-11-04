@@ -155,8 +155,8 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    * Set *\*value*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
-   *\*value* can be set to ``NULL`` if the option is an optional string and the
-   option is unset.
+   *\*value* can be set to ``NULL`` if the option is unset or if the option is
+   an optional string.
    Optional strings are documented with the type ``str | None`` in the
    :ref:`Configuration Options <pyinitconfig-opts>` table.
 
