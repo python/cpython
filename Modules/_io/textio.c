@@ -3112,6 +3112,20 @@ _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
         return NULL;
     }
 
+    if (pos == Py_None) {
+        /* The buffer may have read ahead of this stream's position, so the
+           buffer's own position must not be used here.  Resize to the
+           position reported by tell(), as _pyio already does. */
+        PyObject *cookie = _io_TextIOWrapper_tell_impl(self);
+        if (cookie == NULL) {
+            return NULL;
+        }
+        PyObject *res = buffer_callmethod_onearg(self, &_Py_ID(truncate),
+                                                 cookie);
+        Py_DECREF(cookie);
+        return res;
+    }
+
     return buffer_callmethod_onearg(self, &_Py_ID(truncate), pos);
 }
 

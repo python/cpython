@@ -577,6 +577,28 @@ class TextIOWrapperTest:
             rlines.append((pos, line))
         self.assertEqual(rlines, wlines)
 
+    def test_truncate_after_read(self):
+        # gh-161275: truncate() without an argument resizes the stream to the
+        # current position.  The buffer may have read ahead of the text
+        # stream, so the buffer's own position must not be used.
+        with self.open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            f.write("abcde")
+        with self.open(os_helper.TESTFN, "r+", encoding="utf-8") as f:
+            self.assertEqual(f.read(2), "ab")
+            self.assertEqual(f.tell(), 2)
+            self.assertEqual(f.truncate(), 2)
+            self.assertEqual(f.tell(), 2)
+        with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), "ab")
+
+        # Also with a file larger than the read-ahead chunk.
+        with self.open(os_helper.TESTFN, "w", encoding="utf-8") as f:
+            f.write("0123456789" * 2000)
+        with self.open(os_helper.TESTFN, "r+", encoding="utf-8") as f:
+            self.assertEqual(f.read(10), "0123456789")
+            self.assertEqual(f.truncate(), 10)
+        self.assertEqual(os.path.getsize(os_helper.TESTFN), 10)
+
     def test_telling(self):
         f = self.open(os_helper.TESTFN, "w+", encoding="utf-8")
         p0 = f.tell()

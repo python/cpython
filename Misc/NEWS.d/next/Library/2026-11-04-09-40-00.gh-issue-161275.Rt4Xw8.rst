@@ -1,0 +1,3 @@
+:meth:`~io.IOBase.truncate` on an :class:`io.TextIOWrapper` with no argument
+resized the stream to the position of the underlying buffer, which may have
+read ahead, instead of to the current position of the text stream.
