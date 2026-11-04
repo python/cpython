@@ -1,3 +1,2 @@
-Fix ``configure`` function checks reporting false negatives when ``CFLAGS``
-contains ``-Werror`` with ``-Wall``, which hid functions such as
-:func:`os.fchdir`, :func:`os.fsync` and :func:`os.fdatasync`.
+Fix a ``configure`` probe that could omit functions such
+as :func:`os.fchdir` from builds using ``-Wall -Werror``.
