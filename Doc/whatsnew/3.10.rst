@@ -1648,7 +1648,7 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` instead.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* :meth:`!zimport.zipimporter.load_module` has been deprecated in
+* :meth:`!zipimport.zipimporter.load_module` has been deprecated in
   preference for :meth:`~zipimport.zipimporter.exec_module`.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
@@ -1711,8 +1711,8 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`42137`.)
 
 * :meth:`!importlib.abc.Loader.module_repr`,
-  :meth:`!importlib.machinery.FrozenLoader.module_repr`, and
-  :meth:`!importlib.machinery.BuiltinLoader.module_repr` are deprecated and
+  :meth:`!importlib.machinery.FrozenImporter.module_repr`, and
+  :meth:`!importlib.machinery.BuiltinImporter.module_repr` are deprecated and
   slated for removal in Python 3.12.
   (Contributed by Brett Cannon in :issue:`42136`.)
 
@@ -1742,7 +1742,7 @@ Deprecated
 
   * ``threading.Thread.setName`` => :attr:`threading.Thread.name`
 
-  * ``threading.thread.getName`` => :attr:`threading.Thread.name`
+  * ``threading.Thread.getName`` => :attr:`threading.Thread.name`
 
   * ``threading.Thread.isDaemon`` => :attr:`threading.Thread.daemon`
 

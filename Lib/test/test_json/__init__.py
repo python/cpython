@@ -48,13 +48,10 @@ class TestCTest(CTest):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(json, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, json, "__version__", "__author__", remove=(3, 20),
+        )
 
 
 def load_tests(loader, _, pattern):
@@ -63,6 +60,7 @@ def load_tests(loader, _, pattern):
         suite.addTest(doctest.DocTestSuite(mod))
     suite.addTest(TestPyTest('test_pyjson'))
     suite.addTest(TestCTest('test_cjson'))
+    suite.addTests(loader.loadTestsFromTestCase(TestModule))
 
     pkg_dir = os.path.dirname(__file__)
     return support.load_package_tests(pkg_dir, loader, suite, pattern)

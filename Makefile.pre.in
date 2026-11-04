@@ -659,6 +659,7 @@ LIBEXPAT_OBJS= \
 LIBEXPAT_HEADERS= \
 		Modules/expat/ascii.h \
 		Modules/expat/asciitab.h \
+		Modules/expat/entities.h \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \

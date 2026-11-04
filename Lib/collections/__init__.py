@@ -1163,8 +1163,7 @@ class ChainMap(_collections_abc.MutableMapping):
         if not isinstance(other, _collections_abc.Mapping):
             return NotImplemented
         m = dict(other)
-        for child in reversed(self.maps):
-            m.update(child)
+        m.update(self)
         return self.__class__(m)
 
 
