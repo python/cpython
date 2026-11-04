@@ -85,18 +85,26 @@ functions: :func:`~fnmatch.fnmatch`, :func:`fnmatchcase`, :func:`.filter`,
 
 .. function:: filter(names, pat)
 
-   Construct a list from those elements of the :term:`iterable` of filename
-   strings *names* that match the pattern string *pat*.
+   Construct a list from those elements of the :term:`iterable` of filenames
+   *names* that match the pattern string *pat*.
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
+
+   The filenames may be strings or path-like objects. Each filename is
+   normalized using :func:`os.path.normcase` for matching; the original
+   objects are preserved in the returned list.
 
 
 .. function:: filterfalse(names, pat)
 
-   Construct a list from those elements of the :term:`iterable` of filename
-   strings *names* that do not match the pattern string *pat*.
+   Construct a list from those elements of the :term:`iterable` of filenames
+   *names* that do not match the pattern string *pat*.
    It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
    but implemented more efficiently.
+
+   The filenames may be strings or path-like objects. Each filename is
+   normalized using :func:`os.path.normcase` for matching; the original
+   objects are preserved in the returned list.
 
    .. versionadded:: 3.14
 

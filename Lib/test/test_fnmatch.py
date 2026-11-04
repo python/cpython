@@ -318,16 +318,15 @@ class TranslateTestCase(unittest.TestCase):
 
 
 class FilterTestCase(unittest.TestCase):
-    def test_pathlike(self):
-        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
-        self.assertEqual(filter(names, "P*"), [names[0]])
-
-
     def test_filter(self):
         self.assertEqual(filter(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*'),
                          ['Python', 'Perl'])
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
+
+    def test_filter_pathlike(self):
+        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
+        self.assertEqual(filter(names, "P*"), [names[0]])
 
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filter, ['test'], b'*')
@@ -347,16 +346,15 @@ class FilterTestCase(unittest.TestCase):
 
 
 class FilterFalseTestCase(unittest.TestCase):
-    def test_pathlike(self):
-        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
-        self.assertEqual(filterfalse(names, "P*"), [names[1]])
-
-
     def test_filterfalse(self):
         actual = filterfalse(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*')
         self.assertListEqual(actual, ['Ruby', 'Tcl'])
         actual = filterfalse([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*')
         self.assertListEqual(actual, [b'Ruby', b'Tcl'])
+
+    def test_filterfalse_pathlike(self):
+        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
+        self.assertEqual(filterfalse(names, "P*"), [names[1]])
 
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filterfalse, ['test'], b'*')
