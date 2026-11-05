@@ -2062,6 +2062,24 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
 
+    def test_audit_hook_survives_allocator_change(self):
+        # A hook added before Py_Initialize() is freed at finalization, after
+        # PYTHONMALLOC changed the raw allocator: the entry must not be
+        # allocated with one allocator and freed with another.
+        allocators = ['debug']
+        if not support.Py_GIL_DISABLED:
+            allocators.append('malloc_debug')
+        if support.with_mimalloc():
+            allocators.extend(['mimalloc', 'mimalloc_debug'])
+        for allocator in allocators:
+            with self.subTest(allocator=allocator):
+                self.run_embedded_interpreter(
+                    "test_audit", env={'PYTHONMALLOC': allocator})
+        # The development mode installs the debug hooks too
+        with self.subTest(dev_mode=True):
+            self.run_embedded_interpreter(
+                "test_audit", env={'PYTHONDEVMODE': '1'})
+
     def test_audit_tuple(self):
         self.run_embedded_interpreter("test_audit_tuple")
 

@@ -32,6 +32,7 @@ Data members:
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
+#include "pycore_pymem_init.h"    // _PyMem_RawMalloc()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_runtime.h"       // _PyRuntimeState_Get*()
@@ -448,7 +449,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
-        PyMem_RawFree(e);
+        _PyMem_RawFree(NULL, e);
         e = n;
     }
 }
@@ -496,8 +497,12 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
-            sizeof(_Py_AuditHookEntry));
+    /* Use malloc(), not PyMem_RawMalloc(): a hook can be added before
+       Py_Initialize(), and the entry is freed during finalization, after
+       PYTHONMALLOC may have changed the raw allocator (and, in debug builds,
+       the allocator under the debug hooks). */
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)_PyMem_RawMalloc(
+            NULL, sizeof(_Py_AuditHookEntry));
     if (!e) {
         if (tstate != NULL) {
             _PyErr_NoMemory(tstate);
