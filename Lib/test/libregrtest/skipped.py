@@ -45,52 +45,13 @@ NEED_TESTMULTIPHASE = {
 
 # List of tests expected to be skipped
 EXPECTED_SKIP = set()
-if support.MS_WINDOWS:
-    EXPECTED_SKIP |= {
-        # UNIX only
-        'test_asyncio.test_unix_events',
-        # test_gdb doesn't work on Windows
-        'test_gdb',
-        # Can't test signal on Windows
-        'test_threadsignals',
-    }
-else:
-    EXPECTED_SKIP |= {
-        # Tests specific to Windows
-        'test_asyncio.test_windows_events',
-        'test_asyncio.test_windows_utils',
-        'test_msvcrt',
-        'test_os.test_windows',
-        'test_winapi',
-        'test_winconsoleio',
-        'test_winreg',
-        'test_winsound',
-        'test_wmi',
-    }
-
-if sys.platform in ("win32", 'darwin'):
-    EXPECTED_SKIP.add('test_multiprocessing_fork')
-if sys.platform in ("win32", "cygwin"):
-    EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 
 if support.Py_GIL_DISABLED:
+    # Need GIL build
     EXPECTED_SKIP.add('test_interpreters')
 else:
+    # Need Free Threading build
     EXPECTED_SKIP.add('test_free_threading')
-
-if not hasattr(os, 'startfile'):
-    EXPECTED_SKIP.add('test_startfile')
-if not hasattr(os, "openpty"):
-    EXPECTED_SKIP.add('test_openpty')
-if not hasattr(os, "wait3"):
-    EXPECTED_SKIP.add('test_wait3')
-if not hasattr(os, "wait4"):
-    EXPECTED_SKIP.add('test_wait4')
-
-if not support.is_android:
-    EXPECTED_SKIP.add('test_android')
-if not support.is_apple:
-    EXPECTED_SKIP.add('test_apple')
 
 if not support.has_socket_support or IS_WASI:
     # Need socket support
@@ -139,13 +100,96 @@ if not support.has_subprocess_support or IS_WASI:
         'test_subprocess',
         'test_tools',
     }
+if not support.has_fork_support or IS_WASI:
+    # Need fork
+    EXPECTED_SKIP |= {
+        'test_fork1',
+        'test_multiprocessing_forkserver',
+        'test_wait3',
+        'test_wait4',
+    }
+
+
+if support.MS_WINDOWS:
+    # Tests specific to non-Windows platforms
+    EXPECTED_SKIP |= {
+        'test_asyncio.test_unix_events',  # UNIX only
+        'test_dbm_gnu',        # Need dbm.gnu module
+        'test_dbm_ndbm',       # Need dbm.ndbm module
+        'test_fcntl',          # Need fcntl module
+        'test_free_threading.test_dbm_gnu',   # Need dbm.gnu module
+        'test_free_threading.test_grp',       # Need grp module
+        'test_free_threading.test_pwd',       # Need pwd module
+        'test_free_threading.test_readline',  # Need readline module
+        'test_free_threading.test_resource',  # Need resource module
+        'test_free_threading.test_syslog',    # Need syslog module
+        'test_gdb',            # test_gdb doesn't work on Windows
+        'test_grp',            # Need grp module
+        'test_ioctl',          # Need fcntl module
+        'test_openpty',        # Need os.openpty()
+        'test_pty',            # Need termios module
+        'test_pwd',            # Need pwd module
+        'test_readline',       # Need readline module
+        'test_resource',       # Need resource module
+        'test_syslog',         # Need syslog module
+        'test_termios',        # Need termios module
+        'test_threadsignals',  # Can't test signal on Windows
+        'test_tty',            # Need termios and tty modules
+        'test_wait3',          # Need os.wait3()
+        'test_wait4',          # Need os.wait4()
+    }
+else:
+    EXPECTED_SKIP |= {
+        # Tests specific to Windows
+        'test_asyncio.test_windows_events',
+        'test_asyncio.test_windows_utils',
+        'test_msvcrt',
+        'test_os.test_windows',
+        'test_startfile',      # Need os.startfile()
+        'test_winapi',
+        'test_winconsoleio',
+        'test_winreg',
+        'test_winsound',
+        'test_wmi',
+    }
+if sys.platform in ("win32", 'darwin'):
+    EXPECTED_SKIP.add('test_multiprocessing_fork')
+if sys.platform in ("win32", "cygwin"):
+    EXPECTED_SKIP.add('test_multiprocessing_forkserver')
+
+if not support.is_android:
+    EXPECTED_SKIP.add('test_android')
+if not support.is_apple:
+    EXPECTED_SKIP.add('test_apple')
+
+if support.is_apple_mobile:
+    # configure disables multiple extension modules on Apple mobile
+    EXPECTED_SKIP |= {
+        'test_curses',                 # need _curses
+        'test_grp',                    # need grp
+        'test_syslog',                 # need syslog
+    }
+    EXPECTED_SKIP |= NEED_MULTIPROCESSING
+
 if support.is_emscripten:
+    # configure disables multiple extension modules on Emscripten
+    EXPECTED_SKIP |= {
+        'test__interpchannels',        # need _interpchannels
+        'test__interpreters',          # need _interpreters
+        'test_crossinterp',            # need _interpreters
+        'test_curses',                 # need _curses
+        'test_grp',                    # need grp
+        'test_pwd',                    # need pwd
+        'test_resource',               # need resource
+        'test_syslog',                 # need syslog
+    }
     EXPECTED_SKIP |= {
         # Incompatible with Emscripten's mmap emulation
         'test_mmap',
         # Cannot create socketpair on Emscripten/WASI
         'test_selectors',
     }
+
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP |= {
         # pty is not available on these platforms
@@ -153,16 +197,11 @@ if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI
         # venv is not available on these platforms
         'test_venv',
     }
+
 # On FreeBSD, is_remote_debug_enabled() is always false
 if not sys.is_remote_debug_enabled():
     EXPECTED_SKIP.add('test_remote_pdb')
-if not support.has_fork_support or IS_WASI:
-    EXPECTED_SKIP |= {
-        'test_fork1',
-        'test_multiprocessing_forkserver',
-        'test_wait3',
-        'test_wait4',
-    }
+
 if IS_WASI:
     EXPECTED_SKIP |= {
         # configure disables multiple extension modules on WASI
@@ -207,51 +246,51 @@ if IS_WASI:
     EXPECTED_SKIP |= NEED_SSL
 
 
-# Modules needed by a test.
-# Used to check if a test is expected to be skipped.
-# NEED_MODULES doesn't work on WASI, since the main regrtest process is run
-# on the build Python which is different than the host (WASI) Python.
-NEED_MODULES = {
-    'test__interpchannels': '_interpchannels',
-    'test__interpreters': '_interpreters',
-    'test_crossinterp': '_interpreters',
-    'test_curses': ('_curses', 'curses', 'curses.ascii', 'curses.textpad'),
-    'test_dbm_gnu': 'dbm.gnu',
-    'test_dbm_ndbm': 'dbm.ndbm',
-    'test_fcntl': 'fcntl',
-    'test_free_threading.test_dbm_gnu': 'dbm.gnu',
-    'test_free_threading.test_grp': 'grp',
-    'test_free_threading.test_pwd': 'pwd',
-    'test_free_threading.test_readline': 'readline',
-    'test_free_threading.test_resource': 'resource',
-    'test_free_threading.test_syslog': 'syslog',
-    'test_grp': 'grp',
-    'test_ioctl': ('fcntl', 'termios'),
-    'test_lzma': '_lzma',
-    'test_pty': 'termios',
-    'test_pwd': 'pwd',
-    'test_readline': 'readline',
-    'test_resource': 'resource',
-    'test_syslog': 'syslog',
-    'test_termios': 'termios',
-    'test_tty': ('termios', 'tty'),
-    'test_xxlimited': 'xxlimited',
-    'test_xxtestfuzz': '_xxtestfuzz',
-    'test_zstd': '_zstd',
-}
-for name in NEED_MULTIPROCESSING:
-    NEED_MODULES[name] = '_multiprocessing'
-for name in (
-    'test_idle',
-    'test_tcl',
-    'test_tkinter',
-    'test_ttk',
-    'test_ttk_textonly',
-    'test_turtle',
-):
-    NEED_MODULES[name] = '_tkinter'
-for name in NEED_SSL:
-    NEED_MODULES[name] = '_ssl'
+## # Modules needed by a test.
+## # Used to check if a test is expected to be skipped.
+## # NEED_MODULES doesn't work on WASI, since the main regrtest process is run
+## # on the build Python which is different than the host (WASI) Python.
+## NEED_MODULES = {
+##     'test__interpchannels': '_interpchannels',
+##     'test__interpreters': '_interpreters',
+##     'test_crossinterp': '_interpreters',
+##     'test_curses': ('_curses', 'curses', 'curses.ascii', 'curses.textpad'),
+##     'test_dbm_gnu': 'dbm.gnu',
+##     'test_dbm_ndbm': 'dbm.ndbm',
+##     'test_fcntl': 'fcntl',
+##     'test_free_threading.test_dbm_gnu': 'dbm.gnu',
+##     'test_free_threading.test_grp': 'grp',
+##     'test_free_threading.test_pwd': 'pwd',
+##     'test_free_threading.test_readline': 'readline',
+##     'test_free_threading.test_resource': 'resource',
+##     'test_free_threading.test_syslog': 'syslog',
+##     'test_grp': 'grp',
+##     'test_ioctl': ('fcntl', 'termios'),
+##     'test_lzma': '_lzma',
+##     'test_pty': 'termios',
+##     'test_pwd': 'pwd',
+##     'test_readline': 'readline',
+##     'test_resource': 'resource',
+##     'test_syslog': 'syslog',
+##     'test_termios': 'termios',
+##     'test_tty': ('termios', 'tty'),
+##     'test_xxlimited': 'xxlimited',
+##     'test_xxtestfuzz': '_xxtestfuzz',
+##     'test_zstd': '_zstd',
+## }
+## for name in NEED_MULTIPROCESSING:
+##     NEED_MODULES[name] = '_multiprocessing'
+## for name in (
+##     'test_idle',
+##     'test_tcl',
+##     'test_tkinter',
+##     'test_ttk',
+##     'test_ttk_textonly',
+##     'test_turtle',
+## ):
+##     NEED_MODULES[name] = '_tkinter'
+## for name in NEED_SSL:
+##     NEED_MODULES[name] = '_ssl'
 
 
 NEED_WORKING_THREADING = {
@@ -285,13 +324,13 @@ def expected_to_be_skipped(test_name):
     if package in EXPECTED_SKIP:
         return True
 
-    # Test NEED_MODULES
-    if test_name in NEED_MODULES:
-        if miss_modules(NEED_MODULES[test_name]):
-            return True
-    elif package in NEED_MODULES:
-        if miss_modules(NEED_MODULES[package]):
-            return True
+    ## # Test NEED_MODULES
+    ## if test_name in NEED_MODULES:
+    ##     if miss_modules(NEED_MODULES[test_name]):
+    ##         return True
+    ## elif package in NEED_MODULES:
+    ##     if miss_modules(NEED_MODULES[package]):
+    ##         return True
 
     # Custom ruleset
     if (test_name in NEED_WORKING_THREADING
