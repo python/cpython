@@ -224,13 +224,14 @@ if os.name == 'nt':
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def is_python_build():
-    for fn in ("Setup", "Setup.local"):
-        if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
-            return True
-    return False
+def is_python_build(check_home=None):
+    if check_home is not None:
+        import warnings
+        warnings.warn("check_home argument is deprecated and ignored.",
+                      DeprecationWarning, stacklevel=2)
+    return bool(sys.build_prefix)
 
-_PYTHON_BUILD = is_python_build()
+_PYTHON_BUILD = bool(sys.build_prefix)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
