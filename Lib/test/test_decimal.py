@@ -3763,6 +3763,20 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.to_integral_value, '10')
         self.assertRaises(TypeError, c.to_integral_value, 10, 'x')
 
+    def test_invalid_signal_dict_flags(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().traps)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(traps=SignalDict())
+
+    def test_invalid_signal_dict_flags(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().flags)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(flags=SignalDict())
+
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
