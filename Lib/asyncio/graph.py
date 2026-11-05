@@ -180,8 +180,7 @@ def capture_call_graph(
     finally:
         del f
 
-    if call_stack:
-        call_stack = call_stack[max(0, operator.index(depth)):]
+    call_stack = call_stack[max(0, operator.index(depth)):]
 
     awaited_by = []
     if future._asyncio_awaited_by:
