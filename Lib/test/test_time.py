@@ -561,6 +561,16 @@ class TimeTestCase(unittest.TestCase):
                 del environ['TZ']
             time.tzset()
 
+    @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_TIMEZONE_GLOBALS'),
+                         'requires libc timezone globals')
+    @support.run_with_tz('IST-1GMT0,M10.5.0,M3.5.0/1')
+    def test_tzset_negative_dst(self):
+        # Prefer libc's standard/DST classification over ordering offsets.
+        # altzone may still assume a one-hour positive DST shift.
+        self.assertEqual(time.timezone, -3600)
+        self.assertEqual(time.tzname, ('IST', 'GMT'))
+        self.assertEqual(time.daylight, 1)
+
     def test_insane_timestamps(self):
         # It's possible that some platform maps time_t to double,
         # and that this test will fail there.  This test should
@@ -858,17 +868,10 @@ class TestPytime(unittest.TestCase):
         lt = time.localtime()
         self.assertHasAttr(lt, "tm_gmtoff")
         self.assertHasAttr(lt, "tm_zone")
-
-        # See if the offset and zone are similar to the module
-        # attributes.
         if lt.tm_gmtoff is None:
             self.assertNotHasAttr(time, "timezone")
-        else:
-            self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
             self.assertNotHasAttr(time, "tzname")
-        else:
-            self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
         # Try and make UNIX times from the localtime and a 9-tuple
         # created from the localtime. Test to see that the times are
@@ -885,6 +888,21 @@ class TestPytime(unittest.TestCase):
         self.assertEqual(new_lt9, lt)
         self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
         self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
+
+    @support.run_with_tz('EST5EDT,M3.2.0,M11.1.0')
+    @skip_if_buggy_ucrt_strfptime
+    def test_localtime_timezone_constants(self):
+        # The module constants cannot describe every historical or current
+        # offset in zones whose rules have changed. Compare them against
+        # localtime() using explicit rules with a one-hour DST shift.
+        for month, isdst in ((1, 0), (7, 1)):
+            with self.subTest(month=month):
+                t = time.mktime((2000, month, 1, 12, 0, 0, 0, 0, -1))
+                lt = time.localtime(t)
+                self.assertEqual(lt.tm_isdst, isdst)
+                self.assertEqual(lt.tm_gmtoff,
+                                 -(time.timezone, time.altzone)[isdst])
+                self.assertEqual(lt.tm_zone, time.tzname[isdst])
 
     def test_strptime_timezone(self):
         t = time.strptime("UTC", "%Z")

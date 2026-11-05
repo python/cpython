@@ -1,0 +1,6 @@
+Use libc's ``timezone``, ``daylight`` and ``tzname`` variables for the
+:mod:`time` module constants when available, rather than estimating them
+from January and July samples. This fixes stale constants after timezone
+rule changes and the standard/DST classification for negative DST zones.
+The existing one-hour approximation for :data:`time.altzone` is unchanged
+on platforms without a native ``altzone`` variable.
