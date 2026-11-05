@@ -291,4 +291,8 @@ def expected_to_be_skipped(test_name):
         import shutil
         return not shutil.which('gdb')
 
+    if test_name == 'test_asdl_parser':
+        # Test only relevant for from-source Python builds
+        return not sysconfig.is_python_build()
+
     return False
