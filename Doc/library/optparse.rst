@@ -2153,7 +2153,7 @@ Features of note:
   actions.
 
 * ``values`` is an instance of the optparse.Values class, which provides
-  the very useful :meth:`ensure_value` method. :meth:`ensure_value` is
+  the very useful :meth:`!ensure_value` method. :meth:`!ensure_value` is
   essentially :func:`getattr` with a safety valve; it is called as ::
 
      values.ensure_value(attr, value)
@@ -2163,9 +2163,9 @@ Features of note:
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using
-  :meth:`ensure_value` means that scripts using your action don't have to worry
+  :meth:`!ensure_value` means that scripts using your action don't have to worry
   about setting a default value for the option destinations in question; they
-  can just leave the default as ``None`` and :meth:`ensure_value` will take care of
+  can just leave the default as ``None`` and :meth:`!ensure_value` will take care of
   getting it right when it's needed.
 
 Exceptions
