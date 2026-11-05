@@ -282,8 +282,6 @@ def expected_to_be_skipped(test_name):
 
     if test_name in ('test_perf_profiler', 'test_perfmaps', 'test_samply_profiler'):
         # need perf trampoline profiling
-        import sysconfig
-        perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
-        return (not perf_trampoline or int(perf_trampoline) != 1)
+        return not support.supports_perf_trampoline_profiling()
 
     return False
