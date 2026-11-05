@@ -47,12 +47,16 @@ NEED_TESTMULTIPHASE = {
 EXPECTED_SKIP = set()
 if support.MS_WINDOWS:
     EXPECTED_SKIP |= {
+        # UNIX only
         'test_asyncio.test_unix_events',
+        # test_gdb doesn't work on Windows
         'test_gdb',
+        # Can't test signal on Windows
         'test_threadsignals',
     }
 else:
     EXPECTED_SKIP |= {
+        # Tests specific to Windows
         'test_asyncio.test_windows_events',
         'test_asyncio.test_windows_utils',
         'test_msvcrt',
@@ -89,7 +93,7 @@ if not support.is_apple:
     EXPECTED_SKIP.add('test_apple')
 
 if not support.has_socket_support or IS_WASI:
-    # need socket support
+    # Need socket support
     EXPECTED_SKIP |= {
         'test_asyncgen',
         'test_asyncio',
@@ -114,7 +118,7 @@ if not support.has_socket_support or IS_WASI:
     }
     EXPECTED_SKIP |= SELECT_TESTS
 if not support.has_subprocess_support or IS_WASI:
-    # need subprocess support
+    # Need subprocess support
     EXPECTED_SKIP |= {
         'test_argparse',
         'test_c_stack_unwind',
@@ -137,14 +141,19 @@ if not support.has_subprocess_support or IS_WASI:
     }
 if support.is_emscripten:
     EXPECTED_SKIP |= {
+        # Incompatible with Emscripten's mmap emulation
         'test_mmap',
+        # Cannot create socketpair on Emscripten/WASI
         'test_selectors',
     }
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP |= {
+        # pty is not available on these platforms
         'test_pty',
+        # venv is not available on these platforms
         'test_venv',
     }
+# On FreeBSD, is_remote_debug_enabled() is always false
 if not sys.is_remote_debug_enabled():
     EXPECTED_SKIP.add('test_remote_pdb')
 if not support.has_fork_support or IS_WASI:
@@ -156,44 +165,52 @@ if not support.has_fork_support or IS_WASI:
     }
 if IS_WASI:
     EXPECTED_SKIP |= {
+        # configure disables multiple extension modules on WASI
         'test__interpchannels',        # need _interpchannels
         'test__interpreters',          # need _interpreters
-        'test_bz2',                    # need _bz2
         'test_crossinterp',            # need _interpreters
-        'test_ctypes',                 # need _ctypes
         'test_curses',                 # need _curses
-        'test_dbm_sqlite3',            # need _sqlite3
         'test_external_inspection',    # need _remote_debugging
         'test_fcntl',                  # need fcntl
         'test_gc_stats',               # need _remote_debugging
         'test_grp',                    # need grp
-        'test_gzip',                   # need zlib
         'test_ioctl',                  # need fcntl
-        'test_lzma',                   # need _lzma
         'test_mmap',                   # need mmap
-        'test_openpty',                # need os.openpty()
         'test_pwd',                    # need pwd
         'test_pyrepl',                 # need termios
-        'test_remote_pdb',             # need remote debugging
+        'test_remote_pdb',             # need _remote_debugging
         'test_resource',               # need resource
-        'test_sqlite3',                # need _sqlite3
-        'test_stable_abi_ctypes',      # need _ctypes
         'test_syslog',                 # need syslog
         'test_termios',                # need termios
         'test_tty',                    # need termios
         'test_xxlimited',              # need xxlimited
+
+        # Missing functions on WASI
+        'test_openpty',                # need os.openpty()
+
+        # Missing dependencies on WASI
+        'test_bz2',                    # need _bz2
+        'test_ctypes',                 # need _ctypes
+        'test_dbm_sqlite3',            # need _sqlite3
+        'test_gzip',                   # need zlib
+        'test_lzma',                   # need _lzma
+        'test_sqlite3',                # need _sqlite3
+        'test_stable_abi_ctypes',      # need _ctypes
         'test_zlib',                   # need zlib
         'test_zstd',                   # need _zstd
     }
-    EXPECTED_SKIP |= NEED_MULTIPROCESSING
-    EXPECTED_SKIP |= NEED_SSL
+    # configure disables _multiprocessing and _testmultiphase
+    # extension modules on WASI
     EXPECTED_SKIP |= NEED_TESTMULTIPHASE
+    EXPECTED_SKIP |= NEED_MULTIPROCESSING
+    # Missing OpenSSL dependency on WASI
+    EXPECTED_SKIP |= NEED_SSL
 
 
 # Modules needed by a test.
 # Used to check if a test is expected to be skipped.
-# NEED_MODULES doesn't work on WASI, since the regrtest summary is run on the
-# build Python which is different than the host (WASI) Python.
+# NEED_MODULES doesn't work on WASI, since the main regrtest process is run
+# on the build Python which is different than the host (WASI) Python.
 NEED_MODULES = {
     'test__interpchannels': '_interpchannels',
     'test__interpreters': '_interpreters',
@@ -279,25 +296,34 @@ def expected_to_be_skipped(test_name):
     # Custom ruleset
     if (test_name in NEED_WORKING_THREADING
         or package in NEED_WORKING_THREADING):
+        # Detect whether Python can start new threads
+        # - wasm32-wasi does not have threading.
+        # - wasm32-emscripten can be compiled with or without pthread
+        #   support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
         if IS_WASI:
             return True
         from test.support import threading_helper
         return not threading_helper.can_start_thread
 
     if test_name in SELECT_TESTS:
+        # For example, test_epoll needs select.epoll()
         import select
         name = test_name.removeprefix('test_')
         return not hasattr(select, name)
 
     if test_name == 'test_dtrace':
+        # Need ./configure --with-dtrace
         import sysconfig
         return not sysconfig.get_config_var('WITH_DTRACE')
 
     if test_name in ('test_perf_profiler', 'test_perfmaps', 'test_samply_profiler'):
-        # need perf trampoline profiling
+        # Need perf trampoline profiling: configure defines the
+        # PY_HAVE_PERF_TRAMPOLINE macro on Linux (x86-64 and AArch64)
+        # and on macOS.
         return not support.supports_perf_trampoline_profiling()
 
     if package == 'test_gdb':
+        # Need gdb program
         import shutil
         return not shutil.which('gdb')
 
