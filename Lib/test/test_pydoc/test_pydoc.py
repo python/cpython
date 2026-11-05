@@ -2296,17 +2296,15 @@ class TestHelper(unittest.TestCase):
 
     def test_related_topics(self):
         # Every related help topic must be something help() can document.
-        helper = pydoc.Helper
-        for name, target in (*helper.topics.items(), *helper.keywords.items()):
+        for name, target in (*pydoc.Helper.topics.items(),
+                             *pydoc.Helper.keywords.items()):
             if not isinstance(target, tuple):
                 continue
             for xref in target[1].split():
                 with self.subTest(topic=name, xref=xref):
-                    self.assertTrue(xref in helper.topics
-                                    or xref in helper.keywords
-                                    or xref in helper.symbols
-                                    or xref == 'keywords'  # the keyword list
-                                    or pydoc.locate(xref) is not None)
+                    buf = StringIO()
+                    pydoc.Helper(output=buf).help(xref)
+                    self.assertNotIn('No help entry found', buf.getvalue())
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session
