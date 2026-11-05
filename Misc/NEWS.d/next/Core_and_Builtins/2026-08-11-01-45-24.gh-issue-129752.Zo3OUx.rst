@@ -1,2 +1,0 @@
-Don't update adaptive counters in the free-threaded build when thread-local
-bytecode is disabled (``-X tlbc=0``). Patch by Donghee Na.

@@ -176,35 +176,24 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
-        def run_python(*args):
-            # this is similar to assert_python_ok but doesn't strip
-            # the refcount from stderr.  It can be replaced once
-            # assert_python_ok stops doing that.
-            cmd = [sys.executable]
-            cmd.extend(args)
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
-            out, err = p.communicate()
-            p.stdout.close()
-            p.stderr.close()
-            rc = p.returncode
-            self.assertEqual(rc, 0)
-            return rc, out, err
-        code = 'import sys; print(sys._xoptions)'
         # normally the refcount is hidden
-        rc, out, err = run_python('-c', code)
-        self.assertEqual(out.rstrip(), b'{}')
-        self.assertEqual(err, b'')
+        # (assert_python_ok() enables faulthandler)
+        code = 'import sys; print(sys._xoptions)'
+        proc = assert_python_ok('-c', code)
+        self.assertEqual(proc.out.rstrip(), b"{'faulthandler': True}")
+        self.assertEqual(proc.err, b'')
+
         # "-X showrefcount" shows the refcount, but only in debug builds
-        rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
-        self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
+        proc = assert_python_ok('-I', '-X', 'showrefcount', '-c', code)
+        self.assertEqual(proc.out.rstrip(),
+                         b"{'faulthandler': True, 'showrefcount': True}")
         if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
-            self.assertRegex(err, br'^\[-?\d+ refs, \d+ blocks\]')
+            self.assertRegex(proc.err, br'^\[-?\d+ refs, \d+ blocks\]')
         else:
-            self.assertEqual(err, b'')
+            self.assertEqual(proc.err, b'')
 
     @support.cpython_only
     def test_xoption_frozen_modules(self):
@@ -684,11 +673,11 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_unknown_options(self):
-        # Test unknown option -a
+        # Test unknown option
         for option in ('-z', '--long-option', '---'):
             with self.subTest(option=option):
                 rc, out, err = assert_python_failure('-E', option)
-                errmsg = f'Unknown option: {option}'.encode()
+                errmsg = f"Invalid option '{option}'".encode()
                 self.assertIn(errmsg, err)
                 self.assertEqual(err.splitlines().count(errmsg), 1)
                 self.assertEqual(b'', out)
@@ -696,15 +685,21 @@ class CmdLineTest(unittest.TestCase):
         # Add "without='-E'" to prevent _assert_python to append -E
         # to env_vars and change the output of stderr
         rc, out, err = assert_python_failure('-z', without='-E')
-        self.assertIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertIn(b"Invalid option '-z'", err)
+        self.assertEqual(err.splitlines().count(b"Invalid option '-z'"), 1)
         self.assertEqual(b'', out)
 
         rc, out, err = assert_python_failure('-a', '-z', without='-E')
-        self.assertIn(b'Unknown option: -a', err)
+        self.assertIn(b"Invalid option '-a'", err)
         # only the first unknown option is reported
-        self.assertNotIn(b'Unknown option: -z', err)
-        self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
+        self.assertNotIn(b"Invalid option '-z'", err)
+        self.assertEqual(err.splitlines().count(b"Invalid option '-a'"), 1)
+        self.assertEqual(b'', out)
+
+        # gh-132414: a quoted "-q -i" arrives as one argument; the space
+        # after -q must be visible in the error message
+        rc, out, err = assert_python_failure('-q -i', without='-E')
+        self.assertIn(b"Invalid option '- '", err)
         self.assertEqual(b'', out)
 
     @unittest.skipIf(interpreter_requires_environment(),
@@ -845,10 +840,13 @@ class CmdLineTest(unittest.TestCase):
             code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
-            if support.with_pymalloc():
-                alloc_name = "pymalloc_debug"
-            elif support.Py_GIL_DISABLED:
+            if support.Py_GIL_DISABLED:
                 alloc_name = "mimalloc_debug"
+            elif support.check_sanitizer(address=True, memory=True):
+                # ASan and MSan builds default to malloc, even with pymalloc.
+                alloc_name = "malloc_debug"
+            elif support.with_pymalloc():
+                alloc_name = "pymalloc_debug"
             else:
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
@@ -927,10 +925,15 @@ class CmdLineTest(unittest.TestCase):
         # Test the PYTHONMALLOC environment variable
         malloc = not support.Py_GIL_DISABLED
         pymalloc = support.with_pymalloc()
+        sanitizer = support.check_sanitizer(address=True, memory=True)
         mimalloc = support.with_mimalloc()
         if support.Py_GIL_DISABLED:
             default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
             default_name_debug = 'mimalloc_debug'
+        elif sanitizer:
+            # ASan and MSan builds default to malloc, even with pymalloc.
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
+            default_name_debug = 'malloc_debug'
         elif pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
@@ -1165,7 +1168,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "Unknown option: --unknown-option\nusage: "
+        err_msg = "Invalid option '--unknown-option'\nusage: "
         self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 

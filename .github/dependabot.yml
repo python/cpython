@@ -28,6 +28,17 @@ updates:
     cooldown:
       default-days: 14
 
+  - package-ecosystem: "npm"
+    directory: "/Platforms/emscripten/browser_test/"
+    schedule:
+      interval: "quarterly"
+    labels: ["OS-emscripten", "skip issue", "skip news"]
+    groups:
+      npm:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
   # Release branches: Dependabot only reads this file from the default
   # branch, so each branch that should get its own actions bumps needs an
   # entry here with `target-branch`. Add one when a new release branch is
@@ -92,18 +103,6 @@ updates:
     cooldown:
       default-days: 14
 
-  - package-ecosystem: "github-actions"
-    target-branch: "3.10"
-    directory: "/"
-    schedule:
-      interval: "quarterly"
-    labels: ["skip issue", "skip news"]
-    groups:
-      actions:
-        patterns: ["*"]
-    cooldown:
-      default-days: 14
-
   # Only bump bugfix branches for pip. Remove
   # the entry when branch goes security-only.
   - package-ecosystem: "pip"
@@ -130,14 +129,28 @@ updates:
     cooldown:
       default-days: 14
 
-  - package-ecosystem: "pip"
-    target-branch: "3.13"
-    directory: "/Tools/"
+  # Only bump bugfix branches for npm. Remove
+  # the entry when branch goes security-only.
+  - package-ecosystem: "npm"
+    target-branch: "3.15"
+    directory: "/Platforms/emscripten/browser_test/"
     schedule:
       interval: "quarterly"
-    labels: ["skip issue", "skip news"]
+    labels: ["OS-emscripten", "skip issue", "skip news"]
     groups:
-      pip:
+      npm:
+        patterns: ["*"]
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "npm"
+    target-branch: "3.14"
+    directory: "/Platforms/emscripten/browser_test/"
+    schedule:
+      interval: "quarterly"
+    labels: ["OS-emscripten", "skip issue", "skip news"]
+    groups:
+      npm:
         patterns: ["*"]
     cooldown:
       default-days: 14

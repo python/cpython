@@ -1,9 +1,0 @@
-:meth:`ssl.SSLContext.wrap_bio` now validates its *server_side*,
-*server_hostname* and *session* arguments similar to
-:meth:`ssl.SSLContext.wrap_socket`.
-
-In particular, a context with :attr:`~ssl.SSLContext.check_hostname` enabled
-and no *server_hostname* passed to :meth:`!wrap_bio` now raises :exc:`ValueError`
-instead of completing a handshake that verified the certificate chain
-without verifying the peer's identity, with no indication that the
-check had been skipped.

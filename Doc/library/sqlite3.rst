@@ -505,7 +505,7 @@ Module constants
    This may be different from the SQLite library actually used at runtime,
    which is available as :const:`sqlite_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: sqlite_version
 
@@ -523,14 +523,14 @@ Module constants
    This may be different from the SQLite library actually used at runtime,
    which is available as :const:`sqlite_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: sqlite_version_info
 
    A named tuple containing the version of the runtime SQLite library,
    with the same fields as :const:`SQLITE_VERSION_INFO`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       It is now a named tuple.
 
 .. data:: SQLITE_KEYWORDS
@@ -1443,7 +1443,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``row_factory`` attribute is no longer allowed.
 
    .. attribute:: text_factory
@@ -1455,7 +1455,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-encoding` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
@@ -1741,7 +1741,7 @@ Cursor objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``row_factory`` attribute is no longer allowed.
 
 
@@ -1786,7 +1786,7 @@ Blob objects
 
    .. versionadded:: 3.11
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`Blob` now supports negative-step slices
       (e.g. ``blob[9:0:-2]``) for both reading and writing.
 

@@ -1,0 +1,5 @@
+Fix :meth:`re.Pattern.match`, :meth:`re.Pattern.prefixmatch`,
+:meth:`re.Pattern.fullmatch` and the ``match()`` and ``prefixmatch()`` methods
+of scanner objects returning an empty match, or reading past the end of the
+string, when *pos* is greater than *endpos*.  They now return ``None``, as
+documented.
