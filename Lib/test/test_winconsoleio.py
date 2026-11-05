@@ -160,7 +160,7 @@ class WindowsConsoleIOTests(unittest.TestCase):
                         testcases.append(data + b'\xff')
                         # incomplete multibyte sequence
                         with self.subTest(data=data):
-                            self.assertEqual(f.write(data), len(a))
+                            self.assertEqual(f.write(data), len(a or data))
             for data in testcases:
                 with self.subTest(data=data):
                     self.assertEqual(f.write(data), len(data))
