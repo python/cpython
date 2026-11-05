@@ -17,6 +17,7 @@
 #include <Python.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <marshal.h>  /* PyMarshal_ReadObjectFromString for fuzz_marshal */
 
 /*  Fuzz PyFloat_FromString as a proxy for float(str). */
 static int fuzz_builtin_float(const char* data, size_t size) {
@@ -595,6 +596,125 @@ static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* 
     return rv;
 }
 
+#define MAX_DESERIALISE_TEST_SIZE 0x100000
+
+/* Fuzz marshal.loads() via PyMarshal_ReadObjectFromString. marshal is the
+   deserialiser behind .pyc files and marshal.dumps()/loads(); unmarshalling
+   attacker-supplied bytes must stay memory-safe (invalid type tags, negative
+   or oversized length fields, dangling ref tags, malformed code objects). */
+static int fuzz_marshal(const char* data, size_t size) {
+    if (size > MAX_DESERIALISE_TEST_SIZE) {
+        return 0;
+    }
+    PyObject* obj = PyMarshal_ReadObjectFromString(data, (Py_ssize_t)size);
+    if (obj == NULL) {
+        /* Expected for attacker-controlled bytes: truncated streams raise
+           EOFError, invalid tags raise ValueError, malformed code objects
+           raise TypeError, deeply nested data raises RecursionError and
+           oversized length fields raise MemoryError. */
+        if (PyErr_ExceptionMatches(PyExc_EOFError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError) ||
+            PyErr_ExceptionMatches(PyExc_TypeError) ||
+            PyErr_ExceptionMatches(PyExc_RecursionError) ||
+            PyErr_ExceptionMatches(PyExc_MemoryError))
+        {
+            PyErr_Clear();
+        }
+    }
+    Py_XDECREF(obj);
+    return 0;
+}
+
+/* Fuzz the C unpickler over attacker-controlled bytes: pickle is the classic
+   "never unpickle untrusted data" surface. The load loop stays in C (we
+   subclass the C _pickle.Unpickler); find_class is overridden to raise so
+   mutated payloads cannot import arbitrary modules or execute code inside
+   the fuzzer process, while every opcode-handling code path (stack/memo
+   manipulation, string and framing parsing, object reconstruction) remains
+   covered. Memory-safety bugs still crash the sanitizer. */
+static PyObject* pickle_bytesio_type = NULL;
+static PyObject* safe_unpickler_type = NULL;
+
+static const char* safe_unpickler_code =
+    "class _SafeUnpickler(_pickle.Unpickler):\n"
+    "    def find_class(self, module, name):\n"
+    "        raise _pickle.UnpicklingError('find_class is disabled')\n";
+
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_pickle(void) {
+    PyObject* pickle_module = PyImport_ImportModule("_pickle");
+    if (pickle_module == NULL) {
+        return 0;
+    }
+    PyObject* io_module = PyImport_ImportModule("io");
+    if (io_module == NULL) {
+        Py_DECREF(pickle_module);
+        return 0;
+    }
+    pickle_bytesio_type = PyObject_GetAttrString(io_module, "BytesIO");
+    Py_DECREF(io_module);
+    if (pickle_bytesio_type == NULL) {
+        Py_DECREF(pickle_module);
+        return 0;
+    }
+
+    /* Create the restricted Unpickler subclass once. */
+    PyObject* globals = PyDict_New();
+    if (globals == NULL) {
+        Py_DECREF(pickle_module);
+        return 0;
+    }
+    if (PyDict_SetItemString(globals, "_pickle", pickle_module) < 0) {
+        Py_DECREF(globals);
+        Py_DECREF(pickle_module);
+        return 0;
+    }
+    PyObject* result = PyRun_String(safe_unpickler_code, Py_file_input,
+                                    globals, globals);
+    Py_DECREF(pickle_module);  /* the new class holds its own references */
+    if (result != NULL) {
+        Py_DECREF(result);
+        safe_unpickler_type = PyDict_GetItemString(globals, "_SafeUnpickler");
+        Py_XINCREF(safe_unpickler_type);
+    }
+    Py_DECREF(globals);
+    return safe_unpickler_type != NULL;
+}
+
+/* Fuzz _pickle.Unpickler.load() over untrusted bytes */
+static int fuzz_pickle(const char* data, size_t size) {
+    if (size > MAX_DESERIALISE_TEST_SIZE) {
+        return 0;
+    }
+    PyObject* input = PyObject_CallFunction(pickle_bytesio_type, "y#",
+                                            data, (Py_ssize_t)size);
+    if (input == NULL) {
+        PyErr_Print();
+        abort();
+    }
+    PyObject* unpickler = PyObject_CallFunctionObjArgs(safe_unpickler_type,
+                                                       input, NULL);
+    Py_DECREF(input);
+    if (unpickler == NULL) {
+        PyErr_Print();
+        abort();
+    }
+    PyObject* result = PyObject_CallMethod(unpickler, "load", NULL);
+    Py_DECREF(unpickler);
+    if (result == NULL) {
+        /* Expected for attacker-controlled pickle bytes: invalid streams
+           raise UnpicklingError/EOFError, and object reconstruction (REDUCE,
+           SETSTATE, APPEND on built-in containers) can raise arbitrary
+           exceptions. Python-level failures are cleared here; memory-safety
+           bugs in the opcode machinery still crash the sanitizer. */
+        PyErr_Clear();
+    } else {
+        Py_DECREF(result);
+    }
+    return 0;
+}
+
+
 /* CPython generates a lot of leak warnings for whatever reason. */
 int __lsan_is_turned_off(void) { return 1; }
 
@@ -726,6 +846,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
     rv |= _run_fuzz(data, size, fuzz_pycompile);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_marshal)
+    rv |= _run_fuzz(data, size, fuzz_marshal);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pickle)
+    static int PICKLE_INITIALIZED = 0;
+    if (!PICKLE_INITIALIZED && !init_pickle()) {
+        PyErr_Print();
+        abort();
+    } else {
+        PICKLE_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_pickle);
 #endif
   return rv;
 }
