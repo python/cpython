@@ -2000,8 +2000,7 @@ current_context(decimal_state *state)
         if (!PyDecContext_Check(state, tl_context)) {
             PyErr_Format(PyExc_TypeError,
                          "current decimal context must be a Context "
-                         "instance, got %.200s",
-                         Py_TYPE(tl_context)->tp_name);
+                         "instance, got %T", tl_context);
             Py_DECREF(tl_context);
             return NULL;
         }
