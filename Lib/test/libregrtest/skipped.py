@@ -1,3 +1,7 @@
+"""
+Ruleset to check if a test is expected to be skipped.
+"""
+
 import importlib
 import os
 import sys
@@ -51,8 +55,14 @@ if not support.has_socket_support:
         'test_httpservers',
         'test_imaplib',
         'test_poplib',
+        'test_select',
+        'test_smtplib',
         'test_socket',
         'test_urllib2',
+        'test_urllib2_localnet',
+        'test_wsgiref',
+        'test_xml_dom_xmlbuilder',
+        'test_xmlrpc',
     ))
 if not support.has_subprocess_support:
     EXPECTED_SKIP.extend((
@@ -67,11 +77,21 @@ if not support.has_subprocess_support:
         'test_getopt',
         'test_optparse',
         'test_perf_profiler',
+        'test_regrtest',
+        'test_repl',
+        'test_samply_profiler',
+        'test_subprocess',
+        'test_tools',
     ))
 if support.is_emscripten:
     EXPECTED_SKIP.extend((
         'test_mmap',
+        'test_selectors',
     ))
+if support.is_android or support.is_apple_mobile or support.is_wasm32:
+    EXPECTED_SKIP.append('test_venv')
+if not sys.is_remote_debug_enabled():
+    EXPECTED_SKIP.append('test_remote_pdb')
 
 
 # Modules needed by a test.
@@ -94,6 +114,7 @@ NEED_MODULES = {
     'test_termios': 'termios',
     'test_tty': ('termios', 'tty'),
     'test_xxtestfuzz': '_xxtestfuzz',
+    'test_zstd': '_zstd',
 }
 for name in (
     'test_multiprocessing_fork',
@@ -117,6 +138,16 @@ for name in (
 ):
     NEED_MODULES[name] = '_ssl'
 
+
+NEED_WORKING_THREADING = (
+    'test_concurrent_futures',
+    'test_queue',
+    'test_thread',
+    'test_threadedtempfile',
+    'test_threading',
+    'test_threading_local',
+    'test_webbrowser',
+)
 
 
 def miss_modules(modules):
@@ -157,7 +188,8 @@ def expected_to_be_skipped(test_name):
     if test_name == 'test_dtrace':
         import sysconfig
         return not sysconfig.get_config_var('WITH_DTRACE')
-    if package == 'test_concurrent_futures' or test_name == 'test_queue':
+    if (test_name in NEED_WORKING_THREADING
+        or package in NEED_WORKING_THREADING):
         from test.support import threading_helper
         return not threading_helper.can_start_thread
 
