@@ -414,6 +414,20 @@ class PointersTestCase(unittest.TestCase):
             with self.assertRaises(ctypes.ArgumentError):
                 func(object())
 
+    def test_incomplete_pointer_subscript(self):
+        class BadType(ctypes._Pointer):
+            pass
+
+        buf = bytearray(8)
+        buf[0] = 1
+        obj = BadType.from_buffer(buf)
+        with self.assertRaisesRegex(TypeError, "has no _type_"):
+            obj[0:1]
+        with self.assertRaisesRegex(TypeError, "has no _type_"):
+            obj[0]
+        with self.assertRaisesRegex(TypeError, "has no _type_"):
+            obj[0] = 0
+
 class PointerTypeCacheTestCase(unittest.TestCase):
     # dummy tests to check warnings and base behavior
     def tearDown(self):
