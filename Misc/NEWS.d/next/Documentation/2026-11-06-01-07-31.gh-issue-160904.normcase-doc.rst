@@ -1,0 +1,1 @@
+Fixed the documentation of :func:`os.path.normcase` to clarify that on Posix it calls :func:`os.fspath`, which converts path-like objects to `str` or `bytes`.
