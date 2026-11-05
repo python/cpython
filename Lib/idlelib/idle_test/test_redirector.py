@@ -64,8 +64,11 @@ class WidgetRedirectorTest(unittest.TestCase):
         self.redir.close()
 
     def test_repr(self):  # partly for 100% coverage
-        self.assertIn('Redirector', repr(self.redir))
-        self.assertIn('Original', repr(self.orig_insert))
+        self.assertRegex(repr(self.redir),
+                         r"^WidgetRedirector\(Text<.+>\)$")
+        self.assertRegex(
+            repr(self.orig_insert),
+            r"^OriginalCommand\(WidgetRedirector\(Text<.+>\), 'insert'\)$")
 
     def test_register(self):
         self.assertEqual(self.text.get('1.0', 'end'), '\n')
