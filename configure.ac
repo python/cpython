@@ -6300,8 +6300,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 
 dnl no longer used, now always defined for backwards compatibility
 AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
