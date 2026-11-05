@@ -21,6 +21,7 @@ from test.support import (
     verbose,
 )
 from test import support
+from test.support import os_helper
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
@@ -915,6 +916,83 @@ class TestExit(unittest.TestCase):
     def test_pymain_run_module(self):
         ham = self.ham
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
+
+
+class MiscTests(unittest.TestCase):
+    CODE = textwrap.dedent("""
+        import runpy, sys
+
+        # Remove sys.path[0]
+        orig_path = sys.path.copy()
+        path0 = sys._path0
+        runpy._remove_sys_path0()
+
+        if path0 is not None and path0 in sys.path:
+            raise Exception(f"path0 {path0!r} found in sys.path {sys.path!r}")
+        if not sys.flags.safe_path:
+            if sys.path == orig_path:
+                raise Exception("sys.path was not changed")
+        else:
+            if sys.path != orig_path:
+                raise Exception("sys.path was changed")
+
+        # Calling it twice must do nothing
+        clean_path = sys.path.copy()
+        runpy._remove_sys_path0()
+        if sys.path != clean_path:
+            raise Exception("sys.path was changed")
+    """)
+
+    def run_python(self, *args, PYTHONPATH=None):
+        cmd = [sys.executable, *args]
+        env = support.make_clean_env()
+        if PYTHONPATH:
+            env['PYTHONPATH'] = PYTHONPATH
+        proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_remove_sys_path0(self):
+        # Check that all path0 copies are removed
+        path0 = '/path/zero'
+        stdlib_path = '/to/stdlib'
+        other_path = '/other/path'
+        sys_path = [path0, stdlib_path, path0, '', other_path, path0]
+        expected = [stdlib_path, '', other_path]
+        with (support.swap_attr(sys, '_path0', path0),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+            # Calling it twice does nothing
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+        # Do nothing is sys._path0 is None
+        sys_path = ['', stdlib_path, other_path]
+        with (support.swap_attr(sys, '_path0', None),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, sys_path)
+
+    def test_remove_sys_path0_run_python(self):
+        # Test "python -c code"
+        self.run_python('-c', self.CODE)
+        self.run_python('-P', '-c', self.CODE)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            name = 'test_remove_sys_path0'
+            filename = os.path.join(tmpdir, f'{name}.py')
+            with open(filename, 'w') as fp:
+                fp.write(self.CODE)
+
+            # Test "python script.py"
+            self.run_python(filename)
+            self.run_python('-P', filename)
+
+            with os_helper.change_cwd(tmpdir):
+                # Test "python -m module"
+                self.run_python('-m', name)
+                self.run_python('-P', '-m', name, PYTHONPATH=tmpdir)
 
 
 if __name__ == "__main__":
