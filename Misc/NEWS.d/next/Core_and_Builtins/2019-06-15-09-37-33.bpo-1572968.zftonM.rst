@@ -1,0 +1,1 @@
+Release the GIL in :class:`mmap.mmap`.
