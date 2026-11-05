@@ -2295,7 +2295,7 @@ class TestHelper(unittest.TestCase):
                          sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_symbols(self):
-        # Every symbol listed by help('symbols') must lead to documentation.
+        # gh-161414
         for symbol in pydoc.Helper.symbols:
             with self.subTest(symbol=symbol):
                 buf = StringIO()
