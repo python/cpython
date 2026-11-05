@@ -69,6 +69,11 @@ if sys.platform in ("win32", 'darwin'):
 if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 
+if support.Py_GIL_DISABLED:
+    EXPECTED_SKIP.add('test_interpreters')
+else:
+    EXPECTED_SKIP.add('test_free_threading')
+
 if not hasattr(os, 'startfile'):
     EXPECTED_SKIP.add('test_startfile')
 if not hasattr(os, "openpty"):
@@ -82,8 +87,6 @@ if not support.is_android:
     EXPECTED_SKIP.add('test_android')
 if not support.is_apple:
     EXPECTED_SKIP.add('test_apple')
-if not support.Py_GIL_DISABLED:
-    EXPECTED_SKIP.add('test_free_threading')
 
 if not support.has_socket_support or IS_WASI:
     # need socket support
