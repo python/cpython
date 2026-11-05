@@ -1,0 +1,4 @@
+Format the attribute name with :func:`repr`, instead of :func:`str`, when
+formatting :exc:`AttributeError` error message. For example,
+``getattr(object(), "a'b")`` now formats the attribute error correctly.
+Patch by Victor Stinner.
