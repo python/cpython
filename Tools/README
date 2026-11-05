@@ -14,6 +14,9 @@ clinic          A preprocessor for CPython C files in order to automate
                 the boilerplate involved with writing argument parsing
                 code for "builtins".
 
+coinstall-check A tool to ensure that multiple CPython builds can be
+                co-installed on Linux.
+
 freeze          Create a stand-alone executable from a Python program.
 
 ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
