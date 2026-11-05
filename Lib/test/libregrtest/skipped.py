@@ -138,7 +138,10 @@ if support.is_emscripten:
         'test_selectors',
     }
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
-    EXPECTED_SKIP.add('test_venv')
+    EXPECTED_SKIP |= {
+        'test_pty',
+        'test_venv',
+    }
 if not sys.is_remote_debug_enabled():
     EXPECTED_SKIP.add('test_remote_pdb')
 if not support.has_fork_support or IS_WASI:
@@ -166,7 +169,6 @@ if IS_WASI:
         'test_lzma',                   # need _lzma
         'test_mmap',                   # need mmap
         'test_openpty',                # need os.openpty()
-        'test_pty',                    # need termios
         'test_pwd',                    # need pwd
         'test_pyrepl',                 # need termios
         'test_remote_pdb',             # need remote debugging
@@ -191,6 +193,7 @@ if IS_WASI:
 # build Python which is different than the host (WASI) Python.
 NEED_MODULES = {
     'test__interpchannels': '_interpchannels',
+    'test__interpreters': '_interpreters',
     'test_crossinterp': '_interpreters',
     'test_curses': ('_curses', 'curses', 'curses.ascii', 'curses.textpad'),
     'test_dbm_gnu': 'dbm.gnu',
