@@ -1,0 +1,2 @@
+Fix unraisable :exc:`TypeError` when ``None`` was passed as a *timer* to
+:class:`cProfile.Profile <profile.Profile>`.

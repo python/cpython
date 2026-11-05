@@ -11,7 +11,7 @@ class DummyEditwin:
         self.text = text
         self.indentwidth = 8
         self.tabwidth = 8
-        self.prompt_last_line = '>>>'
+        self.is_shell = True
         self.num_context_lines = 50, 500, 1000
 
     _build_char_in_string_func = EditorWindow._build_char_in_string_func
@@ -53,7 +53,7 @@ class HyperParserTest(unittest.TestCase):
 
     def tearDown(self):
         self.text.delete('1.0', 'end')
-        self.editwin.prompt_last_line = '>>>'
+        self.editwin.is_shell = True
 
     def get_parser(self, index):
         """
@@ -70,8 +70,8 @@ class HyperParserTest(unittest.TestCase):
             p = self.get_parser('1.5')
         self.assertIn('precedes', str(ve.exception))
 
-        # test without ps1
-        self.editwin.prompt_last_line = ''
+        # test an editor
+        self.editwin.is_shell = False
 
         # number of lines lesser than 50
         p = self.get_parser('end')

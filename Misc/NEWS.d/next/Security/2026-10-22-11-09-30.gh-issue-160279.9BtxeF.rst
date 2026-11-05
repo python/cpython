@@ -1,0 +1,2 @@
+Prevent :mod:`venv` from importing modules from the root of an existing
+virtual environment when installing or upgrading pip.
