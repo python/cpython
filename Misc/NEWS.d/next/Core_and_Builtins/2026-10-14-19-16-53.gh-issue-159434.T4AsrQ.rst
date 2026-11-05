@@ -1,0 +1,4 @@
+Fix reading a function's :attr:`~function.__annotations__` using borrowed
+references to :attr:`~function.__annotate__` and the internal annotations
+tuple while running code that can replace them.  If ``__annotations__`` is
+set while ``__annotate__`` runs, the newly set value is now kept.

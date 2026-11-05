@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
@@ -238,11 +238,6 @@ AH_TOP([
 #define Py_PYCONFIG_H
 ])
 AH_BOTTOM([
-/* Define the macros needed if on a UnixWare 7.x system. */
-#if defined(__USLC__) && defined(__SCO_VERSION__)
-#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
-#endif
-
 #endif /*Py_PYCONFIG_H*/
 ])
 
@@ -377,8 +372,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -1018,15 +1012,6 @@ case $ac_sys_system/$ac_sys_release in
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
-    define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.@<:@0-4@:>@)
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
     define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
@@ -2622,11 +2607,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -2994,10 +2974,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -3150,15 +3126,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 
         # end of Darwin* tests
         ;;
-    esac
-], [
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
     esac
 ])
 
@@ -3541,13 +3508,6 @@ AC_DEFINE([_LARGEFILE_SOURCE], [1],
 AC_DEFINE([_FILE_OFFSET_BITS], [64],
 [This must be set to 64 on some systems to enable large file support.])
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 AC_TYPE_MODE_T
@@ -3967,17 +3927,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not implemented yet
@@ -4025,16 +3974,6 @@ then
 		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -4085,9 +4024,6 @@ then
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -6364,8 +6300,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 
 dnl no longer used, now always defined for backwards compatibility
 AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
