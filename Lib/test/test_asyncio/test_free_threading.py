@@ -116,6 +116,59 @@ class TestFreeThreading:
         support.gc_collect()
         self.assertIsNone(wr())
 
+    def test_unregister_lingering_tasks_of_exited_thread(self) -> None:
+        # gh-159449: a new thread can get the same OS thread id as
+        # an exited thread whose tasks linger on the interpreter's list.
+        class InertLoop:
+            def get_debug(self):
+                return False
+
+            def is_running(self):
+                return False
+
+            def call_soon(self, *args, **kwargs):
+                pass
+
+        loop = InertLoop()
+        done = threading.Event()
+
+        async def coro():
+            pass
+
+        def worker(handoff):
+            while handoff:
+                for task in handoff.pop():
+                    # complete the task right away, unlike Task.cancel()
+                    asyncio.Future.cancel(task)
+            tasks = []
+            for _ in range(32):
+                c = coro()
+                task = self.factory(loop, c)
+                c.close()
+                task._log_destroy_pending = False
+                tasks.append(task)
+            handoff.append(tasks)
+
+        def spawner():
+            handoff = []
+            for _ in range(100):
+                thread = Thread(target=worker, args=(handoff,))
+                thread.start()
+                thread.join()
+
+        def inspector():
+            while not done.is_set():
+                asyncio.all_tasks(loop)
+
+        inspectors = [Thread(target=inspector) for _ in range(2)]
+        with threading_helper.start_threads(inspectors):
+            try:
+                spawners = [Thread(target=spawner) for _ in range(4)]
+                with threading_helper.start_threads(spawners):
+                    pass
+            finally:
+                done.set()
+
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
 
