@@ -602,10 +602,28 @@ class TclTest(unittest.TestCase):
             def __str__(self):
                 raise RuntimeError("setvar evil")
 
-        setvar = self.interp.tk.setvar
         default = StrRaises()
-        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-            setvar("name1", "name2", default)
+
+        for getvar, setvar, unsetvar in [
+            (
+                self.interp.tk.getvar,
+                self.interp.tk.setvar,
+                self.interp.tk.unsetvar,
+            ),
+            (
+                self.interp.tk.globalgetvar,
+                self.interp.tk.globalsetvar,
+                self.interp.tk.globalunsetvar,
+            )
+        ]:
+            with self.subTest(getvar=getvar, setvar=setvar, unsetvar=unsetvar):
+                with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+                    setvar("name1", "name2", default)
+
+                self.assertRaises(TclError, getvar, "name1")
+                self.assertIsNone(setvar("name1", "name2"))
+                self.assertEqual(getvar("name1"), "name2")
+                self.assertIsNone(unsetvar("name1"))
 
     def test_user_command(self):
         result = None

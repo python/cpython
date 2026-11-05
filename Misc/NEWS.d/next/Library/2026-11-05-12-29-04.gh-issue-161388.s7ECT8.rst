@@ -1,2 +1,0 @@
-Fixes a crash when passing objects with raising :meth:`~object.__str__`
-method to :meth:`~tkinter.Misc.setvar`.
