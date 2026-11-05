@@ -2306,6 +2306,14 @@ class TestHelper(unittest.TestCase):
                     pydoc.Helper(output=buf).help(xref)
                     self.assertNotIn('No help entry found', buf.getvalue())
 
+    def test_symbols(self):
+        # gh-161414
+        for symbol in pydoc.Helper.symbols:
+            with self.subTest(symbol=symbol):
+                buf = StringIO()
+                pydoc.Helper(output=buf).showsymbol(symbol)
+                self.assertNotIn('no documentation found', buf.getvalue())
+
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session
         self.assertEqual(
