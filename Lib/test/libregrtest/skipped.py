@@ -108,7 +108,9 @@ if not support.has_fork_support or IS_WASI:
         'test_wait3',
         'test_wait4',
     }
-
+if not(sys.platform in ("linux", "darwin") or support.MS_WINDOWS):
+    # Need Py_SUPPORTS_REMOTE_DEBUG macro
+    EXPECTED_SKIP.add('test_remote_pdb')
 
 if support.MS_WINDOWS:
     # Tests specific to non-Windows platforms
@@ -197,10 +199,6 @@ if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI
         # venv is not available on these platforms
         'test_venv',
     }
-
-# On FreeBSD, is_remote_debug_enabled() is always false
-if not sys.is_remote_debug_enabled():
-    EXPECTED_SKIP.add('test_remote_pdb')
 
 if IS_WASI:
     EXPECTED_SKIP |= {
