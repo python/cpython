@@ -2158,7 +2158,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Deallocations after the refcount merge may run Python code.
     bool needs_resurrection_check = state->objs_to_decref.head != 0;
 
-    // Print debugging information.
+    // Force resurrection code path which will run the debug print
     if (FT_ATOMIC_LOAD_INT_RELAXED(interp->gc.debug) & _PyGC_DEBUG_COLLECTABLE) {
         needs_resurrection_check = true;
     }
