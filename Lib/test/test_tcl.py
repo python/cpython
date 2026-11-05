@@ -596,6 +596,17 @@ class TclTest(unittest.TestCase):
                     % support.exceeds_recursion_limit())
         self.assertRaises(RecursionError, interp.getvar, 'x')
 
+    def test_setvar_evil(self):
+        # gh-161388
+        class StrRaises:
+            def __str__(self):
+                raise RuntimeError("setvar evil")
+
+        setvar = self.interp.tk.setvar
+        default = StrRaises()
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            setvar("name1", "name2", default)
+
     def test_user_command(self):
         result = None
         def testfunc(arg):
