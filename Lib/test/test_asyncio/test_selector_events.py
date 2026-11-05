@@ -855,14 +855,23 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
     def test_write_tryagain(self):
-        self.sock.send.side_effect = BlockingIOError
-
         data = b'data'
-        transport = self.socket_transport()
-        transport.write(data)
+        for buf in data, bytearray(data), memoryview(data):
+            with self.subTest(type=type(buf).__name__):
+                self.sock.send.side_effect = BlockingIOError
 
-        self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                transport = self.socket_transport()
+                transport.write(buf)
+
+                self.loop.assert_writer(7, transport._write_ready)
+                self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                # gh-159503: the data is buffered as a view, not a copy
+                self.assertIsInstance(transport._buffer[0], memoryview)
+                self.assertIs(transport._buffer[0].obj, memoryview(buf).obj)
+                if isinstance(buf, bytearray):
+                    # The buffered view pins the bytearray against resizing.
+                    with self.assertRaises(BufferError):
+                        buf.append(0)
 
     def test_write_sendmsg_no_data(self):
         self.sock.sendmsg = mock.Mock()

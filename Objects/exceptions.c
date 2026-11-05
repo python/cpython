@@ -2325,46 +2325,70 @@ static PyObject *
 OSError_str(PyObject *op)
 {
     PyOSErrorObject *self = PyOSErrorObject_CAST(op);
+    PyObject *res;
+    /* Hold strong references: formatting may run arbitrary code
+       which modifies the attributes. */
+    PyObject *myerrno = Py_XNewRef(self->myerrno);
+    PyObject *strerror = Py_XNewRef(self->strerror);
+    PyObject *filename = Py_XNewRef(self->filename);
+    PyObject *filename2 = Py_XNewRef(self->filename2);
+#ifdef MS_WINDOWS
+    PyObject *winerror = Py_XNewRef(self->winerror);
+#endif
 #define OR_NONE(x) ((x)?(x):Py_None)
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
-    if (self->winerror && self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R -> %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
+    if (winerror && filename) {
+        if (filename2) {
+            res = PyUnicode_FromFormat("[WinError %S] %S: %R -> %R",
+                                       OR_NONE(winerror),
+                                       OR_NONE(strerror),
+                                       filename,
+                                       filename2);
         } else {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+            res = PyUnicode_FromFormat("[WinError %S] %S: %R",
+                                       OR_NONE(winerror),
+                                       OR_NONE(strerror),
+                                       filename);
         }
+        goto done;
     }
-    if (self->winerror && self->strerror)
-        return PyUnicode_FromFormat("[WinError %S] %S",
-                                    self->winerror ? self->winerror: Py_None,
-                                    self->strerror ? self->strerror: Py_None);
+    if (winerror && strerror) {
+        res = PyUnicode_FromFormat("[WinError %S] %S",
+                                   winerror, strerror);
+        goto done;
+    }
 #endif
-    if (self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
+    if (filename) {
+        if (filename2) {
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
+                                       OR_NONE(myerrno),
+                                       OR_NONE(strerror),
+                                       filename,
+                                       filename2);
         } else {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R",
+                                       OR_NONE(myerrno),
+                                       OR_NONE(strerror),
+                                       filename);
         }
+        goto done;
     }
-    if (self->myerrno && self->strerror)
-        return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno, self->strerror);
-    return BaseException_str(op);
+    if (myerrno && strerror) {
+        res = PyUnicode_FromFormat("[Errno %S] %S",
+                                   myerrno, strerror);
+        goto done;
+    }
+    res = BaseException_str(op);
+done:
+    Py_XDECREF(myerrno);
+    Py_XDECREF(strerror);
+    Py_XDECREF(filename);
+    Py_XDECREF(filename2);
+#ifdef MS_WINDOWS
+    Py_XDECREF(winerror);
+#endif
+    return res;
 }
 
 static PyObject *

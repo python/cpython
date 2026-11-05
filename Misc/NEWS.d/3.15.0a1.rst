@@ -5914,8 +5914,8 @@ Exception text when trying to delete attributes of types was clarified.
 .. nonce: ALByCb
 .. section: C API
 
-Function watchers can now receive a PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME
-event when a watched functions qualname is changed.
+Function watchers can now receive a PyFunction_EVENT_MODIFY_QUALNAME
+event when a watched function's qualname is changed.
 
 ..
 

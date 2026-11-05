@@ -5055,8 +5055,8 @@ fi
 case $host in #(
   wasm64-*-emscripten) :
 
-    as_fn_append CFLAGS " -sMEMORY64=1"
-    as_fn_append LDFLAGS " -sMEMORY64=1"
+    as_fn_append CFLAGS " -m64"
+    as_fn_append LDFLAGS " -m64"
    ;; #(
   *) :
      ;;
@@ -10229,7 +10229,7 @@ fi
 then :
 
       as_fn_append CFLAGS_NODIST " -pthread"
-      as_fn_append LDFLAGS_NODIST " -sUSE_PTHREADS"
+      as_fn_append LDFLAGS_NODIST " -pthread"
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
@@ -16191,6 +16191,11 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -16880,7 +16885,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_cif_var
+(void)ffi_prep_cif_var
   ;
   return 0;
 }
@@ -16921,7 +16926,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_closure_loc
+(void)ffi_prep_closure_loc
   ;
   return 0;
 }
@@ -16962,7 +16967,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_closure_alloc
+(void)ffi_closure_alloc
   ;
   return 0;
 }
@@ -21951,7 +21956,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=freadlink
+(void)freadlink
   ;
   return 0;
 }
@@ -21993,7 +21998,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=strerror_r
+(void)strerror_r
   ;
   return 0;
 }
@@ -22036,7 +22041,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=pthread_attr_get_np
+(void)pthread_attr_get_np
   ;
   return 0;
 }
@@ -22236,7 +22241,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=chroot
+(void)chroot
   ;
   return 0;
 }
@@ -22277,7 +22282,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=link
+(void)link
   ;
   return 0;
 }
@@ -22318,7 +22323,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=symlink
+(void)symlink
   ;
   return 0;
 }
@@ -22359,7 +22364,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fchdir
+(void)fchdir
   ;
   return 0;
 }
@@ -22400,7 +22405,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fsync
+(void)fsync
   ;
   return 0;
 }
@@ -22441,7 +22446,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fdatasync
+(void)fdatasync
   ;
   return 0;
 }
@@ -22505,7 +22510,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create
+(void)epoll_create
   ;
   return 0;
 }
@@ -22546,7 +22551,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create1
+(void)epoll_create1
   ;
   return 0;
 }
@@ -22592,7 +22597,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=kqueue
+(void)kqueue
   ;
   return 0;
 }
@@ -22636,7 +22641,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=prlimit
+(void)prlimit
   ;
   return 0;
 }
@@ -22678,7 +22683,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=_dyld_shared_cache_contains_path
+(void)_dyld_shared_cache_contains_path
   ;
   return 0;
 }
@@ -22727,7 +22732,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=memfd_create
+(void)memfd_create
   ;
   return 0;
 }
@@ -22773,7 +22778,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=eventfd
+(void)eventfd
   ;
   return 0;
 }
@@ -22819,7 +22824,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=timerfd_create
+(void)timerfd_create
   ;
   return 0;
 }
@@ -22867,7 +22872,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ctermid_r
+(void)ctermid_r
   ;
   return 0;
 }
@@ -23006,7 +23011,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpagesize
+(void)getpagesize
   ;
   return 0;
 }
@@ -24893,7 +24898,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=hstrerror
+(void)hstrerror
   ;
   return 0;
 }
@@ -24934,7 +24939,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyname
+(void)getservbyname
   ;
   return 0;
 }
@@ -24975,7 +24980,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyport
+(void)getservbyport
   ;
   return 0;
 }
@@ -25016,7 +25021,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyname
+(void)gethostbyname
   ;
   return 0;
 }
@@ -25057,7 +25062,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyaddr
+(void)gethostbyaddr
   ;
   return 0;
 }
@@ -25098,7 +25103,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getprotobyname
+(void)getprotobyname
   ;
   return 0;
 }
@@ -25147,7 +25152,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_aton
+(void)inet_aton
   ;
   return 0;
 }
@@ -25193,7 +25198,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_ntoa
+(void)inet_ntoa
   ;
   return 0;
 }
@@ -25239,7 +25244,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_pton
+(void)inet_pton
   ;
   return 0;
 }
@@ -25285,7 +25290,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpeername
+(void)getpeername
   ;
   return 0;
 }
@@ -25331,7 +25336,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getsockname
+(void)getsockname
   ;
   return 0;
 }
@@ -25377,7 +25382,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=accept
+(void)accept
   ;
   return 0;
 }
@@ -25423,7 +25428,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=bind
+(void)bind
   ;
   return 0;
 }
@@ -25469,7 +25474,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=connect
+(void)connect
   ;
   return 0;
 }
@@ -25515,7 +25520,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=listen
+(void)listen
   ;
   return 0;
 }
@@ -25561,7 +25566,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=recvfrom
+(void)recvfrom
   ;
   return 0;
 }
@@ -25607,7 +25612,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sendto
+(void)sendto
   ;
   return 0;
 }
@@ -25653,7 +25658,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setsockopt
+(void)setsockopt
   ;
   return 0;
 }
@@ -25699,7 +25704,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socket
+(void)socket
   ;
   return 0;
 }
@@ -25747,7 +25752,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setgroups
+(void)setgroups
   ;
   return 0;
 }
@@ -27274,7 +27279,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socketpair
+(void)socketpair
   ;
   return 0;
 }
@@ -27899,7 +27904,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=acospi
+(void)acospi
   ;
   return 0;
 }
@@ -27941,7 +27946,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=asinpi
+(void)asinpi
   ;
   return 0;
 }
@@ -27983,7 +27988,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atanpi
+(void)atanpi
   ;
   return 0;
 }
@@ -28025,7 +28030,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atan2pi
+(void)atan2pi
   ;
   return 0;
 }
@@ -28067,7 +28072,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=cospi
+(void)cospi
   ;
   return 0;
 }
@@ -28109,7 +28114,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sinpi
+(void)sinpi
   ;
   return 0;
 }
@@ -28151,7 +28156,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=tanpi
+(void)tanpi
   ;
   return 0;
 }
