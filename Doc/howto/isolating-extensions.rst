@@ -530,7 +530,7 @@ and the corresponding :c:type:`PyCMethod` signature::
        PyTypeObject *defining_class, // defining class
        PyObject *const *args,        // C array of arguments
        Py_ssize_t nargs,             // length of "args"
-       PyObject *kwnames)            // NULL, or dict of keyword arguments
+       PyObject *kwnames)            // NULL, or tuple of keyword argument names
 
 Once you have the defining class, call :c:func:`PyType_GetModuleState` to get
 the state of its associated module.

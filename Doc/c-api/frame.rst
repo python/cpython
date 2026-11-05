@@ -99,8 +99,6 @@ See also :ref:`Reflection <reflection>`.
 
    Get the *frame*'s :attr:`~frame.f_lasti` attribute.
 
-   Returns -1 if ``frame.f_lasti`` is ``None``.
-
    .. versionadded:: 3.11
 
 

@@ -1299,7 +1299,7 @@ iterations of the loop.
    * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
-   except that ``namei`` is shifted left by 2 bits instead of 1.
+   except that ``namei`` is shifted right by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
    :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
