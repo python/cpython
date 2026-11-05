@@ -172,26 +172,32 @@ xsetref_strict_aliasing(PyTypeObject **a, PyTypeObject **b,
     Py_XSETREF(*b, second);
 }
 
+static PyType_Slot empty_type_slots[] = {
+    {0, 0},
+};
+
+static PyType_Spec setref_type_spec = {
+    STR(MODULE_NAME) ".setref_type",  // .name
+    0, // .basicsize
+    0, // .itemsize
+    Py_TPFLAGS_DEFAULT, // .flags
+    empty_type_slots, // .slots
+};
 
 // gh-161185: Test that Py_SETREF(), Py_XSETREF() and Py_CLEAR() macros
 // have no strict aliasing issue
 static PyObject *
 test_setref_strict_aliasing(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    PySlot slots[] = {
-        PySlot_PTR_STATIC(Py_tp_name, STR(MODULE_NAME) ".setref_type"),
-        PySlot_PTR_STATIC(Py_tp_flags, Py_TPFLAGS_DEFAULT),
-        PySlot_END
-    };
     PyObject *first, *second;
     Py_ssize_t first_refcnt, second_refcnt;
     PyTypeObject *slot = NULL;
 
-    first = PyType_FromSlots(slots);
+    first = PyType_FromSpec(&setref_type_spec);
     if (first == NULL) {
         return NULL;
     }
-    second = PyType_FromSlots(slots);
+    second = PyType_FromSpec(&setref_type_spec);
     if (second == NULL) {
         Py_DECREF(first);
         return NULL;
