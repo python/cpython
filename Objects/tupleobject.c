@@ -1031,8 +1031,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
-        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0
+        || (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))
+        // gh-161226: Disallow resizing a tuple if the hash value is cached
+        || (Py_SIZE(v) != 0 && v->ob_hash != -1))
+    {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
