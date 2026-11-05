@@ -243,3 +243,54 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
+
+
+External frame introspectors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Frames pushed by something other than the VM carry an external frame
+introspector, which tells the :term:`free-threaded <free threading>` garbage
+collector how to visit references held in external frame state.
+
+.. c:var:: PyTypeObject PyUnstable_ExternalFrameIntrospector_Type
+
+   The type of external frame introspector objects.
+
+   Instances cannot be created from Python code. Use
+   :c:func:`PyUnstable_ExternalFrameIntrospector_New` to create one.
+
+   .. versionadded:: 3.16
+
+
+.. c:function:: int PyUnstable_ExternalFrameIntrospector_Check(PyObject *obj)
+
+   Return non-zero if *obj* is an external frame introspector object.
+
+   .. versionadded:: 3.16
+
+
+.. c:type:: int (*PyUnstable_ExternalFrameGCVisitor)(PyInterpreterState *interp, struct _PyInterpreterFrame *frame, gcvisitobjects_t callback, void *arg)
+
+   The garbage-collector visitor held by an external frame introspector.
+
+   The collector calls it with the interpreter being collected, the
+   external frame, and a *callback* to invoke once for each :c:type:`PyObject`
+   referenced by external frame state (passing *arg* through). The callback
+   follows :c:type:`gcvisitobjects_t` conventions.
+
+   Return 0 if the frame is complete (all references were visited), or
+   non-zero if the frame is incomplete and the collector must skip collecting
+   objects with deferred references.
+
+   .. versionadded:: 3.16
+
+
+.. c:function:: PyObject* PyUnstable_ExternalFrameIntrospector_New(PyUnstable_ExternalFrameGCVisitor gc_visitor)
+
+   Create a new external frame introspector holding *gc_visitor*.
+
+   Return a :term:`strong reference` to the new introspector on success.
+   Raise :exc:`ValueError` and return ``NULL`` if *gc_visitor* is ``NULL``;
+   raise :exc:`MemoryError` and return ``NULL`` on allocation failure.
+
+   .. versionadded:: 3.16

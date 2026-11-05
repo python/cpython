@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef struct _PyInterpreterFrame _PyInterpreterFrame;
+typedef struct _PyInterpreterFrameExternal _PyInterpreterFrameExternal;
 typedef struct pyruntimestate _PyRuntimeState;
 
 #ifdef __cplusplus

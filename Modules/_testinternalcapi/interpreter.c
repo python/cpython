@@ -87,6 +87,7 @@ Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
     entry.frame.stackpointer = entry.stack;
     entry.frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry.frame.visited = 0;
+    entry.frame.external = 0;
     entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
     entry.frame.lltrace = 0;
