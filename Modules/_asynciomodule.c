@@ -68,7 +68,8 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // thread id of the thread where this task was created
+    // id of the thread state whose asyncio_tasks_head the task was
+    // registered on; unlike _Py_ThreadId() it is never reused
     uint64_t task_tstate_id;
 #endif
 } TaskObj;
@@ -2208,14 +2209,14 @@ unregister_task(TaskObj *task)
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
-    // check if we are in the same thread
-    // if so, we can avoid locking
-    if (task->task_tstate_id == tstate->id && !tstate->_status.finalizing) {
+    // The task can only be on this thread's list if this thread state
+    // registered it, in which case no locking is needed.
+    if (task->task_tstate_id == tstate->id) {
         unregister_task_safe(task);
     }
     else {
-        // we are in a different thread
-        // stop the world then check and remove the task
+        // The task is on another thread's list or on the interpreter's
+        // list of lingering tasks: stop the world to remove it.
         _PyEval_StopTheWorld(tstate->interp);
         unregister_task_safe(task);
         _PyEval_StartTheWorld(tstate->interp);
@@ -2343,11 +2344,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     }
 
     Py_CLEAR(self->task_fut_waiter);
-#ifdef Py_GIL_DISABLED
-    if (self->task_node.next == NULL) {
-        self->task_tstate_id = _PyThreadState_GET()->id;
-    }
-#endif
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;

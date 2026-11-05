@@ -116,62 +116,58 @@ class TestFreeThreading:
         support.gc_collect()
         self.assertIsNone(wr())
 
-    def test_lingering_task_different_thread_finalized(self) -> None:
-        tls = threading.local()
+    def test_unregister_lingering_tasks_of_exited_thread(self) -> None:
+        # gh-159449: a new thread can get the same OS thread id as
+        # an exited thread whose tasks linger on the interpreter's list.
+        class InertLoop:
+            def get_debug(self):
+                return False
 
-        async def never_finishes():
-            await asyncio.Future()
+            def is_running(self):
+                return False
 
-        def make_pending_tasks(loop, count):
+            def call_soon(self, *args, **kwargs):
+                pass
+
+        loop = InertLoop()
+        done = threading.Event()
+
+        async def coro():
+            pass
+
+        def worker(handoff):
+            while handoff:
+                for task in handoff.pop():
+                    # complete the task right away, unlike Task.cancel()
+                    asyncio.Future.cancel(task)
             tasks = []
-            for _ in range(count):
-                task = loop.create_task(never_finishes())
+            for _ in range(32):
+                c = coro()
+                task = self.factory(loop, c)
+                c.close()
                 task._log_destroy_pending = False
                 tasks.append(task)
-            return tasks
+            handoff.append(tasks)
 
-        def worker(batches):
-            loop = asyncio.new_event_loop()
-            loop.set_task_factory(self.factory)
-            tls_tasks = make_pending_tasks(loop, 8)
-            for task in tls_tasks:
-                task.get_coro().close()
-            tls.tasks = tls_tasks
-            batches.append((loop, make_pending_tasks(loop, 8)))
-
-        stop = threading.Event()
+        def spawner():
+            handoff = []
+            for _ in range(100):
+                thread = Thread(target=worker, args=(handoff,))
+                thread.start()
+                thread.join()
 
         def inspector():
-            loop = asyncio.new_event_loop()
-            try:
-                while not stop.is_set():
-                    asyncio.all_tasks(loop)
-            finally:
-                loop.close()
+            while not done.is_set():
+                asyncio.all_tasks(loop)
 
         inspectors = [Thread(target=inspector) for _ in range(2)]
         with threading_helper.start_threads(inspectors):
             try:
-                for _ in range(15):
-                    batches = []
-                    workers = [Thread(target=worker, args=(batches,)) for _ in range(4)]
-                    with threading_helper.start_threads(workers):
-                        pass
-
-                    def cleanup(batch):
-                        loop, tasks = batch
-                        for task in tasks:
-                            task.cancel()
-                            task.get_coro().close()
-                        tasks.clear()
-                        loop.close()
-
-                    cleaners = [Thread(target=cleanup, args=(b,)) for b in batches]
-                    with threading_helper.start_threads(cleaners):
-                        pass
-                support.gc_collect()
+                spawners = [Thread(target=spawner) for _ in range(4)]
+                with threading_helper.start_threads(spawners):
+                    pass
             finally:
-                stop.set()
+                done.set()
 
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
