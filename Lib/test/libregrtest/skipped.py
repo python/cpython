@@ -218,6 +218,7 @@ NEED_MODULES = {
     'test_syslog': 'syslog',
     'test_termios': 'termios',
     'test_tty': ('termios', 'tty'),
+    'test_xxlimited': 'xxlimited',
     'test_xxtestfuzz': '_xxtestfuzz',
     'test_zstd': '_zstd',
 }
