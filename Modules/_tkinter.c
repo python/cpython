@@ -1234,8 +1234,9 @@ AsObjNested(PyObject *value, int depth)
 
     {
         PyObject *v = PyObject_Str(value);
-        if (!v)
+        if (!v) {
             return NULL;
+        } 
         result = AsObjNested(v, depth);
         Py_DECREF(v);
         return result;
