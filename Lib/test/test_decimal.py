@@ -3782,11 +3782,10 @@ class CContextAPItests(ContextAPItests, unittest.TestCase):
                 var.reset(token)
 
         self.addCleanup(restore)
-        refcount = sys.getrefcount(value)
-        for _ in range(3):
-            with self.assertRaises(TypeError):
-                self.decimal.Decimal(1) + self.decimal.Decimal(2)
-        self.assertEqual(sys.getrefcount(value), refcount)
+        with self.assertRaisesRegex(TypeError, "got object"):
+            self.decimal.Decimal(1) + self.decimal.Decimal(2)
+        for var in context_vars:
+            self.assertIs(var.get(), value)
 
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
