@@ -1380,12 +1380,25 @@ C API changes
 New features
 ------------
 
+* Add a new way to efficiently create a :class:`frozendict` instance by building
+  a :class:`dict` and "freezing" it: :c:func:`PyDict_AsFrozenDictAndClear`.
+  (Contributed by Nikita Sobolev in :gh:`153413`.)
+
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
 * Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
+
+* Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
+  (Contributed by Victor Stinner in :gh:`161172`.)
+
+* Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable
+  of an internal interpreter frame by its localsplus index, and
+  :c:func:`PyUnstable_Code_GetLocalPlusNames` to get the matching variable
+  names.
+  (Contributed by Guilherme Leobas in :gh:`156133`.)
 
 Porting to Python 3.16
 ----------------------
@@ -1434,7 +1447,7 @@ Deprecated C APIs
   :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
   :c:func:`PyUnicode_Fill`, :c:func:`PyUnicode_Resize`,
   :c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar`.
-  Use the safer :c:type:`PyUnicodeWriter` API instead.
+  Use the safer :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
   (Contributed by Victor Stinner in :gh:`157710`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.

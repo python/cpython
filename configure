@@ -4226,8 +4226,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -4912,15 +4911,6 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
-    define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.[0-4])
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
     define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
@@ -10185,11 +10175,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -11531,10 +11516,6 @@ fi
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -11750,18 +11731,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
         ;;
     esac
 
-else case e in #(
-  e)
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
-    esac
- ;;
-esac
 fi
 
 # Check for --enable-experimental-jit:
@@ -13222,13 +13191,6 @@ printf "%s\n" "#define _LARGEFILE_SOURCE 1" >>confdefs.h
 printf "%s\n" "#define _FILE_OFFSET_BITS 64" >>confdefs.h
 
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 ac_fn_c_check_type "$LINENO" "mode_t" "ac_cv_type_mode_t" "$ac_includes_default"
@@ -14770,17 +14732,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -14835,16 +14786,6 @@ then :
 fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -14897,9 +14838,6 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -16885,7 +16823,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_cif_var
+(void)ffi_prep_cif_var
   ;
   return 0;
 }
@@ -16926,7 +16864,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_closure_loc
+(void)ffi_prep_closure_loc
   ;
   return 0;
 }
@@ -16967,7 +16905,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_closure_alloc
+(void)ffi_closure_alloc
   ;
   return 0;
 }
@@ -21956,7 +21894,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=freadlink
+(void)freadlink
   ;
   return 0;
 }
@@ -21998,7 +21936,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=strerror_r
+(void)strerror_r
   ;
   return 0;
 }
@@ -22041,7 +21979,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=pthread_attr_get_np
+(void)pthread_attr_get_np
   ;
   return 0;
 }
@@ -22241,7 +22179,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=chroot
+(void)chroot
   ;
   return 0;
 }
@@ -22282,7 +22220,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=link
+(void)link
   ;
   return 0;
 }
@@ -22323,7 +22261,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=symlink
+(void)symlink
   ;
   return 0;
 }
@@ -22364,7 +22302,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fchdir
+(void)fchdir
   ;
   return 0;
 }
@@ -22405,7 +22343,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fsync
+(void)fsync
   ;
   return 0;
 }
@@ -22446,7 +22384,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fdatasync
+(void)fdatasync
   ;
   return 0;
 }
@@ -22510,7 +22448,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create
+(void)epoll_create
   ;
   return 0;
 }
@@ -22551,7 +22489,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create1
+(void)epoll_create1
   ;
   return 0;
 }
@@ -22597,7 +22535,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=kqueue
+(void)kqueue
   ;
   return 0;
 }
@@ -22641,7 +22579,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=prlimit
+(void)prlimit
   ;
   return 0;
 }
@@ -22683,7 +22621,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=_dyld_shared_cache_contains_path
+(void)_dyld_shared_cache_contains_path
   ;
   return 0;
 }
@@ -22732,7 +22670,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=memfd_create
+(void)memfd_create
   ;
   return 0;
 }
@@ -22778,7 +22716,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=eventfd
+(void)eventfd
   ;
   return 0;
 }
@@ -22824,7 +22762,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=timerfd_create
+(void)timerfd_create
   ;
   return 0;
 }
@@ -22872,7 +22810,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ctermid_r
+(void)ctermid_r
   ;
   return 0;
 }
@@ -23011,7 +22949,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpagesize
+(void)getpagesize
   ;
   return 0;
 }
@@ -24898,7 +24836,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=hstrerror
+(void)hstrerror
   ;
   return 0;
 }
@@ -24939,7 +24877,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyname
+(void)getservbyname
   ;
   return 0;
 }
@@ -24980,7 +24918,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyport
+(void)getservbyport
   ;
   return 0;
 }
@@ -25021,7 +24959,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyname
+(void)gethostbyname
   ;
   return 0;
 }
@@ -25062,7 +25000,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyaddr
+(void)gethostbyaddr
   ;
   return 0;
 }
@@ -25103,7 +25041,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getprotobyname
+(void)getprotobyname
   ;
   return 0;
 }
@@ -25152,7 +25090,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_aton
+(void)inet_aton
   ;
   return 0;
 }
@@ -25198,7 +25136,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_ntoa
+(void)inet_ntoa
   ;
   return 0;
 }
@@ -25244,7 +25182,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_pton
+(void)inet_pton
   ;
   return 0;
 }
@@ -25290,7 +25228,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpeername
+(void)getpeername
   ;
   return 0;
 }
@@ -25336,7 +25274,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getsockname
+(void)getsockname
   ;
   return 0;
 }
@@ -25382,7 +25320,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=accept
+(void)accept
   ;
   return 0;
 }
@@ -25428,7 +25366,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=bind
+(void)bind
   ;
   return 0;
 }
@@ -25474,7 +25412,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=connect
+(void)connect
   ;
   return 0;
 }
@@ -25520,7 +25458,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=listen
+(void)listen
   ;
   return 0;
 }
@@ -25566,7 +25504,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=recvfrom
+(void)recvfrom
   ;
   return 0;
 }
@@ -25612,7 +25550,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sendto
+(void)sendto
   ;
   return 0;
 }
@@ -25658,7 +25596,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setsockopt
+(void)setsockopt
   ;
   return 0;
 }
@@ -25704,7 +25642,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socket
+(void)socket
   ;
   return 0;
 }
@@ -25752,7 +25690,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setgroups
+(void)setgroups
   ;
   return 0;
 }
@@ -27279,7 +27217,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socketpair
+(void)socketpair
   ;
   return 0;
 }
@@ -27904,7 +27842,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=acospi
+(void)acospi
   ;
   return 0;
 }
@@ -27946,7 +27884,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=asinpi
+(void)asinpi
   ;
   return 0;
 }
@@ -27988,7 +27926,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atanpi
+(void)atanpi
   ;
   return 0;
 }
@@ -28030,7 +27968,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atan2pi
+(void)atan2pi
   ;
   return 0;
 }
@@ -28072,7 +28010,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=cospi
+(void)cospi
   ;
   return 0;
 }
@@ -28114,7 +28052,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sinpi
+(void)sinpi
   ;
   return 0;
 }
@@ -28156,7 +28094,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=tanpi
+(void)tanpi
   ;
   return 0;
 }
