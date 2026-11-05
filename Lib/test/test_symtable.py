@@ -9,6 +9,7 @@ import unittest
 
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 TEST_CODE = """
@@ -908,6 +909,23 @@ class CommandLineTest(unittest.TestCase):
             self.assertEqual(stdout.getvalue(), out)
         lines = out.splitlines()
         self.assertIn("symbol table for module from file '<stdin>':", lines)
+
+
+class CommandLineSubprocessTest(unittest.TestCase):
+
+    @support.requires_subprocess()
+    def test_file(self):
+        filename = os_helper.TESTFN
+        with open(filename, 'w') as f:
+            f.write("x = 1\n")
+        self.addCleanup(os_helper.unlink, filename)
+
+        rc, stdout, stderr = assert_python_ok('-m', 'symtable', filename)
+        self.assertIn(
+            f"symbol table for module from file {filename!r}:".encode(), stdout
+        )
+        self.assertIn(b"local symbol 'x': def_local", stdout)
+        self.assertEqual(stderr, b'')
 
 
 if __name__ == '__main__':
