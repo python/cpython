@@ -595,6 +595,145 @@ static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* 
     return rv;
 }
 
+#define MAX_DATETIME_TEST_SIZE 0x10000
+
+/* Fuzz the C ISO-8601 fast parsers and date/time arithmetic: date,
+   time and datetime fromisoformat() (all parsing lives in
+   Modules/_datetimemodule.c), isoformat() round-tripping as a property
+   (documented inverse), and timedelta addition/subtraction to drive the
+   C normalisation and overflow-checking paths. */
+static PyObject* datetime_module = NULL;
+static PyObject* date_type = NULL;
+static PyObject* time_type = NULL;
+static PyObject* datetime_type = NULL;
+static PyObject* timedelta_type = NULL;
+
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_datetime(void) {
+    datetime_module = PyImport_ImportModule("datetime");
+    if (datetime_module == NULL) {
+        return 0;
+    }
+    date_type = PyObject_GetAttrString(datetime_module, "date");
+    time_type = PyObject_GetAttrString(datetime_module, "time");
+    datetime_type = PyObject_GetAttrString(datetime_module, "datetime");
+    timedelta_type = PyObject_GetAttrString(datetime_module, "timedelta");
+    return (date_type != NULL && time_type != NULL &&
+            datetime_type != NULL && timedelta_type != NULL);
+}
+
+/* Call <type>.fromisoformat(s); returns new reference or NULL */
+static PyObject* datetime_fromiso_format(PyObject* type, PyObject* s) {
+    return PyObject_CallMethod(type, "fromisoformat", "O", s);
+}
+
+/* Fuzz date/time/datetime.fromisoformat(x) + arithmetic */
+static int fuzz_datetime(const char* data, size_t size) {
+    if (size < 2 || size > MAX_DATETIME_TEST_SIZE) {
+        return 0;
+    }
+    /* First byte selects the parser, second drives the timedelta. */
+    unsigned char op = (unsigned char) data[0];
+    unsigned char amount = (unsigned char) data[1];
+    data += 2;
+    size -= 2;
+
+    PyObject* s = PyUnicode_FromStringAndSize(data, size);
+    if (s == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+            PyErr_Clear();
+        }
+        return 0;
+    }
+
+    PyObject* parsed = NULL;
+    switch (op % 3) {
+        case 0:
+            parsed = datetime_fromiso_format(date_type, s);
+            break;
+        case 1:
+            parsed = datetime_fromiso_format(time_type, s);
+            break;
+        default:
+            parsed = datetime_fromiso_format(datetime_type, s);
+            break;
+    }
+    if (parsed == NULL) {
+        /* Invalid ISO strings are the expected failure mode; anything
+           else is caught by _run_fuzz's last-ditch check. */
+        if (PyErr_ExceptionMatches(PyExc_ValueError) ||
+            PyErr_ExceptionMatches(PyExc_TypeError))
+        {
+            PyErr_Clear();
+        }
+        Py_DECREF(s);
+        return 0;
+    }
+
+    /* Property: isoformat() output must parse back to an equal object
+       (fromisoformat is the documented inverse of isoformat). A failure
+       or mismatch is a genuine logic bug, not a harness fault. */
+    PyObject* iso = PyObject_CallMethod(parsed, "isoformat", NULL);
+    if (iso == NULL) {
+        PyErr_Clear();
+    } else {
+        PyObject* reparsed = datetime_fromiso_format(
+            op % 3 == 0 ? date_type : (op % 3 == 1 ? time_type : datetime_type),
+            iso);
+        if (reparsed == NULL) {
+            PyErr_Print();
+            abort();
+        }
+        int equal = PyObject_RichCompareBool(parsed, reparsed, Py_EQ);
+        if (equal < 0) {
+            PyErr_Clear();
+        } else if (equal == 0) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "isoformat/fromisoformat round-trip mismatch");
+            PyErr_Print();
+            abort();
+        }
+        Py_DECREF(reparsed);
+        Py_DECREF(iso);
+
+        /* Exercise C arithmetic and normalisation with a fuzzed timedelta.
+           (time objects reject +/- with TypeError: expected and cleared.) */
+        PyObject* td = PyObject_CallFunction(timedelta_type, "iii",
+                                             amount % 30, amount % 60,
+                                             amount % 1000000);
+        if (td == NULL) {
+            PyErr_Clear();
+        } else {
+            PyObject* shifted = PyNumber_Add(parsed, td);
+            if (shifted == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_TypeError) ||
+                    PyErr_ExceptionMatches(PyExc_OverflowError))
+                {
+                    PyErr_Clear();
+                }
+            } else {
+                Py_DECREF(shifted);
+            }
+            PyObject* shifted_back = PyNumber_Subtract(parsed, td);
+            if (shifted_back == NULL) {
+                if (PyErr_ExceptionMatches(PyExc_TypeError) ||
+                    PyErr_ExceptionMatches(PyExc_OverflowError))
+                {
+                    PyErr_Clear();
+                }
+            } else {
+                Py_DECREF(shifted_back);
+            }
+            Py_DECREF(td);
+        }
+    }
+
+    Py_DECREF(parsed);
+    Py_DECREF(s);
+    return 0;
+}
+
+
 /* CPython generates a lot of leak warnings for whatever reason. */
 int __lsan_is_turned_off(void) { return 1; }
 
@@ -726,6 +865,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
     rv |= _run_fuzz(data, size, fuzz_pycompile);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_datetime)
+    static int DATETIME_INITIALIZED = 0;
+    if (!DATETIME_INITIALIZED && !init_datetime()) {
+        PyErr_Print();
+        abort();
+    } else {
+        DATETIME_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_datetime);
 #endif
   return rv;
 }
