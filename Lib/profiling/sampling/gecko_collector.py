@@ -2,6 +2,7 @@ import itertools
 import io
 import json
 import os
+from pathlib import Path, PureWindowsPath
 import platform
 import sys
 import tempfile
@@ -646,38 +647,29 @@ class GeckoCollector(Collector):
         resource_types = resource_table["type"]
 
         resource_idx = len(resource_names)
-        norm_filename = (
-            filename.replace("\\", "/") if "\\" in filename else filename
-        )
-        if not norm_filename or norm_filename.startswith("<"):
+        if not filename or filename.startswith("<"):
             resource_name = filename
         else:
             module_name, module_type = extract_module_name(
-                norm_filename, self._path_info
+                filename.replace("\\", "/"), self._path_info
             )
             if module_type != "other":
                 resource_name = module_name
             else:
-                is_abs = norm_filename.startswith("/") or (
-                    len(norm_filename) > 1 and norm_filename[1] == ":"
+                path = (
+                    PureWindowsPath(filename)
+                    if ("\\" in filename or (len(filename) > 1 and filename[1] == ":"))
+                    else Path(filename)
                 )
-                if is_abs:
-                    parts = norm_filename.rstrip("/").rsplit("/", 2)
-                    if len(parts) >= 2:
-                        parent = parts[-2]
-                        basename = parts[-1]
-                        if (
-                            basename == "__init__.py"
-                            and parent
-                            and not parent.endswith(":")
-                        ):
-                            resource_name = parent
-                        elif parent and not parent.endswith(":"):
-                            resource_name = f"{parent}/{basename}"
-                        else:
-                            resource_name = basename
+                if path.is_absolute() or bool(path.anchor):
+                    parent = path.parent.name
+                    name = path.name
+                    if name == "__init__.py" and parent:
+                        resource_name = parent
+                    elif parent:
+                        resource_name = f"{parent}/{name}"
                     else:
-                        resource_name = os.path.basename(filename) or filename
+                        resource_name = name or filename
                 else:
                     resource_name = module_name
 
