@@ -714,7 +714,8 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
         self.assertEqual(classes,
-                         [('FesteringGob', mod.FesteringGob),
+                         [('DynamicSubclass', mod.DynamicSubclass),
+                          ('FesteringGob', mod.FesteringGob),
                           ('MalodorousPervert', mod.MalodorousPervert),
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
@@ -734,7 +735,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                                                     mod.ParrotDroppings))
                              ]
                             ],
-                            (mod.WhichComments, (object,),)
+                            (mod.WhichComments, (object,),),
+                            (mod.DynamicSubclass, (mod.StupidGit,)),
                            ]
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
@@ -747,7 +749,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                                                     mod.ParrotDroppings))
                              ]
                             ],
-                            (mod.WhichComments, (object,),)
+                            (mod.WhichComments, (object,),),
+                            (mod.DynamicSubclass, (mod.StupidGit,)),
                            ]
                           ])
 
@@ -782,6 +785,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
+        self.assertEqual(inspect.getdoc(mod.DynamicSubclass.abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(mod.DynamicSubclass().abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
