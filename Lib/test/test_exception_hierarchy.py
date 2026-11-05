@@ -5,6 +5,7 @@ import socket
 import unittest
 import errno
 from errno import EEXIST
+from test.support import cpython_only
 
 
 class SubOSError(OSError):
@@ -135,6 +136,17 @@ class AttributesTest(unittest.TestCase):
         self.assertEqual(e.filename, "foo.txt")
         if os.name == "nt":
             self.assertEqual(e.winerror, None)
+
+    @cpython_only
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    def test_strerror_cached(self):
+        def strerror():
+            try:
+                os.stat('')
+            except FileNotFoundError as e:
+                return e.strerror
+        self.assertIs(strerror(), strerror())
+        self.assertIs(strerror(), os.strerror(errno.ENOENT))
 
     @unittest.skipUnless(os.name == "nt", "Windows-specific test")
     def test_errno_translation(self):

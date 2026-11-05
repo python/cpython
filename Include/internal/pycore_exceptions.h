@@ -22,6 +22,8 @@ extern void _PyExc_Fini(PyInterpreterState *);
 struct _Py_exc_state {
     // The dict mapping from errno codes to OSError subclasses
     PyObject *errnomap;
+    // errno code -> _Py_strerror() message
+    PyObject *strerror_cache;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;
 #ifdef Py_GIL_DISABLED
