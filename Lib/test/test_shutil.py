@@ -2072,6 +2072,21 @@ class TestArchives(BaseTest, unittest.TestCase):
             # root_dir must be None, so the archive path is relative.
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
+            # The archive does not contain itself.
+            with zipfile.ZipFile('test.zip') as zf:
+                self.assertEqual(zf.namelist(), [])
+
+    @support.requires_zlib()
+    @os_helper.skip_unless_symlink
+    def test_make_zipfile_symlink_to_archive(self):
+        root_dir, base_dir = self._create_files('')
+        os.symlink('archive.zip', os.path.join(root_dir, 'link'))
+        base_name = os.path.join(root_dir, 'archive')
+        with no_chdir:
+            archive = make_archive(base_name, 'zip', root_dir)
+        with zipfile.ZipFile(archive) as zf:
+            self.assertCountEqual(zf.namelist(),
+                    ['sub/', 'sub2/', 'file1', 'file2', 'sub/file3'])
 
     def test_register_archive_format(self):
 

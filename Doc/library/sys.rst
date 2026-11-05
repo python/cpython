@@ -251,7 +251,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    you might bind it to a function that expects additional arguments
    (positional and/or keyword).  The built-in ``breakpoint()`` function passes
    its ``*args`` and ``**kws`` straight through.  Whatever
-   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+   ``breakpointhook()`` returns is returned from ``breakpoint()``.
 
    The default implementation first consults the environment variable
    :envvar:`PYTHONBREAKPOINT`.  If that is set to ``"0"`` then this function
@@ -1871,7 +1871,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
       *finalizer* method see the implementation of
-      ``asyncio.Loop.shutdown_asyncgens`` in
+      ``asyncio.BaseEventLoop._asyncgen_finalizer_hook`` in
       :source:`Lib/asyncio/base_events.py`
 
    .. note::

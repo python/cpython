@@ -174,9 +174,8 @@ ENCODER_RESET(iso2022)
     if (STATE_G0 != CHARSET_ASCII) {
         WRITEBYTE3(ESC, '(', 'B');
         NEXT_OUT(3);
-        STATE_SETG0(CHARSET_ASCII);
     }
-    return 0;
+    return iso2022_encode_init(state, codec);
 }
 
 ENCODER(iso2022)
@@ -311,9 +310,7 @@ DECODER_INIT(iso2022)
 
 DECODER_RESET(iso2022)
 {
-    STATE_SETG0(CHARSET_ASCII);
-    STATE_CLEARFLAG(F_SHIFTED);
-    return 0;
+    return iso2022_decode_init(state, codec);
 }
 
 static Py_ssize_t

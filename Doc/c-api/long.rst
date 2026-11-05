@@ -589,7 +589,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Macro for converting a Python integer into a process identifier.
 
    This can be defined as an alias to :c:func:`PyLong_AsLong`,
-   :c:func:`PyLong_FromLongLong`, or :c:func:`PyLong_AsInt`, depending on the
+   :c:func:`PyLong_AsLongLong`, or :c:func:`PyLong_AsInt`, depending on the
    size of the system's PID type.
 
    .. versionadded:: 3.2

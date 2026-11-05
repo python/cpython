@@ -1076,7 +1076,7 @@ Test cases
       :meth:`assertWarns`.  The test passes if *warning* is triggered and
       fails if it isn't.  Any exception is an error.
       To catch any of a group of warnings, a tuple containing the warning
-      classes may be passed as *warnings*.
+      classes may be passed as *warning*.
 
       If only the *warning* and possibly the *msg* arguments are given,
       return a context manager so that the code under test can be written

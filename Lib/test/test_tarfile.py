@@ -2,6 +2,7 @@ import errno
 import sys
 import os
 import io
+import ntpath
 from hashlib import sha256
 from contextlib import contextmanager, ExitStack
 from random import Random
@@ -4014,6 +4015,47 @@ class TestExtractionFilters(unittest.TestCase):
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
 
+    def test_drive_relative(self):
+        # Test names and link targets that have a drive but no root.
+        # They are not absolute, but os.path.join() does not put them
+        # below a destination that has no drive or another drive.
+        # Windows path handling is used on all platforms.
+        dest = r'C:\outerdir\dest'
+        with support.swap_attr(os, 'path', ntpath):
+            for name in 'C:escaped.evil', 'x/../C:escaped.evil':
+                for filter in tarfile.tar_filter, tarfile.data_filter:
+                    with self.subTest(name=name, filter=filter.__name__):
+                        with self.assertRaises(tarfile.AbsolutePathError):
+                            filter(tarfile.TarInfo(name), dest)
+
+            for linkname in 'C:escaped.evil', 'x/../C:escaped.evil', './C:evil':
+                for type in tarfile.SYMTYPE, tarfile.LNKTYPE:
+                    with self.subTest(linkname=linkname, type=type):
+                        member = tarfile.TarInfo('link')
+                        member.type = type
+                        member.linkname = linkname
+                        with self.assertRaises(tarfile.AbsoluteLinkError):
+                            tarfile.data_filter(member, dest)
+
+            member = tarfile.TarInfo('x/../C/benign.txt')
+            member = tarfile.data_filter(member, dest)
+            self.assertEqual(member.name, r'C\benign.txt')
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows drives')
+    def test_drive_relative_to_cwd(self):
+        # Test a name like 'C:escaped.evil' with a destination that has no
+        # drive. The file must not be created in the current directory.
+        with os_helper.temp_cwd() as cwd:
+            drive = os.path.splitdrive(cwd)[0]
+            with ArchiveMaker() as arc:
+                arc.add(f'{drive}escaped.evil')
+
+            for filter in 'tar', 'data':
+                with self.subTest(filter=filter), arc.open() as tar:
+                    with self.assertRaises(tarfile.AbsolutePathError):
+                        tar.extractall('dest', filter=filter)
+                    self.assertFalse(os.path.lexists('escaped.evil'))
+
     def test_parent_dir_out_and_back(self):
         # Test a member that leaves the destination and comes back.
         # The containment check looks at the resolved path, which stays
@@ -4525,6 +4567,33 @@ class TestExtractionFilters(unittest.TestCase):
                 else:
                     self.expect_file("a/b/s", symlink_to=os.path.join('..', 'escape'))
                     self.expect_file("s", symlink_to=os.path.join('..', 'escape'))
+
+    @symlink_test
+    def test_sneaky_hardlink_fallback_attrs(self):
+        # Test that when a hardlink is extracted as a copy of a symlink
+        # member, the hardlink's attributes are not applied to the file
+        # the symlink points to.
+        with ArchiveMaker() as arc:
+            arc.add("a/s", symlink_to=os.path.join("..", "flag"))
+            arc.add("s", hardlink_to=os.path.join("a", "s"),
+                    mode='-rwxr-xr-x', mtime=86400, uid=1337, gid=1337)
+
+        for filter in 'tar', 'fully_trusted':
+            with (
+                self.subTest(filter),
+                unittest.mock.patch("os.chown", create=True) as mock_chown,
+                self.check_context(arc.open(), filter) as cc,
+            ):
+                if not os_helper.can_symlink():
+                    self.expect_file("a/")
+                else:
+                    self.expect_file("a/s", symlink_to=os.path.join('..', 'flag'))
+                    self.expect_file("s", symlink_to=os.path.join('..', 'flag'))
+                st = (cc.outerdir / 'flag').stat()
+                self.assertNotEqual(st.st_mtime, 86400)
+                if sys.platform != "win32":
+                    self.assertNotEqual(st.st_mode & 0o777, 0o755)
+                mock_chown.assert_not_called()
 
     @symlink_test
     @os_helper.skip_unless_hardlink

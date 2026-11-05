@@ -1783,7 +1783,7 @@ where
 
    ``parser.values``
       the object where option values are by default stored (an instance of
-      optparse.OptionValues).  This lets callbacks use the same mechanism as the
+      optparse.Values).  This lets callbacks use the same mechanism as the
       rest of :mod:`!optparse` for storing option values; you don't need to mess
       around with globals or closures.  You can also access or modify the
       value(s) of any options already encountered on the command-line.

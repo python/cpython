@@ -192,6 +192,52 @@ class FunctionsTestCase(unittest.TestCase):
         dat = decompress(DAT_130K_C + DAT_130K_C)
         self.assertEqual(len(dat), 2 * _130_1K)
 
+    def test_decompress_multi_frames(self):
+        big = random.randbytes(100_000)
+        frames = [b"a" * 100, b"", big, b"b" * 100, big]
+        expected = b"".join(frames)
+        dat = b"".join(map(compress, frames))
+        self.assertEqual(decompress(dat), expected)
+        self.assertEqual(decompress(bytearray(dat)), expected)
+        self.assertEqual(decompress(memoryview(dat)), expected)
+        with self.assertRaisesRegex(ZstdError, "Compressed data ended before"):
+            decompress(dat[:-50_000])
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(dat + b"junk")
+
+    def test_decompress_error_releases_buffer(self):
+        # The argument can be resized while the exception is handled.
+        for dat in COMPRESSED_100_PLUS_32KB[:-10], b"junk" * 10:
+            with self.subTest(dat=dat[:10]):
+                dat = bytearray(dat)
+                try:
+                    decompress(dat)
+                except ZstdError:
+                    dat += b"more"
+                else:
+                    self.fail("no exception")
+
+    def test_decompress_many_frames(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of frames.
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = ZstdDecompressor(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        dat = compress(b"")
+        with support.swap_attr(zstd, "ZstdDecompressor", Decompressor):
+            fed = 0
+            self.assertEqual(decompress(dat * 1000), b"")
+            fed1 = fed
+            fed = 0
+            self.assertEqual(decompress(dat * 2000), b"")
+        self.assertLess(fed, fed1 * 3)
+
 
 class CompressorTestCase(unittest.TestCase):
 

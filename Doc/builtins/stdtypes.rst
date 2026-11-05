@@ -1858,12 +1858,22 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased.
+   rest lowercased. For example:
+
+   .. doctest::
+
+      >>> 'PYTHON IS AMAZING'.capitalize()
+      'Python is amazing'
+      >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
+      'ǋemačka starts with a non-ascii digraph'
+
+   See also :meth:`title`.
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
       This means that characters like digraphs will only have their first
       letter capitalized, instead of the full character.
+
 
 .. method:: str.casefold()
 
@@ -2862,7 +2872,7 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   See also :meth:`istitle`.
+   See also :meth:`istitle` and :meth:`capitalize`.
 
 
 .. method:: str.translate(table, /)
@@ -5332,7 +5342,7 @@ can be used interchangeably to index the same dictionary entry.
 
    * Use a comma-separated list of ``key: value`` pairs within braces:
      ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
-   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use a dict comprehension: ``{x: x ** 2 for x in range(10)}``
    * Use the type constructor: ``dict()``,
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
@@ -5543,9 +5553,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
-      An equality comparison between one ``dict.values()`` view and another
-      will always return ``False``. This also applies when comparing
-      ``dict.values()`` to itself::
+      An equality comparison between two distinct ``dict.values()`` views
+      will always return ``False``, even for views of the same dictionary::
 
          >>> d = {'a': 1}
          >>> d.values() == d.values()

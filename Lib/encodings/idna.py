@@ -347,6 +347,9 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
         result = []
         size = 0
         for label in labels:
+            if result:
+                # Join with U+002E
+                size += 1
             try:
                 u_label = ToUnicode(label)
             except (UnicodeEncodeError, UnicodeDecodeError) as exc:
@@ -359,8 +362,6 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
                 )
             else:
                 result.append(u_label)
-            if size:
-                size += 1
             size += len(label)
 
         result = ".".join(result) + trailing_dot

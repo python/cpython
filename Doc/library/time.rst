@@ -664,7 +664,7 @@ Functions
 
       * - 5
         - .. attribute:: tm_sec
-        - range [0, 61]; see :ref:`Note (2) <leap-second>` in :func:`strftime`
+        - range [0, 61]; see :ref:`Note (3) <leap-second>` in :func:`strftime`
 
       * - 6
         - .. attribute:: tm_wday

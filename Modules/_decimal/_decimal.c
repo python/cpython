@@ -1135,6 +1135,9 @@ context_settraps_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {
@@ -1201,6 +1204,9 @@ context_setstatus_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {

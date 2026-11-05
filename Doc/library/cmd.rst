@@ -112,15 +112,15 @@ A :class:`Cmd` instance has the following methods:
    undocumented commands.
 
 
-.. method:: Cmd.onecmd(str)
+.. method:: Cmd.onecmd(line)
 
    Interpret the argument as though it had been typed in response to the prompt.
    This may be overridden, but should not normally need to be; see the
    :meth:`precmd` and :meth:`postcmd` methods for useful execution hooks.  The
    return value is a flag indicating whether interpretation of commands by the
    interpreter should stop.  If there is a :meth:`!do_\*` method for the command
-   *str*, the return value of that method is returned, otherwise the return value
-   from the :meth:`default` method is returned.
+   *line*, the return value of that method is returned, otherwise the return
+   value from the :meth:`default` method is returned.
 
 
 .. method:: Cmd.emptyline()

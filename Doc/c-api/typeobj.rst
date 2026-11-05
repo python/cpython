@@ -2591,7 +2591,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Specifically, if *type* uses the default metaclass,
       ``type->tp_vectorcall`` must behave the same as
-      :c:expr:`PyType_Type->tp_call`, which:
+      ``Py_TYPE(type)->tp_call``, which:
 
       - calls ``type->tp_new``,
 

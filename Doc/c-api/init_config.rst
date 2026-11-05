@@ -156,8 +156,10 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    * Set *\*value*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
-   *\*value* can be set to ``NULL`` if the option is an optional string and the
-   option is unset.
+   *\*value* can be set to ``NULL`` if the option is unset or if the option is
+   an optional string.
+   Optional strings are documented with the type ``str | None`` in the
+   :ref:`Configuration Options <pyinitconfig-opts>` table.
 
    On success, the string must be released with ``free(value)`` if it's not
    ``NULL``.
@@ -168,7 +170,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -204,6 +206,9 @@ only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
 
    Set a string configuration option from a null-terminated UTF-8
    encoded string. The string is copied.
+
+   Options documented with the type ``str | None`` in the :ref:`Configuration
+   Options <pyinitconfig-opts>` table can be set to ``NULL``.
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
@@ -275,15 +280,15 @@ Configuration Options
      - Public
    * - ``"base_exec_prefix"``
      - :c:member:`base_exec_prefix <PyConfig.base_exec_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"base_executable"``
      - :c:member:`base_executable <PyConfig.base_executable>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"base_prefix"``
      - :c:member:`base_prefix <PyConfig.base_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"buffered_stdio"``
      - :c:member:`buffered_stdio <PyConfig.buffered_stdio>`
@@ -331,15 +336,15 @@ Configuration Options
      - Read-only
    * - ``"dump_refs_file"``
      - :c:member:`dump_refs_file <PyConfig.dump_refs_file>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"exec_prefix"``
      - :c:member:`exec_prefix <PyConfig.exec_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"executable"``
      - :c:member:`executable <PyConfig.executable>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"faulthandler"``
      - :c:member:`faulthandler <PyConfig.faulthandler>`
@@ -359,7 +364,7 @@ Configuration Options
      - Read-only
    * - ``"home"``
      - :c:member:`home <PyConfig.home>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
@@ -431,7 +436,7 @@ Configuration Options
      - Public
    * - ``"prefix"``
      - :c:member:`prefix <PyConfig.prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"program_name"``
      - :c:member:`program_name <PyConfig.program_name>`
@@ -439,7 +444,7 @@ Configuration Options
      - Read-only
    * - ``"pycache_prefix"``
      - :c:member:`pycache_prefix <PyConfig.pycache_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"quiet"``
      - :c:member:`quiet <PyConfig.quiet>`
@@ -447,19 +452,19 @@ Configuration Options
      - Public
    * - ``"run_command"``
      - :c:member:`run_command <PyConfig.run_command>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_filename"``
      - :c:member:`run_filename <PyConfig.run_filename>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_module"``
      - :c:member:`run_module <PyConfig.run_module>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_presite"``
      - :c:member:`run_presite <PyConfig.run_presite>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"safe_path"``
      - :c:member:`safe_path <PyConfig.safe_path>`
@@ -479,7 +484,7 @@ Configuration Options
      - Read-only
    * - ``"stdio_encoding"``
      - :c:member:`stdio_encoding <PyConfig.stdio_encoding>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"stdio_errors"``
      - :c:member:`stdio_errors <PyConfig.stdio_errors>`
@@ -487,7 +492,7 @@ Configuration Options
      - Read-only
    * - ``"stdlib_dir"``
      - :c:member:`stdlib_dir <PyConfig.stdlib_dir>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"tracemalloc"``
      - :c:member:`tracemalloc <PyConfig.tracemalloc>`
@@ -541,6 +546,9 @@ Configuration Options
      - :c:member:`_pystats <PyConfig._pystats>`
      - ``bool``
      - Read-only
+
+The type ``str | None`` means that the option is an optional string which can
+be set to ``NULL``.
 
 Visibility:
 
@@ -1936,7 +1944,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
