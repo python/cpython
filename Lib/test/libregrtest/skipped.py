@@ -17,6 +17,24 @@ HOST_PLATFORM = os.environ.get('_PYTHON_HOST_PLATFORM', '')
 IS_WASI = support.is_wasi or HOST_PLATFORM.startswith('wasi')
 
 
+NEED_MULTIPROCESSING = {
+    'test_multiprocessing_fork',
+    'test_multiprocessing_forkserver',
+    'test_multiprocessing_main_handling',
+    'test_multiprocessing_spawn',
+}
+SELECT_TESTS = {
+    'test_devpoll',
+    'test_epoll',
+    'test_kqueue',
+    'test_poll',
+}
+NEED_SSL = {
+    'test_smtpnet',
+    'test_ssl',
+}
+
+
 # List of tests expected to be skipped
 EXPECTED_SKIP = set()
 if support.MS_WINDOWS:
@@ -57,25 +75,32 @@ if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 if not support.has_socket_support or IS_WASI:
     EXPECTED_SKIP |= {
+        'test_asyncgen',
         'test_asyncio',
         'test_docxmlrpc',
         'test_ftplib',
         'test_httplib',
         'test_httpservers',
         'test_imaplib',
+        'test_mailbox',
         'test_poplib',
         'test_select',
+        'test_selectors',
         'test_smtplib',
         'test_socket',
+        'test_urllib',
         'test_urllib2',
         'test_urllib2_localnet',
+        'test_urllib_response',
         'test_wsgiref',
         'test_xml_dom_xmlbuilder',
         'test_xmlrpc',
     }
+    EXPECTED_SKIP |= SELECT_TESTS
 if not support.has_subprocess_support or IS_WASI:
     EXPECTED_SKIP |= {
         'test_argparse',
+        'test_c_stack_unwind',
         'test_cext',
         'test_clinic',
         'test_cmd_line',
@@ -97,7 +122,7 @@ if support.is_emscripten:
         'test_mmap',
         'test_selectors',
     }
-if support.is_android or support.is_apple_mobile or support.is_wasm32:
+if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP.add('test_venv')
 if not sys.is_remote_debug_enabled():
     EXPECTED_SKIP.add('test_remote_pdb')
@@ -109,7 +134,40 @@ if not support.has_fork_support or IS_WASI:
         'test_wait4',
     }
 if IS_WASI:
-    EXPECTED_SKIP.add('test_multiprocessing_fork')
+    EXPECTED_SKIP |= {
+        'test__interpchannels',        # need _interpchannels
+        'test__interpreters',          # need _interpreters
+        'test_bz2',                    # need _bz2
+        'test_crossinterp',            # need _interpreters
+        'test_ctypes',                 # need _ctypes
+        'test_curses',                 # need _curses
+        'test_dbm_sqlite3',            # need _sqlite3
+        'test_external_inspection',    # need _remote_debugging
+        'test_fcntl',                  # need fcntl
+        'test_gc_stats',               # need _remote_debugging
+        'test_grp',                    # need grp
+        'test_gzip',                   # need zlib
+        'test_ioctl',                  # need fcntl
+        'test_lzma',                   # need _lzma
+        'test_mmap',                   # need mmap
+        'test_openpty',                # need os.openpty()
+        'test_perfmaps',               # need perf trampoline profiling
+        'test_pty',                    # need termios
+        'test_pwd',                    # need pwd
+        'test_pyrepl',                 # need termios
+        'test_remote_pdb',             # need remote debugging
+        'test_resource',               # need resource
+        'test_sqlite3',                # need _sqlite3
+        'test_stable_abi_ctypes',      # need _ctypes
+        'test_syslog',                 # need syslog
+        'test_termios',                # need termios
+        'test_tty',                    # need termios
+        'test_xxlimited',              # need xxlimited
+        'test_zlib',                   # need zlib
+        'test_zstd',                   # need _zstd
+    }
+    EXPECTED_SKIP |= NEED_MULTIPROCESSING
+    EXPECTED_SKIP |= NEED_SSL
 
 
 # Modules needed by a test.
@@ -136,12 +194,7 @@ NEED_MODULES = {
     'test_xxtestfuzz': '_xxtestfuzz',
     'test_zstd': '_zstd',
 }
-for name in (
-    'test_multiprocessing_fork',
-    'test_multiprocessing_forkserver',
-    'test_multiprocessing_main_handling',
-    'test_multiprocessing_spawn',
-):
+for name in NEED_MULTIPROCESSING:
     NEED_MODULES[name] = '_multiprocessing'
 for name in (
     'test_idle',
@@ -152,14 +205,11 @@ for name in (
     'test_turtle',
 ):
     NEED_MODULES[name] = '_tkinter'
-for name in (
-    'test_smtpnet',
-    'test_ssl',
-):
+for name in NEED_SSL:
     NEED_MODULES[name] = '_ssl'
 
 
-NEED_WORKING_THREADING = (
+NEED_WORKING_THREADING = {
     'test_concurrent_futures',
     'test_queue',
     'test_thread',
@@ -167,7 +217,7 @@ NEED_WORKING_THREADING = (
     'test_threading',
     'test_threading_local',
     'test_webbrowser',
-)
+}
 
 
 def miss_modules(modules):
@@ -182,20 +232,15 @@ def miss_modules(modules):
 
 
 def expected_to_be_skipped(test_name):
+    # Test EXPECTED_SKIP
     test_name = test_name.removeprefix('test.')
     if test_name in EXPECTED_SKIP:
         return True
-
     package = test_name.split('.')[0]
     if package in EXPECTED_SKIP:
         return True
 
-    if test_name in ('test_poll', 'test_epoll',
-                     'test_kqueue', 'test_devpoll'):
-        import select
-        name = test_name.removeprefix('test_')
-        return not hasattr(select, name)
-
+    # Test NEED_MODULES
     if test_name in NEED_MODULES:
         if miss_modules(NEED_MODULES[test_name]):
             return True
@@ -203,16 +248,21 @@ def expected_to_be_skipped(test_name):
         if miss_modules(NEED_MODULES[package]):
             return True
 
-    if test_name == 'test_fork1':
-        return not support.has_fork_support
-    if test_name == 'test_dtrace':
-        import sysconfig
-        return not sysconfig.get_config_var('WITH_DTRACE')
+    # Custom ruleset
     if (test_name in NEED_WORKING_THREADING
         or package in NEED_WORKING_THREADING):
         if IS_WASI:
             return True
         from test.support import threading_helper
         return not threading_helper.can_start_thread
+
+    if test_name in SELECT_TESTS:
+        import select
+        name = test_name.removeprefix('test_')
+        return not hasattr(select, name)
+
+    if test_name == 'test_dtrace':
+        import sysconfig
+        return not sysconfig.get_config_var('WITH_DTRACE')
 
     return False
