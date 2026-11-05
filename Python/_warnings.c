@@ -666,6 +666,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
 {
     PyObject *f_stderr = NULL;
     PyObject *name;
+    PyObject *truncated = NULL;
     char lineno_str[128];
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
@@ -701,7 +702,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         const void *data;
         Py_ssize_t i, len;
         Py_UCS4 ch;
-        PyObject *truncated;
 
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
@@ -716,9 +716,12 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         if (truncated == NULL)
             goto error;
 
-        PyFile_WriteObject(truncated, f_stderr, Py_PRINT_RAW);
-        Py_DECREF(truncated);
-        PyFile_WriteString("\n", f_stderr);
+        if (PyFile_WriteString("  ", f_stderr) < 0)
+            goto error;
+        if (PyFile_WriteObject(truncated, f_stderr, Py_PRINT_RAW) < 0)
+            goto error;
+        if (PyFile_WriteString("\n", f_stderr) < 0)
+            goto error;
     }
     else {
         _Py_DisplaySourceLine(f_stderr, filename, lineno, 2, NULL, NULL);
@@ -727,6 +730,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
 error:
     Py_XDECREF(f_stderr);
     Py_XDECREF(name);
+    Py_XDECREF(truncated);
     PyErr_Clear();
 }
 
