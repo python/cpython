@@ -1,3 +1,2 @@
-Remove the backquote from the symbols listed by :func:`help`. It is not
-valid syntax in Python 3, and asking for help on it reported that no
+Remove the backquote from the symbols listed by :func:`help`, asking for help on it reported that no
 documentation was found.
