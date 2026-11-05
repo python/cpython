@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
