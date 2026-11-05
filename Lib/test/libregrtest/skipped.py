@@ -359,10 +359,10 @@ def expected_to_be_skipped(test_name):
         # and on macOS.
         return not support.supports_perf_trampoline_profiling()
 
-    if package == 'test_gdb':
-        # Need gdb program
-        import shutil
-        return not shutil.which('gdb')
+    ## if package == 'test_gdb':
+    ##     # Need gdb program
+    ##     import shutil
+    ##     return not shutil.which('gdb')
 
     if test_name == 'test_asdl_parser':
         # Test only relevant for from-source Python builds
