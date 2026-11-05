@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from test import support
 
 try:
     from _testinternalcapi import perf_map_state_teardown, write_perf_map_entry
