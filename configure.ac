@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
@@ -1153,12 +1153,12 @@ if test -z "$CFLAGS"; then
 fi
 
 dnl Emscripten SDK and WASI SDK default to wasm32.
-dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl On Emscripten use -m64 to build target wasm64-emscripten.
 dnl for wasm64.
 AS_CASE([$host],
   [wasm64-*-emscripten], [
-    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
-    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([CFLAGS], [" -m64"])
+    AS_VAR_APPEND([LDFLAGS], [" -m64"])
   ],
 )
 
@@ -2659,7 +2659,7 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
       AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
-      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -pthread"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
@@ -4466,6 +4466,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -9070,12 +9075,12 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib -b Modules/Setup.bootstrap $srcdir/Modules/Setup
 if test $? -ne 0; then
   AC_MSG_ERROR([makesetup failed])
 fi
 
-mv config.c Modules
+mv config.c config_bootstrap.c Modules
 
 if test -z "$PKG_CONFIG"; then
   AC_MSG_WARN([pkg-config is missing. Some dependencies may not be detected correctly.])

@@ -535,7 +535,7 @@ added matters.  To illustrate::
       If :attr:`~Policy.cte_type` is ``8bit``, non-ASCII binary data is
       converted back
       into bytes.  Headers with binary data are not refolded, regardless of the
-      ``refold_header`` setting, since there is no way to know whether the
+      ``refold_source`` setting, since there is no way to know whether the
       binary data consists of single byte characters or multibyte characters.
 
 

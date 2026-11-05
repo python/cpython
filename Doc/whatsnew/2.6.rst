@@ -2565,8 +2565,8 @@ changes, or look through the Subversion logs for all the details.
   for the statement being timed and for the setup code.
   Two convenience functions were added for creating
   :class:`~timeit.Timer` instances:
-  ``repeat(stmt, setup, time, repeat, number)`` and
-  ``timeit(stmt, setup, time, number)`` create an instance and call
+  ``repeat(stmt, setup, timer, repeat, number)`` and
+  ``timeit(stmt, setup, timer, number)`` create an instance and call
   the corresponding method. (Contributed by Erik Demaine;
   :issue:`1533909`.)
 
@@ -2600,7 +2600,7 @@ changes, or look through the Subversion logs for all the details.
   measured in seconds.   For example::
 
      >>> u = urllib2.urlopen("http://slow.example.com",
-                             timeout=3)
+     ...                     timeout=3)
      Traceback (most recent call last):
        ...
      urllib2.URLError: <urlopen error timed out>
@@ -2622,15 +2622,15 @@ changes, or look through the Subversion logs for all the details.
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
 
-* The XML-RPC :class:`SimpleXMLRPCServer <xmlrpc.server>` and :class:`DocXMLRPCServer <xmlrpc.server>`
-  classes can now be prevented from immediately opening and binding to
-  their socket by passing ``False`` as the *bind_and_activate*
-  constructor parameter.  This can be used to modify the instance's
-  :attr:`~socketserver.BaseServer.allow_reuse_address` attribute before calling the
-  :meth:`~socketserver.BaseServer.server_bind` and
-  :meth:`~socketserver.BaseServer.server_activate` methods to
-  open the socket and begin listening for connections.
-  (Contributed by Peter Parente; :issue:`1599845`.)
+* The XML-RPC :class:`~xmlrpc.server.SimpleXMLRPCServer` and
+  :class:`~xmlrpc.server.DocXMLRPCServer` classes can now be prevented from
+  immediately opening and binding to their socket by passing ``False`` as the
+  *bind_and_activate* constructor parameter.  This can be used to modify the
+  instance's :attr:`~socketserver.BaseServer.allow_reuse_address` attribute
+  before calling the :meth:`~socketserver.BaseServer.server_bind` and
+  :meth:`~socketserver.BaseServer.server_activate` methods to open the socket
+  and begin listening for connections. (Contributed by Peter Parente;
+  :issue:`1599845`.)
 
   :class:`~xmlrpc.server.SimpleXMLRPCServer` also has a :attr:`!_send_traceback_header`
   attribute; if true, the exception and formatted traceback are returned
