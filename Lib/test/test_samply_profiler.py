@@ -1,7 +1,6 @@
 import unittest
 import subprocess
 import sys
-import sysconfig
 import os
 import pathlib
 from test import support
