@@ -15,6 +15,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pybuffer.h"      // _PyBuffer_FindItem()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
@@ -1313,24 +1314,7 @@ static PyObject *
 array_array_count_impl(arrayobject *self, PyObject *v)
 /*[clinic end generated code: output=93ead26a2affb739 input=d9bce9d65e39d1f5]*/
 {
-    Py_ssize_t count = 0;
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *selfi;
-        int cmp;
-
-        selfi = getarrayitem((PyObject *)self, i);
-        if (selfi == NULL)
-            return NULL;
-        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
-        Py_DECREF(selfi);
-        if (cmp > 0)
-            count++;
-        else if (cmp < 0)
-            return NULL;
-    }
-    return PyLong_FromSsize_t(count);
+    return _PyBuffer_CountItem((PyObject *)self, v);
 }
 
 
@@ -1352,50 +1336,25 @@ array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
                        Py_ssize_t stop)
 /*[clinic end generated code: output=c45e777880c99f52 input=089dff7baa7e5a7e]*/
 {
-    if (start < 0) {
-        start += Py_SIZE(self);
-        if (start < 0) {
-            start = 0;
-        }
+    Py_ssize_t i = _PyBuffer_FindItem((PyObject *)self, v, start, stop);
+    if (i == -2) {
+        return NULL;
     }
-    if (stop < 0) {
-        stop += Py_SIZE(self);
+    if (i == -1) {
+        PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
+        return NULL;
     }
-    // Use Py_SIZE() for every iteration in case the array is mutated
-    // during PyObject_RichCompareBool()
-    for (Py_ssize_t i = start; i < stop && i < Py_SIZE(self); i++) {
-        PyObject *selfi;
-        int cmp;
-
-        selfi = getarrayitem((PyObject *)self, i);
-        if (selfi == NULL)
-            return NULL;
-        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
-        Py_DECREF(selfi);
-        if (cmp > 0) {
-            return PyLong_FromSsize_t(i);
-        }
-        else if (cmp < 0)
-            return NULL;
-    }
-    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
-    return NULL;
+    return PyLong_FromSsize_t(i);
 }
 
 static int
 array_contains(PyObject *self, PyObject *v)
 {
-    Py_ssize_t i;
-    int cmp;
-
-    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(self); i++) {
-        PyObject *selfi = getarrayitem(self, i);
-        if (selfi == NULL)
-            return -1;
-        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
-        Py_DECREF(selfi);
+    Py_ssize_t i = _PyBuffer_FindItem(self, v, 0, PY_SSIZE_T_MAX);
+    if (i == -2) {
+        return -1;
     }
-    return cmp;
+    return i >= 0;
 }
 
 /*[clinic input]
@@ -1411,27 +1370,18 @@ static PyObject *
 array_array_remove_impl(arrayobject *self, PyObject *v)
 /*[clinic end generated code: output=f2a24e288ecb2a35 input=0b1e5aed25590027]*/
 {
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *selfi;
-        int cmp;
-
-        selfi = getarrayitem((PyObject *)self,i);
-        if (selfi == NULL)
-            return NULL;
-        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
-        Py_DECREF(selfi);
-        if (cmp > 0) {
-            if (array_del_slice(self, i, i+1) != 0)
-                return NULL;
-            Py_RETURN_NONE;
-        }
-        else if (cmp < 0)
-            return NULL;
+    Py_ssize_t i = _PyBuffer_FindItem((PyObject *)self, v, 0, PY_SSIZE_T_MAX);
+    if (i == -2) {
+        return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
-    return NULL;
+    if (i == -1) {
+        PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
+        return NULL;
+    }
+    if (array_del_slice(self, i, i+1) != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]

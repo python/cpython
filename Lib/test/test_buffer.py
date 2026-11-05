@@ -2963,6 +2963,16 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "index out of bounds on dimension %d" % (dim,))
 
+    def test_memoryview_search_unsupported_format(self):
+        nd = ndarray([1, 2], shape=[2], format='<i')
+        m = memoryview(nd)
+        # Ensure empty and non-empty behave the same.
+        for mv in m, m[:0]:
+            self.assertRaises(NotImplementedError, mv.count, 1)
+            self.assertRaises(NotImplementedError, mv.index, 1)
+            self.assertRaises(NotImplementedError, lambda: 1 in mv)
+        self.assertRaises(NotImplementedError, m.index, 1, 2)
+
     def test_memoryview_index(self):
 
         # ndim = 0
@@ -4630,6 +4640,17 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertTrue(wr.held)
             self.assertEqual(mv.tobytes(), b"hello")
         self.assertFalse(wr.held)
+
+    def test_search_restricted_memoryview(self):
+        # The memoryview passed to __release_buffer__() refuses to export new
+        # views, but can still be searched.
+        results = []
+        class Searcher(bytearray):
+            def __release_buffer__(self, mv):
+                results.append((97 in mv, mv.count(98), mv.index(99)))
+
+        memoryview(Searcher(b"abc")).release()
+        self.assertEqual(results, [(True, 1, 2)])
 
     def test_buffer_flags(self):
         class PossiblyMutable:

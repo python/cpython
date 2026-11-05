@@ -1,0 +1,6 @@
+Speed up ``in``, :meth:`memoryview.count` and :meth:`memoryview.index` for
+:class:`memoryview` objects with integer formats. Attempts to resize during
+these operations may now raise :exc:`BufferError`. Searching is 60-130x faster
+for 100,000 items. :meth:`memoryview.index` now raises
+:exc:`NotImplementedError` for an unsupported format even when there are no
+items to search, like :meth:`~memoryview.count` and ``in``.

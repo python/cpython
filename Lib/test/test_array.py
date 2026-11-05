@@ -5,7 +5,8 @@
 import collections.abc
 import unittest
 from test import support
-from test.support import import_helper, script_helper
+from test.seq_tests import NativeItemsSearchTest
+from test.support import import_helper, script_helper, warnings_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import subTests
@@ -130,6 +131,22 @@ class MiscTest(unittest.TestCase):
                 self.assertGreaterEqual(array.array(typecode).itemsize,
                                         minimum_size)
 
+    def test_search_mutated_during_compare(self):
+        # The buffer is held while searching, so the array cannot be resized
+        # by a comparison.
+        for search in (array.array.index, array.array.count,
+                       array.array.remove, array.array.__contains__):
+            for mutate in (lambda a: a.append(9.0), lambda a: a.clear()):
+                with self.subTest(search=search.__name__):
+                    a = array.array('d', [1.0, 2.0, 3.0])
+                    class Mutate:
+                        def __eq__(self, other):
+                            mutate(a)
+                            return False
+                    self.assertRaises(BufferError, search, a, Mutate())
+                    self.assertEqual(a.tolist(), [1.0, 2.0, 3.0])
+                    a.append(4.0)  # The buffer was released.
+
 
 # Machine format codes.
 #
@@ -166,6 +183,47 @@ IEEE_754_FLOAT16_LE = 26
 IEEE_754_FLOAT16_BE = 27
 
 MACHINE_FORMAT_CODE_MAX = 27
+
+class SearchTest(NativeItemsSearchTest, unittest.TestCase):
+    # 'w' is tested by test_search_unicode. The raw is not valid UCS4 so
+    # conversion to a list fails.
+    search_formats = tuple(fmt for fmt in array.typecodes if fmt != 'w')
+
+    def make_haystacks(self, typecode, raw):
+        yield 'array', array.array(typecode, raw)
+
+    def test_search_remove(self):
+        self.run_search_cases(self.check_remove)
+
+    def check_remove(self, a, haystack_objects, needle):
+        """Check a.remove(needle) against removing the first item of
+        haystack_objects equal to needle."""
+        matches = [i for i, x in enumerate(haystack_objects) if x == needle]
+        b = array.array(a.typecode, a)
+        if matches:
+            b.remove(needle)
+            after = array.array(a.typecode, a)
+            del after[matches[0]]
+            self.assertEqual(b.tobytes(), after.tobytes(), repr(needle))
+        else:
+            with self.assertRaises(ValueError, msg=repr(needle)):
+                b.remove(needle)
+
+    # Comparing bytes needles with str items emits BytesWarning with -b.
+    @warnings_helper.ignore_warnings(category=BytesWarning)
+    def test_search_unicode(self):
+        a = array.array('w', 'abc\U0010ffff\0ab' * 2)
+        haystack_objects = a.tolist()
+        for needle in ['a', 'b', '\U0010ffff', '\0', 'z', 'ab', '', b'a', 97]:
+            self.check_search(a, haystack_objects, needle)
+            self.check_remove(a, haystack_objects, needle)
+        # memoryview does not support 'w' items, but can search them.
+        m = memoryview(a)
+        self.assertEqual(m.count('a'), a.count('a'))
+        self.assertEqual(m.index('\0', 1), a.index('\0', 1))
+        self.assertIn('\U0010ffff', m)
+        self.assertNotIn('z', m)
+        self.assertRaises(NotImplementedError, m.__getitem__, 0)
 
 
 class ArrayReconstructorTest(unittest.TestCase):
