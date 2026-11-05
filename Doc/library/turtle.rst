@@ -1856,7 +1856,7 @@ Using screen events
       >>> def f():
       ...     fd(50)
       ...
-      >>> screen.onkey(f, "Up")
+      >>> screen.onkeypress(f, "Up")
       >>> screen.listen()
 
 

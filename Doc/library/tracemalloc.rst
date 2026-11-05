@@ -750,7 +750,7 @@ Traceback
       Example::
 
           print("Traceback (most recent call first):")
-          for line in traceback:
+          for line in traceback.format():
               print(line)
 
       Output::
