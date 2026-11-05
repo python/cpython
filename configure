@@ -22130,7 +22130,7 @@ printf "%s\n" "$ac_cv_unreliable_pthread_getattr_np" >&6; }
    if test "x$ac_cv_unreliable_pthread_getattr_np" = xyes
 then :
 
-printf "%s\n" "#define HAVE_UNRELIABLE_PTHREAD_GETATTR_NP 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP 1" >>confdefs.h
 
 fi
 fi

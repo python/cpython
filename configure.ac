@@ -5855,7 +5855,7 @@ int main(void) {
       [ac_cv_unreliable_pthread_getattr_np=yes],
       [ac_cv_unreliable_pthread_getattr_np=no])])
    AS_VAR_IF([ac_cv_unreliable_pthread_getattr_np], [yes],
-     [AC_DEFINE([HAVE_UNRELIABLE_PTHREAD_GETATTR_NP], [1],
+     [AC_DEFINE([_Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP], [1],
        [Define if pthread_getattr_np under-reports the main thread's stack size (musl behaviour).])])])
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,

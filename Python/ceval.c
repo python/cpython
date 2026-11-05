@@ -70,7 +70,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #  define Py_C_STACK_SIZE 4000000
 #endif
 
-#ifdef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+#ifdef _Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
 #ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>
 #endif
@@ -119,7 +119,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         err |= pthread_attr_destroy(&attr);
     }
     if (err == 0) {
-#    ifdef HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+#    ifdef _Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
         /* pthread_getattr_np on the main thread of a musl process reports a
          * stack size based on the current stack rather than RLIMIT_STACK.
          * New threads are reported correctly even on musl, so this fallback
