@@ -227,7 +227,7 @@ selected versioned distribution directory inside `dist/`, then restores it
 from the matching `.tar.xz` archive before running the tests.
 The archive and other distributions in `dist/` are left untouched.
 
-You can also tests more directly. To find out where the WASI build directory
+You can also run tests more directly. To find out where the WASI build directory
 is, you can run:
 
 ```shell
