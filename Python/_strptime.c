@@ -9,6 +9,7 @@
  * - numeric %Y, %y, %m, %d, %H, %M, %S, and %f fields;
  * - a terminal %z: empty, Z, or +/-HHMM or +/-HH:MM with hours below 24;
  * - literal characters, %%, and ASCII whitespace.
+ *
  * Duplicate directives, mixed %Y/%y, and day-of-month without a year use the
  * fallback. So do other directives (including locale-dependent names and
  * week/day-of-year calculations), and offsets with seconds or fractions.

@@ -3763,6 +3763,20 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.to_integral_value, '10')
         self.assertRaises(TypeError, c.to_integral_value, 10, 'x')
 
+    def test_crashing_signal_dict_traps(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().traps)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(traps=SignalDict())
+
+    def test_crashing_signal_dict_flags(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().flags)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(flags=SignalDict())
+
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
@@ -6099,13 +6113,10 @@ class SignatureTest(unittest.TestCase):
 
 
 class TestModule:
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(self.decimal, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, self.decimal, "__version__", remove=(3, 20),
+        )
 
 
 @requires_cdecimal

@@ -432,6 +432,7 @@ Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
 Modules/*time*                   @pganssle @StanFromIreland
 Python/pytime.c                  @pganssle @StanFromIreland
+Python/_strptime.c               @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -508,6 +509,13 @@ Doc/library/importlib.resources.abc.rst   @jaraco @warsaw @FFY00
 Doc/library/importlib.resources.rst       @jaraco @warsaw @FFY00
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
+
+# IO
+Doc/library/io.rst            @cmaloney
+Lib/_pyio.py                  @cmaloney
+Lib/io.py                     @cmaloney
+Lib/test/test_io/             @cmaloney
+Modules/_io/                  @cmaloney
 
 # Itertools
 Doc/library/itertools.rst     @rhettinger
