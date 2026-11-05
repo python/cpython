@@ -781,6 +781,86 @@ class TestDialectRegistry(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "'delimeter'"):
             copy.replace(dialect, delimeter=':')
 
+    def test_replace_dialect_slots(self):
+        # Dialect with single string __slots__
+        class SingleSlotDialect(csv.excel):
+            __slots__ = 'delimiter'
+            def __init__(self):
+                self.delimiter = ';'
+                super().__init__()
+
+        d1 = SingleSlotDialect()
+        r1 = copy.replace(d1, quoting=csv.QUOTE_ALL)
+        self.assertIsInstance(r1, SingleSlotDialect)
+        self.assertEqual(r1.delimiter, ';')
+        self.assertEqual(r1.quoting, csv.QUOTE_ALL)
+        self.assertEqual(list(csv.reader(['a;b'], r1)), [['a', 'b']])
+
+        # Replacing a slot-backed attribute
+        r1_mod = copy.replace(d1, delimiter=':')
+        self.assertEqual(r1_mod.delimiter, ':')
+        self.assertEqual(list(csv.reader(['a:b'], r1_mod)), [['a', 'b']])
+
+        # Dialect with tuple __slots__
+        class MultiSlotDialect(csv.excel):
+            __slots__ = ('delimiter', 'quotechar')
+            def __init__(self):
+                self.delimiter = '|'
+                self.quotechar = '#'
+                super().__init__()
+
+        d2 = MultiSlotDialect()
+        r2 = copy.replace(d2, quoting=csv.QUOTE_MINIMAL)
+        self.assertIsInstance(r2, MultiSlotDialect)
+        self.assertEqual(r2.delimiter, '|')
+        self.assertEqual(r2.quotechar, '#')
+        self.assertEqual(list(csv.reader(['#a|b#|c'], r2)), [['a|b', 'c']])
+
+        # Subclassing with __slots__ across multiple inheritance levels
+        class BaseSlotDialect(csv.excel):
+            __slots__ = ('delimiter',)
+            def __init__(self):
+                self.delimiter = ';'
+                super().__init__()
+
+        class SubSlotDialect(BaseSlotDialect):
+            __slots__ = ('quotechar', 'escapechar')
+            def __init__(self):
+                super().__init__()
+                self.quotechar = '~'
+                self.escapechar = '\\'
+
+        d3 = SubSlotDialect()
+        r3 = copy.replace(d3, doublequote=False)
+        self.assertIsInstance(r3, SubSlotDialect)
+        self.assertEqual(r3.delimiter, ';')
+        self.assertEqual(r3.quotechar, '~')
+        self.assertEqual(r3.escapechar, '\\')
+        self.assertFalse(r3.doublequote)
+        self.assertEqual(list(csv.reader(['~a;b~;c'], r3)), [['a;b', 'c']])
+
+        # Unset slot attribute on instance
+        class UnsetSlotDialect(csv.excel):
+            __slots__ = ('delimiter',)
+
+        d4 = UnsetSlotDialect()
+        r4 = copy.replace(d4, quoting=csv.QUOTE_ALL)
+        self.assertIsInstance(r4, UnsetSlotDialect)
+        self.assertFalse(hasattr(r4, 'delimiter'))
+
+        # Mapping __slots__
+        class DictSlotDialect(csv.excel):
+            __slots__ = {'delimiter': 'doc for delimiter'}
+            def __init__(self):
+                self.delimiter = '\t'
+                super().__init__()
+
+        d5 = DictSlotDialect()
+        r5 = copy.replace(d5, quoting=csv.QUOTE_ALL)
+        self.assertIsInstance(r5, DictSlotDialect)
+        self.assertEqual(r5.delimiter, '\t')
+        self.assertEqual(list(csv.reader(['a\tb'], r5)), [['a', 'b']])
+
     def test_pickle(self):
         for name in csv.list_dialects():
             dialect = csv.get_dialect(name)
