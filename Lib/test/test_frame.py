@@ -5,6 +5,7 @@ import sys
 import textwrap
 import threading
 import unittest
+import warnings
 import weakref
 try:
     import _testcapi
@@ -221,6 +222,30 @@ class FrameAttrsTest(unittest.TestCase):
         f, _, _ = self.make_frames()
         with self.assertRaises(AttributeError):
             del f.f_lineno
+
+    def test_f_lineno_deep_stack_swap(self):
+        fors = " ".join(f"for v{i} in range(1)" for i in range(11))
+        params = ", ".join(f"v{i}=None" for i in range(11))
+        ns = {}
+        exec(f"def f({params}):\n    return [0 {fors}]\n", ns)
+        f = ns["f"]
+
+        jumped = []
+
+        def tracer(frame, event, arg):
+            if (event == 'line' and frame.f_code is f.__code__
+                    and not jumped):
+                jumped.append(None)
+                frame.f_lineno = frame.f_lineno
+            return tracer
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', RuntimeWarning)
+            sys.settrace(tracer)
+            try:
+                self.assertEqual(f(), [0])
+            finally:
+                sys.settrace(None)
 
     def test_f_trace(self):
         f, _, _ = self.make_frames()
