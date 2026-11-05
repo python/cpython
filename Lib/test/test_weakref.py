@@ -1058,10 +1058,10 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(found, [])
 
     def test_ref_to_object_dying_after_finalizer(self):
-        found = []
+        cleared = []
         class Attr:
             def __del__(self):
-                found.append(self.wr() is None)
+                cleared.append(self.wr() is None)
 
         class SetWithDel(set):
             __slots__ = ('a',)
@@ -1073,12 +1073,12 @@ class ReferencesTestCase(TestBase):
 
         for cls in (SetWithDel, Raw):
             with self.subTest(cls=cls.__name__):
-                found.clear()
+                cleared.clear()
                 o = cls()
                 o.a = Attr()
                 o.a.wr = weakref.ref(o)
                 del o
-                self.assertEqual(found, [True])
+                self.assertEqual(cleared, [True])
 
     def test_callback_attribute(self):
         x = Object(1)
