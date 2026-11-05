@@ -67,8 +67,8 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // thread id of the thread where this task was created
-    uintptr_t task_tid;
+    // unique id of the thread state where the task was registered
+    uint64_t task_tstate_id;
 #endif
 } TaskObj;
 
@@ -2209,6 +2209,9 @@ register_task(TaskObj *task)
         return;
     }
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) _PyThreadState_GET();
+#ifdef Py_GIL_DISABLED
+    task->task_tstate_id = tstate->base.id;
+#endif
     struct llist_node *head = &tstate->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
 }
@@ -2228,15 +2231,15 @@ static void
 unregister_task(TaskObj *task)
 {
 #ifdef Py_GIL_DISABLED
-    // check if we are in the same thread
-    // if so, we can avoid locking
-    if (task->task_tid == _Py_ThreadId()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    // The task can only be on this thread's list if this thread state
+    // registered it, in which case no locking is needed.
+    if (task->task_tstate_id == tstate->id) {
         unregister_task_safe(task);
     }
     else {
-        // we are in a different thread
-        // stop the world then check and remove the task
-        PyThreadState *tstate = _PyThreadState_GET();
+        // The task is on another thread's list or on the interpreter's
+        // list of lingering tasks: stop the world to remove it.
         _PyEval_StopTheWorld(tstate->interp);
         unregister_task_safe(task);
         _PyEval_StartTheWorld(tstate->interp);
@@ -2370,9 +2373,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     }
 
     Py_CLEAR(self->task_fut_waiter);
-#ifdef Py_GIL_DISABLED
-    self->task_tid = _Py_ThreadId();
-#endif
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
@@ -4009,7 +4009,6 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
-        assert(task->task_state == STATE_PENDING);
         // The linked list holds borrowed references to task
         // as such it is possible that the task is concurrently
         // deallocated while added to this list.
