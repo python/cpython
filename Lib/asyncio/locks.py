@@ -489,7 +489,7 @@ class Barrier(mixins._LoopBoundMixin):
         self._parties = parties
         self._state = _BarrierState.FILLING
         self._count = 0       # count tasks in Barrier
-        # index number returned when barrier drains 
+        # index number returned when barrier drains
         self._index = self._parties - 1 
 
     def __repr__(self):
