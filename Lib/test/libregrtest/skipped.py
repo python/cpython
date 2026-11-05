@@ -284,4 +284,8 @@ def expected_to_be_skipped(test_name):
         # need perf trampoline profiling
         return not support.supports_perf_trampoline_profiling()
 
+    if package == 'test_gdb':
+        import shutil
+        return not shutil.which('gdb')
+
     return False
