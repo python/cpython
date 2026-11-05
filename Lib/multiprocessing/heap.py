@@ -15,7 +15,8 @@ import sys
 import tempfile
 import threading
 
-from .context import reduction, assert_spawning
+from . import context
+from .context import assert_spawning
 from . import util
 
 __all__ = ['BufferWrapper']
@@ -101,12 +102,12 @@ else:
         if a.fd == -1:
             raise ValueError('Arena is unpicklable because '
                              'forking was enabled when it was created')
-        return rebuild_arena, (a.size, reduction.DupFd(a.fd))
+        return rebuild_arena, (a.size, context.reduction.DupFd(a.fd))
 
     def rebuild_arena(size, dupfd):
         return Arena(size, dupfd.detach())
 
-    reduction.register(Arena, reduce_arena)
+    context.reduction.register(Arena, reduce_arena)
 
 #
 # Class allowing allocation of chunks of memory from arenas

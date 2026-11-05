@@ -22,7 +22,6 @@ from queue import Empty, Full
 
 from . import connection
 from . import context
-_ForkingPickler = context.reduction.ForkingPickler
 
 from .util import debug, info, Finalize, register_after_fork, is_exiting
 
@@ -47,6 +46,7 @@ class Queue(object):
         self._sem = ctx.BoundedSemaphore(maxsize)
         # For use by concurrent.futures
         self._ignore_epipe = False
+        self._ctx = ctx
         self._reset()
 
         if sys.platform != 'win32':
@@ -55,11 +55,11 @@ class Queue(object):
     def __getstate__(self):
         context.assert_spawning(self)
         return (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-                self._rlock, self._wlock, self._sem, self._opid)
+                self._rlock, self._wlock, self._sem, self._opid, self._ctx)
 
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-         self._rlock, self._wlock, self._sem, self._opid) = state
+         self._rlock, self._wlock, self._sem, self._opid, self._ctx) = state
         self._reset()
 
     def _after_fork(self):
@@ -117,7 +117,7 @@ class Queue(object):
             finally:
                 self._rlock.release()
         # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        return self._ctx.get_reducer().loads(res)
 
     def qsize(self):
         # Raises NotImplementedError on Mac OSX because of broken sem_getvalue()
@@ -180,7 +180,7 @@ class Queue(object):
             args=(self._buffer, self._notempty, self._send_bytes,
                   self._wlock, self._reader.close, self._writer.close,
                   self._ignore_epipe, self._on_queue_feeder_error,
-                  self._sem),
+                  self._sem, self._ctx),
             name='QueueFeederThread',
             daemon=True,
         )
@@ -228,7 +228,7 @@ class Queue(object):
 
     @staticmethod
     def _feed(buffer, notempty, send_bytes, writelock, reader_close,
-              writer_close, ignore_epipe, onerror, queue_sem):
+              writer_close, ignore_epipe, onerror, queue_sem, ctx):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
@@ -259,7 +259,7 @@ class Queue(object):
                             return
 
                         # serialize the data before acquiring the lock
-                        obj = _ForkingPickler.dumps(obj)
+                        obj = ctx.get_reducer().dumps(obj)
                         if wacquire is None:
                             send_bytes(obj)
                         else:
@@ -357,6 +357,7 @@ class JoinableQueue(Queue):
 class SimpleQueue(object):
 
     def __init__(self, *, ctx):
+        self._ctx = ctx
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
         self._poll = self._reader.poll
@@ -374,21 +375,23 @@ class SimpleQueue(object):
 
     def __getstate__(self):
         context.assert_spawning(self)
-        return (self._reader, self._writer, self._rlock, self._wlock)
+        return (self._reader, self._writer, self._rlock, self._wlock,
+                self._ctx)
 
     def __setstate__(self, state):
-        (self._reader, self._writer, self._rlock, self._wlock) = state
+        (self._reader, self._writer, self._rlock, self._wlock,
+         self._ctx) = state
         self._poll = self._reader.poll
 
     def get(self):
         with self._rlock:
             res = self._reader.recv_bytes()
         # unserialize the data after having released the lock
-        return _ForkingPickler.loads(res)
+        return self._ctx.get_reducer().loads(res)
 
     def put(self, obj):
         # serialize the data before acquiring the lock
-        obj = _ForkingPickler.dumps(obj)
+        obj = self._ctx.get_reducer().dumps(obj)
         if self._wlock is None:
             # writes to a message oriented win32 pipe are atomic
             self._writer.send_bytes(obj)
