@@ -2086,7 +2086,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertGreater(alloc, len(b))
 
     def test_init_from_iterator_with_offset(self):
-        # gh-158928: Inserting form an iterator in __init__ needs to take into
+        # gh-158928: Inserting from an iterator in __init__ needs to take into
         # account if there is a start offset.
         b = bytearray()
         def iterator_which_resets():
