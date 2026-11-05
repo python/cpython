@@ -3783,6 +3783,7 @@ class CContextAPItests(ContextAPItests, unittest.TestCase):
         self.addCleanup(restore)
         with self.assertRaises(TypeError):
             self.decimal.Decimal(1) + self.decimal.Decimal(2)
+
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
 
