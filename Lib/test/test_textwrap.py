@@ -411,6 +411,39 @@ What a mess!
         self.check_wrap("abcd efgh", 6, ["  abcd", "  efgh"],
                         initial_indent="  ", subsequent_indent="  ")
 
+    def test_replace_whitespace(self):
+        # Check that special whitespace chars like \n are replaced with a space.
+        self.check_wrap("abcd\nefgh", 10, ["abcd efgh"])
+        self.check_wrap("abcd \nefgh", 10, ["abcd  efgh"])
+
+        self.check_wrap("abcd \nefgh", 6, ["abcd  ", "efgh"],
+                        drop_whitespace=False)
+
+        self.check_wrap("abcd \nefgh", 10, ["abcd \nefgh"],
+                        replace_whitespace=False)
+
+    def test_fold_space_newline(self):
+        # Check that \n and \r\n are folded into adjacent space if present,
+        # otherwise \n and \r\n would be replaced with spaces.
+        self.check_wrap("abcd\nefgh", 10, ["abcd efgh"],
+                        fold_space_newline=True)
+
+        self.check_wrap("abcd \nefgh", 10, ["abcd efgh"],
+                        fold_space_newline=True)
+
+        # this is the test for combination of arguments that allow "stable"
+        # wrapping (see docstring for _munge_whitespace())
+        self.check_wrap("abcd \nefgh", 6, ["abcd ", "efgh"],
+                        fold_space_newline=True, drop_whitespace=False)
+
+        self.check_wrap("abcd\n efgh", 10, ["abcd efgh"],
+                        fold_space_newline=True)
+
+        self.check_wrap("abcd\r\n efgh", 12, ["abcd   efgh"])
+
+        self.check_wrap("abcd\r\n efgh", 10, ["abcd efgh"],
+                        fold_space_newline=True)
+
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
         # in the comments
