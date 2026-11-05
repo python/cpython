@@ -3769,6 +3769,8 @@ class CContextAPItests(ContextAPItests, unittest.TestCase):
 
     def test_current_context_var_wrong_type(self):
         # gh-161387
+        if not self.decimal.HAVE_CONTEXTVAR:
+            self.skipTest("_decimal built without context variables")
         context_vars = [var for var in contextvars.copy_context()
                         if var.name == "decimal_context"]
         self.assertTrue(context_vars)
