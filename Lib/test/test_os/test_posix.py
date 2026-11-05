@@ -328,6 +328,8 @@ class PosixTester(unittest.TestCase):
             buf = [bytearray(i) for i in [5, 3, 2]]
             self.assertEqual(posix.preadv(fd, buf, 3), 10)
             self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+            with self.assertRaisesRegex(TypeError, r'^preadv\(\) arg 2 '):
+                posix.preadv(fd, 42, 0)
         finally:
             os.close(fd)
 
