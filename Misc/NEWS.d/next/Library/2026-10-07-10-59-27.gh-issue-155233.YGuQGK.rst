@@ -1,1 +1,1 @@
-Fix the returned value of the :meth:`asyncio.Barrier.wait`. This value is now calculated on demand during the *draining* phasis.
+Fix :meth:`asyncio.Barrier.wait` returning duplicate indices when a waiting task is cancelled before the barrier is released.```

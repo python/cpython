@@ -1850,5 +1850,6 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sorted(results), list(range(self.N)))
         self.assertEqual(barrier.n_waiting, 0)
 
+
 if __name__ == '__main__':
     unittest.main()
