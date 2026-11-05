@@ -33,6 +33,14 @@ NEED_SSL = {
     'test_smtpnet',
     'test_ssl',
 }
+NEED_TESTMULTIPHASE = {
+    # Lib/test/test_importlib/util.py requires _testmultiphase
+    'test_compileall',
+    'test_import',
+    'test_pkgutil',
+    'test_pyclbr',
+    'test_runpy',
+}
 
 
 # List of tests expected to be skipped
@@ -55,6 +63,12 @@ else:
         'test_winsound',
         'test_wmi',
     }
+
+if sys.platform in ("win32", 'darwin'):
+    EXPECTED_SKIP.add('test_multiprocessing_fork')
+if sys.platform in ("win32", "cygwin"):
+    EXPECTED_SKIP.add('test_multiprocessing_forkserver')
+
 if not hasattr(os, 'startfile'):
     EXPECTED_SKIP.add('test_startfile')
 if not hasattr(os, "openpty"):
@@ -63,17 +77,16 @@ if not hasattr(os, "wait3"):
     EXPECTED_SKIP.add('test_wait3')
 if not hasattr(os, "wait4"):
     EXPECTED_SKIP.add('test_wait4')
+
 if not support.is_android:
     EXPECTED_SKIP.add('test_android')
 if not support.is_apple:
     EXPECTED_SKIP.add('test_apple')
 if not support.Py_GIL_DISABLED:
     EXPECTED_SKIP.add('test_free_threading')
-if sys.platform in ("win32", 'darwin'):
-    EXPECTED_SKIP.add('test_multiprocessing_fork')
-if sys.platform in ("win32", "cygwin"):
-    EXPECTED_SKIP.add('test_multiprocessing_forkserver')
+
 if not support.has_socket_support or IS_WASI:
+    # need socket support
     EXPECTED_SKIP |= {
         'test_asyncgen',
         'test_asyncio',
@@ -98,6 +111,7 @@ if not support.has_socket_support or IS_WASI:
     }
     EXPECTED_SKIP |= SELECT_TESTS
 if not support.has_subprocess_support or IS_WASI:
+    # need subprocess support
     EXPECTED_SKIP |= {
         'test_argparse',
         'test_c_stack_unwind',
@@ -107,6 +121,7 @@ if not support.has_subprocess_support or IS_WASI:
         'test_embed',
         'test_faulthandler',
         'test_file_eintr',
+        'test_gdb',
         'test_generated_cases',
         'test_getopt',
         'test_optparse',
@@ -151,7 +166,6 @@ if IS_WASI:
         'test_lzma',                   # need _lzma
         'test_mmap',                   # need mmap
         'test_openpty',                # need os.openpty()
-        'test_perfmaps',               # need perf trampoline profiling
         'test_pty',                    # need termios
         'test_pwd',                    # need pwd
         'test_pyrepl',                 # need termios
@@ -168,6 +182,7 @@ if IS_WASI:
     }
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     EXPECTED_SKIP |= NEED_SSL
+    EXPECTED_SKIP |= NEED_TESTMULTIPHASE
 
 
 # Modules needed by a test.
@@ -264,5 +279,11 @@ def expected_to_be_skipped(test_name):
     if test_name == 'test_dtrace':
         import sysconfig
         return not sysconfig.get_config_var('WITH_DTRACE')
+
+    if test_name in ('test_perf_profiler', 'test_perfmaps', 'test_samply_profiler'):
+        # need perf trampoline profiling
+        import sysconfig
+        perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
+        return (not perf_trampoline or int(perf_trampoline) != 1)
 
     return False
