@@ -68,8 +68,7 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // id of the thread state whose asyncio_tasks_head the task was
-    // registered on; unlike _Py_ThreadId() it is never reused
+    // unqiue id of the thread state where the task was registered
     uint64_t task_tstate_id;
 #endif
 } TaskObj;
