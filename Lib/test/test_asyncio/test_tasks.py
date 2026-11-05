@@ -335,6 +335,21 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(runner())
 
+    def test_print_stack_exception_lineno(self):
+        # gh-161166
+        async def coro():
+            try:
+                1 / 0
+            finally:
+                cleaned = True
+
+        task = self.new_task(self.loop, coro())
+        test_utils.run_briefly(self.loop)
+        task.exception()
+        file = io.StringIO()
+        task.print_stack(file=file)
+        self.assertIn('    1 / 0\n', file.getvalue())
+
     def test_task_repr(self):
         self.loop.set_debug(False)
 
