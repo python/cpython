@@ -1050,15 +1050,12 @@ Timezone Constants
 
    For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
    and :data:`tzname`), the value is determined by the timezone rules in effect
-   at module load time or the last time :func:`tzset` is called and may be incorrect
-   for times in the past.  On platforms that do not provide a DST offset,
-   :data:`altzone` is estimated by sampling dates in the current year.  The
-   latest sampled DST offset at or before the current time is preferred;
-   future months are sampled only if no such offset was found.  It may equal
-   :data:`timezone` even when :data:`daylight` is nonzero if no sampled date
-   observes DST.  It is recommended to use the
-   :attr:`~struct_time.tm_gmtoff` and :attr:`~struct_time.tm_zone` results from
-   :func:`localtime` to obtain timezone information.
+   at module load time or the last time :func:`tzset` is called and may be
+   incorrect for times in the past.  On platforms that do not provide a DST
+   offset, :data:`altzone` is estimated by sampling dates in the current year.
+   It is recommended to use the :attr:`~struct_time.tm_gmtoff` and
+   :attr:`~struct_time.tm_zone` results from :func:`localtime` to obtain
+   timezone information.
 
 
 .. seealso::

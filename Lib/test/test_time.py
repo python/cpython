@@ -599,13 +599,18 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.altzone, time.timezone)
 
     @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_TIMEZONE_GLOBALS')
-                         and not sysconfig.get_config_var('HAVE_ALTZONE'),
-                         'requires sampling the DST offset')
+                         and not sysconfig.get_config_var('HAVE_ALTZONE')
+                         and sysconfig.get_config_var('HAVE_MKTIME'),
+                         'requires calendar-based DST offset sampling')
     def test_tzset_recent_dst_offset(self):
         # A synthetic TZif zone has an old, a current, and a future DST
         # offset. Prefer the current offset over both other offsets.
         now = int(time.time())
-        transitions = (now - 370 * 86400, now - 3600, now + 86400)
+        transitions = ((now - 370 * 86400, 1), (now - 3600, 2),
+                       (now + 86400, 3))
+        self.check_tzset_dst_offset(transitions, -7200)
+
+    def check_tzset_dst_offset(self, transitions, expected):
         names = b'STD\0OLD\0NEW\0FUT\0'
 
         def header(timecnt, typecnt, charcnt):
@@ -613,8 +618,10 @@ class TimeTestCase(unittest.TestCase):
                     + struct.pack('>6l', 0, 0, 0, timecnt, typecnt, charcnt))
 
         data = (header(0, 1, 4) + struct.pack('>lbb', 0, 0, 0) + b'STD\0'
-                + header(3, 4, len(names))
-                + struct.pack('>3q', *transitions) + bytes((1, 2, 3)))
+                + header(len(transitions), 4, len(names))
+                + struct.pack(f'>{len(transitions)}q',
+                              *(t for t, _ in transitions))
+                + bytes(index for _, index in transitions))
         for offset, isdst, index in ((0, 0, 0), (3600, 1, 4),
                                      (7200, 1, 8), (10800, 1, 12)):
             data += struct.pack('>lbb', offset, isdst, index)
@@ -626,11 +633,11 @@ class TimeTestCase(unittest.TestCase):
 
             @support.run_with_tz(':' + zone.name)
             def check():
-                local = time.localtime(now)
-                if getattr(local, 'tm_gmtoff', None) != 7200:
-                    self.skipTest('requires TZif v2 timezone support')
-                self.assertEqual(local.tm_isdst, 1)
-                self.assertEqual(time.altzone, -7200)
+                for t, index in transitions:
+                    local = time.localtime(t)
+                    if getattr(local, 'tm_gmtoff', None) != index * 3600:
+                        self.skipTest('requires TZif v2 timezone support')
+                self.assertEqual(time.altzone, expected)
 
             check()
 
