@@ -126,8 +126,8 @@ def miss_modules(modules):
         for module in modules:
             importlib.import_module(module)
     except ImportError:
-        return False
-    return True
+        return True
+    return False
 
 
 def expected_to_be_skipped(test_name):
@@ -148,7 +148,7 @@ def expected_to_be_skipped(test_name):
     if test_name in NEED_MODULES:
         if miss_modules(NEED_MODULES[test_name]):
             return True
-    if package in NEED_MODULES:
+    elif package in NEED_MODULES:
         if miss_modules(NEED_MODULES[package]):
             return True
 
