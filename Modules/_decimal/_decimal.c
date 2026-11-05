@@ -1998,8 +1998,10 @@ current_context(decimal_state *state)
 
     if (tl_context != NULL) {
         if (!PyDecContext_Check(state, tl_context)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "current decimal context is not a Context");
+            PyErr_Format(PyExc_TypeError,
+                         "current decimal context must be a Context "
+                         "instance, got %.200s",
+                         Py_TYPE(tl_context)->tp_name);
             Py_DECREF(tl_context);
             return NULL;
         }

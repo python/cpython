@@ -3768,15 +3768,17 @@ class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
 
     def test_current_context_var_wrong_type(self):
-        # gh-161387: the internal ContextVar must hold a Context instance.
-        # Both _decimal and _pydecimal define a var with this name, so set
-        # every matching var and restore them with their reset tokens.
-        matches = [(var, var.set(1))
-                   for var in contextvars.copy_context()
-                   if var.name == "decimal_context"]
-        self.assertTrue(matches)
-        self.addCleanup(lambda: [var.reset(token)
-                                 for var, token in matches])
+        # gh-161387
+        context_vars = [var for var in contextvars.copy_context()
+                        if var.name == "decimal_context"]
+        self.assertTrue(context_vars)
+        tokens = [var.set(1) for var in context_vars]
+
+        def restore():
+            for var, token in zip(context_vars, tokens):
+                var.reset(token)
+
+        self.addCleanup(restore)
         with self.assertRaises(TypeError):
             self.decimal.Decimal(1) + self.decimal.Decimal(2)
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
