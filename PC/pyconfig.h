@@ -506,8 +506,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV
 
-/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
+/* Define if  you can safely include both <sys/select.h> and <sys/time.h> */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
 
 /* Define if you want build the _decimal module using a coroutine-local rather
