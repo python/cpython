@@ -114,11 +114,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
-static inline char* _PyUnicode_UTF8(PyObject *op)
-{
-    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
-}
-
 static inline char* PyUnicode_UTF8(PyObject *op)
 {
     assert(_PyUnicode_CHECK(op));
@@ -173,15 +168,6 @@ static inline int _PyUnicode_SHARE_UTF8(PyObject *op)
     assert(_PyUnicode_CHECK(op));
     assert(!PyUnicode_IS_COMPACT_ASCII(op));
     return (_PyUnicode_UTF8(op) == PyUnicode_DATA(op));
-}
-
-/* true if the Unicode object has an allocated UTF-8 memory block
-   (not shared with other data) */
-static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
-{
-    return (!PyUnicode_IS_COMPACT_ASCII(op)
-            && _PyUnicode_UTF8(op) != NULL
-            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
 }
 
 
@@ -1251,8 +1237,10 @@ const void *_PyUnicode_data(void *unicode_raw) {
     printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
     printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));
     printf("ascii op %p\n", (void*)(_PyASCIIObject_CAST(unicode) + 1));
-    printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
-    printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    if (!PyUnicode_IS_COMPACT_ASCII(unicode)) {
+        printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
+        printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    }
     return PyUnicode_DATA(unicode);
 }
 
@@ -1260,25 +1248,21 @@ void
 _PyUnicode_Dump(PyObject *op)
 {
     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-    PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
-    PyUnicodeObject *unicode = _PyUnicodeObject_CAST(op);
-    const void *data;
 
-    if (ascii->state.compact)
-    {
-        if (ascii->state.ascii)
-            data = (ascii + 1);
-        else
-            data = (compact + 1);
-    }
-    else
-        data = unicode->data.any;
-    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
+    printf("%s: len=%zu", unicode_kind_name(op), ascii->length);
 
     if (!ascii->state.ascii) {
-        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
+        PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
+        if (compact->utf8 == NULL) {
+            printf(", utf8=NULL");
+        }
+        else {
+            printf(", utf8=%p", (void *)compact->utf8);
+        }
+        printf(" (%zu)", compact->utf8_length);
     }
-    printf(", data=%p\n", data);
+    printf(", data=%p\n", PyUnicode_DATA(op));
+    fflush(stdout);
 }
 #endif
 
@@ -1767,6 +1751,9 @@ _PyUnicode_IsModifiable(PyObject *unicode)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+        return 0;
+    }
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
     assert(!unicode_is_singleton(unicode));
