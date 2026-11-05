@@ -68,7 +68,7 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // unqiue id of the thread state where the task was registered
+    // unique id of the thread state where the task was registered
     uint64_t task_tstate_id;
 #endif
 } TaskObj;
