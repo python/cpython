@@ -205,26 +205,23 @@ After building, you can run the CI tests with:
 python3 Platforms/WASI test
 ```
 
-This runs `make test` in the WASI build directory.
+The `--speed` flag selects `fast` (the default) for `make test` or `slow` for
+`make buildbottest`. The `--target` flag selects the files to test:
 
-After running `gather` or `package`, you can run the buildbot tests against the
-distribution with:
+- `build` (the default): the WASI build in `cross-build/`.
+- `dist`: the distribution files gathered in `dist/`.
+- `archive`: the contents of the release archive, unpacked into `dist/`.
 
-```shell
-python3 Platforms/WASI buildbottest
-```
 
-This uses `make buildbottest` appropriately with the binary for releasing.
-
-To test the contents of the release archive instead of the gathered files, use:
+To thoroughly test the contents of the release archive, use:
 
 ```shell
-python3 Platforms/WASI buildbottest --unpack
+python3 Platforms/WASI test --speed slow --target archive
 ```
 
 This requires an archive created by `package` or `release`. It deletes the
 selected versioned distribution directory inside `dist/`, then restores it
-from the matching `.tar.xz` archive before running `make buildbottest`.
+from the matching `.tar.xz` archive before running the tests.
 The archive and other distributions in `dist/` are left untouched.
 
 You can also tests more directly. To find out where the WASI build directory

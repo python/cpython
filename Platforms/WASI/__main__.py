@@ -78,14 +78,19 @@ def main():
     release = subcommands.add_parser(
         "release", help="Build and package for a release"
     )
-    test = subcommands.add_parser("test", help="Run the CI tests")
-    buildbottest = subcommands.add_parser(
-        "buildbottest", help="Run the buildbot tests against the distribution"
+    test = subcommands.add_parser("test", help="Run the tests")
+    test.add_argument(
+        "--speed",
+        choices={"fast", "slow"},
+        default="fast",
+        help="Run `make test` (fast, the default) or `make buildbottest` (slow)",
     )
-    buildbottest.add_argument(
-        "--unpack",
-        action="store_true",
-        help="Replace the distribution directory with the release archive's contents",
+    test.add_argument(
+        "--target",
+        choices={"build", "dist", "archive"},
+        default="build",
+        help="Test the build (the default), gathered distribution, or release archive; "
+        "'archive' replaces the distribution directory with the archive's contents",
     )
     path = subcommands.add_parser(
         "path", help="Print the path to a build or distribution directory"
@@ -112,7 +117,6 @@ def main():
         build_host,
         release,
         test,
-        buildbottest,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -188,7 +192,6 @@ def main():
         path,
         release,
         test,
-        buildbottest,
     ):
         subcommand.add_argument(
             "--host-triple",
@@ -251,8 +254,6 @@ def main():
             _package.archive(context)
         case "test":
             _test.test(context)
-        case "buildbottest":
-            _test.buildbottest(context)
         case "path":
             paths = {
                 "build-python": "build_python_path",
