@@ -51,7 +51,6 @@ source file by including the header ``"Python.h"``.
    newtypes_tutorial.rst
    newtypes.rst
    building.rst
-   windows.rst
    embedding.rst
 
 
@@ -92,7 +91,6 @@ C extensions.
 * :ref:`defining-new-types`
 * :ref:`new-types-topics`
 * :ref:`building`
-* :ref:`building-on-windows`
 
 Embedding the CPython runtime in a larger application
 =====================================================
