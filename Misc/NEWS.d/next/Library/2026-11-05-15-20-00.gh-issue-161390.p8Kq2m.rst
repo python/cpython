@@ -1,0 +1,4 @@
+Assigning to the :attr:`contents` attribute of a :mod:`ctypes` pointer now
+raises :exc:`TypeError` when the value is not a ctypes object. A value
+whose ``__class__`` claimed to be a ctypes type could previously crash
+the interpreter.
