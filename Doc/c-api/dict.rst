@@ -474,9 +474,10 @@ Dictionary objects
 
    This is the same as ``PyDict_Merge(a, b, 1)`` in C.
 
-   Similar to ``a.update(b)`` in Python except that :c:func:`PyDict_Update`
-   doesn't not support a sequence of key value pairs as *b* parameter.
-   Use :c:func:`PyDict_MergeFromSeq2` in this case.
+   Similar to ``a.update(b)`` in Python, except that this function
+   does not fall back to the iterating over a sequence of key-value pairs
+   if *b* is not a mapping.
+   Use :c:func:`PyDict_MergeFromSeq2` for this case.
 
    Return ``0`` on success or ``-1`` if an exception was raised.
 
