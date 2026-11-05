@@ -1,0 +1,2 @@
+Fix :func:`asyncio.print_call_graph` reporting event loop frames when
+*depth* exceeds the task stack. Patch by Timofei Ivankov.
