@@ -1253,7 +1253,10 @@ New deprecations
 
 * :mod:`typing`:
 
-  * :data:`typing.AnyStr` now raises :exc:`DeprecationWarning` when used.
+  * :data:`typing.AnyStr` now raises :exc:`DeprecationWarning`
+    when used and is scheduled to be removed in Python 3.21.
+    Use :pep:`695` syntax instead.
+    (Contributed by Nikita Sobolev in :gh:`150190`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 

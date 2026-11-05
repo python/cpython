@@ -44,3 +44,4 @@ Pending removal in Python 3.21
      and deprecated since Python 3.13
      and is scheduled to be removed in Python 3.21.
      Use :pep:`695` syntax instead.
+     (Contributed by Nikita Sobolev in :gh:`150190`.)
