@@ -139,8 +139,8 @@ The following sections describe how each of these are used.
 
 .. _prog:
 
-prog
-^^^^
+``prog``
+^^^^^^^^
 
 
 By default, :class:`ArgumentParser` calculates the name of the program
@@ -185,8 +185,8 @@ specifier.
    The default ``prog`` value now reflects how ``__main__`` was actually executed,
    rather than always being ``os.path.basename(sys.argv[0])``.
 
-usage
-^^^^^
+``usage``
+^^^^^^^^^
 
 By default, :class:`ArgumentParser` calculates the usage message from the
 arguments it contains. The default message can be overridden with the
@@ -217,8 +217,8 @@ usage information across subparsers.
 
 .. _description:
 
-description
-^^^^^^^^^^^
+``description``
+^^^^^^^^^^^^^^^
 
 Most calls to the :class:`ArgumentParser` constructor will use the
 ``description=`` keyword argument.  This argument gives a brief description of
@@ -230,8 +230,8 @@ By default, the description will be line-wrapped so that it fits within the
 given space.  To change this behavior, see the formatter_class_ argument.
 
 
-epilog
-^^^^^^
+``epilog``
+^^^^^^^^^^
 
 Some programs like to display additional description of the program after the
 description of the arguments.  Such text can be specified using the ``epilog=``
@@ -255,8 +255,8 @@ line-wrapped, but this behavior can be adjusted with the formatter_class_
 argument to :class:`ArgumentParser`.
 
 
-parents
-^^^^^^^
+``parents``
+^^^^^^^^^^^
 
 Sometimes, several parsers share a common set of arguments. Rather than
 repeating the definitions of these arguments, a single parser with all the
@@ -290,8 +290,8 @@ and one in the child) and raise an error.
 
 .. _formatter_class:
 
-formatter_class
-^^^^^^^^^^^^^^^
+``formatter_class``
+^^^^^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
 specifying an alternate formatting class.  Currently, there are four such
@@ -396,8 +396,8 @@ as the regular formatter does)::
      --foo int
 
 
-prefix_chars
-^^^^^^^^^^^^
+``prefix_chars``
+^^^^^^^^^^^^^^^^
 
 Most command-line options will use ``-`` as the prefix, e.g. ``-f/--foo``.
 Parsers that need to support different or additional prefix
@@ -416,8 +416,8 @@ characters that does not include ``-`` will cause ``-f/--foo`` options to be
 disallowed.
 
 
-fromfile_prefix_chars
-^^^^^^^^^^^^^^^^^^^^^
+``fromfile_prefix_chars``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes, when dealing with a particularly long argument list, it
 may make sense to keep the list of arguments in a file rather than typing it out
@@ -458,8 +458,8 @@ arguments will never be treated as file references.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
 
-argument_default
-^^^^^^^^^^^^^^^^
+``argument_default``
+^^^^^^^^^^^^^^^^^^^^
 
 Generally, argument defaults are specified either by passing a default to
 :meth:`~ArgumentParser.add_argument` or by calling the
@@ -480,8 +480,8 @@ calls, we supply ``argument_default=SUPPRESS``::
 
 .. _allow_abbrev:
 
-allow_abbrev
-^^^^^^^^^^^^
+``allow_abbrev``
+^^^^^^^^^^^^^^^^
 
 Normally, when you pass an argument list to the
 :meth:`~ArgumentParser.parse_args` method of an :class:`ArgumentParser`,
@@ -499,8 +499,8 @@ This feature can be disabled by setting ``allow_abbrev`` to ``False``::
 .. versionadded:: 3.5
 
 
-conflict_handler
-^^^^^^^^^^^^^^^^
+``conflict_handler``
+^^^^^^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects do not allow two actions with the same option
 string.  By default, :class:`ArgumentParser` objects raise an exception if an
@@ -536,8 +536,8 @@ action is retained as the ``-f`` action, because only the ``--foo`` option
 string was overridden.
 
 
-add_help
-^^^^^^^^
+``add_help``
+^^^^^^^^^^^^
 
 By default, :class:`ArgumentParser` objects add an option which simply displays
 the parser's help message. If ``-h`` or ``--help`` is supplied at the command
@@ -569,8 +569,8 @@ the help options::
      +h, ++help  show this help message and exit
 
 
-exit_on_error
-^^^^^^^^^^^^^
+``exit_on_error``
+^^^^^^^^^^^^^^^^^
 
 Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
 method of an :class:`ArgumentParser`, it will print a *message* to :data:`sys.stderr` and exit with a status
@@ -591,8 +591,8 @@ If the user would like to catch errors manually, the feature can be enabled by s
 
 .. versionadded:: 3.9
 
-suggest_on_error
-^^^^^^^^^^^^^^^^
+``suggest_on_error``
+^^^^^^^^^^^^^^^^^^^^
 
 By default, when a user passes an invalid argument choice or subparser name,
 :class:`ArgumentParser` will exit with error info and provide suggestions for
@@ -613,8 +613,8 @@ You can disable suggestions by setting ``suggest_on_error`` to ``False``.
 .. versionchanged:: 3.15
    Changed default value of ``suggest_on_error`` from ``False`` to ``True``.
 
-color
-^^^^^
+``color``
+^^^^^^^^^
 
 By default, the help message is printed in color using `ANSI escape sequences
 <https://en.wikipedia.org/wiki/ANSI_escape_code>`__.
@@ -701,8 +701,8 @@ The following sections describe how each of these are used.
 
 .. _`name or flags`:
 
-name or flags
-^^^^^^^^^^^^^
+``name`` or ``flags``
+^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~ArgumentParser.add_argument` method must know whether an optional
 argument, like ``-f`` or ``--foo``, or a positional argument, like a list of
@@ -755,8 +755,8 @@ the upper-cased name. For example::
 
 .. _action:
 
-action
-^^^^^^
+``action``
+^^^^^^^^^^
 
 :class:`ArgumentParser` objects associate command-line arguments with actions.  These
 actions can do just about anything with the command-line arguments associated with
@@ -788,6 +788,9 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument('--baz', action='store_false')
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
+
+  These defaults apply when the options are absent. They can be overridden
+  by default_ or argument_default_.
 
 * ``'append'`` - This appends each argument value to a list.
   It is useful for allowing an option to be specified multiple times.
@@ -894,8 +897,8 @@ For more details, see :class:`Action`.
 
 .. _nargs:
 
-nargs
-^^^^^
+``nargs``
+^^^^^^^^^
 
 :class:`ArgumentParser` objects usually associate a single command-line argument with a
 single action to be taken.  The ``nargs`` keyword argument associates a
@@ -983,8 +986,8 @@ Actions that do not consume command-line arguments (e.g.
 
 .. _const:
 
-const
-^^^^^
+``const``
+^^^^^^^^^
 
 The ``const`` argument of :meth:`~ArgumentParser.add_argument` is used to hold
 constant values that are not read from the command line but are required for
@@ -1011,15 +1014,13 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
 
 .. _default:
 
-default
-^^^^^^^
+``default``
+^^^^^^^^^^^
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
-specifies what value should be used if the command-line argument is not present.
-For optional arguments, the ``default`` value is used when the option string
-was not present at the command line::
+:meth:`~ArgumentParser.add_argument` specifies what value should be used if the
+command-line argument is not present. For example::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
@@ -1027,6 +1028,11 @@ was not present at the command line::
    Namespace(foo='2')
    >>> parser.parse_args([])
    Namespace(foo=42)
+
+If ``default`` is omitted, :meth:`~ArgumentParser.add_argument` uses a value
+previously set for the dest_ with :meth:`~ArgumentParser.set_defaults`, or
+otherwise a non-``None`` argument_default_. If neither is set, the action's
+own default is used.
 
 If the target namespace already has an attribute set, the action *default*
 will not overwrite it::
@@ -1078,8 +1084,8 @@ command-line argument was not present::
 
 .. _argparse-type:
 
-type
-^^^^
+``type``
+^^^^^^^^
 
 By default, the parser reads command-line arguments in as simple
 strings. However, quite often the command-line string should instead be
@@ -1157,8 +1163,8 @@ using the choices_ keyword instead.
 
 .. _choices:
 
-choices
-^^^^^^^
+``choices``
+^^^^^^^^^^^
 
 Some command-line arguments should be selected from a restricted set of values.
 These can be handled by passing a sequence object as the *choices* keyword
@@ -1198,8 +1204,8 @@ many choices), just specify an explicit metavar_.
 
 .. _required:
 
-required
-^^^^^^^^
+``required``
+^^^^^^^^^^^^
 
 In general, the :mod:`!argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
@@ -1226,8 +1232,8 @@ present at the command line.
 
 .. _help:
 
-help
-^^^^
+``help``
+^^^^^^^^
 
 The ``help`` value is a string containing a brief description of the argument.
 When a user requests help (usually by using ``-h`` or ``--help`` at the
@@ -1268,8 +1274,8 @@ setting the ``help`` value to ``argparse.SUPPRESS``::
 
 .. _metavar:
 
-metavar
-^^^^^^^
+``metavar``
+^^^^^^^^^^^
 
 When :class:`ArgumentParser` generates help messages, it needs some way to refer
 to each expected argument.  By default, :class:`!ArgumentParser` objects use the dest_
@@ -1334,8 +1340,8 @@ arguments::
 
 .. _dest:
 
-dest
-^^^^
+``dest``
+^^^^^^^^
 
 Most :class:`ArgumentParser` actions add some value as an attribute of the
 object returned by :meth:`~ArgumentParser.parse_args`.  The name of this
@@ -1389,8 +1395,8 @@ strings* rather than ``dest`` names, see conflict_handler_.
 
 .. _deprecated:
 
-deprecated
-^^^^^^^^^^
+``deprecated``
+^^^^^^^^^^^^^^
 
 During a project's lifetime, some arguments may need to be removed from the
 command line. Before removing them, you should inform
@@ -1771,8 +1777,9 @@ Subcommands
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available subcommands in help; by default it
-     is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
+   * metavar_ - placeholder shown in usage and the subparsers' help entry
+     instead of ``{cmd1, cmd2, ...}``; by default ``None``.
+     Individual subcommand names are unchanged.
 
    Some example usage::
 
@@ -2072,6 +2079,19 @@ Argument groups
       is now deprecated.
 
 
+.. class:: ArgumentGroup
+
+   The type of objects returned by :meth:`ArgumentParser.add_argument_group`.
+   Its :meth:`~ArgumentParser.add_argument` and
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` methods work as on
+   :class:`ArgumentParser`.  Use :meth:`~ArgumentParser.add_argument_group`
+   to create instances.  Only the methods documented here are part of the
+   public API; other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_ArgumentGroup`` name remains as an alias.
+
+
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
@@ -2133,6 +2153,20 @@ Mutual exclusion
       on a mutually exclusive group now raises an exception. This nesting was
       never supported, often failed to work correctly, and was unintentionally
       exposed through inheritance.
+
+
+.. class:: MutuallyExclusiveGroup
+
+   The type of objects returned by
+   :meth:`ArgumentParser.add_mutually_exclusive_group`.
+   Its :meth:`~ArgumentParser.add_argument` method works as on
+   :class:`ArgumentParser`.  Use
+   :meth:`~ArgumentParser.add_mutually_exclusive_group` to create instances.
+   Only the ``add_argument`` method documented here is part of the public API;
+   other attributes and methods are implementation details.
+
+   .. versionadded:: next
+      The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 
 Parser defaults

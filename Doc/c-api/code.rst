@@ -94,11 +94,12 @@ bound into a function.
 
 .. c:function:: int PyCode_Addr2Line(PyCodeObject *co, int byte_offset)
 
-    Return the line number of the instruction that occurs on or before ``byte_offset`` and ends after it.
-    If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
+    Return the line number of the instruction that occurs on or before
+    ``byte_offset`` and ends after it.  This may be ``O(N)`` in the number of
+    instructions in the code object, so it is not performant for iterating over
+    all the line numbers in a code object.
 
-    For efficiently iterating over the line numbers in a code object, use :pep:`the API described in PEP 626
-    <0626#out-of-process-debuggers-and-profilers>`.
+    If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
 
 .. c:function:: int PyCode_Addr2Location(PyObject *co, int byte_offset, int *start_line, int *start_column, int *end_line, int *end_column)
 
@@ -175,6 +176,14 @@ bound into a function.
    - ``PY_CODE_EVENT_DESTROY``
 
    .. versionadded:: 3.12
+
+.. c:macro:: PY_FOREACH_CODE_EVENT(V)
+
+   Apply the macro *V* to each suffix of :c:type:`PyCodeEvent`
+   constants.
+   Currently expands to ``V(CREATE) V(DESTROY)``.
+   The macro *V* must accept one event name and supply any punctuation
+   needed between expansions.
 
 .. c:type:: int (*PyCode_WatchCallback)(PyCodeEvent event, PyCodeObject* co)
 
@@ -306,9 +315,9 @@ may change without deprecation warnings.
 
    Return a new opaque index value used to adding data to code objects.
 
-   You generally call this function once (per interpreter) and use the result
-   with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
-   data on individual code objects.
+   You generally call this function once (per interpreter). Use the result with
+   :c:func:`PyUnstable_Code_GetExtra` and :c:func:`PyUnstable_Code_SetExtra`
+   to manipulate data on individual code objects.
 
    If *free* is not ``NULL``: when a code object is deallocated,
    *free* will be called on non-``NULL`` data stored under the new index.

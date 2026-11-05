@@ -1905,15 +1905,15 @@ static digit
 v_lshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    twodigits carry = 0;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=0; i < m; i++) {
         twodigits acc = (twodigits)a[i] << d | carry;
         z[i] = (digit)acc & PyLong_MASK;
-        carry = (digit)(acc >> PyLong_SHIFT);
+        carry = acc >> PyLong_SHIFT;
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Shift digit vector a[0:m] d bits right, with 0 <= d < PyLong_SHIFT.  Put
@@ -1923,16 +1923,16 @@ static digit
 v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
-    digit mask = ((digit)1 << d) - 1U;
+    twodigits carry = 0;
+    twodigits mask = ((twodigits)1 << d) - 1U;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=m; i-- > 0;) {
-        twodigits acc = (twodigits)carry << PyLong_SHIFT | a[i];
-        carry = (digit)acc & mask;
+        twodigits acc = carry << PyLong_SHIFT | a[i];
+        carry = acc & mask;
         z[i] = (digit)(acc >> d);
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
@@ -5527,7 +5527,9 @@ long_lshift_int64(PyLongObject *a, int64_t shiftby)
         return PyLong_FromLong(0);
     }
 #if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
-    if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
+    /* Keep wordshift <= MAX_LONG_DIGITS, so that oldsize + wordshift
+       cannot overflow Py_ssize_t in long_lshift1(). */
+    if (shiftby > (int64_t)MAX_LONG_DIGITS * PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
@@ -5552,14 +5554,20 @@ _PyLong_Lshift(PyObject *a, int64_t shiftby)
 static void
 v_complement(digit *z, digit *a, Py_ssize_t m)
 {
-    Py_ssize_t i;
-    digit carry = 1;
-    for (i = 0; i < m; ++i) {
-        carry += a[i] ^ PyLong_MASK;
-        z[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
+    Py_ssize_t i = 0;
+
+    /* -a is ~a + 1, and the +1 only carries through the trailing zero
+       digits: they stay zero, the first nonzero digit is negated, and the
+       digits above it are just inverted.  No carry is passed between
+       iterations of the last loop, so it can be vectorized. */
+    while (i < m && a[i] == 0) {
+        z[i++] = 0;
     }
-    assert(carry == 0);
+    assert(i < m);
+    z[i] = (0U - a[i]) & PyLong_MASK;
+    for (++i; i < m; ++i) {
+        z[i] = a[i] ^ PyLong_MASK;
+    }
 }
 
 /* Bitwise and/xor/or operations */

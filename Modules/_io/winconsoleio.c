@@ -962,6 +962,10 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
     bytes_size += _buflen(self);
     bytes = PyBytes_FromStringAndSize(NULL, bytes_size);
+    if (bytes == NULL) {
+        PyMem_Free(buf);
+        return NULL;
+    }
     rn = _copyfrombuf(self, PyBytes_AS_STRING(bytes), bytes_size);
 
     if (len) {

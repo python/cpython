@@ -1611,7 +1611,11 @@ class TracebackException:
                     )
                 else:
                     yield '    {}\n'.format(ltext)
-        msg = self.msg or "<no detail available>"
+        try:
+            if not (msg := self.msg):
+                msg = "<no detail available>"
+        except TypeError:
+            pass
         yield "{}{}{}: {}{}{}{}\n".format(
             theme.type,
             stype,
@@ -1954,31 +1958,34 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             return None
     else:
         assert isinstance(exc_value, NameError)
-        # find most recent frame
-        if tb is None:
-            return None
-        while tb.tb_next is not None:
-            tb = tb.tb_next
-        frame = tb.tb_frame
-        d = (
-            list(frame.f_locals)
-            + list(frame.f_globals)
-            + list(frame.f_builtins)
-        )
-        d = [x for x in d if isinstance(x, str)]
-        if not_normalized and wrong_name in d:
-            return wrong_name
+        try:
+            # find most recent frame
+            if tb is None:
+                return None
+            while tb.tb_next is not None:
+                tb = tb.tb_next
+            frame = tb.tb_frame
+            d = (
+                list(frame.f_locals)
+                + list(frame.f_globals)
+                + list(frame.f_builtins)
+            )
+            d = [x for x in d if isinstance(x, str)]
+            if not_normalized and wrong_name in d:
+                return wrong_name
 
-        # Check first if we are in a method and the instance
-        # has the wrong name as attribute
-        if 'self' in frame.f_locals:
-            self = frame.f_locals['self']
-            try:
-                has_wrong_name = hasattr(self, wrong_name)
-            except Exception:
-                has_wrong_name = False
-            if has_wrong_name:
-                return f"self.{wrong_name}"
+            # Check first if we are in a method and the instance
+            # has the wrong name as attribute
+            if 'self' in frame.f_locals:
+                self = frame.f_locals['self']
+                try:
+                    has_wrong_name = hasattr(self, wrong_name)
+                except Exception:
+                    has_wrong_name = False
+                if has_wrong_name:
+                    return f"self.{wrong_name}"
+        except Exception:
+            return None
 
     if not_normalized and wrong_name in d:
         return wrong_name

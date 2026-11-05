@@ -50,7 +50,7 @@
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
 #if !defined(_MSC_VER) && \
-    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+    ((defined (_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L) \
         || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
@@ -491,7 +491,7 @@ extern "C" {
 #ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
-#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  elif _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
 #    define _Py_thread_local _Thread_local
 #  elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #    define _Py_thread_local __declspec(thread)
@@ -543,11 +543,16 @@ extern "C" {
 //
 // gh-157649: Do not use decltype() on C++, since it produces invalid code in
 // Py_CLEAR()/Py_SETREF().
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#if defined (_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
 #elif (defined(__GNUC__) || defined(__clang__) \
        || (defined(_MSC_VER) && _MSC_VER >= 1939 && !defined(__cplusplus)))
 #  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
+#ifdef _Py_TESTCEXT_NO_TYPEOF
+   // Exercise fallback implementations in test_cext.
+#  undef _Py_TYPEOF
 #endif
 
 
@@ -579,6 +584,9 @@ extern "C" {
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
@@ -605,6 +613,9 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_NO_SANITIZE_FUNCTION
+#  define _Py_NO_SANITIZE_FUNCTION
 #endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)
@@ -635,10 +646,6 @@ extern "C" {
 #  else
 #    define PY_CXX_CONST
 #  endif
-#endif
-
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#  define _SGI_MP_SOURCE
 #endif
 
 // Explicit fallthrough in switch case to avoid warnings

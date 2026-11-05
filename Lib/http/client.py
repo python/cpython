@@ -1,7 +1,8 @@
 r"""HTTP/1.1 client library
 
-<intro stuff goes here>
-<other stuff, too>
+This module implements the client side of the HTTP and HTTPS protocols.
+HTTPConnection and HTTPSConnection manage a single connection to a server;
+HTTPResponse wraps the reply.
 
 HTTPConnection goes through a number of "states", which define when a client
 may legally make another request or fetch the response for a particular
@@ -397,6 +398,10 @@ class HTTPResponse(io.BufferedIOBase):
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
         length = self.headers.get("content-length")
+        if length is not None:
+            # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+            # the field value is not part of the value.
+            length = length.strip(' \t')
         if length and not self.chunked and _is_legal_content_length(length):
             self.length = int(length)
         else:
