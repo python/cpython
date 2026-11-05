@@ -2626,7 +2626,7 @@ class TextIOWrapper(TextIOBase):
         if size < 0:
             chunk = self.buffer.read()
             if chunk is None:
-                raise BlockingIOError("Read returned None.")
+                raise BlockingIOError(errno.EAGAIN, "Read returned None.")
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(chunk, final=True))
