@@ -257,7 +257,8 @@ class Context:
                     env_diff[key] = value
 
             env_vars = [
-                f"\n     {key}={item}" for key, item in sorted(env_diff.items())
+                f"\n     {key}={item}"
+                for key, item in sorted(env_diff.items())
             ]
             log("🌎", f"Environment changes:{''.join(env_vars)}")
 
