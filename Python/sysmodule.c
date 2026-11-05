@@ -4191,6 +4191,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
         SET_SYS_FROM_WSTR(SYS_ATTR, WSTR); \
     }
 
+#define COPY_BOOL(KEY, VALUE) \
+        SET_SYS(KEY, PyBool_FromLong(VALUE));
+
     if (config->module_search_paths_set) {
         COPY_LIST("path", config->module_search_paths);
     }
@@ -4202,6 +4205,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     COPY_WSTR("exec_prefix", config->exec_prefix);
     COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
     COPY_WSTR("platlibdir", config->platlibdir);
+    COPY_WSTR("build_prefix", config->build_prefix);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);

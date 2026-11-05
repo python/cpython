@@ -225,12 +225,9 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
 def is_python_build():
-    for fn in ("Setup", "Setup.local"):
-        if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
-            return True
-    return False
+    return bool(sys.build_prefix)
 
-_PYTHON_BUILD = is_python_build()
+_PYTHON_BUILD = bool(sys.build_prefix)
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
