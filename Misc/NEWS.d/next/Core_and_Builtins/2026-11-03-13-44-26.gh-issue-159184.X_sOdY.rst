@@ -1,0 +1,2 @@
+Fix a leak of NaN constants in code objects created by :func:`marshal.loads`
+on the free-threaded build.
