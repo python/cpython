@@ -3766,6 +3766,16 @@ class ContextAPItests:
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
+
+    def test_current_context_var_wrong_type(self):
+        # gh-161387: the internal ContextVar must hold a Context instance.
+        ctx = self.decimal.getcontext()
+        var = next(v for v in contextvars.copy_context()
+                   if v.name == "decimal_context")
+        self.addCleanup(var.set, ctx)
+        var.set(1)
+        with self.assertRaises(TypeError):
+            self.decimal.Decimal(1) + self.decimal.Decimal(2)
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
 

@@ -1997,6 +1997,12 @@ current_context(decimal_state *state)
     }
 
     if (tl_context != NULL) {
+        if (!PyDecContext_Check(state, tl_context)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "current decimal context is not a Context");
+            Py_DECREF(tl_context);
+            return NULL;
+        }
         return tl_context;
     }
 
