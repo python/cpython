@@ -5561,7 +5561,13 @@ class ZipInfoTests(unittest.TestCase):
     def test_from_file_clamps_localtime_overflow(self):
         cases = (
             (2**63, (2107, 12, 31, 23, 59, 58)),
+            (2**48, (2107, 12, 31, 23, 59, 58)),
+            (4386441600, (2107, 12, 31, 23, 59, 58)),  # 2109-01-01 UTC
             (-2**63, (1980, 1, 1, 0, 0, 0)),
+            (-2**48, (1980, 1, 1, 0, 0, 0)),
+            (0, (1980, 1, 1, 0, 0, 0)),  # 1970-01-01 UTC
+            (157766400, (1980, 1, 1, 0, 0, 0)),  # 1975-01-01 UTC
+            (283996799, (1980, 1, 1, 0, 0, 0)),  # 1978-12-31 23:59:59 UTC
         )
         for exception in (OverflowError, OSError):
             for timestamp, expected in cases:
@@ -5572,9 +5578,38 @@ class ZipInfoTests(unittest.TestCase):
                             zipfile.os, 'stat', return_value=st), \
                          mock.patch.object(zipfile.time, 'localtime',
                                            side_effect=exception):
+                        with self.assertRaises(exception):
+                            zipfile.ZipInfo.from_file('future')
                         zinfo = zipfile.ZipInfo.from_file(
                             'future', strict_timestamps=False)
                     self.assertEqual(zinfo.date_time, expected)
+
+    def test_from_file_preserves_in_range_localtime_errors(self):
+        timestamps = (
+            283996800,  # 1979-01-01 00:00:00 UTC (conservative lower bound)
+            315532799,  # 1979-12-31 23:59:59 UTC
+            315532800,  # 1980-01-01 00:00:00 UTC
+            2146003200,  # 2038-01-02 00:00:00 UTC (AIX localtime overflow)
+            2**31,  # Beyond the signed 32-bit time_t range
+            4354819199,  # 2107-12-31 23:59:59 UTC
+            4354819200,  # 2108-01-01 00:00:00 UTC
+            4386441599,  # 2108-12-31 23:59:59 UTC
+        )
+        for exception in (OverflowError, OSError):
+            for timestamp in timestamps:
+                for strict_timestamps in (True, False):
+                    with self.subTest(exception=exception, timestamp=timestamp,
+                                      strict_timestamps=strict_timestamps):
+                        st = mock.Mock(st_mode=stat.S_IFREG | 0o644,
+                                       st_mtime=timestamp, st_size=5)
+                        with mock.patch.object(
+                                zipfile.os, 'stat', return_value=st), \
+                             mock.patch.object(zipfile.time, 'localtime',
+                                               side_effect=exception):
+                            with self.assertRaises(exception):
+                                zipfile.ZipInfo.from_file(
+                                    'in_range',
+                                    strict_timestamps=strict_timestamps)
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(FakePath(__file__))

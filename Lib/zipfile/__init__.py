@@ -648,9 +648,11 @@ class ZipInfo:
         try:
             mtime = time.localtime(st.st_mtime)
         except (OverflowError, OSError):
-            if strict_timestamps:
+            # A platform limit (such as 2038) need not be a ZIP limit.
+            # UTC years 1979 through 2108 leave room for local time offsets.
+            if strict_timestamps or 283996800 <= st.st_mtime < 4386441600:
                 raise
-            if st.st_mtime < 0:
+            if st.st_mtime < 283996800:
                 date_time = (1980, 1, 1, 0, 0, 0)
             else:
                 date_time = (2107, 12, 31, 23, 59, 58)
