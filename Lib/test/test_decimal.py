@@ -3771,18 +3771,22 @@ class CContextAPItests(ContextAPItests, unittest.TestCase):
         # gh-161387
         if not self.decimal.HAVE_CONTEXTVAR:
             self.skipTest("_decimal built without context variables")
+        value = object()
         context_vars = [var for var in contextvars.copy_context()
                         if var.name == "decimal_context"]
         self.assertTrue(context_vars)
-        tokens = [var.set(1) for var in context_vars]
+        tokens = [var.set(value) for var in context_vars]
 
         def restore():
             for var, token in zip(context_vars, tokens):
                 var.reset(token)
 
         self.addCleanup(restore)
-        with self.assertRaises(TypeError):
-            self.decimal.Decimal(1) + self.decimal.Decimal(2)
+        refcount = sys.getrefcount(value)
+        for _ in range(3):
+            with self.assertRaises(TypeError):
+                self.decimal.Decimal(1) + self.decimal.Decimal(2)
+        self.assertEqual(sys.getrefcount(value), refcount)
 
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
