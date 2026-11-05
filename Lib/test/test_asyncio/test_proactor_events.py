@@ -336,6 +336,20 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.protocol.connection_lost.called)
         self.assertTrue(self.sock.close.called)
 
+    def test_call_connection_lost_shutdown_reset(self):
+        # gh-160429: a ConnectionResetError from shutdown() must not skip
+        # closing the socket and detaching the transport from its server.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = ConnectionResetError
+        tr._call_connection_lost(None)
+        self.protocol.connection_lost.assert_called_once_with(None)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertIsNone(tr._sock)
+        self.assertTrue(tr._called_connection_lost)
+
     def test_write_eof(self):
         tr = self.socket_transport()
         self.assertTrue(tr.can_write_eof())
