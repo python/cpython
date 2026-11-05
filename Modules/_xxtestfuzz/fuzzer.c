@@ -595,6 +595,142 @@ static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* 
     return rv;
 }
 
+#define MAX_ZLIB_TEST_SIZE 0x100000
+
+/* Fuzz zlib and lzma decompression of attacker-controlled bytes. The
+   module wrappers live in Modules/zlibmodule.c and Modules/_lzmamodule.c
+   (the zlib/xz libraries themselves are built from source with sanitizer
+   instrumentation). Streaming decompression with an explicit max_length
+   bounds the output so decompression bombs cannot OOM the fuzzer. */
+static PyObject* zlib_decompressobj_factory = NULL;
+static PyObject* lzma_decompress_factory = NULL;
+static PyObject* zlib_error_exc = NULL;
+static PyObject* lzma_error_exc = NULL;
+
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_zlib(void) {
+    if (PyErr_Occurred()) {
+        /* A pending exception left over from interpreter startup would
+           trip asserts inside attribute lookups; report it visibly and
+           start the lookups with a clean error indicator. */
+        PyErr_Print();
+    }
+    PyObject* zlib_module = PyImport_ImportModule("zlib");
+    if (zlib_module == NULL) {
+        return 0;
+    }
+    zlib_decompressobj_factory = PyObject_GetAttrString(zlib_module, "decompressobj");
+    if (zlib_decompressobj_factory == NULL) {
+        Py_DECREF(zlib_module);
+        return 0;
+    }
+    zlib_error_exc = PyObject_GetAttrString(zlib_module, "error");
+    Py_DECREF(zlib_module);
+    if (zlib_error_exc == NULL) {
+        return 0;
+    }
+    PyObject* lzma_module = PyImport_ImportModule("lzma");
+    if (lzma_module == NULL) {
+        return 0;
+    }
+    lzma_decompress_factory = PyObject_GetAttrString(lzma_module, "LZMADecompressor");
+    if (lzma_decompress_factory == NULL) {
+        Py_DECREF(lzma_module);
+        return 0;
+    }
+    lzma_error_exc = PyObject_GetAttrString(lzma_module, "LZMAError");
+    Py_DECREF(lzma_module);
+    if (lzma_error_exc == NULL) {
+        return 0;
+    }
+    return 1;
+}
+
+/* Fuzz zlib.decompressobj(wbits).decompress / lzma.LZMADecompressor().decompress */
+static int fuzz_zlib(const char* data, size_t size) {
+    if (size < 2 || size > MAX_ZLIB_TEST_SIZE) {
+        return 0;
+    }
+    unsigned char mode = (unsigned char) data[0];
+    data += 1;
+    size -= 1;
+
+    PyObject* payload = PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
+    if (payload == NULL) {
+        return 0;
+    }
+
+    PyObject* dobj;
+    if (mode % 4 == 3) {
+        /* lzma with FORMAT_AUTO (0) */
+        dobj = PyObject_CallFunction(lzma_decompress_factory, "(i)", 0);
+    } else {
+        /* zlib window bits: 15 = zlib stream, -15 = raw deflate,
+           47 = auto-detect zlib or gzip */
+        int wbits = 15;
+        switch (mode % 3) {
+            case 0: wbits = 15; break;
+            case 1: wbits = -15; break;
+            default: wbits = 47; break;
+        }
+        dobj = PyObject_CallFunction(zlib_decompressobj_factory, "(i)", wbits);
+    }
+    if (dobj == NULL) {
+        PyErr_Clear();
+        Py_DECREF(payload);
+        return 0;
+    }
+
+    /* max_length bounds the output per call: decompression bombs end up
+       in unconsumed_tail instead of memory. */
+    PyObject* out = PyObject_CallMethod(dobj, "decompress", "Oi", payload,
+                                        65536);
+    if (out == NULL) {
+        /* Expected for attacker bytes: zlib.error / lzma.LZMAError for
+           corrupt or unsupported streams, EOFError for truncated ones,
+           ValueError for bad header combinations. */
+        if (PyErr_ExceptionMatches(PyExc_EOFError) ||
+            PyErr_ExceptionMatches(PyExc_ValueError) ||
+            PyErr_ExceptionMatches(zlib_error_exc) ||
+            PyErr_ExceptionMatches(lzma_error_exc))
+        {
+            PyErr_Clear();
+        }
+    } else {
+        Py_DECREF(out);
+        if (mode % 4 == 3) {
+            /* LZMADecompressor has no flush(); reading the end-of-stream
+               flags exercises its EOF detection paths instead. */
+            PyObject* eof = PyObject_GetAttrString(dobj, "eof");
+            if (eof == NULL) {
+                PyErr_Clear();
+            } else {
+                Py_DECREF(eof);
+            }
+            PyObject* unused = PyObject_GetAttrString(dobj, "unused_data");
+            if (unused == NULL) {
+                PyErr_Clear();
+            } else {
+                Py_DECREF(unused);
+            }
+        } else {
+            /* flush() completes the zlib stream handling paths. */
+            PyObject* flushed = PyObject_CallMethod(dobj, "flush", NULL);
+            if (flushed == NULL) {
+                if (PyErr_ExceptionMatches(zlib_error_exc)) {
+                    PyErr_Clear();
+                }
+            } else {
+                Py_DECREF(flushed);
+            }
+        }
+    }
+    Py_DECREF(dobj);
+    Py_DECREF(payload);
+    return 0;
+}
+
+
 /* CPython generates a lot of leak warnings for whatever reason. */
 int __lsan_is_turned_off(void) { return 1; }
 
@@ -726,6 +862,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
     rv |= _run_fuzz(data, size, fuzz_pycompile);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_zlib)
+    static int ZLIB_INITIALIZED = 0;
+    if (!ZLIB_INITIALIZED && !init_zlib()) {
+        PyErr_Print();
+        abort();
+    } else {
+        ZLIB_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_zlib);
 #endif
   return rv;
 }
