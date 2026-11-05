@@ -8,16 +8,25 @@ import sys
 from test import support
 
 
+# On a WASI CI, the main regrtest process is run on the build Python and test
+# worker processes are run on the host Python. Detect WASI using
+# _PYTHON_HOST_PLATFORM environment variable. Below, IS_WASI should be checked
+# explicitly since test.support constants (such as support.has_socket_support)
+# are set by the build Python which is different.
+HOST_PLATFORM = os.environ.get('_PYTHON_HOST_PLATFORM', '')
+IS_WASI = support.is_wasi or HOST_PLATFORM.startswith('wasi')
+
+
 # List of tests expected to be skipped
-EXPECTED_SKIP = []
+EXPECTED_SKIP = set()
 if support.MS_WINDOWS:
-    EXPECTED_SKIP.extend((
+    EXPECTED_SKIP |= {
         'test_asyncio.test_unix_events',
         'test_gdb',
         'test_threadsignals',
-    ))
+    }
 else:
-    EXPECTED_SKIP.extend((
+    EXPECTED_SKIP |= {
         'test_asyncio.test_windows_events',
         'test_asyncio.test_windows_utils',
         'test_msvcrt',
@@ -27,27 +36,27 @@ else:
         'test_winreg',
         'test_winsound',
         'test_wmi',
-    ))
+    }
 if not hasattr(os, 'startfile'):
-    EXPECTED_SKIP.append('test_startfile')
+    EXPECTED_SKIP.add('test_startfile')
 if not hasattr(os, "openpty"):
-    EXPECTED_SKIP.append('test_openpty')
+    EXPECTED_SKIP.add('test_openpty')
 if not hasattr(os, "wait3"):
-    EXPECTED_SKIP.append('test_wait3')
+    EXPECTED_SKIP.add('test_wait3')
 if not hasattr(os, "wait4"):
-    EXPECTED_SKIP.append('test_wait4')
+    EXPECTED_SKIP.add('test_wait4')
 if not support.is_android:
-    EXPECTED_SKIP.append('test_android')
+    EXPECTED_SKIP.add('test_android')
 if not support.is_apple:
-    EXPECTED_SKIP.append('test_apple')
+    EXPECTED_SKIP.add('test_apple')
 if not support.Py_GIL_DISABLED:
-    EXPECTED_SKIP.append('test_free_threading')
+    EXPECTED_SKIP.add('test_free_threading')
 if sys.platform in ("win32", 'darwin'):
-    EXPECTED_SKIP.append('test_multiprocessing_fork')
+    EXPECTED_SKIP.add('test_multiprocessing_fork')
 if sys.platform in ("win32", "cygwin"):
-    EXPECTED_SKIP.append('test_multiprocessing_forkserver')
-if not support.has_socket_support:
-    EXPECTED_SKIP.extend((
+    EXPECTED_SKIP.add('test_multiprocessing_forkserver')
+if not support.has_socket_support or IS_WASI:
+    EXPECTED_SKIP |= {
         'test_asyncio',
         'test_docxmlrpc',
         'test_ftplib',
@@ -63,9 +72,9 @@ if not support.has_socket_support:
         'test_wsgiref',
         'test_xml_dom_xmlbuilder',
         'test_xmlrpc',
-    ))
-if not support.has_subprocess_support:
-    EXPECTED_SKIP.extend((
+    }
+if not support.has_subprocess_support or IS_WASI:
+    EXPECTED_SKIP |= {
         'test_argparse',
         'test_cext',
         'test_clinic',
@@ -82,20 +91,31 @@ if not support.has_subprocess_support:
         'test_samply_profiler',
         'test_subprocess',
         'test_tools',
-    ))
+    }
 if support.is_emscripten:
-    EXPECTED_SKIP.extend((
+    EXPECTED_SKIP |= {
         'test_mmap',
         'test_selectors',
-    ))
+    }
 if support.is_android or support.is_apple_mobile or support.is_wasm32:
-    EXPECTED_SKIP.append('test_venv')
+    EXPECTED_SKIP.add('test_venv')
 if not sys.is_remote_debug_enabled():
-    EXPECTED_SKIP.append('test_remote_pdb')
+    EXPECTED_SKIP.add('test_remote_pdb')
+if not support.has_fork_support or IS_WASI:
+    EXPECTED_SKIP |= {
+        'test_fork1',
+        'test_multiprocessing_forkserver',
+        'test_wait3',
+        'test_wait4',
+    }
+if IS_WASI:
+    EXPECTED_SKIP.add('test_multiprocessing_fork')
 
 
 # Modules needed by a test.
 # Used to check if a test is expected to be skipped.
+# NEED_MODULES doesn't work on WASI, since the regrtest summary is run on the
+# build Python which is different than the host (WASI) Python.
 NEED_MODULES = {
     'test__interpchannels': '_interpchannels',
     'test_crossinterp': '_interpreters',
@@ -190,6 +210,8 @@ def expected_to_be_skipped(test_name):
         return not sysconfig.get_config_var('WITH_DTRACE')
     if (test_name in NEED_WORKING_THREADING
         or package in NEED_WORKING_THREADING):
+        if IS_WASI:
+            return True
         from test.support import threading_helper
         return not threading_helper.can_start_thread
 
