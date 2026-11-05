@@ -84,7 +84,8 @@ class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
                     if i == 2:
                         break
                 finally:
-                    return 0
+                    pass
+                return 0
             """)
 
 
@@ -117,7 +118,8 @@ class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
                     if i == 2:
                         continue
                 finally:
-                    return 0
+                    pass
+                return 0
             """)
 
     def test_return_in_except_star_block_invalid(self):
@@ -703,6 +705,88 @@ class TestExceptStarRaise(ExceptStarTest):
         self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
         self.assertMetadataEqual(orig, exc.exceptions[1].__context__)
 
+    def test_raise_base_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [ValueError(1), OSError(2)])
+        try:
+            try:
+                raise orig
+            except* OSError:
+                raise MyBaseException(3)
+        except BaseException as e:
+            exc = e
+
+        self.assertIs(type(exc), BaseExceptionGroup)
+        self.assertEqual(exc.message, "")
+        self.assertEqual(len(exc.exceptions), 2)
+        self.assertExceptionIsLike(exc.exceptions[0], MyBaseException(3))
+        self.assertExceptionIsLike(
+            exc.exceptions[1], ExceptionGroup("eg", [ValueError(1)]))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[0].__context__,
+            ExceptionGroup("eg", [OSError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+
+    def test_raise_handle_all_raise_one_base_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
+        try:
+            try:
+                raise orig
+            except* (TypeError, ValueError):
+                raise MyBaseException(3)
+        except BaseException as e:
+            exc = e
+
+        self.assertExceptionIsLike(exc, MyBaseException(3))
+
+        self.assertExceptionIsLike(
+            exc.__context__,
+            ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.__context__)
+
+    def test_raise_handle_all_raise_base_exception_and_exception(self):
+        class MyBaseException(BaseException):
+            pass
+
+        orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
+        try:
+            try:
+                raise orig
+            except* TypeError:
+                raise MyBaseException(3)
+            except* ValueError:
+                raise SyntaxError(4)
+        except BaseException as e:
+            exc = e
+
+        self.assertIs(type(exc), BaseExceptionGroup)
+        self.assertEqual(exc.message, "")
+        self.assertEqual(len(exc.exceptions), 2)
+        self.assertExceptionIsLike(exc.exceptions[0], MyBaseException(3))
+        self.assertExceptionIsLike(exc.exceptions[1], SyntaxError(4))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[0].__context__,
+            ExceptionGroup("eg", [TypeError(1)]))
+
+        self.assertExceptionIsLike(
+            exc.exceptions[1].__context__,
+            ExceptionGroup("eg", [ValueError(2)]))
+
+        self.assertMetadataNotEqual(orig, exc)
+        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+        self.assertMetadataEqual(orig, exc.exceptions[1].__context__)
+
 
 class TestExceptStarRaiseFrom(ExceptStarTest):
     def test_raise_named(self):
@@ -951,6 +1035,49 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertExceptionIsLike(exc, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
+
+    def test_exception_group_subclass_with_bad_split_func(self):
+        # see gh-128049.
+        class BadEG1(ExceptionGroup):
+            def split(self, *args):
+                return "NOT A 2-TUPLE!"
+
+        class BadEG2(ExceptionGroup):
+            def split(self, *args):
+                return ("NOT A 2-TUPLE!",)
+
+        eg_list = [
+            (BadEG1("eg", [OSError(123), ValueError(456)]),
+             r"split must return a tuple, not str"),
+            (BadEG2("eg", [OSError(123), ValueError(456)]),
+             r"split must return a 2-tuple, got tuple of size 1")
+        ]
+
+        for eg_class, msg in eg_list:
+            with self.assertRaisesRegex(TypeError, msg) as m:
+                try:
+                    raise eg_class
+                except* ValueError:
+                    pass
+                except* OSError:
+                    pass
+
+            self.assertExceptionIsLike(m.exception.__context__, eg_class)
+
+        # we allow tuples of length > 2 for backwards compatibility
+        class WeirdEG(ExceptionGroup):
+            def split(self, *args):
+                return super().split(*args) + ("anything", 123456, None)
+
+        try:
+            raise WeirdEG("eg", [OSError(123), ValueError(456)])
+        except* OSError as e:
+            oeg = e
+        except* ValueError as e:
+            veg = e
+
+        self.assertExceptionIsLike(oeg, WeirdEG("eg", [OSError(123)]))
+        self.assertExceptionIsLike(veg, WeirdEG("eg", [ValueError(456)]))
 
 
 class TestExceptStarCleanup(ExceptStarTest):

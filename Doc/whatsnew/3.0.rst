@@ -150,8 +150,8 @@ Some well-known APIs no longer return lists:
   sorted(d)`` instead (this works in Python 2.5 too and is just
   as efficient).
 
-* Also, the :meth:`dict.iterkeys`, :meth:`dict.iteritems` and
-  :meth:`dict.itervalues` methods are no longer supported.
+* Also, the :meth:`!dict.iterkeys`, :meth:`!dict.iteritems` and
+  :meth:`!dict.itervalues` methods are no longer supported.
 
 * :func:`map` and :func:`filter` return iterators.  If you really need
   a list and the input sequences are all of equal length, a quick
@@ -170,7 +170,7 @@ Some well-known APIs no longer return lists:
   :func:`itertools.zip_longest`, e.g. ``map(func, *sequences)`` becomes
   ``list(map(func, itertools.zip_longest(*sequences)))``.
 
-* :func:`range` now behaves like :func:`xrange` used to behave, except
+* :func:`range` now behaves like :func:`!xrange` used to behave, except
   it works with values of arbitrary size.  The latter no longer
   exists.
 
@@ -192,33 +192,33 @@ Python 3.0 has simplified the rules for ordering comparisons:
   operators: objects of different incomparable types always compare
   unequal to each other.
 
-* :meth:`builtin.sorted` and :meth:`list.sort` no longer accept the
+* :meth:`sorted` and :meth:`list.sort` no longer accept the
   *cmp* argument providing a comparison function.  Use the *key*
   argument instead. N.B. the *key* and *reverse* arguments are now
   "keyword-only".
 
-* The :func:`cmp` function should be treated as gone, and the :meth:`__cmp__`
-  special method is no longer supported.  Use :meth:`__lt__` for sorting,
-  :meth:`__eq__` with :meth:`__hash__`, and other rich comparisons as needed.
-  (If you really need the :func:`cmp` functionality, you could use the
+* The :func:`!cmp` function should be treated as gone, and the :meth:`!__cmp__`
+  special method is no longer supported.  Use :meth:`~object.__lt__` for sorting,
+  :meth:`~object.__eq__` with :meth:`~object.__hash__`, and other rich comparisons as needed.
+  (If you really need the :func:`!cmp` functionality, you could use the
   expression ``(a > b) - (a < b)`` as the equivalent for ``cmp(a, b)``.)
 
 Integers
 --------
 
-* :pep:`237`: Essentially, :class:`long` renamed to :class:`int`.
+* :pep:`237`: Essentially, :class:`!long` renamed to :class:`int`.
   That is, there is only one built-in integral type, named
-  :class:`int`; but it behaves mostly like the old :class:`long` type.
+  :class:`int`; but it behaves mostly like the old :class:`!long` type.
 
 * :pep:`238`: An expression like ``1/2`` returns a float.  Use
   ``1//2`` to get the truncating behavior.  (The latter syntax has
   existed for years, at least since Python 2.2.)
 
-* The :data:`sys.maxint` constant was removed, since there is no
+* The :data:`!sys.maxint` constant was removed, since there is no
   longer a limit to the value of integers.  However, :data:`sys.maxsize`
   can be used as an integer larger than any practical list or string
   index.  It conforms to the implementation's "natural" integer size
-  and is typically the same as :data:`sys.maxint` in previous releases
+  and is typically the same as :data:`!sys.maxint` in previous releases
   on the same platform (assuming the same build options).
 
 * The :func:`repr` of a long integer doesn't include the trailing ``L``
@@ -251,7 +251,7 @@ changed.
   that uses Unicode, encodings or binary data most likely has to
   change.  The change is for the better, as in the 2.x world there
   were numerous bugs having to do with mixing encoded and unencoded
-  text.  To be prepared in Python 2.x, start using :class:`unicode`
+  text.  To be prepared in Python 2.x, start using :class:`!unicode`
   for all unencoded text, and :class:`str` for binary or encoded data
   only.  Then the ``2to3`` tool will do most of the work for you.
 
@@ -269,7 +269,7 @@ changed.
   separate *mutable* type to hold buffered binary data,
   :class:`bytearray`.  Nearly all APIs that accept :class:`bytes` also
   accept :class:`bytearray`.  The mutable API is based on
-  :class:`collections.MutableSequence`.
+  :class:`collections.MutableSequence <collections.abc.MutableSequence>`.
 
 * All backslashes in raw string literals are interpreted literally.
   This means that ``'\U'`` and ``'\u'`` escapes in raw strings are not
@@ -278,11 +278,11 @@ changed.
   single "euro" character.  (Of course, this change only affects raw
   string literals; the euro character is ``'\u20ac'`` in Python 3.0.)
 
-* The built-in :class:`basestring` abstract type was removed.  Use
+* The built-in :class:`!basestring` abstract type was removed.  Use
   :class:`str` instead.  The :class:`str` and :class:`bytes` types
   don't have functionality enough in common to warrant a shared base
   class.  The ``2to3`` tool (see below) replaces every occurrence of
-  :class:`basestring` with :class:`str`.
+  :class:`!basestring` with :class:`str`.
 
 * Files opened as text files (still the default mode for :func:`open`)
   always use an encoding to map between strings (in memory) and bytes
@@ -428,7 +428,7 @@ Changed Syntax
     class C(metaclass=M):
         ...
 
-  The module-global :data:`__metaclass__` variable is no longer
+  The module-global :data:`!__metaclass__` variable is no longer
   supported.  (It was a crutch to make it easier to default to
   new-style classes without deriving every class from
   :class:`object`.)
@@ -522,19 +522,19 @@ consulted for longer descriptions.
   *encoding*, *errors*, *newline* and *closefd*.  Also note that an
   invalid *mode* argument now raises :exc:`ValueError`, not
   :exc:`IOError`.  The binary file object underlying a text file
-  object can be accessed as :attr:`f.buffer` (but beware that the
+  object can be accessed as :attr:`!f.buffer` (but beware that the
   text object maintains a buffer of itself in order to speed up
   the encoding and decoding operations).
 
-* :ref:`pep-3118`.  The old builtin :func:`buffer` is now really gone;
+* :ref:`pep-3118`.  The old builtin :func:`!buffer` is now really gone;
   the new builtin :func:`memoryview` provides (mostly) similar
   functionality.
 
 * :ref:`pep-3119`.  The :mod:`abc` module and the ABCs defined in the
   :mod:`collections` module plays a somewhat more prominent role in
   the language now, and built-in collection types like :class:`dict`
-  and :class:`list` conform to the :class:`collections.MutableMapping`
-  and :class:`collections.MutableSequence` ABCs, respectively.
+  and :class:`list` conform to the :class:`collections.MutableMapping <collections.abc.MutableMapping>`
+  and :class:`collections.MutableSequence <collections.abc.MutableSequence>` ABCs, respectively.
 
 * :ref:`pep-3127`.  As mentioned above, the new octal literal
   notation is the only one supported, and binary literals have been
@@ -612,7 +612,7 @@ review:
     :mod:`!CGIHTTPServer`, :mod:`!SimpleHTTPServer`, :mod:`!Cookie`,
     :mod:`!cookielib`).
 
-  * :mod:`tkinter` (all :mod:`Tkinter`-related modules except
+  * :mod:`tkinter` (all ``Tkinter``-related modules except
     :mod:`turtle`).  The target audience of :mod:`turtle` doesn't
     really care about :mod:`tkinter`.  Also note that as of Python
     2.6, the functionality of :mod:`turtle` has been greatly enhanced.
@@ -628,47 +628,47 @@ Some other changes to standard library modules, not covered by
 
 * Killed :mod:`!sets`.  Use the built-in :func:`set` class.
 
-* Cleanup of the :mod:`sys` module: removed :func:`sys.exitfunc`,
-  :func:`sys.exc_clear`, :data:`sys.exc_type`, :data:`sys.exc_value`,
-  :data:`sys.exc_traceback`.  (Note that :data:`sys.last_type`
+* Cleanup of the :mod:`sys` module: removed :func:`!sys.exitfunc`,
+  :func:`!sys.exc_clear`, :data:`!sys.exc_type`, :data:`!sys.exc_value`,
+  :data:`!sys.exc_traceback`.  (Note that :data:`sys.last_type`
   etc. remain.)
 
-* Cleanup of the :class:`array.array` type: the :meth:`read` and
-  :meth:`write` methods are gone; use :meth:`fromfile` and
-  :meth:`tofile` instead.  Also, the ``'c'`` typecode for array is
+* Cleanup of the :class:`array.array` type: the :meth:`!read` and
+  :meth:`!write` methods are gone; use :meth:`~array.array.fromfile` and
+  :meth:`~array.array.tofile` instead.  Also, the ``'c'`` typecode for array is
   gone -- use either ``'b'`` for bytes or ``'u'`` for Unicode
   characters.
 
 * Cleanup of the :mod:`operator` module: removed
-  :func:`sequenceIncludes` and :func:`isCallable`.
+  :func:`!sequenceIncludes` and :func:`!isCallable`.
 
 * Cleanup of the :mod:`!thread` module: :func:`!acquire_lock` and
   :func:`!release_lock` are gone; use :meth:`~threading.Lock.acquire` and
   :meth:`~threading.Lock.release` instead.
 
-* Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
+* Cleanup of the :mod:`random` module: removed the :func:`!jumpahead` API.
 
 * The :mod:`!new` module is gone.
 
-* The functions :func:`os.tmpnam`, :func:`os.tempnam` and
-  :func:`os.tmpfile` have been removed in favor of the :mod:`tempfile`
+* The functions :func:`!os.tmpnam`, :func:`!os.tempnam` and
+  :func:`!os.tmpfile` have been removed in favor of the :mod:`tempfile`
   module.
 
 * The :mod:`tokenize` module has been changed to work with bytes.  The
   main entry point is now :func:`tokenize.tokenize`, instead of
   generate_tokens.
 
-* :data:`string.letters` and its friends (:data:`string.lowercase` and
-  :data:`string.uppercase`) are gone.  Use
+* :data:`!string.letters` and its friends (:data:`!string.lowercase` and
+  :data:`!string.uppercase`) are gone.  Use
   :data:`string.ascii_letters` etc. instead.  (The reason for the
-  removal is that :data:`string.letters` and friends had
+  removal is that :data:`!string.letters` and friends had
   locale-specific behavior, which is a bad idea for such
   attractively named global "constants".)
 
-* Renamed module :mod:`__builtin__` to :mod:`builtins` (removing the
-  underscores, adding an 's').  The :data:`__builtins__` variable
+* Renamed module :mod:`!__builtin__` to :mod:`builtins` (removing the
+  underscores, adding an 's').  The :data:`!__builtins__` variable
   found in most global namespaces is unchanged.  To modify a builtin,
-  you should use :mod:`builtins`, not :data:`__builtins__`!
+  you should use :mod:`builtins`, not :data:`!__builtins__`!
 
 
 :pep:`3101`: A New Approach To String Formatting
@@ -702,9 +702,9 @@ new powerful features added:
   idiom for handling all exceptions except for this latter category is
   to use :keyword:`except` :exc:`Exception`.
 
-* :exc:`StandardError` was removed.
+* :exc:`!StandardError` was removed.
 
-* Exceptions no longer behave as sequences.  Use the :attr:`args`
+* Exceptions no longer behave as sequences.  Use the :attr:`~BaseException.args`
   attribute instead.
 
 * :pep:`3109`: Raising exceptions.  You must now use :samp:`raise
@@ -765,20 +765,20 @@ Operators And Special Methods
   When referencing a method as a class attribute, you now get a plain
   function object.
 
-* :meth:`__getslice__`, :meth:`__setslice__` and :meth:`__delslice__`
+* :meth:`!__getslice__`, :meth:`!__setslice__` and :meth:`!__delslice__`
   were killed.  The syntax ``a[i:j]`` now translates to
-  ``a.__getitem__(slice(i, j))`` (or :meth:`__setitem__` or
-  :meth:`__delitem__`, when used as an assignment or deletion target,
+  ``a.__getitem__(slice(i, j))`` (or :meth:`~object.__setitem__` or
+  :meth:`~object.__delitem__`, when used as an assignment or deletion target,
   respectively).
 
 * :pep:`3114`: the standard :meth:`next` method has been renamed to
   :meth:`~iterator.__next__`.
 
-* The :meth:`__oct__` and :meth:`__hex__` special methods are removed
-  -- :func:`oct` and :func:`hex` use :meth:`__index__` now to convert
+* The :meth:`!__oct__` and :meth:`!__hex__` special methods are removed
+  -- :func:`oct` and :func:`hex` use :meth:`~object.__index__` now to convert
   the argument to an integer.
 
-* Removed support for :attr:`__members__` and :attr:`__methods__`.
+* Removed support for :attr:`!__members__` and :attr:`!__methods__`.
 
 * The function attributes named :attr:`!func_X` have been renamed to
   use the :attr:`!__X__` form, freeing up these names in the function
@@ -802,7 +802,7 @@ Builtins
   instance will automatically be chosen.  With arguments, the behavior
   of :func:`super` is unchanged.
 
-* :pep:`3111`: :func:`raw_input` was renamed to :func:`input`.  That
+* :pep:`3111`: :func:`!raw_input` was renamed to :func:`input`.  That
   is, the new :func:`input` function reads a line from
   :data:`sys.stdin` and returns it with the trailing newline stripped.
   It raises :exc:`EOFError` if the input is terminated prematurely.
@@ -820,31 +820,31 @@ Builtins
   argument and a value of the same type as ``x`` when called with two
   arguments.
 
-* Moved :func:`intern` to :func:`sys.intern`.
+* Moved :func:`!intern` to :func:`sys.intern`.
 
-* Removed: :func:`apply`.  Instead of ``apply(f, args)`` use
+* Removed: :func:`!apply`.  Instead of ``apply(f, args)`` use
   ``f(*args)``.
 
 * Removed :func:`callable`.  Instead of ``callable(f)`` you can use
-  ``isinstance(f, collections.Callable)``.  The :func:`operator.isCallable`
+  ``isinstance(f, collections.Callable)``.  The :func:`!operator.isCallable`
   function is also gone.
 
-* Removed :func:`coerce`.  This function no longer serves a purpose
+* Removed :func:`!coerce`.  This function no longer serves a purpose
   now that classic classes are gone.
 
-* Removed :func:`execfile`.  Instead of ``execfile(fn)`` use
+* Removed :func:`!execfile`.  Instead of ``execfile(fn)`` use
   ``exec(open(fn).read())``.
 
-* Removed the :class:`file` type.  Use :func:`open`.  There are now several
+* Removed the :class:`!file` type.  Use :func:`open`.  There are now several
   different kinds of streams that open can return in the :mod:`io` module.
 
-* Removed :func:`reduce`.  Use :func:`functools.reduce` if you really
+* Removed :func:`!reduce`.  Use :func:`functools.reduce` if you really
   need it; however, 99 percent of the time an explicit :keyword:`for`
   loop is more readable.
 
-* Removed :func:`reload`.  Use :func:`!imp.reload`.
+* Removed :func:`!reload`.  Use :func:`!imp.reload`.
 
-* Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
+* Removed. :meth:`!dict.has_key` -- use the :keyword:`in` operator
   instead.
 
 .. ======================================================================
@@ -870,7 +870,7 @@ to the C API.
 * :c:func:`!PyNumber_Coerce`, :c:func:`!PyNumber_CoerceEx`,
   :c:func:`!PyMember_Get`, and :c:func:`!PyMember_Set` C APIs are removed.
 
-* New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
+* New C API :c:func:`!PyImport_ImportModuleNoBlock`, works like
   :c:func:`PyImport_ImportModule` but won't block on the import lock
   (returning an error instead).
 

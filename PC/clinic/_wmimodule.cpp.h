@@ -14,8 +14,8 @@ PyDoc_STRVAR(_wmi_exec_query__doc__,
 "\n"
 "Runs a WMI query against the local machine.\n"
 "\n"
-"This returns a single string with \'name=value\' pairs in a flat array separated\n"
-"by null characters.");
+"This returns a single string with \'name=value\' pairs in a flat array\n"
+"separated by null characters.");
 
 #define _WMI_EXEC_QUERY_METHODDEF    \
     {"exec_query", _PyCFunction_CAST(_wmi_exec_query), METH_FASTCALL|METH_KEYWORDS, _wmi_exec_query__doc__},
@@ -33,9 +33,11 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(query), },
     };
     #undef NUM_KEYWORDS
@@ -70,4 +72,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ac5fd7faf889e52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f246d0e568cc2d2c input=a9049054013a1b77]*/

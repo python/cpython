@@ -1,5 +1,5 @@
 import os
-from pickle import dump
+from pickle import dump, load
 import sys
 from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
@@ -142,6 +142,8 @@ class TestLineCounts(unittest.TestCase):
 
         self.assertEqual(self.tracer.results().counts, expected)
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_traced_func_loop(self):
         self.tracer.runfunc(traced_func_loop, 2, 3)
 
@@ -166,6 +168,8 @@ class TestLineCounts(unittest.TestCase):
 
         self.assertEqual(self.tracer.results().counts, expected)
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_trace_func_generator(self):
         self.tracer.runfunc(traced_func_calling_generator)
 
@@ -236,6 +240,8 @@ class TestRunExecCounts(unittest.TestCase):
         self.my_py_filename = fix_ext_py(__file__)
         self.addCleanup(sys.settrace, sys.gettrace())
 
+    @unittest.skipIf(os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0',
+                     "Line counts differ when JIT optimizer is disabled")
     def test_exec_counts(self):
         self.tracer = Trace(count=1, trace=0, countfuncs=0, countcallers=0)
         code = r'''traced_func_loop(2, 5)'''
@@ -390,7 +396,7 @@ class TestCoverage(unittest.TestCase):
         libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
-                             libpath], trace=0, count=1)
+                             libpath] + sys.path, trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
         if os.path.exists(TESTFN):
@@ -412,7 +418,7 @@ class TestCoverage(unittest.TestCase):
         coverage = {}
         for line in stdout:
             lines, cov, module = line.split()[:3]
-            coverage[module] = (int(lines), int(cov[:-1]))
+            coverage[module] = (float(lines), float(cov[:-1]))
         # XXX This is needed to run regrtest.py as a script
         modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
@@ -553,7 +559,29 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {modulename}   ({filename})', stdout)
+        self.assertIn(f'6   100.0%   {modulename}   ({filename})', stdout)
+
+    def test_count_no_report_accumulates_counts(self):
+        # --no-report must still save the --file counts so they accumulate.
+        filename = f'{TESTFN}.py'
+        countsfile = f'{TESTFN}.counts'
+        with open(filename, 'w', encoding='utf-8') as fd:
+            self.addCleanup(unlink, filename)
+            self.addCleanup(unlink, countsfile)
+            fd.write('for i in range(3):\n    pass\n')
+        argv = ('-m', 'trace', '--count', '--no-report',
+                '--file', countsfile, filename)
+        assert_python_ok(*argv, PYTHONIOENCODING='utf-8')
+        self.assertTrue(os.path.exists(countsfile))
+        with open(countsfile, 'rb') as fd:
+            counts = load(fd)[0]
+        self.assertTrue(counts)
+        # A second run accumulates into the same file.
+        assert_python_ok(*argv, PYTHONIOENCODING='utf-8')
+        with open(countsfile, 'rb') as fd:
+            accumulated = load(fd)[0]
+        self.assertEqual(accumulated,
+                         {key: 2 * value for key, value in counts.items()})
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')

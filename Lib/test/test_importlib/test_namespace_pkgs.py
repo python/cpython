@@ -80,7 +80,7 @@ class SingleNamespacePackage(NamespacePackageTest):
 
     def test_simple_repr(self):
         import foo.one
-        self.assertTrue(repr(foo).startswith("<module 'foo' (namespace) from ["))
+        self.assertStartsWith(repr(foo), "<module 'foo' (namespace) from [")
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):
@@ -301,7 +301,7 @@ class ZipWithMissingDirectory(NamespacePackageTest):
 
     def test_missing_directory2(self):
         import foo
-        self.assertFalse(hasattr(foo, 'one'))
+        self.assertNotHasAttr(foo, 'one')
 
     def test_present_directory(self):
         import bar.two
@@ -316,6 +316,17 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         #  namespace package.
         import a_test
         self.assertEqual(a_test.attr, 'in module')
+
+
+class NamespaceSubpackageSameName(NamespacePackageTest):
+    paths = ['']
+
+    def test_namespace_subpackage_shares_name_with_directory(self):
+        submodule_path = 'project4.foo'
+        with self.assertRaises(ModuleNotFoundError) as cm:
+            importlib.machinery.PathFinder.find_spec(submodule_path)
+
+        self.assertEqual(cm.exception.name, 'project4')
 
 
 class ReloadTests(NamespacePackageTest):

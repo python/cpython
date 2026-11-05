@@ -6,7 +6,7 @@ SCRIPT_NAME = 'Tools/build/generate_sre_constants.py'
 
 def update_file(file, content):
     try:
-        with open(file, 'r') as fobj:
+        with open(file) as fobj:
             if fobj.read() == content:
                 return False
     except (OSError, ValueError):

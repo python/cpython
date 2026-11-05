@@ -1,4 +1,3 @@
-
 Guide to the parser
 ===================
 
@@ -57,7 +56,7 @@ an input string as its argument, and yields one of the following results:
 
 Note that "failure" results do not imply that the program is incorrect, nor do
 they necessarily mean that the parsing has failed. Since the choice operator is
-ordered, a failure very often merely indicates "try the following option".  A
+ordered, a failure very often merely indicates "try the following option". A
 direct implementation of a PEG parser as a recursive descent parser will present
 exponential time performance in the worst case, because PEG parsers have
 infinite lookahead (this means that they can consider an arbitrary number of
@@ -81,7 +80,7 @@ Key ideas
   using memoization.
 - If parsing fails completely (no rule succeeds in parsing all the input text), the
   PEG parser doesn't have a concept of "where the
-  [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError) is".
+  [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError) is".
 
 
 > [!IMPORTANT]
@@ -98,7 +97,7 @@ Consequences of the ordered choice operator
 -------------------------------------------
 
 Although PEG may look like EBNF, its meaning is quite different. The fact
-that the alternatives are ordered in a PEG grammer (which is at the core of
+that the alternatives are ordered in a PEG grammar (which is at the core of
 how PEG parsers work) has deep consequences, other than removing ambiguity.
 
 If a rule has two alternatives and the first of them succeeds, the second one is
@@ -254,7 +253,7 @@ inside curly-braces, which specifies the return value of the alternative:
 If the action is omitted, a default action is generated:
 
 - If there is a single name in the rule, it gets returned.
-- If there multiple names in the rule, a collection with all parsed
+- If there are multiple names in the rule, a collection with all parsed
   expressions gets returned (the type of the collection will be different
   in C and Python).
 
@@ -444,15 +443,15 @@ How to regenerate the parser
 Once you have made the changes to the grammar files, to regenerate the `C`
 parser (the one used by the interpreter) just execute:
 
-```
-    make regen-pegen
+```shell
+$ make regen-pegen
 ```
 
-using the `Makefile` in the main directory.  If you are on Windows you can
+using the `Makefile` in the main directory. If you are on Windows you can
 use the Visual Studio project files to regenerate the parser or to execute:
 
-```
-    ./PCbuild/build.bat --regen
+```dos
+PCbuild/build.bat --regen
 ```
 
 The generated parser file is located at [`Parser/parser.c`](../Parser/parser.c).
@@ -468,15 +467,15 @@ any modifications to this file (in order to implement new Pegen features) you wi
 need to regenerate the meta-parser (the parser that parses the grammar files).
 To do so just execute:
 
-```
-    make regen-pegen-metaparser
+```shell
+$ make regen-pegen-metaparser
 ```
 
 If you are on Windows you can use the Visual Studio project files
 to regenerate the parser or to execute:
 
-```
-    ./PCbuild/build.bat --regen
+```dos
+PCbuild/build.bat --regen
 ```
 
 
@@ -499,6 +498,42 @@ Pegen has some special grammatical elements and rules:
     reporting incorrect locations due to the invalid rules).
   - The order of the alternatives involving invalid rules matter
     (like any rule in PEG).
+  - These rules live in [`Grammar/invalid.gram`](../Grammar/invalid.gram),
+    which is included from [`Grammar/python.gram`](../Grammar/python.gram).
+
+A grammar can be split into several files with the `@include` meta, which
+takes a file name relative to the including file:
+
+```
+@include "invalid.gram"
+```
+
+The rules of each included file are appended, in order, to the rules of the
+including file, so the parser is the same as if the files were concatenated.
+Included files may themselves use `@include`, but may not define other metas
+(such as `@trailer`), and a rule can only be defined in one of the files.
+Includes are resolved by `pegen.build.build_parser()`, which every pegen
+command uses to load a grammar file. A grammar parsed some other way must be
+passed to `pegen.build.resolve_includes()` before generating a parser from it;
+otherwise the generator refuses it.
+
+The C generator emits the rules of each included file into a separate C file,
+with the included file's name appended: for `invalid.gram` that is
+[`Parser/parser_invalid.c`](../Parser/parser_invalid.c). An included file in a
+subdirectory of the root grammar file's directory gets its C file in the same
+subdirectory of the output's directory (`sub/extra.gram` gives
+`Parser/sub/parser_extra.c`); included files outside that directory are
+rejected. This keeps the generated files smaller, and lets them be compiled
+separately. The keyword tables and the `@trailer` code are only in the main C
+file, while the `@header` and `@subheader` code is copied into every C file,
+so it must not define non-`static` functions or variables (they would be defined
+more than once). Rules that are called from another C file, including rules of
+included files that the trailer or a C action calls, can't be `static`; the
+generated code gives them a `_PyPegen_` prefix with a `#define`, since CPython
+requires that prefix on its non-static symbols, and marks them
+`Py_LOCAL_SYMBOL` so that they aren't exported from the shared library. Helper
+rules (for groups, repetitions and so on)
+are never shared between files: each C file gets its own `static` copy.
 
 Tokenization
 ------------
@@ -516,15 +551,15 @@ be found in the [`Grammar/Tokens`](../Grammar/Tokens)
 file. If you change this file to add new tokens, make sure to regenerate the
 files by executing:
 
-```
-    make regen-token
+```shell
+$ make regen-token
 ```
 
 If you are on Windows you can use the Visual Studio project files to regenerate
 the tokens or to execute:
 
-```
-    ./PCbuild/build.bat --regen
+```dos
+PCbuild/build.bat --regen
 ```
 
 How tokens are generated and the rules governing this are completely up to the tokenizer
@@ -540,14 +575,14 @@ memoization is used.
 The C parser used by Python is highly optimized and memoization can be expensive
 both in memory and time. Although the memory cost is obvious (the parser needs
 memory for storing previous results in the cache) the execution time cost comes
-for continuously checking if the given rule has a cache hit or not. In many
+from continuously checking if the given rule has a cache hit or not. In many
 situations, just parsing it again can be faster. Pegen **disables memoization
 by default** except for rules with the special marker `memo` after the rule
 name (and type, if present):
 
 ```
-    rule_name[typr] (memo):
-      ...
+rule_name[return_type] (memo):
+  ...
 ```
 
 By selectively turning on memoization for a handful of rules, the parser becomes
@@ -563,6 +598,68 @@ and without memoization). There is a very simple instrumentation API available
 in the generated C parse code that allows to measure how much each rule uses
 memoization (check the [`Parser/pegen.c`](../Parser/pegen.c)
 file for more information) but it needs to be manually activated.
+
+The C generator also reuses memoized prefixes within consecutive alternatives.
+For example, in `prefix ':' NAME | prefix ':' NUMBER`, failure after the first
+`':'` normally requires another call to `prefix` and another memo lookup. The
+generated code can keep the result and ending position in local variables and
+reuse them when trying the next alternative.
+
+This applies only when the shared first item is a memoized rule, including a
+left-recursion leader, that the generator can prove consumes input on success.
+The locals are reset on each rule-body invocation, including each seed-growing
+iteration. Alternative order, cuts, and suffix backtracking are preserved. When
+`call_invalid_rules` is enabled, the generated code uses the original rule calls.
+
+The consumption analysis follows grammar items; it cannot inspect arbitrary C
+actions. As with memoization, actions must not invalidate cached results. In
+particular, suffix actions must not move the parser before their starting mark,
+rewrite buffered input, or replace memo entries for earlier positions.
+
+Fast-path hooks
+---------------
+
+Some rules are entered so often that even the bookkeeping of trying their
+alternatives is expensive. Consider parsing the argument ``a`` in a call
+like ``f(a, b)``: the argument is a full expression, so the parser descends
+the whole operator precedence chain
+
+```
+expression -> disjunction -> conjunction -> inversion -> comparison
+    -> bitwise_or -> bitwise_xor -> bitwise_and -> shift_expr -> sum
+    -> term -> factor -> power -> await_primary -> primary -> atom
+```
+
+before it can produce the ``Name`` node for ``a``: around fourteen rule
+invocations, each paying its own C-stack check and memoization lookups, to
+consume a single token. But since the following token is ``,``, which
+cannot continue any binary or postfix expression, that outcome is already
+known after peeking at two tokens.
+
+For cases like this a rule can declare a hand-written C hook with the
+``fastpath`` flag, next to where ``memo`` goes:
+
+```
+disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+```
+
+The generator calls the hook on rule entry, before any alternative is tried:
+
+```c
+if (_PyPegen_atom_fast_path(p, &_res)) {
+    p->level--;
+    return _res;
+}
+```
+
+The hook receives the parser and a pointer to the rule's result variable and
+returns 1 if it handled the parse (storing its result, which can be ``NULL``
+to signal failure with ``p->error_indicator`` set) or 0 to fall through to
+the rule's normal alternatives. The generator knows nothing about what the
+hook does: all parsing logic lives in the hook itself, next to the other
+token helpers in [`Parser/pegen.c`](../Parser/pegen.c). A hook must behave
+exactly like the rule it accelerates, including which tokens it fills,
+because error reporting depends on the number of tokens read (``p->fill``).
 
 Automatic variables
 -------------------
@@ -593,25 +690,25 @@ are always reserved words, even in positions where they make no sense
 meaning in context. Trying to use a hard keyword as a variable will always
 fail:
 
-```
-    >>> class = 3
-    File "<stdin>", line 1
-        class = 3
-            ^
-    SyntaxError: invalid syntax
-    >>> foo(class=3)
-    File "<stdin>", line 1
-        foo(class=3)
-            ^^^^^
-    SyntaxError: invalid syntax
+```pycon
+>>> class = 3
+File "<stdin>", line 1
+    class = 3
+        ^
+SyntaxError: invalid syntax
+>>> foo(class=3)
+File "<stdin>", line 1
+    foo(class=3)
+        ^^^^^
+SyntaxError: invalid syntax
 ```
 
-While soft keywords don't have this limitation if used in a context other the
+While soft keywords don't have this limitation if used in a context other than
 one where they are defined as keywords:
 
-```
-    >>> match = 45
-    >>> foo(match="Yeah!")
+```pycon
+>>> match = 45
+>>> foo(match="Yeah!")
 ```
 
 The `match` and `case` keywords are soft keywords, so that they are
@@ -621,21 +718,21 @@ argument names.
 
 You can get a list of all keywords defined in the grammar from Python:
 
-```
-    >>> import keyword
-    >>> keyword.kwlist
-    ['False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break',
-    'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for',
-    'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or',
-    'pass', 'raise', 'return', 'try', 'while', 'with', 'yield']
+```pycon
+>>> import keyword
+>>> keyword.kwlist
+['False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break',
+'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for',
+'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or',
+'pass', 'raise', 'return', 'try', 'while', 'with', 'yield']
 ```
 
 as well as soft keywords:
 
-```
-    >>> import keyword
-    >>> keyword.softkwlist
-    ['_', 'case', 'match']
+```pycon
+>>> import keyword
+>>> keyword.softkwlist
+['_', 'case', 'match']
 ```
 
 > [!CAUTION]
@@ -655,7 +752,7 @@ is, and it will unwind the stack and report the exception. This means that if a
 [rule action](#grammar-actions) raises an exception, all parsing will
 stop at that exact point. This is done to allow to correctly propagate any
 exception set by calling Python's C API functions. This also includes
-[`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+[`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 exceptions and it is the main mechanism the parser uses to report custom syntax
 error messages.
 
@@ -716,7 +813,7 @@ acts in two phases:
 > When defining invalid rules:
 >
 > - Make sure all custom invalid rules raise
->   [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError)
+>   [`SyntaxError`](https://docs.python.org/3/builtins/exceptions.html#SyntaxError)
 >   exceptions (or a subclass of it).
 > - Make sure **all** invalid rules start with the `invalid_` prefix to not
 >   impact performance of parsing correct Python code.
@@ -736,7 +833,7 @@ displayed when the error is reported.
 > rule or not. For example:
 
 ```
-   <valid python code> $ 42
+<valid python code> $ 42
 ```
 
 should trigger the syntax error in the `$` character. If your rule is not correctly defined this
@@ -744,7 +841,7 @@ won't happen. As another example, suppose that you try to define a rule to match
 `print` statements in order to create a better error message and you define it as:
 
 ```
-    invalid_print: "print" expression
+invalid_print: "print" expression
 ```
 
 This will **seem** to work because the parser will correctly parse `print(something)` because it is valid
@@ -756,7 +853,7 @@ will be reported there instead of the `$` character.
 Generating AST objects
 ----------------------
 
-The output of the C parser used by CPython,  which is generated from the
+The output of the C parser used by CPython, which is generated from the
 [grammar file](../Grammar/python.gram), is a Python AST object (using C
 structures). This means that the actions in the grammar file generate AST
 objects when they succeed. Constructing these objects can be quite cumbersome
@@ -773,7 +870,7 @@ from them or to perform extra processing on the generated tree.
 > Actions must **never** be used to accept or reject rules. It may be tempting
 > in some situations to write a very generic rule and then check the generated
 > AST to decide whether it is valid or not, but this will render the
-> (official grammar)[https://docs.python.org/3/reference/grammar.html] partially
+> [official grammar](https://docs.python.org/3/reference/grammar.html) partially
 > incorrect (because it does not include actions) and will make it more difficult
 > for other Python implementations to adapt the grammar to their own needs.
 
@@ -798,7 +895,7 @@ Check the contents of these files to know which is the best place for new
 tests, depending on the nature of the new feature you are adding.
 
 Tests for the parser generator itself can be found in the
-[test_peg_generator](../Lib/test_peg_generator) directory.
+[test_peg_generator](../Lib/test/test_peg_generator) directory.
 
 
 Debugging generated parsers
@@ -816,15 +913,22 @@ For this reason it is a good idea to experiment first by generating a Python
 parser. To do this, you can go to the [Tools/peg_generator](../Tools/peg_generator)
 directory on the CPython repository and manually call the parser generator by executing:
 
+```shell
+$ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 ```
-    $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
-```
+
+> [!CAUTION]
+> Python's grammar (the `Grammar/python.gram` file) is written for the
+> C backend. To experiment, you will need to write a grammar
+> without C-specific parts like actions and the trailer.
+> See [#133560](https://github.com/python/cpython/issues/133560)
+> and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
 This will generate a file called `parse.py` in the same directory that you
 can use to parse some input:
 
-```
-    $ python parse.py file_with_source_code_to_test.py
+```shell
+$ python parse.py file_with_source_code_to_test.py
 ```
 
 As the generated `parse.py` file is just Python code, you can modify it
@@ -848,16 +952,16 @@ can be a bit hard to understand at first.
 
 To activate verbose mode you can add the `-d` flag when executing Python:
 
-```
-    $ python -d file_to_test.py
+```shell
+$ python -d file_to_test.py
 ```
 
 This will print **a lot** of output to `stderr` so it is probably better to dump
 it to a file for further analysis. The output consists of trace lines with the
-following structure::
+following structure:
 
 ```
-    <indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
+<indentation> ('>'|'-'|'+'|'!') <rule_name>[<token_location>]: <alternative> ...
 ```
 
 Every line is indented by a different amount (`<indentation>`) depending on how

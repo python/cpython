@@ -17,7 +17,6 @@ Functions:
 
 Misc variables:
 
-    __version__
     format_version
     compatible_formats
 
@@ -31,9 +30,9 @@ from functools import partial
 import sys
 from sys import maxsize
 from struct import pack, unpack
-import re
 import io
 import codecs
+import weakref
 import _compat_pickle
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
@@ -188,7 +187,12 @@ BYTEARRAY8       = b'\x96'  # push bytearray
 NEXT_BUFFER      = b'\x97'  # push next out-of-band buffer
 READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 
-__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
+__all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
+
+
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = (1 << 20)
 
 
 class _Framer:
@@ -289,7 +293,7 @@ class _Unframer:
                     "pickle exhausted before end of frame")
             return data
         else:
-            return self.file_read(n)
+            return self._chunked_file_read(n)
 
     def readline(self):
         if self.current_frame:
@@ -304,11 +308,23 @@ class _Unframer:
         else:
             return self.file_readline()
 
+    def _chunked_file_read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        b = self.file_read(cursize)
+        while cursize < size and len(b) == cursize:
+            delta = min(cursize, size - cursize)
+            b += self.file_read(delta)
+            cursize += delta
+        return b
+
     def load_frame(self, frame_size):
         if self.current_frame and self.current_frame.read() != b'':
             raise UnpicklingError(
                 "beginning of a new frame before end of current frame")
-        self.current_frame = io.BytesIO(self.file_read(frame_size))
+        data = self._chunked_file_read(frame_size)
+        if len(data) < frame_size:
+            raise EOFError
+        self.current_frame = io.BytesIO(data)
 
 
 # Tools used for pickling.
@@ -470,6 +486,9 @@ class _Pickler:
         self.write = self.framer.write
         self._write_large_bytes = self.framer.write_large_bytes
         self.memo = {}
+        # Ids of objects reached so far only through weak references; any
+        # left at the end of dump() is an error.  See save_weakref.
+        self._weak_only = set()
         self.proto = int(protocol)
         self.bin = protocol >= 1
         self.fast = 0
@@ -484,6 +503,7 @@ class _Pickler:
         useful when re-using picklers.
         """
         self.memo.clear()
+        self._weak_only.clear()
 
     def dump(self, obj):
         """Write a pickled representation of obj to the open file."""
@@ -497,6 +517,14 @@ class _Pickler:
         if self.proto >= 4:
             self.framer.start_framing()
         self.save(obj)
+        if self._weak_only:
+            # These referents would be collected right after loading.  Report
+            # distinct type names: referents may be numerous and unhashable.
+            names = {_T(self.memo[i][1])
+                     for i in self._weak_only if i in self.memo}
+            raise PicklingError(
+                "cannot pickle weak reference(s) whose referent(s) have no "
+                "strong reference in the pickle: " + ", ".join(sorted(names)))
         self.write(STOP)
         self.framer.end_framing()
 
@@ -544,7 +572,7 @@ class _Pickler:
 
         return GET + repr(i).encode("ascii") + b'\n'
 
-    def save(self, obj, save_persistent_id=True):
+    def save(self, obj, save_persistent_id=True, weak=False):
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
@@ -557,6 +585,9 @@ class _Pickler:
         # Check the memo
         x = self.memo.get(id(obj))
         if x is not None:
+            # A strong reference anchors the object: no longer weak-only.
+            if not weak:
+                self._weak_only.discard(id(obj))
             self.write(self.get(x[0]))
             return
 
@@ -617,6 +648,12 @@ class _Pickler:
         except BaseException as exc:
             exc.add_note(f'when serializing {_T(obj)} object')
             raise
+
+        # A completed non-weak save anchors obj.  Only save_reduce() memoizes
+        # an object after its arguments, so only here can a weak reference to
+        # a still-in-progress obj have tagged it.
+        if not weak:
+            self._weak_only.discard(id(obj))
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
@@ -905,17 +942,11 @@ class _Pickler:
                     # Write data in-band
                     # XXX The C implementation avoids a copy here
                     buf = m.tobytes()
-                    in_memo = id(buf) in self.memo
                     if m.readonly:
-                        if in_memo:
-                            self._save_bytes_no_memo(buf)
-                        else:
-                            self.save_bytes(buf)
+                        self._save_bytes_no_memo(buf)
                     else:
-                        if in_memo:
-                            self._save_bytearray_no_memo(buf)
-                        else:
-                            self.save_bytearray(buf)
+                        self._save_bytearray_no_memo(buf)
+                    self.memoize(obj)
                 else:
                     # Write data out-of-band
                     self.write(NEXT_BUFFER)
@@ -1154,12 +1185,22 @@ class _Pickler:
 
     def save_global(self, obj, name=None):
         write = self.write
-        memo = self.memo
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
             if name is None:
                 name = obj.__name__
+
+        if '.__' in name:
+            # Mangle names of private attributes.
+            dotted_path = name.split('.')
+            for i, subpath in enumerate(dotted_path):
+                if i and subpath.startswith('__') and not subpath.endswith('__'):
+                    prev = prev.lstrip('_')
+                    if prev:
+                        dotted_path[i] = f"_{prev.lstrip('_')}{subpath}"
+                prev = subpath
+            name = '.'.join(dotted_path)
 
         module_name = whichmodule(obj, name)
         if self.proto >= 2:
@@ -1244,6 +1285,40 @@ class _Pickler:
 
     dispatch[FunctionType] = save_global
     dispatch[type] = save_type
+
+    def save_weakref(self, obj):
+        # Reconstruct as weakref.ref(referent).  The referent is saved
+        # *weakly* (no anchoring, see save()) and tagged weak-only only after
+        # its whole subtree, so a strong cycle inside it cannot anchor it.
+        referent = obj()
+        if referent is None:
+            # All dead references are interchangeable: pickle by name as the
+            # weakref._dead_ref singleton.
+            self.write(GLOBAL + b'weakref\n_dead_ref\n')
+            return
+
+        save = self.save
+        write = self.write
+        save(weakref.ref)
+        # A referent already in the memo is anchored or already tracked;
+        # otherwise it is tagged below, until a strong save of it.
+        anchored = id(referent) in self.memo
+        # Build the 1-tuple (referent,); TUPLE1 needs protocol 2.
+        if self.proto < 2:
+            write(MARK)
+        save(referent, weak=True)
+        if not anchored and id(referent) in self.memo:
+            self._weak_only.add(id(referent))
+        write(TUPLE1 if self.proto >= 2 else TUPLE)
+        write(REDUCE)
+        # The referent's subtree may have pickled this very (cached) weakref
+        # already; reuse the memoized one.
+        if id(obj) in self.memo:
+            write(POP + self.get(self.memo[id(obj)][0]))
+        else:
+            self.memoize(obj)
+
+    dispatch[weakref.ReferenceType] = save_weakref
 
 
 # Unpickling machinery
@@ -1387,7 +1462,7 @@ class _Unpickler:
         elif data == TRUE[1:]:
             val = True
         else:
-            val = int(data, 0)
+            val = int(data)
         self.append(val)
     dispatch[INT[0]] = load_int
 
@@ -1407,7 +1482,7 @@ class _Unpickler:
         val = self.readline()[:-1]
         if val and val[-1] == b'L'[0]:
             val = val[:-1]
-        self.append(int(val, 0))
+        self.append(int(val))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):
@@ -1498,12 +1573,17 @@ class _Unpickler:
     dispatch[BINBYTES8[0]] = load_binbytes8
 
     def load_bytearray8(self):
-        len, = unpack('<Q', self.read(8))
-        if len > maxsize:
+        size, = unpack('<Q', self.read(8))
+        if size > maxsize:
             raise UnpicklingError("BYTEARRAY8 exceeds system's maximum size "
                                   "of %d bytes" % maxsize)
-        b = bytearray(len)
-        self.readinto(b)
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        b = bytearray(cursize)
+        if self.readinto(b) == cursize:
+            while cursize < size and len(b) == cursize:
+                delta = min(cursize, size - cursize)
+                b += self.read(delta)
+                cursize += delta
         self.append(b)
     dispatch[BYTEARRAY8[0]] = load_bytearray8
 
@@ -1599,11 +1679,7 @@ class _Unpickler:
     def _instantiate(self, klass, args):
         if (args or not isinstance(klass, type) or
             hasattr(klass, "__getinitargs__")):
-            try:
-                value = klass(*args)
-            except TypeError as err:
-                raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), err.__traceback__)
+            value = klass(*args)
         else:
             value = klass.__new__(klass)
         self.append(value)
@@ -1736,7 +1812,7 @@ class _Unpickler:
         i = self.read(1)[0]
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
@@ -1745,7 +1821,7 @@ class _Unpickler:
         i, = unpack('<I', self.read(4))
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget
@@ -1907,36 +1983,25 @@ except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
-# Doctest
-def _test():
-    import doctest
-    return doctest.testmod()
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
+    import pprint
     parser = argparse.ArgumentParser(
-        description='display contents of the pickle files')
+        description='display contents of the pickle files',
+    )
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
-    args = parser.parse_args()
-    if args.test:
-        _test()
-    else:
-        if not args.pickle_file:
-            parser.print_help()
+        nargs='+', help='the pickle file')
+    args = parser.parse_args(args)
+    for fn in args.pickle_file:
+        if fn == '-':
+            obj = load(sys.stdin.buffer)
         else:
-            import pprint
-            for fn in args.pickle_file:
-                if fn == '-':
-                    obj = load(sys.stdin.buffer)
-                else:
-                    with open(fn, 'rb') as f:
-                        obj = load(f)
-                pprint.pprint(obj)
+            with open(fn, 'rb') as f:
+                obj = load(f)
+        pprint.pprint(obj)
+
+
+if __name__ == "__main__":
+    _main()

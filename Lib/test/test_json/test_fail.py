@@ -102,7 +102,7 @@ class TestFail:
         with self.assertRaisesRegex(TypeError,
                 'Object of type module is not JSON serializable') as cm:
             self.dumps(sys)
-        self.assertFalse(hasattr(cm.exception, '__notes__'))
+        self.assertNotHasAttr(cm.exception, '__notes__')
 
         with self.assertRaises(TypeError) as cm:
             self.dumps([1, [2, 3, sys]])
@@ -143,6 +143,13 @@ class TestFail:
         test_cases += [
             ('"', 'Unterminated string starting at', 0),
             ('"spam', 'Unterminated string starting at', 0),
+        ]
+        # A complete \uXXXX escape at end of input leaves it unterminated.
+        test_cases += [
+            (r'"\u0041', 'Unterminated string starting at', 0),
+            (r'"\ud834', 'Unterminated string starting at', 0),
+            (r'"\ud834\udd1e', 'Unterminated string starting at', 0),
+            (r'{"a": "\u0041', 'Unterminated string starting at', 6),
         ]
         for data, msg, idx in test_cases:
             with self.assertRaises(self.JSONDecodeError) as cm:

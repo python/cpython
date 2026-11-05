@@ -1,3 +1,0 @@
-The :func:`map` built-in now has an optional keyword-only *strict* flag
-like :func:`zip` to check that all the iterables are of equal length.
-Patch by Wannes Boeykens.

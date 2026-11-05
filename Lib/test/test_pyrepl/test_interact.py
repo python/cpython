@@ -1,15 +1,58 @@
 import contextlib
 import io
+import sys
+import warnings
 import unittest
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 from textwrap import dedent
 
 from test.support import force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
-from _pyrepl.simple_interact import _more_lines
+from _pyrepl.simple_interact import (
+    _more_lines,
+    run_multiline_interactive_console,
+)
 
 class TestSimpleInteract(unittest.TestCase):
+    def test_prompts_are_converted_to_strings(self):
+        console = InteractiveColoredConsole()
+
+        class Prompt:
+            def __init__(self, value):
+                self.value = value
+
+            def __str__(self):
+                return self.value
+
+        with (
+            patch.object(sys, "ps1", Prompt("primary"), create=True),
+            patch.object(sys, "ps2", Prompt("secondary"), create=True),
+            patch("_pyrepl.readline._setup"),
+            patch(
+                "_pyrepl.simple_interact.multiline_input", side_effect=EOFError
+            ) as multiline_input,
+        ):
+            run_multiline_interactive_console(console)
+
+        multiline_input.assert_called_once_with(ANY, "primary", "secondary")
+
+    def test_ps1_str_error_uses_default_prompt(self):
+        class Prompt:
+            def __str__(self):
+                return 1 / 0
+
+        with (
+            patch.object(sys, "ps1", Prompt(), create=True),
+            patch("_pyrepl.readline._setup"),
+            patch(
+                "_pyrepl.simple_interact.multiline_input", side_effect=EOFError
+            ) as multiline_input,
+        ):
+            run_multiline_interactive_console(InteractiveColoredConsole())
+
+        multiline_input.assert_called_once_with(ANY, ">>> ", ANY)
+
     def test_multiple_statements(self):
         namespace = {}
         code = dedent("""\
@@ -52,6 +95,19 @@ class TestSimpleInteract(unittest.TestCase):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "1\n")
+
+    @force_not_colorized
+    def test_multiple_statements_fail_early(self):
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        raise Exception('foobar')
+        print('spam', 'eggs', sep='&')
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            console.runsource(code)
+        self.assertIn('Exception: foobar', f.getvalue())
+        self.assertNotIn('spam&eggs', f.getvalue())
 
     def test_empty(self):
         namespace = {}
@@ -99,7 +155,7 @@ class TestSimpleInteract(unittest.TestCase):
         r = """
     def f(x, x): ...
              ^
-SyntaxError: duplicate argument 'x' in function definition"""
+SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
@@ -116,6 +172,17 @@ SyntaxError: duplicate argument 'x' in function definition"""
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+
+    @force_not_colorized
+    def test_runsource_compile_error(self):
+        # Any error raised by compile() is reported (gh-69919).
+        console = InteractiveColoredConsole()
+        source = '-' * 100_000 + '1'
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertRegex(f.getvalue(), r'^(MemoryError|RecursionError): ')
 
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
@@ -165,6 +232,12 @@ class TestMoreLines(unittest.TestCase):
     def test_invalid_syntax_single_line(self):
         namespace = {}
         code = "if foo"
+        console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        self.assertFalse(_more_lines(console, code))
+
+    def test_compile_error_single_line(self):
+        namespace = {}
+        code = '-' * 100_000 + '1'  # MemoryError or RecursionError
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertFalse(_more_lines(console, code))
 
@@ -260,3 +333,28 @@ class TestMoreLines(unittest.TestCase):
         code = "if foo:"
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
+
+
+class TestWarnings(unittest.TestCase):
+    def test_pep_765_warning(self):
+        """
+        Test that a SyntaxWarning emitted from the
+        AST optimizer is only shown once in the REPL.
+        """
+        # gh-131927
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        def f():
+            try:
+                return 1
+            finally:
+                return 2
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            console.runsource(code)
+
+        count = sum("'return' in a 'finally' block" in str(w.message)
+                    for w in caught)
+        self.assertEqual(count, 1)

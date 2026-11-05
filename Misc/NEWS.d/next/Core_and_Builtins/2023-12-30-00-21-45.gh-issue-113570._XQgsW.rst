@@ -1,1 +1,0 @@
-Fixed a bug in ``reprlib.repr`` where it incorrectly called the repr method on shadowed Python built-in types.

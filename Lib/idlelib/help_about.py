@@ -87,16 +87,19 @@ class AboutDialog(Toplevel):
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
 
         forums_url = "https://discuss.python.org"
-        forums = Label(frame_background, text="Python forums: "+forums_url,
-                        justify=LEFT, fg=self.fg, bg=self.bg)
-        forums.grid(row=6, column=0, sticky=W, padx=10, pady=0)
-        forums.bind("<Button-1>", lambda event: webbrowser.open(forums_url))
+        forums = Button(frame_background, text='Python (and IDLE) Discussion', width=35,
+                                 highlightbackground=self.bg,
+                                 command=lambda: webbrowser.open(forums_url))
+        forums.grid(row=6, column=0, sticky=W, padx=10, pady=10)
+
+
         docs_url = ("https://docs.python.org/%d.%d/library/idle.html" %
                     sys.version_info[:2])
-        docs = Label(frame_background, text=docs_url,
-                     justify=LEFT, fg=self.fg, bg=self.bg)
-        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs.bind("<Button-1>", lambda event: webbrowser.open(docs_url))
+        docs = Button(frame_background, text='IDLE Documentation', width=35,
+                                 highlightbackground=self.bg,
+                                 command=lambda: webbrowser.open(docs_url))
+        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=10)
+
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,

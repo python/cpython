@@ -125,12 +125,12 @@ class LazyLoaderTests(unittest.TestCase):
         # Deleting an attribute should stay deleted.
         module = self.new_module()
         del module.attr
-        self.assertFalse(hasattr(module, 'attr'))
+        self.assertNotHasAttr(module, 'attr')
 
     def test_delete_preexisting_attr(self):
         module = self.new_module()
         del module.__name__
-        self.assertFalse(hasattr(module, '__name__'))
+        self.assertNotHasAttr(module, '__name__')
 
     def test_module_substitution_error(self):
         with test_util.uncache(TestingImporter.module_name):

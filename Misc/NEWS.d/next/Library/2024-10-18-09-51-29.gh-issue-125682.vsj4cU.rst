@@ -1,2 +1,0 @@
-Reject non-ASCII digits in the Python implementation of :func:`json.loads`
-conforming to the JSON specification.

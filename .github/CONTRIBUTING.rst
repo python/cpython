@@ -4,7 +4,7 @@ Contributing to Python
 Build Status
 ------------
 
-- `Buildbot status overview <https://buildbot.python.org/all/#/release_status>`_
+- `Buildbot status overview <https://buildbot.python.org/#/release_status>`_
 
 - `GitHub Actions status <https://github.com/python/cpython/actions/workflows/build.yml>`_
 
@@ -28,23 +28,23 @@ Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
 `Lifecycle of a Pull Request <https://devguide.python.org/getting-started/pull-request-lifecycle.html>`_.
 We utilize various bots and status checks to help with this, so do follow the
-comments they leave and their "Details" links, respectively. The key points of
-our workflow that are not covered by a bot or status check are:
+comments they leave and their "Details" links, respectively.
 
-- All discussions that are not directly related to the code in the pull request
-  should happen on `GitHub Issues <https://github.com/python/cpython/issues>`_.
-- Upon your first non-trivial pull request (which includes documentation changes),
-  feel free to add yourself to ``Misc/ACKS``
+The final key part of our workflow is that all discussions that are not
+directly related to the code in the pull request should happen on
+`GitHub Issues <https://github.com/python/cpython/issues>`__, generally in the
+pull request's parent issue.
 
 
 Setting Expectations
 --------------------
-Due to the fact that this project is entirely volunteer-run (i.e. no one is paid
-to work on Python full-time), we unfortunately can make no guarantees as to if
+Due to the fact that this project is run by volunteers,
+unfortunately we cannot make any guarantees as to if
 or when a core developer will get around to reviewing your pull request.
 If no core developer has done a review or responded to changes made because of a
-"changes requested" review, please feel free to email python-dev to ask if
-someone could take a look at your pull request.
+"changes requested" review within a month, you can ask for someone to
+review your pull request via a post in the `Core Development Discourse
+category <https://discuss.python.org/c/core-dev/23>`__.
 
 
 Code of Conduct

@@ -388,7 +388,7 @@ Add internal documentation explaining design of new (for 3.11) frame stack.
 .. bpo: 47197
 .. date: 2022-04-03-17-21-04
 .. nonce: Ji_c30
-.. section: Core and Builtins
+.. section: Library
 
 ctypes used to mishandle ``void`` return types, so that for instance a
 function declared like ``ctypes.CFUNCTYPE(None, ctypes.c_int)`` would be
@@ -415,7 +415,7 @@ Make opcodes :opcode:`!JUMP_IF_TRUE_OR_POP` and
 
 Replace the ``f_lasti`` member of the internal ``_PyInterpreterFrame``
 structure with a ``prev_instr`` pointer, which reduces overhead in the main
-interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
+interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
 preserved for backward-compatibility.
 
 ..
@@ -500,7 +500,7 @@ at runtime where types are known at C compile time.
 .. bpo: 46045
 .. date: 2021-12-11-11-36-48
 .. nonce: sfThay
-.. section: Core and Builtins
+.. section: Build
 
 Do not use POSIX semaphores on NetBSD
 
@@ -570,7 +570,7 @@ planned). Patch by Alex Waygood.
 
 ..
 
-.. gh: 78157
+.. gh-issue: 78157
 .. date: 2022-05-05-20-40-45
 .. nonce: IA_9na
 .. section: Library
@@ -664,7 +664,7 @@ for :func:`os.fcopyfile` available in macOs.
 .. nonce: l1p7CJ
 .. section: Library
 
-For :func:`@dataclass <dataclasses.dataclass>`, add *weakref_slot*.
+For :deco:`~dataclasses.dataclass`, add *weakref_slot*.
 The new parameter defaults to ``False``. If true, and if
 ``slots=True``, add a slot named ``"__weakref__"``, which will allow instances to be
 weakref'd. Contributed by Eric V. Smith
@@ -1289,7 +1289,7 @@ Deprecate the chunk module.
 
 ..
 
-.. gh: 91498
+.. gh-issue: 91498
 .. date: 2022-04-10-08-39-44
 .. nonce: 8oII92
 .. section: Library

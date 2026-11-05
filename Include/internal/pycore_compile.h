@@ -14,6 +14,15 @@ extern "C" {
 #include "pycore_symtable.h"  // _Py_SourceLocation
 #include "pycore_instruction_sequence.h"
 
+/* A soft limit for stack use, to avoid excessive
+ * memory use for large constants, etc.
+ *
+ * The value 30 is plucked out of thin air.
+ * Code that could use more stack than this is
+ * rare, so the exact value is unimportant.
+ */
+#define _PY_STACK_USE_GUIDELINE 30
+
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
@@ -23,21 +32,28 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    PyObject *module);
 
-/* AST optimizations */
-extern int _PyCompile_AstOptimize(
+/* AST preprocessing */
+extern int _PyCompile_AstPreprocess(
     struct _mod *mod,
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    int syntax_check_only,
+    PyObject *module);
 
-extern int _PyAST_Optimize(
+extern int _PyAST_Preprocess(
     struct _mod *,
     struct _arena *arena,
+    PyObject *filename,
     int optimize,
-    int ff_features);
+    int ff_features,
+    int syntax_check_only,
+    int enable_warnings,
+    PyObject *module);
 
 
 typedef struct {
@@ -53,9 +69,8 @@ typedef struct {
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
-    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
-                               temporarily within an inlined comprehension. When
-                               value is True, treat as fast-local. */
+    PyObject *u_fasthidden; /* set of names that are fast-locals only
+                               temporarily within an inlined comprehension. */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
@@ -83,6 +98,7 @@ typedef enum {
 enum _PyCompile_FBlockType {
      COMPILE_FBLOCK_WHILE_LOOP,
      COMPILE_FBLOCK_FOR_LOOP,
+     COMPILE_FBLOCK_ASYNC_FOR_LOOP,
      COMPILE_FBLOCK_TRY_EXCEPT,
      COMPILE_FBLOCK_FINALLY_TRY,
      COMPILE_FBLOCK_FINALLY_END,
@@ -93,6 +109,7 @@ enum _PyCompile_FBlockType {
      COMPILE_FBLOCK_EXCEPTION_HANDLER,
      COMPILE_FBLOCK_EXCEPTION_GROUP_HANDLER,
      COMPILE_FBLOCK_ASYNC_COMPREHENSION_GENERATOR,
+     COMPILE_FBLOCK_INLINED_COMPREHENSION,
      COMPILE_FBLOCK_STOP_ITERATION,
 };
 
@@ -114,25 +131,30 @@ int _PyCompile_PushFBlock(struct _PyCompiler *c, _Py_SourceLocation loc,
 void _PyCompile_PopFBlock(struct _PyCompiler *c, enum _PyCompile_FBlockType t,
                           _PyJumpTargetLabel block_label);
 _PyCompile_FBlockInfo *_PyCompile_TopFBlock(struct _PyCompiler *c);
+bool _PyCompile_InExceptionHandler(struct _PyCompiler *c);
 
 int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type,
                           void *key, int lineno, PyObject *private,
                           _PyCompile_CodeUnitMetadata *umd);
 void _PyCompile_ExitScope(struct _PyCompiler *c);
+int _PyCompile_SetQualname(struct _PyCompiler *c);
 Py_ssize_t _PyCompile_AddConst(struct _PyCompiler *c, PyObject *o);
 _PyInstructionSequence *_PyCompile_InstrSequence(struct _PyCompiler *c);
+int _PyCompile_StartAnnotationSetup(struct _PyCompiler *c);
+int _PyCompile_EndAnnotationSetup(struct _PyCompiler *c);
 int _PyCompile_FutureFeatures(struct _PyCompiler *c);
-PyObject *_PyCompile_DeferredAnnotations(struct _PyCompiler *c);
+void _PyCompile_DeferredAnnotations(
+    struct _PyCompiler *c, PyObject **deferred_annotations,
+    PyObject **conditional_annotation_indices);
 PyObject *_PyCompile_Mangle(struct _PyCompiler *c, PyObject *name);
 PyObject *_PyCompile_MaybeMangle(struct _PyCompiler *c, PyObject *name);
 int _PyCompile_MaybeAddStaticAttributeToClass(struct _PyCompiler *c, expr_ty e);
 int _PyCompile_GetRefType(struct _PyCompiler *c, PyObject *name);
 int _PyCompile_LookupCellvar(struct _PyCompiler *c, PyObject *name);
-int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled, int scope,
+int _PyCompile_ResolveNameop(struct _PyCompiler *c, PyObject *mangled,
                              _PyCompile_optype *optype, Py_ssize_t *arg);
 
 int _PyCompile_IsInteractiveTopLevel(struct _PyCompiler *c);
-int _PyCompile_IsInInlinedComp(struct _PyCompiler *c);
 int _PyCompile_ScopeType(struct _PyCompiler *c);
 int _PyCompile_OptimizationLevel(struct _PyCompiler *c);
 int _PyCompile_LookupArg(struct _PyCompiler *c, PyCodeObject *co, PyObject *name);
@@ -156,31 +178,25 @@ enum {
 
 typedef struct {
     PyObject *pushed_locals;
-    PyObject *temp_symbols;
-    PyObject *fast_hidden;
     _PyJumpTargetLabel cleanup;
+    PySTEntryObject *saved_ste;
 } _PyCompile_InlinedComprehensionState;
 
-int _PyCompile_TweakInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                               PySTEntryObject *entry,
-                                               _PyCompile_InlinedComprehensionState *state);
-int _PyCompile_RevertInlinedComprehensionScopes(struct _PyCompiler *c, _Py_SourceLocation loc,
-                                                _PyCompile_InlinedComprehensionState *state);
-int _PyCompile_AddDeferredAnnotaion(struct _PyCompiler *c, stmt_ty s);
+int _PyCompile_EnterInlinedComprehensionScope(struct _PyCompiler *c,
+                                              PySTEntryObject *entry,
+                                              _PyCompile_InlinedComprehensionState *state);
+int _PyCompile_ExitInlinedComprehensionScope(struct _PyCompiler *c,
+                                             _PyCompile_InlinedComprehensionState *state);
+int _PyCompile_AddDeferredAnnotation(struct _PyCompiler *c, stmt_ty s,
+                                     PyObject **conditional_annotation_index);
+void _PyCompile_EnterConditionalBlock(struct _PyCompiler *c);
+void _PyCompile_LeaveConditionalBlock(struct _PyCompiler *c);
 
 int _PyCodegen_AddReturnAtEnd(struct _PyCompiler *c, int addNone);
 int _PyCodegen_EnterAnonymousScope(struct _PyCompiler* c, mod_ty mod);
 int _PyCodegen_Expression(struct _PyCompiler *c, expr_ty e);
-int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
-                    bool is_interactive);
-
-/* Utility for a number of growing arrays used in the compiler */
-int _PyCompile_EnsureArrayLargeEnough(
-        int idx,
-        void **array,
-        int *alloc,
-        int default_alloc,
-        size_t item_size);
+int _PyCodegen_Module(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
+                      bool is_interactive);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 

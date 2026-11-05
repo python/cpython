@@ -4,6 +4,16 @@ import test.support
 import time
 import unittest
 
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("email.utils", {"random", "socket"})
+
 
 class DateTimeTests(unittest.TestCase):
 
@@ -64,6 +74,15 @@ class DateTimeTests(unittest.TestCase):
             'Friday, 19-Nov- 16:14:55 EST',
         ]
         for dtstr in invalid_dates:
+            with self.subTest(dtstr=dtstr):
+                self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
+
+    def test_parsedate_to_datetime_out_of_range_raises_valueerror(self):
+        out_of_range_dates = [
+            'Mon, 20 Nov 9999999999 12:00:00 +0000',
+            'Mon, 20 Nov 2017 12:00:00 +24000000000000',
+        ]
+        for dtstr in out_of_range_dates:
             with self.subTest(dtstr=dtstr):
                 self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)
 

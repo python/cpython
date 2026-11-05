@@ -1,7 +1,7 @@
 """Tests for Lib/fractions.py."""
 
 from decimal import Decimal
-from test.support import requires_IEEE_754
+from test.support import requires_IEEE_754, adjust_int_max_str_digits
 import math
 import numbers
 import operator
@@ -395,12 +395,14 @@ class FractionTest(unittest.TestCase):
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
+        self.assertEqual((5, 1), _components(F("005")))
         self.assertEqual((3, 2), _components(F("3/2")))
         self.assertEqual((3, 2), _components(F("3 / 2")))
         self.assertEqual((3, 2), _components(F(" \n  +3/2")))
         self.assertEqual((-3, 2), _components(F("-3/2  ")))
-        self.assertEqual((13, 2), _components(F("    013/02 \n  ")))
+        self.assertEqual((13, 2), _components(F("    0013/002 \n  ")))
         self.assertEqual((16, 5), _components(F(" 3.2 ")))
+        self.assertEqual((16, 5), _components(F("003.2")))
         self.assertEqual((-16, 5), _components(F(" -3.2 ")))
         self.assertEqual((-3, 1), _components(F(" -3. ")))
         self.assertEqual((3, 5), _components(F(" .6 ")))
@@ -419,116 +421,102 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ZeroDivisionError, "Fraction(3, 0)",
             F, "3/0")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '3/'",
-            F, "3/")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '/2'",
-            F, "/2")
-        self.assertRaisesMessage(
-            # Denominators don't need a sign.
-            ValueError, "Invalid literal for Fraction: '3/+2'",
-            F, "3/+2")
-        self.assertRaisesMessage(
-            # Imitate float's parsing.
-            ValueError, "Invalid literal for Fraction: '+ 3/2'",
-            F, "+ 3/2")
-        self.assertRaisesMessage(
-            # Avoid treating '.' as a regex special character.
-            ValueError, "Invalid literal for Fraction: '3a2'",
-            F, "3a2")
-        self.assertRaisesMessage(
-            # Don't accept combinations of decimals and rationals.
-            ValueError, "Invalid literal for Fraction: '3/7.2'",
-            F, "3/7.2")
-        self.assertRaisesMessage(
-            # Don't accept combinations of decimals and rationals.
-            ValueError, "Invalid literal for Fraction: '3.2/7'",
-            F, "3.2/7")
-        self.assertRaisesMessage(
-            # Allow 3. and .3, but not .
-            ValueError, "Invalid literal for Fraction: '.'",
-            F, ".")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '_'",
-            F, "_")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '_1'",
-            F, "_1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1__2'",
-            F, "1__2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '/_'",
-            F, "/_")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1_/'",
-            F, "1_/")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '_1/'",
-            F, "_1/")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1__2/'",
-            F, "1__2/")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/_'",
-            F, "1/_")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/_1'",
-            F, "1/_1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/1__2'",
-            F, "1/1__2")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1._111'",
-            F, "1._111")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1__1'",
-            F, "1.1__1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1e+_1'",
-            F, "1.1e+_1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
-            F, "1.1e+1__1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '123.dd'",
-            F, "123.dd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '123.5_dd'",
-            F, "123.5_dd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: 'dd.5'",
-            F, "dd.5")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '7_dd'",
-            F, "7_dd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/dd'",
-            F, "1/dd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/123_dd'",
-            F, "1/123_dd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '789edd'",
-            F, "789edd")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '789e2_dd'",
-            F, "789e2_dd")
+
+        def check_invalid(s):
+            msg = "Invalid literal for Fraction: " + repr(s)
+            self.assertRaisesMessage(ValueError, msg, F, s)
+
+        check_invalid("3/")
+        check_invalid("/2")
+        # Denominators don't need a sign.
+        check_invalid("3/+2")
+        check_invalid("3/-2")
+        # Imitate float's parsing.
+        check_invalid("+ 3/2")
+        check_invalid("- 3/2")
+        # Avoid treating '.' as a regex special character.
+        check_invalid("3a2")
+        # Don't accept combinations of decimals and rationals.
+        check_invalid("3/7.2")
+        check_invalid("3.2/7")
+        # No space around dot.
+        check_invalid("3 .2")
+        check_invalid("3. 2")
+        # No space around e.
+        check_invalid("3.2 e1")
+        check_invalid("3.2e 1")
+        # Fractional part don't need a sign.
+        check_invalid("3.+2")
+        check_invalid("3.-2")
+        # Only accept base 10.
+        check_invalid("0x10")
+        check_invalid("0x10/1")
+        check_invalid("1/0x10")
+        check_invalid("0x10.")
+        check_invalid("0x10.1")
+        check_invalid("1.0x10")
+        check_invalid("1.0e0x10")
+        # Only accept decimal digits.
+        check_invalid("³")
+        check_invalid("³/2")
+        check_invalid("3/²")
+        check_invalid("³.2")
+        check_invalid("3.²")
+        check_invalid("3.2e²")
+        check_invalid("¼")
+        # Allow 3. and .3, but not .
+        check_invalid(".")
+        check_invalid("_")
+        check_invalid("_1")
+        check_invalid("1__2")
+        check_invalid("/_")
+        check_invalid("1_/")
+        check_invalid("_1/")
+        check_invalid("1__2/")
+        check_invalid("1/_")
+        check_invalid("1/_1")
+        check_invalid("1/1__2")
+        check_invalid("1._111")
+        check_invalid("1.1__1")
+        check_invalid("1.1e+_1")
+        check_invalid("1.1e+1__1")
+        check_invalid("123.dd")
+        check_invalid("123.5_dd")
+        check_invalid("dd.5")
+        check_invalid("7_dd")
+        check_invalid("1/dd")
+        check_invalid("1/123_dd")
+        check_invalid("789edd")
+        check_invalid("789e2_dd")
         # Test catastrophic backtracking.
         val = "9"*50 + "_"
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '" + val + "'",
-            F, val)
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/" + val + "'",
-            F, "1/" + val)
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1." + val + "'",
-            F, "1." + val)
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1+e" + val + "'",
-            F, "1.1+e" + val)
+        check_invalid(val)
+        check_invalid("1/" + val)
+        check_invalid("1." + val)
+        check_invalid("." + val)
+        check_invalid("1.1+e" + val)
+        check_invalid("1.1e" + val)
+
+    def test_limit_int(self):
+        maxdigits = 5000
+        with adjust_int_max_str_digits(maxdigits):
+            msg = 'Exceeds the limit'
+            val = '1' * maxdigits
+            num = (10**maxdigits - 1)//9
+            self.assertEqual((num, 1), _components(F(val)))
+            self.assertRaisesRegex(ValueError, msg, F, val + '1')
+            self.assertEqual((num, 2), _components(F(val + '/2')))
+            self.assertRaisesRegex(ValueError, msg, F, val + '1/2')
+            self.assertEqual((1, num), _components(F('1/' + val)))
+            self.assertRaisesRegex(ValueError, msg, F, '1/1' + val)
+            self.assertEqual(((10**(maxdigits+1) - 1)//9, 10**maxdigits),
+                             _components(F('1.' + val)))
+            self.assertRaisesRegex(ValueError, msg, F, '1.1' + val)
+            self.assertEqual((num, 10**maxdigits), _components(F('.' + val)))
+            self.assertRaisesRegex(ValueError, msg, F, '.1' + val)
+            self.assertRaisesRegex(ValueError, msg, F, '1.1e1' + val)
+            self.assertEqual((11, 10), _components(F('1.1e' + '0' * maxdigits)))
+            self.assertRaisesRegex(ValueError, msg, F, '1.1e' + '0' * (maxdigits+1))
 
     def testImmutable(self):
         r = F(7, 3)
@@ -1334,6 +1322,8 @@ class FractionTest(unittest.TestCase):
             # Thousands separators
             (F('1234567.123456'), ',.5e', '1.23457e+06'),
             (F('123.123456'), '012_.2e', '0_001.23e+02'),
+            # Thousands separators for fractional part (or for integral too)
+            (F('1234567.123456'), '.5_e', '1.234_57e+06'),
             # z flag is legal, but never makes a difference to the output
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
         ]
@@ -1459,6 +1449,12 @@ class FractionTest(unittest.TestCase):
             (F('1234567'), ',.2f', '1,234,567.00'),
             (F('12345678'), ',.2f', '12,345,678.00'),
             (F('12345678'), ',f', '12,345,678.000000'),
+            # Thousands separators for fractional part (or for integral too)
+            (F('123456.789123123'), '._f', '123456.789_123'),
+            (F('123456.789123123'), '.7_f', '123456.789_123_1'),
+            (F('123456.789123123'), '.9_f', '123456.789_123_123'),
+            (F('123456.789123123'), '.,f', '123456.789,123'),
+            (F('123456.789123123'), '_.,f', '123_456.789,123'),
             # Underscore as thousands separator
             (F(2, 3), '_.2f', '0.67'),
             (F(2, 3), '_.7f', '0.6666667'),
@@ -1492,11 +1488,8 @@ class FractionTest(unittest.TestCase):
             (F('-1234.5678'), '08,.0f', '-001,235'),
             (F('-1234.5678'), '09,.0f', '-0,001,235'),
             # Corner-case - zero-padding specified through fill and align
-            # instead of the zero-pad character - in this case, treat '0' as a
-            # regular fill character and don't attempt to insert commas into
-            # the filled portion. This differs from the int and float
-            # behaviour.
-            (F('1234.5678'), '0=12,.2f', '00001,234.57'),
+            # instead of the zero-pad character.
+            (F('1234.5678'), '0=12,.2f', '0,001,234.57'),
             # Corner case where it's not clear whether the '0' indicates zero
             # padding or gives the minimum width, but there's still an obvious
             # answer to give. We want this to work in case the minimum width
@@ -1530,6 +1523,8 @@ class FractionTest(unittest.TestCase):
             (F(51, 1000), '.1f', '0.1'),
             (F(149, 1000), '.1f', '0.1'),
             (F(151, 1000), '.1f', '0.2'),
+            (F(22, 7), '.02f', '3.14'),  # issue gh-130662
+            (F(22, 7), '005.02f', '03.14'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1628,17 +1623,16 @@ class FractionTest(unittest.TestCase):
             '=010%',
             '>00.2f',
             '>00f',
-            # Too many zeros - minimum width should not have leading zeros
-            '006f',
-            # Leading zeros in precision
-            '.010f',
-            '.02f',
-            '.000f',
             # Missing precision
             '.e',
             '.f',
             '.g',
             '.%',
+            # Thousands separators before precision
+            '._6e',
+            '._6f',
+            '._6g',
+            '._6%',
             # Z instead of z for negative zero suppression
             'Z.2f'
             # z flag not supported for general formatting
@@ -1707,6 +1701,12 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(TypeError,
                                  message % ("Fraction", "int", "int"),
                                  pow, F(3), 4, 5)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("int", "Fraction", "int"),
+                                 pow, 3, F(4), 5)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("int", "int", "Fraction"),
+                                 pow, 3, 4, F(5))
 
 
 if __name__ == '__main__':

@@ -90,6 +90,9 @@ class SemLock(object):
         self.acquire = self._semlock.acquire
         self.release = self._semlock.release
 
+    def locked(self):
+        return self._semlock._is_zero()
+
     def __enter__(self):
         return self._semlock.__enter__()
 
@@ -132,11 +135,16 @@ class Semaphore(SemLock):
         SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=ctx)
 
     def get_value(self):
+        '''Returns current value of Semaphore.
+
+        Raises NotImplementedError on Mac OSX
+        because of broken sem_getvalue().
+        '''
         return self._semlock._get_value()
 
     def __repr__(self):
         try:
-            value = self._semlock._get_value()
+            value = self.get_value()
         except Exception:
             value = 'unknown'
         return '<%s(value=%s)>' % (self.__class__.__name__, value)
@@ -152,7 +160,7 @@ class BoundedSemaphore(Semaphore):
 
     def __repr__(self):
         try:
-            value = self._semlock._get_value()
+            value = self.get_value()
         except Exception:
             value = 'unknown'
         return '<%s(value=%s, maxvalue=%s)>' % \
@@ -244,8 +252,8 @@ class Condition(object):
 
     def __repr__(self):
         try:
-            num_waiters = (self._sleeping_count._semlock._get_value() -
-                           self._woken_count._semlock._get_value())
+            num_waiters = (self._sleeping_count.get_value() -
+                           self._woken_count.get_value())
         except Exception:
             num_waiters = 'unknown'
         return '<%s(%s, %s)>' % (self.__class__.__name__, self._lock, num_waiters)
@@ -359,7 +367,7 @@ class Event(object):
                 return True
             return False
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         set_status = 'set' if self.is_set() else 'unset'
         return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
 #

@@ -14,6 +14,34 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
+#ifdef HAVE_DYNAMIC_LOADING
+/* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
+   supported on this platform. configure will then compile and link in one
+   of the dynload_*.c files, as appropriate. We will call a function in
+   those modules to get a function pointer to the module's init function.
+
+   The function should return:
+   - The function pointer on success
+   - NULL with exception set if the library cannot be loaded
+   - NULL *without* an extension set if the library could be loaded but the
+     function cannot be found in it.
+*/
+#ifdef MS_WINDOWS
+#include <windows.h>
+typedef FARPROC dl_funcptr;
+extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
+                                                     const char *shortname,
+                                                     PyObject *pathname,
+                                                     FILE *fp);
+#else
+typedef void (*dl_funcptr)(void);
+extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                              const char *shortname,
+                                              const char *pathname, FILE *fp);
+#endif
+
+#endif /* HAVE_DYNAMIC_LOADING */
+
 
 typedef enum ext_module_kind {
     _Py_ext_module_kind_UNKNOWN = 0,
@@ -23,10 +51,15 @@ typedef enum ext_module_kind {
 } _Py_ext_module_kind;
 
 typedef enum ext_module_origin {
-    _Py_ext_module_origin_CORE = 1,
-    _Py_ext_module_origin_BUILTIN = 2,
-    _Py_ext_module_origin_DYNAMIC = 3,
+    _Py_ext_module_origin_CORE = 1,  // 'sys' & 'builtins'
+    _Py_ext_module_origin_BUILTIN = 2,  // inittab or PyImport_CreateModuleFromInitfunc
+    _Py_ext_module_origin_DYNAMIC = 3,  // loaded dynamically
 } _Py_ext_module_origin;
+
+struct hook_prefixes {
+    const char *const init_prefix;
+    const char *const export_prefix;
+};
 
 /* Input for loading an extension module. */
 struct _Py_ext_module_loader_info {
@@ -40,29 +73,20 @@ struct _Py_ext_module_loader_info {
      * depending on if it's builtin or not. */
     PyObject *path;
     _Py_ext_module_origin origin;
-    const char *hook_prefix;
+    const struct hook_prefixes *hook_prefixes;
     const char *newcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
     struct _Py_ext_module_loader_info *info);
 extern int _Py_ext_module_loader_info_init(
-    struct _Py_ext_module_loader_info *info,
+    struct _Py_ext_module_loader_info *p_info,
     PyObject *name,
-    PyObject *filename,
+    PyObject *spec,
     _Py_ext_module_origin origin);
-extern int _Py_ext_module_loader_info_init_for_core(
-    struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
-extern int _Py_ext_module_loader_info_init_for_builtin(
-    struct _Py_ext_module_loader_info *p_info,
-    PyObject *name);
-#ifdef HAVE_DYNAMIC_LOADING
-extern int _Py_ext_module_loader_info_init_from_spec(
-    struct _Py_ext_module_loader_info *info,
-    PyObject *spec);
-#endif
 
-/* The result from running an extension module's init function. */
+/* The result from running an extension module's init function.
+ * Not used for modules defined via PyModExport (slots array).
+ */
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
@@ -89,10 +113,11 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
+typedef PySlot *(*PyModExportFunction)(void);
 #ifdef HAVE_DYNAMIC_LOADING
-extern PyModInitFunction _PyImport_GetModInitFunc(
+extern int _PyImport_GetModuleExportHooks(
     struct _Py_ext_module_loader_info *info,
-    FILE *fp);
+    FILE *fp, PyModInitFunction *modinit, PyModExportFunction *modexport);
 #endif
 extern int _PyImport_RunModInitFunc(
     PyModInitFunction p0,
@@ -104,10 +129,8 @@ extern int _PyImport_RunModInitFunc(
 #define MAXSUFFIXSIZE 12
 
 #ifdef MS_WINDOWS
-#include <windows.h>
-typedef FARPROC dl_funcptr;
 
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 #  define PYD_DEBUG_SUFFIX "_d"
 #else
 #  define PYD_DEBUG_SUFFIX ""
@@ -128,8 +151,6 @@ typedef FARPROC dl_funcptr;
 #define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX "." PYD_SOABI ".pyd"
 #define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
 
-#else
-typedef void (*dl_funcptr)(void);
 #endif
 
 

@@ -94,6 +94,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(tcltkDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="$(TclMajorVersion) == '9'">TCL_WITH_EXTERNAL_TOMMATH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>WITH_APPINIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(BuildForRelease)' != 'true'">Py_TCLTK_DIR="$(tcltkDir.TrimEnd('\').Replace('\', '\\'))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -109,9 +110,10 @@
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
   <ItemGroup>
-    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDllName)" />
-    <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDllName)" />
-    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclZlibDllName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclDLLName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tkDLLName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tclZlibDLLName)" />
+    <_TclTkDLL Include="$(tcltkdir)\bin\$(tommathDLLName)" Condition="$(tommathDLLName) != ''"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">

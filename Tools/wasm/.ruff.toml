@@ -1,0 +1,25 @@
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
+[format]
+preview = true
+docstring-code-format = true
+
+[lint]
+select = [
+    "C4",      # flake8-comprehensions
+    "E",       # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "ISC",     # flake8-implicit-str-concat
+    "LOG",     # flake8-logging
+    "PGH",     # pygrep-hooks
+    "PT",      # flake8-pytest-style
+    "PYI",     # flake8-pyi
+    "RUF100",  # Ban unused `# noqa` comments
+    "UP",      # pyupgrade
+    "W",       # pycodestyle
+    "YTT",     # flake8-2020
+]
+ignore = [
+    "E501",    # Line too long
+]

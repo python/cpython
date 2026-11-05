@@ -1,0 +1,355 @@
+import importlib
+import json
+import os
+import os.path
+import sys
+import sysconfig
+import string
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from test.support import is_android, is_apple_mobile, is_wasm32
+
+BASE_PATH = Path(
+    __file__,  # Lib/test/test_build_details.py
+    '..',  # Lib/test
+    '..',  # Lib
+    '..',  # <src/install dir>
+).resolve()
+MODULE_PATH = BASE_PATH / 'Tools' / 'build' / 'generate-build-details.py'
+
+try:
+    # Import "generate-build-details.py" as "generate_build_details"
+    spec = importlib.util.spec_from_file_location(
+        "generate_build_details", MODULE_PATH
+    )
+    generate_build_details = importlib.util.module_from_spec(spec)
+    sys.modules["generate_build_details"] = generate_build_details
+    spec.loader.exec_module(generate_build_details)
+except (FileNotFoundError, ImportError):
+    generate_build_details = None
+
+
+class FormatTestsBase:
+    @property
+    def contents(self):
+        """Install details file contents. Should be overridden by subclasses."""
+        raise NotImplementedError
+
+    @property
+    def data(self):
+        """Parsed install details file data, as a Python object."""
+        return json.loads(self.contents)
+
+    def key(self, name):
+        """Helper to fetch subsection entries.
+
+        It takes the entry name, allowing the usage of a dot to separate the
+        different subsection names (eg. specifying 'a.b.c' as the key will
+        return the value of self.data['a']['b']['c']).
+        """
+        value = self.data
+        for part in name.split('.'):
+            value = value[part]
+        return value
+
+    def test_top_level_container(self):
+        self.assertIsInstance(self.data, dict)
+        for key, value in self.data.items():
+            with self.subTest(key=key):
+                if key in ('schema_version', 'base_prefix', 'base_interpreter',
+                           'platform'):
+                    self.assertIsInstance(value, str)
+                elif key in ('language', 'implementation', 'abi', 'suffixes',
+                             'libpython', 'c_api', 'arbitrary_data'):
+                    self.assertIsInstance(value, dict)
+
+    def test_base_prefix(self):
+        self.assertIsInstance(self.key('base_prefix'), str)
+
+    def test_base_interpreter(self):
+        """Test the base_interpreter entry.
+
+        The generic test wants the key to be missing. If your implementation
+        provides a value for it, you should override this test.
+        """
+        with self.assertRaises(KeyError):
+            self.key('base_interpreter')
+
+    def test_platform(self):
+        self.assertEqual(self.key('platform'), sysconfig.get_platform())
+
+    def test_language_version(self):
+        allowed_characters = string.digits + string.ascii_letters + '.'
+        value = self.key('language.version')
+
+        self.assertLessEqual(set(value), set(allowed_characters))
+        self.assertTrue(sys.version.startswith(value))
+
+    def test_language_version_info(self):
+        value = self.key('language.version_info')
+
+        self.assertEqual(len(value), sys.version_info.n_fields)
+        for part_name, part_value in value.items():
+            with self.subTest(part=part_name):
+                sys_version_value = getattr(sys.version_info, part_name)
+                self.assertEqual(part_value, sys_version_value)
+
+    def test_implementation(self):
+        impl_ver = sys.implementation.version
+        for key, value in self.key('implementation').items():
+            with self.subTest(part=key):
+                if key == 'version':
+                    self.assertEqual(len(value), len(impl_ver))
+                    for part_name, part_value in value.items():
+                        self.assertFalse(isinstance(sys.implementation.version, dict))
+                        getattr(sys.implementation.version, part_name)
+                        sys_implementation_value = getattr(impl_ver, part_name)
+                        self.assertEqual(sys_implementation_value, part_value)
+                else:
+                    self.assertEqual(getattr(sys.implementation, key), value)
+
+
+needs_installed_python = unittest.skipIf(
+    sysconfig.is_python_build(),
+    'This test can only run in an installed Python',
+)
+
+
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
+class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
+    """Test CPython's install details file implementation."""
+
+    @property
+    def location(self):
+        if sysconfig.is_python_build():
+            projectdir = sysconfig.get_config_var('projectbase')
+            pybuilddir = os.path.join(projectdir, 'pybuilddir.txt')
+            with open(pybuilddir, encoding='utf-8') as f:
+                dirname = os.path.join(projectdir, f.read())
+        else:
+            dirname = sysconfig.get_path('stdlib')
+        return os.path.join(dirname, 'build-details.json')
+
+    @property
+    def contents(self):
+        with open(self.location, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    @needs_installed_python
+    def test_location(self):
+        self.assertTrue(os.path.isfile(self.location))
+
+    # Override generic format tests with tests for our specific implemenation.
+
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        'Android and iOS run tests via a custom testbed method that changes sys.executable'
+    )
+    def test_base_interpreter(self):
+        value = self.key('base_interpreter')
+
+        # Skip check if installation is relocated
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        self.assertEqual(os.path.realpath(value), os.path.realpath(sys.executable))
+
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship headers"
+    )
+    def test_c_api(self):
+        value = self.key('c_api')
+
+        # Skip check if installation is relocated
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
+        version = sysconfig.get_config_var('VERSION')
+        self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
+
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship libpython"
+    )
+    def test_libpython_static(self):
+        value = self.data.get('libpython', {})
+        if 'static' not in value:
+            self.skipTest("No static libpython")
+
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        # The path must name an installed static library (an 'ar' archive).
+        with open(value['static'], 'rb') as f:
+            self.assertEqual(f.read(8), b'!<arch>\n')
+
+    @needs_installed_python
+    @unittest.skipIf(
+        is_android or is_apple_mobile,
+        "Android and iOS run tests via a custom testbed method that doesn't ship libpython"
+    )
+    @unittest.skipIf(
+        sys.platform == 'cygwin',
+        "Cygwin installs the DLL in BINDIR and the import library in LIBPL, "
+        "not in LIBDIR"
+    )
+    def test_libpython_dynamic(self):
+        value = self.data.get('libpython', {})
+        if 'dynamic' not in value:
+            self.skipTest("No dynamic libpython")
+
+        if sysconfig._installation_is_relocated():
+            self.skipTest("Installation is relocated")
+
+        self.assertTrue(os.path.isfile(value['dynamic']))
+
+
+@unittest.skipIf(
+    generate_build_details is None,
+    "Failed to import generate-build-details"
+)
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
+class BuildDetailsRelativePathsTests(unittest.TestCase):
+    @property
+    def build_details_absolute_paths(self):
+        data = generate_build_details.generate_data(schema_version='1.0')
+        return json.loads(json.dumps(data))
+
+    @property
+    def build_details_relative_paths(self):
+        data = self.build_details_absolute_paths
+        generate_build_details.make_paths_relative(data, config_path=None)
+        return data
+
+    def test_round_trip(self):
+        data_abs_path = self.build_details_absolute_paths
+        data_rel_path = self.build_details_relative_paths
+
+        self.assertEqual(data_abs_path['base_prefix'],
+                         data_rel_path['base_prefix'])
+
+        self.check_relative_paths(data_abs_path, data_rel_path)
+
+    def test_round_trip_with_config_file_path(self):
+        data_abs_path = self.build_details_absolute_paths
+        base_prefix = data_abs_path['base_prefix']
+        config_dir = os.path.join(base_prefix, 'lib', 'python3.X')
+        data_rel_path = self.build_details_absolute_paths
+        generate_build_details.make_paths_relative(
+            data_rel_path,
+            config_path=os.path.join(config_dir, 'build-details.json'),
+        )
+
+        # base_prefix is relative to the config file's directory...
+        self.assertEqual(data_rel_path['base_prefix'], os.path.join('..', '..'))
+        # ...while the other paths are still relative to base_prefix.
+        self.check_relative_paths(data_abs_path, data_rel_path)
+
+    def check_relative_paths(self, data_abs_path, data_rel_path):
+        base_prefix = data_abs_path['base_prefix']
+
+        top_level_keys = ('base_interpreter',)
+        for key in top_level_keys:
+            self.assertEqual(key in data_abs_path, key in data_rel_path)
+            if key not in data_abs_path:
+                continue
+
+            abs_rel_path = os.path.join(base_prefix, data_rel_path[key])
+            abs_rel_path = os.path.normpath(abs_rel_path)
+            self.assertEqual(data_abs_path[key], abs_rel_path)
+
+        second_level_keys = (
+            ('libpython', 'dynamic'),
+            ('libpython', 'dynamic_stableabi'),
+            ('libpython', 'static'),
+            ('c_api', 'headers'),
+            ('c_api', 'pkgconfig_path'),
+
+        )
+        for part, key in second_level_keys:
+            self.assertEqual(part in data_abs_path, part in data_rel_path)
+            if part not in data_abs_path:
+                continue
+            self.assertEqual(key in data_abs_path[part],
+                             key in data_rel_path[part])
+            if key not in data_abs_path[part]:
+                continue
+
+            abs_rel_path = os.path.join(base_prefix, data_rel_path[part][key])
+            abs_rel_path = os.path.normpath(abs_rel_path)
+            self.assertEqual(data_abs_path[part][key], abs_rel_path)
+
+
+@unittest.skipIf(
+    generate_build_details is None,
+    "Failed to import generate-build-details"
+)
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
+class BuildDetailsLibpythonTests(unittest.TestCase):
+    LIBDIR = '/prefix/lib'
+    LIBPL = '/prefix/lib/python3.X/config-3.X'
+
+    def generate_libpython(self, **config_vars):
+        """Generate the libpython section with overridden config vars."""
+        config_vars = dict(LIBDIR=self.LIBDIR, LIBPL=self.LIBPL,
+                           LIBRARY='libpython3.X.a', **config_vars)
+        get_config_var = sysconfig.get_config_var
+        def patched_get_config_var(name):
+            if name in config_vars:
+                return config_vars[name]
+            return get_config_var(name)
+        with mock.patch('sysconfig.get_config_var', patched_get_config_var):
+            data = generate_build_details.generate_data(schema_version='1.0')
+        return json.loads(json.dumps(data)).get('libpython', {})
+
+    def test_static_only(self):
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.a', STATIC_LIBPYTHON=1,
+            PYTHONFRAMEWORK='')
+        self.assertNotIn('dynamic', libpython)
+        self.assertEqual(libpython['static'],
+                         os.path.join(self.LIBDIR, 'libpython3.X.a'))
+
+    def test_shared_and_static(self):
+        # The static library is only installed into LIBPL, not LIBDIR.
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.so', STATIC_LIBPYTHON=1,
+            PYTHONFRAMEWORK='')
+        self.assertEqual(libpython['dynamic'],
+                         os.path.join(self.LIBDIR, 'libpython3.X.so'))
+        self.assertEqual(libpython['static'],
+                         os.path.join(self.LIBPL, 'libpython3.X.a'))
+
+    def test_shared_without_static(self):
+        libpython = self.generate_libpython(
+            LDLIBRARY='libpython3.X.so', STATIC_LIBPYTHON=0,
+            PYTHONFRAMEWORK='')
+        self.assertNotIn('static', libpython)
+
+    def test_framework(self):
+        # Framework builds don't install the static library.  LIBPL contains
+        # a libpython3.X.a symlink to the framework's shared library instead.
+        libpython = self.generate_libpython(
+            LDLIBRARY='Python.framework/Versions/3.X/Python',
+            STATIC_LIBPYTHON=1, PYTHONFRAMEWORK='Python',
+            PYTHONFRAMEWORKPREFIX='/Library/Frameworks')
+        self.assertNotIn('static', libpython)
+        # The dynamic library is the framework binary, which is installed at
+        # PYTHONFRAMEWORKPREFIX/LDLIBRARY.
+        self.assertEqual(
+            libpython['dynamic'],
+            '/Library/Frameworks/Python.framework/Versions/3.X/Python')
+
+
+if __name__ == '__main__':
+    unittest.main()
