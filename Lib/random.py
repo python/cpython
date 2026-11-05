@@ -1067,7 +1067,6 @@ def main(arg_list: list[str] | None = None) -> int | str:
         try:
             # Is it an integer?
             val = int(val)
-            return randint(1, val)
         except ValueError:
             try:
                 # Is it a float?
@@ -1076,6 +1075,8 @@ def main(arg_list: list[str] | None = None) -> int | str:
             except ValueError:
                 # Split in case of space-separated string: "a b c"
                 return choice(val.split())
+        else:
+            return randint(1, val)
 
     if len(args.input) >= 2:
         return choice(args.input)
