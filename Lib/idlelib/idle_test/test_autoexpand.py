@@ -74,6 +74,23 @@ class AutoExpandTest(unittest.TestCase):
         text.delete('1.0', 'end')
         equal(previous(), '')
 
+    def test_get_prevword_non_ascii(self):
+        # gh-89855: word prefixes may contain non-ASCII identifier characters.
+        text = self.text
+        previous = self.auto_expand.getprevword
+        equal = self.assertEqual
+
+        text.insert('insert', 'Ångström')
+        equal(previous(), 'Ångström')
+
+        text.delete('1.0', 'end')
+        text.insert('insert', 'їжак_naïve1')
+        equal(previous(), 'їжак_naïve1')
+
+        # A non-word character ends the prefix.
+        text.insert('insert', '+')
+        equal(previous(), '')
+
     def test_before_only(self):
         previous = self.auto_expand.getprevword
         expand = self.auto_expand.expand_word_event
