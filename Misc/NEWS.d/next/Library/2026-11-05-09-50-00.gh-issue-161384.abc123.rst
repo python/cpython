@@ -1,0 +1,1 @@
+Fix :meth:`ipaddress.IPv6Network.exploded` for networks with a scope ID.

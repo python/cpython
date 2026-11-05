@@ -1920,7 +1920,7 @@ class _BaseV6:
 
         """
         if isinstance(self, IPv6Network):
-            ip_str = str(self.network_address)
+            ip_str = self._string_from_ip_int(int(self.network_address))
         elif isinstance(self, IPv6Interface):
             ip_str = str(self.ip)
         else:
@@ -1929,10 +1929,12 @@ class _BaseV6:
         ip_int = self._ip_int_from_string(ip_str)
         hex_str = '%032x' % ip_int
         exploded = ':'.join([hex_str[x:x+4] for x in range(0, 32, 4)])
+        scope_id = (self.network_address._scope_id
+                    if isinstance(self, IPv6Network) else self._scope_id)
+        if scope_id:
+            exploded = '%s%%%s' % (exploded, scope_id)
         if isinstance(self, _BaseNetwork):
             return '%s/%d' % (exploded, self._prefixlen)
-        if self._scope_id:
-            exploded = '%s%%%s' % (exploded, self._scope_id)
         if isinstance(self, IPv6Interface):
             return '%s/%d' % (exploded, self._prefixlen)
         return exploded
