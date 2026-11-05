@@ -50,13 +50,12 @@ def _compile_pattern(pat):
 
 def filter(names, pat):
     """Construct a list from those elements of the iterable NAMES that match PAT."""
-    result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
-    for name in names:
-        if match(os.path.normcase(name)):
-            result.append(name)
-    return result
+    return [
+        name for name in names
+        if match(os.path.normcase(name))
+    ]
 
 
 def filterfalse(names, pat):

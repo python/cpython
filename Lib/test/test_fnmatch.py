@@ -332,7 +332,6 @@ class FilterTestCase(unittest.TestCase):
         self.assertRaises(TypeError, filter, ['test'], b'*')
         self.assertRaises(TypeError, filter, [b'test'], '*')
 
-
     def test_mix_bytes_str_pathlike(self):
         path = pathlib.Path("test")
         self.assertRaises(TypeError, filter, [path], b'*')
@@ -369,7 +368,6 @@ class FilterFalseTestCase(unittest.TestCase):
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filterfalse, ['test'], b'*')
         self.assertRaises(TypeError, filterfalse, [b'test'], '*')
-
 
     def test_mix_bytes_str_pathlike(self):
         path = pathlib.Path("test")
