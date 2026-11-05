@@ -1865,7 +1865,9 @@ get_zone(char *zone, int n, struct tm *p)
     strftime(zone, n, "%Z", p);
 #endif
 }
+#endif // !_Py_HAVE_TIMEZONE_GLOBALS
 
+#if !defined(_Py_HAVE_TIMEZONE_GLOBALS) || !defined(HAVE_ALTZONE)
 static time_t
 get_gmtoff(time_t t, struct tm *p)
 {
@@ -1875,7 +1877,7 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
-#endif // !_Py_HAVE_TIMEZONE_GLOBALS
+#endif
 
 static int
 init_timezone(PyObject *m)
@@ -1910,14 +1912,11 @@ init_timezone(PyObject *m)
     tzset();
 #endif
     ADD_INT("timezone", _Py_timezone);
-#ifdef HAVE_ALTZONE
-    ADD_INT("altzone", altzone);
-#else
-    /* libc does not provide the DST offset.  Assume a one hour shift when
-       the zone has DST, otherwise use the standard offset. */
-    ADD_INT("altzone", _Py_daylight ? _Py_timezone - 3600 : _Py_timezone);
-#endif
     ADD_INT("daylight", _Py_daylight);
+#ifndef HAVE_ALTZONE
+    long dst_offset = _Py_timezone;
+    int has_dst = _Py_daylight;
+#endif
 #ifdef MS_WINDOWS
     TIME_ZONE_INFORMATION tzinfo = {0};
     GetTimeZoneInformation(&tzinfo);
@@ -1944,6 +1943,43 @@ init_timezone(PyObject *m)
     if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
+#ifdef HAVE_ALTZONE
+    ADD_INT("altzone", altzone);
+#else
+    /* daylight can be nonzero solely because of historical transitions.
+       Sample roughly monthly through the current year, looking for an
+       actual DST offset, which need not be one hour from standard time.
+       Prefer the latest DST sample at or before now; only look ahead if
+       none has been found by the current month.  If none is found at all,
+       use the standard offset.  Like the fallback below,
+       this is only a heuristic: short DST seasons may not be sampled.
+       Copy the other globals first, since localtime() may update tzname. */
+    if (has_dst) {
+        static const time_t YEAR = (365 * 24 + 6) * 3600;
+        time_t now = time((time_t *)0);
+        struct tm current;
+        if (_PyTime_localtime(now, &current) < 0) {
+            return -1;
+        }
+        time_t t = (now / YEAR) * YEAR;
+        int found_dst = 0;
+        for (int month = 0; month < 12; month++, t += YEAR / 12) {
+            time_t sample = month == current.tm_mon ? now : t;
+            struct tm p;
+            if (_PyTime_localtime(sample, &p) < 0) {
+                return -1;
+            }
+            if (p.tm_isdst > 0) {
+                dst_offset = -get_gmtoff(sample, &p);
+                found_dst = 1;
+            }
+            if (month >= current.tm_mon && found_dst) {
+                break;
+            }
+        }
+    }
+    ADD_INT("altzone", dst_offset);
+#endif
 #else // !_Py_HAVE_TIMEZONE_GLOBALS
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;

@@ -5,8 +5,10 @@ import enum
 import fractions
 import math
 import platform
+import struct
 import sys
 import sysconfig
+import tempfile
 import time
 import threading
 import unittest
@@ -561,6 +563,76 @@ class TimeTestCase(unittest.TestCase):
             elif 'TZ' in environ:
                 del environ['TZ']
             time.tzset()
+
+    @support.run_with_tz('LHST-10:30LHDT-11,M10.1.0,M4.1.0')
+    def test_tzset_half_hour_dst(self):
+        self.assertEqual(time.timezone, -37800)
+        self.assertEqual(time.altzone, -39600)
+        self.assertEqual(time.daylight, 1)
+
+    @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_TIMEZONE_GLOBALS'),
+                         'requires libc timezone globals')
+    @support.run_with_tz('IST-1GMT0,M10.5.0,M3.5.0/1')
+    def test_tzset_negative_dst(self):
+        self.assertEqual(time.timezone, -3600)
+        self.assertEqual(time.altzone, 0)
+        self.assertEqual(time.daylight, 1)
+        self.assertEqual(time.tzname, ('IST', 'GMT'))
+
+    @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_TIMEZONE_GLOBALS')
+                         and not sysconfig.get_config_var('HAVE_ALTZONE'),
+                         'requires sampling the DST offset')
+    @support.run_with_tz('Asia/Kolkata')
+    def test_tzset_historical_dst(self):
+        # Kolkata observed DST during World War II, but not since 1945.
+        # Check libc's zone data, rather than assuming it is installed.
+        historical = time.localtime(-862531200)  # 1942-09-02 UTC
+        if (historical.tm_isdst != 1
+                or getattr(historical, 'tm_gmtoff', None) != 23400):
+            self.skipTest('requires historical Asia/Kolkata timezone data')
+        current = time.localtime()
+        if (current.tm_isdst != 0
+                or getattr(current, 'tm_gmtoff', None) != 19800):
+            self.skipTest('requires Asia/Kolkata without current DST')
+        self.assertEqual(time.timezone, -19800)
+        # libc's daylight may still be nonzero for the historical DST.
+        self.assertEqual(time.altzone, time.timezone)
+
+    @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_TIMEZONE_GLOBALS')
+                         and not sysconfig.get_config_var('HAVE_ALTZONE'),
+                         'requires sampling the DST offset')
+    def test_tzset_recent_dst_offset(self):
+        # A synthetic TZif zone has an old, a current, and a future DST
+        # offset. Prefer the current offset over both other offsets.
+        now = int(time.time())
+        transitions = (now - 370 * 86400, now - 3600, now + 86400)
+        names = b'STD\0OLD\0NEW\0FUT\0'
+
+        def header(timecnt, typecnt, charcnt):
+            return (b'TZif2' + bytes(15)
+                    + struct.pack('>6l', 0, 0, 0, timecnt, typecnt, charcnt))
+
+        data = (header(0, 1, 4) + struct.pack('>lbb', 0, 0, 0) + b'STD\0'
+                + header(3, 4, len(names))
+                + struct.pack('>3q', *transitions) + bytes((1, 2, 3)))
+        for offset, isdst, index in ((0, 0, 0), (3600, 1, 4),
+                                     (7200, 1, 8), (10800, 1, 12)):
+            data += struct.pack('>lbb', offset, isdst, index)
+        data += names + b'\n\n'
+
+        with tempfile.NamedTemporaryFile() as zone:
+            zone.write(data)
+            zone.flush()
+
+            @support.run_with_tz(':' + zone.name)
+            def check():
+                local = time.localtime(now)
+                if getattr(local, 'tm_gmtoff', None) != 7200:
+                    self.skipTest('requires TZif v2 timezone support')
+                self.assertEqual(local.tm_isdst, 1)
+                self.assertEqual(time.altzone, -7200)
+
+            check()
 
     def test_insane_timestamps(self):
         # It's possible that some platform maps time_t to double,
