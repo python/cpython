@@ -1,3 +1,3 @@
-Fix :func:`statistics.correlation` returning inaccurate results for very
-small inputs, where the product of the sums of squares is subnormal rather
+Improved the accuracy of :func:`statistics.correlation` for very small
+inputs, where the product of the sums of squares is subnormal rather
 than zero.
