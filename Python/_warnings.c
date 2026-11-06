@@ -716,12 +716,15 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         if (truncated == NULL)
             goto error;
 
-        if (PyFile_WriteString("  ", f_stderr) < 0)
+        if (PyFile_WriteString("  ", f_stderr) < 0) {
             goto error;
-        if (PyFile_WriteObject(truncated, f_stderr, Py_PRINT_RAW) < 0)
+        }
+        if (PyFile_WriteObject(truncated, f_stderr, Py_PRINT_RAW) < 0) {
             goto error;
-        if (PyFile_WriteString("\n", f_stderr) < 0)
+        }
+        if (PyFile_WriteString("\n", f_stderr) < 0) {
             goto error;
+        }
     }
     else {
         _Py_DisplaySourceLine(f_stderr, filename, lineno, 2, NULL, NULL);
