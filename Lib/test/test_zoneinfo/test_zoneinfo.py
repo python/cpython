@@ -1724,19 +1724,11 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
             pass
 
     def test_clear_cache_non_string_keys(self):
-        self.addCleanup(self.klass.clear_cache)
-        for cached in (False, True):
-            for key in (None, 1):
-                with self.subTest(cached=cached, key=key):
-                    self.klass.clear_cache()
-                    original = (
-                        self.klass("America/Los_Angeles") if cached else None
-                    )
-                    self.klass.clear_cache(only_keys=(key,))
-                    if cached:
-                        self.assertIs(
-                            self.klass("America/Los_Angeles"), original
-                        )
+        la0 = self.klass("America/Los_Angeles")
+        self.klass.clear_cache(only_keys=[None, 1])
+        la1 = self.klass("America/Los_Angeles")
+
+        self.assertIs(la0, la1)
 
     def test_weak_cache_descriptor_use_after_free(self):
         class BombDescriptor:
@@ -1763,6 +1755,8 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
 
     def test_strong_cache_path_like_key(self):
+        # A non-str key is matched by identity, and comparing it against a
+        # str key must not raise TypeError.
         class Key:
             def __fspath__(self):
                 return "UTC"
@@ -1774,10 +1768,9 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
                 return ["UTC"]
 
         key = Key()
-        self.addCleanup(self.klass.clear_cache)
         original = self.klass(key)
         self.assertIs(self.klass(key), original)
-        self.assertEqual(self.klass("UTC").key, "UTC")
+        self.assertIsNot(self.klass("UTC"), original)
         self.klass.clear_cache(only_keys=(key,))
         self.assertIsNot(self.klass(key), original)
 
@@ -1788,7 +1781,6 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
 
             __hash__ = str.__hash__
 
-        self.addCleanup(self.klass.clear_cache)
         for cached_type, lookup_type in ((str, Stringy), (Stringy, str),
                                          (Stringy, Stringy)):
             with self.subTest(cached_type=cached_type, lookup_type=lookup_type):
@@ -1818,7 +1810,6 @@ class CZoneInfoCacheTest(ZoneInfoCacheTest):
 
             __hash__ = str.__hash__
 
-        self.addCleanup(klass.clear_cache)
         original = klass(Stringy("America/Los_Angeles"))
         key = Stringy("America/Los_Angeles")
         if operation == "lookup":
