@@ -1776,7 +1776,8 @@ def _sqrtprod(x: float, y: float) -> float:
             return _sqrtprod(scale * x, scale * y) / scale
         return h
 
-    if h < 2.0 ** -485:
+    subnormal_cutoff = 2.0 ** -485  # sqrt(sys.float_info.min / sys.float_info.epsilon)
+    if h < subnormal_cutoff:
         # x * y is subnormal or underflowed, or the correction term
         # below would be. Rescale non-zero inputs.
         if x and y:
