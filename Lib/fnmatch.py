@@ -11,6 +11,7 @@ corresponding to PATTERN.  (It does not compile it.)
 """
 
 import functools
+import itertools
 import os
 import posixpath
 import re
@@ -69,10 +70,15 @@ def filterfalse(names, pat):
     """Construct a list from those elements of the iterable NAMES that do not match PAT."""
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
-    return [
-        name for name in names
-        if not match(os.path.normcase(name))
-    ]
+    if os.path is posixpath:
+        # normcase on posix is NOP. Optimize it away from the loop.
+        return list(itertools.filterfalse(lambda name: match(os.fspath(name)), names))
+
+    result = []
+    for name in names:
+        if match(os.path.normcase(name)) is None:
+            result.append(name)
+    return result
 
 
 def fnmatchcase(name, pat):
