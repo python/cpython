@@ -1,0 +1,8 @@
+.. date: 2026-10-09
+.. gh-issue: 0
+.. no changes: True
+.. nonce: JNIkQa
+.. release date: 2026-10-09
+.. section: Library
+
+There were no new changes in version 3.15.0.

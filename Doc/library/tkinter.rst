@@ -767,34 +767,76 @@ Tk option data types
 
 Many widget options documented in the reference
 accept values of a small number of common types, described here.
+The standard options and their types are described in the
+:manpage:`options(3tk)` manual page.
 
 anchor
    Legal values are points of the compass: ``"n"``, ``"ne"``, ``"e"``, ``"se"``,
    ``"s"``, ``"sw"``, ``"w"``, ``"nw"``, and also ``"center"``.
+   The *labelanchor* option of :class:`LabelFrame` and
+   :class:`ttk.LabelFrame <tkinter.ttk.LabelFrame>`
+   accepts also ``"en"``, ``"es"``, ``"wn"`` and ``"ws"``.
+   The *sticky* option of the grid geometry manager accepts a combination
+   of the compass directions, such as ``"nsew"``, or an empty string.
 
 bitmap
    There are ten built-in, named bitmaps: ``'error'``, ``'gray12'``,
    ``'gray25'``, ``'gray50'``, ``'gray75'``, ``'hourglass'``, ``'info'``,
-   ``'questhead'``, ``'question'``, ``'warning'``.  To specify an X bitmap
-   filename, give the full path to the file, preceded with an ``@``, as in
-   ``"@/usr/contrib/bitmap/gumby.bit"``.
+   ``'questhead'``, ``'question'``, ``'warning'``.
+   On macOS the following bitmaps are available as well:
+   ``'application'``, ``'accessory'``, ``'folder'``, ``'pfolder'``,
+   ``'trash'``, ``'floppy'``, ``'ramdisk'``, ``'cdrom'``, ``'preferences'``,
+   ``'querydoc'``, ``'stop'``, ``'note'`` and ``'caution'``.
+   To specify an X bitmap file, give the full path to the file,
+   preceded with an ``@``, as in ``"@/usr/contrib/bitmap/gumby.bit"``.
 
 boolean
-   You can pass integers 0 or 1 or the strings ``"yes"`` or ``"no"``.
+   You can pass the integers 0 or 1, ``True`` or ``False``, or the strings
+   ``"0"``, ``"1"``, ``"yes"``, ``"no"``, ``"true"``, ``"false"``, ``"on"``
+   or ``"off"``.
+   The strings are matched ignoring case,
+   and an unambiguous prefix, such as ``"t"``, is enough.
+   Any non-zero integer means true.
 
 callback
-   This is any Python function that takes no arguments.  For example::
+   This is any callable object.
+   Most callbacks take no arguments.  For example::
 
       def print_it():
           print("hi there")
       fred["command"] = print_it
 
+   Some options call it with arguments,
+   such as the *command* option of :class:`Scale`,
+   which is called with the new value.
+
 color
-   Colors can be given as the names of X colors in the rgb.txt file, or as strings
-   representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit:
-   ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
-   represent any legal hex digit.  See the :manpage:`colors(3tk)` man page for
-   the list of named colors.
+   Colors can be given as symbolic names, such as ``"red"`` or ``"light blue"``,
+   or as strings representing RGB values in 4 bit: ``"#RGB"``, 8 bit:
+   ``"#RRGGBB"``, 12 bit: ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"``
+   ranges, where R,G,B here represent any legal hex digit.
+   Tk provides a portable set of symbolic names available on all platforms;
+   they are matched ignoring case and spaces,
+   so ``"light blue"``, ``"Light Blue"`` and ``"lightblue"``
+   are the same color.
+   The full list of names, including the platform-specific names
+   of the current system colors
+   (for example ``"systemButtonFace"`` on Windows
+   or ``"systemWindowBody"`` on macOS),
+   is given in the :manpage:`colors(3tk)` manual page.
+   :meth:`~tkinter.Misc.winfo_rgb` returns
+   the red, green and blue components of a color.
+
+compound
+   Determines how to combine an image and a text displayed in a widget.
+   Legal values are ``"none"`` (display the image if there is one,
+   otherwise the text), ``"text"``, ``"image"``,
+   ``"center"`` (display the text in the center of the image) and
+   ``"top"``, ``"bottom"``, ``"left"``, ``"right"``
+   (display the image above, below, to the left of or to the right
+   of the text).
+   The themed widgets accept all these values,
+   the classic widgets accept all except ``"text"`` and ``"image"``.
 
 cursor
    The name of the mouse cursor to display while the pointer is over the widget.
@@ -821,19 +863,32 @@ font
    ``(family, size, *styles)`` (or as the equivalent string
    ``"Courier 10 bold"``).  Font sizes with positive numbers are measured in
    points; sizes with negative numbers are measured in pixels.
-
-geometry
-   This is a string of the form ``widthxheight``, where width and height are
-   measured in pixels for most widgets (in characters for widgets displaying text).
-   For example: ``fred["geometry"] = "200x100"``.
+   The name of a named font, such as ``"TkDefaultFont"``,
+   a :class:`tkinter.font.Font` instance,
+   or, on X11, an XLFD font name can be used as well.
 
 justify
    Legal values are the strings: ``"left"``, ``"center"``, and ``"right"``.
 
+orient
+   Legal values are ``"horizontal"`` and ``"vertical"``.
+
+padding
+   This is a legal distance (see above), applied on all sides,
+   or a sequence of up to four distances
+   specifying the left, top, right and bottom padding.
+   If fewer than four are specified,
+   the bottom padding defaults to the top one,
+   the right one to the left one, and the top one to the left one.
+   It is only supported by the themed widgets.
+
 region
-   This is a string with four space-delimited elements, each of which is a legal
-   distance (see above).  For example: ``"2 3 4 5"`` and ``"3i 2i 4.5i 2i"`` and
-   ``"3c 2c 4c 10.43c"``  are all legal regions.
+   Used for the *scrollregion* option of :class:`Canvas`.
+   This is a string with four space-delimited elements,
+   each of which is a legal distance (see above),
+   or a sequence of four such elements.
+   For example: ``"2 3 4 5"``, ``(2, 3, 4, 5)``, ``"3i 2i 4.5i 2i"`` and
+   ``"3c 2c 4c 10.43c"`` are all legal regions.
 
 relief
    Determines what the border style of a widget will be.  Legal values are:
@@ -844,8 +899,19 @@ scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.
 
+state
+   Legal values are ``"normal"``, ``"disabled"`` and, depending on the widget,
+   also ``"active"``, ``"hidden"`` (for :class:`Canvas` items)
+   or ``"readonly"`` (for :class:`Entry`, :class:`Spinbox`
+   and the themed widgets).
+   The themed widgets have in addition a more general set of states,
+   which is manipulated with
+   :meth:`ttk.Widget.state <tkinter.ttk.Widget.state>`.
+
 wrap
-   Must be one of: ``"none"``, ``"char"``, or ``"word"``.
+   Must be one of ``"none"``, ``"char"`` or ``"word"``
+   for the :class:`Text` widget and its tags;
+   for a tag an empty string means to use the widget's value.
 
 .. _Bindings-and-Events:
 
@@ -1095,7 +1161,7 @@ Base and mixin classes
       Interpret the string *s* as a Tcl boolean and return the corresponding
       :class:`bool`.
       Tcl accepts values such as ``'1'``, ``'0'``, ``'yes'``, ``'no'``,
-      ``'true'`` and ``'false'``.
+      ``'true'``, ``'false'``, ``'on'`` and ``'off'``.
       Raise :exc:`ValueError` if *s* is not a valid boolean.
 
    .. method:: getdouble(s)
@@ -2077,6 +2143,9 @@ Base and mixin classes
 
       Return the geometry of the widget, in the form ``widthxheight+x+y``.
       All dimensions are in pixels.
+      The position is relative to the parent widget;
+      use :meth:`winfo_rootx` and :meth:`winfo_rooty`
+      for the position on the screen.
       An offset can be negative; see :meth:`~Wm.geometry`.
 
    .. method:: winfo_height()
@@ -3258,6 +3327,8 @@ Base and mixin classes
       Shift the view left or right by *number* units.
       *what* is either ``'units'`` or ``'pages'``; a negative *number* scrolls
       left and a positive one scrolls right.
+      The :class:`Text` widget accepts also ``'pixels'``,
+      and then *number* can be a screen distance, such as ``'1i'``.
 
 
 .. class:: YView()
@@ -3288,6 +3359,8 @@ Base and mixin classes
       Shift the view up or down by *number* units.
       *what* is either ``'units'`` or ``'pages'``; a negative *number* scrolls
       up and a positive one scrolls down.
+      The :class:`Text` widget accepts also ``'pixels'``,
+      and then *number* can be a screen distance, such as ``'1i'``.
 
 
 .. class:: BaseWidget(master, widgetName, cnf={}, kw={}, extra=())
@@ -3710,8 +3783,7 @@ Widget classes
 
       .. note::
 
-         Tk 8.6 added the *angle* option and Tk 9.0 added the *underline*
-         option for ``text`` items.
+         Tk 8.6 added the *angle* option for ``text`` items.
 
    .. method:: coords(tagOrId)
                coords(tagOrId, coordList, /)
@@ -5062,10 +5134,10 @@ Widget classes
    *increment* options, or an explicit list of strings given by the *values*
    option (which takes precedence over the range).
    Each time an arrow is invoked the *command* callback, if any, is called; the
-   *wrap* option controls whether stepping past either end of the range wraps
-   around to the other end; the *format* option specifies how numeric values
-   are formatted; and the *validate* option enables validation of the entered
-   text.
+   boolean *wrap* option controls whether stepping past either end of the range
+   wraps around to the other end;
+   the *format* option specifies how numeric values are formatted;
+   and the *validate* option enables validation of the entered text.
    Inherits from :class:`Widget` and :class:`XView`.
 
    With a non-integer *increment*, see :ref:`numeric values and the locale
@@ -5452,7 +5524,7 @@ Widget classes
          baseline, for superscripts and subscripts.
 
       *underline*
-         Whether to underline the text.
+         Whether to underline the text (a boolean).
 
       *underlinefg*
          The color of the underline; it defaults to the text color.
@@ -5610,7 +5682,8 @@ Widget classes
       Embed a window (any widget) at *index*.
       The options, given in *cnf* and *kw*, include *window* (the widget to
       embed), *create* (a callback that creates the widget on demand), *align*,
-      *stretch*, *padx* and *pady*.
+      the boolean *stretch* (whether the widget is stretched vertically to the
+      height of the line), *padx* and *pady*.
       The embedded widget must be a descendant of the text widget's parent.
 
    .. method:: window_cget(index, option)
@@ -6409,7 +6482,7 @@ Module-level functions
    Convert the Tcl boolean string *s* (one of ``'1'``, ``'true'``, ``'yes'``,
    ``'on'`` and similar, or their false counterparts) to a Python
    :class:`bool`.
-   Raise :exc:`TclError` for an invalid value.
+   Raise :exc:`ValueError` for an invalid value.
 
 .. function:: getdouble(s)
 

@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "pycore_fileutils.h"     // _Py_strerror()
 
 #ifndef MS_WINDOWS
 #include <unistd.h>
@@ -229,9 +230,13 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         if (entry == NULL) {
             if (errno != 0) {
                 int err = errno;
-                _set_debug_oserror_from_errno_with_filename(err, "/proc",
-                    "Failed to read process directory '/proc': %s",
-                    strerror(err));
+                PyObject *message = _Py_strerror(err);
+                if (message != NULL) {
+                    _set_debug_oserror_from_errno_with_filename(err, "/proc",
+                        "Failed to read process directory '/proc': %S",
+                        message);
+                    Py_DECREF(message);
+                }
                 goto done;
             }
             break;
@@ -259,9 +264,13 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     if (closedir(proc_dir) != 0) {
         int err = errno;
         proc_dir = NULL;
-        _set_debug_oserror_from_errno_with_filename(err, "/proc",
-            "Failed to close process directory '/proc': %s",
-            strerror(err));
+        PyObject *message = _Py_strerror(err);
+        if (message != NULL) {
+            _set_debug_oserror_from_errno_with_filename(err, "/proc",
+                "Failed to close process directory '/proc': %S",
+                message);
+            Py_DECREF(message);
+        }
         goto done;
     }
     proc_dir = NULL;

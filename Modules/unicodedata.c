@@ -762,9 +762,8 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         }
 
         if (run_length > sortbuflen) {
-            Py_UCS4 *new_sortbuf = PyMem_Resize(sortbuf,
-                                                Py_UCS4,
-                                                run_length);
+            Py_UCS4 *new_sortbuf = sortbuf;
+            PyMem_Resize(new_sortbuf, Py_UCS4, run_length);
             if (new_sortbuf == NULL) {
                 PyErr_NoMemory();
                 PyMem_Free(sortbuf);
@@ -2002,6 +2001,7 @@ Segment_dealloc(PyObject *self)
 static int
 Segment_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(((SegmentObject *)self)->string);
     return 0;
 }
@@ -2070,6 +2070,7 @@ GBI_dealloc(PyObject *self)
 static int
 GBI_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(((GraphemeBreakIterator *)self)->iter.str);
     return 0;
 }

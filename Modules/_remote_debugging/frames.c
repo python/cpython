@@ -305,9 +305,7 @@ process_frame_chain(
     uintptr_t frame_addr = ctx->frame_addr;
     uintptr_t prev_frame_addr = 0;
     uintptr_t last_frame_addr = 0;
-    const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
-    assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
     ctx->stopped_at_cached_frame = 0;
     ctx->last_frame_visited = 0;
@@ -318,12 +316,12 @@ process_frame_chain(
         uintptr_t stackpointer = 0;
         last_frame_addr = frame_addr;
 
-        if (++frame_count > MAX_FRAMES) {
+        if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain iteration limit exceeded");
             return -1;
         }
-        assert(frame_count <= MAX_FRAMES);
+        assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
             if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {

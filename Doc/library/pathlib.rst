@@ -307,6 +307,21 @@ Methods and properties
 
    from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
+The :attr:`~PurePath.parent`, :attr:`~PurePath.name`,
+:attr:`~PurePath.stem`, and :attr:`~PurePath.suffix` properties describe
+different parts of a path.  For example, given::
+
+   >>> p = PurePosixPath('/srv/holy/grail.tar.gz')
+
+.. image:: pathlib-parts.svg
+   :align: center
+   :class: invert-in-dark-mode
+   :alt: For p = PurePosixPath('/srv/holy/grail.tar.gz'), p.parent is
+         PurePosixPath('/srv/holy'), p.name is 'grail.tar.gz',
+         p.stem is 'grail.tar', and p.suffix is '.gz'.
+
+The stem excludes only the final suffix: in this example, it includes ``.tar``.
+
 Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.parser
@@ -571,10 +586,23 @@ Pure paths provide the following methods and properties:
       True
       >>> PurePath('a/b.py').full_match('*.py')
       False
-      >>> PurePath('/a/b/c.py').full_match('/a/**')
-      True
       >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
+      >>> PurePath('/a/b/c.py').full_match('/a/**')
+      True
+
+   Patterns ending in "``/**``", as in the example above, may surprise when
+   passed to ``full_match``. Even though "``**``" can match 0 segments,
+   "``.../**``" requires a separator to match. Hence "``/a/**``" does not
+   match path "``/a``". Since :class:`PurePath` drops trailing slashes, this
+   pattern also does not match "``/a/``".
+
+   ::
+
+      >>> PurePath('/a').full_match('/a/**')
+      False
+      >>> PurePath('/a/').full_match('/a/**')
+      False
 
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
@@ -1795,6 +1823,8 @@ The following wildcards are supported in patterns for
 
 ``**`` (entire segment)
   Matches any number of file or directory segments, including zero.
+  Note that in :meth:`~PurePath.full_match`, "``a/**``" does not match
+  "``a``", whereas :meth:`~Path.glob` yields "``a``" for that pattern.
 ``*`` (entire segment)
   Matches one file or directory segment.
 ``*`` (part of a segment)

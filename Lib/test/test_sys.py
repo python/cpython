@@ -1445,6 +1445,37 @@ class SysModuleTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             sys.set_int_max_str_digits(2_048.0)
 
+    @test.support.cpython_only
+    def test_is_immortal(self):
+        is_immortal = sys._is_immortal
+
+        # Singletons
+        self.assertTrue(is_immortal(None))
+        self.assertTrue(is_immortal(False))
+        self.assertTrue(is_immortal(True))
+        self.assertTrue(is_immortal(0))
+        self.assertTrue(is_immortal(b''))
+        self.assertTrue(is_immortal(''))
+        self.assertTrue(is_immortal(b'x'))
+        self.assertTrue(is_immortal('x'))
+        self.assertTrue(is_immortal(()))
+
+        # Static types
+        self.assertTrue(is_immortal(int))
+        self.assertTrue(is_immortal(dict))
+
+        # Test some mortal objects
+        class PythonType:
+            pass
+        self.assertFalse(is_immortal([1, 2, 3]))
+        self.assertFalse(is_immortal({'key': 5}))
+        self.assertFalse(is_immortal(object()))
+        self.assertFalse(is_immortal(PythonType))
+        self.assertFalse(is_immortal(2 ** 100))
+        # Use encode/decode to get a fresh object
+        self.assertFalse(is_immortal(b'abc'.decode()))
+        self.assertFalse(is_immortal('abc'.encode()))
+
 
 @test.support.cpython_only
 @test.support.force_not_colorized_test_class
@@ -2336,16 +2367,20 @@ this is invalid python code
         if not os.path.exists(source_libpython):
             self.skipTest(f'{source_libpython!r} does not exist')
 
-        with os_helper.temp_dir() as lib_dir:
-            copied_libpython = os.path.join(lib_dir, instsoname)
+        with os_helper.temp_dir(os_helper.TESTFN) as lib_dir:
+            copied_libpython = os.path.abspath(
+                os.path.join(lib_dir, instsoname))
             shutil.copy2(source_libpython, copied_libpython)
             if ldlibrary != instsoname:
                 os.symlink(instsoname, os.path.join(lib_dir, ldlibrary))
 
             env = os.environ.copy()
-            ld_library_path = env.get('LD_LIBRARY_PATH')
-            env['LD_LIBRARY_PATH'] = lib_dir if not ld_library_path else (
-                lib_dir + os.pathsep + ld_library_path)
+            # Preload the copy even when `RPATH` overrides `LD_LIBRARY_PATH`.
+            # Use a relative path to avoid spaces or colons in parent directories.
+            preload = os.path.join(os.curdir, lib_dir, instsoname)
+            ld_preload = env.get('LD_PRELOAD')
+            env['LD_PRELOAD'] = preload if not ld_preload else (
+                preload + os.pathsep + ld_preload)
 
             self._run_remote_exec_with_deleted_mapping(copied_libpython,
                                                        env=env)

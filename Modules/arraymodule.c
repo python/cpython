@@ -3200,6 +3200,7 @@ The following type codes are defined:\n\
     'b'         signed integer     1\n\
     'B'         unsigned integer   1\n\
     'u'         Unicode character  2 (see note)\n\
+    'w'         Py_UCS4            4\n\
     'h'         signed integer     2\n\
     'H'         unsigned integer   2\n\
     'i'         signed integer     2\n\

@@ -740,9 +740,8 @@ class NewIMAPTestsMixin:
                 SimpleIMAPHandler.handle(self)
 
         _, server = self._setup(TimeoutHandler)
-        addr = server.server_address[1]
         with self.assertRaises(TimeoutError):
-            client = self.imap_class("localhost", addr, timeout=0.001)
+            client = self.imap_class(*server.server_address, timeout=0.001)
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
@@ -894,6 +893,8 @@ class NewIMAPTestsMixin:
         client.login('user', 'pass')
         self.assertIn('ENABLE', client.capabilities)
         self.assertIn('UTF8=ACCEPT', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE UTF8=ACCEPT']))
         typ, _ = client.enable('UTF8=ACCEPT')
         self.assertEqual(typ, 'OK')
 
@@ -912,6 +913,8 @@ class NewIMAPTestsMixin:
         self.assertNotIn('ENABLE', client.capabilities)
         client.authenticate('MYAUTH', lambda x: b'fake')
         self.assertIn('ENABLE', client.capabilities)
+        self.assertEqual(client.response('CAPABILITY'),
+                         ('CAPABILITY', [b'IMAP4rev1 ENABLE']))
 
     def test_greeting_capabilities(self):
         # Capabilities advertised in the greeting are used directly,
@@ -925,6 +928,8 @@ class NewIMAPTestsMixin:
         client, server = self._setup(GreetingHandler)
         self.assertEqual(client.capabilities, ('IMAP4REV1', 'ENABLE'))
         self.assertFalse(getattr(server, 'capability_queried', False))
+        # The greeting is not a response to a command, so it is consumed.
+        self.assertEqual(client.response('CAPABILITY'), ('CAPABILITY', [None]))
 
     def test_login_requery_capabilities(self):
         # If the server does not advertise capabilities after login,

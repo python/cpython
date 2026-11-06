@@ -393,16 +393,16 @@ Improved Compatibility with Shells
 
 .. versionadded:: 3.6
 
-The :class:`shlex` class provides compatibility with the parsing performed by
-common Unix shells like ``bash``, ``dash``, and ``sh``.  To take advantage of
-this compatibility, specify the ``punctuation_chars`` argument in the
-constructor.  This defaults to ``False``, which preserves pre-3.6 behaviour.
-However, if it is set to ``True``, then parsing of the characters ``();<>|&``
-is changed: any run of these characters is returned as a single token.  While
-this is short of a full parser for shells (which would be out of scope for the
-standard library, given the multiplicity of shells out there), it does allow
-you to perform processing of command lines more easily than you could
-otherwise.  To illustrate, you can see the difference in the following snippet:
+The :class:`~shlex.shlex` class provides compatibility with the parsing
+performed by common Unix shells like ``bash``, ``dash``, and ``sh``.  To take
+advantage of this compatibility, specify the ``punctuation_chars`` argument in
+the constructor.  This defaults to ``False``, which preserves pre-3.6 behaviour.
+However, if it is set to ``True``, then parsing of the characters ``();<>|&`` is
+changed: any run of these characters is returned as a single token.  While this
+is short of a full parser for shells (which would be out of scope for the
+standard library, given the multiplicity of shells out there), it does allow you
+to perform processing of command lines more easily than you could otherwise.  To
+illustrate, you can see the difference in the following snippet:
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE

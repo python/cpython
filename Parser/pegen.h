@@ -174,6 +174,7 @@ typedef enum {
 } TARGETS_TYPE;
 
 int _Pypegen_raise_decode_error(Parser *p);
+int _Pypegen_raise_decode_error_known_location(Parser *p, expr_ty a);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,

@@ -467,6 +467,16 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
+#ifdef Py_GIL_DISABLED
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
+    if (subproc != NULL) {
+        // Delete the sub-process only when no abandoned segment points to it.
+        if (mi_atomic_load_relaxed(&subproc->abandoned_count) == 0) {
+            mi_subproc_delete(subproc);
+        }
+        interp->mimalloc.subproc = NULL;
+    }
+#endif
 #ifdef Py_STATS
     if (interp->pystats_struct) {
         PyMem_RawFree(interp->pystats_struct);
@@ -575,6 +585,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
+
+    interp->mimalloc.subproc = mi_subproc_new();
+    if (interp->mimalloc.subproc == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #endif
 
     llist_init(&interp->mem_free_queue.head);
@@ -1479,6 +1494,8 @@ alloc_threadstate(PyInterpreterState *interp)
         }
         reset_threadstate(tstate);
     }
+    // Set the interpreter before any later initialization can fail.
+    tstate->base.interp = interp;
     return tstate;
 }
 
@@ -1806,13 +1823,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-    // merge any lingering tasks from thread state to interpreter's
-    // tasks list
-    llist_concat(&tstate->interp->asyncio_tasks_head,
-                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
-    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
@@ -1888,11 +1898,30 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
-/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
+// `release_gil` releases the current thread's GIL. For states already removed
+// by _PyThreadState_RemoveExcept(), `is_unlinked` limits cleanup to task transfer.
 static void
-tstate_delete_common(PyThreadState *tstate, int release_gil)
+tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    assert(!is_unlinked || !release_gil);
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // Finalizers may register tasks during or after PyThreadState_Clear().
+    // Transfer them before normal unlinking or GIL release: cross-thread task
+    // removal uses stop-the-world or the GIL, not asyncio_tasks_lock.
+    if (!llist_empty(&tstate_impl->asyncio_tasks_head)) {
+        // Serialize transfers from concurrently exiting threads.
+        PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+        llist_concat(&tstate->interp->asyncio_tasks_head,
+                     &tstate_impl->asyncio_tasks_head);
+        PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
+    }
+    assert(llist_empty(&tstate_impl->asyncio_tasks_head));
+    if (is_unlinked) {
+        return;
+    }
+
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -1912,7 +1941,10 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
     }
-    if (tstate->state != _Py_THREAD_SUSPENDED) {
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    if (state != _Py_THREAD_SUSPENDED &&
+        state != _Py_THREAD_SUSPENDED_WAITING)
+    {
         // Any ongoing stop-the-world request should not wait for us because
         // our thread is getting deleted.
         if (interp->stoptheworld.requested) {
@@ -1925,7 +1957,6 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     // Add our portion of the total refcount to the interpreter's total.
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
     assert(tstate_impl->refcounts.values == NULL);
@@ -1972,7 +2003,7 @@ zapthreads(PyInterpreterState *interp)
     */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        tstate_delete_common(tstate, 0);
+        tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
@@ -1983,7 +2014,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate, 0);
+    tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -1999,7 +2030,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _PyStats_Detach((_PyThreadStateImpl *)tstate);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    tstate_delete_common(tstate, 1);  // release GIL as part of call
+    tstate_delete_common(tstate, /*release_gil=*/1, /*is_unlinked=*/0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2069,6 +2100,7 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
+        tstate_delete_common(p, /*release_gil=*/0, /*is_unlinked=*/1);
         if (is_after_fork) {
             free_threadstate((_PyThreadStateImpl *)p);
         }
@@ -2196,6 +2228,22 @@ tstate_try_attach(PyThreadState *tstate)
 #endif
 }
 
+static int
+tstate_try_attach_detached(PyThreadState *tstate, int *state)
+{
+#ifdef Py_GIL_DISABLED
+    assert(*state == _Py_THREAD_DETACHED ||
+           *state == _Py_THREAD_DETACHED_WAITING);
+    return _Py_atomic_compare_exchange_int(&tstate->state,
+                                           state,
+                                           _Py_THREAD_ATTACHED);
+#else
+    assert(tstate->state == _Py_THREAD_DETACHED);
+    tstate->state = _Py_THREAD_ATTACHED;
+    return 1;
+#endif
+}
+
 static void
 tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
@@ -2210,10 +2258,20 @@ tstate_set_detached(PyThreadState *tstate, int detached_state)
 static void
 tstate_wait_attach(PyThreadState *tstate)
 {
-    do {
+    for (;;) {
         int state = _Py_atomic_load_int_relaxed(&tstate->state);
         if (state == _Py_THREAD_SUSPENDED) {
-            // Wait until we're switched out of SUSPENDED to DETACHED.
+            // Register an active attach waiter. The next stop-the-world
+            // request must let this thread attach before suspending it again.
+            if (!_Py_atomic_compare_exchange_int(
+                    &tstate->state, &state, _Py_THREAD_SUSPENDED_WAITING))
+            {
+                continue;
+            }
+            state = _Py_THREAD_SUSPENDED_WAITING;
+        }
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            // Park rechecks the state before sleeping, in case we were resumed.
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }
@@ -2222,10 +2280,13 @@ tstate_wait_attach(PyThreadState *tstate)
             _PyThreadState_HangThread(tstate);
         }
         else {
-            assert(state == _Py_THREAD_DETACHED);
+            assert(state == _Py_THREAD_DETACHED ||
+                   state == _Py_THREAD_DETACHED_WAITING);
+            if (tstate_try_attach_detached(tstate, &state)) {
+                return;
+            }
         }
-        // Once we're back in DETACHED we can re-attach
-    } while (!tstate_try_attach(tstate));
+    }
 }
 
 void
@@ -2367,10 +2428,24 @@ void
 _PyThreadState_ResumeDetached(PyThreadState *tstate)
 {
     assert(tstate != _PyThreadState_GET());
-    assert(_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_SUSPENDED);
-    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    int next_state;
+    do {
+        assert(state == _Py_THREAD_SUSPENDED ||
+               state == _Py_THREAD_SUSPENDED_WAITING);
+        if (state == _Py_THREAD_SUSPENDED_WAITING) {
+            next_state = _Py_THREAD_DETACHED_WAITING;
+        }
+        else {
+            next_state = _Py_THREAD_DETACHED;
+        }
+        // Retry if an attach waiter registered concurrently.
+    } while (!_Py_atomic_compare_exchange_int(
+                &tstate->state, &state, next_state));
     // Wake the thread if it is parked in tstate_wait_attach().
-    _PyParkingLot_UnparkAll(&tstate->state);
+    if (state == _Py_THREAD_SUSPENDED_WAITING) {
+        _PyParkingLot_UnparkAll(&tstate->state);
+    }
 }
 #endif
 
@@ -2415,6 +2490,8 @@ park_detached_threads(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             int state = _Py_atomic_load_int_relaxed(&t->state);
+            // DETACHED_WAITING threads remain counted until they attach and
+            // stop, so repeated pauses cannot prevent them from attaching.
             if (state == _Py_THREAD_DETACHED) {
                 // Atomically transition to "suspended" if in "detached" state.
                 if (_Py_atomic_compare_exchange_int(
@@ -2503,10 +2580,7 @@ start_the_world(struct _stoptheworld_state *stw)
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
             if (t != stw->requester) {
-                assert(_Py_atomic_load_int_relaxed(&t->state) ==
-                       _Py_THREAD_SUSPENDED);
-                _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
-                _PyParkingLot_UnparkAll(&t->state);
+                _PyThreadState_ResumeDetached(t);
             }
         }
     }
@@ -3249,10 +3323,11 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
     llist_init(&mts->page_list);
 
-    // Exiting threads push any remaining in-use segments to the abandoned
-    // pool to be re-claimed later by other threads. We use per-interpreter
-    // pools to keep Python objects from different interpreters separate.
-    tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
+    // Exiting threads abandon any remaining in-use segments to be re-claimed
+    // later by other threads. We use a per-interpreter mimalloc sub-process
+    // to keep Python objects from different interpreters separate.
+    assert(tstate->interp->mimalloc.subproc != NULL);
+    tld->segments.subproc = tstate->interp->mimalloc.subproc;
 
     // Don't fill in the first N bytes up to ob_type in debug builds. We may
     // access ob_tid and the refcount fields in the dict and list lock-less
@@ -3270,7 +3345,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
 
     // Initialize each heap
     for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
-        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
+        _mi_heap_init(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
         mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
 

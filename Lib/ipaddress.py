@@ -1870,14 +1870,18 @@ class _BaseV6:
         elif isinstance(self, IPv6Interface):
             ip_str = str(self.ip)
         else:
-            ip_str = str(self)
+            ip_str = self._string_from_ip_int(self._ip)
 
         ip_int = self._ip_int_from_string(ip_str)
         hex_str = '%032x' % ip_int
-        parts = [hex_str[x:x+4] for x in range(0, 32, 4)]
-        if isinstance(self, (_BaseNetwork, IPv6Interface)):
-            return '%s/%d' % (':'.join(parts), self._prefixlen)
-        return ':'.join(parts)
+        exploded = ':'.join([hex_str[x:x+4] for x in range(0, 32, 4)])
+        if isinstance(self, _BaseNetwork):
+            return '%s/%d' % (exploded, self._prefixlen)
+        if self._scope_id:
+            exploded = '%s%%%s' % (exploded, self._scope_id)
+        if isinstance(self, IPv6Interface):
+            return '%s/%d' % (exploded, self._prefixlen)
+        return exploded
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv6 address.
@@ -2268,7 +2272,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_unspecified(self):
-        return self._ip == 0 and self.network.is_unspecified
+        return super().is_unspecified and self.network.is_unspecified
 
     @property
     def is_loopback(self):

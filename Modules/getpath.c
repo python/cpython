@@ -374,9 +374,11 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     size_t cb = fread(buffer, 1, MAX_FILE, fp);
     fclose(fp);
     if (!cb) {
+        PyMem_Free(buffer);
         return r;
     }
     if (cb >= MAX_FILE) {
+        PyMem_Free(buffer);
         Py_DECREF(r);
         PyErr_SetString(PyExc_MemoryError,
             "cannot read file larger than 32KB during initialization");
@@ -589,7 +591,11 @@ getpath_warn(PyObject *Py_UNUSED(self), PyObject *args)
     if (!PyArg_ParseTuple(args, "U", &msgobj)) {
         return NULL;
     }
-    fprintf(stderr, "%s\n", PyUnicode_AsUTF8(msgobj));
+    const char *msg = PyUnicode_AsUTF8(msgobj);
+    if (msg == NULL) {
+        return NULL;
+    }
+    fprintf(stderr, "%s\n", msg);
     Py_RETURN_NONE;
 }
 

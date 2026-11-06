@@ -633,7 +633,7 @@ message objects.
    .. method:: make_mixed(boundary=None)
 
       Convert a non-``multipart``, a ``multipart/related``, or a
-      ``multipart-alternative`` into a ``multipart/mixed``, moving any existing
+      ``multipart/alternative`` into a ``multipart/mixed``, moving any existing
       :mailheader:`Content-` headers and payload into a (new) first part of the
       ``multipart``.  If *boundary* is specified, use it as the boundary string
       in the multipart, otherwise leave the boundary to be automatically

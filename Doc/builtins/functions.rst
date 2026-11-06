@@ -314,6 +314,10 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
+   It can also be ``'func_type'`` if *source* consists of a
+   function type signature, for example ``(int) -> str``; see
+   :func:`ast.parse` for more information. This mode requires passing
+   :data:`ast.PyCF_ONLY_AST` in *flags*.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
@@ -344,8 +348,14 @@ are always available.  They are listed here in alphabetical order.
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
-   source is invalid.
+   This function raises :exc:`SyntaxError` if the compiled source is invalid,
+   including a *source* containing a null character or that cannot be decoded;
+   :exc:`ValueError` if *mode* or *flags* is invalid,
+   or if a string *source* contains surrogate characters;
+   :exc:`MemoryError` or :exc:`RecursionError` if *source* is too complex
+   to parse or compile,
+   for example an expression with many thousands of nested operators;
+   and :exc:`OverflowError` if *source* is too large.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -377,11 +387,18 @@ are always available.  They are listed here in alphabetical order.
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
 
-   .. versionadded:: 3.15
+   .. versionchanged:: 3.8
+      Added support for ``mode='func_type'``.
+
+   .. versionchanged:: 3.12
+      :exc:`SyntaxError` is raised instead of :exc:`ValueError` when null bytes
+      are encountered in *source*.
+
+   .. versionchanged:: 3.15
       Added the *module* parameter.
 
 
@@ -715,7 +732,7 @@ are always available.  They are listed here in alphabetical order.
    still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing
+   It's only valid when *source* is a code object containing
    :term:`free (closure) variables <closure variable>`.
    The length of the tuple must exactly match the length of the code object's
    :attr:`~codeobject.co_freevars` attribute.
@@ -1771,8 +1788,6 @@ are always available.  They are listed here in alphabetical order.
    including the name and address of the object.  A class can control what this
    function returns for its instances
    by defining a :meth:`~object.__repr__` method.
-   If :func:`sys.displayhook` is not accessible, this function will raise
-   :exc:`RuntimeError`.
 
    This class has a custom representation that can be evaluated::
 
@@ -2086,10 +2101,10 @@ are always available.  They are listed here in alphabetical order.
 
    When called directly within an ordinary method of a class, both arguments may
    be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
-   enclosing class, and *obj* will be the first argument of the immediately
-   enclosing function (typically ``self``). (This means that zero-argument
+   enclosing class, and *object_or_type* will be the first argument of the
+   immediately enclosing function (typically ``self``). Zero-argument
    :func:`!super` will not work as expected within nested functions, including
-   generator expressions, which implicitly create nested functions.)
+   generator expressions, which implicitly create nested functions.
 
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without
@@ -2348,10 +2363,9 @@ are always available.  They are listed here in alphabetical order.
    determine the package context of the :keyword:`import` statement.
 
    *level* specifies whether to use absolute or relative imports. ``0`` (the
-   default) means only perform absolute imports.  Positive values for
-   *level* indicate the number of parent directories to search relative to the
-   directory of the module calling :func:`__import__` (see :pep:`328` for the
-   details).
+   default) means only perform absolute imports.  For relative imports,
+   ``1`` refers to the current package, ``2`` to its parent package, and so on
+   (see :pep:`328` for details).
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the

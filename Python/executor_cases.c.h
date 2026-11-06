@@ -9020,7 +9020,6 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     SET_CURRENT_CACHED_VALUES(0);
@@ -9064,10 +9063,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache0 = stack_pointer[0];
+                    _tos_cache0 = none;
                     SET_CURRENT_CACHED_VALUES(1);
                     JUMP_TO_JUMP_TARGET();
                 }
@@ -9111,10 +9109,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache1 = stack_pointer[1];
+                    _tos_cache1 = none;
                     _tos_cache0 = null_or_index;
                     SET_CURRENT_CACHED_VALUES(2);
                     JUMP_TO_JUMP_TARGET();
@@ -9161,10 +9158,9 @@
                     SET_CURRENT_CACHED_VALUES(0);
                     JUMP_TO_ERROR();
                 }
-                next = none;
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
-                    _tos_cache2 = stack_pointer[2];
+                    _tos_cache2 = none;
                     _tos_cache1 = null_or_index;
                     _tos_cache0 = iter;
                     SET_CURRENT_CACHED_VALUES(3);
@@ -10410,6 +10406,76 @@
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL_r00: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            if (BUILTINS() != tstate->interp->builtins) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
+            SET_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            if (BUILTINS() != tstate->interp->builtins) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL_r22: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            if (BUILTINS() != tstate->interp->builtins) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(2);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _GUARD_BUILTINS_IS_CANONICAL_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            if (BUILTINS() != tstate->interp->builtins) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache2 = _stack_item_2;
+                _tos_cache1 = _stack_item_1;
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(3);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache2 = _stack_item_2;
+            _tos_cache1 = _stack_item_1;
+            _tos_cache0 = _stack_item_0;
+            SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
@@ -18938,6 +19004,18 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = self;
+                self = PyStackRef_NULL;
+                stack_pointer[-2] = self;
+                PyStackRef_CLOSE(tmp);
+                tmp = callable;
+                callable = PyStackRef_NULL;
+                stack_pointer[-3] = callable;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -3;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
@@ -18980,7 +19058,17 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
-                stack_pointer += 1;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = self;
+                self = PyStackRef_NULL;
+                stack_pointer[-1] = self;
+                PyStackRef_CLOSE(tmp);
+                tmp = callable;
+                callable = PyStackRef_NULL;
+                stack_pointer[-2] = callable;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
@@ -19026,8 +19114,17 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = self;
+                self = PyStackRef_NULL;
                 stack_pointer[0] = self;
-                stack_pointer += 2;
+                PyStackRef_CLOSE(tmp);
+                tmp = callable;
+                callable = PyStackRef_NULL;
+                stack_pointer[-1] = callable;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
@@ -19075,10 +19172,17 @@
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp = self;
+                self = PyStackRef_NULL;
                 stack_pointer[0] = callable;
                 stack_pointer[1] = self;
-                stack_pointer += 3;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                PyStackRef_CLOSE(tmp);
+                tmp = callable;
+                callable = PyStackRef_NULL;
+                stack_pointer[0] = callable;
+                PyStackRef_CLOSE(tmp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }

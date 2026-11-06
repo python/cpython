@@ -46,14 +46,12 @@
    when researching a change.
 
 This article explains the new features in Python 3.15, compared to 3.14.
-
+Python 3.15 was released on 9 October 2026.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+.. seealso::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.15 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+   :pep:`790` -- Python 3.15 release schedule
 
 
 Summary -- Release highlights
@@ -62,7 +60,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
-Python 3.15 will be the latest stable release of the Python programming
+Python 3.15 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation,
 and the standard library.
 The biggest changes include
@@ -147,6 +145,7 @@ Release changes:
 
 * :ref:`The official Windows 64-bit binaries now use the tail-calling interpreter
   <whatsnew315-windows-tail-calling-interpreter>`
+* The official macOS binaries now install free-threading support by default
 
 
 New features
@@ -2908,3 +2907,30 @@ that may require changes to your code.
   Use warning filters to silence them or additional :meth:`!assertWarns*`
   to catch and check them.
   (Contributed by Serhiy Storchaka in :gh:`143231`.)
+
+
+Notable changes in 3.15.2
+=========================
+
+importlib
+---------
+
+* Threads that simultaneously perform first-time ``import package.submodule``
+  imports no longer risk a deadlock or spurious import errors, a regression
+  introduced in 3.15.0 by the fix for :gh:`83065`.  A package's import lock is
+  now released as soon as its ``__init__`` returns.
+  :func:`importlib.import_module` now returns the partially initialized
+  module in a circular import split across threads, as the :keyword:`import`
+  statement already did, instead of raising ``_DeadlockError``.
+  (Contributed by Gregory P. Smith in :gh:`159963`.)
+
+ssl
+---
+
+* The :mod:`ssl` module now rejects TLS certificate chains that contain one
+  of a set of compromised eMudhra intermediate CA certificates.  The affected
+  certificates are identified by their public key, so cross-signed copies that
+  reuse the same key are blocked as well.  It is a defense-in-depth backstop
+  that applies even when an application supplies its own root CA bundle, and
+  regardless of whether the platform trust store has removed trust.
+  (Contributed by Christian Heimes in :gh:`160040` for :cve:`2026-115557`.)

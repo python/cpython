@@ -827,7 +827,7 @@ class CmdLineTest(unittest.TestCase):
                 '-Werror:::test_pkg.__main__',
                 os.path.join(zip_name, 'test_pkg')
             )
-            self.assertEqual(err.count(b': SyntaxWarning: '), 12)
+            self.assertEqual(err.count(b': SyntaxWarning: '), 6)
 
 
 def tearDownModule():

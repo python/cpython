@@ -1747,16 +1747,16 @@ _Unpickler_NewMemo(Py_ssize_t new_size)
     return memo;
 }
 
-/* Free the unpickler's memo, taking care to decref any items left in it. */
+/* Replace the unpickler's memo and release the old entries. */
 static void
-_Unpickler_MemoCleanup(UnpicklerObject *self)
+_Unpickler_MemoCleanup(UnpicklerObject *self, PyObject **replacement)
 {
     Py_ssize_t i;
     PyObject **memo = self->memo;
 
-    if (self->memo == NULL)
+    self->memo = replacement;
+    if (memo == NULL)
         return;
-    self->memo = NULL;
     i = self->memo_size;
     while (--i >= 0) {
         Py_XDECREF(memo[i]);
@@ -4846,6 +4846,25 @@ persistent_id(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *Pickler_getattr(PyObject *self, PyObject *name);
+
+/* Like PyObject_GetOptionalAttr(), but avoids creating an AttributeError
+   for a missing attribute.  Must not be used for "persistent_id". */
+static int
+pickler_get_optional_attr(PicklerObject *self, PyObject *name,
+                          PyObject **result)
+{
+    if (Py_TYPE(self)->tp_getattro == Pickler_getattr) {
+        *result = _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
+                                                   NULL, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        return PyErr_Occurred() ? -1 : 0;
+    }
+    return PyObject_GetOptionalAttr((PyObject *)self, name, result);
+}
+
 static int
 dump(PickleState *state, PicklerObject *self, PyObject *obj)
 {
@@ -4867,8 +4886,8 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     Py_XSETREF(self->persistent_id, tmp);
 
     /* Cache the reducer_override method, if it exists. */
-    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(reducer_override),
-                             &tmp) < 0) {
+    if (pickler_get_optional_attr(self, &_Py_ID(reducer_override),
+                                  &tmp) < 0) {
         goto error;
     }
     Py_XSETREF(self->reducer_override, tmp);
@@ -5148,8 +5167,8 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_memo = NULL;
 
     if (self->dispatch_table == NULL) {
-        if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
-                                &self->dispatch_table) < 0) {
+        if (pickler_get_optional_attr(self, &_Py_ID(dispatch_table),
+                                      &self->dispatch_table) < 0) {
             goto error;
         }
     }
@@ -7558,7 +7577,7 @@ Unpickler_clear(PyObject *op)
     }
 
     Py_CLEAR(self->memo_dict);
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     PyMem_Free(self->marks);
     self->marks = NULL;
     PyMem_Free(self->input_line);
@@ -7705,10 +7724,16 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=d20cd43f4ba1fb1f input=b1df7c52e7afd9bd]*/
 {
-    _Unpickler_MemoCleanup(self->unpickler);
-    self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
-    if (self->unpickler->memo == NULL)
+    UnpicklerObject *unpickler = self->unpickler;
+    PyObject **memo = _Unpickler_NewMemo(unpickler->memo_size);
+    if (memo == NULL) {
         return NULL;
+    }
+    PyObject *memo_dict = unpickler->memo_dict;
+    unpickler->memo_dict = NULL;
+    unpickler->memo_len = 0;
+    _Unpickler_MemoCleanup(unpickler, memo);
+    Py_XDECREF(memo_dict);
     Py_RETURN_NONE;
 }
 
@@ -7913,7 +7938,7 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         return -1;
     }
 
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     self->memo_size = new_memo_size;
     self->memo = new_memo;
 

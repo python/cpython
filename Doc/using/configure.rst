@@ -240,7 +240,7 @@ General Options
 
    By default, the digit size is 30.
 
-   Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
+   Define :c:macro:`PYLONG_BITS_IN_DIGIT` to ``15`` or ``30``.
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
@@ -866,7 +866,12 @@ also be used to improve performance.
    Disable static documentation strings to reduce the memory footprint (enabled
    by default). Documentation strings defined in Python are not affected.
 
-   Don't define the ``WITH_DOC_STRINGS`` macro.
+   Don't define the :c:macro:`WITH_DOC_STRINGS` macro.
+
+   .. c:macro:: WITH_DOC_STRINGS
+
+      Define this macro to include static documentation strings in the build.
+      It is defined by default, unless :option:`--without-doc-strings` is used.
 
    See the ``PyDoc_STRVAR()`` macro.
 
@@ -1015,6 +1020,10 @@ Debug options
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
 
+   MSan reports false positives for memory initialized by libraries that are
+   not built with MSan, so either build all dependencies with MSan or disable
+   the extension modules that use them in :file:`Modules/Setup.local`.
+
    .. versionadded:: 3.6
 
 .. option:: --with-undefined-behavior-sanitizer
@@ -1056,7 +1065,7 @@ Linker options
 
    This option does nothing if ``--enable-shared`` is not used.
 
-   The default (when ``-enable-shared`` is used) is to link the Python
+   The default (when ``--enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
    .. versionadded:: 3.15

@@ -11,6 +11,7 @@ the package, and perhaps a particular module inside it.
 """
 
 from _curses import *
+import _curses
 import os as _os
 import sys as _sys
 
@@ -33,6 +34,7 @@ def initscr():
         if key.startswith('ACS_') or key in ('LINES', 'COLS'):
             setattr(curses, key, value)
     return stdscr
+initscr.__doc__ = _curses.initscr.__doc__
 
 # This is a similar wrapper for start_color(), which adds the COLORS and
 # COLOR_PAIRS variables which are only available after start_color() is
@@ -43,6 +45,7 @@ def start_color():
     _curses.start_color()
     curses.COLORS = _curses.COLORS
     curses.COLOR_PAIRS = _curses.COLOR_PAIRS
+start_color.__doc__ = _curses.start_color.__doc__
 
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 

@@ -355,19 +355,30 @@ def _find_isoformat_datetime_separator(dtstr):
             return 8
 
 
+def _read_isoformat_component(s, n):
+    # The caller has verified the string is ASCII, so isdigit() matches only
+    # the ASCII digits accepted by the C parser.
+    if len(s) != n or not s.isdigit():
+        raise ValueError("Invalid isoformat string")
+    return int(s)
+
+
 def _parse_isoformat_date(dtstr):
     # It is assumed that this is an ASCII-only string of lengths 7, 8 or 10,
     # see the comment on Modules/_datetimemodule.c:_find_isoformat_datetime_separator
     if len(dtstr) not in (7, 8, 10):
         raise ValueError("Invalid isoformat string")
-    year = int(dtstr[0:4])
+    if not dtstr.isascii():
+        raise ValueError("Invalid isoformat string")
+
+    year = _read_isoformat_component(dtstr[0:4], 4)
     has_sep = dtstr[4] == '-'
 
     pos = 4 + has_sep
     if dtstr[pos:pos + 1] == "W":
         # YYYY-?Www-?D?
         pos += 1
-        weekno = int(dtstr[pos:pos + 2])
+        weekno = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
 
         dayno = 1
@@ -377,17 +388,17 @@ def _parse_isoformat_date(dtstr):
 
             pos += has_sep
 
-            dayno = int(dtstr[pos:pos + 1])
+            dayno = _read_isoformat_component(dtstr[pos:pos + 1], 1)
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
-        month = int(dtstr[pos:pos + 2])
+        month = _read_isoformat_component(dtstr[pos:pos + 2], 2)
         pos += 2
         if (dtstr[pos:pos + 1] == "-") != has_sep:
             raise ValueError("Inconsistent use of dash separator")
 
         pos += has_sep
-        day = int(dtstr[pos:pos + 2])
+        day = _read_isoformat_component(dtstr[pos:pos + 2], 2)
 
         return [year, month, day]
 
@@ -402,10 +413,7 @@ def _parse_hh_mm_ss_ff(tstr):
     time_comps = [0, 0, 0, 0]
     pos = 0
     for comp in range(0, 3):
-        if (len_str - pos) < 2:
-            raise ValueError("Incomplete time component")
-
-        time_comps[comp] = int(tstr[pos:pos+2])
+        time_comps[comp] = _read_isoformat_component(tstr[pos:pos+2], 2)
 
         pos += 2
         next_char = tstr[pos:pos+1]
@@ -426,7 +434,7 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
-            if not all(map(_is_ascii_digit, tstr[pos:])):
+            if not tstr[pos:].isdigit():
                 raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
@@ -447,6 +455,8 @@ def _parse_isoformat_time(tstr):
     len_str = len(tstr)
     if len_str < 2:
         raise ValueError("Isoformat time too short")
+    if not tstr.isascii():
+        raise ValueError("Invalid isoformat string")
 
     # This is equivalent to re.search('[+-Z]', tstr), but faster
     tz_pos = (tstr.find('-') + 1 or tstr.find('+') + 1 or tstr.find('Z') + 1)
@@ -646,14 +656,6 @@ class timedelta:
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
                 milliseconds=0, minutes=0, hours=0, weeks=0):
-        # Doing this efficiently and accurately in C is going to be difficult
-        # and error-prone, due to ubiquitous overflow possibilities, and that
-        # C double doesn't have enough bits of precision to represent
-        # microseconds over 10K years faithfully.  The code here tries to make
-        # explicit where go-fast assumptions can be relied on, in order to
-        # guide the C implementation; it's way more convoluted than speed-
-        # ignoring auto-overflow-to-long idiomatic Python could be.
-
         for name, value in (
             ("days", days),
             ("seconds", seconds),
@@ -668,80 +670,35 @@ class timedelta:
                     f"unsupported type for timedelta {name} component: {type(value).__name__}"
                 )
 
-        # Final values, all integer.
-        # s and us fit in 32-bit signed ints; d isn't bounded.
-        d = s = us = 0
+        # Sum the exact number of microseconds, like the C implementation:
+        # the integer part of each float is converted exactly, and only the
+        # fractional microseconds left over are added up as a float and
+        # rounded (half to even) at the end.
+        us = 0
+        leftover = 0.0
+        for value, factor in (
+            (microseconds, 1),
+            (milliseconds, 1000),
+            (seconds, 1000000),
+            (minutes, 60*1000000),
+            (hours, 3600*1000000),
+            (days, 24*3600*1000000),
+            (weeks, 7*24*3600*1000000)
+        ):
+            if isinstance(value, float):
+                frac, whole = _math.modf(value)
+                us += int(whole) * factor
+                frac, whole = _math.modf(frac * factor)
+                us += int(whole)
+                leftover += frac
+            else:
+                us += int(value * factor)
+        if leftover:
+            n, m = leftover.as_integer_ratio()
+            us = _divide_and_round(us * m + n, m)
 
-        # Normalize everything to days, seconds, microseconds.
-        days += weeks*7
-        seconds += minutes*60 + hours*3600
-        microseconds += milliseconds*1000
-
-        # Get rid of all fractions, and normalize s and us.
-        # Take a deep breath <wink>.
-        if isinstance(days, float):
-            dayfrac, days = _math.modf(days)
-            daysecondsfrac, daysecondswhole = _math.modf(dayfrac * (24.*3600.))
-            assert daysecondswhole == int(daysecondswhole)  # can't overflow
-            s = int(daysecondswhole)
-            assert days == int(days)
-            d = int(days)
-        else:
-            daysecondsfrac = 0.0
-            d = days
-        assert isinstance(daysecondsfrac, float)
-        assert abs(daysecondsfrac) <= 1.0
-        assert isinstance(d, int)
-        assert abs(s) <= 24 * 3600
-        # days isn't referenced again before redefinition
-
-        if isinstance(seconds, float):
-            secondsfrac, seconds = _math.modf(seconds)
-            assert seconds == int(seconds)
-            seconds = int(seconds)
-            secondsfrac += daysecondsfrac
-            assert abs(secondsfrac) <= 2.0
-        else:
-            secondsfrac = daysecondsfrac
-        # daysecondsfrac isn't referenced again
-        assert isinstance(secondsfrac, float)
-        assert abs(secondsfrac) <= 2.0
-
-        assert isinstance(seconds, int)
-        days, seconds = divmod(seconds, 24*3600)
-        d += days
-        s += int(seconds)    # can't overflow
-        assert isinstance(s, int)
-        assert abs(s) <= 2 * 24 * 3600
-        # seconds isn't referenced again before redefinition
-
-        usdouble = secondsfrac * 1e6
-        assert abs(usdouble) < 2.1e6    # exact value not critical
-        # secondsfrac isn't referenced again
-
-        if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-        else:
-            microseconds = int(microseconds)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-            microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
-        assert isinstance(microseconds, int)
-        assert abs(s) <= 3 * 24 * 3600
-        assert abs(microseconds) < 3.1e6
-
-        # Just a little bit of carrying possible for microseconds and seconds.
-        seconds, us = divmod(microseconds, 1000000)
-        s += seconds
-        days, s = divmod(s, 24*3600)
-        d += days
+        s, us = divmod(us, 1000000)
+        d, s = divmod(s, 24*3600)
 
         assert isinstance(d, int)
         assert isinstance(s, int) and 0 <= s < 24*3600

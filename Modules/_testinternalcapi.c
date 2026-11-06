@@ -30,6 +30,7 @@
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_jit.h"           // _PyJIT_AddressInJitCode()
+#include "pycore_lock.h"          // PyEvent_WaitTimed()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -200,6 +201,23 @@ static PyObject*
 get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
+
+static PyObject *
+test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    // Request consecutive pauses without running Python code between them.
+    for (int i = 0; i < 100; i++) {
+        _PyEval_StopTheWorld(interp);
+        // Give detached threads time to try to reattach during the pause.
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, 10 * 1000 * 1000, /*detach=*/0);
+        _PyEval_StartTheWorld(interp);
+    }
+#endif
+    Py_RETURN_NONE;
 }
 
 #ifdef MS_WINDOWS
@@ -438,7 +456,7 @@ next_frame_pointer_is_valid(uintptr_t *frame_pointer, uintptr_t *next_fp,
 #endif
 }
 
-static PyObject *
+static PyObject * _Py_NO_SANITIZE_MEMORY
 manual_unwind_from_fp(uintptr_t *frame_pointer)
 {
     uintptr_t stack_min = 0;
@@ -1124,7 +1142,9 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list, func->func_name);
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -1185,7 +1205,9 @@ record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        int res = PyList_Append(state->record_list, func->func_name);
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_name));
+        int res = PyList_Append(state->record_list, name);
+        Py_DECREF(name);
         if (res < 0) {
             return NULL;
         }
@@ -1995,6 +2017,19 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
+/* Return a str holding code points above U+10FFFF. */
+static PyObject *
+new_invalid_str(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *str = PyUnicode_New(2, _Py_MAX_UNICODE);
+    if (str == NULL) {
+        return NULL;
+    }
+    PyUnicode_4BYTE_DATA(str)[0] = _Py_MAX_UNICODE + 1;
+    PyUnicode_4BYTE_DATA(str)[1] = _Py_MAX_UNICODE + 2;
+    return str;
+}
+
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
@@ -2049,8 +2084,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* ASan or TSan would report an use-after-free error */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+    /* ASan, MSan or TSan would report an error. */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -2563,6 +2598,9 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         mode = PyUnicode_AsUTF8(modeobj);
+        if (mode == NULL) {
+            return NULL;
+        }
         if (strlen(mode) == 0) {
             mode = "xidata";
         }
@@ -3261,6 +3299,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
@@ -3312,6 +3351,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"new_invalid_str", new_invalid_str, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -3480,6 +3520,10 @@ module_exec(PyObject *module)
         return 1;
     }
     PyModule_AddObject(module, "SelfInterruptingContextManager", (PyObject *)&SelfInterruptingContextManager_Type);
+
+    if (PyModule_AddIntMacro(module, _Py_MAX_UNICODE) < 0) {
+        return 1;
+    }
 
     return 0;
 }

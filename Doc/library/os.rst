@@ -1253,8 +1253,8 @@ as internal buffering of data.
    * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
    * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
    * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
-   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
-   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_HOLE` -- set *pos* to the next data hole, relative to *pos*
 
    .. versionchanged:: 3.3
 
@@ -2945,6 +2945,11 @@ features:
 
    .. audit-event:: os.scandir path os.scandir
 
+   Sharing a :func:`scandir` iterator between threads will not corrupt the
+   iterator, but it is subject to :term:`race conditions <race condition>`:
+   which entries each thread receives is unspecified, and closing the iterator
+   while another thread is iterating ends that iteration early.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -4553,16 +4558,17 @@ Naturally, they are all only available on Linux.
    - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
 
    If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
-   real-time clock is used. If system clock is changed, timer setting need
-   to be updated. To cancel timer when system clock is changed, see
+   real-time clock is used. If the system clock is changed, the timer setting
+   needs to be updated. To cancel the timer when the system clock is changed, see
    :const:`TFD_TIMER_CANCEL_ON_SET`.
 
    If *clockid* is :const:`time.CLOCK_MONOTONIC`, a non-settable monotonically
    increasing clock is used. Even if the system clock is changed, the timer
    setting will not be affected.
 
-   If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
-   except it includes any time that the system is suspended.
+   If *clockid* is :const:`time.CLOCK_BOOTTIME`, it is the same as
+   :const:`time.CLOCK_MONOTONIC` except it includes any time that the system
+   is suspended.
 
    The file descriptor's behaviour can be modified by specifying a *flags* value.
    Any of the following variables may be used, combined using bitwise OR
@@ -4573,8 +4579,8 @@ Naturally, they are all only available on Linux.
 
    If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until
    the timer expires. If it is set as a flag, :func:`read` doesn't block, but
-   If there hasn't been an expiration since the last call to read,
-   :func:`read` raises :class:`OSError` with ``errno`` is set to
+   if there hasn't been an expiration since the last call to read,
+   :func:`read` raises :class:`OSError` with ``errno`` set to
    :const:`errno.EAGAIN`.
 
    :const:`TFD_CLOEXEC` is always set by Python automatically.
@@ -4589,7 +4595,7 @@ Naturally, they are all only available on Linux.
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
+.. function:: timerfd_settime(fd, /, *, flags=0, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
    This function operates the same interval timer as :func:`timerfd_settime_ns`.
@@ -4604,12 +4610,11 @@ Naturally, they are all only available on Linux.
    - :const:`TFD_TIMER_CANCEL_ON_SET`
 
    The timer is disabled by setting *initial* to zero (``0``).
-   If *initial* is equal to or greater than zero, the timer is enabled.
+   If *initial* is greater than zero, the timer is enabled.
    If *initial* is less than zero, it raises an :class:`OSError` exception
-   with ``errno`` set to :const:`errno.EINVAL`
+   with ``errno`` set to :const:`errno.EINVAL`.
 
    By default the timer will fire when *initial* seconds have elapsed.
-   (If *initial* is zero, timer will fire immediately.)
 
    However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
    the timer will fire when the timer's clock
@@ -4620,13 +4625,13 @@ Naturally, they are all only available on Linux.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
    If *interval* is less than zero, it raises :class:`OSError` with ``errno``
-   set to :const:`errno.EINVAL`
+   set to :const:`errno.EINVAL`.
 
    If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with
    :const:`TFD_TIMER_ABSTIME` and the clock for this timer is
    :const:`time.CLOCK_REALTIME`, the timer is marked as cancelable if the
    real-time clock is changed discontinuously. Reading the descriptor is
-   aborted with the error ECANCELED.
+   aborted with the error :const:`errno.ECANCELED`.
 
    Linux manages system clock as UTC. A daylight-savings time transition is
    done by changing time offset only and doesn't cause discontinuous system
@@ -5451,16 +5456,16 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.7
 
 
-.. function:: spawnl(mode, path, ...)
-              spawnle(mode, path, ..., env)
+.. function:: spawnl(mode, file, ...)
+              spawnle(mode, file, ..., env)
               spawnlp(mode, file, ...)
               spawnlpe(mode, file, ..., env)
-              spawnv(mode, path, args)
-              spawnve(mode, path, args, env)
+              spawnv(mode, file, args)
+              spawnve(mode, file, args, env)
               spawnvp(mode, file, args)
               spawnvpe(mode, file, args, env)
 
-   Execute the program *path* in a new process.
+   Execute the program *file* in a new process.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
@@ -5492,7 +5497,7 @@ written in Python, such as a mail server's external command delivery program.
    discussed in the next paragraph), the new environment is used as the source of
    the :envvar:`PATH` variable.  The other variants, :func:`spawnl`,
    :func:`spawnle`, :func:`spawnv`, and :func:`spawnve`, will not use the
-   :envvar:`PATH` variable to locate the executable; *path* must contain an
+   :envvar:`PATH` variable to locate the executable; *file* must contain an
    appropriate absolute or relative path.
 
    For :func:`spawnle`, :func:`spawnlpe`, :func:`spawnve`, and :func:`spawnvpe`
@@ -5513,7 +5518,7 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
-   .. audit-event:: os.spawn mode,path,args,env os.spawnl
+   .. audit-event:: os.spawn mode,file,args,env os.spawnl
 
    .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 

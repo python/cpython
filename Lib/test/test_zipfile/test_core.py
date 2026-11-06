@@ -2128,6 +2128,20 @@ class OtherTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(fp))
         self.assertEqual(fp.tell(), mid)
 
+    def test_is_zip_bad_central_directory_offset(self):
+        """Check that is_zipfile() rejects a central directory before the file."""
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w") as zipf:
+            zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
+        data = bytearray(fp.getvalue())
+        endrec = len(data) - zipfile.sizeEndCentDir
+        struct.pack_into("<L", data, endrec + 12, len(data))
+        fp = io.BytesIO(data)
+        pos = fp.seek(5)
+        self.assertFalse(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), pos)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, io.BytesIO(data))
+
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
         # ZipFile instance is finalized; this tests for regression on SF tracker
@@ -2443,6 +2457,8 @@ class OtherTests(unittest.TestCase):
                     zipf.writestr('str', 'abcde')
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
+                with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
                 with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
@@ -3471,6 +3487,9 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:

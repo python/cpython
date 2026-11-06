@@ -1101,6 +1101,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
             if root_dir is not None:
                 base_dir = os.path.join(root_dir, base_dir)
             base_dir = os.path.normpath(base_dir)
+            zip_stat = os.stat(zip_filename)
             if arcname != os.curdir:
                 zf.write(base_dir, arcname)
                 if logger is not None:
@@ -1119,7 +1120,13 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                 for name in filenames:
                     path = os.path.join(dirpath, name)
                     path = os.path.normpath(path)
-                    if os.path.isfile(path):
+                    try:
+                        st = os.stat(path)
+                    except OSError:
+                        continue
+                    # Do not add the archive to itself.
+                    if (stat.S_ISREG(st.st_mode) and
+                            not os.path.samestat(st, zip_stat)):
                         arcname = os.path.join(arcdirpath, name)
                         zf.write(path, arcname)
                         if logger is not None:

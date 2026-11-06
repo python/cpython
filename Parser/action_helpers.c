@@ -1332,7 +1332,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* tok
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
     PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
-        _Pypegen_raise_decode_error(p);
+        _Pypegen_raise_decode_error_known_location(p, constant);
         return NULL;
     }
     if (_PyArena_AddPyObject(p->arena, str) < 0) {

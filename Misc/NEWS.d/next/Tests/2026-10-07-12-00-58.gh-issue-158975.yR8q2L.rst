@@ -1,0 +1,2 @@
+Replace fixed sleeps used for synchronization in multiprocessing tests with
+bounded waits to avoid failures on slow or overloaded systems.

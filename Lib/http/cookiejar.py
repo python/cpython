@@ -53,7 +53,8 @@ def _debug(*args):
 HTTPONLY_ATTR = "HTTPOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
-NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")
+NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File",
+                                re.IGNORECASE | re.ASCII)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 NETSCAPE_HEADER_TEXT =  """\
@@ -973,6 +974,12 @@ class DefaultCookiePolicy(CookiePolicy):
             _debug("   Set-Cookie2 without version attribute (%s=%s)",
                    cookie.name, cookie.value)
             return False
+        if cookie.version < 0:
+            # Neither the Netscape (version 0) nor the RFC 2965 (version > 0)
+            # rules would apply, so the domain checks would all be skipped.
+            _debug("   negative version attribute (%s=%s)",
+                   cookie.name, cookie.value)
+            return False
         if cookie.version > 0 and not self.rfc2965:
             _debug("   RFC 2965 cookies are switched off")
             return False
@@ -1116,6 +1123,9 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_version(self, cookie, request):
+        if cookie.version < 0:
+            _debug("   negative version attribute")
+            return False
         if cookie.version > 0 and not self.rfc2965:
             _debug("   RFC 2965 cookies are switched off")
             return False
@@ -1503,6 +1513,8 @@ class CookieJar:
             try:
                 version = int(version)
             except ValueError:
+                return None  # invalid version, ignore cookie
+            if version < 0:
                 return None  # invalid version, ignore cookie
         secure = standard.get("secure", False)
         # (discard is also set if expires is Absent)
@@ -2055,7 +2067,8 @@ class MozillaCookieJar(FileCookieJar):
                 assert domain_specified == initial_dot
 
                 discard = False
-                if expires == "":
+                # curl and Wget set expires to 0 for session cookies.
+                if expires == "0" or expires == "":
                     expires = None
                     discard = True
 

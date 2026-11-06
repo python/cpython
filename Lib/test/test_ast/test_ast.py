@@ -973,6 +973,19 @@ class AST_Tests(unittest.TestCase):
                 with self.assertRaises(SyntaxError):
                     ast.parse(sample, feature_version=(3, 12))
 
+    def test_lazy_imports_feature_version(self):
+        samples = [
+            "lazy import os",
+            "lazy from .. import name",
+            "lazy from mod import some",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                ast.parse(sample, feature_version=(3, 15))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 14))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))
@@ -1056,12 +1069,11 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @support.skip_if_huge_c_stack(100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        # Android test devices have less memory.
-        crash_depth = 100_000 if sys.platform == "android" else 500_000
+        crash_depth = 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()

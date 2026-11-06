@@ -169,10 +169,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       the specified width, representing an empty day. The *weekday* parameter
       is unused.
 
-   .. method:: formatweek(theweek, w=0)
+   .. method:: formatweek(theweek, width)
 
-      Return a single week in a string with no newline. If *w* is provided, it
-      specifies the width of the date columns, which are centered. Depends
+      Return a single week in a string with no newline. *width* specifies
+      the width of the date columns, which are centered. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
@@ -200,7 +200,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       :meth:`setfirstweekday` method.
 
 
-   .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
+   .. method:: formatmonthname(theyear, themonth, width, withyear=True)
 
       Return a string representing the month's name centered within the
       specified *width*. If *withyear* is ``True``, include the year in the
@@ -432,7 +432,8 @@ For simple text calendars this module provides the following functions.
 
 .. function:: prcal(theyear, w=0, l=0, c=6, m=3)
 
-   Prints the calendar for an entire year as returned by  :func:`calendar`.
+   Prints the calendar for an entire year as returned by
+   :func:`~calendar.calendar`.
 
 
 .. function:: calendar(theyear, w=2, l=1, c=6, m=3)

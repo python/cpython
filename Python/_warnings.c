@@ -9,6 +9,7 @@
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #include <stdbool.h>
 #include "clinic/_warnings.c.h"
@@ -275,6 +276,28 @@ warnings_lock_held(WarningsState *st)
 {
     return PyMutex_IsLocked(&st->lock.mutex);
 }
+
+#ifdef HAVE_FORK
+// PyOS_BeforeFork() holds HEAD_LOCK while saving this value and until fork(),
+// so concurrent forks cannot overwrite it before the child inherits it.
+// The child consumes its private copy before running Python callbacks.
+static bool warnings_lock_held_at_fork;
+
+void
+_PyWarnings_BeforeFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    warnings_lock_held_at_fork = _PyRecursiveMutex_IsLockedByCurrentThread(&st->lock);
+}
+
+void
+_PyWarnings_AfterFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    _PyRecursiveMutex_at_fork_reinit(&st->lock, warnings_lock_held_at_fork);
+    warnings_lock_held_at_fork = false;
+}
+#endif
 
 static PyObject *
 get_warnings_context(PyInterpreterState *interp)
@@ -747,7 +770,8 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None,
+            filename, lineno_obj, Py_None,
+            sourceline ? sourceline : Py_None,
             source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
@@ -1034,6 +1058,9 @@ setup_context(Py_ssize_t stack_level,
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
+        if (*filename == NULL) {
+            return 0;
+        }
         *lineno = 0;
     }
     else {
@@ -1177,7 +1204,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                 stacklevel = 2;
             }
         } else {
-            Py_DECREF((PyObject *)skip_file_prefixes);
             skip_file_prefixes = NULL;
         }
     }
@@ -1200,11 +1226,32 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
 
-    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
-                               &module_name);
-    if (rc < 0 || rc == 0) {
+    /* Prefer __spec__.name: __name__ is "__main__" for the module executed
+       as a script, but the loader can only handle its own module name. */
+    PyObject *spec;
+    if (PyDict_GetItemRef(module_globals, &_Py_ID(__spec__), &spec) < 0) {
         Py_DECREF(loader);
         return NULL;
+    }
+    module_name = NULL;
+    if (spec != NULL) {
+        int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(name), &module_name);
+        Py_DECREF(spec);
+        if (rc < 0) {
+            Py_DECREF(loader);
+            return NULL;
+        }
+        if (module_name == Py_None) {
+            Py_CLEAR(module_name);
+        }
+    }
+    if (module_name == NULL) {
+        int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                                   &module_name);
+        if (rc <= 0) {  // not found or error
+            Py_DECREF(loader);
+            return NULL;
+        }
     }
 
     /* Make sure the loader implements the optional get_source() method. */
@@ -1219,6 +1266,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
+        /* The source line is optional: the loader can be unable to provide
+           the source of the module, for example if it is not its loader. */
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            PyErr_Clear();
+        }
         return NULL;
     }
     if (source == Py_None) {
@@ -1234,8 +1286,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     }
 
     /* Get the source line. */
-    source_line = PyList_GetItem(source_list, lineno-1);
-    Py_XINCREF(source_line);
+    if (lineno < 1 || lineno > PyList_GET_SIZE(source_list)) {
+        Py_DECREF(source_list);
+        return NULL;
+    }
+    source_line = Py_NewRef(PyList_GET_ITEM(source_list, lineno-1));
     Py_DECREF(source_list);
     return source_line;
 }
