@@ -87,11 +87,10 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
         p += SIZEOF_SIZE_T * 16;
     }
 
-    while (p + SIZEOF_SIZE_T <= _end) {
+    for (; p + SIZEOF_SIZE_T <= _end; p += SIZEOF_SIZE_T) {
         size_t a;
         memcpy(&a, p, SIZEOF_SIZE_T);
         value |= a;
-        p += SIZEOF_SIZE_T;
     }
 
     if (p < _end) {
