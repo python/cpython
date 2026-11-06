@@ -1,12 +1,7 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
-// _Py_STDC_VERSION: the version of the C standard.
-// gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
-// arbitrary value, which means we can't use __STDC_VERSION__ on C++.
-#if !defined(__cplusplus) && defined(__STDC_VERSION__)
-#  define _Py_STDC_VERSION __STDC_VERSION__
-#endif
+// _Py_STDC_VERSION is defined in pyport.h, which is included before this file.
 
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
