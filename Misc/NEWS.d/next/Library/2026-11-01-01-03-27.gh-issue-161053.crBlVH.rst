@@ -1,0 +1,3 @@
+Fix :meth:`io.TextIOWrapper.tell` reading past the end of an internal buffer
+when called after :meth:`~io.TextIOWrapper.seek`, which could make it raise a
+spurious :exc:`UnicodeDecodeError`.

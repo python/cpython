@@ -2981,10 +2981,11 @@ _io_TextIOWrapper_tell_impl(textio *self)
     } while (0)
 
     /* Fast search for an acceptable start point, close to our
-       current pos */
-    skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
+       current pos.  b2cratio is only a hint and may not have been computed
+       from this snapshot, so never guess past the end of next_input. */
+    skip_bytes = (Py_ssize_t) Py_MIN(self->b2cratio * chars_to_skip,
+                                     (double) PyBytes_GET_SIZE(next_input));
     skip_back = 1;
-    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */
