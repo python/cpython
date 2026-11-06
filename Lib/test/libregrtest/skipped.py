@@ -1,5 +1,6 @@
 """
 Ruleset to check if a test is expected to be skipped.
+Tests are mostly filtered using sys.platform, except a few exceptions.
 """
 
 import importlib
@@ -41,9 +42,18 @@ NEED_TESTMULTIPHASE = {
     'test_pyclbr',
     'test_runpy',
 }
+NEED_WORKING_THREADING = {
+    'test_concurrent_futures',
+    'test_queue',
+    'test_thread',
+    'test_threadedtempfile',
+    'test_threading',
+    'test_threading_local',
+    'test_webbrowser',
+}
 
 
-# List of tests expected to be skipped
+# List of tests expected to be skipped on sys.platform
 EXPECTED_SKIP = set()
 
 if support.Py_GIL_DISABLED:
@@ -238,79 +248,10 @@ if IS_WASI:
     }
     # configure disables _multiprocessing and _testmultiphase
     # extension modules on WASI
-    EXPECTED_SKIP |= NEED_TESTMULTIPHASE
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
+    EXPECTED_SKIP |= NEED_TESTMULTIPHASE
     # Missing OpenSSL dependency on WASI
     EXPECTED_SKIP |= NEED_SSL
-
-
-## # Modules needed by a test.
-## # Used to check if a test is expected to be skipped.
-## # NEED_MODULES doesn't work on WASI, since the main regrtest process is run
-## # on the build Python which is different than the host (WASI) Python.
-## NEED_MODULES = {
-##     'test__interpchannels': '_interpchannels',
-##     'test__interpreters': '_interpreters',
-##     'test_crossinterp': '_interpreters',
-##     'test_curses': ('_curses', 'curses', 'curses.ascii', 'curses.textpad'),
-##     'test_dbm_gnu': 'dbm.gnu',
-##     'test_dbm_ndbm': 'dbm.ndbm',
-##     'test_fcntl': 'fcntl',
-##     'test_free_threading.test_dbm_gnu': 'dbm.gnu',
-##     'test_free_threading.test_grp': 'grp',
-##     'test_free_threading.test_pwd': 'pwd',
-##     'test_free_threading.test_readline': 'readline',
-##     'test_free_threading.test_resource': 'resource',
-##     'test_free_threading.test_syslog': 'syslog',
-##     'test_grp': 'grp',
-##     'test_ioctl': ('fcntl', 'termios'),
-##     'test_lzma': '_lzma',
-##     'test_pty': 'termios',
-##     'test_pwd': 'pwd',
-##     'test_readline': 'readline',
-##     'test_resource': 'resource',
-##     'test_syslog': 'syslog',
-##     'test_termios': 'termios',
-##     'test_tty': ('termios', 'tty'),
-##     'test_xxlimited': 'xxlimited',
-##     'test_xxtestfuzz': '_xxtestfuzz',
-##     'test_zstd': '_zstd',
-## }
-## for name in NEED_MULTIPROCESSING:
-##     NEED_MODULES[name] = '_multiprocessing'
-## for name in (
-##     'test_idle',
-##     'test_tcl',
-##     'test_tkinter',
-##     'test_ttk',
-##     'test_ttk_textonly',
-##     'test_turtle',
-## ):
-##     NEED_MODULES[name] = '_tkinter'
-## for name in NEED_SSL:
-##     NEED_MODULES[name] = '_ssl'
-
-
-NEED_WORKING_THREADING = {
-    'test_concurrent_futures',
-    'test_queue',
-    'test_thread',
-    'test_threadedtempfile',
-    'test_threading',
-    'test_threading_local',
-    'test_webbrowser',
-}
-
-
-def miss_modules(modules):
-    if isinstance(modules, str):
-        modules = (modules,)
-    try:
-        for module in modules:
-            importlib.import_module(module)
-    except ImportError:
-        return True
-    return False
 
 
 def expected_to_be_skipped(test_name):
@@ -321,14 +262,6 @@ def expected_to_be_skipped(test_name):
     package = test_name.split('.')[0]
     if package in EXPECTED_SKIP:
         return True
-
-    ## # Test NEED_MODULES
-    ## if test_name in NEED_MODULES:
-    ##     if miss_modules(NEED_MODULES[test_name]):
-    ##         return True
-    ## elif package in NEED_MODULES:
-    ##     if miss_modules(NEED_MODULES[package]):
-    ##         return True
 
     # Custom ruleset
     if (test_name in NEED_WORKING_THREADING
@@ -358,11 +291,6 @@ def expected_to_be_skipped(test_name):
         # PY_HAVE_PERF_TRAMPOLINE macro on Linux (x86-64 and AArch64)
         # and on macOS.
         return not support.supports_perf_trampoline_profiling()
-
-    ## if package == 'test_gdb':
-    ##     # Need gdb program
-    ##     import shutil
-    ##     return not shutil.which('gdb')
 
     if test_name == 'test_asdl_parser':
         # Test only relevant for from-source Python builds
