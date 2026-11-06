@@ -1880,6 +1880,28 @@ class MinidomTest(unittest.TestCase):
         self.checkRenameNodeSharedConstraints(doc, attr)
         doc.unlink()
 
+    def testRenameAttributeToPrefixedName(self):
+        doc = parseString("<doc a='v' b='w'/>")
+        elem = doc.documentElement
+        attr = elem.getAttributeNode("a")
+        attr = doc.renameNode(attr, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(attr.name, "p:c")
+        self.assertEqual(attr.prefix, "p")
+        self.assertEqual(attr.localName, "c")
+        self.assertEqual(attr.namespaceURI, "http://xml.python.org/ns")
+        self.assertIsNone(elem.getAttributeNode("a"))
+        self.assertIs(elem.getAttributeNodeNS("http://xml.python.org/ns", "c"),
+                      attr)
+
+        # A rejected rename leaves the attribute on its element.
+        attr = elem.getAttributeNode("b")
+        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, attr,
+                          "http://xml.python.org/ns", "xml:lang")
+        self.assertEqual(attr.name, "b")
+        self.assertIsNone(attr.namespaceURI)
+        self.assertIs(elem.getAttributeNode("b"), attr)
+        doc.unlink()
+
     def testRenameElement(self):
         doc = parseString("<doc/>")
         elem = doc.documentElement
