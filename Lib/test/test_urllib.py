@@ -303,6 +303,14 @@ class ProxyTests_withOrderedEnv(unittest.TestCase):
 class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urlopen() opening a fake http connection."""
 
+    def setUp(self):
+        # Don't use proxies from the environment or the system settings,
+        # and don't reuse an opener created by an earlier test.
+        self.enterContext(
+            support.swap_attr(urllib.request, 'getproxies', lambda: {}))
+        urllib.request.urlcleanup()
+        self.addCleanup(urllib.request.urlcleanup)
+
     def check_read(self, ver):
         self.fakehttp(b"HTTP/" + ver + b" 200 OK\r\n\r\nHello!")
         try:
