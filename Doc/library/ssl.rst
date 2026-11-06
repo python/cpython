@@ -446,7 +446,7 @@ Certificate handling
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       The function now raises :exc:`SSLCertVerificationError` if *ca_certs* is
       specified but the certificate hostname does not match the server
       hostname.
