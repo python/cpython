@@ -318,6 +318,7 @@ class TranslateTestCase(unittest.TestCase):
 
 
 class FilterTestCase(unittest.TestCase):
+
     def test_filter(self):
         self.assertEqual(filter(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*'),
                          ['Python', 'Perl'])
@@ -355,6 +356,7 @@ class FilterTestCase(unittest.TestCase):
 
 
 class FilterFalseTestCase(unittest.TestCase):
+
     def test_filterfalse(self):
         actual = filterfalse(['Python', 'Ruby', 'Perl', 'Tcl'], 'P*')
         self.assertListEqual(actual, ['Ruby', 'Tcl'])
