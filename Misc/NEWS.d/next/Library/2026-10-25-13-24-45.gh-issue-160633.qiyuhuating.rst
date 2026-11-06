@@ -1,0 +1,4 @@
+Fix :func:`textwrap.shorten` and :func:`textwrap.wrap` with ``max_lines``
+discarding a broken long word -- and with it, for :func:`textwrap.shorten`,
+all remaining text -- instead of breaking it further to make room for the
+placeholder.

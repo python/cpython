@@ -66,6 +66,11 @@ functions should be good enough; otherwise, you should use an instance of
       >>> textwrap.shorten("Hello world", width=10, placeholder="...")
       'Hello...'
 
+   If no words can be kept before the *placeholder* (for example, when
+   *text* is a single word longer than *width*) and *break_long_words* is
+   true, the word is broken so that part of it is kept before the
+   *placeholder*.
+
    Optional keyword arguments correspond to the instance attributes of
    :class:`TextWrapper`, documented below.  Note that the whitespace is
    collapsed before the text is passed to the :class:`TextWrapper` :meth:`fill`
