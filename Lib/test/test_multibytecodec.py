@@ -3,6 +3,7 @@
 #   Unit test for multibytecodec itself
 #
 
+import _codecs
 import _multibytecodec
 import codecs
 import io
@@ -251,6 +252,91 @@ class Test_IncrementalEncoder(unittest.TestCase):
         self.assertEqual(res, 0)
 
 class Test_IncrementalDecoder(unittest.TestCase):
+
+    def test_final_decode_incomplete_sequence(self):
+        cases = [
+            ('euc_jp', b'\x8f\x00'),
+            ('euc_jis_2004', b'\x8f\x00'),
+            ('euc_jisx0213', b'\x8f\x00'),
+            ('gb18030', b'\x806'),
+            ('gb18030', b'\x81\x30\x81'),
+        ]
+        for encoding, data in cases:
+            for errors in ('surrogateescape', 'replace', 'ignore',
+                           'backslashreplace'):
+                expected = data.decode(encoding, errors)
+                for split in range(len(data) + 1):
+                    with self.subTest(encoding=encoding, data=data,
+                                      errors=errors, split=split):
+                        decoder = codecs.getincrementaldecoder(encoding)(errors)
+                        text = decoder.decode(data[:split])
+                        text += decoder.decode(data[split:], final=True)
+                        self.assertEqual(text, expected)
+                        self.assertEqual(decoder.getstate()[0], b'')
+                        self.assertEqual(decoder.decode(b'', final=True), '')
+
+    def test_final_decode_incomplete_sequence_strict(self):
+        for encoding in ('euc_jp', 'euc_jis_2004', 'euc_jisx0213', 'gb18030'):
+            with self.subTest(encoding=encoding):
+                decoder = codecs.getincrementaldecoder(encoding)()
+                self.assertEqual(decoder.decode(b'\x81'), '')
+                state = decoder.getstate()
+                with self.assertRaises(UnicodeDecodeError):
+                    decoder.decode(b'', final=True)
+                self.assertEqual(decoder.getstate(), state)
+                decoder.errors = 'surrogateescape'
+                self.assertEqual(decoder.decode(b'', final=True), '\udc81')
+                self.assertEqual(decoder.getstate()[0], b'')
+
+    def test_final_decode_partial_error_handler(self):
+        def replace_one(exc):
+            return ('?', exc.start + 1)
+
+        errors = 'test.multibytecodec.replace_one'
+        codecs.register_error(errors, replace_one)
+        self.addCleanup(_codecs._unregister_error, errors)
+        for encoding, data, expected in (
+            ('euc_jp', b'\x8f\x81', '??'),
+            ('gb18030', b'\x81\x30\x81', '?0?'),
+        ):
+            with self.subTest(encoding=encoding):
+                decoder = codecs.getincrementaldecoder(encoding)(errors)
+                self.assertEqual(decoder.decode(data, final=True), expected)
+                self.assertEqual(decoder.getstate()[0], b'')
+
+    def test_final_decode_partial_error_handler_failure(self):
+        def replace_one_then_raise(exc):
+            if exc.start:
+                raise exc
+            return ('?', exc.start + 1)
+
+        errors = 'test.multibytecodec.replace_one_then_raise'
+        codecs.register_error(errors, replace_one_then_raise)
+        self.addCleanup(_codecs._unregister_error, errors)
+        decoder = codecs.getincrementaldecoder('euc_jp')(errors)
+        self.assertEqual(decoder.decode(b'\x8f\x81'), '')
+        state = decoder.getstate()
+        with self.assertRaises(UnicodeDecodeError):
+            decoder.decode(b'', final=True)
+        self.assertEqual(decoder.getstate(), state)
+        decoder.errors = 'surrogateescape'
+        self.assertEqual(decoder.decode(b'', final=True), '\udc8f\udc81')
+        self.assertEqual(decoder.getstate()[0], b'')
+
+    def test_textio_incomplete_sequence(self):
+        for encoding, data in (
+            ('euc_jp', b'\x8f\x00'),
+            ('euc_jis_2004', b'\x8f\x00'),
+            ('euc_jisx0213', b'\x8f\x00'),
+            ('gb18030', b'\x806'),
+            ('gb18030', b'\x81\x30\x81'),
+        ):
+            with self.subTest(encoding=encoding, data=data):
+                with io.TextIOWrapper(io.BytesIO(data), encoding=encoding,
+                                      errors='surrogateescape') as stream:
+                    self.assertEqual(stream.read(),
+                                     data.decode(encoding, 'surrogateescape'))
+                    self.assertEqual(stream.read(), '')
 
     def test_iso2022_split_escape(self):
         raw = b'\x1b$0000000B'

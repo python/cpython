@@ -1222,7 +1222,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
     if (decoder_feed_buffer(STATEFUL_DCTX(self), &buf))
         goto errorexit;
 
-    if (final && buf.inbuf < buf.inbuf_end) {
+    while (final && buf.inbuf < buf.inbuf_end) {
         if (multibytecodec_decerror(self->codec, &self->state,
                         &buf, self->errors, MBERR_TOOFEW)) {
             /* recover the original pending buffer */
@@ -1230,6 +1230,9 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
             self->pendingsize = origpending;
             goto errorexit;
         }
+        /* The error handler may have consumed only part of the input. */
+        if (decoder_feed_buffer(STATEFUL_DCTX(self), &buf))
+            goto errorexit;
     }
 
     if (buf.inbuf < buf.inbuf_end) { /* pending sequence still exists */
