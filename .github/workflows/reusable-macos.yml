@@ -43,8 +43,11 @@ jobs:
         brew install make gdb
     - name: Codesign gdb binary
       # https://sourceware.org/gdb/wiki/PermissionsDarwin
-      # https://github.com/conda-forge/gdb-feedstock/blob/main/recipe/macos-codesign/macos-setup-codesign.sh
-      run: ./.github/workflows/macos-setup-gdb-codesign.sh
+      run: |
+        which gdb
+        ./.github/workflows/macos-setup-gdb-codesign.sh
+        sudo codesign --entitlements .github/workflows/gdb-entitlement.xml -fs gdb_codesign $(which gdb)
+        sudo killall taskgated
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \
