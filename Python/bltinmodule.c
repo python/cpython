@@ -18,6 +18,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_tuple.h"         // _PyTuple_Recycle()
+#include "pycore_unicodeobject.h" // _Py_LATIN1_CHR()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -2240,8 +2241,6 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
                    PyObject *file, int flush)
 /*[clinic end generated code: output=38d8def56c837bcc input=ff35cb3d59ee8115]*/
 {
-    int i;
-
     if (file == Py_None) {
         file = PySys_GetAttr(&_Py_ID(stdout));
         if (file == NULL) {
@@ -2279,29 +2278,84 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         return NULL;
     }
 
-    for (i = 0; i < objects_length; i++) {
-        if (i > 0 && PyFile_WriteObject(sep, file, Py_PRINT_RAW) < 0) {
-            Py_DECREF(file);
-            return NULL;
-        }
-        if (PyFile_WriteObject(objects[i], file, Py_PRINT_RAW) < 0) {
-            Py_DECREF(file);
-            return NULL;
-        }
-    }
-    if (PyFile_WriteObject(end, file, Py_PRINT_RAW) < 0) {
+    PyObject *parts = PyList_New(0);
+    if (parts == NULL) {
         Py_DECREF(file);
         return NULL;
     }
-
-    if (flush) {
-        if (_PyFile_Flush(file) < 0) {
-            Py_DECREF(file);
-            return NULL;
+    PyObject *exception, *saved_exception, *line;
+    for (Py_ssize_t i = 0; i < objects_length; i++) {
+        if (i > 0 && PyList_Append(parts, sep) < 0) {
+            goto write;
+        }
+        PyObject *arg = PyObject_Str(objects[i]);
+        if (arg == NULL) {
+            goto write;
+        }
+        int err = PyList_Append(parts, arg);
+        Py_DECREF(arg);
+        if (err < 0) {
+            goto write;
         }
     }
-    Py_DECREF(file);
+    if (PyList_Append(parts, end) < 0) {
+        goto write;
+    }
 
+write:
+    /* Write the accumulated parts even if converting an argument failed.
+       Handle that exception while writing, as in a Python finally block. */
+    exception = PyErr_GetRaisedException();
+    saved_exception = PyErr_GetHandledException();
+    if (exception != NULL) {
+        if (PyList_GET_SIZE(parts) == 0) {
+            /* An empty write may discard a text stream's buffered input. */
+            PyErr_SetRaisedException(exception);
+            exception = NULL;
+            goto done;
+        }
+        PyErr_SetHandledException(exception);
+    }
+
+    line = PyUnicode_Join(&_Py_STR(empty), parts);
+    if (line != NULL) {
+        PyObject *result = PyObject_CallMethodOneArg(file, &_Py_ID(write), line);
+        Py_DECREF(line);
+        if (result == NULL) {
+            goto done;
+        }
+        Py_DECREF(result);
+    }
+    else {
+        /* If joining fails (usually from lack of memory), try writing the
+           parts separately before propagating the exception. */
+        Py_XSETREF(exception, PyErr_GetRaisedException());
+        PyErr_SetHandledException(exception);
+        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(parts); i++) {
+            PyObject *result = PyObject_CallMethodOneArg(
+                file, &_Py_ID(write), PyList_GET_ITEM(parts, i));
+            if (result == NULL) {
+                goto done;
+            }
+            Py_DECREF(result);
+        }
+    }
+
+    if (flush && _PyFile_Flush(file) < 0) {
+        goto done;
+    }
+    PyErr_SetRaisedException(exception);
+    exception = NULL;
+
+done:
+    PyErr_SetHandledException(saved_exception);
+    Py_XDECREF(saved_exception);
+    Py_XDECREF(exception);
+    Py_DECREF(parts);
+    Py_DECREF(file);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 

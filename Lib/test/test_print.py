@@ -40,6 +40,18 @@ class ClassWith__str__:
         return self.x
 
 
+class RecordingFile:
+    def __init__(self):
+        self.writes = []
+        self.flushes = 0
+
+    def write(self, text):
+        self.writes.append(text)
+
+    def flush(self):
+        self.flushes += 1
+
+
 class TestPrint(unittest.TestCase):
     """Test correct operation of the print function."""
 
@@ -99,6 +111,135 @@ class TestPrint(unittest.TestCase):
         self.assertRaises(TypeError, print, '', sep=3)
         self.assertRaises(TypeError, print, '', end=3)
         self.assertRaises(AttributeError, print, '', file='')
+
+    def test_print_single_write(self):
+        cases = [
+            ((), {}, '\n'),
+            ((), {'end': ''}, ''),
+            (('',), {'end': ''}, ''),
+            (('a', 1, None), {}, 'a 1 None\n'),
+            (('a', 'b'), {'sep': None, 'end': None}, 'a b\n'),
+            (('a', 'b'), {'sep': '', 'end': ''}, 'ab'),
+            (('a\0', '\u20ac', '\U0001f40d'),
+             {'sep': '\u3000', 'end': '!'}, 'a\0\u3000\u20ac\u3000\U0001f40d!'),
+        ]
+        for args, kwargs, expected in cases:
+            with self.subTest(args=args, kwargs=kwargs):
+                file = RecordingFile()
+                self.assertIsNone(print(*args, file=file, **kwargs))
+                self.assertEqual(file.writes, [expected])
+                self.assertEqual(file.flushes, 0)
+
+    def test_print_converts_before_writing(self):
+        file = RecordingFile()
+        converted = []
+
+        class Value:
+            def __str__(value):
+                self.assertEqual(file.writes, [])
+                converted.append(True)
+                return 'value'
+
+        print(Value(), Value(), file=file)
+        self.assertEqual(converted, [True, True])
+        self.assertEqual(file.writes, ['value value\n'])
+
+    def test_print_str_subclass(self):
+        class Str(str):
+            def __str__(self):
+                raise AssertionError('unexpected conversion')
+
+        file = RecordingFile()
+        print(ClassWith__str__(Str('value')), 'other',
+              sep=Str('|'), end=Str('!'), file=file)
+        self.assertEqual(file.writes, ['value|other!'])
+
+    def test_print_str_error(self):
+        error = ValueError('cannot convert')
+
+        class BadStr:
+            def __str__(self):
+                raise error
+
+        for prefix in [(), ('',), ('first',), ('first', 'second')]:
+            for sep in [' ', '', '::']:
+                for flush in [False, True]:
+                    with self.subTest(prefix=prefix, sep=sep, flush=flush):
+                        file = RecordingFile()
+                        with self.assertRaises(ValueError) as cm:
+                            print(*prefix, BadStr(), 'not printed', sep=sep,
+                                  end='END', file=file, flush=flush)
+                        self.assertIs(cm.exception, error)
+                        expected = sep.join((*prefix, ''))
+                        self.assertEqual(file.writes,
+                                         [expected] if prefix else [])
+                        self.assertEqual(file.flushes,
+                                         int(flush and bool(prefix)))
+
+        file = RecordingFile()
+        with self.assertRaises(TypeError):
+            print('first', ClassWith__str__(42), file=file)
+        self.assertEqual(file.writes, ['first '])
+
+    def test_print_write_and_flush_errors(self):
+        for operation in ['write', 'flush']:
+            for str_error in [False, True]:
+                with self.subTest(operation=operation, str_error=str_error):
+                    conversion_error = ValueError('cannot convert')
+                    output_error = OSError('cannot output')
+                    handled = []
+
+                    class Value:
+                        def __str__(self):
+                            if str_error:
+                                raise conversion_error
+                            return 'value'
+
+                    class File(RecordingFile):
+                        def write(self, text):
+                            super().write(text)
+                            handled.append(sys.exception())
+                            if operation == 'write':
+                                raise output_error
+
+                        def flush(self):
+                            super().flush()
+                            if operation == 'flush':
+                                raise output_error
+
+                    file = File()
+                    previous_exception = sys.exception()
+                    with self.assertRaises(OSError) as cm:
+                        print('first', Value(), file=file, flush=True)
+                    self.assertIs(cm.exception, output_error)
+                    expected_context = (conversion_error if str_error
+                                        else previous_exception)
+                    self.assertIs(output_error.__context__, expected_context)
+                    self.assertEqual(handled, [expected_context])
+                    self.assertIs(sys.exception(), previous_exception)
+                    expected = 'first ' if str_error else 'first value\n'
+                    self.assertEqual(file.writes, [expected])
+                    self.assertEqual(file.flushes, int(operation == 'flush'))
+
+    @support.nomemtest
+    def test_print_join_error(self):
+        import _testcapi
+
+        class Value:
+            def __str__(self):
+                # The parts list has room for this string and the terminator.
+                # Fail the allocation of the joined string only.
+                _testcapi.set_nomemory(0, 1)
+                return 'second'
+
+        file = RecordingFile()
+        try:
+            with self.assertRaises(MemoryError):
+                print('first', Value(), file=file, flush=True)
+        finally:
+            _testcapi.remove_mem_hooks()
+        self.assertEqual(file.writes, ['first', ' ', 'second', '\n'])
+        self.assertEqual(file.flushes, 1)
 
     def test_print_flush(self):
         # operation of the flush flag
