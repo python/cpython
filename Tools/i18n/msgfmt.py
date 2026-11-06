@@ -5,8 +5,7 @@
 
 This program converts a textual Uniforum-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
-GNU msgfmt program.  Currently it does not handle plural forms but it does
-handle message contexts.
+GNU msgfmt program, however, it is a simpler implementation.
 
 Usage: msgfmt.py [OPTIONS] filename.po
 
@@ -61,35 +60,12 @@ def generate():
     "Return the generated output."
     global MESSAGES
 
-    def hash_insert_entry(string, i):
-        hash_val = _hashpjw(string)
-        hash_cursor = hash_val % hash_tab_size
-        inc = 1 + (hash_val % (hash_tab_size - 2))
-        while hash_table[hash_cursor]:
-            hash_cursor += inc
-            hash_cursor %= hash_tab_size
-        hash_table[hash_cursor] = i + 1
-
-    # From [gettext.git]/gettext-tools/src/write-mo.c:
-    #  Each string has an associate hashing value V, computed by a fixed
-    #  function.  To locate the string we use open addressing with double
-    #      hashing.  The first index will be V % M, where M is the size of the
-    #  hashing table.  If no entry is found, iterating with a second,
-    #  independent hashing function takes place.  This second value will
-    #  be 1 + V % (M - 2).
-    #  The approximate number of probes will be
-    #
-    #    for unsuccessful search:  (1 - N / M) ^ -1
-    #    for successful search:    - (N / M) ^ -1 * ln (1 - N / M)
-    #
-    #  where N is the number of keys.
-    #
-    #  If we now choose M to be the next prime bigger than 4 / 3 * N,
-    #  we get the values
-    #                      4   and   1.85  resp.
-    #  Because unsuccessful searches are unlikely this is a good value.
-    #  Formulas: [Knuth, The Art of Computer Programming, Volume 3,
-    #                 766 Sorting and Searching, 1973, Addison Wesley]
+    # The hash table uses open addressing with double hashing, as in GNU
+    # gettext's write-mo.c: the first probe is V % M and each following probe
+    # adds 1 + V % (M - 2), where V is the hash of the string and M is the
+    # table size.  M is the smallest prime greater than 4/3 * N (N being the
+    # number of strings), which keeps the expected number of probes small.
+    # See Knuth, The Art of Computer Programming, Volume 3, section 6.4.
     hash_tab_size = _next_prime((len(MESSAGES) * 4) // 3)
     if hash_tab_size <= 2:
         hash_tab_size = 3
@@ -100,16 +76,22 @@ def generate():
     offsets = []
     ids = strs = b''
     for i, id in enumerate(keys):
+        hash_val = _hashpjw(id)
+        idx = hash_val % hash_tab_size
+        inc = 1 + (hash_val % (hash_tab_size - 2))
+        while hash_table[idx]:
+            idx = (idx + inc) % hash_tab_size
+        hash_table[idx] = i + 1
         # For each string, we need size and file offset.  Each string is NUL
         # terminated; the NUL does not count into the size.
-        hash_insert_entry(id, i)
         offsets.append((len(ids), len(id), len(strs), len(MESSAGES[id])))
         ids += id + b'\0'
         strs += MESSAGES[id] + b'\0'
 
-    # The header is 7 32-bit unsigned integers, and we have an index table and
-    # hash table.
-    keystart = 7*4+16*len(keys)+hash_tab_size*4
+    # The header is 7 32-bit unsigned integers, followed by the index tables,
+    # then the hash table, then the keys.
+    hashstart = 7*4+16*len(keys)
+    keystart = hashstart+hash_tab_size*4
     # and the values start after the keys
     valuestart = keystart + len(ids)
     koffsets = []
@@ -121,13 +103,13 @@ def generate():
         voffsets += [l2, o2+valuestart]
     offsets = koffsets + voffsets
     output = struct.pack("Iiiiiii",
-                         0x950412de,                   # Magic
-                         0,                            # Version
-                         len(keys),                    # # of entries
-                         7*4,                          # start of key index
-                         7*4+len(keys)*8,              # start of value index
-                         hash_tab_size,                # size of hash table
-                         7 * 4 + 2 * (len(keys) * 8))  # offset of hash table
+                         0x950412de,        # Magic
+                         0,                 # Version
+                         len(keys),         # # of entries
+                         7*4,               # start of key index
+                         7*4+len(keys)*8,   # start of value index
+                         hash_tab_size,     # size of hash table
+                         hashstart)         # offset of hash table
     output += array.array("i", offsets).tobytes()
     output += hash_table.tobytes()
     output += ids
@@ -310,7 +292,7 @@ def _hashpjw(strs):
         if g:
             hval ^= g >> 24
             hval ^= g
-    return hval
+    return hval & 0xFFFFFFFF
 
 
 def _next_prime(start):

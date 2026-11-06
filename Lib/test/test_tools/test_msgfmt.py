@@ -21,9 +21,6 @@ msgfmt_py = script_dir / 'msgfmt.py'
 with imports_under_tool("i18n"):
     import msgfmt
 
-with imports_under_tool("i18n"):
-    from msgfmt import _hashpjw
-
 
 def compile_messages(po_file, mo_file):
     assert_python_ok(msgfmt_py, '-o', mo_file, po_file)
@@ -49,8 +46,10 @@ class CompilationTest(unittest.TestCase):
 
     def test_hash_table(self):
         # Check _hashpjw generates correct hash values
-        self.assertEqual(_hashpjw(b"stan"), 502398)
-        self.assertEqual(_hashpjw(b"foo"), 27999)
+        self.assertEqual(msgfmt._hashpjw(b"stan"), 502398)
+        self.assertEqual(msgfmt._hashpjw(b"foo"), 27999)
+        # Carries into bit 32 are discarded, as GNU gettext does
+        self.assertEqual(msgfmt._hashpjw(b"kL{M-#[J)pxyz"), 32778)
 
         # Check hash table is generated correctly for general.po
         with temp_cwd():
@@ -62,11 +61,11 @@ class CompilationTest(unittest.TestCase):
             header = struct.unpack("=7I", mo_data[:28])
             hash_table_size, hash_table_offset = header[5:7]
 
+            hash_tab_end = hash_table_offset + hash_table_size * 4
             hash_tab = struct.unpack(f"={hash_table_size}I",
-                                       mo_data[hash_table_offset : hash_table_offset + (hash_table_size * 4)])
+                                     mo_data[hash_table_offset:hash_tab_end])
 
             self.assertEqual(hash_tab, (1, 3, 0, 8, 9, 7, 2, 0, 4, 5, 0, 6, 0))
-
 
     def test_binary_header(self):
         with temp_cwd():

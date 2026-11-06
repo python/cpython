@@ -1,1 +1,2 @@
-:program:`msgfmt` now generates GNU hash tables.
+``Tools/i18n/msgfmt.py`` now writes a hash table to the generated ``.mo``
+file, as GNU :program:`msgfmt` does.
