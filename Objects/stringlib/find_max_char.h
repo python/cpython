@@ -109,7 +109,8 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     }
 
     if (p < _end) {
-        size_t n = (size_t)(_end - (const unsigned char *)begin);
+        const unsigned char *start = (const unsigned char *)begin;
+        size_t n = (size_t)(_end - start);
         if (n >= SIZEOF_SIZE_T) {
             size_t a;
             memcpy(&a, _end - SIZEOF_SIZE_T, SIZEOF_SIZE_T);
@@ -118,7 +119,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #if SIZEOF_SIZE_T == 8
         else if (n >= 4) {
             uint32_t a, b;
-            memcpy(&a, p, 4);
+            memcpy(&a, start, 4);
             memcpy(&b, _end - 4, 4);
             value |= a | b;
         }
@@ -126,14 +127,14 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #if STRINGLIB_SIZEOF_CHAR <= 2
         else if (n >= 2) {
             uint16_t a, b;
-            memcpy(&a, p, 2);
+            memcpy(&a, start, 2);
             memcpy(&b, _end - 2, 2);
             value |= a | b;
         }
 #endif
 #if STRINGLIB_SIZEOF_CHAR == 1
         else {
-            value |= *p;
+            value |= *start;
         }
 #endif
     }
