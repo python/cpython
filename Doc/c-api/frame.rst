@@ -99,8 +99,6 @@ See also :ref:`Reflection <reflection>`.
 
    Get the *frame*'s :attr:`~frame.f_lasti` attribute.
 
-   Returns -1 if ``frame.f_lasti`` is ``None``.
-
    .. versionadded:: 3.11
 
 
@@ -245,60 +243,19 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
-.. c:var:: const PyTypeObject *PyUnstable_ExecutableKinds
+.. c:function:: int PyUnstable_InterpreterFrame_GetLocal(struct _PyInterpreterFrame *frame, Py_ssize_t index, PyObject **result)
 
-   An array of executable kinds (executor types) for frames, used for internal
-   debugging and tracing.
+   Retrieve the local variable at *index*.
+   To determine the index of a particular variable, use
+   :c:func:`PyUnstable_InterpreterFrame_GetCode` and
+   :c:func:`PyUnstable_Code_GetLocalPlusNames`.
 
-   Tools like debuggers and profilers can use this to identify the type of execution
-   context associated with a frame (such as to filter out internal frames).
-   The entries are indexed by the following constants:
+   Cell and free variables are unboxed to their contents.  Free variables are
+   resolved from the function closure, so this also works on a frame that has
+   not started executing.
 
-   .. list-table::
-      :header-rows: 1
-      :widths: auto
+   * On success, store a new :term:`strong reference` in *result* and return ``1``.
+   * If the slot is unset or hidden, store ``NULL`` in *result* and return ``0``.
+   * On error, raise an exception, store ``NULL`` in *result* and return ``-1``.
 
-      * - Constant
-        - Description
-      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_SKIP
-        - The frame is internal (For example: inlined) and should be skipped by tools.
-      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_PY_FUNCTION
-        - The frame corresponds to a standard Python function.
-      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
-        - The frame corresponds to a function defined in native code.
-      * - .. c:macro:: PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR
-        - The frame corresponds to a method on a class instance.
-
-   However, Python's C API lacks a function to read the executable kind from
-   a frame. Instead, use this recipe:
-
-   .. code-block:: c
-
-      int
-      get_executable_kind(PyFrameObject *frame)
-      {
-         _PyInterpreterFrame *f = frame->f_frame;
-         PyObject *exec = PyStackRef_AsPyObjectBorrow(f->f_executable);
-
-         if (PyCode_Check(exec)) {
-            return PyUnstable_EXECUTABLE_KIND_PY_FUNCTION;
-         }
-         if (PyMethod_Check(exec)) {
-            return PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION;
-         }
-         if (Py_IS_TYPE(exec, &PyMethodDescr_Type)) {
-            return PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR;
-         }
-
-         return PyUnstable_EXECUTABLE_KIND_SKIP;
-      }
-
-   .. versionadded:: 3.13
-
-
-.. c:macro:: PyUnstable_EXECUTABLE_KINDS
-
-   The number of entries in :c:data:`PyUnstable_ExecutableKinds`.
-
-   .. versionadded:: 3.13
-
+   .. versionadded:: next

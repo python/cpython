@@ -214,8 +214,8 @@ slightly different way:
 
 .. awaitablefunction:: set_trace_async(*, header=None, commands=None)
 
-   async version of :func:`set_trace`. This function should be used inside an
-   async function with :keyword:`await`.
+   Asynchronous version of :func:`set_trace`. This function should be used inside
+   a :term:`coroutine function` with :keyword:`await`. For instance:
 
    .. code-block:: python
 
@@ -458,7 +458,8 @@ can be overridden by the local file.
 
    With a *function* argument, set a break at the first executable statement within
    that function. *function* can be any expression that evaluates to a function
-   in the current namespace.
+   in the current namespace, or in the form ``package.module.function`` if
+   ``package.module`` is importable.
 
    If a second argument is present, it is an expression which must evaluate to
    true before the breakpoint is honored.
@@ -834,7 +835,7 @@ can be overridden by the local file.
         def inner(x):
             1 / x
 
-         out()
+        out()
 
    calling ``pdb.pm()`` will allow to move between exceptions::
 

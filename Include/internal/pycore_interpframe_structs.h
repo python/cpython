@@ -42,12 +42,11 @@ struct _PyInterpreterFrame {
 #endif
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
-#ifdef Py_DEBUG
     uint8_t visited:1;
+    uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+#ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
-    uint8_t lltrace:6;
-#else
-    uint8_t visited;
+    uint8_t lltrace:5;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
@@ -66,9 +65,9 @@ struct _PyInterpreterFrame {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
-    char prefix##_hooks_inited;                                             \
-    char prefix##_closed;                                                   \
-    char prefix##_running_async;                                            \
+    int8_t prefix##_hooks_inited;                                           \
+    int8_t prefix##_closed;                                                 \
+    int8_t prefix##_running_async;                                          \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
     _PyInterpreterFrame prefix##_iframe;                                    \

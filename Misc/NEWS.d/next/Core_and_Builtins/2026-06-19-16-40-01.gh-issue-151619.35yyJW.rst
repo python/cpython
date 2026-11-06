@@ -1,3 +1,0 @@
-Fix an issue where using non-module global or builtin namespaces (such as
-dictionaries passed to :func:`exec`) could cause cached global loads to
-produce unresolved :ref:`lazy imports <lazy-imports>`.

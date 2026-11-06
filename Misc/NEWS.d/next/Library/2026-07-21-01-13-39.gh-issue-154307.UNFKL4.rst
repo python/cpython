@@ -1,3 +1,0 @@
-Fix :meth:`tempfile.TemporaryDirectory.cleanup` on DragonFly BSD, where removing
-a file with the ``UF_NOUNLINK`` flag failed with ``EISDIR`` instead of
-``EPERM``.
