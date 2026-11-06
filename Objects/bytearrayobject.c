@@ -266,13 +266,18 @@ bytearray_resize_storage(PyByteArrayObject *self,
 }
 
 
+/* Resize the storage for requested_size bytes, even if it is already the
+   size of the bytearray.  The caller must have checked that the bytearray
+   can be resized. */
 static int
-bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
+bytearray_resize_unchecked(PyByteArrayObject *obj, Py_ssize_t requested_size)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+    PyObject *self = (PyObject *)obj;
 
     assert(obj->ob_bytes_object != NULL);
+    assert(requested_size >= 0);
+    assert(obj->ob_exports == 0);
 
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
@@ -280,22 +285,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     size_t logical_offset = (size_t) (obj->ob_start - obj->ob_bytes);
     size_t size = (size_t) requested_size;
 
-    assert(self != NULL);
-    assert(PyByteArray_Check(self));
     assert(logical_offset <= alloc);
-
-    if (requested_size < 0) {
-        PyErr_Format(PyExc_ValueError,
-            "Can only resize to positive sizes, got %zd", requested_size);
-        return -1;
-    }
-
-    if (requested_size == Py_SIZE(self)) {
-        return 0;
-    }
-    if (!_canresize(obj)) {
-        return -1;
-    }
 
     /* Resize to 0 resets to empty bytes (see issue #153419). */
     if (requested_size == 0) {
@@ -346,6 +336,30 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         bytearray_write_trailing_null_byte(obj);
     }
     return 0;
+}
+
+static int
+bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+
+    assert(self != NULL);
+    assert(PyByteArray_Check(self));
+
+    if (requested_size < 0) {
+        PyErr_Format(PyExc_ValueError,
+            "Can only resize to positive sizes, got %zd", requested_size);
+        return -1;
+    }
+
+    if (requested_size == Py_SIZE(self)) {
+        return 0;
+    }
+    if (!_canresize(obj)) {
+        return -1;
+    }
+    return bytearray_resize_unchecked(obj, requested_size);
 }
 
 int
@@ -612,8 +626,12 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             return -1;
 
         if (lo == 0) {
-            /* Shrink the buffer by advancing its logical start */
+            /* Shrink the buffer by advancing its logical start.  The bytes
+               are removed at this point; the resize below only releases
+               memory. */
             self->ob_start -= growth;
+            Py_SET_SIZE(self, Py_SIZE(self) + growth);
+            growth = 0;
             /*
               0   lo               hi             old_size
               |   |<----avail----->|<-----tail------>|
@@ -631,24 +649,16 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             memmove(buf + lo + bytes_len, buf + hi,
                     Py_SIZE(self) - hi);
         }
-        if (bytearray_resize_lock_held((PyObject *)self,
-                               Py_SIZE(self) + growth) < 0) {
+        if (bytearray_resize_unchecked(self, Py_SIZE(self) + growth) < 0) {
             /* Issue #19578: Handling the memory allocation failure here is
                tricky here because the bytearray object has already been
-               modified. Depending on growth and lo, the behaviour is
-               different.
+               modified: the bytes are removed and the bytearray object
+               cannot be restored in its previous state.
 
-               If growth < 0 and lo != 0, the operation is completed, but a
-               MemoryError is still raised and the memory block is not
-               shrunk. Otherwise, the bytearray is restored in its previous
-               state and a MemoryError is raised. */
-            if (lo == 0) {
-                self->ob_start += growth;
-                return -1;
-            }
-            /* memmove() removed bytes, the bytearray object cannot be
-               restored in its previous state. */
+               The operation is completed, but a MemoryError is still
+               raised and the memory block is not shrunk. */
             Py_SET_SIZE(self, Py_SIZE(self) + growth);
+            bytearray_write_trailing_null_byte(self);
             res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
