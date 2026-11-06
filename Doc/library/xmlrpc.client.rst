@@ -39,8 +39,8 @@ between conformable Python objects and XML on the wire.
    remote XML-RPC server.  The required first argument is a URI (Uniform Resource
    Indicator), and will normally be the URL of the server.  The optional second
    argument is a transport factory instance; by default it is an internal
-   :class:`SafeTransport` instance for https: URLs and an internal HTTP
-   :class:`Transport` instance otherwise.  The optional third argument is an
+   :class:`!SafeTransport` instance for https: URLs and an internal HTTP
+   :class:`!Transport` instance otherwise.  The optional third argument is an
    encoding, by default UTF-8. The optional fourth argument is a debugging flag.
 
    The following parameters govern the use of the returned proxy instance.
@@ -142,7 +142,7 @@ between conformable Python objects and XML on the wire.
    via XML-RPC, use :class:`bytes` or :class:`bytearray` classes or the
    :class:`Binary` wrapper class described below.
 
-   :class:`Server` is retained as an alias for :class:`ServerProxy` for backwards
+   :class:`!Server` is retained as an alias for :class:`ServerProxy` for backwards
    compatibility.  New code should use :class:`ServerProxy`.
 
    .. versionchanged:: 3.5
@@ -181,7 +181,7 @@ by returning data in a conformant type or by raising a :class:`Fault` or
 :class:`ProtocolError` exception indicating an error.
 
 Servers that support the XML introspection API support some common methods
-grouped under the reserved :attr:`~ServerProxy.system` attribute:
+grouped under the reserved :attr:`!system` attribute:
 
 
 .. method:: ServerProxy.system.listMethods()
@@ -358,6 +358,23 @@ The client gets the image and saves it to a file::
    proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
    with open("fetched_python_logo.jpg", "wb") as handle:
        handle.write(proxy.python_logo().data)
+
+.. _error-objects:
+
+Error Objects
+-------------
+
+.. exception:: Error
+
+   Base class of the :exc:`Fault`, :exc:`ProtocolError` and
+   :exc:`ResponseError` exceptions.
+
+
+.. exception:: ResponseError
+
+   Raised when an XML-RPC response is malformed and cannot be unmarshalled,
+   for example when it contains an unsupported type tag.
+
 
 .. _fault-objects:
 
