@@ -663,6 +663,29 @@ class BasicTest(BaseTest):
             self.assertRaises((ValueError, OSError), venv.create, self.env_dir)
             self.clear_directory(self.env_dir)
 
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_symlinked_file_replaced(self):
+        """
+        Test that venv creation replaces a symlink where it writes a file.
+        """
+        outside_dir = tempfile.mkdtemp()
+        self.addCleanup(rmtree, outside_dir)
+        outside = os.path.join(outside_dir, 'outside')
+        with open(outside, 'w', encoding='utf-8') as f:
+            f.write('untouched\n')
+        links = ['pyvenv.cfg', '.gitignore',
+                 os.path.join(self.bindir, 'activate')]
+        os.mkdir(os.path.join(self.env_dir, self.bindir))
+        for link in links:
+            os.symlink(outside, self.get_env_file(link))
+        venv.create(self.env_dir, scm_ignore_files={'git'})
+        for link in links:
+            with self.subTest(link=link):
+                self.assertFalse(os.path.islink(self.get_env_file(link)))
+                self.assertTrue(os.path.isfile(self.get_env_file(link)))
+        with open(outside, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'untouched\n')
+
     def test_upgrade(self):
         """
         Test upgrading an existing environment directory.

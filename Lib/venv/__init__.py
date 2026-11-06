@@ -18,6 +18,11 @@ CORE_VENV_DEPS = ('pip',)
 logger = logging.getLogger(__name__)
 
 
+def _unlink_symlink(path):
+    if os.path.islink(path):
+        os.unlink(path)
+
+
 class EnvBuilder:
     """
     This class exists to allow virtual environment creation to be
@@ -223,6 +228,7 @@ class EnvBuilder:
                         being processed.
         """
         context.cfg_path = path = os.path.join(context.env_dir, 'pyvenv.cfg')
+        _unlink_symlink(path)
         with open(path, 'w', encoding='utf-8') as f:
             f.write('home = %s\n' % context.python_dir)
             if self.system_site_packages:
@@ -291,6 +297,7 @@ class EnvBuilder:
         ignored by git.
         """
         gitignore_path = os.path.join(context.env_dir, '.gitignore')
+        _unlink_symlink(gitignore_path)
         with open(gitignore_path, 'w', encoding='utf-8') as file:
             file.write('# Created by venv; '
                        'see https://docs.python.org/3/library/venv.html\n')
@@ -585,6 +592,7 @@ class EnvBuilder:
                 if not os.path.exists(dstdir):
                     os.makedirs(dstdir)
                 dstfile = os.path.join(dstdir, f)
+                _unlink_symlink(dstfile)
                 if os.name == 'nt' and srcfile.endswith(('.exe', '.pdb')):
                     shutil.copy2(srcfile, dstfile)
                     continue
