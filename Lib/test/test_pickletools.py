@@ -492,7 +492,7 @@ class MiscTestCase(unittest.TestCase):
             'bytes_types',
             'UP_TO_NEWLINE', 'TAKEN_FROM_ARGUMENT1',
             'TAKEN_FROM_ARGUMENT4', 'TAKEN_FROM_ARGUMENT4U',
-            'TAKEN_FROM_ARGUMENT8U', 'ArgumentDescriptor',
+            'TAKEN_FROM_ARGUMENT8U',
             'read_uint1', 'read_uint2', 'read_int4', 'read_uint4',
             'read_uint8', 'read_stringnl', 'read_stringnl_noescape',
             'read_stringnl_noescape_pair', 'read_string1',
@@ -508,12 +508,11 @@ class MiscTestCase(unittest.TestCase):
             'unicodestringnl', 'unicodestring1', 'unicodestring4',
             'unicodestring8', 'decimalnl_short', 'decimalnl_long',
             'floatnl', 'float8', 'long1', 'long4',
-            'StackObject',
             'pyint', 'pylong', 'pyinteger_or_bool', 'pybool', 'pyfloat',
             'pybytes_or_str', 'pystring', 'pybytes', 'pybytearray',
             'pyunicode', 'pynone', 'pytuple', 'pylist', 'pydict',
             'pyset', 'pyfrozenset', 'pybuffer', 'anyobject',
-            'markobject', 'stackslice', 'OpcodeInfo', 'opcodes',
+            'markobject', 'stackslice', 'opcodes',
             'code2op',
         }
         support.check__all__(self, pickletools, not_exported=not_exported)
