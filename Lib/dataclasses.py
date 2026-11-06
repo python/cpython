@@ -1290,10 +1290,6 @@ def _get_slots(cls):
 
 def _update_func_cell_for__class__(f, oldcls, newcls):
     # Returns True if we update a cell, else False.
-    if f is None:
-        # f will be None in the case of a property where not all of
-        # fget, fset, and fdel are used.  Nothing to do in that case.
-        return False
     try:
         idx = f.__code__.co_freevars.index("__class__")
     except ValueError:
@@ -1315,6 +1311,58 @@ def _update_func_cell_for__class__(f, oldcls, newcls):
         closure.cell_contents = newcls
         return True
     return False
+
+
+_object_members_values = None
+
+
+def _is_not_object_member(v):
+    # _object_members_values is initialized on first use, so that
+    # importing dataclasses does not eagerly import inspect (gh-137855).
+    global _object_members_values
+    if _object_members_values is None:
+        import inspect
+        _object_members_values = {
+            value for _, value in
+            (
+                *inspect.getmembers_static(object),
+                *inspect.getmembers_static(object())
+             )
+        }
+    try:
+        return v not in _object_members_values
+    except TypeError:
+        return True
+
+
+def _find_inner_functions(obj, seen=None, depth=0):
+    # inspect is imported lazily (see gh-137855).
+    import inspect
+    if seen is None:
+        seen = set()
+    if id(obj) in seen:
+        return None
+    seen.add(id(obj))
+
+    depth += 1
+    # Normally just an inspection of a descriptor object itself should be enough,
+    # and we should encounter the function as its attribute,
+    # but in case function was wrapped (e.g. functools.partial was used),
+    # we want to dive at least one level deeper.
+    if depth > 2:
+        return None
+
+    obj_is_type_instance = type in inspect._static_getmro(type(obj))
+    for _, value in inspect.getmembers_static(obj, _is_not_object_member):
+        value_type = type(value)
+        if value_type is types.MemberDescriptorType and not obj_is_type_instance:
+            value = value.__get__(obj)
+            value_type = type(value)
+
+        if value_type is types.FunctionType:
+            yield inspect.unwrap(value)
+        else:
+            yield from _find_inner_functions(value, seen, depth)
 
 
 def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
@@ -1391,22 +1439,45 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # (the newly created one, which we're returning) and not the
     # original class.  We can break out of this loop as soon as we
     # make an update, since all closures for a class will share a
-    # given cell.
+    # given cell.  First we try to find a pure function or a property,
+    # and then fallback to inspecting custom descriptors
+    # if no pure function or property is found.
+
+    # inspect is imported lazily (see gh-137855): only slots classes
+    # with wrapped members, properties or descriptors need it here.
+    import inspect
+    custom_descriptors_to_check = []
     for member in newcls.__dict__.values():
 
         # If this is a wrapped function, unwrap it.
-        if not isinstance(member, type) and hasattr(member, '__wrapped__'):
-            import inspect
-            member = inspect.unwrap(member)
+        member = inspect.unwrap(member)
 
         if isinstance(member, types.FunctionType):
             if _update_func_cell_for__class__(member, cls, newcls):
                 break
-        elif isinstance(member, property):
-            if (_update_func_cell_for__class__(member.fget, cls, newcls)
-                or _update_func_cell_for__class__(member.fset, cls, newcls)
-                or _update_func_cell_for__class__(member.fdel, cls, newcls)):
-                break
+        elif isinstance(member, property) and (
+            any(
+                # Unwrap once more in case function
+                # was wrapped before it became property.
+                _update_func_cell_for__class__(inspect.unwrap(f), cls, newcls)
+                for f in (member.fget, member.fset, member.fdel)
+                if f is not None
+            )
+        ):
+            break
+        elif hasattr(member, "__get__") and not inspect.ismemberdescriptor(
+            member
+        ):
+            # We don't want to inspect custom descriptors just yet
+            # there's still a chance we'll encounter a pure function
+            # or a property and won't have to use slower recursive search.
+            custom_descriptors_to_check.append(member)
+    else:
+        # Now let's ensure custom descriptors won't be left out.
+        for descriptor in custom_descriptors_to_check:
+            for f in _find_inner_functions(descriptor):
+                if _update_func_cell_for__class__(f, cls, newcls):
+                    break
 
     # Get new annotations to remove references to the original class
     # in forward references
