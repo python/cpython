@@ -780,10 +780,11 @@ class PyLongModuleTests(unittest.TestCase):
 
     def test_pylong_int_mod(self):
         n = (1 << 100_000)
-        self.assertEqual((n * 3 + 1) % n, 1)
-        self.assertEqual((-n * 3 - 1) % n, n - 1)
-        self.assertEqual((n * 3 + 1) % -n, 1 - n)
-        self.assertEqual((-n * 3 - 1) % -n, -1)
+        m = (1 << 50_000)
+        self.assertEqual((n * 3 + 1) % m, 1)
+        self.assertEqual((-n * 3 - 1) % m, m - 1)
+        self.assertEqual((n * 3 + 1) % -m, 1 - m)
+        self.assertEqual((-n * 3 - 1) % -m, -1)
 
     @support.cpython_only  # tests implementation details of CPython.
     @unittest.skipUnless(_pylong, "_pylong module required")
