@@ -296,6 +296,7 @@ class ArrayTypeCacheTest(unittest.TestCase):
     # the same (item type, length) pair when the array type was created from
     # more than one thread at a time.
 
+    @threading_helper.requires_working_threading()
     def test_concurrent_creation_with_set_name(self):
         # Creating the array type runs Python code -- ``__set_name__`` here --
         # which lets a second thread reach the cache before the first one has
