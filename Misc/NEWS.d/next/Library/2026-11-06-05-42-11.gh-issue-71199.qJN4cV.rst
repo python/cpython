@@ -1,0 +1,3 @@
+Change :mod:`os` module types such as :class:`~os.DirEntry` to report ``os``
+as their module on every platform. :ref:`Pickled <pickle-picklable>` objects
+using the platform-specific qualified name, such as ``nt.times_result``, still load.
