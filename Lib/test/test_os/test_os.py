@@ -188,6 +188,18 @@ class MiscTests(unittest.TestCase):
         if hasattr(os, "waitid_result"):
             self.assertEqual(fqdn(os.waitid_result), (native, "waitid_result"))
 
+    def test_pickle_global_names(self):
+        # Existing pickles name these via os or the platform module (posix
+        # or nt); both must keep loading, as must new pickles.
+        for name in ('stat', 'stat_result', 'statvfs_result', 'times_result',
+                     'uname_result'):
+            with self.subTest(name):
+                obj = getattr(os, name)
+                for module in ('os', os.name):
+                    p = f'c{module}\n{name}\n.'.encode()
+                    self.assertIs(pickle.loads(p), obj)
+                self.assertIs(pickle.loads(pickle.dumps(obj)), obj)
+
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
