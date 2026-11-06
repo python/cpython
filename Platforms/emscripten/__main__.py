@@ -812,12 +812,12 @@ def main():
         subcommand.add_argument(
             "--emsdk-cache",
             action="store",
-            default=os.environ.get("EMSDK_CACHE"),
+            default=os.environ.get("PY_EMSDK_CACHE"),
             dest="emsdk_cache",
             help=(
                 "Path to emsdk cache directory. If provided, validates that "
                 "the required emscripten version is installed. "
-                "Can also be set with the EMSDK_CACHE environment variable."
+                "Can also be set with the PY_EMSDK_CACHE environment variable."
             ),
         )
 
