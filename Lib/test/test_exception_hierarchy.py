@@ -141,10 +141,9 @@ class AttributesTest(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "POSIX-specific test")
     def test_strerror_cached(self):
         def strerror():
-            try:
-                os.stat('')
-            except FileNotFoundError as e:
-                return e.strerror
+            with self.assertRaises(FileNotFoundError) as cm:
+                open("some_hopefully_non_existing_file")
+            return cm.exception.strerror
         self.assertIs(strerror(), strerror())
         self.assertIs(strerror(), os.strerror(errno.ENOENT))
 
