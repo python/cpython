@@ -1,0 +1,3 @@
+Fix a crash (double free) in the :term:`free-threaded build` when ``close()``
+or ``truncate()`` is called concurrently on the same unbuffered
+:class:`io.FileIO` object.
