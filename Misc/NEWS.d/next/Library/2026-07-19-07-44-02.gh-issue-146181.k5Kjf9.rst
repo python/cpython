@@ -1,0 +1,5 @@
+On Unix, :mod:`asyncio` now spawns child processes (:func:`asyncio.create_subprocess_exec`,
+:func:`asyncio.create_subprocess_shell`, and :meth:`~asyncio.loop.subprocess_exec`) via
+:meth:`~asyncio.loop.run_in_executor` instead of calling :class:`subprocess.Popen`
+directly on the event loop thread, so a slow-to-start child process no longer
+blocks the event loop.
