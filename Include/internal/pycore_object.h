@@ -253,11 +253,29 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 }
 
 #else
-// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+#ifdef Py_REF_DEBUG
     Py_DECREF(op);
+#else
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcountSpecialized(op, destruct);
+        }
+    }
+    else {
+        _Py_DecRefShared(op);
+    }
+#endif
 }
 
 static inline int
@@ -465,7 +483,7 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
 #endif
 #else  // Py_GIL_DISABLED
 # define Py_DECREF_MORTAL(op) Py_DECREF(op)
-# define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF(op)
+# define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_SPECIALIZED(op, destruct)
 #endif
 
 /* Inline functions trading binary compatibility for speed:
