@@ -149,6 +149,13 @@ class EnvBuilder:
         if os.pathsep in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir} because '
                              f'it contains the PATH separator {os.pathsep}.')
+        if '\n' in os.fspath(env_dir) or '\r' in os.fspath(env_dir):
+            raise ValueError(f'Refusing to create a venv in {env_dir!r} '
+                             'because its path contains a line break.')
+        if self.prompt is not None and ('\n' in self.prompt
+                                        or '\r' in self.prompt):
+            raise ValueError(f'Refusing to use the prompt {self.prompt!r} '
+                             'because it contains a line break.')
         if os.path.exists(env_dir) and self.clear:
             self.clear_directory(env_dir)
         context = types.SimpleNamespace()

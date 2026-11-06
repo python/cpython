@@ -1075,6 +1075,23 @@ class BasicTest(BaseTest):
         self.assertRaises(ValueError, venv.create, bad_itempath)
         self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
+    def test_line_break_error(self):
+        """
+        Test that venv creation fails when the target directory or the
+        prompt contains a line break.
+        """
+        rmtree(self.env_dir)
+        for line_break in '\n', '\r':
+            with self.subTest(line_break=line_break):
+                bad_itempath = f'{self.env_dir}{line_break}x'
+                self.assertRaises(ValueError, venv.create, bad_itempath)
+                self.assertRaises(ValueError, venv.create,
+                                  FakePath(bad_itempath))
+                bad_prompt = f'x{line_break}x'
+                self.assertRaises(ValueError, venv.create, self.env_dir,
+                                  prompt=bad_prompt)
+                self.assertFalse(os.path.exists(self.env_dir))
+
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
     def test_zippath_from_non_installed_posix(self):

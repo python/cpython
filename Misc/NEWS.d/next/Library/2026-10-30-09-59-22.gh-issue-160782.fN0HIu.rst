@@ -1,0 +1,2 @@
+:mod:`venv`: a line break in the prompt or the path now raises
+:exc:`ValueError` instead of being written into ``pyvenv.cfg``.
