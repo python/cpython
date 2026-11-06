@@ -1,0 +1,1 @@
+Enable deferred reference counting for mutable class attributes to improve free-threading scaling
