@@ -1039,6 +1039,61 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(nested_dict, depth=1), lv1_dict)
         self.assertEqual(pprint.pformat(nested_list, depth=1), lv1_list)
 
+    def test_deeply_nested_items_not_formatted_per_level(self):
+        # The items of the innermost container must not be formatted again
+        # for each of the containers around it, which would make the time
+        # proportional to the size of the data times its nesting depth.
+        class Item(int):
+            calls = 0
+            def __repr__(self):
+                Item.calls += 1
+                return int.__repr__(self)
+
+        depth = 50
+        size = 1000
+        width = 80
+        for wrap in (
+            lambda o: [o],
+            lambda o: (o,),
+            lambda o: {'k': o},
+            lambda o: frozendict({'k': o}),
+            lambda o: {'k': o}.values(),
+        ):
+            for items in ([Item(i) for i in range(size)],
+                          {Item(i): Item(i) for i in range(size)}):
+                for kwargs in {}, {'compact': True}, {'expand': True}:
+                    nested = items
+                    for i in range(depth):
+                        nested = wrap(nested)
+                    with self.subTest(type=type(nested).__name__,
+                                      items=type(items).__name__, **kwargs):
+                        Item.calls = 0
+                        pprint.pformat(nested, width=width, **kwargs)
+                        # Each level may format a line's worth of items to
+                        # find out that the container does not fit on one
+                        # line, and every item is formatted a few times once
+                        # the innermost container is laid out.
+                        self.assertLess(Item.calls,
+                                        depth * width + 4 * len(items))
+
+    def test_format_override_shortening_repr(self):
+        # A format() override may shorten what PrettyPrinter.format()
+        # returns, so whether that fits on one line cannot be decided before
+        # it is complete.
+        class ShortPrettyPrinter(pprint.PrettyPrinter):
+            def format(self, object, context, maxlevels, level):
+                rep, readable, recursive = super().format(
+                    object, context, maxlevels, level)
+                if len(rep) > 20:
+                    rep = rep[:17] + '...'
+                return rep, False, recursive
+
+        printer = ShortPrettyPrinter(width=30)
+        self.assertEqual(printer.pformat({'a': list(range(100))}),
+                         "{'a': [0, 1, 2, 3...")
+        self.assertEqual(printer.pformat([list(range(100))] * 3),
+                         "[[0, 1, 2, 3, 4, ...")
+
     def test_sort_unorderable_values(self):
         # Issue 3976:  sorted pprints fail for unorderable values.
         n = 20
