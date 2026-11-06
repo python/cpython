@@ -2375,9 +2375,13 @@ Hacl_Streaming_HMAC_digest(
     Hacl_Agile_Hash_state_s *s112 = tmp_block_state1.snd;
     update_multi(s112, prev_len, buf_multi, 0U);
     uint64_t prev_len_last = total_len - (uint64_t)r;
-    Hacl_Agile_Hash_state_s *s11 = tmp_block_state1.snd;
-    update_last(s11, prev_len_last, buf_last, r);
+    Hacl_Agile_Hash_state_s *s113 = tmp_block_state1.snd;
+    update_last(s113, prev_len_last, buf_last, r);
     finish0(tmp_block_state1, output);
+    Hacl_Agile_Hash_state_s *s210 = tmp_block_state1.thd;
+    Hacl_Agile_Hash_state_s *s11 = tmp_block_state1.snd;
+    free_(s11);
+    free_(s210);
     return Hacl_Streaming_Types_Success;
   }
   KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",

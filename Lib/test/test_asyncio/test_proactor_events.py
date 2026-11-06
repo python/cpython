@@ -18,7 +18,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 def close_transport(transport):
@@ -335,6 +335,20 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._call_connection_lost(None)
         self.assertTrue(self.protocol.connection_lost.called)
         self.assertTrue(self.sock.close.called)
+
+    def test_call_connection_lost_shutdown_reset(self):
+        # gh-160429: a ConnectionResetError from shutdown() must not skip
+        # closing the socket and detaching the transport from its server.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = ConnectionResetError
+        tr._call_connection_lost(None)
+        self.protocol.connection_lost.assert_called_once_with(None)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertIsNone(tr._sock)
+        self.assertTrue(tr._called_connection_lost)
 
     def test_write_eof(self):
         tr = self.socket_transport()
@@ -691,7 +705,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_str(self):
         transport = self.datagram_transport()
-        self.assertRaises(TypeError, transport.sendto, 'str', ())
+        self.assertRaisesRegex(
+            TypeError, "^data argument must be a bytes-like object, not 'str'$",
+            transport.sendto, 'str', ())
 
     def test_sendto_connected_addr(self):
         transport = self.datagram_transport(address=('0.0.0.0', 1))
@@ -865,6 +881,26 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         loop(fut)
         self.assertTrue(self.sock.close.called)
         self.assertTrue(m_log.error.called)
+
+    def test_create_server_connection_reset(self):
+        # gh-93821: a peer resetting its connection before it is accepted
+        # must not close the listening socket.
+        pf = mock.Mock()
+        call_soon = self.loop.call_soon = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop._start_serving(pf, self.sock)
+        loop = call_soon.call_args[0][0]
+
+        for exc in ConnectionResetError, ConnectionAbortedError:
+            with self.subTest(exc=exc):
+                call_soon.reset_mock()
+                fut = mock.Mock()
+                fut.result.side_effect = exc()
+                loop(fut)
+                self.assertFalse(self.sock.close.called)
+                self.assertFalse(self.loop.call_exception_handler.called)
+                call_soon.assert_called_once_with(loop)
 
     def test_create_server_cancel(self):
         pf = mock.Mock()

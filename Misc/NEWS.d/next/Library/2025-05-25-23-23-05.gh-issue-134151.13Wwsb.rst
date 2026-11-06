@@ -1,2 +1,0 @@
-:mod:`email`: Fix :exc:`TypeError` in :func:`email.utils.decode_params`
-when sorting :rfc:`2231` continuations that contain an unnumbered section.

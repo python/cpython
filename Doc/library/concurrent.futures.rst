@@ -12,7 +12,7 @@ and :source:`Lib/concurrent/futures/interpreter.py`
 
 --------------
 
-The :mod:`concurrent.futures` module provides a high-level interface for
+The :mod:`!concurrent.futures` module provides a high-level interface for
 asynchronously executing callables.
 
 The asynchronous execution can be performed with threads, using
@@ -20,6 +20,11 @@ The asynchronous execution can be performed with threads, using
 or separate processes, using :class:`ProcessPoolExecutor`.
 Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
+
+:class:`concurrent.futures.Future` must not be confused with
+:class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
+tasks and coroutines. See the :doc:`asyncio's Future <asyncio-future>`
+documentation for a detailed comparison of the two.
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -56,11 +61,18 @@ Executor Objects
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
-      *timeout* can be an int or a float.  If *timeout* is not specified or
+      *timeout* can be an int or a float.
+      It cancels all future calls of *fn* and closes the iterator.
+      If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
+      It does not cancel future calls of *fn*.
+
+      The returned iterator has method :meth:`!close` which cancels all
+      future calls of *fn* and discards the results of already finished calls
+      if they are available.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
       into a number of chunks which it submits to the pool as separate
@@ -76,6 +88,10 @@ Executor Objects
 
       .. versionchanged:: 3.14
          Added the *buffersize* parameter.
+
+      .. versionchanged:: 3.16
+         The returned iterator is no longer automatically closed if a *fn*
+         call raises an exception.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -114,7 +130,7 @@ Executor Objects
              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
       .. versionchanged:: 3.9
-         Added *cancel_futures*.
+         Added the *cancel_futures* parameter.
 
 
 ThreadPoolExecutor
@@ -151,10 +167,13 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future)
+   future = executor.submit(wait_on_future)
+   # Note: calling future.result() would also cause a deadlock because
+   # the single worker thread is already waiting for wait_on_future().
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', \
+                              initializer=None, initargs=(), **ctxkwargs)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -171,6 +190,18 @@ And::
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
+
+   *ctxkwargs* is a mapping of additional keyword arguments passed to
+   :meth:`prepare_context`, allowing customization of the worker execution
+   context.
+
+   .. classmethod:: prepare_context(initializer, initargs)
+
+      Setting up the necessary context for creating worker instances in a
+      pool-based executor (for example, in a concurrent environment like
+      threads or interpreters).
+
+      .. versionadded:: 3.14
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -200,6 +231,10 @@ And::
    .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
+   .. versionchanged:: 3.14
+      Added *ctxkwargs* to pass additional arguments to :meth:`prepare_context`
+      class method.
 
 
 .. _threadpoolexecutor-example:
@@ -238,6 +273,8 @@ ThreadPoolExecutor Example
 
 InterpreterPoolExecutor
 -----------------------
+
+.. versionadded:: 3.14
 
 The :class:`InterpreterPoolExecutor` class uses a pool of interpreters
 to execute calls asynchronously.  It is a :class:`ThreadPoolExecutor`
@@ -287,7 +324,8 @@ efficient alternative is to serialize with :mod:`pickle` and then send
 the bytes over a shared :mod:`socket <socket>` or
 :func:`pipe <os.pipe>`.
 
-.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: InterpreterPoolExecutor(max_workers=None, thread_name_prefix='', \
+                                   initializer=None, initargs=())
 
    A :class:`ThreadPoolExecutor` subclass that executes calls asynchronously
    using a pool of at most *max_workers* threads.  Each thread runs
@@ -306,7 +344,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    .. note::
       The executor may replace uncaught exceptions from *initializer*
-      with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
+      with :class:`~concurrent.interpreters.ExecutionFailed`.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
@@ -318,11 +356,11 @@ likewise serializes the return value when sending it back.
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful
 then it also sets the ``__cause__`` to a corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance, which contains a summary of the original exception.
 In the uncommon case that the worker is not able to preserve the
 original as-is then it directly preserves the corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance instead.
 
 
@@ -347,7 +385,9 @@ per :class:`multiprocessing.Process` apply when using :meth:`~Executor.submit`
 and :meth:`~Executor.map` on a :class:`ProcessPoolExecutor`. A function defined
 in a REPL or a lambda should not be expected to work.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, \
+                               initializer=None, initargs=(), \
+                               max_tasks_per_child=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -411,6 +451,11 @@ in a REPL or a lambda should not be expected to work.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. versionchanged:: 3.16
+      Fixed a deadlock (:gh:`115634`) where the executor could hang after
+      a worker process exited upon reaching its *max_tasks_per_child*
+      limit while tasks remained queued.
 
    .. method:: terminate_workers()
 
@@ -710,15 +755,6 @@ Exception classes
    this exception class is raised when one of the workers
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
-
-   .. versionadded:: 3.14
-
-.. exception:: ExecutionFailed
-
-   Raised from :class:`~concurrent.futures.InterpreterPoolExecutor` when
-   the given initializer fails or from
-   :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
-   exception from the submitted task.
 
    .. versionadded:: 3.14
 

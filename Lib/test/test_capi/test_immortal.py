@@ -25,14 +25,14 @@ class TestUnstableCAPI(unittest.TestCase):
 class TestInternalCAPI(unittest.TestCase):
 
     def test_immortal_builtins(self):
-        for obj in range(-5, 256):
+        for obj in range(-5, 1025):
             self.assertTrue(_testinternalcapi.is_static_immortal(obj))
         self.assertTrue(_testinternalcapi.is_static_immortal(None))
         self.assertTrue(_testinternalcapi.is_static_immortal(False))
         self.assertTrue(_testinternalcapi.is_static_immortal(True))
         self.assertTrue(_testinternalcapi.is_static_immortal(...))
         self.assertTrue(_testinternalcapi.is_static_immortal(()))
-        for obj in range(300, 400):
+        for obj in range(1025, 1125):
             self.assertFalse(_testinternalcapi.is_static_immortal(obj))
         for obj in ([], {}, set()):
             self.assertFalse(_testinternalcapi.is_static_immortal(obj))

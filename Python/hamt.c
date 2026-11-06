@@ -4,8 +4,16 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
 
 #include <stddef.h>               // offsetof()
+
+/*[clinic input]
+class hamt "PyHamtObject *" "&_PyHamt_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ab743c139c849b8e]*/
+
+#include "clinic/hamt.c.h"
 
 /*
 This file provides an implementation of an immutable mapping using the
@@ -701,6 +709,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
             PyHamtNode_Bitmap *ret = hamt_node_bitmap_clone(self);
             if (ret == NULL) {
+                Py_DECREF(sub_node);
                 return NULL;
             }
             Py_SETREF(ret->b_array[val_idx], (PyObject*)sub_node);
@@ -993,6 +1002,7 @@ hamt_node_bitmap_without(PyHamtNode_Bitmap *self,
 
                 PyHamtNode_Bitmap *clone = hamt_node_bitmap_clone(self);
                 if (clone == NULL) {
+                    Py_DECREF(sub_node);
                     return W_ERROR;
                 }
 
@@ -2328,6 +2338,10 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
         return 0;
     }
 
+    Py_INCREF(v);
+    Py_INCREF(w);
+
+    int res = 1;
     PyHamtIteratorState iter;
     hamt_iter_t iter_res;
     hamt_find_t find_res;
@@ -2343,25 +2357,38 @@ _PyHamt_Eq(PyHamtObject *v, PyHamtObject *w)
             find_res = hamt_find(w, v_key, &w_val);
             switch (find_res) {
                 case F_ERROR:
-                    return -1;
+                    res = -1;
+                    goto done;
 
                 case F_NOT_FOUND:
-                    return 0;
+                    res = 0;
+                    goto done;
 
                 case F_FOUND: {
+                    Py_INCREF(v_key);
+                    Py_INCREF(v_val);
+                    Py_INCREF(w_val);
                     int cmp = PyObject_RichCompareBool(v_val, w_val, Py_EQ);
+                    Py_DECREF(v_key);
+                    Py_DECREF(v_val);
+                    Py_DECREF(w_val);
                     if (cmp < 0) {
-                        return -1;
+                        res = -1;
+                        goto done;
                     }
                     if (cmp == 0) {
-                        return 0;
+                        res = 0;
+                        goto done;
                     }
                 }
             }
         }
     } while (iter_res != I_END);
 
-    return 1;
+done:
+    Py_DECREF(v);
+    Py_DECREF(w);
+    return res;
 }
 
 Py_ssize_t
@@ -2431,6 +2458,10 @@ hamt_baseiter_tp_clear(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
     Py_CLEAR(it->hi_obj);
+    /* i_nodes holds borrowed pointers into the tree that hi_obj was keeping
+       alive, so the cursor must not be used again.  A negative i_level makes
+       hamt_iterator_next() report I_END without touching i_nodes. */
+    it->hi_iter.i_level = -1;
     return 0;
 }
 
@@ -2477,6 +2508,10 @@ static Py_ssize_t
 hamt_baseiter_tp_len(PyObject *op)
 {
     PyHamtIterator *it = (PyHamtIterator*)op;
+    if (it->hi_obj == NULL) {
+        /* tp_clear() ran on this iterator. */
+        return 0;
+    }
     return it->hi_obj->h_count;
 }
 
@@ -2497,6 +2532,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
 
     hamt_iterator_init(&it->hi_iter, o->h_root);
 
+    PyObject_GC_Track(it);
     return (PyObject*)it;
 }
 
@@ -2525,7 +2561,7 @@ PyTypeObject _PyHamtItems_Type = {
 static PyObject *
 hamt_iter_yield_items(PyObject *key, PyObject *val)
 {
-    return PyTuple_Pack(2, key, val);
+    return _PyTuple_FromPair(key, val);
 }
 
 PyObject *
@@ -2703,32 +2739,38 @@ hamt_tp_iter(PyObject *op)
     return _PyHamt_NewIterKeys(self);
 }
 
+/*[clinic input]
+hamt.set
+
+    key: object
+    val: object
+    /
+
+Return a copy of the mapping with the key set to the value.
+[clinic start generated code]*/
+
 static PyObject *
-hamt_py_set(PyObject *op, PyObject *args)
+hamt_set_impl(PyHamtObject *self, PyObject *key, PyObject *val)
+/*[clinic end generated code: output=2256fa2f6cf80a86 input=d0775605f5ad8fc1]*/
 {
-    PyObject *key;
-    PyObject *val;
-
-    if (!PyArg_UnpackTuple(args, "set", 2, 2, &key, &val)) {
-        return NULL;
-    }
-
-    PyHamtObject *self = _PyHamtObject_CAST(op);
     return (PyObject *)_PyHamt_Assoc(self, key, val);
 }
 
+/*[clinic input]
+hamt.get
+
+    key: object
+    default as def: object = None
+    /
+
+Return the value for the key, or the default if it is not found.
+[clinic start generated code]*/
+
 static PyObject *
-hamt_py_get(PyObject *op, PyObject *args)
+hamt_get_impl(PyHamtObject *self, PyObject *key, PyObject *def)
+/*[clinic end generated code: output=32bfe9cfd2ac5b22 input=2636859ec1bf5912]*/
 {
-    PyObject *key;
-    PyObject *def = NULL;
-
-    if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def)) {
-        return NULL;
-    }
-
     PyObject *val = NULL;
-    PyHamtObject *self = _PyHamtObject_CAST(op);
     hamt_find_t res = hamt_find(self, key, &val);
     switch (res) {
         case F_ERROR:
@@ -2736,9 +2778,6 @@ hamt_py_get(PyObject *op, PyObject *args)
         case F_FOUND:
             return Py_NewRef(val);
         case F_NOT_FOUND:
-            if (def == NULL) {
-                Py_RETURN_NONE;
-            }
             return Py_NewRef(def);
         default:
             Py_UNREACHABLE();
@@ -2784,8 +2823,8 @@ hamt_py_dump(PyObject *op, PyObject *Py_UNUSED(args))
 
 
 static PyMethodDef PyHamt_methods[] = {
-    {"set", hamt_py_set, METH_VARARGS, NULL},
-    {"get", hamt_py_get, METH_VARARGS, NULL},
+    HAMT_SET_METHODDEF
+    HAMT_GET_METHODDEF
     {"delete", hamt_py_delete, METH_O, NULL},
     {"items", hamt_py_items, METH_NOARGS, NULL},
     {"keys", hamt_py_keys, METH_NOARGS, NULL},

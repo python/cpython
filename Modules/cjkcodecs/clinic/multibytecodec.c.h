@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "encode($self, /, input, errors=None)\n"
@@ -14,10 +15,11 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "\n"
 "Return an encoded string version of \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeEncodeError. Other possible\n"
-"values are \'ignore\', \'replace\' and \'xmlcharrefreplace\' as well as any other name\n"
-"registered with codecs.register_error that can handle UnicodeEncodeErrors.");
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeEncodeError.  Other possible values are \'ignore\', \'replace\'\n"
+"and \'xmlcharrefreplace\' as well as any other name registered with\n"
+"codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_ENCODE_METHODDEF    \
     {"encode", _PyCFunction_CAST(_multibytecodec_MultibyteCodec_encode), METH_FASTCALL|METH_KEYWORDS, _multibytecodec_MultibyteCodec_encode__doc__},
@@ -76,13 +78,8 @@ _multibytecodec_MultibyteCodec_encode(PyObject *self, PyObject *const *args, Py_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -103,9 +100,10 @@ PyDoc_STRVAR(_multibytecodec_MultibyteCodec_decode__doc__,
 "\n"
 "Decodes \'input\'.\n"
 "\n"
-"\'errors\' may be given to set a different error handling scheme. Default is\n"
-"\'strict\' meaning that encoding errors raise a UnicodeDecodeError. Other possible\n"
-"values are \'ignore\' and \'replace\' as well as any other name registered with\n"
+"\'errors\' may be given to set a different error handling scheme.\n"
+"Default is \'strict\' meaning that encoding errors raise\n"
+"a UnicodeDecodeError.  Other possible values are \'ignore\' and\n"
+"\'replace\' as well as any other name registered with\n"
 "codecs.register_error that is able to handle UnicodeDecodeErrors.\"");
 
 #define _MULTIBYTECODEC_MULTIBYTECODEC_DECODE_METHODDEF    \
@@ -167,13 +165,8 @@ _multibytecodec_MultibyteCodec_decode(PyObject *self, PyObject *const *args, Py_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -594,25 +587,12 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "write",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *strobj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("write", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("write", nargs, 1, 1)) {
         goto exit;
     }
     strobj = args[0];
@@ -639,25 +619,12 @@ static PyObject *
 _multibytecodec_MultibyteStreamWriter_writelines(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "writelines",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *lines;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("writelines", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("writelines", nargs, 1, 1)) {
         goto exit;
     }
     lines = args[0];
@@ -696,4 +663,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=014f4f6bb9d29594 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20fec21d79e87a15 input=a9049054013a1b77]*/

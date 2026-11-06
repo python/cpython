@@ -1,19 +1,19 @@
 """Debugger basics"""
 
-import fnmatch
-import sys
-import threading
 import os
-import weakref
+import sys
 from contextlib import contextmanager
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
+lazy import fnmatch
+lazy import threading
+lazy import weakref
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
 GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
-class BdbQuit(Exception):
+class BdbQuit(BaseException):
     """Exception to give up completely."""
 
 
@@ -199,6 +199,8 @@ class Bdb:
         self.frame_returning = None
         self.trace_opcodes = False
         self.enterframe = None
+        self.cmdframe = None
+        self.cmdlineno = None
         self.code_linenos = weakref.WeakKeyDictionary()
         self.backend = backend
         if backend == 'monitoring':
@@ -297,7 +299,12 @@ class Bdb:
         self.user_line(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
-        if self.stop_here(frame) or self.break_here(frame):
+        # GH-136057
+        # For line events, we don't want to stop at the same line where
+        # the latest next/step command was issued.
+        if (self.stop_here(frame) or self.break_here(frame)) and not (
+            self.cmdframe == frame and self.cmdlineno == frame.f_lineno
+        ):
             self.user_line(frame)
             self.restart_events()
             if self.quitting: raise BdbQuit
@@ -526,7 +533,8 @@ class Bdb:
             if self.monitoring_tracer:
                 self.monitoring_tracer.update_local_events()
 
-    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False):
+    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False,
+                      cmdframe=None, cmdlineno=None):
         """Set the attributes for stopping.
 
         If stoplineno is greater than or equal to 0, then stop at line
@@ -539,6 +547,10 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
+        # cmdframe/cmdlineno is the frame/line number when the user issued
+        # step/next commands.
+        self.cmdframe = cmdframe
+        self.cmdlineno = cmdlineno
         self._set_trace_opcodes(opcode)
 
     def _set_caller_tracefunc(self, current_frame):
@@ -560,11 +572,14 @@ class Bdb:
         # the name "until" is borrowed from gdb
         if lineno is None:
             lineno = frame.f_lineno + 1
-        self._set_stopinfo(frame, frame, lineno)
+        self._set_stopinfo(frame, frame, lineno,
+                           cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_step(self):
         """Stop after one line of code."""
-        self._set_stopinfo(None, None)
+        # set_step() could be called from signal handler so enterframe might be None
+        self._set_stopinfo(None, None, cmdframe=self.enterframe,
+                           cmdlineno=getattr(self.enterframe, 'f_lineno', None))
 
     def set_stepinstr(self):
         """Stop before the next instruction."""
@@ -572,7 +587,7 @@ class Bdb:
 
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
-        self._set_stopinfo(frame, None)
+        self._set_stopinfo(frame, None, cmdframe=frame, cmdlineno=frame.f_lineno)
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
@@ -586,6 +601,13 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+
+        if self.enterframe is not None:
+            # If self.enterframe is not None, it means we are already in
+            # dispatched functions. Tracing is disabled when calling a
+            # trace function, so we just skip this set_trace() call.
+            return
+
         self.stop_trace()
         if frame is None:
             frame = sys._getframe().f_back
@@ -733,7 +755,7 @@ class Bdb:
             return 'There are no breakpoints in %s' % filename
         for line in self.breaks[filename]:
             blist = Breakpoint.bplist[filename, line]
-            for bp in blist:
+            for bp in blist[:]:
                 bp.deleteMe()
         del self.breaks[filename]
         return None

@@ -1,28 +1,32 @@
-import re
-import pickle
-import unittest
+import contextlib
 import importlib
-import importlib.metadata
-from test.support import os_helper
+import io
+import pickle
+import re
+import unittest
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
 except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
+from test.support import os_helper
 
-from . import fixtures
-from ._path import Symlink
 from importlib.metadata import (
     Distribution,
     EntryPoint,
+    MetadataNotFound,
     PackageNotFoundError,
     _unique,
+    diagnose,
     distributions,
     entry_points,
     metadata,
     packages_distributions,
     version,
 )
+
+from . import fixtures
+from ._path import Symlink
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -58,7 +62,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
         dict(name=''),
     )
     def test_invalid_inputs_to_from_name(self, name):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             Distribution.from_name(name)
 
 
@@ -135,7 +139,7 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
 
 class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
-    def make_pkg(name, files=dict(METADATA="VERSION: 1.0")):
+    def make_pkg(name, files=frozendict(METADATA="VERSION: 1.0")):
         """
         Create metadata for a dist-info package with name and files.
         """
@@ -156,6 +160,123 @@ class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCa
         fixtures.build_files(self.make_pkg('foo-4.2', files={}), self.site_dir)
         dist = Distribution.from_name('foo')
         assert dist.version == "1.0"
+
+    def test_missing_metadata(self):
+        """
+        Dists with a missing metadata file should raise ``MetadataNotFound``.
+
+        Ref python/importlib_metadata#493 and python/cpython#143387.
+        """
+        fixtures.build_files(self.make_pkg('foo-4.3', files={}), self.site_dir)
+        with self.assertRaises(MetadataNotFound):
+            _ = Distribution.from_name('foo').metadata
+        with self.assertRaises(MetadataNotFound):
+            metadata('foo')
+
+    def test_diagnose_reports_invalid(self):
+        """
+        The diagnostic should report invalid dists by location
+        rather than crashing on them.
+
+        Ref python/importlib_metadata#548.
+        """
+        fixtures.build_files(self.make_pkg('nameless-1.0'), self.site_dir)
+        fixtures.build_files(self.make_pkg('empty-1.0', files={}), self.site_dir)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            diagnose.inspect(str(self.site_dir))
+        report = out.getvalue()
+        assert 'empty-1.0.dist-info (no metadata)' in report
+        assert 'nameless-1.0.dist-info (metadata without a name)' in report
+
+    def test_missing_required_metadata(self):
+        """
+        A missing required metadata field should raise a ``KeyError``
+        naming the field and locating the distribution.
+
+        Ref python/importlib_metadata#508.
+        """
+        fixtures.build_files(self.make_pkg('nameless-4.4'), self.site_dir)
+        fixtures.build_files(
+            self.make_pkg('unversioned-4.4', files=dict(METADATA='Name: unversioned')),
+            self.site_dir,
+        )
+        nameless = Distribution.at(self.site_dir / 'nameless-4.4.dist-info')
+        with self.assertRaisesRegex(KeyError, 'Name.*nameless-4.4.dist-info'):
+            nameless.name
+        unversioned = Distribution.at(self.site_dir / 'unversioned-4.4.dist-info')
+        with self.assertRaisesRegex(KeyError, 'Version.*unversioned-4.4.dist-info'):
+            unversioned.version
+
+
+class MultipleVersionsTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+    """
+    An unclean upgrade can leave more than one metadata directory for a
+    distribution in one path. Prefer the greater one.
+
+    Ref python/cpython#100666.
+    """
+
+    # Deliberately not in version order; the preference follows the
+    # lexicographic ordering of the directory names, which only
+    # approximates the ordering of the versions they name.
+    versions = '1.12.1', '1.13.1', '1.9.0', '2.0.0'
+    expected = '2.0.0', '1.9.0', '1.13.1', '1.12.1'
+
+    @staticmethod
+    def make_pkg(name, version, files=None):
+        """
+        Create metadata for a dist-info package at the indicated version.
+        """
+        return {
+            f'{name}-{version}.dist-info': (
+                {'METADATA': f'Name: {name}\nVersion: {version}\n'}
+                if files is None
+                else files
+            ),
+        }
+
+    def build_versions(self, *versions):
+        for ver in versions:
+            fixtures.build_files(self.make_pkg('foo', ver), self.site_dir)
+
+    def test_greater_version_preferred(self):
+        """
+        Retrieving by name resolves to the greater version.
+        """
+        self.build_versions(*self.versions)
+        assert version('foo') == self.expected[0]
+
+    def test_discovery_order(self):
+        """
+        Preferring one version doesn't hide the others from discovery,
+        which reports them greatest first.
+        """
+        self.build_versions(*self.versions)
+        found = tuple(dist.version for dist in Distribution.discover(name='foo'))
+        assert found == self.expected
+
+    def test_greater_version_preferred_in_eggs(self):
+        """
+        Legacy egg-info metadata gets the same preference.
+        """
+        fixtures.build_files(
+            {
+                f'foo-{ver}.egg-info': {'PKG-INFO': f'Name: foo\nVersion: {ver}\n'}
+                for ver in self.versions
+            },
+            self.site_dir,
+        )
+        assert version('foo') == self.expected[0]
+
+    def test_validity_preferred_to_version(self):
+        """
+        A valid dist is still preferred to an invalid one of a greater
+        version, the condition that prompted the report.
+        """
+        self.build_versions('1.12.1')
+        fixtures.build_files(self.make_pkg('foo', '2.0.0', files={}), self.site_dir)
+        assert version('foo') == '1.12.1'
 
 
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
@@ -248,9 +369,8 @@ class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     def test_egg(self):
         egg = self.site_dir.joinpath('foo-3.6.egg')
         egg.mkdir()
-        with self.add_sys_path(egg):
-            with self.assertRaises(PackageNotFoundError):
-                version('foo')
+        with self.add_sys_path(egg), self.assertRaises(PackageNotFoundError):
+            version('foo')
 
 
 class MissingSysPath(fixtures.OnSysPath, unittest.TestCase):

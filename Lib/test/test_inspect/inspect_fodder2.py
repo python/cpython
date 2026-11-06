@@ -388,4 +388,16 @@ def func383():
     )
     return ge385
 
+# line 391
+@decorator
+# comment
+def func394():
+    return 395
+
+# line 397
+@decorator
+
+def func400():
+    return 401
+
 pass # end of file

@@ -22,8 +22,9 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include "hashlib.h"
 
@@ -145,6 +146,7 @@ newSHA384object(sha2_state *state)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(sha);
+    sha->state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(sha);
     return sha;
@@ -158,30 +160,23 @@ newSHA512object(sha2_state *state)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(sha);
+    sha->state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(sha);
     return sha;
 }
 
 /* Internal methods for our hash objects. */
-
-static int
-SHA2_traverse(PyObject *ptr, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(ptr));
-    return 0;
-}
-
 static void
 SHA256_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     SHA256object *ptr = _SHA256object_CAST(op);
     if (ptr->state != NULL) {
         Hacl_Hash_SHA2_free_256(ptr->state);
         ptr->state = NULL;
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
@@ -189,13 +184,13 @@ SHA256_dealloc(PyObject *op)
 static void
 SHA512_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     SHA512object *ptr = _SHA512object_CAST(op);
     if (ptr->state != NULL) {
         Hacl_Hash_SHA2_free_512(ptr->state);
         ptr->state = NULL;
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
@@ -519,7 +514,7 @@ static PyType_Slot sha256_types_slots[] = {
     {Py_tp_dealloc, SHA256_dealloc},
     {Py_tp_methods, SHA256_methods},
     {Py_tp_getset, SHA256_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 
@@ -527,7 +522,7 @@ static PyType_Slot sha512_type_slots[] = {
     {Py_tp_dealloc, SHA512_dealloc},
     {Py_tp_methods, SHA512_methods},
     {Py_tp_getset, SHA512_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 
@@ -890,6 +885,7 @@ static int sha2_exec(PyObject *module)
 }
 
 static PyModuleDef_Slot _sha2_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, sha2_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

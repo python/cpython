@@ -1,9 +1,11 @@
-import unittest
 import gc
+import sys
+import unittest
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 NULL = None
 PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
@@ -14,6 +16,12 @@ class TupleSubclass(tuple):
 
 
 class CAPITest(unittest.TestCase):
+    def _not_tracked(self, t):
+        self.assertFalse(gc.is_tracked(t), t)
+
+    def _tracked(self, t):
+        self.assertTrue(gc.is_tracked(t), t)
+
     def test_check(self):
         # Test PyTuple_Check()
         check = _testlimitedcapi.tuple_check
@@ -52,15 +60,47 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tup1, ())
         self.assertEqual(size(tup1), 0)
         self.assertIs(type(tup1), tuple)
+        self._not_tracked(tup1)
+
         tup2 = tuple_new(1)
         self.assertIs(type(tup2), tuple)
         self.assertEqual(size(tup2), 1)
         self.assertIsNot(tup2, tup1)
         self.assertTrue(checknull(tup2, 0))
+        self._tracked(tup2)
 
         self.assertRaises(SystemError, tuple_new, -1)
         self.assertRaises(SystemError, tuple_new, PY_SSIZE_T_MIN)
         self.assertRaises(MemoryError, tuple_new, PY_SSIZE_T_MAX)
+
+
+    def test_tuple_fromarray(self):
+        # Test PyTuple_FromArray()
+        tuple_fromarray = _testcapi.tuple_fromarray
+
+        tup = tuple([i] for i in range(5))
+        copy = tuple_fromarray(tup)
+        self.assertEqual(copy, tup)
+        self._tracked(copy)
+
+        tup = tuple(42**i for i in range(5))
+        copy = tuple_fromarray(tup)
+        self.assertEqual(copy, tup)
+        self._not_tracked(copy)
+
+        tup = ()
+        copy = tuple_fromarray(tup)
+        self.assertIs(copy, tup)
+
+        copy = tuple_fromarray(NULL, 0)
+        self.assertIs(copy, ())
+
+        with self.assertRaises(SystemError):
+            tuple_fromarray(NULL, -1)
+        with self.assertRaises(SystemError):
+            tuple_fromarray(NULL, PY_SSIZE_T_MIN)
+        with self.assertRaises(MemoryError):
+            tuple_fromarray(NULL, PY_SSIZE_T_MAX)
 
     def test_tuple_pack(self):
         # Test PyTuple_Pack()
@@ -70,12 +110,51 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(pack(1, [1]), ([1],))
         self.assertEqual(pack(2, [1], [2]), ([1], [2]))
 
+        self._tracked(pack(1, [1]))
+        self._tracked(pack(2, [1], b'abc'))
+        self._not_tracked(pack(2, 42, b'abc'))
+
         self.assertRaises(SystemError, pack, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, pack, -1)
         self.assertRaises(MemoryError, pack, PY_SSIZE_T_MAX)
 
         # CRASHES pack(1, NULL)
         # CRASHES pack(2, [1])
+
+    def check_tuple_from_pair(self, from_pair):
+        self.assertEqual(type(from_pair(1, 2)), tuple)
+        self.assertEqual(from_pair(1, 145325), (1, 145325))
+        self.assertEqual(from_pair(None, None), (None, None))
+        self.assertEqual(from_pair(True, False), (True, False))
+
+        # user class supports gc
+        class Temp:
+            pass
+        temp = Temp()
+        temp_rc = sys.getrefcount(temp)
+        self.assertEqual(from_pair(temp, temp), (temp, temp))
+        self.assertEqual(sys.getrefcount(temp), temp_rc)
+
+        self._not_tracked(from_pair(1, 2))
+        self._not_tracked(from_pair(None, None))
+        self._not_tracked(from_pair(True, False))
+        self._tracked(from_pair(temp, (1, 2)))
+        self._tracked(from_pair(temp, 1))
+        self._tracked(from_pair([], {}))
+
+        self.assertRaises(TypeError, from_pair, 1, 2, 3)
+        self.assertRaises(TypeError, from_pair, 1)
+        self.assertRaises(TypeError, from_pair)
+
+    def test_tuple_from_pair(self):
+        # Test _PyTuple_FromPair()
+        from_pair = _testinternalcapi.tuple_from_pair
+        self.check_tuple_from_pair(from_pair)
+
+    def test_tuple_from_pair_steal(self):
+        # Test _PyTuple_FromPairSteal()
+        from_pair = _testinternalcapi.tuple_from_pair_steal
+        self.check_tuple_from_pair(from_pair)
 
     def test_tuple_size(self):
         # Test PyTuple_Size()
@@ -220,31 +299,76 @@ class CAPITest(unittest.TestCase):
 
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()
-        resize = _testcapi._tuple_resize
+        _resize = _testcapi._tuple_resize
         checknull = _testcapi._check_tuple_item_is_NULL
 
-        a = ()
-        b = resize(a, 0, False)
-        self.assertEqual(len(a), 0)
-        self.assertEqual(len(b), 0)
-        b = resize(a, 2, False)
-        self.assertEqual(len(a), 0)
-        self.assertEqual(len(b), 2)
-        self.assertTrue(checknull(b, 0))
-        self.assertTrue(checknull(b, 1))
+        def assert_is_fresh_copy(result, refcnt, is_new_obj):
+            self.assertEqual(refcnt, 1)
+            self.assertTrue(is_new_obj)
+            self.assertFalse(sys._is_immortal(result))
 
-        a = ([1], [2], [3])
-        b = resize(a, 3)
+        def resize(tup, new_size, new=True, compute_hash=False):
+            if isinstance(tup, tuple):
+                old_size = len(tup)
+            else:
+                old_size = 0
+            result, refcnt, is_new_obj = _resize(tup, new_size, new,
+                                                 compute_hash=compute_hash)
+            if new_size == old_size:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif old_size == 0:
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            elif new_size == 0:
+                # check that the result is the empty bytes string singleton
+                self.assertEqual(result, ())
+                self.assertTrue(sys._is_immortal(result))
+                self.assertTrue(is_new_obj)
+            elif not new:
+                # Make sure that the result is a fresh object.
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            else:
+                # An in-place resize can return the same memory address, or
+                # not. 'is_new_obj' cannot be tested.
+                self.assertEqual(refcnt, 1)
+                self.assertFalse(sys._is_immortal(result))
+
+            return result
+
+        # Resizing the empty tuple singleton always create a new tuple
+        for compute_hash in (False, True):
+            with self.subTest(compute_hash=compute_hash):
+                a = ()
+                b = resize(a, 0, False, compute_hash)
+                self.assertEqual(len(a), 0)
+                self.assertEqual(len(b), 0)
+                b = resize(a, 2, False, compute_hash)
+                self.assertEqual(len(a), 0)
+                self.assertEqual(len(b), 2)
+                self.assertTrue(checknull(b, 0))
+                self.assertTrue(checknull(b, 1))
+
+        a = tuple(object() for _ in range(3))
+        b = resize(a, 3, True)
         self.assertEqual(b, a)
-        b = resize(a, 2)
+        b = resize(a, 2, True)
         self.assertEqual(b, a[:2])
-        b = resize(a, 5)
+        b = resize(a, 5, True)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
         self.assertTrue(checknull(b, 3))
         self.assertTrue(checknull(b, 4))
 
+        # gh-161226: Disallow resizing a tuple if the hash value is cached
+        a = tuple(object() for _ in range(3))
+        with self.assertRaises(SystemError):
+            resize(a, 3, True, compute_hash=True)
+
         a = ()
+        self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, resize, a, -1)
+        self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
+        a = ([1], [2], [3])
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, resize, a, -1)
         self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
@@ -278,6 +402,10 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
         self.assertEqual(tuples, [])
+
+    def test_uninitialized_tuple_repr(self):
+        tup = _testlimitedcapi.tuple_new(3)
+        self.assertEqual(repr(tup), '(<NULL>, <NULL>, <NULL>)')
 
 
 if __name__ == "__main__":

@@ -4,9 +4,6 @@
 .. module:: collections.abc
    :synopsis: Abstract base classes for containers
 
-.. moduleauthor:: Raymond Hettinger <python at rcn.com>
-.. sectionauthor:: Raymond Hettinger <python at rcn.com>
-
 .. versionadded:: 3.3
    Formerly, this module was part of the :mod:`collections` module.
 
@@ -112,7 +109,9 @@ of three ways.
 Collections Abstract Base Classes
 ---------------------------------
 
-The collections module offers the following :term:`ABCs <abstract base class>`:
+The collections module offers the following :term:`ABCs <abstract base class>`,
+where the "Abstract Methods" column lists all required abstract methods,
+including those inherited from parent classes:
 
 .. tabularcolumns:: |l|L|L|L|
 
@@ -123,7 +122,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`Hashable` [1]_                                ``__hash__``
 :class:`Iterable` [1]_ [2]_                           ``__iter__``
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
-:class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``
+:class:`Reversible` [1]_       :class:`Iterable`      ``__iter__``,
+                                                      ``__reversed__``
 :class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
 :class:`Sized`  [1]_                                  ``__len__``
 :class:`Callable`  [1]_                               ``__call__``
@@ -139,6 +139,9 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__delitem__``,        ``pop``, ``remove``, and ``__iadd__``
                                                       ``__len__``,
                                                       ``insert``
+
+:class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
+                                                      ``__len__``
 
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
@@ -170,7 +173,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`ValuesView`            :class:`MappingView`,                          ``__contains__``, ``__iter__``
                                :class:`Collection`
 :class:`Awaitable` [1]_                               ``__await__``
-:class:`Coroutine` [1]_        :class:`Awaitable`     ``send``, ``throw``     ``close``
+:class:`Coroutine` [1]_        :class:`Awaitable`     ``__await__``,          ``close``
+                                                      ``send``, ``throw``
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
@@ -260,21 +264,50 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Sequence
            MutableSequence
+           ByteString
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
    Implementation note: Some of the mixin methods, such as
-   :meth:`~container.__iter__`, :meth:`~object.__reversed__` and :meth:`index`, make
-   repeated calls to the underlying :meth:`~object.__getitem__` method.
+   :meth:`~container.__iter__`, :meth:`~object.__reversed__`,
+   and :meth:`~sequence.index` make repeated calls to the underlying
+   :meth:`~object.__getitem__` method.
    Consequently, if :meth:`~object.__getitem__` is implemented with constant
    access speed, the mixin methods will have linear performance;
    however, if the underlying method is linear (as it would be with a
    linked list), the mixins will have quadratic performance and will
    likely need to be overridden.
 
-   .. versionchanged:: 3.5
-      The index() method added support for *stop* and *start*
-      arguments.
+   .. method:: index(value, start=0, stop=None)
+
+      Return first index of *value*.
+
+      Raises :exc:`ValueError` if the value is not present.
+
+      Supporting the *start* and *stop* arguments is optional, but recommended.
+
+      .. versionchanged:: 3.5
+         The :meth:`~sequence.index` method gained support for
+         the *stop* and *start* arguments.
+
+   .. deprecated-removed:: 3.12 3.17
+      The :class:`ByteString` ABC has been deprecated.
+
+      Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+      implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
+      in type annotations, either use :class:`Buffer` or a union that
+      explicitly specifies the types your code supports (e.g.,
+      ``bytes | bytearray | memoryview``).
+
+      :class:`!ByteString` was originally intended to be an abstract class that
+      would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+      However, since the ABC never had any methods, knowing that an object was
+      an instance of :class:`!ByteString` never actually told you anything
+      useful about the object. Other common buffer types such as
+      :class:`memoryview` were also never understood as subtypes of
+      :class:`!ByteString` (either at runtime or by static type checkers).
+
+      See :pep:`PEP 688 <688#current-options>` for more details.
 
 .. class:: Set
            MutableSet
@@ -304,7 +337,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -322,7 +355,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. note::
       In CPython, generator-based coroutines (:term:`generators <generator>`
-      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      decorated with :deco:`types.coroutine`) are
       *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
@@ -427,7 +460,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
    The :class:`Set` mixin provides a :meth:`!_hash` method to compute a hash value
    for the set; however, :meth:`~object.__hash__` is not defined because not all sets
    are :term:`hashable` or immutable.  To add set hashability using mixins,
-   inherit from both :meth:`Set` and :meth:`Hashable`, then define
+   inherit from both :class:`Set` and :class:`Hashable`, then define
    ``__hash__ = Set._hash``.
 
 .. seealso::

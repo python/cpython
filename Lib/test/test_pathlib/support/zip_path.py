@@ -264,13 +264,13 @@ class ReadableZipPath(_ReadablePath):
         tree = self.zip_file.filelist.tree
         return tree.resolve(vfspath(self), follow_symlinks=False)
 
-    def __open_rb__(self, buffering=-1):
+    def __open_reader__(self):
         info = self.info.resolve()
         if not info.exists():
             raise FileNotFoundError(errno.ENOENT, "File not found", self)
         elif info.is_dir():
             raise IsADirectoryError(errno.EISDIR, "Is a directory", self)
-        return self.zip_file.open(info.zip_info, 'r')
+        return self.zip_file.open(info.zip_info)
 
     def iterdir(self):
         info = self.info.resolve()
@@ -320,8 +320,8 @@ class WritableZipPath(_WritablePath):
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments, zip_file=self.zip_file)
 
-    def __open_wb__(self, buffering=-1):
-        return self.zip_file.open(vfspath(self), 'w')
+    def __open_writer__(self, mode):
+        return self.zip_file.open(vfspath(self), mode)
 
     def mkdir(self, mode=0o777):
         zinfo = zipfile.ZipInfo(vfspath(self) + '/')

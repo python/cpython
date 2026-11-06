@@ -160,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -305,7 +305,7 @@ the minimal value for the corresponding signed integer type of the same size.
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than
@@ -399,13 +399,18 @@ inside nested parentheses.  They are:
    their default value --- when an optional argument is not specified,
    :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding C
    variable(s).
+   For example, the format string ``"OO|OO"`` corresponds to the Python
+   signature ``f(a, b, c=None, d=None)``.
 
 ``$``
    :c:func:`PyArg_ParseTupleAndKeywords` only:
    Indicates that the remaining arguments in the Python argument list are
-   keyword-only.  Currently, all keyword-only arguments must also be optional
-   arguments, so ``|`` must always be specified before ``$`` in the format
-   string.
+   keyword-only.
+   They are optional if ``|`` was specified before ``$``, and required otherwise.
+   ``|`` cannot be specified after ``$``.
+   For example, the format string ``"O|O$O"`` corresponds to the Python
+   signature ``f(a, b=None, *, c=None)``,
+   and the format string ``"OO$OO"`` corresponds to ``f(a, b, *, c, d)``.
 
    .. versionadded:: 3.3
 
@@ -514,6 +519,28 @@ API Functions
            }
            // ... use value ...
        }
+
+
+.. c:function:: int PyArg_ParseArray(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
+
+   Parse the parameters of a function that takes only array parameters into
+   local variables (that is, a function using the :c:macro:`METH_FASTCALL`
+   calling convention).
+   Returns true on success; on failure, it returns false and raises the
+   appropriate exception.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: int PyArg_ParseArrayAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, const char *format, const char * const *kwlist, ...)
+
+   Parse the parameters of a function that takes both array and keyword
+   parameters into local variables (that is, a function using the
+   :c:macro:`METH_FASTCALL` ``|`` :c:macro:`METH_KEYWORDS` calling convention).
+   Returns true on success; on failure, it returns false and raises the
+   appropriate exception.
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)

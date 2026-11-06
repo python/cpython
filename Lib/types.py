@@ -76,6 +76,9 @@ except ImportError:
     # CapsuleType cannot be accessed from pure Python,
     # so there is no fallback definition.
 
+    # LazyImportType in pure Python cannot be guaranteed
+    # without overriding the filter, so there is no fallback.
+
     del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
@@ -192,18 +195,19 @@ def get_original_bases(cls, /):
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 
-    This is a descriptor, used to define attributes that act differently when
-    accessed through an instance and through a class.  Instance access remains
-    normal, but access to an attribute through a class will be routed to the
-    class's __getattr__ method; this is done by raising AttributeError.
+    This is a descriptor, used to define attributes that act differently
+    when accessed through an instance and through a class.  Instance access
+    remains normal, but access to an attribute through a class will be
+    routed to the class's __getattr__ method; this is done by raising
+    AttributeError.
 
-    This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name.  (Enum used this between Python
-    versions 3.4 - 3.9 .)
+    This allows one to have properties active on an instance, and have
+    virtual attributes on the class with the same name.  (Enum used this
+    between Python versions 3.4 - 3.9 .)
 
-    Subclass from this to use a different method of accessing virtual attributes
-    and still be treated properly by the inspect module. (Enum uses this since
-    Python 3.10 .)
+    Subclass from this to use a different method of accessing virtual
+    attributes and still be treated properly by the inspect module.  (Enum
+    uses this since Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -276,10 +280,20 @@ class _GeneratorWrapper:
     @property
     def gi_yieldfrom(self):
         return self.__wrapped.gi_yieldfrom
+    @property
+    def gi_suspended(self):
+        return self.__wrapped.gi_suspended
+    @property
+    def gi_state(self):
+        return self.__wrapped.gi_state
+    @property
+    def cr_state(self):
+        return self.__wrapped.gi_state.replace('GEN_', 'CORO_')
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
     cr_await = gi_yieldfrom
+    cr_suspended = gi_suspended
     def __next__(self):
         return next(self.__wrapped)
     def __iter__(self):

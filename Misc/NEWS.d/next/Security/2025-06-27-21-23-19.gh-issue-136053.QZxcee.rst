@@ -1,1 +1,0 @@
-:mod:`marshal`: fix a possible crash when deserializing :class:`slice` objects.

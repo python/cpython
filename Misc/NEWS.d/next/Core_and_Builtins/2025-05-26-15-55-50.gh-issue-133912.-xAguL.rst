@@ -1,2 +1,0 @@
-Fix the C API function ``PyObject_GenericSetDict`` to handle extension
-classes with inline values.

@@ -1,3 +1,0 @@
-Remove support for arbitrary positional or keyword arguments in the C
-implementation of :class:`threading.RLock` objects. This was deprecated
-since Python 3.14. Patch by Bénédikt Tran.

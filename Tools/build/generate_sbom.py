@@ -56,9 +56,6 @@ class PackageFiles(typing.NamedTuple):
 # values to 'exclude' if we create new files within tracked
 # directories that aren't sourced from third-party packages.
 PACKAGE_TO_FILES = {
-    "mpdecimal": PackageFiles(
-        include=["Modules/_decimal/libmpdec/**"]
-    ),
     "expat": PackageFiles(
         include=["Modules/expat/**"],
         exclude=[
@@ -242,14 +239,14 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
             )
 
         # libexpat specifies its expected rev in a refresh script.
-        if package["name"] == "libexpat":
+        if package["name"] == "expat":
             libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
             libexpat_expected_version_match = re.search(
                 r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
                 libexpat_refresh_sh
             )
             libexpat_expected_sha256_match = re.search(
-                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                r"expected_libexpat_sha256=\"([a-f0-9]{64})\"",
                 libexpat_refresh_sh
             )
             libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)

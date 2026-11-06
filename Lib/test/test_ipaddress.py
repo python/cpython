@@ -12,6 +12,8 @@ import operator
 import pickle
 import ipaddress
 import weakref
+from collections.abc import Iterator
+from test import support
 from test.support import LARGEST, SMALLEST
 
 
@@ -1472,18 +1474,27 @@ class IpaddrUnitTest(unittest.TestCase):
                          self.ipv6_scoped_network.supernet(new_prefix=62))
 
     def testHosts(self):
+        hosts = self.ipv4_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), next(hosts))
         hosts = list(self.ipv4_network.hosts())
         self.assertEqual(254, len(hosts))
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
 
         ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
+        hosts = ipv6_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), next(hosts))
         hosts = list(ipv6_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
 
         ipv6_scoped_network = ipaddress.IPv6Network('2001:658:22a:cafe::%scope/120')
+        hosts = ipv6_scoped_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual((ipaddress.IPv6Address('2001:658:22a:cafe::1')), next(hosts))
         hosts = list(ipv6_scoped_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
@@ -1494,6 +1505,12 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv4Address('2.0.0.1')]
         str_args = '2.0.0.0/31'
         tpl_args = ('2.0.0.0', 31)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1503,6 +1520,12 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv4Address('1.2.3.4')]
         str_args = '1.2.3.4/32'
         tpl_args = ('1.2.3.4', 32)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1512,6 +1535,12 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv6Address('2001:658:22a:cafe::1')]
         str_args = '2001:658:22a:cafe::/127'
         tpl_args = ('2001:658:22a:cafe::', 127)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1520,10 +1549,63 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::1'), ]
         str_args = '2001:658:22a:cafe::1/128'
         tpl_args = ('2001:658:22a:cafe::1', 128)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertEqual(next(hosts), addrs[0])
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
                          list(ipaddress.ip_network(tpl_args).hosts()))
+
+    def testNextNetwork(self):
+        ipv4 = ipaddress.IPv4Network('1.2.3.0/24')
+        self.assertEqual(
+            ipv4.next_network(),
+            ipaddress.IPv4Network('1.2.4.0/24'),
+        )
+        self.assertEqual(
+            ipv4.next_network(next_prefix=16),
+            ipaddress.IPv4Network('1.3.0.0/16'),
+        )
+        self.assertEqual(
+            ipv4.next_network(next_prefix=25),
+            ipaddress.IPv4Network('1.2.4.0/25'),
+        )
+
+        ipv6 = ipaddress.IPv6Network('2001:dbb8:aaaa:aaaa::/64')
+        self.assertEqual(
+            ipv6.next_network(),
+            ipaddress.IPv6Network('2001:dbb8:aaaa:aaab::/64'),
+        )
+        self.assertEqual(
+            ipv6.next_network(next_prefix=48),
+            ipaddress.IPv6Network('2001:dbb8:aaab::/48'),
+        )
+        self.assertEqual(
+            ipv6.next_network(next_prefix=88),
+            ipaddress.IPv6Network('2001:dbb8:aaaa:aaab::/88'),
+        )
+
+    def testNextNetworkWithBadPrefix(self):
+        self.assertRaises(ValueError, self.ipv4_network.next_network, 0)
+        self.assertRaises(ValueError, self.ipv4_network.next_network, 35)
+        self.assertRaises(ValueError, self.ipv6_network.next_network, 0)
+        self.assertRaises(ValueError, self.ipv6_network.next_network, 150)
+
+    def testNextNetworkOutOfAddressSpace(self):
+        ipv4 = ipaddress.IPv4Network('255.255.255.0/24')
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /24 network',
+            ipv4.next_network)
+        ipv6 = ipaddress.IPv6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:0/112')
+        self.assertRaisesRegex(
+            ValueError,
+            'out of address space, cannot make another /112 network',
+            ipv6.next_network)
 
     def testFancySubnetting(self):
         self.assertEqual(sorted(self.ipv4_network.subnets(prefixlen_diff=3)),
@@ -2413,6 +2495,14 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('::1').is_unspecified)
         self.assertEqual(False, ipaddress.ip_network('::/127').is_unspecified)
 
+        self.assertTrue(ipaddress.ip_interface('::/128').is_unspecified)
+        self.assertTrue(
+            ipaddress.ip_interface('::ffff:0.0.0.0/128').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('::/127').is_unspecified)
+        self.assertFalse(
+            ipaddress.ip_interface('::ffff:0.0.0.0/127').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('::1/128').is_unspecified)
+
         self.assertEqual(True,
                          ipaddress.ip_network('2001::1/128').is_private)
         self.assertEqual(True,
@@ -2454,6 +2544,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_address('2001::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::1').is_global)
         self.assertTrue(ipaddress.ip_address('2001:1::2').is_global)
+        # gh-151049: RFC 9665 anycast address (IANA 2024-04 registration)
+        self.assertTrue(ipaddress.ip_address('2001:1::3').is_global)
+        self.assertFalse(ipaddress.ip_address('2001:1::3').is_private)
+        self.assertFalse(ipaddress.ip_address('2001:1::4').is_global)
         self.assertFalse(ipaddress.ip_address('2001:2::').is_global)
         self.assertTrue(ipaddress.ip_address('2001:3::').is_global)
         self.assertFalse(ipaddress.ip_address('2001:4::').is_global)
@@ -2493,6 +2587,17 @@ class IpaddrUnitTest(unittest.TestCase):
             with self.subTest(addr4):
                 ipv4 = ipaddress.IPv4Address(addr4)
                 ipv6 = ipaddress.IPv6Address(f"::ffff:{addr4}")
+
+                self.assertEqual(ipv4.is_global, ipv6.is_global)
+                self.assertEqual(ipv4.is_private, ipv6.is_private)
+                self.assertEqual(ipv4.is_reserved, ipv6.is_reserved)
+                self.assertEqual(ipv4.is_multicast, ipv6.is_multicast)
+                self.assertEqual(ipv4.is_unspecified, ipv6.is_unspecified)
+                self.assertEqual(ipv4.is_link_local, ipv6.is_link_local)
+                self.assertEqual(ipv4.is_loopback, ipv6.is_loopback)
+
+                ipv4 = ipaddress.IPv4Interface(addr4)
+                ipv6 = ipaddress.IPv6Interface(f"::ffff:{addr4}")
 
                 self.assertEqual(ipv4.is_global, ipv6.is_global)
                 self.assertEqual(ipv4.is_private, ipv6.is_private)
@@ -2643,6 +2748,12 @@ class IpaddrUnitTest(unittest.TestCase):
                          addr1.exploded)
         self.assertEqual('0000:0000:0000:0000:0000:0000:0000:0001/128',
                          ipaddress.IPv6Interface('::1/128').exploded)
+        self.assertEqual('fe80:0000:0000:0000:0000:0000:0000:0001%1',
+                         ipaddress.IPv6Address('fe80::1%1').exploded)
+        self.assertEqual('fe80:0000:0000:0000:0000:0000:0000:0001%eth0',
+                         ipaddress.IPv6Address('fe80::1%eth0').exploded)
+        self.assertEqual('fe80:0000:0000:0000:0000:0000:0000:0001%1/64',
+                         ipaddress.IPv6Interface('fe80::1%1/64').exploded)
         # issue 77
         self.assertEqual('2001:0000:5ef5:79fd:0000:059d:a0e5:0ba1',
                          addr2.exploded)
@@ -2818,6 +2929,13 @@ class IpaddrUnitTest(unittest.TestCase):
             ipaddress.IPv6Network(
                 "ffff:ffff:ffff:ffff:ffff:ffff:aff:0/112"
             ).__hash__()
+        )
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, ipaddress, "__version__", remove=(3, 20),
         )
 
 

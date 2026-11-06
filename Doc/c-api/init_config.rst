@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.
@@ -116,15 +116,14 @@ Error Handling
 
    Get the *config* exit code.
 
-   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
-   * Return ``0`` if *config* has no exit code set.
+   Return ``0`` and leave *\*exitcode* unchanged.
 
-   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
-   code if the ``parse_argv`` option is non-zero.
+   In Python 3.15, :c:func:`Py_InitializeFromInitConfig` sets an exit code if a
+   command line option wants to exit Python. This is no longer the case in
+   Python 3.16. Instead, the option is now processed in :c:func:`Py_RunMain`.
+   This function became useless.
 
-   An exit code can be set when parsing the command line failed (exit
-   code ``2``) or when a command line option asks to display the command
-   line help (exit code ``0``).
+   .. deprecated:: 3.16
 
 
 Get Options
@@ -156,8 +155,10 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    * Set *\*value*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
-   *\*value* can be set to ``NULL`` if the option is an optional string and the
-   option is unset.
+   *\*value* can be set to ``NULL`` if the option is unset or if the option is
+   an optional string.
+   Optional strings are documented with the type ``str | None`` in the
+   :ref:`Configuration Options <pyinitconfig-opts>` table.
 
    On success, the string must be released with ``free(value)`` if it's not
    ``NULL``.
@@ -168,7 +169,7 @@ UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
    Get a string list configuration option as an array of
    null-terminated UTF-8 encoded strings.
 
-   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set *\*length* and *\*items*, and return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
 
    On success, the string list must be released with
@@ -204,6 +205,9 @@ only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
 
    Set a string configuration option from a null-terminated UTF-8
    encoded string. The string is copied.
+
+   Options documented with the type ``str | None`` in the :ref:`Configuration
+   Options <pyinitconfig-opts>` table can be set to ``NULL``.
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
@@ -247,10 +251,11 @@ Initialize Python
 
    * Return ``0`` on success.
    * Set an error in *config* and return ``-1`` on error.
-   * Set an exit code in *config* and return ``-1`` if Python wants to
-     exit.
 
-   See ``PyInitConfig_GetExitcode()`` for the exit code case.
+   .. versionchanged:: 3.16
+      The function no longer sets an exit code if a command line option wants
+      to exit Python. Instead, the option is now processed in
+      :c:func:`Py_RunMain`.
 
 
 .. _pyinitconfig-opts:
@@ -275,15 +280,15 @@ Configuration Options
      - Public
    * - ``"base_exec_prefix"``
      - :c:member:`base_exec_prefix <PyConfig.base_exec_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"base_executable"``
      - :c:member:`base_executable <PyConfig.base_executable>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"base_prefix"``
      - :c:member:`base_prefix <PyConfig.base_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"buffered_stdio"``
      - :c:member:`buffered_stdio <PyConfig.buffered_stdio>`
@@ -331,15 +336,15 @@ Configuration Options
      - Read-only
    * - ``"dump_refs_file"``
      - :c:member:`dump_refs_file <PyConfig.dump_refs_file>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"exec_prefix"``
      - :c:member:`exec_prefix <PyConfig.exec_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"executable"``
      - :c:member:`executable <PyConfig.executable>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"faulthandler"``
      - :c:member:`faulthandler <PyConfig.faulthandler>`
@@ -359,7 +364,7 @@ Configuration Options
      - Read-only
    * - ``"home"``
      - :c:member:`home <PyConfig.home>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
@@ -385,6 +390,10 @@ Configuration Options
      - :c:member:`isolated <PyConfig.isolated>`
      - ``bool``
      - Read-only
+   * - ``"lazy_imports"``
+     - :c:member:`lazy_imports <PyConfig.lazy_imports>`
+     - ``int``
+     - Public
    * - ``"legacy_windows_fs_encoding"``
      - :c:member:`legacy_windows_fs_encoding <PyPreConfig.legacy_windows_fs_encoding>`
      - ``bool``
@@ -431,7 +440,7 @@ Configuration Options
      - Public
    * - ``"prefix"``
      - :c:member:`prefix <PyConfig.prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"program_name"``
      - :c:member:`program_name <PyConfig.program_name>`
@@ -439,7 +448,7 @@ Configuration Options
      - Read-only
    * - ``"pycache_prefix"``
      - :c:member:`pycache_prefix <PyConfig.pycache_prefix>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"quiet"``
      - :c:member:`quiet <PyConfig.quiet>`
@@ -447,19 +456,19 @@ Configuration Options
      - Public
    * - ``"run_command"``
      - :c:member:`run_command <PyConfig.run_command>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_filename"``
      - :c:member:`run_filename <PyConfig.run_filename>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_module"``
      - :c:member:`run_module <PyConfig.run_module>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"run_presite"``
      - :c:member:`run_presite <PyConfig.run_presite>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"safe_path"``
      - :c:member:`safe_path <PyConfig.safe_path>`
@@ -479,7 +488,7 @@ Configuration Options
      - Read-only
    * - ``"stdio_encoding"``
      - :c:member:`stdio_encoding <PyConfig.stdio_encoding>`
-     - ``str``
+     - ``str | None``
      - Read-only
    * - ``"stdio_errors"``
      - :c:member:`stdio_errors <PyConfig.stdio_errors>`
@@ -487,7 +496,7 @@ Configuration Options
      - Read-only
    * - ``"stdlib_dir"``
      - :c:member:`stdlib_dir <PyConfig.stdlib_dir>`
-     - ``str``
+     - ``str | None``
      - Public
    * - ``"tracemalloc"``
      - :c:member:`tracemalloc <PyConfig.tracemalloc>`
@@ -542,11 +551,14 @@ Configuration Options
      - ``bool``
      - Read-only
 
+The type ``str | None`` means that the option is an optional string which can
+be set to ``NULL``.
+
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be retrieved by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be retrieved by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
@@ -623,6 +635,10 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: 3.16
+      The function now replaces :data:`sys.flags` (create a new object),
+      instead of modifying :data:`sys.flags` in-place.
+
 
 .. _pyconfig_api:
 
@@ -686,9 +702,6 @@ Example of customized Python always running in isolated mode::
 
     exception:
         PyConfig_Clear(&config);
-        if (PyStatus_IsExit(status)) {
-            return status.exitcode;
-        }
         /* Display the error message and exit the process with
            non-zero exit code */
         Py_ExitStatusException(status);
@@ -754,6 +767,8 @@ PyStatus
 
       Exit code. Argument passed to ``exit()``.
 
+      .. deprecated:: 3.16
+
    .. c:member:: const char *err_msg
 
       Error message.
@@ -784,6 +799,11 @@ PyStatus
 
       Exit Python with the specified exit code.
 
+      .. deprecated:: 3.16
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
+
    Functions to handle a status:
 
    .. c:function:: int PyStatus_Exception(PyStatus status)
@@ -798,6 +818,11 @@ PyStatus
    .. c:function:: int PyStatus_IsExit(PyStatus status)
 
       Is the result an exit?
+
+      .. deprecated:: 3.16
+         :c:func:`Py_InitializeFromConfig` no longer sets an exit code if a
+         command line option wants to exit Python. Instead, the option is
+         now processed in :c:func:`Py_RunMain`.
 
    .. c:function:: void Py_ExitStatusException(PyStatus status)
 
@@ -827,7 +852,7 @@ Example::
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
-        PyMem_Free(ptr);
+        PyMem_RawFree(ptr);
         return 0;
     }
 
@@ -876,9 +901,9 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
-      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``7``): use ``mimalloc``, a fast
         malloc replacement.
-      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``8``): use ``mimalloc``, a fast
         malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
 
 
@@ -1153,7 +1178,7 @@ PyConfig
 
    Most ``PyConfig`` methods :ref:`preinitialize Python <c-preinit>` if needed.
    In that case, the Python preinitialization configuration
-   (:c:type:`PyPreConfig`) in based on the :c:type:`PyConfig`. If configuration
+   (:c:type:`PyPreConfig`) is based on the :c:type:`PyConfig`. If configuration
    fields which are in common with :c:type:`PyPreConfig` are tuned, they must
    be set before calling a :c:type:`PyConfig` method:
 
@@ -1231,9 +1256,9 @@ PyConfig
 
    .. c:member:: wchar_t* base_executable
 
-      Python base executable: :data:`sys._base_executable`.
+      Python base executable: ``sys._base_executable``.
 
-      Set by the :envvar:`__PYVENV_LAUNCHER__` environment variable.
+      Set by the ``__PYVENV_LAUNCHER__`` environment variable.
 
       Set from :c:member:`PyConfig.executable` if ``NULL``.
 
@@ -1277,6 +1302,11 @@ PyConfig
       Incremented by the :option:`-b` command line option.
 
       Default: ``0``.
+
+      .. deprecated-removed:: 3.15 3.17
+
+         The :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
 
    .. c:member:: int warn_default_encoding
 
@@ -1420,6 +1450,10 @@ PyConfig
       name. For example, ``"ANSI_X3.4-1968"`` is replaced with ``"ascii"``.
 
       See also the :c:member:`~PyConfig.filesystem_errors` member.
+
+      See also :c:func:`PyUnicode_EncodeFSDefault` and
+      :ref:`related functions <capi-filesystem-encoding>`
+      for encoding paths at runtime.
 
    .. c:member:: wchar_t* filesystem_errors
 
@@ -1568,6 +1602,21 @@ PyConfig
 
       See also the :ref:`Isolated Configuration <init-isolated-conf>` and
       :c:member:`PyPreConfig.isolated`.
+
+   .. c:member:: int lazy_imports
+
+      Control :ref:`lazy imports <lazy-imports>`.
+
+      A value of ``-1`` keeps the default behaviour, where only imports marked
+      with the ``lazy`` keyword are lazy. A value of ``1`` makes every import
+      lazy. ``0`` is rejected.
+
+      Configured by the :option:`-X lazy_imports <-X>` command line option or
+      the :envvar:`PYTHON_LAZY_IMPORTS` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.15
 
    .. c:member:: int legacy_windows_stdio
 
@@ -1739,7 +1788,7 @@ PyConfig
 
       * On macOS, use :envvar:`PYTHONEXECUTABLE` environment variable if set.
       * If the ``WITH_NEXT_FRAMEWORK`` macro is defined, use
-        :envvar:`__PYVENV_LAUNCHER__` environment variable if set.
+        ``__PYVENV_LAUNCHER__`` environment variable if set.
       * Use ``argv[0]`` of :c:member:`~PyConfig.argv` if available and
         non-empty.
       * Otherwise, use ``L"python"`` on Windows, or ``L"python3"`` on other
@@ -1802,10 +1851,10 @@ PyConfig
 
    .. c:member:: wchar_t* run_presite
 
-      ``package.module`` path to module that should be imported before
-      ``site.py`` is run.
+      ``module`` or ``module:func`` entry point that should be executed before
+      the :mod:`site` module is imported.
 
-      Set by the :option:`-X presite=package.module <-X>` command-line
+      Set by the :option:`-X presite=module:func <-X>` command-line
       option and the :envvar:`PYTHON_PRESITE` environment variable.
       The command-line option takes precedence.
 
@@ -1926,7 +1975,7 @@ PyConfig
       If equals to zero, ignore the :ref:`environment variables
       <using-on-envvars>`.
 
-      Set to ``0`` by the :option:`-E` environment variable.
+      Set to ``0`` by the :option:`-E` command-line option.
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
@@ -1975,8 +2024,7 @@ PyConfig
 
       The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
-      item of :data:`warnings.filters` which is checked first (highest
-      priority).
+      item of ``warnings.filters`` which is checked first (highest priority).
 
       The :option:`-W` command line options adds its value to
       :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
@@ -2294,13 +2342,91 @@ Py_GetArgcArgv()
 
    See also :c:member:`PyConfig.orig_argv` member.
 
-Delaying main module execution
-==============================
 
-In some embedding use cases, it may be desirable to separate interpreter initialization
-from the execution of the main module.
+Multi-Phase Initialization Private Provisional API
+==================================================
 
-This separation can be achieved by setting ``PyConfig.run_command`` to the empty
-string during initialization (to prevent the interpreter from dropping into the
-interactive prompt), and then subsequently executing the desired main module
-code using ``__main__.__dict__`` as the global namespace.
+This section is a private provisional API introducing multi-phase
+initialization, the core feature of :pep:`432`:
+
+* "Core" initialization phase, "bare minimum Python":
+
+  * Builtin types;
+  * Builtin exceptions;
+  * Builtin and frozen modules;
+  * The :mod:`sys` module is only partially initialized
+    (ex: :data:`sys.path` doesn't exist yet).
+
+* "Main" initialization phase, Python is fully initialized:
+
+  * Install and configure :mod:`importlib`;
+  * Apply the :ref:`Path Configuration <init-path-config>`;
+  * Install signal handlers;
+  * Finish :mod:`sys` module initialization (ex: create :data:`sys.stdout`
+    and :data:`sys.path`);
+  * Enable optional features like :mod:`faulthandler` and :mod:`tracemalloc`;
+  * Import the :mod:`site` module;
+  * etc.
+
+Private provisional API:
+
+.. c:member:: int PyConfig._init_main
+
+   If set to ``0``, :c:func:`Py_InitializeFromConfig` stops at the "Core"
+   initialization phase.
+
+.. c:function:: PyStatus _Py_InitializeMain(void)
+
+   Move to the "Main" initialization phase, finish the Python initialization.
+
+No module is imported during the "Core" phase and the ``importlib`` module is
+not configured: the :ref:`Path Configuration <init-path-config>` is only
+applied during the "Main" phase. It may allow to customize Python in Python to
+override or tune the :ref:`Path Configuration <init-path-config>`, maybe
+install a custom :data:`sys.meta_path` importer or an import hook, etc.
+
+It may become possible to calculate the :ref:`Path Configuration
+<init-path-config>` in Python, after the Core phase and before the Main phase,
+which is one of the :pep:`432` motivation.
+
+The "Core" phase is not properly defined: what should be and what should
+not be available at this phase is not specified yet. The API is marked
+as private and provisional: the API can be modified or even be removed
+anytime until a proper public API is designed.
+
+Example running Python code between "Core" and "Main" initialization
+phases::
+
+    void init_python(void)
+    {
+        PyStatus status;
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config._init_main = 0;
+
+        /* ... customize 'config' configuration ... */
+
+        status = Py_InitializeFromConfig(&config);
+        PyConfig_Clear(&config);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+
+        /* Use sys.stderr because sys.stdout is only created
+           by _Py_InitializeMain() */
+        int res = PyRun_SimpleString(
+            "import sys; "
+            "print('Run Python code before _Py_InitializeMain', "
+                   "file=sys.stderr)");
+        if (res < 0) {
+            exit(1);
+        }
+
+        /* ... put more configuration code here ... */
+
+        status = _Py_InitializeMain();
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
+    }

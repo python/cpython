@@ -10,7 +10,7 @@ and now maintained as an independent project.
 .. _reStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Sphinx: https://www.sphinx-doc.org/
 
-.. In the online version of these documents, you can submit comments and suggest
+.. In the online version of this documentation, you can submit comments and suggest
    changes directly on the documentation pages.
 
 Development of the documentation and its toolchain is an entirely volunteer
@@ -32,8 +32,9 @@ Contributors to the Python documentation
 ----------------------------------------
 
 Many people have contributed to the Python language, the Python standard
-library, and the Python documentation.  See :source:`Misc/ACKS` in the Python
-source distribution for a partial list of contributors.
+library, and the Python documentation.  See the `CPython
+GitHub repository <https://github.com/python/cpython/graphs/contributors>`__
+for a partial list of contributors.
 
 It is only with the input and contributions of the Python community
 that Python has such wonderful documentation -- Thank You!

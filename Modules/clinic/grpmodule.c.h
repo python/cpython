@@ -20,7 +20,7 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
     {"getgrgid", _PyCFunction_CAST(grp_getgrgid), METH_FASTCALL|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
-grp_getgrgid_impl(PyObject *module, PyObject *id);
+grp_getgrgid_impl(PyObject *module, gid_t gid);
 
 static PyObject *
 grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -54,15 +54,17 @@ grp_getgrgid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *id;
+    gid_t gid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    id = args[0];
-    return_value = grp_getgrgid_impl(module, id);
+    if (!_Py_Gid_Converter(args[0], &gid)) {
+        goto exit;
+    }
+    return_value = grp_getgrgid_impl(module, gid);
 
 exit:
     return return_value;
@@ -152,4 +154,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=35aa81c00dbd3229 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9052db62d986262c input=a9049054013a1b77]*/

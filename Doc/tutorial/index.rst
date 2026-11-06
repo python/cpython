@@ -15,7 +15,7 @@ together with its interpreted nature, make it an ideal language for scripting
 and rapid application development in many areas on most platforms.
 
 The Python interpreter and the extensive standard library are freely available
-in source or binary form for all major platforms from the Python web site,
+in source or binary form for all major platforms from the Python website,
 https://www.python.org/, and may be freely distributed. The same site also
 contains distributions of and pointers to many free third party Python modules,
 programs and tools, and additional documentation.
@@ -30,9 +30,9 @@ have a basic understanding of programming in general. It helps to have a Python
 interpreter handy for hands-on experience, but all examples are self-contained,
 so the tutorial can be read off-line as well.
 
-For a description of standard objects and modules, see :ref:`library-index`.
-:ref:`reference-index` gives a more formal definition of the language.  To write
-extensions in C or C++, read :ref:`extending-index` and
+For a description of standard objects and modules, see :ref:`builtins-index` and
+:ref:`library-index`.  :ref:`reference-index` gives a more formal definition of
+the language.  To write extensions in C or C++, read :ref:`extending-index` and
 :ref:`c-api-index`. There are also several books covering Python in depth.
 
 This tutorial does not attempt to be comprehensive and cover every single

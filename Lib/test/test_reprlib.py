@@ -27,6 +27,14 @@ def nestedTuple(nesting):
 
 class ReprTests(unittest.TestCase):
 
+    def test_repr(self):
+        self.assertEqual(
+            repr(Repr(maxlevel=3, fillvalue='***', indent='\t')),
+            "Repr(maxlevel=3, maxtuple=6, maxlist=6, maxarray=5, maxdict=4, "
+            "maxset=6, maxfrozenset=6, maxdeque=6, maxstring=30, maxlong=40, "
+            "maxother=30, fillvalue='***', indent='\\t')",
+        )
+
     def test_init_kwargs(self):
         example_kwargs = {
             "maxlevel": 101,
@@ -695,8 +703,11 @@ class LongReprTest(unittest.TestCase):
         source_path_len += 2 * (len(self.longname) + 1)
         # a path separator + `module_name` + ".py"
         source_path_len += len(module_name) + 1 + len(".py")
-        cached_path_len = (source_path_len +
-            len(importlib.util.cache_from_source("x.py")) - len("x.py"))
+        try:
+            cached_path_len = (source_path_len +
+                len(importlib.util.cache_from_source("x.py")) - len("x.py"))
+        except NotImplementedError:
+            cached_path_len = source_path_len
         if os.name == 'nt' and cached_path_len >= 258:
             # Under Windows, the max path len is 260 including C's terminating
             # NUL character.

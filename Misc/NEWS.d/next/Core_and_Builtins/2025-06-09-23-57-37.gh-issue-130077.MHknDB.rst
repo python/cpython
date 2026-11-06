@@ -1,2 +1,0 @@
-Properly raise custom syntax errors when incorrect syntax containing names
-that are prefixes of soft keywords is encountered.  Patch by Pablo Galindo.

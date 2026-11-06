@@ -1,21 +1,21 @@
 diff --git a/Lib/test/test_urlparse.py b/Lib/test/test_urlparse.py
-index d6c83a75c1c..19ed4e01091 100644
+index 49a292df934..e1669a0c9b2 100644
 --- a/Lib/test/test_urlparse.py
 +++ b/Lib/test/test_urlparse.py
-@@ -237,11 +237,6 @@ def test_roundtrips(self):
-               '','',''),
+@@ -282,11 +282,6 @@ def test_qs(self, orig, expect):
+               None,None,None),
               ('git+ssh', 'git@github.com','/user/project.git',
-               '', '')),
+               None, None)),
 -            ('itms-services://?action=download-manifest&url=https://example.com/app',
--             ('itms-services', '', '', '',
--              'action=download-manifest&url=https://example.com/app', ''),
+-             ('itms-services', '', '', None,
+-              'action=download-manifest&url=https://example.com/app', None),
 -             ('itms-services', '', '',
--              'action=download-manifest&url=https://example.com/app', '')),
+-              'action=download-manifest&url=https://example.com/app', None)),
              ('+scheme:path/to/file',
-              ('', '', '+scheme:path/to/file', '', '', ''),
-              ('', '', '+scheme:path/to/file', '', '')),
+              (None, None, '+scheme:path/to/file', None, None, None),
+              (None, None, '+scheme:path/to/file', None, None)),
 diff --git a/Lib/urllib/parse.py b/Lib/urllib/parse.py
-index 8f724f907d4..148caf742c9 100644
+index e917f8b61bb..8575172573f 100644
 --- a/Lib/urllib/parse.py
 +++ b/Lib/urllib/parse.py
 @@ -59,7 +59,7 @@

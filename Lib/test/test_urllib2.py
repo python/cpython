@@ -30,6 +30,11 @@ import http.client
 
 support.requires_working_socket(module=True)
 
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)
@@ -82,6 +87,37 @@ class TrivialTests(unittest.TestCase):
     def test_URLError_reasonstr(self):
         err = urllib.error.URLError('reason')
         self.assertIn(err.reason, str(err))
+        self.assertIsNone(err.errno)
+        self.assertIsNone(err.strerror)
+
+    def test_URLError_OSError_attributes(self):
+        # gh-50720: errno and strerror are copied from a wrapped OSError.
+        socket_error = socket.gaierror(-2, 'Name or service not known')
+
+        class FailingHTTPConnection(MockHTTPClass):
+            def request(self, *args, **kwargs):
+                raise socket_error
+
+        h = urllib.request.AbstractHTTPHandler()
+        req = Request("http://example.com/")
+        req.timeout = None
+
+        with self.assertRaises(urllib.error.URLError) as cm:
+            h.do_open(FailingHTTPConnection(), req)
+        err = cm.exception
+        self.assertIs(err.reason, socket_error)
+        self.assertEqual(err.errno, -2)
+        self.assertEqual(err.strerror, 'Name or service not known')
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_URLError_OSError_attributes_winerror(self):
+        # gh-50720: OSError(errno, strerror, filename, winerror):
+        # on Windows the constructor derives errno from winerror.
+        os_error = OSError(0, "The system cannot find the path specified", None, 3)
+
+        err = urllib.error.URLError(os_error)
+        self.assertEqual(err.winerror, 3)
+        self.assertEqual(err.strerror, os_error.strerror)
 
 
 class RequestHdrsTests(unittest.TestCase):
@@ -269,6 +305,50 @@ class RequestHdrsTests(unittest.TestCase):
                          ('13', 'm'))
         self.assertEqual(find_user_pass("i", "http://j.example.com:80"),
                          (None, None))
+
+    def test_password_manager_scheme(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+        mgr.add_password(
+            "realm", "https://example.com/", "user", "password")
+
+        self.assertEqual(
+            mgr.find_user_password("realm", "https://example.com/"),
+            ("user", "password"))
+        self.assertEqual(
+            mgr.find_user_password("realm", "http://example.com/"),
+            (None, None))
+        # Support an authority without a scheme.
+        self.assertEqual(
+            mgr.find_user_password("realm", "example.com"),
+            ("user", "password"))
+        # An authority without a scheme continues to match any scheme.
+        mgr.add_password(
+            "realm", "schemeless.example.com", "user", "password")
+        for scheme in "http", "https":
+            with self.subTest(scheme=scheme):
+                self.assertEqual(
+                    mgr.find_user_password(
+                        "realm", f"{scheme}://schemeless.example.com/"),
+                    ("user", "password"))
+
+        # A network-path reference also has no scheme.
+        mgr.add_password(
+            "realm", "//network-path.example.com/", "user", "password")
+        self.assertEqual(
+            mgr.find_user_password(
+                "realm", "https://network-path.example.com/"),
+            ("user", "password"))
+
+    def test_password_manager_reduced_uri(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+
+        self.assertEqual(
+            mgr.reduce_uri("http://example.com/path"),
+            ("example.com:80", "/path"))
+        self.assertTrue(
+            mgr.is_suburi(
+                ("example.com", "/path"),
+                ("example.com", "/path/subpath")))
 
 
 class MockOpener:
@@ -576,6 +656,23 @@ class OpenerDirectorTests(unittest.TestCase):
             pass
         self.assertRaises(TypeError,
                           OpenerDirector().add_handler, NonHandler())
+
+    def test_no_protocol_methods(self):
+        # test the case that methods starts with handler type without the protocol
+        # like open*() or _open*().
+        # These methods should be ignored
+
+        o = OpenerDirector()
+        meth_spec = [
+            ["open"],
+            ["_open"],
+            ["error"]
+        ]
+
+        add_ordered_mock_handlers(o, meth_spec)
+
+        self.assertEqual(len(o.handle_open), 0)
+        self.assertEqual(len(o.handle_error), 0)
 
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
@@ -962,6 +1059,35 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
+
+    def test_http_header_priority(self):
+        # gh-47005: regular headers set via add_header() must override
+        # unredirected headers with the same name in do_open(), consistent
+        # with get_header() and header_items().
+        cases = [
+            ("Content-Type", "application/json", "application/x-www-form-urlencoded"),
+            ("Content-Length", "99", "0"),
+            ("Host", "override.example.com", "internal.example.com"),
+            ("Authorization", "Bearer user-token", "Basic stale="),
+            ("Cookie", "a=1", "b=2"),
+            ("User-Agent", "MyApp/1.0", "Python-urllib/test"),
+        ]
+        h = urllib.request.AbstractHTTPHandler()
+        h.parent = MockOpener()
+
+        for key, regular, unredirected in cases:
+            req = Request("http://example.com/", headers={key: regular})
+            req.timeout = None
+            req.add_unredirected_header(key, unredirected)
+
+            http = MockHTTPClass()
+            h.do_open(http, req)
+
+            sent_headers = dict(http.req_headers)
+            self.assertEqual(sent_headers[key], regular)
+            # key is capitalized by add_header() and add_unredirected_header() calls
+            self.assertEqual(req.get_header(key.capitalize()), regular)
+            self.assertEqual(dict(req.header_items())[key.capitalize()], regular)
 
     def test_http_body_file(self):
         # A regular file - chunked encoding is used unless Content Length is
@@ -1363,8 +1489,15 @@ class HandlerTests(unittest.TestCase):
         fp = o.open('http://www.example.com')
         self.assertEqual(fp.geturl(), redirected_url.strip())
 
+    def unset_proxy_env(self):
+        # Keep the test independent from proxy-related environment settings.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("http_proxy", "https_proxy", "all_proxy", "no_proxy",
+                  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY")
+
     def test_redirect_no_path(self):
         # Issue 14132: Relative redirect strips original path
+        self.unset_proxy_env()
 
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
@@ -1398,6 +1531,7 @@ class HandlerTests(unittest.TestCase):
                     b'123'
                 )
                 return result
+        self.unset_proxy_env()
         handler = Handler()
         opener = urllib.request.build_opener(handler)
         tests = (
@@ -1535,6 +1669,14 @@ class HandlerTests(unittest.TestCase):
                             "expect <local> to bypass intranet address '%s'"
                             % host)
 
+        # empty entries (e.g. a trailing ';') must not match every host
+        for proxy_override in ("www.example.com;", ";", " ; ",
+                               "www.example.com;;*.example.net"):
+            self.assertFalse(proxy_bypass("www.python.org", proxy_override),
+                             "expected empty entry in %r not to bypass"
+                             % proxy_override)
+        self.assertTrue(proxy_bypass("www.example.com", "www.example.com;"))
+
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
         bypass = {
@@ -1645,6 +1787,113 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_proxy_digest_auth(self):
+        # gh-60299: ProxyDigestAuthHandler must look up credentials using
+        # the proxy's authority
+        opener = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
+        opener.add_handler(ph)
+        password_manager = MockPasswordManager()
+        digest_handler = urllib.request.ProxyDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        http_handler = MockHTTPHandlerRedirect(
+            407,
+            'Proxy-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'qop="auth"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        user, password = "wile", "coyote"
+        request_url = "http://acme.example.com/protected"
+        proxy_authority = "proxy.example.com:3128"
+
+        digest_handler.add_password(realm, proxy_authority, user, password)
+        self.assertEqual(realm, password_manager.realm)
+        self.assertEqual(proxy_authority, password_manager.url)
+
+        opener.open(request_url)
+
+        self.assertEqual(password_manager.target_realm, realm)
+        self.assertEqual(password_manager.target_url, proxy_authority)
+
+        self.assertEqual(len(http_handler.requests), 2)
+        self.assertFalse(
+            http_handler.requests[0].has_header("Proxy-authorization"))
+        self.assertTrue(
+            http_handler.requests[1].has_header("Proxy-authorization"))
+        self.assertTrue(
+            http_handler.requests[1]
+            .get_header("Proxy-authorization").startswith("Digest "))
+
+    def test_proxy_digest_auth_uri(self):
+        # The digest-uri of a request sent through an HTTP proxy is the
+        # absolute URL, matching the absolute-form request line
+        opener = OpenerDirector()
+        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
+        opener.add_handler(ph)
+        password_manager = urllib.request.HTTPPasswordMgr()
+        digest_handler = urllib.request.ProxyDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        http_handler = MockHTTPHandlerRedirect(
+            407,
+            'Proxy-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'algorithm="SHA-256"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        request_url = "http://acme.example.com/protected"
+        digest_handler.add_password(realm, "proxy.example.com:3128",
+                                    "wile", "coyote")
+        opener.open(request_url)
+
+        self.assertEqual(len(http_handler.requests), 2)
+        auth = http_handler.requests[1].get_header("Proxy-authorization")
+        self.assertIn('uri="%s"' % request_url, auth)
+
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_digest_auth_uses_full_url(self):
+        # The non-proxy case must keep using the full request URL (not
+        # just the host) for the password lookup, so that sub-URI realm
+        # matching (HTTPPasswordMgr.is_suburi) keeps working
+        opener = OpenerDirector()
+        password_manager = MockPasswordManager()
+        digest_handler = urllib.request.HTTPDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        request_url = "http://acme.example.com/protected"
+        http_handler = MockHTTPHandlerRedirect(
+            401,
+            'WWW-Authenticate: Digest realm="%s", nonce="abcdef0123456789", '
+            'qop="auth"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        digest_handler.add_password(realm, request_url, "wile", "coyote")
+        opener.open(request_url)
+
+        self.assertEqual(password_manager.target_realm, realm)
+        self.assertEqual(password_manager.target_url, request_url)
+
+    def test_digest_auth_empty_path(self):
+        # gh-53089: the digest-uri must match the Request-URI, which is
+        # '/' for a URL with an empty path
+        password_manager = urllib.request.HTTPPasswordMgr()
+        digest_handler = urllib.request.HTTPDigestAuthHandler(password_manager)
+        realm = "ACME Networks"
+        digest_handler.add_password(realm, "http://acme.example.com",
+                                    "wile", "coyote")
+        req = Request("http://acme.example.com")
+        chal = {"realm": realm, "nonce": "abcdef0123456789",
+                "algorithm": "SHA-256"}
+
+        auth = digest_handler.get_authorization(req, chal)
+
+        H, KD = digest_handler.get_algorithm_impls("SHA-256")
+        respdig = KD(H("wile:%s:coyote" % realm),
+                     "abcdef0123456789:%s" % H("GET:/"))
+        self.assertIn('uri="/"', auth)
+        self.assertIn('response="%s"' % respdig, auth)
+
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
         # response (https://bugs.python.org/issue1479302), where it should instead
@@ -1704,6 +1953,141 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(digest_auth_handler)
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
+
+    def check_digest_auth(self, headers, realm):
+        with self.subTest(headers=headers):
+            opener = OpenerDirector()
+            password_manager = MockPasswordManager()
+            auth_handler = urllib.request.HTTPDigestAuthHandler(
+                password_manager)
+            auth_handler.add_password(realm, "http://acme.example.com/",
+                                      "wile", "coyote")
+            body = '\r\n'.join(headers) + '\r\n\r\n'
+            http_handler = MockHTTPHandlerRedirect(401, body)
+            opener.add_handler(auth_handler)
+            opener.add_handler(http_handler)
+            opener.open("http://acme.example.com/protected")
+            self.assertEqual(password_manager.target_realm, realm)
+            auth = http_handler.requests[1].unredirected_hdrs["Authorization"]
+            self.assertStartsWith(auth, "Digest ")
+            self.assertIn(f'realm="{realm}"', auth)
+            self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
+            self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
+
+    @skip_libssl_fips_mode
+    def test_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth, auth-int", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", '
+                  f'opaque="5ccc069c403ebaf9f0171e9517f40e41"')
+        basic = 'Basic realm="basic@example.com"'
+        other = 'Otherscheme xxx'
+
+        # Multiple challenges per header.
+        for challenges in (
+            digest,
+            f'{basic}, {digest}',
+            f'{digest}, {basic}',
+            f'{other}, {digest}',
+            f'{basic}, {digest}, {other}',
+        ):
+            self.check_digest_auth([f'WWW-Authenticate: {challenges}'], realm)
+
+        # Multiple headers: one challenge per header.
+        for challenges in (
+            [basic, digest],
+            [digest, basic],
+            [other, digest],
+        ):
+            headers = [f'WWW-Authenticate: {challenge}'
+                       for challenge in challenges]
+            self.check_digest_auth(headers, realm)
+
+    def test_digest_auth_handler_ignores_basic_challenge(self):
+        # Leave Basic challenges to HTTPBasicAuthHandler, even when an
+        # unsupported scheme is present as well.
+        for headers in (
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos, Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos\r\n'
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.HTTPDigestAuthHandler(None))
+                opener.add_handler(MockHTTPHandlerRedirect(401, headers))
+                self.assertIsNone(opener.open("http://www.example.com"))
+
+    def test_digest_auth_parse_challenges(self):
+        parse = AbstractDigestAuthHandler()._parse_challenges
+        self.assertEqual(list(parse('')), [])
+        self.assertEqual(list(parse('Digest realm="a"')),
+                         [('Digest', 'Digest realm="a"')])
+        # Commas and quotes inside a quoted string do not split challenges.
+        self.assertEqual(
+            list(parse(r'Digest realm="a, Basic realm=\"b\"", nonce="n", '
+                       r'Basic realm="c"')),
+            [('Digest', r'Digest realm="a, Basic realm=\"b\"", nonce="n"'),
+             ('Basic', 'Basic realm="c"')])
+        # Whitespace around "=" does not start a new challenge.
+        self.assertEqual(
+            list(parse('Digest realm = "a", nonce = "n", Basic realm="b"')),
+            [('Digest', 'Digest realm = "a", nonce = "n"'),
+             ('Basic', 'Basic realm="b"')])
+        self.assertEqual(
+            list(parse('Negotiate, Bearer abc==, Digest realm="a",, ')),
+            [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
+             ('Digest', 'Digest realm="a"')])
+
+    @skip_libssl_fips_mode
+    def test_proxy_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"')
+        basic = 'Basic realm="basic@example.com"'
+        for headers in (
+            [f'Proxy-Authenticate: {basic}, {digest}'],
+            [f'Proxy-Authenticate: {basic}', f'Proxy-Authenticate: {digest}'],
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.ProxyHandler(
+                    dict(http="proxy.example.com:3128")))
+                password_manager = MockPasswordManager()
+                auth_handler = urllib.request.ProxyDigestAuthHandler(
+                    password_manager)
+                auth_handler.add_password(realm, "proxy.example.com:3128",
+                                          "wile", "coyote")
+                body = '\r\n'.join(headers) + '\r\n\r\n'
+                http_handler = MockHTTPHandlerRedirect(407, body)
+                opener.add_handler(auth_handler)
+                opener.add_handler(http_handler)
+                opener.open("http://acme.example.com/protected")
+                self.assertEqual(password_manager.target_realm, realm)
+                auth = http_handler.requests[1].unredirected_hdrs[
+                    "Proxy-authorization"]
+                self.assertStartsWith(auth, "Digest ")
+                self.assertIn(f'realm="{realm}"', auth)
+    def test_digest_auth_failure_code(self):
+        # gh-53852: a failed proxy digest auth must report 407, not 401.
+        headers = http.client.HTTPMessage()
+        for handler_class, auth_header, code in [
+                (urllib.request.HTTPDigestAuthHandler,
+                 'www-authenticate', 401),
+                (urllib.request.ProxyDigestAuthHandler,
+                 'proxy-authenticate', 407)]:
+            with self.subTest(handler=handler_class.__name__):
+                handler = handler_class()
+                handler.retried = 6
+                req = Request("http://www.example.com/")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    handler.http_error_auth_reqed(auth_header,
+                                                  "www.example.com",
+                                                  req, headers)
+                self.assertEqual(cm.exception.code, code)
+                cm.exception.close()
 
     def test_unsupported_auth_basic_handler(self):
         # While using BasicAuthHandler
@@ -1778,6 +2162,18 @@ class HandlerTests(unittest.TestCase):
 
         # expect request to be sent with auth header
         self.assertTrue(http_handler.has_auth_header)
+
+    def test_basic_prior_auth_different_scheme(self):
+        pwd_manager = HTTPPasswordMgrWithPriorAuth()
+        auth_handler = HTTPBasicAuthHandler(pwd_manager)
+        auth_handler.add_password(
+            None, "https://example.com/", "user", "password",
+            is_authenticated=True)
+
+        request = Request("http://example.com/")
+        auth_handler.http_request(request)
+
+        self.assertFalse(request.has_header("Authorization"))
 
     def test_basic_prior_auth_send_after_first_success(self):
         # Auto send auth header after authentication is successful once
@@ -1966,12 +2362,6 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
-
-
-skip_libssl_fips_mode = unittest.skipIf(
-    support.is_libssl_fips_mode(),
-    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
-)
 
 
 class TestDigestAuthAlgorithms(unittest.TestCase):

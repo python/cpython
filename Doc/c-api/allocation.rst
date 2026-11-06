@@ -2,7 +2,7 @@
 
 .. _allocating-objects:
 
-Allocating Objects on the Heap
+Allocating objects on the heap
 ==============================
 
 
@@ -140,10 +140,6 @@ Allocating Objects on the Heap
       * :c:member:`~PyTypeObject.tp_alloc`
 
 
-.. c:function:: void PyObject_Del(void *op)
-
-   Same as :c:func:`PyObject_Free`.
-
 .. c:var:: PyObject _Py_NoneStruct
 
    Object which is visible in Python as ``None``.  This should only be accessed
@@ -156,3 +152,37 @@ Allocating Objects on the Heap
    :ref:`moduleobjects`
       To allocate and create extension modules.
 
+
+Soft-deprecated aliases
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. soft-deprecated:: 3.15
+
+These are aliases to existing functions and macros.
+They exist solely for backwards compatibility.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Soft-deprecated alias
+     * Function
+   * * .. c:macro:: PyObject_NEW(type, typeobj)
+     * :c:macro:`PyObject_New`
+   * * .. c:macro:: PyObject_NEW_VAR(type, typeobj, n)
+     * :c:macro:`PyObject_NewVar`
+   * * .. c:macro:: PyObject_INIT(op, typeobj)
+     * :c:func:`PyObject_Init`
+   * * .. c:macro:: PyObject_INIT_VAR(op, typeobj, n)
+     * :c:func:`PyObject_InitVar`
+   * * .. c:macro:: PyObject_MALLOC(n)
+     * :c:func:`PyObject_Malloc`
+   * * .. c:macro:: PyObject_REALLOC(p, n)
+     * :c:func:`PyObject_Realloc`
+   * * .. c:macro:: PyObject_FREE(p)
+     * :c:func:`PyObject_Free`
+   * * .. c:macro:: PyObject_DEL(p)
+     * :c:func:`PyObject_Free`
+   * * .. c:macro:: PyObject_Del(p)
+     * :c:func:`PyObject_Free`

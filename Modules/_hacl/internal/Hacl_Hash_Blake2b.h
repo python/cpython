@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_Blake2b_H
-#define __internal_Hacl_Hash_Blake2b_H
+#ifndef internal_Hacl_Hash_Blake2b_H
+#define internal_Hacl_Hash_Blake2b_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -91,5 +91,5 @@ Hacl_Hash_Blake2b_state_t;
 }
 #endif
 
-#define __internal_Hacl_Hash_Blake2b_H_DEFINED
-#endif
+#define internal_Hacl_Hash_Blake2b_H_DEFINED
+#endif /* internal_Hacl_Hash_Blake2b_H */

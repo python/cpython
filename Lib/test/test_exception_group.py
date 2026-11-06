@@ -1,7 +1,9 @@
-import collections.abc
+import collections
 import types
 import unittest
-from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow, exceeds_recursion_limit
+from test.support import (skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, run_with_limited_c_stack,
+                          exceeds_recursion_limit, nomemtest)
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -128,6 +130,15 @@ class InstanceCreation(unittest.TestCase):
             type(MyBEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
             MyBEG)
 
+    @nomemtest
+    def test_no_memory(self):
+        import _testcapi
+        # A tuple of exceptions is not copied, so the first allocation
+        # is the one of the exception group itself.
+        excs = (ValueError(1),)
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, ExceptionGroup, "eg", excs)
+
 
 class StrAndReprTests(unittest.TestCase):
     def test_ExceptionGroup(self):
@@ -192,6 +203,89 @@ class StrAndReprTests(unittest.TestCase):
                       "ValueError(1), "
                       "MyEG('flat', [ValueError(1), TypeError(2)]), "
                       "TypeError(2)])"))
+
+    def test_exceptions_mutation(self):
+        class MyEG(ExceptionGroup):
+            pass
+
+        excs = [ValueError(1), TypeError(2)]
+        eg = MyEG('test', excs)
+
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+        excs.clear()
+
+        # Ensure that clearing the exceptions sequence doesn't change the repr.
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+
+        # Ensure that the args are still as passed.
+        self.assertEqual(eg.args, ('test', []))
+
+        excs = (ValueError(1), KeyboardInterrupt(2))
+        eg = BaseExceptionGroup('test', excs)
+
+        # Ensure that immutable sequences still work fine.
+        self.assertEqual(
+            repr(eg),
+            "BaseExceptionGroup('test', (ValueError(1), KeyboardInterrupt(2)))"
+        )
+
+        # Test non-standard custom sequences.
+        excs = collections.deque([ValueError(1), TypeError(2)])
+        eg = ExceptionGroup('test', excs)
+
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
+        excs.clear()
+
+        # Ensure that clearing the exceptions sequence doesn't change the repr.
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
+
+    def test_repr_small_size_args(self):
+        eg = ExceptionGroup("msg", [ValueError()])
+        eg.args = ()
+        # repr of the ExceptionGroup with empty args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+        eg.args = (1,)
+        # repr of the ExceptionGroup with 1-size args should not crash
+        self.assertEqual(repr(eg), "ExceptionGroup('msg', (ValueError(),))")
+
+
+
+    def test_repr_raises(self):
+        class MySeq(collections.abc.Sequence):
+            def __init__(self, raises):
+                self.raises = raises
+
+            def __len__(self):
+                return 1
+
+            def __getitem__(self, index):
+                if index == 0:
+                    return ValueError(1)
+                raise IndexError
+
+            def __repr__(self):
+                if self.raises:
+                    raise self.raises
+                return None
+
+        seq = MySeq(None)
+        with self.assertRaisesRegex(
+            TypeError,
+            r".*MySeq\.__repr__\(\) must return a str, not NoneType"
+        ):
+            ExceptionGroup("test", seq)
+
+        seq = MySeq(ValueError)
+        with self.assertRaises(ValueError):
+            BaseExceptionGroup("test", seq)
+
 
 
 def create_simple_eg():
@@ -464,6 +558,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
             e = ExceptionGroup('eg', [e])
         return e
 
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_split(self):
@@ -471,6 +566,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):
