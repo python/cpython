@@ -82,29 +82,24 @@ class FindLibraryLinux(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         try:
-            p = subprocess.run(['ld', '--version'],
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.DEVNULL,
-                               text=True)
-        except OSError:
-            pass
-        else:
-            if p.stdout.startswith('mold '):
+            subprocess.check_output(['gcc', '--version'], text=True)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            raise unittest.SkipTest('gcc, needed for test, is not found')
+
+        try:
+            ret = subprocess.check_output(['ld', '--version'], text=True)
+            if ret.startswith('mold '):
                 # The mold linker is known to be incompatible with
                 # the soft-deprecated ctypes.util.find_library
                 # (which uses `ld -t`).
                 raise unittest.SkipTest('Fails when ld is mold')
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            raise unittest.SkipTest('ld, needed for test, is not found')
 
     @thread_unsafe('uses setenv')
     def test_find_on_libpath(self):
         import tempfile
 
-        try:
-            p = subprocess.Popen(['gcc', '--version'], stdout=subprocess.PIPE,
-                                 stderr=subprocess.DEVNULL)
-            out, _ = p.communicate()
-        except OSError:
-            raise unittest.SkipTest('gcc, needed for test, not available')
         with tempfile.TemporaryDirectory() as d:
             # create an empty temporary file
             srcname = os.path.join(d, 'dummy.c')
@@ -134,7 +129,8 @@ class FindLibraryLinux(unittest.TestCase):
                 self.assertEqual(find_library(libname), 'lib%s.so' % libname)
 
     def test_find_library_with_gcc(self):
-        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None):
+        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
+             unittest.mock.patch("ctypes.util._findLib_ld", lambda *args: None):
             self.assertNotEqual(find_library('c'), None)
 
     def test_find_library_with_ld(self):
