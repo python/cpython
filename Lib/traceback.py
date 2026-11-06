@@ -2000,12 +2000,10 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
 
     # Compute closest match
 
-    if len(d) > _MAX_CANDIDATE_ITEMS:
+    if len(d) >= _MAX_CANDIDATE_ITEMS:
         return None
     wrong_name_len = len(wrong_name)
-    if wrong_name_len > _MAX_STRING_SIZE:
-        return None
-    best_distance = wrong_name_len
+    best_distance = sys.maxsize
     suggestion = None
     for possible_name in d:
         if possible_name == wrong_name:
