@@ -728,7 +728,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         acc = f.accessible
         self.assertIsInstance(acc, tkinter.Accessible)
         self.assertIs(f.accessible, acc)
+        # The role has to be set first, it creates the table in which
+        # other attributes are stored.
+        acc.role = 'Label'
+        result = acc.role
         if sr:
+            self.assertEqual(result, 'Label')
             # Reading an attribute that has not been set raises TclError.
             with self.assertRaises(tkinter.TclError):
                 acc.help
@@ -739,10 +744,6 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                 result = getattr(acc, attr)
                 if sr:
                     self.assertEqual(result, 'spam')
-        acc.role = 'Label'
-        result = acc.role
-        if sr:
-            self.assertEqual(result, 'Label')
         acc.add_object()
         acc.emit_selection_change()
         if self.root._windowingsystem != 'aqua':
