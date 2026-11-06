@@ -727,11 +727,12 @@ Glossary
       when doing I/O.
 
       As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
-      build configuration. After building Python with this option, code must be
-      run with :option:`-X gil=0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
-      environment variable. This feature enables improved performance for
-      multi-threaded applications and makes it easier to use multi-core CPUs
-      efficiently. For more details, see :pep:`703`.
+      build configuration. Python built with this option runs with the GIL
+      disabled by default; it can be enabled with :option:`-X gil=1 <-X>` or
+      the :envvar:`PYTHON_GIL=1 <PYTHON_GIL>` environment variable.
+      This feature enables improved performance for multi-threaded
+      applications and makes it easier to use multi-core CPUs efficiently.
+      For more details, see :pep:`703`.
 
       In prior versions of Python's C API, a function might declare that it
       requires the GIL to be held in order to use it. This refers to having an
