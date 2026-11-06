@@ -1109,6 +1109,21 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.module._showwarnmsg = show
         self.assertIn(text, result)
 
+    @support.cpython_only
+    def test_showwarnmsg_missing_source_line(self):
+        # gh-143201: the C fallback must strip the source line like Python.
+        lineno = sys._getframe().f_lineno
+        with self.module.catch_warnings(), \
+             support.swap_attr(self.module, '_showwarnmsg', None), \
+             support.captured_stderr() as stream:
+            self.module.simplefilter("always")
+            del self.module._showwarnmsg  # use the C fallback
+            self.module.warn_explicit('eggs', UserWarning, __file__, lineno,
+                                      module_globals=globals())
+        self.assertEqual(stream.getvalue(), py_warnings.formatwarning(
+            'eggs', UserWarning, __file__, lineno,
+            linecache.getline(__file__, lineno)))
+
     def test_showwarning_not_callable(self):
         orig = self.module.showwarning
         try:
