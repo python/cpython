@@ -64,7 +64,6 @@ NEED_TKINTER = {
 
 # List of tests expected to be skipped on sys.platform
 EXPECTED_SKIP = set()
-
 if support.Py_GIL_DISABLED:
     # Need GIL build
     EXPECTED_SKIP.add('test_interpreters')
@@ -146,6 +145,7 @@ if not sysconfig.get_config_var('WITH_DTRACE'):
     # Need ./configure --with-dtrace
     EXPECTED_SKIP.add('test_dtrace')
 
+
 if support.MS_WINDOWS:
     # Tests specific to non-Windows platforms
     EXPECTED_SKIP |= {
@@ -197,13 +197,24 @@ if support.is_android:
     # Test specific to Android
     EXPECTED_SKIP.add('test_android')
 else:
+    # Missing dependencies on Android
+    EXPECTED_SKIP |= {
+        'test_dbm_gnu',                # need _gdbm
+        'test_dbm_ndbm',               # need _dbm
+        'test_grp',                    # need grp
+        'test_readline',               # need libreadline/libedit
+    }
+
     # _multiprocessing is not available on Android
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     # _tkinter is not available on Android
     EXPECTED_SKIP |= NEED_TKINTER
 
+
 if not support.is_apple:
+    # Test specific to Apple
     EXPECTED_SKIP.add('test_apple')
+
 
 if support.is_apple_mobile:
     # configure disables multiple extension modules on Apple mobile
@@ -219,6 +230,7 @@ if support.is_apple_mobile:
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     # configure disables _tkinter on Apple mobile
     EXPECTED_SKIP |= NEED_TKINTER
+
 
 if support.is_emscripten:
     # configure disables multiple extension modules on Emscripten
@@ -258,6 +270,7 @@ if support.is_emscripten:
     # Missing Tcl/Tk dependency on Emscripten
     EXPECTED_SKIP |= NEED_TKINTER
 
+
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP |= {
         # pty is not available on these platforms
@@ -265,6 +278,7 @@ if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI
         # venv is not available on these platforms
         'test_venv',
     }
+
 
 if IS_WASI:
     # configure disables multiple extension modules on WASI
