@@ -1,0 +1,5 @@
+Fix :c:func:`PyType_Freeze` releasing the type lock while waiting for a
+stop-the-world pause in the :term:`free-threaded build`. Another thread could
+modify the type before the frozen type's caches were invalidated, and the
+release could deadlock against a thread waiting for the pause with the type
+lock held.
