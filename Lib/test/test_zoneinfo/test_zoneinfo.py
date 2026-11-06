@@ -1723,6 +1723,21 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    def test_clear_cache_non_string_keys(self):
+        self.addCleanup(self.klass.clear_cache)
+        for cached in (False, True):
+            for key in (None, 1, b"America/Los_Angeles"):
+                with self.subTest(cached=cached, key=key):
+                    self.klass.clear_cache()
+                    original = (
+                        self.klass("America/Los_Angeles") if cached else None
+                    )
+                    self.klass.clear_cache(only_keys=(key,))
+                    if cached:
+                        self.assertIs(
+                            self.klass("America/Los_Angeles"), original
+                        )
+
     def test_weak_cache_descriptor_use_after_free(self):
         class BombDescriptor:
             def __get__(self, obj, owner):
@@ -1746,6 +1761,71 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
+
+    def test_strong_cache_path_like_key(self):
+        class Key:
+            def __fspath__(self):
+                return "UTC"
+
+            def __len__(self):
+                return 3
+
+            def split(self, sep):
+                return ["UTC"]
+
+        key = Key()
+        self.addCleanup(self.klass.clear_cache)
+        original = self.klass(key)
+        self.assertIs(self.klass(key), original)
+        self.assertEqual(self.klass("UTC").key, "UTC")
+        self.klass.clear_cache(only_keys=(key,))
+        self.assertIsNot(self.klass(key), original)
+
+    def test_strong_cache_str_subclass(self):
+        class Stringy(str):
+            def __eq__(self, other):
+                raise CustomError
+
+            __hash__ = str.__hash__
+
+        self.addCleanup(self.klass.clear_cache)
+        for cached_type, lookup_type in ((str, Stringy), (Stringy, str),
+                                         (Stringy, Stringy)):
+            with self.subTest(cached_type=cached_type, lookup_type=lookup_type):
+                self.klass.clear_cache()
+                original = self.klass(cached_type("America/Los_Angeles"))
+                self.assertIs(
+                    self.klass(lookup_type("America/Los_Angeles")), original
+                )
+
+    def test_strong_cache_reentrant_clear(self):
+        self._test_strong_cache_reentrant_clear("lookup")
+
+    def test_strong_cache_reentrant_clear_only_keys(self):
+        self._test_strong_cache_reentrant_clear("clear")
+
+    def _test_strong_cache_reentrant_clear(self, operation):
+        klass = self.klass
+
+        class Stringy(str):
+            cleared = False
+
+            def __eq__(self, other):
+                if not self.cleared:
+                    self.cleared = True
+                    klass.clear_cache(only_keys=(self,))
+                return super().__eq__(other)
+
+            __hash__ = str.__hash__
+
+        self.addCleanup(klass.clear_cache)
+        original = klass(Stringy("America/Los_Angeles"))
+        key = Stringy("America/Los_Angeles")
+        if operation == "lookup":
+            self.assertIs(klass(key), original)
+        else:
+            klass.clear_cache(only_keys=(key,))
+            self.assertIsNot(klass("America/Los_Angeles"), original)
 
     def test_inconsistent_weak_cache_get(self):
         class Cache:
