@@ -1426,9 +1426,9 @@ class Babyl(_singlefileMailbox):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(linesep))
                 starts.append(next_pos)
-                labels = [label.strip() for label
-                                        in self._file.readline()[1:].split(b',')
-                                        if label.strip()]
+                labels = [label.strip().decode(errors='surrogateescape')
+                          for label in self._file.readline()[1:].split(b',')
+                          if label.strip()]
                 label_lists.append(labels)
             elif line == b'\037' or line == b'\037' + linesep:
                 if len(stops) < len(starts):
@@ -1447,7 +1447,7 @@ class Babyl(_singlefileMailbox):
         babyl = b'BABYL OPTIONS:' + linesep
         babyl += b'Version: 5' + linesep
         labels = self.get_labels()
-        labels = (label.encode() for label in labels)
+        labels = (label.encode(errors='surrogateescape') for label in labels)
         babyl += b'Labels:' + b','.join(labels) + linesep
         babyl += b'\037'
         f.write(babyl)
@@ -1473,10 +1473,12 @@ class Babyl(_singlefileMailbox):
                     labels.append(label)
             self._file.write(b'1')
             for label in special_labels:
-                self._file.write(b', ' + label.encode())
+                label = label.encode(errors='surrogateescape')
+                self._file.write(b', ' + label)
             self._file.write(b',,')
             for label in labels:
-                self._file.write(b' ' + label.encode() + b',')
+                label = label.encode(errors='surrogateescape')
+                self._file.write(b' ' + label + b',')
             self._file.write(linesep)
         else:
             self._file.write(b'1,,' + linesep)
