@@ -1,5 +1,5 @@
-:mod:`email.message`: fix an infinite loop :meth:`EmailMessage.as_string
-<email.message.EmailMessage.as_string>` when :meth:`~email.message.MIMEPart.add_attachment`
+:mod:`email.message`: fix an infinite loop in :meth:`EmailMessage.as_string
+<email.message.EmailMessage.as_string>` when :meth:`~email.message.EmailMessage.add_attachment`
 is called with very long parameter keys.
 
 This could cause denial of service by hanging the application indefinitely
