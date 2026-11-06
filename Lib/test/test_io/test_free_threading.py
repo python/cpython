@@ -2,11 +2,14 @@ import codecs
 import io
 import _pyio as pyio
 import threading
-from unittest import TestCase
-from test.support import threading_helper
+from unittest import SkipTest, TestCase
+from test.support import Py_GIL_DISABLED, threading_helper
 from test.support.threading_helper import run_concurrently
 from random import randint
 from sys import getsizeof
+
+if not Py_GIL_DISABLED:
+    raise SkipTest("GIL enabled")
 
 threading_helper.requires_working_threading(module=True)
 
