@@ -725,6 +725,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             self.skipTest('the "tk accessible" command is not supported')
         self.assertIsInstance(sr, bool)
         f = tkinter.Frame(self.root)
+        # The role has to be set first, it creates the table in which
+        # other attributes are stored.
+        f.tk_set_acc_role('Label')
+        result = f.tk_get_acc_role()
+        if sr:
+            self.assertEqual(result, 'Label')
         for attr in ('name', 'description', 'value', 'state',
                      'action', 'help'):
             with self.subTest(attr=attr):
@@ -732,10 +738,6 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                 result = getattr(f, f'tk_get_acc_{attr}')()
                 if sr:
                     self.assertEqual(result, 'spam')
-        f.tk_set_acc_role('Label')
-        result = f.tk_get_acc_role()
-        if sr:
-            self.assertEqual(result, 'Label')
         f.tk_add_acc_object()
         f.tk_emit_selection_change()
         if self.root._windowingsystem != 'aqua':
