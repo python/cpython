@@ -753,6 +753,7 @@ PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
                     type = state->PySSLCertVerificationErrorObject;
                 }
                 if (ERR_GET_LIB(e) == ERR_LIB_SYS) {
+                    ERR_clear_error();
                     // A system error is being reported; reason is set to errno
                     errno = ERR_GET_REASON(e);
                     return PyErr_SetFromErrno(PyExc_OSError);
@@ -789,6 +790,7 @@ PySSL_SetError(PySSLSocket *sslsock, _PySSLError err, PyObject *exc,
             }
 #endif
             if (ERR_GET_LIB(e) == ERR_LIB_SYS) {
+                ERR_clear_error();
                 // A system error is being reported; reason is set to errno
                 errno = ERR_GET_REASON(e);
                 return PyErr_SetFromErrno(PyExc_OSError);
