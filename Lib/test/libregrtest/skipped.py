@@ -193,9 +193,6 @@ if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 
 if support.is_android:
-    # Test specific to Android
-    EXPECTED_SKIP.add('test_android')
-else:
     # Missing dependencies on Android
     EXPECTED_SKIP |= {
         'test_dbm_gnu',                # need _gdbm
@@ -208,6 +205,9 @@ else:
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     # _tkinter is not available on Android
     EXPECTED_SKIP |= NEED_TKINTER
+else:
+    # Test specific to Android
+    EXPECTED_SKIP.add('test_android')
 
 
 if not support.is_apple:
