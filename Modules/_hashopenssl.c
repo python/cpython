@@ -417,10 +417,11 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
     PY_EVP_MD *digest = NULL, *fresh = NULL;
     _hashlibstate *state = get_hashlib_state(module);
     py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
-    int fips = disable_fips_property(py_ht);
-    if (fips == -1) {
+    int disable_fips = disable_fips_property(py_ht);
+    if (disable_fips == -1) {
         goto finally;
     }
+    int fips = !disable_fips;
 
     if (entry != NULL) {
         PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
