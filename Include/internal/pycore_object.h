@@ -712,6 +712,8 @@ _PyObject_ResurrectEnd(PyObject *op)
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 # ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 # endif
