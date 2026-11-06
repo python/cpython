@@ -14,18 +14,18 @@ extern "C" {
 #endif
 
 #ifdef Py_GIL_DISABLED
-static inline mi_heap_t *
+static inline struct mi_theap_s *
 _PyObject_GetAllocationHeap(_PyThreadStateImpl *tstate, PyTypeObject *tp)
 {
     struct _mimalloc_thread_state *m = &tstate->mimalloc;
     if (_PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER)) {
-        return &m->heaps[_Py_MIMALLOC_HEAP_GC_PRE];
+        return m->heaps[_Py_MIMALLOC_HEAP_GC_PRE];
     }
     else if (_PyType_IS_GC(tp)) {
-        return &m->heaps[_Py_MIMALLOC_HEAP_GC];
+        return m->heaps[_Py_MIMALLOC_HEAP_GC];
     }
     else {
-        return &m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+        return m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
     }
 }
 #endif
@@ -45,7 +45,7 @@ _PyObject_MallocWithType(PyTypeObject *tp, size_t size)
 #endif
     void *mem = PyObject_Malloc(size);
 #ifdef Py_GIL_DISABLED
-    m->current_object_heap = &m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+    m->current_object_heap = m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
 #endif
     return mem;
 }
@@ -60,7 +60,7 @@ _PyObject_ReallocWithType(PyTypeObject *tp, void *ptr, size_t size)
 #endif
     void *mem = PyObject_Realloc(ptr, size);
 #ifdef Py_GIL_DISABLED
-    m->current_object_heap = &m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+    m->current_object_heap = m->heaps[_Py_MIMALLOC_HEAP_OBJECT];
 #endif
     return mem;
 }

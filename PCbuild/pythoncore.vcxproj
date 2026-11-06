@@ -284,6 +284,7 @@
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_mimalloc_structs.h" />
     <ClInclude Include="..\Include\internal\pycore_mmap.h" />
     <ClInclude Include="..\Include\internal\pycore_modsupport.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
@@ -353,13 +354,7 @@
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
     <ClInclude Include="..\Include\methodobject.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\internal.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc-stats.h" />
-    <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h" />
+    <ClInclude Include="..\Include\internal\mimalloc\**\*.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />
     <ClInclude Include="..\Include\object.h" />
