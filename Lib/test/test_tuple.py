@@ -18,50 +18,6 @@ JUST_SHOW_HASH_RESULTS = False # if RUN_ALL_HASH_TESTS, just display
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
-    def test_hash_unhashable_item_note(self):
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
-            hash(("alice", []))
-        self.assertEqual(cm.exception.__notes__,
-                         ["when hashing tuple item 1"])
-
-    def test_hash_nested_unhashable_item_notes(self):
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
-            hash((("alice", []), 42))
-        self.assertEqual(cm.exception.__notes__,
-                         ["when hashing tuple item 1",
-                          "when hashing tuple item 0"])
-
-    def test_hash_custom_type_error_preserved(self):
-        class BrokenHash:
-            def __hash__(self):
-                raise TypeError("custom failure")
-
-        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
-            hash((BrokenHash(),))
-        self.assertEqual(cm.exception.__notes__,
-                         ["when hashing tuple item 0"])
-
-    def test_hash_existing_exception_notes_preserved(self):
-        class BrokenHash:
-            def __hash__(self):
-                exc = TypeError("custom failure")
-                exc.add_note("from custom hash")
-                raise exc
-
-        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
-            hash((BrokenHash(),))
-        self.assertEqual(cm.exception.__notes__,
-                         ["from custom hash", "when hashing tuple item 0"])
-
-    def test_hash_non_type_error_preserved(self):
-        class BrokenHash:
-            def __hash__(self):
-                raise ValueError("custom failure")
-
-        with self.assertRaisesRegex(ValueError, "custom failure") as cm:
-            hash((BrokenHash(),))
-        self.assertFalse(hasattr(cm.exception, "__notes__"))
-
     def test_getitem_error(self):
         t = ()
         msg = "tuple indices must be integers or slices"
@@ -493,6 +449,45 @@ class TupleTest(seq_tests.CommonTest):
         c = self.type2test([1, 3])
         self.assertLess(a, b)
         self.assertLess(b, c)
+
+    def test_hash_unhashable_note(self):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash(("alice", []))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1"])
+
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash((("alice", []), 42))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1",
+                          "when hashing tuple item 0"])
+
+        class BrokenHash:
+            def __hash__(self):
+                raise TypeError("custom failure")
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHash(),))
+        self.assertEqual(cm.exception.__notes__, ["when hashing tuple item 0"])
+
+        class BrokenHashNote:
+            def __hash__(self):
+                exc = TypeError("custom failure")
+                exc.add_note("from custom hash")
+                raise exc
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHashNote(),))
+        self.assertEqual(cm.exception.__notes__,
+                         ["from custom hash", "when hashing tuple item 0"])
+
+        class BrokenHashValueError:
+            def __hash__(self):
+                raise ValueError("custom failure")
+
+        with self.assertRaisesRegex(ValueError, "custom failure") as cm:
+            hash((BrokenHashValueError(),))
+        self.assertFalse(hasattr(cm.exception, "__notes__"))
 
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
