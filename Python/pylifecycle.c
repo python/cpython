@@ -2357,9 +2357,8 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         }
 
         /* Stop the world to prevent other threads from creating threads or
-         * atexit callbacks. On the default build, this is simply locked by
-         * the GIL. For pending calls, we acquire the dedicated mutex, because
-         * Py_AddPendingCall() can be called without an attached thread state.
+         * atexit callbacks. For pending calls, we acquire the dedicated mutex,
+         * because Py_AddPendingCall() can be called without an attached thread state.
          */
         PyMutex_Lock(&interp->ceval.pending.mutex);
         _PyEval_StopTheWorldAll(interp->runtime);
@@ -2444,7 +2443,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
        except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
        We start the world once we are the only thread state left,
        before we call destructors. */
-    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate, /*is_after_fork=*/0);
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }
@@ -2825,7 +2824,7 @@ Py_EndInterpreter(PyThreadState *tstate)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
 
-    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate, /*is_after_fork=*/0);
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }

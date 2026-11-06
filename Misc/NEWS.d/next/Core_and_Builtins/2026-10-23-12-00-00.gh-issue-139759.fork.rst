@@ -1,0 +1,2 @@
+Fix crashes and hangs when calling :func:`os.fork` with existing
+subinterpreters.

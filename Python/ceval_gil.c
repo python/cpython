@@ -618,23 +618,23 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 }
 
 #ifdef HAVE_FORK
-/* This function is called from PyOS_AfterFork_Child to re-initialize the
-   GIL and pending calls lock. */
+/* This function is called from PyOS_AfterFork_Child to re-initialize all GILs. */
 PyStatus
 _PyEval_ReInitThreads(PyThreadState *tstate)
 {
-    assert(tstate->interp == _PyInterpreterState_Main());
-
-    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
-    if (!gil_created(gil)) {
-        return _PyStatus_OK();
+    for (PyInterpreterState *interp = PyInterpreterState_Head(); interp != NULL;
+         interp = interp->next) {
+        struct _gil_runtime_state *gil = interp->ceval.gil;
+        if (interp->ceval.own_gil && gil_created(gil)) {
+            recreate_gil(gil);
+        }
+        _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+            p->holds_gil = 0;
+            p->gil_requested = 0;
+        }
     }
-    recreate_gil(gil);
 
     take_gil(tstate);
-
-    struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    _PyMutex_at_fork_reinit(&pending->mutex);
 
     return _PyStatus_OK();
 }
