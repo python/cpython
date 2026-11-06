@@ -12,6 +12,7 @@ import io
 import itertools
 import logging
 import os
+import random
 import re
 import sys
 import sysconfig
@@ -23,7 +24,7 @@ from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from test.support import requires_resource
 from test.support import threading_helper
 from http.client import HTTPException
@@ -123,6 +124,30 @@ DEPRECATED_STRING_PARAMETER = re.escape(
     "use the 'data' keyword parameter or pass the data "
     "to hash as a positional argument instead"
 )
+
+
+def make_hash_objects(*digestmods, buf=b"", **kwargs):
+    objects = []
+    for digestmod in digestmods:
+        try:
+            if callable(digestmod):
+                obj = digestmod(buf)
+            else:
+                obj = hashlib.new(digestmod, buf, **kwargs)
+        except ValueError:
+            continue
+        objects.append((digestmod, obj))
+    return objects
+
+
+class BytesIOProxy:
+    """A file-like object with the io.BytesIO interface, not an io.BytesIO."""
+
+    def __init__(self, data):
+        self._buffer = io.BytesIO(data)
+
+    def __getattr__(self, name):
+        return getattr(self._buffer, name)
 
 
 class HashLibTestCase(unittest.TestCase):
@@ -547,7 +572,8 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(h.hexdigest(), "8a268e83dd30528bc0907fa2008c91de8f090a0b6e0e60a5ff0d999d8485526f")
 
     def check(self, name, data, hexdigest, shake=False, **kwargs):
-        length = len(hexdigest)//2
+        n = len(data)
+        length = len(hexdigest) // 2
         hexdigest = hexdigest.lower()
         constructors = self.constructors_to_test[name]
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
@@ -556,47 +582,48 @@ class HashLibTestCase(unittest.TestCase):
             m = hash_object_constructor(data, **kwargs)
             computed = m.hexdigest() if not shake else m.hexdigest(length)
             self.assertEqual(
-                    computed, hexdigest,
-                    "Hash algorithm %s constructed using %s returned hexdigest"
-                    " %r for %d byte input data that should have hashed to %r."
-                    % (name, hash_object_constructor,
-                       computed, len(data), hexdigest))
+                computed, hexdigest,
+                "Hash algorithm %s constructed using %s returned hexdigest"
+                " %r for %d byte input data that should have hashed to %r."
+                % (name, hash_object_constructor, computed, n, hexdigest)
+            )
             computed = m.digest() if not shake else m.digest(length)
             digest = bytes.fromhex(hexdigest)
             self.assertEqual(computed, digest)
             if not shake:
                 self.assertEqual(len(digest), m.digest_size)
 
+        def generate_sub_hexdigest(pos=-1):
+            if pos < 0:
+                pos = 0 if n == 0 else random.randrange(0, n)
+                pos += 1  # ensure pos is at least 1 (allowed to be out of range)
+            buf = data[pos:]
+            objects = make_hash_objects(name, *constructors, buf=buf, **kwargs)
+            hexdigests = {obj.hexdigest() for _, obj in objects}
+            self.assertEqual(len(hexdigests), 1, f"bad digests: {objects}")
+            return pos, hexdigests.pop()
+
         if not shake and kwargs.get("key") is None:
             # skip shake and blake2 extended parameter tests
             self.check_file_digest(name, data, hexdigest)
+            for pos in sorted({-1, 1, n - 1, n, n + 1}):
+                with self.subTest(pos=pos):
+                    pos, hexdigest2 = generate_sub_hexdigest(pos=pos)
+                    self.check_file_digest(name, data, hexdigest2, pos)
 
-    def check_file_digest(self, name, data, hexdigest):
+    def check_file_digest(self, name, data, hexdigest, pos=0):
         hexdigest = hexdigest.lower()
-        digests = []
-        for digest in [name, *self.constructors_to_test[name]]:
-            try:
-                if callable(digest):
-                    digest(b"")
-                else:
-                    hashlib.new(digest)
-            except ValueError:
-                # skip, algorithm is blocked by security policy.
-                continue
-            digests.append(digest)
-
+        digests = make_hash_objects(name, *self.constructors_to_test[name])
         with tempfile.TemporaryFile() as f:
             f.write(data)
+            buf = io.BytesIO(data)
+            buf_like = BytesIOProxy(data)
 
-            for digest in digests:
-                buf = io.BytesIO(data)
-                buf.seek(0)
-                self.assertEqual(
-                    hashlib.file_digest(buf, digest).hexdigest(), hexdigest
-                )
-                f.seek(0)
-                digestobj = hashlib.file_digest(f, digest)
-                self.assertEqual(digestobj.hexdigest(), hexdigest)
+            for digest, _ in digests:
+                for fobj in [buf, buf_like, f]:
+                    fobj.seek(pos)
+                    digestobj = hashlib.file_digest(fobj, digest)
+                    self.assertEqual(digestobj.hexdigest(), hexdigest)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -1510,6 +1537,12 @@ class TestTSAN(unittest.TestCase):
     @support.subTests("attrname", ["block_size", "digest_size"])
     def test_HACL_blake2_attributes(self, version, attrname):
         self.check_HACL_attribute(_blake2, version, attrname)
+
+
+@support.cpython_only
+class LazyImportTest(unittest.TestCase):
+    def test_lazy_import(self):
+        ensure_lazy_imports("hashlib", {"io"})
 
 
 if __name__ == "__main__":
