@@ -382,6 +382,7 @@ def archive(context):
                 "--owner=0",
                 "--group=0",
                 "--numeric-owner",
+                "--format=pax",
                 "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
                 "--mode=go+u,go-w",
                 # Explicitly using `-T` because if you don't compress with threads you can't
