@@ -1757,7 +1757,7 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> isinstance(vars(H)['y'], Member)
     True
 
-When instances are created, they have a ``slot_values`` list where the
+When instances are created, they have a ``_slotvalues`` list where the
 attributes are stored:
 
 .. doctest::

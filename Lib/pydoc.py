@@ -1932,7 +1932,6 @@ class Helper:
         ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
-        '`': 'BACKQUOTES',
         '(': 'TUPLES FUNCTIONS CALLS',
         ')': 'TUPLES FUNCTIONS CALLS',
         '[': 'LISTS SUBSCRIPTS SLICINGS',
