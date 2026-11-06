@@ -26,6 +26,7 @@ import os
 import sqlite3 as sqlite
 import subprocess
 import sys
+import textwrap
 import threading
 import unittest
 import urllib.parse
@@ -1733,6 +1734,45 @@ class ThreadTests(unittest.TestCase):
             t.start()
             t.join()
             self.assertEqual(len(err), 0, "\n".join(err))
+
+    @requires_subprocess()
+    def test_concurrent_queries_on_shared_connection(self):
+        code = textwrap.dedent("""\
+            import hashlib
+            import os
+            import sqlite3
+            import threading
+            from concurrent.futures import ThreadPoolExecutor
+
+            connection = sqlite3.connect(":memory:", check_same_thread=False)
+            connection.execute("CREATE TABLE entries (key INTEGER, value BLOB)")
+            data = os.urandom(1_400_000)
+            digest = hashlib.blake2b(data).digest()
+            keys = range(4)
+            connection.executemany(
+                "INSERT INTO entries VALUES (?, ?)", ((key, data) for key in keys)
+            )
+            barrier = threading.Barrier(len(keys))
+
+            def load(key):
+                barrier.wait()
+                for _ in range(100):
+                    row = connection.execute(
+                        "SELECT value FROM entries WHERE key = ?", (key,)
+                    ).fetchone()
+                    assert row is not None
+                    assert hashlib.blake2b(row[0]).digest() == digest
+
+            with ThreadPoolExecutor(max_workers=len(keys)) as executor:
+                list(executor.map(load, keys))
+        """)
+        proc = subprocess.run(
+            [sys.executable, "-X", "faulthandler", "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
 class ConstructorTests(unittest.TestCase):

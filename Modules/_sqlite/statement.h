@@ -32,8 +32,30 @@ typedef struct
 {
     PyObject_HEAD
     sqlite3_stmt* st;
+    int in_use;
     int is_dml;
 } pysqlite_Statement;
+
+static inline int
+pysqlite_statement_try_mark_in_use(pysqlite_Statement *self)
+{
+    int in_use;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    in_use = self->in_use;
+    if (!in_use) {
+        self->in_use = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+    return !in_use;
+}
+
+static inline void
+pysqlite_statement_mark_in_use(pysqlite_Statement *self, int in_use)
+{
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->in_use = in_use;
+    Py_END_CRITICAL_SECTION();
+}
 
 pysqlite_Statement *pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql);
 
