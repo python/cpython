@@ -1,4 +1,5 @@
 import builtins
+import locale
 import os
 import select
 import socket
@@ -138,14 +139,27 @@ class AttributesTest(unittest.TestCase):
             self.assertEqual(e.winerror, None)
 
     @cpython_only
-    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
     def test_strerror_cached(self):
-        def strerror():
-            with self.assertRaises(FileNotFoundError) as cm:
-                open("some_hopefully_non_existing_file")
-            return cm.exception.strerror
-        self.assertIs(strerror(), strerror())
-        self.assertIs(strerror(), os.strerror(errno.ENOENT))
+        codes = (errno.ENOENT, errno.EACCES, errno.EINVAL)
+        messages = [os.strerror(code) for code in codes]
+        # Repeat calls should give the same exact str.
+        for code, message in zip(codes, messages):
+            self.assertIs(os.strerror(code), message)
+
+        # Changing LC_MESSAGES needs to invalidate the cache.
+        if not hasattr(locale, "LC_MESSAGES"):
+            return
+        old = locale.setlocale(locale.LC_MESSAGES)
+        self.addCleanup(locale.setlocale, locale.LC_MESSAGES, old)
+        for name in ("C", "C.UTF-8"):
+            try:
+                new = locale.setlocale(locale.LC_MESSAGES, name)
+            except locale.Error:
+                continue
+            if new != old:
+                for code, message in zip(codes, messages):
+                    self.assertIsNot(os.strerror(code), message)
+                break
 
     @unittest.skipUnless(os.name == "nt", "Windows-specific test")
     def test_errno_translation(self):

@@ -22,7 +22,8 @@ extern void _PyExc_Fini(PyInterpreterState *);
 struct _Py_exc_state {
     // The dict mapping from errno codes to OSError subclasses
     PyObject *errnomap;
-    // errno code -> _Py_strerror() message
+    // errno code -> _Py_strerror() message,
+    // None -> setlocale(LC_ALL, NULL) they were made with
     PyObject *strerror_cache;
     PyBaseExceptionObject *memerrors_freelist;
     int memerrors_numfree;

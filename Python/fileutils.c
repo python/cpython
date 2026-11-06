@@ -3393,28 +3393,93 @@ decode_strerror(int code)
 #endif
 }
 
+// Swap to a new cache if locale does not match.
+static PyObject*
+_ensure_locale_specific_cache(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *cache = Py_XNewRef(interp->exc_state.strerror_cache);
+
+    // Make a new cache if locale changed.
+    const char *codeset = NULL;
+    #ifdef LC_MESSAGES
+    codeset = setlocale(LC_MESSAGES, NULL);
+    #elif MS_WINDOWS  // no LC_MESSAGES
+    codeset = setlocale(LC_ALL, NULL);
+    #endif
+    if (codeset == NULL) {
+        codeset = "";
+    }
+
+    if (cache != NULL) {
+        PyObject *current;
+        if (PyDict_GetItemRef(cache, Py_None, &current) < 0) {
+            Py_DECREF(cache);
+            return NULL;
+        }
+
+        // Return cache if it's good for this locale.
+        if (current != NULL) {
+            if (strcmp(PyBytes_AS_STRING(current), codeset) == 0) {
+                Py_DECREF(current);
+                return cache;
+            }
+            Py_DECREF(current);
+        }
+        Py_CLEAR(cache);
+    }
+
+    // Need a new cache with this locale key.
+    PyObject *locale_val = PyBytes_FromString(codeset);
+    if (locale_val == NULL) {
+        return NULL;
+    }
+    cache = PyDict_New();
+    if (cache == NULL) {
+        Py_DECREF(locale_val);
+        return NULL;
+    }
+    if (PyDict_SetItem(cache, Py_None, locale_val) == 0) {
+        Py_INCREF(cache); // Keep a strong reference to return.
+        Py_XSETREF(interp->exc_state.strerror_cache, cache);
+    } else {
+        Py_CLEAR(cache);
+    }
+    Py_DECREF(locale_val);
+    return cache;
+}
 
 // Call strerror_r(code) if available, or use strerror() otherwise. Decode the
 // result from the locale encoding using surrogateescape error handler.
-// Messages of codes 0-255 are cached until the next locale.setlocale():
-// decoding is a large part of the cost of raising OSError.
+//
+// Cache encoded strings for a bounded number of common errors to save
+// str construction cost.
 //
 // On success, return a Unicode string. On error, set an exception and return
 // NULL.
 PyObject*
 _Py_strerror(int code)
 {
-    PyObject *cache = _PyInterpreterState_GET()->exc_state.strerror_cache;
-    if (cache == NULL || code < 0 || code >= 256) {
+    // Limited size cache which is emptied when locale changes.
+    if (code < 0 || code >= 256) {
         return decode_strerror(code);
     }
+    PyObject *cache = _ensure_locale_specific_cache();
+    if (cache == NULL) {
+        return NULL;
+    }
+
     PyObject *key = _PyLong_FromUnsignedChar((unsigned char)code);
-    PyObject *message;
+    PyObject *message = NULL;
     if (PyDict_GetItemRef(cache, key, &message) == 0) {
-        message = decode_strerror(code);
-        if (message != NULL && PyDict_SetItem(cache, key, message) < 0) {
-            Py_CLEAR(message);
+        // Not cached.
+        PyObject *decoded = decode_strerror(code);
+        if (decoded != NULL) {
+            PyDict_SetDefaultRef(cache, key, decoded, &message);
+            Py_DECREF(decoded);
         }
     }
+    Py_DECREF(key);
+    Py_DECREF(cache);
     return message;
 }

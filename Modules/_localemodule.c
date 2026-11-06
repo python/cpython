@@ -12,7 +12,6 @@ This software comes with no warranty. Use at your own risk.
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
 #include "pycore_pymem.h"         // _PyMem_Strdup()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <locale.h>               // setlocale()
 #include <string.h>               // strlen()
@@ -170,8 +169,6 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
                             "unsupported locale setting");
             return NULL;
         }
-        // strerror() messages depend on LC_MESSAGES and LC_CTYPE
-        PyDict_Clear(_PyInterpreterState_GET()->exc_state.strerror_cache);
         result_object = PyUnicode_DecodeLocale(result, NULL);
         if (!result_object)
             return NULL;
