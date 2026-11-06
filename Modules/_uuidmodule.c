@@ -1621,7 +1621,10 @@ _uuid_UUID___getstate___impl(uuidobject *self)
     }
     Py_DECREF(int_value);
 
-    if (PyDict_SetItem(dict, &_Py_ID(is_safe), self->is_safe) < 0) {
+    // NULL means SafeUUID.unknown, which __setstate__() restores by default.
+    if (self->is_safe != NULL &&
+        PyDict_SetItem(dict, &_Py_ID(is_safe), self->is_safe) < 0)
+    {
         Py_DECREF(dict);
         return NULL;
     }
