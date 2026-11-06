@@ -3,6 +3,7 @@ import textwrap
 import unittest
 from email import errors
 from email import policy
+from email import message_from_string
 from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
@@ -1661,6 +1662,17 @@ class TestAddressAndGroup(TestEmailBase):
         m['To'] = a
         self.assertEqual(m['to'], 'foo <bar@example.com>')
         self.assertEqual(m['to'].addresses, (a,))
+
+    def test_display_name_non_ascii_whitespace_round_trip(self):
+        # Unicode whitespace other than SP and HTAB is not folding white
+        # space and must not be lost after an encoded space.
+        for name in ('. \xa0b', 'a, \u2003b', '"a \u3000"'):
+            with self.subTest(name=name):
+                a = Address(name, 'bar', 'example.com')
+                m = Message(policy=policy.default)
+                m['To'] = a
+                m2 = message_from_string(m.as_string(), policy=policy.default)
+                self.assertEqual(m2['To'].addresses, (a,))
 
     def test_set_message_header_from_group(self):
         g = Group('foo bar')
