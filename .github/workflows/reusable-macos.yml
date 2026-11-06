@@ -37,9 +37,10 @@ jobs:
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Install Homebrew dependencies
+      # install gdb for test_gdb
       run: |
         brew bundle --file=Misc/Brewfile
-        brew install make
+        brew install make gdb
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \
