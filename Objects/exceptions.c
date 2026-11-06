@@ -545,9 +545,45 @@ PyException_GetContext(PyObject *self)
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
+    assert(PyExceptionInstance_Check(self));
+    assert(context == NULL || PyExceptionInstance_Check(context));
+
+    int self_in_chain = 0;
+
     Py_BEGIN_CRITICAL_SECTION(self);
-    Py_XSETREF(PyBaseExceptionObject_CAST(self)->context, context);
+    PyBaseExceptionObject *base_self = PyBaseExceptionObject_CAST(self);
+
+    PyObject *exc = context;
+    PyObject *prev_exc = NULL;
+
+    while (exc != NULL) {
+        if (exc == self) {
+            if (prev_exc != NULL) {
+                /* Move self to the start of the chain. */
+                PyBaseExceptionObject_CAST(prev_exc)->context =
+                        base_self->context;
+                base_self->context = context;
+            }
+            self_in_chain = 1;
+            break;
+        }
+        assert(PyExceptionInstance_Check(exc));
+        prev_exc = exc;
+        exc = PyBaseExceptionObject_CAST(exc)->context;
+    }
+
+    if (self_in_chain) {
+        /* Self was already in the chain; drop the lost link reference. */
+        assert(Py_REFCNT(self) > 1);
+    }
+    else {
+        Py_XSETREF(base_self->context, context);
+    }
     Py_END_CRITICAL_SECTION();
+
+    if (self_in_chain) {
+        Py_DECREF(self);
+    }
 }
 
 PyObject *
