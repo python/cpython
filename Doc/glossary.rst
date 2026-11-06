@@ -819,6 +819,13 @@ Glossary
 
       See also :term:`subscript`.
 
+   instance dictionary
+      A :term:`dictionary` that stores an object's :term:`attributes <attribute>`.
+      Exposed as :attr:`~object.__dict__`.
+      Note that some attributes may be stored elsewhere, such as in
+      :attr:`~object.__slots__`, on the object's type, or through
+      :term:`descriptors <descriptor>`.
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
