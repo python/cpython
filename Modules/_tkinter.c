@@ -3399,6 +3399,20 @@ _tkinter_getbusywaitinterval_impl(PyObject *module)
     return Tkinter_busywaitinterval;
 }
 
+/*[clinic input]
+_tkinter._finalize_thread
+
+Clean up per-thread state.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter__finalize_thread_impl(PyObject *module)
+/*[clinic end generated code: output=4ed0d3be4d1f8de8 input=ea68096ee9b83d23]*/
+{
+    Tcl_FinalizeThread();
+    Py_RETURN_NONE;
+}
+
 #include "clinic/_tkinter.c.h"
 
 static PyMethodDef Tktt_methods[] =
@@ -3490,6 +3504,7 @@ static PyMethodDef moduleMethods[] =
     _TKINTER_CREATE_METHODDEF
     _TKINTER_SETBUSYWAITINTERVAL_METHODDEF
     _TKINTER_GETBUSYWAITINTERVAL_METHODDEF
+    _TKINTER__FINALIZE_THREAD_METHODDEF
     {NULL,                 NULL}
 };
 
