@@ -1674,6 +1674,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyObject *descr = _PyType_LookupRef(tp, name);
+    tp = Py_TYPE(obj);
     descrgetfunc f = NULL;
     if (descr != NULL) {
         if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
@@ -1720,6 +1721,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
         // not found
         Py_DECREF(dict);
+        tp = Py_TYPE(obj);
     }
 
     if (meth_found) {
@@ -1782,6 +1784,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
     }
 
     _PyType_LookupStackRefAndVersion(tp, name, method);
+    tp = Py_TYPE(obj);
     PyObject *descr = PyStackRef_AsPyObjectBorrow(*method);
     descrgetfunc f = NULL;
     if (descr != NULL) {
@@ -1836,6 +1839,7 @@ _PyObject_GetMethodStackRef(PyThreadState *ts, _PyStackRef *self,
             PyStackRef_CLEAR(*self);
             return 0;
         }
+        tp = Py_TYPE(obj);
     }
 
     if (meth_found) {
@@ -1919,6 +1923,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     _PyThreadState_PushCStackRef(tstate, &cref);
 
     _PyType_LookupStackRefAndVersion(tp, name, &cref.ref);
+    tp = Py_TYPE(obj);
     descr = PyStackRef_AsPyObjectBorrow(cref.ref);
 
     f = NULL;
@@ -1980,6 +1985,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         Py_INCREF(dict);
         int rc = PyDict_GetItemRef(dict, name, &res);
         Py_DECREF(dict);
+        tp = Py_TYPE(obj);
         if (res != NULL) {
             goto done;
         }
