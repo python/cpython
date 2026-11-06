@@ -1,0 +1,2 @@
+Fix the error code reported by :func:`winreg.ExpandEnvironmentStrings` when
+expanding the string fails.
