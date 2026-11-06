@@ -66,6 +66,7 @@ def filter(names, pat):
                 result.append(name)
     return result
 
+
 def filterfalse(names, pat):
     """Construct a list from those elements of the iterable NAMES that do not match PAT."""
     pat = os.path.normcase(pat)
