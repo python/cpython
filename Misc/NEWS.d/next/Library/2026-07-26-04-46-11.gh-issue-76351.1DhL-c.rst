@@ -1,0 +1,1 @@
+Add ``extractor`` parameter for :meth:`zipfile.ZipFile.extract` and :meth:`zipfile.ZipFile.extractall` to support customizable file attributes restoration when extracting files from a ZIP archive.
