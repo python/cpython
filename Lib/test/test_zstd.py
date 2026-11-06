@@ -1163,8 +1163,10 @@ class DecompressorOutputSizeTestCase(unittest.TestCase):
             _peak_allocation(decompress_after_empty_input), len(data))
 
     def test_output_allocated_once_each_frame(self):
-        # decompress() feeds every frame to its decompressor whole.
-        data = bytes(range(256)) * (8 * _1K)                 # 2 MiB
+        # decompress() feeds every frame to its decompressor whole.  This
+        # frame is larger than the 1 KiB that a later frame would get first
+        # otherwise, and most of its output is decoded from that first KiB.
+        data = bytes(2 * _1M) + random.randbytes(4 * _1K)
         frame = compress(data)
         small = compress(b'small frame')
         skippable = (0x184D2A50).to_bytes(4, 'little') + (4).to_bytes(4, 'little')
