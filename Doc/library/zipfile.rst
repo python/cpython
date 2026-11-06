@@ -476,6 +476,14 @@ ZipFile objects
    given.
    The archive must be open with mode ``'w'``, ``'x'`` or ``'a'``.
 
+   The file's last modification time is converted to the current local time
+   and stored in the archive member's :attr:`~ZipInfo.date_time`.  Since ZIP
+   timestamps do not record a time zone, creating an archive from the same
+   file in different time zones can result in different stored timestamps.
+   To control the timestamp, create a :class:`ZipInfo` with an explicit
+   :attr:`~ZipInfo.date_time` and pass it with the file contents to
+   :meth:`writestr`.
+
    .. note::
 
       The ZIP file standard historically did not specify a metadata encoding,
