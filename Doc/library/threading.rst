@@ -97,16 +97,15 @@ GIL and performance considerations
 Unlike the :mod:`multiprocessing` module, which uses separate processes to
 bypass the :term:`global interpreter lock` (GIL), the threading module operates
 within a single process, meaning that all threads share the same memory space.
-However, the GIL limits the performance gains of threading when it comes to
-CPU-bound tasks, as only one thread can execute Python bytecode at a time.
-Despite this, threads remain a useful tool for achieving concurrency in many
-scenarios.
+However, in the default build the GIL limits the performance gains of threading
+when it comes to CPU-bound tasks, as only one thread can execute Python
+bytecode at a time.  Despite this, threads remain a useful tool for achieving
+concurrency in many scenarios.
 
 As of Python 3.13, :term:`free-threaded <free threading>` builds
-can disable the GIL, enabling true parallel execution of threads, but this
-feature is not available by default (see :pep:`703`).
-
-.. TODO: At some point this feature will become available by default.
+can disable the GIL, enabling true parallel execution of threads.  These
+builds are separate from the default build and must be installed or built
+explicitly (see :pep:`703` and :ref:`freethreading-python-howto`).
 
 Reference
 ---------

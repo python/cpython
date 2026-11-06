@@ -425,17 +425,24 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 Limited C API and Stable ABI
 ............................
 
-The free-threaded build does not currently support the
+Starting with Python 3.15, the free-threaded build supports the
+:ref:`Limited C API <limited-c-api>` and a variant of the stable ABI called
+``abi3t``.  See :ref:`abi3t-migration-howto` for how to target it, and
+:ref:`stable-abi` for how ``abi3t`` relates to ``abi3``.
+
+The free-threaded builds of Python 3.14 and older do not support the
 :ref:`Limited C API <limited-c-api>` or the stable ABI.  If you use
 `setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`_ to build
-your extension and currently set ``py_limited_api=True`` you can use
+your extension for these versions and currently set ``py_limited_api=True``,
+you can use
 ``py_limited_api=not sysconfig.get_config_var("Py_GIL_DISABLED")`` to opt out
 of the limited API when building with the free-threaded build.
 
 .. note::
-    You will need to build separate wheels specifically for the free-threaded
-    build.  If you currently use the stable ABI, you can continue to build a
-    single wheel for multiple non-free-threaded Python versions.
+    Unless you target ``abi3t``, you will need to build separate wheels
+    specifically for the free-threaded build.  If you use the ``abi3`` stable
+    ABI, you can continue to build a single wheel for multiple
+    non-free-threaded Python versions.
 
 
 Windows
