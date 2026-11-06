@@ -1,0 +1,5 @@
+Fix :mod:`tarfile` writing the old name, link name, owner, size or
+modification time of a member that was read from an archive with a pax
+extended header and then changed, for example with
+:meth:`tarfile.TarInfo.replace`, before it was added to a
+:const:`~tarfile.PAX_FORMAT` archive.
