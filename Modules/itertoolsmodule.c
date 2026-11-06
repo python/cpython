@@ -3663,27 +3663,34 @@ static PyObject *
 count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
-    if (lz->long_cnt == NULL) {
+    PyObject *long_cnt;
+
+    Py_BEGIN_CRITICAL_SECTION(lz);
+    long_cnt = Py_XNewRef(lz->long_cnt);
+    Py_END_CRITICAL_SECTION();
+
+    if (long_cnt == NULL) {
         Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), cnt);
     }
 
+    long step = 0;
     if (PyLong_Check(lz->long_step)) {
-        long step = PyLong_AsLong(lz->long_step);
+        step = PyLong_AsLong(lz->long_step);
         if (step == -1 && PyErr_Occurred()) {
             PyErr_Clear();
         }
-        if (step == 1) {
-            /* Don't display step when it is an integer equal to 1 */
-            return PyUnicode_FromFormat("%s(%R)",
-                                        _PyType_Name(Py_TYPE(lz)),
-                                        lz->long_cnt);
-        }
     }
-    return PyUnicode_FromFormat("%s(%R, %R)",
-                                _PyType_Name(Py_TYPE(lz)),
-                                lz->long_cnt, lz->long_step);
+
+    /* Don't display step when it is an integer equal to 1 */
+    PyObject *msg = (step == 1)
+              ? PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(lz)), long_cnt)
+              : PyUnicode_FromFormat("%s(%R, %R)", _PyType_Name(Py_TYPE(lz)),
+                                     long_cnt, lz->long_step);
+
+    Py_DECREF(long_cnt);
+    return msg;
 }
 
 static PyType_Slot count_slots[] = {
