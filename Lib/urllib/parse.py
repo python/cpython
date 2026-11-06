@@ -307,6 +307,8 @@ class _ResultBase:
 
     def __getstate__(self):
         state = super().__getstate__()
+        if state is None:
+            return None
         try:
             if state[1]['_keep_empty'] == _MISSING_AS_NONE_DEFAULT:
                 del state[1]['_keep_empty']
