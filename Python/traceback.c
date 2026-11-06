@@ -239,7 +239,6 @@ tb_dealloc(PyObject *op)
     PyObject_GC_UnTrack(tb);
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
-    assert(PyTraceBack_Check(tb));
     _Py_FREELIST_FREE(tracebacks, tb, PyObject_GC_Del);
 }
 
