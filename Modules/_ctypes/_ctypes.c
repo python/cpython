@@ -5785,16 +5785,12 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
     assert(stginfo); /* Cannot be NULL for pointer instances */
     assert(stginfo->proto);
     if (!CDataObject_Check(st, value)) {
-        int res = PyObject_IsInstance(value, stginfo->proto);
-        if (res == -1)
-            return -1;
-        if (!res) {
-            PyErr_Format(PyExc_TypeError,
-                         "expected %s instead of %s",
-                         ((PyTypeObject *)(stginfo->proto))->tp_name,
-                         Py_TYPE(value)->tp_name);
-            return -1;
-        }
+        /* PyObject_IsInstance() follows a spoofed __class__ (gh-161390). */
+        PyErr_Format(PyExc_TypeError,
+                     "expected %s instead of %s",
+                     ((PyTypeObject *)(stginfo->proto))->tp_name,
+                     Py_TYPE(value)->tp_name);
+        return -1;
     }
 
     dst = (CDataObject *)value;
