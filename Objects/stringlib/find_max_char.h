@@ -54,10 +54,11 @@
 
 /* OR all characters into a single size_t accumulator and test the high bits
    at the end, instead of comparing each character. The accumulation loop has
-   no branches, so compilers vectorize it. The words are loaded with memcpy,
-   so the data does not need to be aligned, and the tail re-reads the last
-   word of the buffer, which may overlap data already seen. Every 16 words,
-   check whether the widest kind is already known and exit early. */
+   no branches, so compilers vectorize it. The start is first read in pieces
+   until the pointer is aligned, so the loops can use plain word loads on
+   every platform. The tail re-reads the last word of the buffer with memcpy,
+   which may overlap data already seen. Every 16 words, check whether the
+   widest kind is already known and exit early. */
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
@@ -65,20 +66,36 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     const unsigned char *_end = (const unsigned char *)end;
     size_t value = 0;
 
+    if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+#if STRINGLIB_SIZEOF_CHAR <= 1
+        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + 1 <= _end) {
+            value |= *p++;
+        }
+#endif
+#if STRINGLIB_SIZEOF_CHAR <= 2
+        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint16_t) <= _end) {
+            value |= *(const uint16_t *)p;
+            p += sizeof(uint16_t);
+        }
+#endif
+#if SIZEOF_SIZE_T == 8
+        if (!_Py_IS_ALIGNED(p, SIZEOF_SIZE_T) && p + sizeof(uint32_t) <= _end) {
+            value |= *(const uint32_t *)p;
+            p += sizeof(uint32_t);
+        }
+#endif
+    }
+
     while (p + SIZEOF_SIZE_T * 16 <= _end) {
         /* Four independent accumulators so the loop does not serialize on
            one register when the compiler does not vectorize it. */
         size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
         for (int i = 0; i < 16 * SIZEOF_SIZE_T; i += 4 * SIZEOF_SIZE_T) {
-            size_t w0, w1, w2, w3;
-            memcpy(&w0, p + i, SIZEOF_SIZE_T);
-            memcpy(&w1, p + i + SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            memcpy(&w2, p + i + 2*SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            memcpy(&w3, p + i + 3*SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            v0 |= w0;
-            v1 |= w1;
-            v2 |= w2;
-            v3 |= w3;
+            const size_t *w = (const size_t *)(p + i);
+            v0 |= w[0];
+            v1 |= w[1];
+            v2 |= w[2];
+            v3 |= w[3];
         }
         value |= v0 | v1 | v2 | v3;
         if (value & MASK_MAX_CHAR) {
@@ -88,9 +105,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     }
 
     for (; p + SIZEOF_SIZE_T <= _end; p += SIZEOF_SIZE_T) {
-        size_t a;
-        memcpy(&a, p, SIZEOF_SIZE_T);
-        value |= a;
+        value |= *(const size_t *)p;
     }
 
     if (p < _end) {
