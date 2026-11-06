@@ -1,0 +1,4 @@
+Fix a deadlock in :meth:`ProcessPoolExecutor.shutdown()
+<concurrent.futures.Executor.shutdown>` when the messages that exiting
+workers send back fill up the pipe used to return results. This could
+happen with many workers or a small pipe buffer.
