@@ -6,6 +6,7 @@ Tests are mostly filtered using sys.platform, except a few exceptions.
 import importlib
 import os
 import sys
+import sysconfig
 from test import support
 
 
@@ -51,6 +52,14 @@ NEED_WORKING_THREADING = {
     'test_threading_local',
     'test_webbrowser',
 }
+NEED_TKINTER = {
+    'test_idle',
+    'test_tcl',
+    'test_tkinter',
+    'test_ttk',
+    'test_ttk_textonly',
+    'test_turtle',
+}
 
 
 # List of tests expected to be skipped on sys.platform
@@ -92,6 +101,7 @@ if not support.has_subprocess_support or IS_WASI:
     # Need subprocess support
     EXPECTED_SKIP |= {
         'test_argparse',
+        'test_asyncio.test_subprocess',
         'test_c_stack_unwind',
         'test_cext',
         'test_clinic',
@@ -121,6 +131,20 @@ if not support.has_fork_support or IS_WASI:
 if not(sys.platform in ("linux", "darwin") or support.MS_WINDOWS):
     # Need Py_SUPPORTS_REMOTE_DEBUG macro
     EXPECTED_SKIP.add('test_remote_pdb')
+if not sysconfig.is_python_build():
+    # Skip tests on installed Python.
+    # Tests only relevant for from-source Python builds
+    EXPECTED_SKIP |= {
+        # Parser/asdl.py is not installed
+        'test_asdl_parser',
+        # Tools/clinic/ is not installed
+        'test_clinic',
+        # Tools/cases_generator is not installed
+        'test_generated_cases',
+    }
+if not sysconfig.get_config_var('WITH_DTRACE'):
+    # Need ./configure --with-dtrace
+    EXPECTED_SKIP.add('test_dtrace')
 
 if support.MS_WINDOWS:
     # Tests specific to non-Windows platforms
@@ -171,6 +195,11 @@ if sys.platform in ("win32", "cygwin"):
 
 if not support.is_android:
     EXPECTED_SKIP.add('test_android')
+    # _multiprocessing is not available on Android
+    EXPECTED_SKIP |= NEED_MULTIPROCESSING
+    # _tkinter is not available on Android
+    EXPECTED_SKIP |= NEED_TKINTER
+
 if not support.is_apple:
     EXPECTED_SKIP.add('test_apple')
 
@@ -181,7 +210,10 @@ if support.is_apple_mobile:
         'test_grp',                    # need grp
         'test_syslog',                 # need syslog
     }
+    # configure disables _multiprocessing on Apple mobile
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
+    # configure disables _tkinter on Apple mobile
+    EXPECTED_SKIP |= NEED_TKINTER
 
 if support.is_emscripten:
     # configure disables multiple extension modules on Emscripten
@@ -195,12 +227,18 @@ if support.is_emscripten:
         'test_resource',               # need resource
         'test_syslog',                 # need syslog
     }
+    # configure disables _multiprocessing on Emscripten
+    EXPECTED_SKIP |= NEED_MULTIPROCESSING
     EXPECTED_SKIP |= {
         # Incompatible with Emscripten's mmap emulation
         'test_mmap',
         # Cannot create socketpair on Emscripten/WASI
         'test_selectors',
     }
+    # Missing OpenSSL dependency on Emscripten
+    EXPECTED_SKIP |= NEED_SSL
+    # Missing Tcl/Tk dependency on Emscripten
+    EXPECTED_SKIP |= NEED_TKINTER
 
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP |= {
@@ -252,6 +290,10 @@ if IS_WASI:
     EXPECTED_SKIP |= NEED_TESTMULTIPHASE
     # Missing OpenSSL dependency on WASI
     EXPECTED_SKIP |= NEED_SSL
+    # Missing Tcl/Tk dependency on WASI
+    EXPECTED_SKIP |= NEED_TKINTER
+    # Missing libreadline/libedit dependency on Emscripten
+    EXPECTED_SKIP.add('readline')
 
 
 def expected_to_be_skipped(test_name):
@@ -281,20 +323,10 @@ def expected_to_be_skipped(test_name):
         name = test_name.removeprefix('test_')
         return not hasattr(select, name)
 
-    if test_name == 'test_dtrace':
-        # Need ./configure --with-dtrace
-        import sysconfig
-        return not sysconfig.get_config_var('WITH_DTRACE')
-
     if test_name in ('test_perf_profiler', 'test_perfmaps', 'test_samply_profiler'):
         # Need perf trampoline profiling: configure defines the
         # PY_HAVE_PERF_TRAMPOLINE macro on Linux (x86-64 and AArch64)
         # and on macOS.
         return not support.supports_perf_trampoline_profiling()
-
-    if test_name == 'test_asdl_parser':
-        # Test only relevant for from-source Python builds
-        import sysconfig
-        return not sysconfig.is_python_build()
 
     return False
