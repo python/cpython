@@ -65,3 +65,5 @@ Modules
 ---
 
 - [asyncio](asyncio.md)
+
+- [fractions](fractions.md)
