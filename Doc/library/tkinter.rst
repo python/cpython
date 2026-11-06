@@ -2049,6 +2049,10 @@ Base and mixin classes
                tk_set_acc_help(value)
 
       Set an accessible attribute of the widget.
+      A widget must have a role before any other attribute is set or read,
+      otherwise :exc:`~tkinter.TclError` is raised.
+      Tk sets the role of most standard widgets when they are mapped;
+      for other widgets, or before that, call :meth:`!tk_set_acc_role` first.
       The supported roles are ``Button``, ``Canvas``, ``Checkbutton``,
       ``Combobox``, ``Entry``, ``Label``, ``Listbox``, ``Menu``,
       ``Notebook``, ``Progressbar``, ``Scale``, ``Scrollbar``,

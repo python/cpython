@@ -825,6 +825,7 @@ class Misc:
     # readers.  Requires Tk 9.1 or newer.  If no assistive technology
     # is active when the application starts, all these calls (except
     # tk_check_screenreader()) have no effect and return 0.
+    # A widget must have a role before other attributes can be used.
 
     def tk_check_screenreader(self):
         """Return whether a screen reader is currently running.
