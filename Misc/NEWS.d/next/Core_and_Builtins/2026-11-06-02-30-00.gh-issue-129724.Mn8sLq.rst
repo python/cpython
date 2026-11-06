@@ -1,0 +1,4 @@
+Fix the :mod:`marshal` output of compiled code, and so ``.pyc`` files,
+differing for the same source depending on what ran before in the process.
+This affected private names in classes with non-ASCII names, and
+:func:`compile` of an AST with names not created by :func:`ast.parse`.
