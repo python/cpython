@@ -5323,13 +5323,10 @@ class C14NTest(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated_version(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'VERSION' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-                getattr(ET, "VERSION")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, ET, "VERSION", remove=(3, 20),
+        )
 
 
 # --------------------------------------------------------------------

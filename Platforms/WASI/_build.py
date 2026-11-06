@@ -181,8 +181,9 @@ def wasi_sdk_env(context):
     for env_var, binary_name in list(env.items()):
         env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)
 
-    if not wasi_sdk_path.name.startswith("wasi-sdk"):
-        for compiler in ["CC", "CPP", "CXX"]:
+    for compiler in ["CC", "CPP", "CXX"]:
+        env[compiler] += f" --target={context.host_triple}"
+        if not wasi_sdk_path.name.startswith("wasi-sdk"):
             env[compiler] += f" --sysroot={sysroot}"
 
     env["PKG_CONFIG_PATH"] = ""
@@ -229,7 +230,11 @@ def configure_wasi_python(context, working_dir):
                 "https://github.com/bytecodealliance/wasmtime"
             )
     host_runner = context.host_runner.format_map(args)
-    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner}
+    env_additions = {
+        "CONFIG_SITE": config_site,
+        "HOSTRUNNER": host_runner,
+        "CFLAGS": f"{os.environ.get('CFLAGS', '')} -DPY_CALL_TRAMPOLINE".strip(),
+    }
     build_python = os.fsdecode(context.build_python_interpreter)
     # The path to `configure` MUST be relative, else `python.wasm` is unable
     # to find the stdlib due to Python not recognizing that it's being
@@ -239,7 +244,6 @@ def configure_wasi_python(context, working_dir):
         f"--host={context.host_triple}",
         f"--build={context.build_python_path.name}",
         f"--with-build-python={build_python}",
-        "CFLAGS=-DPY_CALL_TRAMPOLINE",
     ]
     if context.is_debug:
         configure.append("--with-pydebug")
