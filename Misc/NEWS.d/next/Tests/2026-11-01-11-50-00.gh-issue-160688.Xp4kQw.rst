@@ -1,0 +1,2 @@
+Add tests for the C API functions :c:func:`PyObject_CopyData` and
+:c:func:`PyBuffer_FillContiguousStrides`.
