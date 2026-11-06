@@ -58,7 +58,9 @@ anywhere.
       for this module's classes and functions,
       as well as a `migration guide
       <https://importlib-metadata.readthedocs.io/en/latest/migration.html>`__
-      for existing users of ``pkg_resources``.
+      for existing users of ``pkg_resources``
+      and `Caveats <https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__
+      on supplying and consuming metadata objects across the two libraries.
 
 
 Overview
@@ -238,8 +240,7 @@ Distribution metadata
 .. class:: PackageMetadata
 
    A protocol describing the interface distribution metadata presents. The
-   :pypi:`importlib_metadata` backport presents the same protocol; see
-   :ref:`metadata-backport-caveats`.
+   :pypi:`importlib_metadata` backport presents the same protocol.
 
    In addition to the protocol methods and attributes, subscripting an
    instance is equivalent to calling the :meth:`!get` method.
@@ -335,8 +336,7 @@ Distribution files
 
 .. class:: IPackagePath
 
-    A protocol describing the interface a :class:`PackagePath` presents. See
-    :ref:`metadata-backport-caveats`.
+    A protocol describing the interface a :class:`PackagePath` presents.
 
     .. versionadded:: 3.16
 
@@ -559,7 +559,8 @@ The same applies for :func:`entry_points` and :func:`files`.
    A consumer that targets this protocol, rather than a concrete class, works
    with distributions from either this module or the
    :pypi:`importlib_metadata` backport, however they were supplied. See
-   :ref:`metadata-backport-caveats`.
+   `Caveats <https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__
+   in the backport's documentation.
 
    .. versionadded:: 3.16
 
@@ -757,57 +758,5 @@ implementation of :attr:`!Distribution.files`. See the source for more inspirati
 
 ``DatabaseDistribution`` derives from :class:`Distribution` as defined here,
 which has consequences for consumers that use the :pypi:`importlib_metadata`
-backport instead of this module. See :ref:`metadata-backport-providers`.
-
-
-.. _metadata-backport-caveats:
-
-Caveats for backports
-=====================
-
-The :pypi:`importlib_metadata` package backports this module and supplies its
-own :class:`!Distribution`, :class:`!PackagePath`, and metadata classes. Those
-classes are separate from the ones here; neither set derives from the other.
-Both libraries discover distributions by querying the finders on
-:data:`sys.meta_path`, so one custom provider serves consumers of both and has
-no say in which of the two a given consumer uses.
-
-Both libraries present the same protocols, :class:`IDistribution`,
-:class:`IPackagePath`, and :class:`PackageMetadata`, and the classes of both
-satisfy them. Those protocols, rather than any concrete class, are the
-interface to write against.
-
-For consumers
--------------
-
-A consumer calling ``importlib_metadata.distributions()`` expects that
-package's objects, but a custom provider may supply objects from the hierarchy
-documented here. The backport settles most of this on the consumer's behalf,
-substituting its own class for each object it recognizes, such as a
-:class:`!PathDistribution`, a :class:`PackagePath`, or an
-:class:`email.message.Message`. It has no way to reconstruct an arbitrary
-:class:`Distribution` subclass from a custom provider, so it passes such an
-object through unchanged.
-
-Annotate against the protocols, then, and do not test an object with
-:func:`isinstance` against a concrete class. Code that needs the protocols on
-earlier Python versions can import them from the backport, which presents them
-there too.
-
-.. _metadata-backport-providers:
-
-For custom providers
---------------------
-
-A provider's objects reach consumers of both libraries, so supply objects that
-satisfy :class:`IDistribution` whole, not in part. Deriving from
-:class:`Distribution`, as the example above does, achieves this: the base
-class builds the rest of the interface on :meth:`~Distribution.read_text` and
-:meth:`~Distribution.locate_file`. Where a class omits a member the protocol
-requires, the backport emits a :exc:`UserWarning` naming what is missing; a
-provider satisfying the protocol whole draws no warning.
-
-Deriving from whichever of the two libraries happens to be importable is not a
-general answer. A provider cannot know whether a consumer will import the
-backport, and importing it to find out activates it in environments that would
-otherwise never have used it.
+backport instead of this module. See `Caveats
+<https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__ in the backport's documentation.
