@@ -5,11 +5,12 @@
 Support for Perf Maps
 ----------------------
 
-On supported platforms (as of this writing, only Linux), the runtime can take
+On supported platforms (Linux and macOS), the runtime can take
 advantage of *perf map files* to make Python functions visible to an external
-profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_).
-A running process may create a file in the ``/tmp`` directory, which contains entries
-that can map a section of executable code to a name. This interface is described in the
+profiling tool (such as `perf <https://perf.wiki.kernel.org/index.php/Main_Page>`_ or
+`samply <https://github.com/mstange/samply/>`_). A running process may create a
+file in the ``/tmp`` directory, which contains entries that can map a section
+of executable code to a name. This interface is described in the
 `documentation of the Linux Perf tool <https://git.kernel.org/pub/scm/linux/
 kernel/git/torvalds/linux.git/tree/tools/perf/Documentation/jit-interface.txt>`_.
 
@@ -30,7 +31,7 @@ Note that holding an :term:`attached thread state` is not required for these API
    or ``-2`` on failure to create a lock. Check ``errno`` for more information
    about the cause of a failure.
 
-.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
+.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, size_t code_size, const char *entry_name)
 
    Write one single entry to the ``/tmp/perf-$pid.map`` file. This function is
    thread safe. Here is what an example entry looks like::
@@ -48,3 +49,43 @@ Note that holding an :term:`attached thread state` is not required for these API
    This is called by the runtime itself during interpreter shut-down. In
    general, there shouldn't be a reason to explicitly call this, except to
    handle specific scenarios such as forking.
+
+.. c:function:: int PyUnstable_CopyPerfMapFile(const char *parent_filename)
+
+   Open the ``/tmp/perf-$pid.map`` file and append the content of *parent_filename*
+   to it.
+
+   This function is available on all platforms but only generates output on platforms
+   that support perf maps (currently only Linux). On other platforms, it does nothing.
+
+   .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *code)
+
+   Compile the given code object using the current perf trampoline.
+
+   The "current" trampoline is the one set by the runtime or the most recent
+   :c:func:`PyUnstable_PerfTrampoline_SetPersistAfterFork` call.
+
+   If no trampoline is set, falls back to normal compilation (no perf map entry).
+
+   :param code: The code object to compile.
+   :return: 0 on success, -1 on failure.
+
+   .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable)
+
+   Set whether the perf trampoline should persist after a fork.
+
+   * If ``enable`` is true (non-zero): perf map file remains open/valid post-fork.
+     Child process inherits all existing perf map entries.
+   * If ``enable`` is false (zero): perf map closes post-fork.
+     Child process gets empty perf map.
+
+   Default: false (clears on fork).
+
+   :param enable: 1 to enable, 0 to disable.
+   :return: 0 on success, -1 on failure.
+
+   .. versionadded:: 3.13

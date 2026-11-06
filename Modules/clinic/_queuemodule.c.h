@@ -44,8 +44,9 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "\n"
 "Put the item on the queue.\n"
 "\n"
-"The optional \'block\' and \'timeout\' arguments are ignored, as this method\n"
-"never blocks.  They are provided for compatibility with the Queue class.");
+"The optional \'block\' and \'timeout\' arguments are ignored, as this\n"
+"method never blocks.  They are provided for compatibility with the\n"
+"Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
     {"put", _PyCFunction_CAST(_queue_SimpleQueue_put), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
@@ -188,10 +189,11 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "\n"
 "Remove and return an item from the queue.\n"
 "\n"
-"If optional args \'block\' is true and \'timeout\' is None (the default),\n"
-"block if necessary until an item is available. If \'timeout\' is\n"
-"a non-negative number, it blocks at most \'timeout\' seconds and raises\n"
-"the Empty exception if no item was available within that time.\n"
+"If optional args \'block\' is true and \'timeout\' is None (the\n"
+"default), block if necessary until an item is available.  If\n"
+"\'timeout\' is a non-negative number, it blocks at most \'timeout\'\n"
+"seconds and raises the Empty exception if no item was available\n"
+"within that time.\n"
 "Otherwise (\'block\' is false), return an item if one is immediately\n"
 "available, else raise the Empty exception (\'timeout\' is ignored\n"
 "in that case).");
@@ -358,4 +360,34 @@ _queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d3efe9df89997cf input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_queue_SimpleQueue___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes.");
+
+#define _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_queue_SimpleQueue___sizeof__, METH_NOARGS, _queue_SimpleQueue___sizeof____doc__},
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self);
+
+static PyObject *
+_queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _queue_SimpleQueue___sizeof___impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=8219fe2f2ed5f068 input=a9049054013a1b77]*/

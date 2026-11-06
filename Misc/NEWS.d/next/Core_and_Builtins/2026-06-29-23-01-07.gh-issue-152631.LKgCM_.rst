@@ -1,0 +1,2 @@
+Fix :func:`ast.parse` ability to parse lazy imports with *feature_version*
+older than 3.15, now it properly raises :exc:`SyntaxError`.

@@ -106,28 +106,36 @@ static PyTypeObject CustomType = {
     .tp_methods = Custom_methods,
 };
 
-static PyModuleDef custommodule = {
-    .m_base =PyModuleDef_HEAD_INIT,
+static int
+custom_module_exec(PyObject *m)
+{
+    if (PyType_Ready(&CustomType) < 0) {
+        return -1;
+    }
+
+    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot custom_module_slots[] = {
+    {Py_mod_exec, custom_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {0, NULL}
+};
+
+static PyModuleDef custom_module = {
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "custom2",
     .m_doc = "Example module that creates an extension type.",
-    .m_size = -1,
+    .m_size = 0,
+    .m_slots = custom_module_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_custom2(void)
 {
-    PyObject *m;
-    if (PyType_Ready(&CustomType) < 0)
-        return NULL;
-
-    m = PyModule_Create(&custommodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&custom_module);
 }

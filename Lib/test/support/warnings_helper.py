@@ -1,9 +1,9 @@
 import contextlib
-import functools
 import importlib
 import re
 import sys
 import warnings
+
 
 
 def import_deprecated(name):
@@ -23,8 +23,7 @@ def check_syntax_warning(testcase, statement, errtext='',
     testcase.assertEqual(len(warns), 1, warns)
 
     warn, = warns
-    testcase.assertTrue(issubclass(warn.category, SyntaxWarning),
-                        warn.category)
+    testcase.assertIsSubclass(warn.category, SyntaxWarning)
     if errtext:
         testcase.assertRegex(str(warn.message), errtext)
     testcase.assertEqual(warn.filename, '<testcase>')
@@ -43,20 +42,32 @@ def check_syntax_warning(testcase, statement, errtext='',
     testcase.assertEqual(warns, [])
 
 
-def ignore_warnings(*, category):
+@contextlib.contextmanager
+def ignore_warnings(*, category, message=''):
     """Decorator to suppress warnings.
 
-    Use of context managers to hide warnings make diffs
-    more noisy and tools like 'git blame' less useful.
+    Can also be used as a context manager. This is not preferred,
+    because it makes diffs more noisy and tools like 'git blame' less useful.
+    But, it's useful for async functions.
     """
-    def decorator(test):
-        @functools.wraps(test)
-        def wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=category)
-                return test(self, *args, **kwargs)
-        return wrapper
-    return decorator
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=category, message=message)
+        yield
+
+
+@contextlib.contextmanager
+def ignore_fork_in_thread_deprecation_warnings():
+    """Suppress deprecation warnings related to forking in multi-threaded code.
+
+    See gh-135427
+
+    Can be used as decorator (preferred) or context manager.
+    """
+    with ignore_warnings(
+        message=".*fork.*may lead to deadlocks in the child.*",
+        category=DeprecationWarning,
+    ):
+        yield
 
 
 class WarningsRecorder(object):

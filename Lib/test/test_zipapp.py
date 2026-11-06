@@ -259,7 +259,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(str(source), target, interpreter='python')
-        self.assertTrue(target.getvalue().startswith(b'#!python\n'))
+        self.assertStartsWith(target.getvalue(), b'#!python\n')
 
     def test_read_shebang(self):
         # Test that we can read the shebang line correctly.
@@ -300,7 +300,7 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target), interpreter='python')
         new_target = io.BytesIO()
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_read_from_pathlike_obj(self):
         # Test that we can copy an archive using a path-like object
@@ -326,7 +326,7 @@ class ZipAppTest(unittest.TestCase):
         new_target = io.BytesIO()
         temp_archive.seek(0)
         zipapp.create_archive(temp_archive, new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_remove_shebang(self):
         # Test that we can remove the shebang from a file.
@@ -365,6 +365,24 @@ class ZipAppTest(unittest.TestCase):
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(str(source), str(target), interpreter='python')
         self.assertTrue(target.stat().st_mode & stat.S_IEXEC)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
+    def test_copied_archive_with_pathlike_target_is_executable(self):
+        # Test that copying an archive to a PathLike target makes it executable.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target = self.tmpdir / 'source.pyz'
+        zipapp.create_archive(source, target, interpreter='python')
+        # Copying an archive uses a different code path than creating
+        # one from scratch. Ensure that the executable bit is set
+        # even if the target is a path-like object.
+        # See https://github.com/python/cpython/issues/156568
+        new_target = self.tmpdir / 'changed.pyz'
+        zipapp.create_archive(target, new_target, interpreter='python')
+        self.assertTrue(new_target.stat().st_mode & stat.S_IEXEC)
 
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')

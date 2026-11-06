@@ -17,9 +17,9 @@ ConIO = io._WindowsConsoleIO
 
 class WindowsConsoleIOTests(unittest.TestCase):
     def test_abc(self):
-        self.assertTrue(issubclass(ConIO, io.RawIOBase))
-        self.assertFalse(issubclass(ConIO, io.BufferedIOBase))
-        self.assertFalse(issubclass(ConIO, io.TextIOBase))
+        self.assertIsSubclass(ConIO, io.RawIOBase)
+        self.assertNotIsSubclass(ConIO, io.BufferedIOBase)
+        self.assertNotIsSubclass(ConIO, io.TextIOBase)
 
     def test_open_fd(self):
         self.assertRaisesRegex(ValueError,

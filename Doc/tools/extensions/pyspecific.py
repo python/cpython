@@ -10,26 +10,10 @@
 """
 
 import re
-import io
-from os import getenv, path
 
 from docutils import nodes
-from docutils.parsers.rst import directives
-from docutils.utils import unescape
 from sphinx import addnodes
-from sphinx.domains.python import PyFunction, PyMethod, PyModule
-from sphinx.locale import _ as sphinx_gettext
-from sphinx.util.docutils import SphinxDirective
-
-# Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
-
-# monkey-patch reST parser to disable alphabetic and roman enumerated lists
-from docutils.parsers.rst.states import Body
-Body.enum.converters['loweralpha'] = \
-    Body.enum.converters['upperalpha'] = \
-    Body.enum.converters['lowerroman'] = \
-    Body.enum.converters['upperroman'] = lambda x: None
+from sphinx.domains.python import PyFunction, PyMethod
 
 
 class PyAwaitableMixin(object):
@@ -95,6 +79,13 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def parse_make_target(env, sig, signode):
+    """Transform a make target signature into RST nodes."""
+    signode += addnodes.desc_name(sig, sig)
+    signode['ids'].append(nodes.make_id(sig))
+    return sig
+
+
 def parse_monitoring_event(env, sig, signode):
     """Transform a monitoring event signature into RST nodes."""
     signode += addnodes.desc_addname('sys.monitoring.events.', 'sys.monitoring.events.')
@@ -130,6 +121,7 @@ def setup(app):
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
+    app.add_object_type('make-target', 'make-target', '%s (make target)', parse_make_target)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.connect('env-check-consistency', patch_pairindextypes)

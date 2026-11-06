@@ -32,6 +32,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3015002
 #error "SQLite 3.15.2 or higher required"
@@ -405,6 +406,121 @@ pysqlite_error_name(int rc)
 }
 
 static int
+add_keyword_tuple(PyObject *module)
+{
+#if SQLITE_VERSION_NUMBER >= 3024000
+    int count = sqlite3_keyword_count();
+    PyObject *keywords = PyTuple_New(count);
+    if (keywords == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < count; i++) {
+        const char *keyword;
+        int size;
+        int result = sqlite3_keyword_name(i, &keyword, &size);
+        if (result != SQLITE_OK) {
+            pysqlite_state *state = pysqlite_get_state(module);
+            set_error_from_code(state, result);
+            goto error;
+        }
+        PyObject *kwd = PyUnicode_FromStringAndSize(keyword, size);
+        if (!kwd) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(keywords, i, kwd);
+    }
+    return PyModule_Add(module, "SQLITE_KEYWORDS", keywords);
+
+error:
+    Py_DECREF(keywords);
+    return -1;
+#else
+    return 0;
+#endif
+}
+
+PyDoc_STRVAR(sqlite_version_info__doc__,
+"_sqlite3.sqlite_version_info\n\
+\n\
+SQLite version information as a named tuple.");
+
+static PyStructSequence_Field sqlite_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {0}
+};
+
+static PyStructSequence_Desc sqlite_version_info_desc = {
+    "_sqlite3.sqlite_version_info",     /* name */
+    sqlite_version_info__doc__,         /* doc */
+    sqlite_version_info_fields,         /* fields */
+    3
+};
+
+static PyObject *
+make_sqlite_version_info(PyTypeObject *type, int number)
+{
+    PyObject *version;
+    int pos = 0;
+    int major = number / 1000000;
+    int minor = (number % 1000000) / 1000;
+    int patch = number % 1000;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(patch))
+#undef SetItem
+
+    return version;
+}
+
+static int
+add_version_constants(PyObject *module)
+{
+    if (PyModule_AddStringMacro(module, SQLITE_VERSION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(module, "sqlite_version",
+                                   sqlite3_libversion()) < 0)
+    {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&sqlite_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "SQLITE_VERSION_INFO",
+            make_sqlite_version_info(version_type, SQLITE_VERSION_NUMBER)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "sqlite_version_info",
+            make_sqlite_version_info(version_type,
+                                     sqlite3_libversion_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
+static int
 add_integer_constants(PyObject *module) {
 #define ADD_INT(ival)                                           \
     do {                                                        \
@@ -702,7 +818,11 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+    if (add_keyword_tuple(module) < 0) {
+        goto error;
+    }
+
+    if (add_version_constants(module) < 0) {
         goto error;
     }
 
@@ -735,11 +855,11 @@ module_exec(PyObject *module)
     return 0;
 
 error:
-    sqlite3_shutdown();
     return -1;
 }
 
 static struct PyModuleDef_Slot module_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

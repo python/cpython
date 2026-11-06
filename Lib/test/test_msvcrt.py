@@ -4,6 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
+from test import support
 from test.support import os_helper, requires_resource
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
@@ -60,6 +61,19 @@ c = '\u5b57'  # unicode CJK char (meaning 'character') for 'wide-char' tests
 c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char for this CJK char
 
 
+def has_console():
+    # A process created without a console (for example by pythonw.exe, or with
+    # the DETACHED_PROCESS creation flag) cannot write to the console.
+    try:
+        with open('CONOUT$', 'w'):
+            return True
+    except OSError:
+        return False
+
+
+requires_console = unittest.skipUnless(has_console(), 'requires a console')
+
+
 class TestConsoleIO(unittest.TestCase):
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @requires_resource('gui')
@@ -67,8 +81,12 @@ class TestConsoleIO(unittest.TestCase):
         # Run test in a separated process to avoid stdin conflicts.
         # See: gh-110147
         cmd = [sys.executable, '-c', code]
-        subprocess.run(cmd, check=True, capture_output=True,
-                       creationflags=subprocess.CREATE_NEW_CONSOLE)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True,
+                           creationflags=subprocess.CREATE_NEW_CONSOLE)
+        except subprocess.CalledProcessError as exc:
+            support.skip_on_low_desktop_heap_memory_subprocess(exc.returncode)
+            raise
 
     def test_kbhit(self):
         code = dedent('''
@@ -101,11 +119,35 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwche(self):
         self.check_getwch('getwche')
 
+    @requires_console
     def test_putch(self):
         msvcrt.putch(b'c')
 
+    @requires_console
     def test_putwch(self):
         msvcrt.putwch(c)
+
+    def test_putch_without_console(self):
+        # gh-69573: putch() and putwch() must report the error instead of
+        # silently ignoring it when the process has no console attached.
+        code = dedent('''
+            import msvcrt
+            import sys
+
+            for name, arg in (('putch', b'c'), ('putwch', 'c')):
+                func = getattr(msvcrt, name)
+                try:
+                    func(arg)
+                except OSError:
+                    pass
+                else:
+                    sys.exit(f'msvcrt.{name}() did not raise OSError')
+        ''')
+        # DETACHED_PROCESS: the child process is created without a console.
+        proc = subprocess.run([sys.executable, '-c', code],
+                              creationflags=subprocess.DETACHED_PROCESS,
+                              capture_output=True, text=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
 
 
 class TestOther(unittest.TestCase):

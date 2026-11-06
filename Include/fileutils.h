@@ -16,7 +16,7 @@
 #  define S_IFMT 0170000
 #endif
 #ifndef S_IFLNK
-   // Windows doesn't define S_IFLNK, but posixmodule.c maps
+   // Windows doesn't define S_IFLNK, but fileutils.c maps
    // IO_REPARSE_TAG_SYMLINK to S_IFLNK.
 #  define S_IFLNK 0120000
 #endif

@@ -365,7 +365,7 @@ class Compat32(Policy):
                                       charset=_charset.UNKNOWN8BIT,
                                       header_name=name)
                 else:
-                    # If we have raw 8bit data in a byte string, we have no idea
+                    # If we have raw 8bit data in a string, we have no idea
                     # what the encoding is.  There is no safe way to split this
                     # string.  If it's ascii-subset, then we could do a normal
                     # ascii split, but if it's multibyte then we could break the
@@ -380,7 +380,7 @@ class Compat32(Policy):
             h = value
         if h is not None:
             # The Header class interprets a value of None for maxlinelen as the
-            # default value of 78, as recommended by RFC 2822.
+            # default value of 78, as recommended by RFC 5322 section 2.1.1.
             maxlinelen = 0
             if self.max_line_length is not None:
                 maxlinelen = self.max_line_length

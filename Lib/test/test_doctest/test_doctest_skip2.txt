@@ -1,0 +1,6 @@
+This is a sample doctest in a text file, in which some examples are skipped.
+
+  >>> 2 + 2  # doctest: +SKIP
+  5
+  >>> 2 + 2
+  4

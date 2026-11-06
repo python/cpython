@@ -274,7 +274,7 @@ def request_host(request):
 
     """
     url = request.full_url
-    host = urlparse(url)[1]
+    host = urlparse(url).netloc
     if host == "":
         host = request.get_header("Host", "")
 
@@ -415,6 +415,8 @@ class OpenerDirector:
                 continue
 
             i = meth.find("_")
+            if i < 1:
+                continue
             protocol = meth[:i]
             condition = meth[i+1:]
 
@@ -813,16 +815,17 @@ class HTTPPasswordMgr:
             self.passwd[realm] = {}
         for default_port in True, False:
             reduced_uri = tuple(
-                self.reduce_uri(u, default_port) for u in uri)
+                self._reduce_uri_with_scheme(u, default_port) for u in uri)
             self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uris, authinfo in domains.items():
                 for uri in uris:
-                    if self.is_suburi(uri, reduced_authuri):
+                    if self._is_suburi_with_scheme(uri, reduced_authuri):
                         return authinfo
         return None, None
 
@@ -830,11 +833,11 @@ class HTTPPasswordMgr:
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
         parts = urlsplit(uri)
-        if parts[1]:
+        if parts.netloc:
             # URI
-            scheme = parts[0]
-            authority = parts[1]
-            path = parts[2] or '/'
+            scheme = parts.scheme
+            authority = parts.netloc
+            path = parts.path or '/'
         else:
             # host or host:port
             scheme = None
@@ -848,6 +851,17 @@ class HTTPPasswordMgr:
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
         return authority, path
+
+    def _reduce_uri_with_scheme(self, uri, default_port=True):
+        parts = urlsplit(uri)
+        scheme = parts[0] if parts[1] else None
+        return (scheme or None, *self.reduce_uri(uri, default_port))
+
+    def _is_suburi_with_scheme(self, base, test):
+        if (base[0] is not None and test[0] is not None and
+                base[0] != test[0]):
+            return False
+        return self.is_suburi(base[1:], test[1:])
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree
@@ -894,14 +908,15 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
         for default_port in True, False:
             for u in uri:
-                reduced_uri = self.reduce_uri(u, default_port)
+                reduced_uri = self._reduce_uri_with_scheme(u, default_port)
                 self.authenticated[reduced_uri] = is_authenticated
 
     def is_authenticated(self, authuri):
         for default_port in True, False:
-            reduced_authuri = self.reduce_uri(authuri, default_port)
+            reduced_authuri = self._reduce_uri_with_scheme(
+                authuri, default_port)
             for uri in self.authenticated:
-                if self.is_suburi(uri, reduced_authuri):
+                if self._is_suburi_with_scheme(uri, reduced_authuri):
                     return self.authenticated[uri]
 
 
@@ -1070,25 +1085,87 @@ class AbstractDigestAuthHandler:
     def reset_retry_count(self):
         self.retried = 0
 
+    def _parse_challenges(self, header):
+        # Yield (scheme, challenge) for each challenge in a WWW-Authenticate
+        # header value.  Commas separate both challenges and the auth-params
+        # of a challenge, so an element which starts with a token that is not
+        # followed by "=" starts a new challenge (RFC 9110, section 11.6.1).
+        #
+        # For example, the header value
+        #
+        #     Basic realm="a", Digest realm="b", nonce="n"
+        #
+        # is split on commas into the elements 'Basic realm="a"',
+        # 'Digest realm="b"' and 'nonce="n"'.  "Basic" and "Digest" are not
+        # followed by "=", so they start challenges; 'nonce="n"' continues
+        # the Digest one.  This yields:
+        #
+        #     ('Basic', 'Basic realm="a"')
+        #     ('Digest', 'Digest realm="b", nonce="n"')
+        elements = []
+        start = 0
+        quote = escape = False
+        for i, c in enumerate(header):
+            if escape:
+                escape = False
+            elif quote:
+                if c == '\\':
+                    escape = True
+                elif c == '"':
+                    quote = False
+            elif c == '"':
+                quote = True
+            elif c == ',':
+                elements.append((start, i))
+                start = i + 1
+        elements.append((start, len(header)))
+
+        scheme = begin = end = None
+        for elt_start, elt_end in elements:
+            words = header[elt_start:elt_end].split(None, 1)
+            if not words:
+                continue
+            rest = words[1] if len(words) > 1 else ''
+            if '=' not in words[0] and not rest.startswith('='):
+                if scheme is not None:
+                    yield scheme, header[begin:end].strip()
+                scheme = words[0]
+                begin = elt_start
+            end = elt_end
+        if scheme is not None:
+            yield scheme, header[begin:end].strip()
+
     def http_error_auth_reqed(self, auth_header, host, req, headers):
-        authreq = headers.get(auth_header, None)
+        authreqs = headers.get_all(auth_header)
         if self.retried > 5:
             # Don't fail endlessly - if we failed once, we'll probably
             # fail a second time. Hm. Unless the Password Manager is
             # prompting for the information. Crap. This isn't great
             # but it's better than the current 'repeat until recursion
             # depth exceeded' approach <wink>
-            raise HTTPError(req.full_url, 401, "digest auth failed",
+            if auth_header.lower() == 'proxy-authenticate':
+                code = 407
+            else:
+                code = 401
+            raise HTTPError(req.full_url, code, "digest auth failed",
                             headers, None)
         else:
             self.retried += 1
-        if authreq:
-            scheme = authreq.split()[0]
-            if scheme.lower() == 'digest':
-                return self.retry_http_digest_auth(req, authreq)
-            elif scheme.lower() != 'basic':
-                raise ValueError("AbstractDigestAuthHandler does not support"
-                                 " the following scheme: '%s'" % scheme)
+        if not authreqs:
+            return None
+        unsupported = None
+        basic_found = False
+        for authreq in authreqs:
+            for scheme, challenge in self._parse_challenges(authreq):
+                if scheme.lower() == 'digest':
+                    return self.retry_http_digest_auth(req, challenge)
+                if scheme.lower() == 'basic':
+                    basic_found = True
+                elif unsupported is None:
+                    unsupported = scheme
+        if unsupported is not None and not basic_found:
+            raise ValueError("AbstractDigestAuthHandler does not support"
+                             " the following scheme: '%s'" % unsupported)
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
@@ -1129,7 +1206,13 @@ class AbstractDigestAuthHandler:
         if H is None:
             return None
 
-        user, pw = self.passwd.find_user_password(realm, req.full_url)
+        # proxy auth is looked up by the proxy's authority
+        # req.host, set by Request.set_proxy()
+        if self.auth_header == 'Proxy-Authorization':
+            authority = req.host
+        else:
+            authority = req.full_url
+        user, pw = self.passwd.find_user_password(realm, authority)
         if user is None:
             return None
 
@@ -1139,10 +1222,15 @@ class AbstractDigestAuthHandler:
         else:
             entdig = None
 
+        # The digest-uri is the request-target as sent on the request line:
+        # the path, or the absolute URL when the request goes through an
+        # HTTP proxy.  RFC 7616, Section 3.4 allows both.  An empty path is
+        # sent as '/' by http.client, so use the same here.
+
+        uri = req.selector or '/'
+
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.get_method(),
-                        # XXX selector: what about proxies and full urls
-                        req.selector)
+        A2 = "%s:%s" % (req.get_method(), uri)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
         if qop is None:
@@ -1164,8 +1252,7 @@ class AbstractDigestAuthHandler:
         # XXX should the partial digests be encoded too?
 
         base = 'username="%s", realm="%s", nonce="%s", uri="%s", ' \
-               'response="%s"' % (user, realm, nonce, req.selector,
-                                  respdig)
+               'response="%s"' % (user, realm, nonce, uri, respdig)
         if opaque:
             base += ', opaque="%s"' % opaque
         if entdig:
@@ -1207,7 +1294,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse(req.full_url)[1]
+        host = urlparse(req.full_url).netloc
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
@@ -1291,8 +1378,7 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update({k: v for k, v in req.headers.items()
-                        if k not in headers})
+        headers.update(req.headers)
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1535,6 +1621,7 @@ class FTPHandler(BaseHandler):
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
@@ -1552,8 +1639,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            raise URLError(f"ftp error: {exp}") from exp
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1577,14 +1668,15 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
@@ -1628,6 +1720,11 @@ class DataHandler(BaseHandler):
         scheme, data = url.split(":",1)
         mediatype, data = data.split(",",1)
 
+        # Disallow control characters within mediatype.
+        if re.search(r"[\x00-\x1F\x7F]", mediatype):
+            raise ValueError(
+                "Control characters not allowed in data: mediatype")
+
         # even base64 encoded data URLs might be quoted so unquote in any case:
         data = unquote_to_bytes(data)
         if mediatype.endswith(";base64"):
@@ -1654,13 +1751,16 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     The URL authority may be resolved with gethostbyname() if
     *resolve_host* is set to true.
     """
-    if require_scheme:
-        scheme, url = _splittype(url)
-        if scheme != 'file':
-            raise URLError("URL is missing a 'file:' scheme")
-    authority, url = _splithost(url)
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
-        if not _is_local_authority(authority, resolve_host):
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':

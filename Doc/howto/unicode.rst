@@ -4,8 +4,6 @@
   Unicode HOWTO
 *****************
 
-:Release: 1.12
-
 This HOWTO discusses Python's support for the Unicode specification
 for representing textual data, and explains various problems that
 people commonly encounter when trying to work with Unicode.
@@ -351,6 +349,8 @@ they have no significance to Python but are a convention.  Python looks for
 If you don't include such a comment, the default encoding used will be UTF-8 as
 already mentioned.  See also :pep:`263` for more information.
 
+
+.. _unicode-properties:
 
 Unicode Properties
 ------------------

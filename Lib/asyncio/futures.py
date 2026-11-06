@@ -79,6 +79,10 @@ class Future:
         loop object used by the future. If it's not provided, the future uses
         the default event loop.
         """
+        if self._loop is not None:
+            raise RuntimeError(f"{self.__class__.__name__} object is already "
+                                "initialized")
+
         if loop is None:
             self._loop = events.get_event_loop()
         else:
@@ -289,7 +293,7 @@ class Future:
         self.__schedule_callbacks()
         self.__log_traceback = True
 
-    def __await__(self):
+    def _await(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self  # This tells Task to wait for completion.
@@ -297,7 +301,41 @@ class Future:
             raise RuntimeError("await wasn't used with future")
         return self.result()  # May raise too.
 
+    def __await__(self):
+        # Return an object that exposes fi_future in addition to being
+        # a generator, for compatability with the C version.
+        return _FutureIter(self)
+
     __iter__ = __await__  # make compatible with 'yield from'.
+
+
+class _FutureIter:
+    __slots__ = ('__future', '__gen')
+
+    def __init__(self, fut):
+        self.__future = fut
+        self.__gen = fut._await()
+
+    @property
+    def fi_future(self):
+        return self.__future
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.__gen.__next__()
+
+    def send(self, v, /):
+        return self.__gen.send(v)
+
+    def throw(self, *args):
+        self.__future = None
+        return self.__gen.throw(*args)
+
+    def close(self):
+        self.__future = None
+        self.__gen.close()
 
 
 # Needed for testing purposes.
@@ -389,7 +427,7 @@ def _chain_future(source, destination):
 
     def _call_check_cancel(destination):
         if destination.cancelled():
-            if source_loop is None or source_loop is dest_loop:
+            if source_loop is None or source_loop is events._get_running_loop():
                 source.cancel()
             else:
                 source_loop.call_soon_threadsafe(source.cancel)
@@ -398,7 +436,7 @@ def _chain_future(source, destination):
         if (destination.cancelled() and
                 dest_loop is not None and dest_loop.is_closed()):
             return
-        if dest_loop is None or dest_loop is source_loop:
+        if dest_loop is None or dest_loop is events._get_running_loop():
             _set_state(destination, source)
         else:
             if dest_loop.is_closed():

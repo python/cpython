@@ -2,7 +2,6 @@ from _codecs import _unregister_error as _codecs_unregister_error
 import codecs
 import html.entities
 import itertools
-import re
 import sys
 import unicodedata
 import unittest
@@ -755,6 +754,18 @@ class CodecCallbackTest(unittest.TestCase):
                                            1, 1 + n, "ouch")),
                     (s[:1], 1 + n)
                 )
+
+    def test_surrogatepass_truncated_encoding_name(self):
+        handler = codecs.lookup_error('surrogatepass')
+        for width in (16, 32):
+            encoding = f'utf-{width}-'
+            data = (0xd800).to_bytes(width // 8, 'little')
+            for exc in (UnicodeEncodeError(encoding, '\ud800', 0, 1, 'test'),
+                        UnicodeDecodeError(encoding, data, 0, len(data), 'test')):
+                with self.subTest(encoding=encoding, error=type(exc).__name__):
+                    with self.assertRaises(type(exc)) as cm:
+                        handler(exc)
+                    self.assertIs(cm.exception, exc)
 
     def test_badhandlerresults(self):
         results = ( 42, "foo", (1,2,3), ("foo", 1, 3), ("foo", None), ("foo",), ("foo", 1, 3), ("foo", None), ("foo",) )

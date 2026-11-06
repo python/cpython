@@ -204,7 +204,33 @@ class LongTest(unittest.TestCase):
         self.check_division(710031681576388032, 26769404391308)
         self.check_division(1933622614268221, 30212853348836)
 
+    @support.requires_IEEE_754
+    def test_intradigit_shift(self):
+        # Unit tests for v_lshift and v_rshift in longobject.c.
+        # These two functions are not used by Python << and >>,
+        # exercise them via float conversion and true division.
 
+        # Full limb values.
+        two_limbs = (1 << (2 * SHIFT)) - 1
+        three_limbs = (1 << (3 * SHIFT)) - 1
+        four_limbs = (1 << (4 * SHIFT)) - 1
+        # Multi-limb (not compact) but bit_length() still <= 55.
+        bits50 = (1 << 50) - 1
+
+        # _PyLong_Frexp (float(n)):
+        # v_lshift if n.bit_length() <= 55, else v_rshift.
+        self.check_float_conversion(bits50)
+        self.check_float_conversion(two_limbs)
+        self.check_float_conversion(four_limbs)
+        self.check_float_conversion(10**40)
+
+        # long_true_divide (a / b):
+        # - (a.bit_length() - b.bit_length()) <= 55  => v_lshift,
+        # - (a.bit_length() - b.bit_length()) > 55   => v_rshift.
+        self.check_truediv(three_limbs, two_limbs)
+        self.check_truediv(four_limbs, two_limbs)
+        self.check_truediv(four_limbs, three_limbs)
+        self.check_truediv(10**40, 10**20)
 
     def test_karatsuba(self):
         digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
@@ -996,6 +1022,16 @@ class LongTest(unittest.TestCase):
         self.assertEqual(v.bit_count(), 2)
         self.assertEqual(v >> size, 5)
 
+    @support.cpython_only
+    def test_huge_lshift_overflow(self):
+        # The number of digits of the result doesn't fit in Py_ssize_t.
+        for a in 1, -1, 1 << SHIFT, -1 << SHIFT, 1 << 10*SHIFT:
+            for ndigits in range(sys.maxsize - 12, sys.maxsize + 1):
+                for shift in ndigits*SHIFT - 1, ndigits*SHIFT:
+                    with self.subTest(a=a, shift=shift):
+                        with self.assertRaises(OverflowError):
+                            a << shift
+
     def test_huge_rshift(self):
         huge_shift = 1 << 1000
         self.assertEqual(42 >> huge_shift, 0)
@@ -1374,17 +1410,22 @@ class LongTest(unittest.TestCase):
         check(tests4, 'little', signed=False)
 
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=True)
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=True)
+        self.assertRaises(OverflowError, (128).to_bytes, 1, 'big', signed=True)
+        self.assertRaises(OverflowError, (128).to_bytes, 1, 'little', signed=True)
+        self.assertRaises(OverflowError, (-129).to_bytes, 1, 'big', signed=True)
+        self.assertRaises(OverflowError, (-129).to_bytes, 1, 'little', signed=True)
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'big', signed=False)
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'little', signed=False)
         self.assertEqual((0).to_bytes(0, 'big'), b'')
+        self.assertEqual((0).to_bytes(0, 'big', signed=True), b'')
         self.assertEqual((1).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x01')
         self.assertEqual((0).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x00')
         self.assertEqual((-1).to_bytes(5, 'big', signed=True),
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'big', signed=True)
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'little', signed=True)
 
         # gh-98783
         class SubStr(str):
@@ -1692,6 +1733,22 @@ class LongTest(unittest.TestCase):
 
         # GH-117195 -- This shouldn't crash
         object.__sizeof__(1)
+
+    def test_hash(self):
+        # gh-136599
+        self.assertEqual(hash(-1), -2)
+        self.assertEqual(hash(0), 0)
+        self.assertEqual(hash(10), 10)
+
+        self.assertEqual(hash(sys.hash_info.modulus - 2), sys.hash_info.modulus - 2)
+        self.assertEqual(hash(sys.hash_info.modulus - 1), sys.hash_info.modulus - 1)
+        self.assertEqual(hash(sys.hash_info.modulus), 0)
+        self.assertEqual(hash(sys.hash_info.modulus + 1), 1)
+
+        self.assertEqual(hash(-sys.hash_info.modulus - 2), -2)
+        self.assertEqual(hash(-sys.hash_info.modulus - 1), -2)
+        self.assertEqual(hash(-sys.hash_info.modulus), 0)
+        self.assertEqual(hash(-sys.hash_info.modulus + 1), -sys.hash_info.modulus + 1)
 
 if __name__ == "__main__":
     unittest.main()

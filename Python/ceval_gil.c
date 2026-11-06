@@ -207,6 +207,7 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
     if (tstate != NULL) {
         tstate->holds_gil = 0;
+        tstate->gil_requested = 0;
     }
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
@@ -320,6 +321,8 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
+    tstate->gil_requested = 1;
+
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
@@ -407,6 +410,7 @@ take_gil(PyThreadState *tstate)
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
+    tstate->gil_requested = 0;
     tstate->holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
@@ -546,7 +550,8 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     interp->ceval.gil = NULL;
 }
 
-void
+// Function removed in Python 3.16 limited C API, but kept in the stable ABI
+PyAPI_FUNC(void)
 PyEval_InitThreads(void)
 {
     /* Do nothing: kept for backward compatibility */
@@ -825,9 +830,6 @@ handle_signals(PyThreadState *tstate)
 {
     assert(_PyThreadState_CheckConsistency(tstate));
     _Py_unset_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
-    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
-        return 0;
-    }
     if (_PyErr_CheckSignalsTstate(tstate) < 0) {
         /* On failure, re-schedule a call to handle_signals(). */
         _Py_set_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
@@ -907,13 +909,9 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 static void
 clear_pending_handling_thread(struct _pending_calls *pending)
 {
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&pending->mutex);
+    FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
-    PyMutex_Unlock(&pending->mutex);
-#else
-    pending->handling_thread = NULL;
-#endif
+    FT_MUTEX_UNLOCK(&pending->mutex);
 }
 
 static int
@@ -1220,7 +1218,7 @@ static inline int run_remote_debugger_source(PyObject *source)
 // that would be an easy target for a ROP gadget.
 static inline void run_remote_debugger_script(PyObject *path)
 {
-    if (0 != PySys_Audit("remote_debugger_script", "O", path)) {
+    if (0 != PySys_Audit("cpython.remote_debugger_script", "O", path)) {
         PyErr_FormatUnraisable(
             "Audit hook failed for remote debugger script %U", path);
         return;
@@ -1257,10 +1255,11 @@ static inline void run_remote_debugger_script(PyObject *path)
 
 int _PyRunRemoteDebugger(PyThreadState *tstate)
 {
+    if (tstate->remote_debugger_support.debugger_pending_call != 1) {
+        return 0;
+    }
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->remote_debug == 1
-         && tstate->remote_debugger_support.debugger_pending_call == 1)
-    {
+    if (config->remote_debug == 1) {
         tstate->remote_debugger_support.debugger_pending_call = 0;
 
         // Immediately make a copy in case of a race with another debugger
@@ -1387,19 +1386,29 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
         _Py_brc_merge_refcounts(tstate);
     }
+    /* Process deferred memory frees held by QSBR */
+    if (_Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr)) {
+        _PyMem_ProcessDelayed(tstate);
+    }
 #endif
 
     /* GC scheduled to run */
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+#ifdef _Py_TIER2
+        _Py_ClearExecutorDeletionList(tstate->interp);
+#endif
     }
 
+#ifdef _Py_TIER2
     if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
         _Py_Executors_InvalidateCold(tstate->interp);
-        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+        tstate->interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
+        _Py_ClearExecutorDeletionList(tstate->interp);
     }
+#endif
 
     /* GIL drop request */
     if ((breaker & _PY_GIL_DROP_REQUEST_BIT) != 0) {
@@ -1413,11 +1422,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* Check for asynchronous exception. */
     if ((breaker & _PY_ASYNC_EXCEPTION_BIT) != 0) {
-        _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
-        PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
-        if (exc != NULL) {
-            _PyErr_SetNone(tstate, exc);
-            Py_DECREF(exc);
+        if (_PyEval_RaiseAsyncExc(tstate) < 0) {
             return -1;
         }
     }
@@ -1426,5 +1431,20 @@ _Py_HandlePending(PyThreadState *tstate)
     _PyRunRemoteDebugger(tstate);
 #endif
 
+    return 0;
+}
+
+int
+_PyEval_RaiseAsyncExc(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(tstate == _PyThreadState_GET());
+    _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
+    PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
+    if (exc != NULL) {
+        _PyErr_SetNone(tstate, exc);
+        Py_DECREF(exc);
+        return -1;
+    }
     return 0;
 }

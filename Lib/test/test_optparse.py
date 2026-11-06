@@ -434,6 +434,13 @@ class TestOptionValues(BaseTest):
         self.assertNotEqual(values, "")
         self.assertNotEqual(values, [])
 
+    def test_replace(self):
+        values = Values(defaults={"foo": "bar", "baz": 42})
+        new = copy.replace(values, baz=43, spam="eggs")
+        self.assertIsInstance(new, Values)
+        self.assertEqual(vars(new), {"foo": "bar", "baz": 43, "spam": "eggs"})
+        self.assertEqual(vars(values), {"foo": "bar", "baz": 42})
+
 
 class TestTypeAliases(BaseTest):
     def setUp(self):
@@ -615,9 +622,9 @@ Options:
         self.parser.add_option(
             "-p", "--prob",
             help="blow up with probability PROB [default: %default]")
-        self.parser.set_defaults(prob=0.43)
+        self.parser.set_defaults(prob=0.25)
         expected_help = self.help_prefix + \
-            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.43]\n"
+            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.25]\n"
         self.assertHelp(self.parser, expected_help)
 
     def test_alt_expand(self):
@@ -1664,6 +1671,13 @@ class MiscTestCase(unittest.TestCase):
 class TestTranslations(TestTranslationsBase):
     def test_translations(self):
         self.assertMsgidsEqual(optparse)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, optparse, "__version__", "__copyright__", remove=(3, 20),
+        )
 
 
 if __name__ == '__main__':

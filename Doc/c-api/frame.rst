@@ -1,6 +1,6 @@
 .. highlight:: c
 
-Frame Objects
+Frame objects
 -------------
 
 .. c:type:: PyFrameObject
@@ -29,6 +29,12 @@ See also :ref:`Reflection <reflection>`.
       Previously, this type was only available after including
       ``<frameobject.h>``.
 
+.. c:function:: PyFrameObject *PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, PyObject *locals)
+
+   Create a new frame object. This function returns a :term:`strong reference`
+   to the new frame object on success, and returns ``NULL`` with an exception
+   set on failure.
+
 .. c:function:: int PyFrame_Check(PyObject *obj)
 
    Return non-zero if *obj* is a frame object.
@@ -44,6 +50,7 @@ See also :ref:`Reflection <reflection>`.
 
    Return a :term:`strong reference`, or ``NULL`` if *frame* has no outer
    frame.
+   This raises no exceptions.
 
    .. versionadded:: 3.9
 
@@ -92,8 +99,6 @@ See also :ref:`Reflection <reflection>`.
 
    Get the *frame*'s :attr:`~frame.f_lasti` attribute.
 
-   Returns -1 if ``frame.f_lasti`` is ``None``.
-
    .. versionadded:: 3.11
 
 
@@ -140,7 +145,7 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
-Frame Locals Proxies
+Frame locals proxies
 ^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.13
@@ -161,7 +166,52 @@ See :pep:`667` for more information.
 
    Return non-zero if *obj* is a frame :func:`locals` proxy.
 
-Internal Frames
+
+Legacy local variable APIs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These APIs are :term:`soft deprecated`. As of Python 3.13, they do nothing.
+They exist solely for backwards compatibility.
+
+
+.. c:function:: void PyFrame_LocalsToFast(PyFrameObject *f, int clear)
+
+   Prior to Python 3.13, this function would copy the :attr:`~frame.f_locals`
+   attribute of *f* to the internal "fast" array of local variables, allowing
+   changes in frame objects to be visible to the interpreter. If *clear* was
+   true, this function would process variables that were unset in the locals
+   dictionary.
+
+   .. soft-deprecated:: 3.13
+      This function now does nothing.
+
+
+.. c:function:: void PyFrame_FastToLocals(PyFrameObject *f)
+
+   Prior to Python 3.13, this function would copy the internal "fast" array
+   of local variables (which is used by the interpreter) to the
+   :attr:`~frame.f_locals` attribute of *f*, allowing changes in local
+   variables to be visible to frame objects.
+
+   .. soft-deprecated:: 3.13
+      This function now does nothing.
+
+
+.. c:function:: int PyFrame_FastToLocalsWithError(PyFrameObject *f)
+
+   Prior to Python 3.13, this function was similar to
+   :c:func:`PyFrame_FastToLocals`, but would return ``0`` on success, and
+   ``-1`` with an exception set on failure.
+
+   .. soft-deprecated:: 3.13
+      This function now does nothing.
+
+
+.. seealso::
+   :pep:`667`
+
+
+Internal frames
 ^^^^^^^^^^^^^^^
 
 Unless using :pep:`523`, you will not need this.
@@ -193,3 +243,19 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
+.. c:function:: int PyUnstable_InterpreterFrame_GetLocal(struct _PyInterpreterFrame *frame, Py_ssize_t index, PyObject **result)
+
+   Retrieve the local variable at *index*.
+   To determine the index of a particular variable, use
+   :c:func:`PyUnstable_InterpreterFrame_GetCode` and
+   :c:func:`PyUnstable_Code_GetLocalPlusNames`.
+
+   Cell and free variables are unboxed to their contents.  Free variables are
+   resolved from the function closure, so this also works on a frame that has
+   not started executing.
+
+   * On success, store a new :term:`strong reference` in *result* and return ``1``.
+   * If the slot is unset or hidden, store ``NULL`` in *result* and return ``0``.
+   * On error, raise an exception, store ``NULL`` in *result* and return ``-1``.
+
+   .. versionadded:: next

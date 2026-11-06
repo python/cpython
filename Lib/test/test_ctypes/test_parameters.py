@@ -1,5 +1,7 @@
+import sys
 import unittest
 import test.support
+import ctypes
 from ctypes import (CDLL, PyDLL, ArgumentError,
                     Structure, Array, Union,
                     _Pointer, _SimpleCData, _CFuncPtr,
@@ -13,6 +15,7 @@ from ctypes import (CDLL, PyDLL, ArgumentError,
                     c_long, c_ulong,
                     c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
+from ctypes.util import struct
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
@@ -166,6 +169,71 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(TypeError, LPINT.from_param, c_long*3)
         self.assertRaises(TypeError, LPINT.from_param, c_uint*3)
 
+    def test_pointer_as_parameter(self):
+        class Wrapper:
+            def __init__(self, param):
+                self._as_parameter_ = param
+
+        p_int = POINTER(c_int)
+
+        # Implicit byref() of a wrapped instance
+        v = c_int(42)
+        x = p_int.from_param(Wrapper(v))
+        self.assertIs(x._obj, v)
+
+        # Wrapped pointer
+        p = pointer(c_int(99))
+        self.assertIs(p_int.from_param(Wrapper(p)), p)
+
+        # Wrapped byref()
+        p_int.from_param(Wrapper(byref(c_int(7))))
+
+        # Wrapped array
+        a = (c_int * 3)()
+        self.assertIs(p_int.from_param(Wrapper(a)), a)
+
+        @struct
+        class Base:
+            x: c_int
+
+        class Derived(Base):
+            pass
+
+        p_base = POINTER(Base)
+
+        # Pointer upcast of a wrapped pointer and a wrapped instance.
+        d = Derived()
+        pd = pointer(d)
+        self.assertIs(p_base.from_param(Wrapper(pd)), pd)
+        self.assertIs(p_base.from_param(Wrapper(d))._obj, d)
+
+        # Nested _as_parameter_.
+        self.assertIs(p_int.from_param(Wrapper(Wrapper(Wrapper(v))))._obj, v)
+
+        # None is still accepted.
+        self.assertIsNone(p_int.from_param(Wrapper(None)))
+
+        # Type mismatches are still rejected.
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(c_short(1)))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(pointer(c_short(1))))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(byref(c_short(1))))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper((c_short * 3)()))
+        with self.assertRaises(TypeError):
+            p_int.from_param(Wrapper(object()))
+
+        # End-to-end through a function call.  The c_int must stay alive
+        # while the returned pointer is used.
+        func = CDLL(_ctypes_test.__file__)._testfunc_p_p
+        func.restype = p_int
+        func.argtypes = [p_int]
+        v = c_int(123)
+        result = func(Wrapper(v))
+        self.assertEqual(result.contents.value, 123)
+
     def test_noctypes_argtype(self):
         func = CDLL(_ctypes_test.__file__)._testfunc_p_p
         func.restype = c_void_p
@@ -240,11 +308,19 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRegex(repr(c_ulonglong.from_param(20000)), r"^<cparam '[LIQ]' \(20000\)>$")
         self.assertEqual(repr(c_float.from_param(1.5)), "<cparam 'f' (1.5)>")
         self.assertEqual(repr(c_double.from_param(1.5)), "<cparam 'd' (1.5)>")
-        self.assertEqual(repr(c_double.from_param(1e300)), "<cparam 'd' (1e+300)>")
+        if sys.float_repr_style == 'short':
+            self.assertEqual(repr(c_double.from_param(1e300)), "<cparam 'd' (1e+300)>")
         self.assertRegex(repr(c_longdouble.from_param(1.5)), r"^<cparam ('d' \(1.5\)|'g' at 0x[A-Fa-f0-9]+)>$")
         self.assertRegex(repr(c_char_p.from_param(b'hihi')), r"^<cparam 'z' \(0x[A-Fa-f0-9]+\)>$")
         self.assertRegex(repr(c_wchar_p.from_param('hihi')), r"^<cparam 'Z' \(0x[A-Fa-f0-9]+\)>$")
         self.assertRegex(repr(c_void_p.from_param(0x12)), r"^<cparam 'P' \(0x0*12\)>$")
+        if hasattr(ctypes, 'c_double_complex'):
+            self.assertRegex(repr(ctypes.c_double_complex.from_param(0)),
+                             r"^<cparam 'Zd' at 0x[A-Fa-f0-9]+>$")
+            self.assertRegex(repr(ctypes.c_float_complex.from_param(0)),
+                             r"^<cparam 'Zf' at 0x[A-Fa-f0-9]+>$")
+            self.assertRegex(repr(ctypes.c_longdouble_complex.from_param(0)),
+                             r"^<cparam 'Zg' at 0x[A-Fa-f0-9]+>$")
 
     @test.support.cpython_only
     def test_from_param_result_refcount(self):

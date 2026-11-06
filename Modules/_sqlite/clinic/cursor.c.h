@@ -6,7 +6,9 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_long.h"          // _PyLong_UInt32_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -135,13 +137,8 @@ pysqlite_cursor_executescript(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("executescript", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sql_script_length;
-    sql_script = PyUnicode_AsUTF8AndSize(arg, &sql_script_length);
+    sql_script = _PyUnicode_AsUTF8NoNUL(arg);
     if (sql_script == NULL) {
-        goto exit;
-    }
-    if (strlen(sql_script) != (size_t)sql_script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_cursor_executescript_impl((pysqlite_Cursor *)self, sql_script);
@@ -181,7 +178,7 @@ PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
     {"fetchmany", _PyCFunction_CAST(pysqlite_cursor_fetchmany), METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_fetchmany__doc__},
 
 static PyObject *
-pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows);
+pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, uint32_t maxrows);
 
 static PyObject *
 pysqlite_cursor_fetchmany(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -216,7 +213,7 @@ pysqlite_cursor_fetchmany(PyObject *self, PyObject *const *args, Py_ssize_t narg
     #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    int maxrows = ((pysqlite_Cursor *)self)->arraysize;
+    uint32_t maxrows = ((pysqlite_Cursor *)self)->arraysize;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -226,8 +223,7 @@ pysqlite_cursor_fetchmany(PyObject *self, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    maxrows = PyLong_AsInt(args[0]);
-    if (maxrows == -1 && PyErr_Occurred()) {
+    if (!_PyLong_UInt32_Converter(args[0], &maxrows)) {
         goto exit;
     }
 skip_optional_pos:
@@ -329,4 +325,39 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=d05c7cbbc8bcab26 input=a9049054013a1b77]*/
+
+static PyObject *
+_sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self);
+
+static PyObject *
+_sqlite3_Cursor_arraysize_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _sqlite3_Cursor_arraysize_get_impl((pysqlite_Cursor *)self);
+}
+
+static int
+_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, uint32_t value);
+
+static int
+_sqlite3_Cursor_arraysize_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
+{
+    int return_value = -1;
+    uint32_t value;
+
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'arraysize' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    if (!_PyLong_UInt32_Converter(arg, &value)) {
+        goto exit;
+    }
+    return_value = _sqlite3_Cursor_arraysize_set_impl((pysqlite_Cursor *)self, value);
+
+exit:
+    return return_value;
+}
+#define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, NULL},
+
+/*[clinic end generated code: output=c24b4d93900ed908 input=a9049054013a1b77]*/

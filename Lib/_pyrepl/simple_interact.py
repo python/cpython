@@ -23,8 +23,6 @@ the CPython prompt as closely as possible, with the exception of
 allowing multiline input and multiline history entries.
 """
 
-from __future__ import annotations
-
 import _sitebuiltins
 import functools
 import os
@@ -68,6 +66,7 @@ def _clear_screen():
     reader.scheduled_commands.append("clear_screen")
 
 
+# Keep this in sync with _pyrepl.utils.COMMANDS
 REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
@@ -83,7 +82,7 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
     src = _strip_final_indent(unicodetext)
     try:
         code = console.compile(src, "<stdin>", "single")
-    except (OverflowError, SyntaxError, ValueError):
+    except Exception:
         lines = src.splitlines(keepends=True)
         if len(lines) == 1:
             return False
@@ -110,6 +109,10 @@ def run_multiline_interactive_console(
     more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
+    _is_x_showrefcount_set = sys._xoptions.get("showrefcount")
+    _is_pydebug_build = hasattr(sys, "gettotalrefcount")
+    show_ref_count = _is_x_showrefcount_set and _is_pydebug_build
+
     def maybe_run_command(statement: str) -> bool:
         statement = statement.strip()
         if statement in console.locals or statement not in REPL_COMMANDS:
@@ -120,7 +123,7 @@ def run_multiline_interactive_console(
         command = REPL_COMMANDS[statement]
         if callable(command):
             # Make sure that history does not change because of commands
-            with reader.suspend_history():
+            with reader.suspend_history(), reader.suspend_colorization():
                 command()
             return True
         return False
@@ -131,9 +134,14 @@ def run_multiline_interactive_console(
                 sys.stdout.flush()
             except Exception:
                 pass
-
-            ps1 = getattr(sys, "ps1", ">>> ")
-            ps2 = getattr(sys, "ps2", "... ")
+            try:
+                ps1 = str(getattr(sys, "ps1", ">>> "))
+            except Exception:
+                ps1 = ">>> "
+            try:
+                ps2 = str(getattr(sys, "ps2", "... "))
+            except Exception:
+                ps2 = "... "
             try:
                 statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
@@ -149,13 +157,15 @@ def run_multiline_interactive_console(
                 append_history_file()
             except (FileNotFoundError, PermissionError, OSError) as e:
                 warnings.warn(f"failed to open the history file for writing: {e}")
+
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
+            r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
-            r.dirty = True
+            r.invalidate_full()
             r.refresh()
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
@@ -167,3 +177,8 @@ def run_multiline_interactive_console(
         except:
             console.showtraceback()
             console.resetbuffer()
+        if show_ref_count:
+            console.write(
+                f"[{sys.gettotalrefcount()} refs,"
+                f" {sys.getallocatedblocks()} blocks]\n"
+            )

@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 #ifndef ZSTD_BUFFER_H
 #define ZSTD_BUFFER_H
@@ -16,10 +16,11 @@ static inline int
 _OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob,
                         Py_ssize_t max_length)
 {
-    /* Ensure .list was set to NULL */
-    assert(buffer->list == NULL);
+    /* Ensure .writer was set to NULL */
+    assert(buffer->writer == NULL);
 
-    Py_ssize_t res = _BlocksOutputBuffer_InitAndGrow(buffer, max_length, &ob->dst);
+    Py_ssize_t res = _BlocksOutputBuffer_InitAndGrow(buffer, max_length,
+                                                     &ob->dst);
     if (res < 0) {
         return -1;
     }
@@ -34,13 +35,12 @@ _OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob,
     Return -1 on failure */
 static inline int
 _OutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob,
-                            Py_ssize_t max_length,
-                            Py_ssize_t init_size)
+                            Py_ssize_t max_length, Py_ssize_t init_size)
 {
     Py_ssize_t block_size;
 
-    /* Ensure .list was set to NULL */
-    assert(buffer->list == NULL);
+    /* Ensure .writer was set to NULL */
+    assert(buffer->writer == NULL);
 
     /* Get block size */
     if (0 <= max_length && max_length < init_size) {
@@ -50,7 +50,8 @@ _OutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob,
         block_size = init_size;
     }
 
-    Py_ssize_t res = _BlocksOutputBuffer_InitWithSize(buffer, block_size, &ob->dst);
+    Py_ssize_t res = _BlocksOutputBuffer_InitWithSize(buffer, block_size,
+                                                      &ob->dst);
     if (res < 0) {
         return -1;
     }

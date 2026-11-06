@@ -40,6 +40,9 @@ class TclTest(unittest.TestCase):
         self.interp = Tcl()
         self.wantobjects = self.interp.tk.wantobjects()
 
+    def passValue(self, value):
+        return self.interp.call('set', '_', value)
+
     def testEval(self):
         tcl = self.interp
         tcl.eval('set a 1')
@@ -51,7 +54,11 @@ class TclTest(unittest.TestCase):
 
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
-        self.assertEqual(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
+        result = tcl.eval(r'set a "<\ud83d\udcbb>"')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalException(self):
         tcl = self.interp
@@ -286,7 +293,11 @@ class TclTest(unittest.TestCase):
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
+        result = tcl.eval('set b')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -490,8 +501,7 @@ class TclTest(unittest.TestCase):
                 self.assertIsInstance(result, str)
 
     def test_passing_values(self):
-        def passValue(value):
-            return self.interp.call('set', '_', value)
+        passValue = self.passValue
 
         self.assertEqual(passValue(True), True if self.wantobjects else '1')
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
@@ -536,6 +546,55 @@ class TclTest(unittest.TestCase):
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
         self.assertEqual(passValue(['a', ['b', 'c']]),
                          ('a', ('b', 'c')) if self.wantobjects else 'a {b c}')
+
+    def test_set_object_concurrent_mutation_in_sequence_conversion(self):
+        # Prevent SIGSEV when the object to convert is concurrently mutated.
+        # See: https://github.com/python/cpython/issues/143310.
+
+        string = "value"
+
+        class Value:
+            def __str__(self):
+                values.clear()
+                return string
+
+        class List(list):
+            pass
+
+        expect = (string, "pad") if self.wantobjects else f"{string} pad"
+        self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
+        self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
+
+    def test_passing_deeply_nested(self):
+        call = self.interp.tk.call
+        setvar = self.interp.tk.setvar
+        for wrap in (lambda x: [x]), (lambda x: (x,)):
+            value = 'a'
+            for i in range(1001):
+                value = wrap(value)
+            self.assertEqual(int(call('string', 'length', value)), 1)
+            value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+            for i in range(support.exceeds_recursion_limit()):
+                value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+        value = ['a', 1]
+        value.append(value)
+        self.assertRaises(ValueError, call, 'set', '_', value)
+        self.assertRaises(ValueError, setvar, '_', value)
+
+    @support.run_with_limited_c_stack()
+    def test_returning_deeply_nested(self):
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+        # run_with_limited_c_stack() runs the test in a new thread, and a
+        # Tcl interpreter can only be used in the thread that created it.
+        interp = Tcl()
+        interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
+                    % support.exceeds_recursion_limit())
+        self.assertRaises(RecursionError, interp.getvar, 'x')
 
     def test_user_command(self):
         result = None
@@ -621,6 +680,22 @@ class TclTest(unittest.TestCase):
             self.assertEqual(a.typename, 'regexp')
         else:
             self.assertEqual(a, expected)
+
+    def test_return_dict_object(self):
+        # A dict is returned as a Tcl_Obj to preserve its structure.
+        tcl = self.interp.tk
+        a = tcl.call('dict', 'create', 'a', 1, 'b', 2)
+        if self.wantobjects:
+            self.assertIsInstance(a, _tkinter.Tcl_Obj)
+            self.assertEqual(a.typename, 'dict')
+        self.assertEqual(str(a), 'a 1 b 2')
+
+    def test_return_nsname_object(self):
+        # An "nsName" object is returned as a str, not wrapped in a Tcl_Obj.
+        tcl = self.interp.tk
+        a = tcl.call('namespace', 'current')
+        self.assertIsInstance(a, str)
+        self.assertEqual(a, '::')
 
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
@@ -761,7 +836,7 @@ class BigmemTclTest(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=3, dry_run=False)
     def test_huge_string_builtins(self, size):
         tk = self.interp.tk
         value = '1' + ' ' * size
@@ -797,6 +872,10 @@ class BigmemTclTest(unittest.TestCase):
 
 
 def setUpModule():
+    wantobjects = support.get_resource_value('wantobjects')
+    if wantobjects is not None:
+        unittest.enterModuleContext(
+            support.swap_attr(tkinter, 'wantobjects', int(wantobjects)))
     if support.verbose:
         tcl = Tcl()
         print('patchlevel =', tcl.call('info', 'patchlevel'), flush=True)

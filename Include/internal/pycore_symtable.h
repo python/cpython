@@ -33,6 +33,10 @@ typedef enum _block_type {
     // i.e., a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two
     // do not support a bound or a constraint tuple).
     TypeVariableBlock,
+    // List/set/dict comprehension inlined into the enclosing compilation unit
+    // (PEP 709). Lexical child of that unit, not a separate code object.
+    // See InternalDocs/inlined_comprehensions.md.
+    InlinedComprehensionBlock,
 } _Py_block_ty;
 
 typedef enum _comprehension_type {
@@ -90,6 +94,7 @@ typedef struct _symtable_entry {
     PyObject *ste_id;        /* int: key in ste_table->st_blocks */
     PyObject *ste_symbols;   /* dict: variable names to flags */
     PyObject *ste_name;      /* string: name of current block */
+    PyObject *ste_function_name;  /* string or NULL: for annotation blocks: name of the corresponding functions */
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
@@ -118,7 +123,6 @@ typedef struct _symtable_entry {
                                              should be created */
     unsigned ste_needs_classdict : 1; /* for class scopes, true if a closure
                                          over the class dict should be created */
-    unsigned ste_comp_inlined : 1; /* true if this comprehension is inlined */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
@@ -126,10 +130,12 @@ typedef struct _symtable_entry {
     unsigned ste_method : 1; /* true if block is a function block defined in class scope */
     unsigned ste_has_conditional_annotations : 1; /* true if block has conditionally executed annotations */
     unsigned ste_in_conditional_block : 1; /* set while we are inside a conditionally executed block */
+    unsigned ste_in_try_block : 1; /* set while we are inside a try/except block */
     unsigned ste_in_unevaluated_annotation : 1; /* set while we are processing an annotation that will not be evaluated */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
+    struct _symtable_entry *ste_parent; /* st entry for the enclosing block if this entry is a sub-scope, NULL otherwise */
     struct symtable *ste_table;
 } PySTEntryObject;
 
@@ -140,6 +146,7 @@ extern PyTypeObject PySTEntry_Type;
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 extern int _PyST_IsFunctionLike(PySTEntryObject *);
+extern int _PyST_IsClassClosureName(PyObject *);
 
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
@@ -151,7 +158,12 @@ extern int _PySymtable_LookupOptional(struct symtable *, void *, PySTEntryObject
 extern void _PySymtable_Free(struct symtable *);
 
 extern PyObject *_Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name);
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
+
+// Export for '_pickle' shared extension
+PyAPI_FUNC(PyObject *)
+_Py_Mangle(PyObject *, PyObject *);
+PyAPI_FUNC(int)
+_Py_IsPrivateName(PyObject *);
 
 /* Flags for def-use information */
 
@@ -165,7 +177,6 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_ANNOT (2<<7)         /* this name is annotated */
 #define DEF_COMP_ITER (2<<8)     /* this name is a comprehension iteration variable */
 #define DEF_TYPE_PARAM (2<<9)    /* this name is a type parameter */
-#define DEF_COMP_CELL (2<<10)    /* this name is a cell in an inlined comprehension */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
@@ -188,7 +199,8 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     const char *str,
     PyObject *filename,
     int start,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    PyObject *module);
 
 int _PyFuture_FromAST(
     struct _mod * mod,

@@ -16,6 +16,7 @@ extern "C" {
 #  define Py_dicts_MAXFREELIST 80
 #  define Py_dictkeys_MAXFREELIST 80
 #  define Py_floats_MAXFREELIST 100
+#  define Py_complexes_MAXFREELIST 100
 #  define Py_ints_MAXFREELIST 100
 #  define Py_slices_MAXFREELIST 1
 #  define Py_ranges_MAXFREELIST 6
@@ -26,9 +27,11 @@ extern "C" {
 #  define Py_futureiters_MAXFREELIST 255
 #  define Py_object_stack_chunks_MAXFREELIST 4
 #  define Py_unicode_writers_MAXFREELIST 1
+#  define Py_bytes_writers_MAXFREELIST 1
 #  define Py_pycfunctionobject_MAXFREELIST 16
 #  define Py_pycmethodobject_MAXFREELIST 16
 #  define Py_pymethodobjects_MAXFREELIST 20
+#  define Py_tracebacks_MAXFREELIST 8
 
 // A generic freelist of either PyObjects or other data structures.
 struct _Py_freelist {
@@ -43,6 +46,7 @@ struct _Py_freelist {
 
 struct _Py_freelists {
     struct _Py_freelist floats;
+    struct _Py_freelist complexes;
     struct _Py_freelist ints;
     struct _Py_freelist tuples[PyTuple_MAXSAVESIZE];
     struct _Py_freelist lists;
@@ -59,9 +63,11 @@ struct _Py_freelists {
     struct _Py_freelist futureiters;
     struct _Py_freelist object_stack_chunks;
     struct _Py_freelist unicode_writers;
+    struct _Py_freelist bytes_writers;
     struct _Py_freelist pycfunctionobject;
     struct _Py_freelist pycmethodobject;
     struct _Py_freelist pymethodobjects;
+    struct _Py_freelist tracebacks;
 };
 
 #ifdef __cplusplus

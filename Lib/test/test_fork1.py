@@ -11,6 +11,7 @@ import unittest
 
 from test.fork_wait import ForkWait
 from test import support
+from test.support import warnings_helper
 
 
 # Skip test if fork does not exist.
@@ -19,6 +20,7 @@ if not support.has_fork_support:
 
 
 class ForkTest(ForkWait):
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_threaded_import_lock_fork(self):
         """Check fork() in main thread works while a subthread is doing an import"""
         import_started = threading.Event()
@@ -61,7 +63,7 @@ class ForkTest(ForkWait):
             except OSError:
                 pass
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_nested_import_lock_fork(self):
         """Check fork() in main thread works while the main thread is doing an import"""
         exitcode = 42

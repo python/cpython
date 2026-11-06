@@ -5,13 +5,14 @@ import time
 import threading
 import unittest
 
+from test import support
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
@@ -187,6 +188,37 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(wr.close)
         await srv.wait_closed()
 
+    async def test_close_before_transport_created(self):
+        # gh-109564: Closing the server after a connection was accepted,
+        # but before its transport was created, must drop the connection
+        # quietly.
+        connected = False
+
+        class Proto(asyncio.Protocol):
+            def connection_made(self, transport):
+                nonlocal connected
+                connected = True
+
+        def factory():
+            srv.close()
+            return Proto()
+
+        errors = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, ctx: errors.append(ctx))
+        srv = await loop.create_server(factory, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
+
+        addr = srv.sockets[0].getsockname()
+        (rd, wr) = await asyncio.open_connection(addr[0], addr[1])
+        self.addCleanup(wr.close)
+        async with asyncio.timeout(support.SHORT_TIMEOUT):
+            self.assertEqual(await rd.read(), b'')
+            await srv.wait_closed()
+
+        self.assertFalse(connected)
+        self.assertEqual(errors, [])
+
     async def test_close_clients(self):
         async def serve(rd, wr):
             try:
@@ -265,6 +297,38 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+    async def test_close_with_hanging_client(self):
+        # Synchronize server cancellation only after the socket connection is
+        # accepted and this event is set
+        conn_event = asyncio.Event()
+        class Proto(asyncio.Protocol):
+            def connection_made(self, transport):
+                conn_event.set()
+
+        loop = asyncio.get_running_loop()
+        srv = await loop.create_server(Proto, socket_helper.HOSTv4, 0)
+
+        # Start the server
+        serve_forever_task = asyncio.create_task(srv.serve_forever())
+        await asyncio.sleep(0)
+
+        # Create a connection to server
+        addr = srv.sockets[0].getsockname()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(addr)
+        self.addCleanup(sock.close)
+
+        # Send a CancelledError into the server to emulate a Ctrl+C
+        # KeyboardInterrupt whilst the server is handling a hanging client
+        await conn_event.wait()
+        serve_forever_task.cancel()
+
+        # Ensure the client is closed within a timeout
+        async with asyncio.timeout(0.5):
+            await srv.wait_closed()
+
+        self.assertFalse(srv.is_serving())
 
 
 # Test the various corner cases of Unix server socket removal

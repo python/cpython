@@ -98,12 +98,50 @@ static PyTypeObject testBufType = {
     .tp_members = testbuf_members
 };
 
+/* Get the pointer from a buffer-supporting object as a PyLong.
+ *
+ * Used to test alignment properties. */
+static PyObject *
+buffer_pointer_as_int(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    PyObject *out;
+    Py_buffer view;
+    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0) {
+        return NULL;
+    }
+    out = PyLong_FromVoidPtr(view.buf);
+    PyBuffer_Release(&view);
+    return out;
+}
+
+static PyObject *
+clear_memoryview(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    if (!PyMemoryView_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError, "memoryview expected");
+        return NULL;
+    }
+    if (Py_TYPE(obj)->tp_clear(obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef test_methods[] = {
+    {"buffer_pointer_as_int", buffer_pointer_as_int, METH_O},
+    {"clear_memoryview", clear_memoryview, METH_O},
+    {NULL},
+};
+
 int
 _PyTestCapi_Init_Buffer(PyObject *m) {
     if (PyType_Ready(&testBufType) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "testBuf", (PyObject *)&testBufType)) {
+        return -1;
+    }
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
 
