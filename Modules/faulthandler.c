@@ -56,6 +56,7 @@ typedef struct {
     int all_threads;
 } fault_handler_t;
 
+#define faulthandler_mutex _PyRuntime.faulthandler.mutex
 #define fatal_error _PyRuntime.faulthandler.fatal_error
 #define thread _PyRuntime.faulthandler.thread
 
@@ -836,17 +837,31 @@ faulthandler_dump_traceback_later_impl(PyObject *module,
         return NULL;
     }
 
+    /* format the timeout before acquiring the lock (no shared state) */
+    header = format_timeout(timeout_us);
+    if (header == NULL) {
+        Py_XDECREF(file);
+        return PyErr_NoMemory();
+    }
+    header_len = strlen(header);
+
+    PyMutex_Lock(&faulthandler_mutex);
+
     if (!thread.running) {
         thread.running = PyThread_allocate_lock();
         if (!thread.running) {
+            PyMutex_Unlock(&faulthandler_mutex);
             Py_XDECREF(file);
+            PyMem_Free(header);
             return PyErr_NoMemory();
         }
     }
     if (!thread.cancel_event) {
         thread.cancel_event = PyThread_allocate_lock();
         if (!thread.cancel_event || !thread.running) {
+            PyMutex_Unlock(&faulthandler_mutex);
             Py_XDECREF(file);
+            PyMem_Free(header);
             return PyErr_NoMemory();
         }
 
@@ -854,14 +869,6 @@ faulthandler_dump_traceback_later_impl(PyObject *module,
            the thread. */
         PyThread_acquire_lock(thread.cancel_event, 1);
     }
-
-    /* format the timeout */
-    header = format_timeout(timeout_us);
-    if (header == NULL) {
-        Py_XDECREF(file);
-        return PyErr_NoMemory();
-    }
-    header_len = strlen(header);
 
     /* Cancel previous thread, if running */
     cancel_dump_traceback_later();
@@ -885,11 +892,13 @@ faulthandler_dump_traceback_later_impl(PyObject *module,
         Py_CLEAR(thread.file);
         PyMem_Free(header);
         thread.header = NULL;
+        PyMutex_Unlock(&faulthandler_mutex);
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to start watchdog thread");
         return NULL;
     }
 
+    PyMutex_Unlock(&faulthandler_mutex);
     Py_RETURN_NONE;
 }
 
@@ -904,7 +913,9 @@ static PyObject *
 faulthandler_cancel_dump_traceback_later_py_impl(PyObject *module)
 /*[clinic end generated code: output=2cf303015d39c926 input=51ad64b6ca8412a4]*/
 {
+    PyMutex_Lock(&faulthandler_mutex);
     cancel_dump_traceback_later();
+    PyMutex_Unlock(&faulthandler_mutex);
     Py_RETURN_NONE;
 }
 
