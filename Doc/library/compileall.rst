@@ -40,7 +40,7 @@ compile Python sources.
 
 .. option:: -f
 
-   Force rebuild even if timestamps are up-to-date.
+   Force rebuild even if timestamps or source hashes are up-to-date.
 
 .. option:: -q
 
@@ -113,6 +113,10 @@ compile Python sources.
    variable is not set, and ``checked-hash`` if the ``SOURCE_DATE_EPOCH``
    environment variable is set.
 
+   An existing byte-code file that is up to date is not recompiled even if
+   it was generated with a different invalidation mode. Use :option:`-f` to
+   regenerate it with the requested mode.
+
 .. option:: -o level
 
    Compile with the given optimization level. May be used multiple times
@@ -145,6 +149,10 @@ compile Python sources.
    :py:func:`sys.getrecursionlimit()`.
    Added the possibility to specify the ``-o`` option multiple times.
 
+.. versionchanged:: 3.16
+   Up-to-date hash-based byte-code files are no longer recompiled, and
+   timestamp-based files are now also checked against the source size.
+
 
 There is no command-line option to control the optimization level used by the
 :func:`compile` function, because the Python interpreter itself already
@@ -173,8 +181,8 @@ Public functions
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
-   If *force* is true, modules are re-compiled even if the timestamps are up to
-   date.
+   If *force* is true, modules are re-compiled even if the timestamps or source
+   hashes are up to date.
 
    If *rx* is given, its ``search`` method is called on the complete path to each
    file considered for compilation, and if it returns a true value, the file
@@ -205,6 +213,8 @@ Public functions
    *invalidation_mode* should be a member of the
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
    pycs are invalidated at runtime.
+   An existing byte-code file that is up to date is not recompiled even if it uses
+   a different invalidation mode; pass *force* to regenerate it.
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
@@ -242,6 +252,10 @@ Public functions
       Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
       Default value of *maxlevels* was changed from ``10`` to ``sys.getrecursionlimit()``
 
+   .. versionchanged:: 3.16
+      Up-to-date hash-based byte-code files are no longer recompiled, and
+      timestamp-based files are now also checked against the source size.
+
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, *, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
    Compile the file with path *fullname*. Return a true value if the file
@@ -275,6 +289,8 @@ Public functions
    *invalidation_mode* should be a member of the
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
    pycs are invalidated at runtime.
+   An existing byte-code file that is up to date is not recompiled even if it uses
+   a different invalidation mode; pass *force* to regenerate it.
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
@@ -300,6 +316,10 @@ Public functions
 
    .. versionchanged:: 3.9
       Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
+
+   .. versionchanged:: 3.16
+      Up-to-date hash-based byte-code files are no longer recompiled, and
+      timestamp-based files are now also checked against the source size.
 
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=None)
 
