@@ -597,9 +597,9 @@ class TclTest(unittest.TestCase):
         self.assertRaises(RecursionError, interp.getvar, 'x')
         interp = None
 
-        # gh-161353: Clean up explicitly per-thread state. Prevent false alarm
-        # of leaked handles on Windows when test_tcl is run with -R 3:3 option.
-        _tkinter.finalize_thread()
+        # gh-161353: Clean up explicitly per-thread state to avoid leaking an
+        # event handle on Windows when test_tcl is run with -R 3:3 option.
+        _tkinter._finalize_thread()
 
     def test_user_command(self):
         result = None
