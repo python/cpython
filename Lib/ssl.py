@@ -1650,6 +1650,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
         cert_reqs = CERT_NONE
     context = _create_stdlib_context(ssl_version,
                                      cert_reqs=cert_reqs,
+                                     check_hostname=ca_certs is not None,
                                      cafile=ca_certs)
     with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
