@@ -112,9 +112,19 @@ whose size is determined when the object is allocated.
 
 /* PyObjects are given a minimum alignment so that the least significant bits
  * of an object pointer become available for other purposes.
- * This must be an integer literal with the value (1 << _PyGC_PREV_SHIFT), number of bytes.
+ * For exposed layouts, this must be an integer literal with the value (1 << _PyGC_PREV_SHIFT), in bytes.
+ * Opaque headers retain 4 for source compatibility.
  */
-#define _PyObject_MIN_ALIGNMENT 4
+// ABI3T test headers may poison Py_GIL_DISABLED.
+#ifndef _Py_OPAQUE_PYOBJECT
+#  if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P > 4
+#    define _PyObject_MIN_ALIGNMENT 8
+#  else
+#    define _PyObject_MIN_ALIGNMENT 4
+#  endif
+#else
+#  define _PyObject_MIN_ALIGNMENT 4
+#endif
 
 /* Nothing is actually declared to be a PyObject, but every pointer to
  * a Python object can be cast to a PyObject*.  This is inheritance built

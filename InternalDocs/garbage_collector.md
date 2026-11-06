@@ -660,11 +660,15 @@ of `PyGC_Head` discussed in the `Memory layout and object structure`_ section:
 
 - The `_gc_prev` field is normally used as the "previous" pointer to maintain the
   doubly linked list but its lowest two bits are used to keep the flags
-  `PREV_MASK_COLLECTING` and `_PyGC_PREV_MASK_FINALIZED`. Between collections,
-  the only flag that can be present is `_PyGC_PREV_MASK_FINALIZED` that indicates
-  if an object has been already finalized. During collections `_gc_prev` is
-  temporarily used for storing a copy of the reference count (`gc_ref`), in
-  addition to two flags, and the GC linked list becomes a singly linked list until
+  `PREV_MASK_COLLECTING` and `_PyGC_PREV_MASK_FINALIZED`. On GIL builds where `SIZEOF_VOID_P > 4`,
+  bit 2 is also used for `_PyGC_PREV_MASK_PERM` to record permanent-generation
+  ownership, including weakrefs temporarily queued for callbacks. Unfreeze clears
+  this flag on objects in the permanent generation. Surviving queued weakrefs
+  have it cleared before moving to the old generation. Between collections,
+  `_PyGC_PREV_MASK_FINALIZED` indicates if an object has been already finalized,
+  and `_PyGC_PREV_MASK_PERM` can also remain set. During collections `_gc_prev`
+  is temporarily used for storing a copy of the reference count (`gc_ref`), in
+  addition to these flags, and the GC linked list becomes a singly linked list until
   `_gc_prev` is restored.
 
 - The `_gc_next` field is used as the "next" pointer to maintain the doubly linked
