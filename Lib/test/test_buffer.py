@@ -4906,5 +4906,22 @@ class TestPythonBufferProtocol(unittest.TestCase):
                 b.extend(A())
 
 
+@unittest.skipIf(ctypes is None or ndarray is None,
+                 "requires ctypes and _testbuffer")
+class TestPyObjectCopyData(unittest.TestCase):
+    def test_mismatched_shape(self):
+        copy_data = ctypes.pythonapi.PyObject_CopyData
+        copy_data.argtypes = (ctypes.py_object, ctypes.py_object)
+        copy_data.restype = ctypes.c_int
+
+        source = ndarray(list(range(7)), shape=(2, 2), strides=(4, 2),
+                         format='B')
+        destination = ndarray([0] * 8, shape=(2, 4), format='B',
+                              flags=ND_WRITABLE)
+
+        with self.assertRaisesRegex(BufferError, "same shape"):
+            copy_data(destination, source)
+
+
 if __name__ == "__main__":
     unittest.main()
