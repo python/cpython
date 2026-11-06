@@ -37,6 +37,13 @@ Pending removal in Python 3.17
     is deprecated and scheduled for removal in Python 3.17.
     (Contributed by Stan Ulbrych in :gh:`136702`.)
 
+* :mod:`profile`:
+
+  - The :mod:`!profile` module is deprecated and will be removed in
+    Python 3.17. Use :mod:`profiling.tracing` instead, which provides a
+    compatible API. See :pep:`799` for details.
+    (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
 * :mod:`webbrowser`:
 
   - :class:`!webbrowser.MacOSXOSAScript` is deprecated in favour of

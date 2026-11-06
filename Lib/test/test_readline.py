@@ -19,21 +19,14 @@ from test.support.threading_helper import requires_working_threading
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
-if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
-    is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
-else:
-    is_editline = readline.backend == "editline"
+is_editline = readline.backend == "editline"
 
 
 def setUpModule():
     if verbose:
-        # Python implementations other than CPython may not have
-        # these private attributes
-        if hasattr(readline, "_READLINE_VERSION"):
-            print(f"readline version: {readline._READLINE_VERSION:#x}")
-            print(f"readline runtime version: {readline._READLINE_RUNTIME_VERSION:#x}")
-        if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
-            print(f"readline library version: {readline._READLINE_LIBRARY_VERSION!r}")
+        print(f"readline version: {readline.READLINE_VERSION_INFO}")
+        print(f"readline runtime version: {readline.readline_version_info}")
+        print(f"readline library version: {readline.readline_version!r}")
         print(f"use libedit emulation? {is_editline}")
 
 
@@ -169,10 +162,77 @@ class TestHistoryManipulation (unittest.TestCase):
         # Readline seems to report an additional history element.
         self.assertIn(readline.get_current_history_length(), (2, 3))
 
+    def test_write_read_zero_length_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.set_history_length(0)
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.clear_history()
+        # libedit cannot read an empty history file, only one that still
+        # has its header line.  How many items remain is not checked:
+        # libedit's own history_truncate_file() ignores a length of 0.
+        readline.read_history_file(TESTFN)
+
+    @unittest.skipUnless(hasattr(readline, "append_history_file"),
+                         "append_history not available")
+    def test_append_limited_history(self):
+        previous_length = readline.get_history_length()
+        self.addCleanup(readline.set_history_length, previous_length)
+
+        readline.clear_history()
+        readline.add_history("first line")
+        readline.add_history("second line")
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+
+        readline.add_history("third line")
+        readline.set_history_length(2)
+        readline.append_history_file(1, TESTFN)
+
+        readline.clear_history()
+        readline.read_history_file(TESTFN)
+        self.assertEqual(readline.get_history_item(1), "second line")
+        self.assertEqual(readline.get_history_item(2), "third line")
+        self.assertEqual(readline.get_history_item(3), None)
+
 
 class TestReadline(unittest.TestCase):
 
-    @unittest.skipIf(readline._READLINE_VERSION < 0x0601 and not is_editline,
+    def _test_readline_version(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 2)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertGreaterEqual(v.major, 4)
+        self.assertGreaterEqual(v.minor, 0)
+
+    def test_readline_version(self):
+        self._test_readline_version(readline.READLINE_VERSION_INFO)
+        self._test_readline_version(readline.readline_version_info)
+        self.assertIsInstance(readline.readline_version, str)
+        if not is_editline:
+            self.assertEqual(readline.readline_version,
+                             '%d.%d' % readline.readline_version_info)
+        # Private names kept for backward compatibility.
+        self.assertEqual(readline._READLINE_VERSION,
+                         readline.READLINE_VERSION_INFO.major << 8 |
+                         readline.READLINE_VERSION_INFO.minor)
+        self.assertEqual(readline._READLINE_RUNTIME_VERSION,
+                         readline.readline_version_info.major << 8 |
+                         readline.readline_version_info.minor)
+        self.assertIs(readline._READLINE_LIBRARY_VERSION,
+                      readline.readline_version)
+
+    @unittest.skipIf(readline.READLINE_VERSION_INFO < (6, 1) and not is_editline,
                      "not supported in this library version")
     def test_init(self):
         # Issue #19884: Ensure that the ANSI sequence "\033[1034h" is not
@@ -328,7 +388,7 @@ print("history", ascii(readline.get_history_item(1)))
     #   See https://cnswww.cns.cwru.edu/php/chet/readline/CHANGES
     # - editline: history size is broken on OS X 10.11.6.
     #   Newer versions were not tested yet.
-    @unittest.skipIf(readline._READLINE_VERSION < 0x600,
+    @unittest.skipIf(readline.READLINE_VERSION_INFO < (6, 0),
                      "this readline version does not support history-size")
     @unittest.skipIf(is_editline,
                      "editline history size configuration is broken")

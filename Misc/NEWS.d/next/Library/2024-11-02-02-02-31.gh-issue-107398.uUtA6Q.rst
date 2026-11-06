@@ -1,1 +1,0 @@
-Fix :mod:`tarfile` stream mode exception when process the file with the gzip extra field.

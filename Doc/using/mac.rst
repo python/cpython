@@ -1,3 +1,4 @@
+.. highlight:: none
 
 .. _using-on-mac:
 
@@ -240,6 +241,9 @@ A number of alternative macOS GUI toolkits are available including:
 * `wxPython <https://wxpython.org>`_: A cross-platform toolkit that
   supports desktop operating systems.
 
+* `Flet <https://flet.dev/>`_: A framework for building cross-platform desktop,
+  mobile, and web applications in Python.
+
 
 Advanced topics
 ===============
@@ -376,7 +380,7 @@ interpreter option:
 
 .. parsed-literal::
 
-    RELEASE="python-\ |version|\ 0b2-macos11.pkg"
+    RELEASE="python-\ |version|\ .0b2-macos11.pkg"
 
     # download installer pkg
     curl -O \https://www.python.org/ftp/python/\ |version|\ .0/${RELEASE}

@@ -498,14 +498,40 @@ Module constants
 
       The ``named`` DB-API parameter style is also supported.
 
+.. data:: SQLITE_VERSION
+
+   The version string of the SQLite library that was used for building
+   the module.
+   This may be different from the SQLite library actually used at runtime,
+   which is available as :const:`sqlite_version`.
+
+   .. versionadded:: 3.16
+
 .. data:: sqlite_version
 
    Version number of the runtime SQLite library as a :class:`string <str>`.
 
+.. data:: SQLITE_VERSION_INFO
+
+   A named tuple containing the three components of the SQLite library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``sqlite3.SQLITE_VERSION_INFO[0]`` is equivalent to
+   ``sqlite3.SQLITE_VERSION_INFO.major`` and so on.
+   This may be different from the SQLite library actually used at runtime,
+   which is available as :const:`sqlite_version_info`.
+
+   .. versionadded:: 3.16
+
 .. data:: sqlite_version_info
 
-   Version number of the runtime SQLite library as a :class:`tuple` of
-   :class:`integers <int>`.
+   A named tuple containing the version of the runtime SQLite library,
+   with the same fields as :const:`SQLITE_VERSION_INFO`.
+
+   .. versionchanged:: 3.16
+      It is now a named tuple.
 
 .. data:: SQLITE_KEYWORDS
 
@@ -1417,7 +1443,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``row_factory`` attribute is no longer allowed.
 
    .. attribute:: text_factory
@@ -1429,7 +1455,7 @@ Connection objects
 
       See :ref:`sqlite3-howto-encoding` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``text_factory`` attribute is no longer allowed.
 
    .. attribute:: total_changes
@@ -1715,7 +1741,7 @@ Cursor objects
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Deleting the ``row_factory`` attribute is no longer allowed.
 
 
@@ -1759,6 +1785,10 @@ Blob objects
 .. class:: Blob
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.16
+      :class:`Blob` now supports negative-step slices
+      (e.g. ``blob[9:0:-2]``) for both reading and writing.
 
    A :class:`Blob` instance is a :term:`file-like object`
    that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.

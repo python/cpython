@@ -3,8 +3,8 @@
 import unittest
 from test import support
 from test.support import script_helper
-from test.support.os_helper import TESTFN, unlink, rmtree
-from test.support.import_helper import unload
+from test.support.os_helper import TESTFN, TESTFN_ASCII, unlink, rmtree
+from test.support.import_helper import import_module, unload
 import importlib
 import os
 import sys
@@ -28,6 +28,30 @@ class MiscSourceEncodingTest(unittest.TestCase):
         d = {}
         exec(c, d)
         self.assertEqual(d['u'], '\xf3')
+
+    def test_compilestring_line_endings(self):
+        for newline in ('\n', '\r', '\r\n', '\r\r\n'):
+            expected = 'é\n\ntext' if newline == '\r\r\n' else 'é\ntext'
+            for suffix in ('', newline):
+                for mode in ('exec', 'eval'):
+                    source = f"'''é{newline}text'''{suffix}"
+                    if mode == 'exec':
+                        source = 'value = ' + source
+                    for encoding in (None, 'utf-8', 'latin-1'):
+                        with self.subTest(newline=newline, suffix=suffix,
+                                          mode=mode, encoding=encoding):
+                            input = source
+                            if encoding is not None:
+                                input = (f'# coding: {encoding}{newline}'
+                                         + source).encode(encoding)
+                            code = compile(input, '<test>', mode)
+                            if mode == 'exec':
+                                namespace = {}
+                                exec(code, namespace)
+                                value = namespace['value']
+                            else:
+                                value = eval(code)
+                            self.assertEqual(value, expected)
 
     def test_issue2301(self):
         try:
@@ -81,6 +105,69 @@ class MiscSourceEncodingTest(unittest.TestCase):
         for seq in truncated:
             with self.subTest(seq=seq):
                 self.assertRaises(SyntaxError, compile, seq, '<test>', 'exec')
+
+    def test_invalid_utf8_offset_after_non_ascii(self):
+        for name in ('é', 'éé', '𝒜'):
+            with self.subTest(name=name):
+                source = ('x = ' + name).encode() + b'\xff\n'
+                with self.assertRaises(SyntaxError) as caught:
+                    compile(source, '<test>', 'exec')
+                error = caught.exception
+                self.assertEqual(
+                    (error.lineno, error.offset, error.end_lineno, error.end_offset),
+                    (1, 5 + len(name), 1, 5 + len(name)),
+                )
+
+    @support.cpython_only
+    def test_invalid_utf8_file_offset_after_non_ascii(self):
+        _testcapi = import_module('_testcapi')
+        self.addCleanup(unlink, TESTFN_ASCII)
+        with open(TESTFN_ASCII, 'wb') as f:
+            f.write(b'\nx = \xc3\xa9\xc3\xa9\xff\n')
+        with self.assertRaises(SyntaxError) as caught:
+            _testcapi.run_file(
+                os.fsencode(TESTFN_ASCII), _testcapi.Py_file_input, {})
+        error = caught.exception
+        self.assertEqual(
+            (error.lineno, error.offset, error.end_lineno, error.end_offset),
+            (2, 7, 2, 7),
+        )
+
+    def test_long_bom_conflict_message_is_not_truncated(self):
+        encoding = "x" * 400
+        source = b"\xef\xbb\xbf# coding:" + encoding.encode() + b"\n"
+        with self.assertRaises(SyntaxError) as caught:
+            compile(source, "<test>", "exec")
+        self.assertEqual(
+            caught.exception.msg,
+            f"encoding problem: {encoding} with BOM",
+        )
+
+    def _assert_python_file_ok(self, source):
+        with tempfile.TemporaryDirectory() as directory:
+            filename = script_helper.make_script(directory, "source", source)
+            script_helper.assert_python_ok(filename)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_spans_lines(self):
+        encoded_name = "変数".encode("iso2022_jp")
+        payload = encoded_name[3:-3]
+        source = (
+            b"# coding: iso2022_jp\n"
+            b"# \x1b$B" + payload + b"\n"
+            + payload + b"\x1b(B = 1\n"
+        )
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_preserves_buffered_text(self):
+        source = b"# coding: hz\nx~\ny = 1\nassert xy == 1\n"
+        self._assert_python_file_ok(source)
+
+    @support.requires_subprocess()
+    def test_stateful_file_decoder_finalizes_before_implicit_newline(self):
+        source = b"# coding: hz\n# ~{1dA?"
+        self._assert_python_file_ok(source)
 
     @support.requires_subprocess()
     def test_20731(self):

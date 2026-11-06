@@ -1,4 +1,5 @@
 import annotationlib
+import atexit
 import contextlib
 import collections
 import collections.abc
@@ -20,7 +21,7 @@ from copy import copy, deepcopy
 
 from typing import Any, NoReturn, Never, assert_never
 from typing import overload, get_overloads, clear_overloads
-from typing import TypeVar, TypeVarTuple, Unpack, AnyStr
+from typing import TypeVar, TypeVarTuple, Unpack
 from typing import T, KT, VT  # Not in __all__.
 from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
@@ -52,8 +53,8 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
-    exceeds_recursion_limit, skip_if_huge_c_stack, skip_wasi_stack_overflow,
-    skip_emscripten_stack_overflow,
+    exceeds_recursion_limit, run_with_limited_c_stack,
+    skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
     ann_module695, mod_generics_cache, _typed_dict_helper,
@@ -488,7 +489,6 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(repr(T), '~T')
         self.assertEqual(repr(KT), '~KT')
         self.assertEqual(repr(VT), '~VT')
-        self.assertEqual(repr(AnyStr), '~AnyStr')
         T_co = TypeVar('T_co', covariant=True)
         self.assertEqual(repr(T_co), '+T_co')
         T_contra = TypeVar('T_contra', contravariant=True)
@@ -5097,7 +5097,7 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
@@ -6053,6 +6053,22 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
+    def test_parameter_added_after_parameters_cached(self):
+        # gh-155752: GenericAlias parameters are cached before substitution, so
+        # an argument can gain __typing_subst__ after the tuple is calculated.
+        class Parameter:
+            pass
+
+        first = Parameter()
+        first.__typing_subst__ = lambda value: value
+        late = Parameter()
+        alias = types.GenericAlias(dict, (first, late))
+        self.assertEqual(alias.__parameters__, (first,))
+        late.__typing_subst__ = lambda value: value
+
+        with self.assertRaisesRegex(TypeError, "not found in __parameters__"):
+            alias[0]
+
     def test_return_non_tuple_while_unpacking(self):
         # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
         # returned a tuple
@@ -6371,13 +6387,15 @@ class OverrideDecoratorTests(BaseTestCase):
 class CastTests(BaseTestCase):
 
     def test_basics(self):
+        T = TypeVar("T")
+
         self.assertEqual(cast(int, 42), 42)
         self.assertEqual(cast(float, 42), 42)
         self.assertIs(type(cast(float, 42)), int)
         self.assertEqual(cast(Any, 42), 42)
         self.assertEqual(cast(list, 42), 42)
         self.assertEqual(cast(Union[str, float], 42), 42)
-        self.assertEqual(cast(AnyStr, 42), 42)
+        self.assertEqual(cast(T, 42), 42)
         self.assertEqual(cast(None, 42), 42)
 
     def test_errors(self):
@@ -6390,9 +6408,10 @@ class AssertTypeTests(BaseTestCase):
 
     def test_basics(self):
         arg = 42
+        T = TypeVar("T")
         self.assertIs(assert_type(arg, int), arg)
         self.assertIs(assert_type(arg, str | float), arg)
-        self.assertIs(assert_type(arg, AnyStr), arg)
+        self.assertIs(assert_type(arg, T), arg)
         self.assertIs(assert_type(arg, None), arg)
 
     def test_errors(self):
@@ -6550,6 +6569,14 @@ class NoTypeCheckTests(BaseTestCase):
 class InternalsTests(BaseTestCase):
     def test_collect_parameters(self):
         typing = import_helper.import_fresh_module("typing")
+        # Importing typing registers an internal function named _clear_caches
+        # with atexit. The throwaway module created here installs its own
+        # handler, which holds the module alive and keeps references until
+        # interpreter shutdown even after the test finishes. Each repetition
+        # of this test under -R would therefore leak another module copy. To
+        # avoid this, we unregister the handler once the test is done.
+        self.addCleanup(atexit.unregister, typing._clear_caches)
+
         with self.assertWarnsRegex(
             DeprecationWarning,
             "The private _collect_parameters function is deprecated"
@@ -7719,6 +7746,10 @@ class CollectionsAbcTests(BaseTestCase):
 
         with self.assertWarns(DeprecationWarning):
             from typing import ByteString
+        # Drop the exit handler of this throwaway copy, see the comment in
+        # InternalsTests.test_collect_parameters.
+        self.addCleanup(atexit.unregister, sys.modules["typing"]._clear_caches)
+
         with self.assertWarns(DeprecationWarning):
             self.assertIsInstance(b'', ByteString)
         with self.assertWarns(DeprecationWarning):
@@ -9608,12 +9639,15 @@ class NotRequiredTests(BaseTestCase):
 class IOTests(BaseTestCase):
 
     def test_io(self):
-
-        def stuff(a: IO) -> AnyStr:
+        def stuff(a: IO):
             return a.readline()
 
         a = stuff.__annotations__['a']
-        self.assertEqual(a.__parameters__, (AnyStr,))
+        self.assertEqual(len(a.__parameters__), 1)
+        any_str = a.__parameters__[0]
+        self.assertEqual(repr(any_str), 'AnyStr')
+        self.assertEqual(any_str.__bound__, None)
+        self.assertEqual(any_str.__constraints__, (bytes, str))
 
     def test_textio(self):
 
@@ -9793,6 +9827,7 @@ class AnnotatedTests(BaseTestCase):
         for args in itertools.permutations(get_args(expr1)):
             with self.subTest(args=args):
                 self.assertEqual(expr1, reduce(operator.or_, args))
+                self.assertEqual(expr1, Union[args])
 
         expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
         for args in itertools.permutations(get_args(expr2)):
@@ -10268,6 +10303,17 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(P.args, P_2.kwargs)
         self.assertEqual(repr(P.args), "P.args")
         self.assertEqual(repr(P.kwargs), "P.kwargs")
+
+    def test_args_kwargs_weakrefs(self):
+        P = ParamSpec('P')
+        for attr_name in ('args', 'kwargs'):
+            with self.subTest(attr_name=attr_name):
+                callback_fired = []
+                attr = getattr(P, attr_name)
+                ref = weakref.ref(attr, lambda _: callback_fired.append(True))
+                del attr
+                self.assertEqual(callback_fired, [True])
+                self.assertIsNone(ref())
 
     def test_stringized(self):
         P = ParamSpec('P')
@@ -11244,12 +11290,21 @@ class AllTests(BaseTestCase):
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
-                k not in {"ByteString"} and
+                k not in {"ByteString", "AnyStr"} and
                 # but export all other things that have __module__ == 'typing'
                 getattr(v, '__module__', None) == typing.__name__
             )
         }
         self.assertSetEqual(computed_all, actual_all)
+
+    def test_any_str_deprecated(self):
+        # gh-105578
+        fresh = import_helper.import_fresh_module('typing')
+
+        with self.assertWarnsRegex(DeprecationWarning, r'typing\.AnyStr'):
+            fresh.AnyStr
+
+        self.assertEqual(repr(fresh.AnyStr), '~AnyStr')
 
 
 class TypeIterationTests(BaseTestCase):

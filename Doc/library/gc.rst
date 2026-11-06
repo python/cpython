@@ -75,6 +75,12 @@ The :mod:`!gc` module provides the following functions:
    returned. If *generation* is not ``None``, return only the objects tracked by
    the collector that are in that generation.
 
+   .. warning::
+      Care must be taken when using objects returned by :func:`get_objects` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_objects` for any purpose other than
+      debugging.
+
    .. versionchanged:: 3.8
       New *generation* parameter.
 
