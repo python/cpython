@@ -421,6 +421,12 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         goto error;
     }
 
+    /* With max_length == 0 there is no room for output.  Don't call into
+       libbz2: any input is kept in the input buffer for the next call. */
+    if (max_length == 0) {
+        goto finish;
+    }
+
     for (;;) {
         int bzret;
         /* On a 64-bit system, buffer length might not fit in avail_out, so we
@@ -456,6 +462,7 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         }
     }
 
+finish:
     result = OutputBuffer_Finish(&buffer, bzs->avail_out);
     if (result != NULL) {
         return result;
