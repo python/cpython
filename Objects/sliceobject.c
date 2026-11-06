@@ -21,6 +21,13 @@ this type and there is exactly one in existence.
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 
+#include "clinic/sliceobject.c.h"
+
+/*[clinic input]
+class slice "PySliceObject *" "&PySlice_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=857b514967456ef4]*/
+
 
 #define _PySlice_CAST(op) _Py_CAST(PySliceObject*, (op))
 
@@ -308,19 +315,22 @@ PySlice_GetIndicesEx(PyObject *_r, Py_ssize_t length,
     return 0;
 }
 
+/*[clinic input]
+@classmethod
+@vectorcall
+slice.__new__ as slice_new
+
+    start: object
+    stop: object(c_default="NULL") = None
+    step: object(c_default="NULL") = None
+    /
+[clinic start generated code]*/
+
 static PyObject *
-slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+slice_new_impl(PyTypeObject *type, PyObject *start, PyObject *stop,
+               PyObject *step)
+/*[clinic end generated code: output=35a6e86397efb677 input=cf5c572a0d2caa22]*/
 {
-    PyObject *start, *stop, *step;
-
-    start = stop = step = NULL;
-
-    if (!_PyArg_NoKeywords("slice", kw))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
-        return NULL;
-
     /* This swapping of stop and start is to maintain similarity with
        range(). */
     if (stop == NULL) {
@@ -702,4 +712,5 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     slice_new,                                  /* tp_new */
+    .tp_vectorcall = slice_vectorcall,
 };

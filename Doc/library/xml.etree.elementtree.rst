@@ -561,13 +561,13 @@ Functions
 
    - *with_comments*: set to true to include comments (default: false)
    - *strip_text*: set to true to strip whitespace before and after text content
-                   (default: false)
+     (default: false)
    - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
-                         (default: false)
+     (default: false)
    - *qname_aware_tags*: a set of qname aware tag names in which prefixes
-                         should be replaced in text content (default: empty)
+     should be replaced in text content (default: empty)
    - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
-                          should be replaced in text content (default: empty)
+     should be replaced in text content (default: empty)
    - *exclude_attrs*: a set of attribute names that should not be serialised
    - *exclude_tags*: a set of tag names that should not be serialised
 
@@ -857,7 +857,8 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the :mod:`!xml.etree.ElementTree` module:
+To process this file, load it as usual, and pass the root element to the
+:mod:`xml.etree.ElementInclude` module:
 
 .. code-block:: python
 
