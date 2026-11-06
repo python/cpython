@@ -5047,6 +5047,27 @@ class PdbTestInline(unittest.TestCase):
         self.assertIn('42', stdout)
         self.assertEqual(stderr, '')
 
+    def test_set_trace_after_quit(self):
+        script = """
+            import bdb
+            import sys
+            # Make quit raise BdbQuit as in the interactive interpreter.
+            sys.ps1 = '>>> '
+            try:
+                breakpoint()
+            except bdb.BdbQuit:
+                pass
+            breakpoint()
+        """
+        commands = """
+            q
+            p 'stopped' + 'again'
+            c
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("'stoppedagain'", stdout)
+        self.assertEqual(stderr, '')
+
     def test_readline_not_imported(self):
         """GH-138860
         Directly or indirectly importing readline might deadlock a subprocess

@@ -1,0 +1,3 @@
+Fix :func:`breakpoint` and :func:`pdb.set_trace` being ignored after a
+previous debugger session was ended by an exception, for example by quitting
+with ``q`` in the interactive interpreter.
