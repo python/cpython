@@ -41,6 +41,10 @@ jobs:
       run: |
         brew bundle --file=Misc/Brewfile
         brew install make gdb
+    - name: Codesign gdb binary
+      # https://sourceware.org/gdb/wiki/PermissionsDarwin
+      # https://github.com/conda-forge/gdb-feedstock/blob/main/recipe/macos-codesign/macos-setup-codesign.sh
+      run: ./.github/workflows/macos-setup-gdb-codesign.sh
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \
