@@ -3,7 +3,6 @@ Ruleset to check if a test is expected to be skipped.
 Tests are mostly filtered using sys.platform, except a few exceptions.
 """
 
-import importlib
 import os
 import sys
 import sysconfig
