@@ -1368,7 +1368,7 @@ _winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
     wchar_t *command_line_copy = NULL;
     AttributeList attribute_list = {0};
 
-    if (PySys_Audit("_winapi.CreateProcess", "uuu", application_name,
+    if (PySys_Audit("_winapi.CreateProcess", "uOu", application_name,
                     command_line, current_directory) < 0) {
         return NULL;
     }

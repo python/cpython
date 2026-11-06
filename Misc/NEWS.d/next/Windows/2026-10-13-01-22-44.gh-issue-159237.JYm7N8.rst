@@ -1,0 +1,2 @@
+Fix the ``_winapi.CreateProcess`` audit event passing garbage instead of the
+*command_line* argument to audit hooks.
