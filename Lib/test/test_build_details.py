@@ -131,7 +131,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
                 dirname = os.path.join(projectdir, f.read())
         else:
             dirname = sysconfig.get_path('stdlib')
-        return os.path.join(dirname, 'build-details.json')
+        return os.path.join(dirname, sysconfig.get_config_var('BUILD_DETAILS'))
 
     @property
     def contents(self):
