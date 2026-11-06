@@ -53,6 +53,29 @@ class Test(unittest.TestCase):
         syslog.syslog('test message from python test_syslog')
 
     @threading_helper.requires_working_threading()
+    def test_racing_openlog_argv(self):
+        # gh-159864: openlog() without an ident reads sys.argv[0] while
+        # another thread replaces it.
+        argv = ["prog"]
+        nthreads = 32
+
+        def opener():
+            for _ in range(1000):
+                syslog.openlog()
+
+        def writer():
+            for i in range(1000):
+                argv[0] = f"prog-{i}"
+
+        with support.swap_attr(sys, "argv", argv):
+            try:
+                threading_helper.run_concurrently(
+                    worker_func=[opener] * (nthreads - 1) + [writer],
+                )
+            finally:
+                syslog.closelog()
+
+    @threading_helper.requires_working_threading()
     def test_syslog_threaded(self):
         start = threading.Event()
         stop = False
@@ -141,6 +164,29 @@ class Test(unittest.TestCase):
             self.assertEqual(res, 0)
         finally:
             syslog.closelog()
+
+    @threading_helper.requires_working_threading()
+    def test_subinterpreter_concurrent_syslog(self):
+        # gh-158929: This used to crash.
+        from concurrent import interpreters
+
+        interp = interpreters.create()
+        try:
+            def in_interpreter():
+                import syslog
+
+                for _ in range(40000):
+                    try:
+                        syslog.syslog('my hovercraft is full of eels')
+                    except RuntimeError:
+                        pass
+            thread = interp.call_in_thread(in_interpreter)
+            for i in range(40000):
+                syslog.openlog(f"python{i}")
+                syslog.closelog()
+            thread.join()
+        finally:
+            interp.close()
 
 
 if __name__ == "__main__":

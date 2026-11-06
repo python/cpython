@@ -92,6 +92,7 @@ _lsprof_get_state(PyObject *module)
 
 static PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
+    assert(pObj->externalTimer != NULL && pObj->externalTimer != Py_None);
     PyObject *o = NULL;
 
     // External timer can do arbitrary things so we need a flag to prevent
@@ -1020,6 +1021,9 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
 {
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return -1;
+    }
+    if (timer == Py_None) {
+        timer = NULL;
     }
     self->externalTimerUnit = timeunit;
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));

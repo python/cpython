@@ -2,8 +2,9 @@
 #include "pyconfig.h"
 
 #include "Python.h"
-#include "internal/pycore_runtime.h"
-#include "internal/pycore_ceval.h"
+#include "pycore_runtime.h"
+#include "pycore_ceval.h"
+#include "pycore_fileutils.h"     // _Py_strerror()
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 #include "remote_debug.h"
@@ -121,10 +122,14 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
             }
             errno = err;
             PyErr_SetFromErrno(PyExc_OSError);
-            _set_debug_exception_cause(PyExc_OSError,
-                "process_vm_writev failed for PID %d at address 0x%lx "
-                "(size %zu, partial write %zd bytes): %s",
-                handle->pid, remote_address + result, len - result, result, strerror(err));
+            PyObject *message = _Py_strerror(err);
+            if (message != NULL) {
+                _set_debug_exception_cause(PyExc_OSError,
+                    "process_vm_writev failed for PID %d at address 0x%lx "
+                    "(size %zu, partial write %zd bytes): %s",
+                    handle->pid, remote_address + result, len - result, result, message);
+                Py_DECREF(message);
+            }
             return -1;
         }
 

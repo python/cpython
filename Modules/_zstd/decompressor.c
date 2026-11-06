@@ -688,18 +688,13 @@ static int
 ZstdDecompressor_traverse(PyObject *ob, visitproc visit, void *arg)
 {
     ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
+    Py_VISIT(Py_TYPE(ob));
     Py_VISIT(self->dict);
     return 0;
 }
 
-static int
-ZstdDecompressor_clear(PyObject *ob)
-{
-    ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
-    Py_CLEAR(self->dict);
-    Py_CLEAR(self->unused_data);
-    return 0;
-}
+/* No tp_clear: the decompression context references the dictionary until
+   ZstdDecompressor_dealloc() has freed the context. */
 
 static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdDecompressor_new},
@@ -709,7 +704,6 @@ static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_getset, ZstdDecompressor_getset},
     {Py_tp_doc, (void *)_zstd_ZstdDecompressor_new__doc__},
     {Py_tp_traverse, ZstdDecompressor_traverse},
-    {Py_tp_clear, ZstdDecompressor_clear},
     {0, 0}
 };
 

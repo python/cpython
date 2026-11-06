@@ -181,24 +181,59 @@ unicode_resize(PyObject *self, PyObject *args)
     PyObject *obj, *copy;
     Py_ssize_t length;
     int result;
+    int new = 1;
+    int compute_hash = 0;
 
-    if (!PyArg_ParseTuple(args, "On", &obj, &length)) {
+    if (!PyArg_ParseTuple(args, "On|pp", &obj, &length, &new, &compute_hash)) {
         return NULL;
     }
 
     NULLABLE(obj);
-    if (!(copy = unicode_copy(obj)) && obj) {
-        return NULL;
+    Py_ssize_t old_len = obj ? PyUnicode_GetLength(obj) : 0;
+    if (obj != NULL && new) {
+        copy = unicode_copy(obj);
+        if (!copy) {
+            return NULL;
+        }
+        obj = copy;
     }
-    result = PyUnicode_Resize(&copy, length);
+    else {
+        Py_XINCREF(obj);
+    }
+
+    if (compute_hash && obj != NULL) {
+        if (PyObject_Hash(obj) == -1) {
+            Py_DECREF(obj);
+            return NULL;
+        }
+    }
+
+    PyObject *old_obj = obj;
+    result = PyUnicode_Resize(&obj, length);
     if (result == -1 && PyErr_Occurred()) {
-        Py_XDECREF(copy);
+        Py_XDECREF(obj);
         return NULL;
     }
-    if (obj && PyUnicode_Check(obj) && length > PyUnicode_GetLength(obj)) {
-        unicode_fill(copy, PyUnicode_GetLength(obj), length, 0U);
+    if (obj && PyUnicode_Check(obj) && length > old_len) {
+        unicode_fill(obj, old_len, length, 0U);
     }
-    return Py_BuildValue("(Ni)", copy, result);
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+    return Py_BuildValue("(Ninp)", obj, result, refcnt, obj != old_obj);
+}
+
+// Test PyUnicode_Resize(NULL, length)
+static PyObject *
+unicode_resize_null(PyObject *self, PyObject *args)
+{
+    Py_ssize_t length;
+    if (!PyArg_ParseTuple(args, "n", &length)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Resize(NULL, length)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 /* Test PyUnicode_Append() */
@@ -944,7 +979,7 @@ unicode_encodecodepage(PyObject *self, PyObject *args)
 {
     int code_page;
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "iO|z", &code_page, &unicode, &errors))
         return NULL;
@@ -961,7 +996,7 @@ unicode_decodelocaleandsize(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -975,7 +1010,7 @@ unicode_decodelocale(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -988,7 +1023,7 @@ static PyObject *
 unicode_encodelocale(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O|z", &unicode, &errors))
         return NULL;
@@ -1282,7 +1317,7 @@ unicode_comparewithasciistring(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     int result;
 
     if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len))
@@ -1321,7 +1356,7 @@ unicode_equaltoutf8andsize(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     Py_ssize_t size = -100;
     int result;
 
@@ -1853,6 +1888,23 @@ unicode_equal(PyObject *module, PyObject *args)
 }
 
 
+/* Test PyUnicode_Check() */
+static PyObject *
+unicode_check(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyUnicode_Check(obj));
+}
+
+
+/* Test PyUnicode_CheckExact() */
+static PyObject *
+unicode_checkexact(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyUnicode_CheckExact(obj));
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
@@ -1863,6 +1915,7 @@ static PyMethodDef TestMethods[] = {
     {"test_widechar",            test_widechar,                  METH_NOARGS},
     {"unicode_writechar",        unicode_writechar,              METH_VARARGS},
     {"unicode_resize",           unicode_resize,                 METH_VARARGS},
+    {"unicode_resize_null",      unicode_resize_null,            METH_VARARGS},
     {"unicode_append",           unicode_append,                 METH_VARARGS},
     {"unicode_appendanddel",     unicode_appendanddel,           METH_VARARGS},
     {"unicode_fromstringandsize",unicode_fromstringandsize,      METH_VARARGS},
@@ -1942,6 +1995,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
     {"unicode_equal",            unicode_equal,                  METH_VARARGS},
+    {"unicode_check",            unicode_check,                  METH_O},
+    {"unicode_checkexact",       unicode_checkexact,             METH_O},
     {NULL},
 };
 

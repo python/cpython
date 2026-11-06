@@ -767,6 +767,17 @@ _Py_TryIncref(PyObject *op)
 #endif
 }
 
+// Like Py_XSETREF, but publish the new value atomically and delay the decref
+// using QSBR in the free-threaded build. The caller must synchronize writers.
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);

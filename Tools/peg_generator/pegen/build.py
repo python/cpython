@@ -149,9 +149,10 @@ def compile_c_extension(
         # HACK: The location of pyconfig.h has moved within our build, and
         # setuptools hasn't updated for it yet. So add the path manually for now
         include_dirs.append(pathlib.Path(sysconfig.get_config_h_filename()).parent)
+    sources = [generated_source_path]
     extension = Extension(
         extension_name,
-        sources=[generated_source_path],
+        sources=sources,
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
     )
@@ -208,19 +209,19 @@ def compile_c_extension(
                 ]
             )
     else:
-        extension.sources[0:0] = common_sources
+        sources[0:0] = common_sources
 
     # Compile the source code to object files.
     ext_path = cmd.get_ext_fullpath(extension_name)
-    if newer_group(extension.sources, ext_path, "newer"):
+    if newer_group(sources, ext_path, "newer"):
         objects = compiler.compile(
-            extension.sources,
+            sources,
             output_dir=cmd.build_temp,
             debug=cmd.debug,
             extra_postargs=extra_compile_args,
         )
     else:
-        objects = compiler.object_filenames(extension.sources, output_dir=cmd.build_temp)
+        objects = compiler.object_filenames(sources, output_dir=cmd.build_temp)
     # The cmd.get_libraries() call needs a valid compiler attribute or we will
     # get an incorrect library name on the free-threaded Windows build.
     cmd.compiler = compiler

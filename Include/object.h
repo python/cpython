@@ -109,7 +109,8 @@ whose size is determined when the object is allocated.
 #ifndef Py_GIL_DISABLED
 struct _object {
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+        && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L \
+            || defined(__cplusplus))
     // On C99 and older, anonymous union is a GCC and clang extension
     __extension__
 #endif
@@ -533,7 +534,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
 #define Py_TPFLAGS_MAPPING (1 << 6)
-#endif
+#endif  // Py_LIMITED_API
 
 /* Disallow creating instances of the type: set tp_new to NULL and don't create
  * the "__new__" key in the type dictionary. */

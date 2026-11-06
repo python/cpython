@@ -457,7 +457,12 @@ class _Stream:
                                          -self.zlib.MAX_WBITS,
                                          self.zlib.DEF_MEM_LEVEL,
                                          0)
-        timestamp = struct.pack("<L", int(time.time()))
+        mtime = time.time()
+        # gh-133998: substitute 0 for an out-of-range mtime and coerce to int,
+        # mirroring gzip (RFC 1952), so struct.pack cannot raise struct.error.
+        if not 0 <= mtime < 2**32:
+            mtime = 0
+        timestamp = struct.pack("<L", int(mtime))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
@@ -814,10 +819,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
     # Include os.sep (target OS directory separator) as well.
     if name.startswith(('/', os.sep)):
         name = new_attrs['name'] = member.path.lstrip('/' + os.sep)
-    if os.path.isabs(name):
-        # Path is absolute even after stripping.
-        # For example, 'C:/foo' on Windows.
-        raise AbsolutePathError(member)
     # Ensure we stay in the destination
     if '..' in name.replace(os.sep, '/').split('/'):
         # Directories are created from the name as given, so a name that
@@ -826,9 +827,20 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         normalized = os.path.normpath(name)
         if normalized != name:
             name = new_attrs['name'] = normalized
+    if os.path.isabs(name) or os.path.splitdrive(name)[0]:
+        # Path is absolute even after stripping, or has a drive.
+        # For example, 'C:/foo' or 'C:foo' on Windows.
+        # os.path.join() ignores a destination without a drive for 'C:foo'.
+        raise AbsolutePathError(member)
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
+        raise OutsideDestinationError(member, target_path)
+    # A link member named after the destination directory itself
+    # would replace it with a (sym)link, redirecting the destination
+    # for all subsequent members.
+    if ((member.islnk() or member.issym())
+            and os.path.normpath(name) == os.curdir):
         raise OutsideDestinationError(member, target_path)
     # Limit permissions (no high bits, and go-w)
     mode = member.mode
@@ -863,16 +875,11 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
             new_attrs['gname'] = None
         # Check link destination for 'data'
         if member.islnk() or member.issym():
-            if os.path.isabs(member.linkname):
-                raise AbsoluteLinkError(member)
-            # A link member that resolves to the destination directory itself
-            # would replace it with a (sym)link, redirecting the destination
-            # for all subsequent members.
-            if target_path == dest_path:
-                raise OutsideDestinationError(member, target_path)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
+            if os.path.isabs(normalized) or os.path.splitdrive(normalized)[0]:
+                raise AbsoluteLinkError(member)
             if member.issym():
                 # The symlink is created at `name` with trailing separators
                 # stripped, so its target is relative to the directory
@@ -2189,7 +2196,9 @@ class TarFile(object):
            than once in the archive, its last occurrence is assumed to be the
            most up-to-date version.
         """
-        tarinfo = self._getmember(name.rstrip('/'))
+        tarinfo = self._getmember(name)
+        if tarinfo is None and name.endswith('/'):
+            tarinfo = self._getmember(name.rstrip('/'))
         if tarinfo is None:
             raise KeyError("filename %r not found" % name)
         return tarinfo
@@ -2698,6 +2707,13 @@ class TarFile(object):
             self.makeunknown(tarinfo, targetpath)
         else:
             self.makefile(tarinfo, targetpath)
+
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
 
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)

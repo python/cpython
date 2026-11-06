@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -228,6 +228,39 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_replace_inline_values_and_lookup(self):
+        # gh-160496: replacing an unmaterialized __dict__ clears inline
+        # values while attribute lookup can still read them without a lock.
+        class C:
+            pass
+
+        objects = [C() for _ in range(1000)]
+        for obj in objects:
+            obj.x = [0]
+
+        # Inline values are invalidated only once per object, so synchronize
+        # the threads for each fresh instance without accessing its __dict__.
+        barrier = Barrier(2)
+        observed = []
+
+        def writer():
+            for obj in objects:
+                barrier.wait()
+                obj.__dict__ = {"x": [1]}
+                barrier.wait()
+
+        def reader():
+            for obj in objects:
+                barrier.wait()
+                observed.append(getattr(obj, "x", None))
+                barrier.wait()
+
+        threading_helper.run_concurrently([writer, reader])
+        for value in observed:
+            self.assertIn(value, ([0], [1]))
+        for obj in objects:
+            self.assertEqual(obj.x, [1])
+
     def test_racing_object_get_set_dict(self):
         e = Exception()
 
@@ -289,6 +322,29 @@ class TestDict(TestCase):
 
         with threading_helper.start_threads([t1, t2]):
             pass
+
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
 
 if __name__ == "__main__":
     unittest.main()

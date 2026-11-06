@@ -160,7 +160,7 @@ breaking client code.  For example, in the :mod:`statistics` module, the
 parameter name *dist* may be changed in the future.  This was made
 possible with the following function specification::
 
-  def quantiles(dist, /, *, n=4, method='exclusive')
+  def quantiles(dist, /, *, n=4, method='exclusive'):
       ...
 
 Since the parameters to the left of ``/`` are not exposed as possible
@@ -908,9 +908,10 @@ for :deco:`property`, :deco:`classmethod`, and :deco:`staticmethod`::
 io
 --
 
-In development mode (:option:`-X` ``env``) and in :ref:`debug build <debug-build>`, the
-:class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
-fails. The exception is ignored silently by default in release build.
+In development mode (:option:`-X` ``dev``) and in
+:ref:`debug build <debug-build>`, the :class:`io.IOBase` finalizer now logs the
+exception if the ``close()`` method fails. The exception is ignored silently
+by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 

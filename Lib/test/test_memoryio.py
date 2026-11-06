@@ -651,6 +651,29 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.getvalue(), b"01AAA56789")
         self.assertEqual(memio.tell(), 5)
 
+    @support.nomemtest
+    def test_memory_error(self):
+        # gh-157242: io.BytesIO() must not close the file on MemoryError
+
+        # write()
+        stream = self.ioclass()
+        stream.write(self.buftype('abc'))
+        data = self.buftype('def')
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                stream.write(data)
+        stream.write(self.buftype('123'))
+        self.assertEqual(stream.getvalue(), self.buftype('abc123'))
+
+        # truncate()
+        data = self.buftype('x' * 100)
+        stream = self.ioclass()
+        stream.write(data)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                stream.truncate(5)
+        self.assertEqual(stream.getvalue(), data)
+
 
 class TextIOTestMixin:
 
@@ -836,6 +859,49 @@ class PyStringIOPickleTest(TextIOTestMixin, unittest.TestCase):
 class CBytesIOTest(PyBytesIOTest):
     ioclass = io.BytesIO
     UnsupportedOperation = io.UnsupportedOperation
+
+    def test_truncate_size_changes_stream(self):
+        class Size:
+            def __init__(self, action):
+                self.action = action
+
+            def __index__(self):
+                self.result = self.action()
+                return 0
+
+        stream = self.ioclass(b'abc')
+        with self.assertRaises(ValueError):
+            stream.truncate(Size(stream.close))
+
+        with self.ioclass(b'abc') as stream:
+            size = Size(stream.getbuffer)
+            try:
+                with self.assertRaises(BufferError):
+                    stream.truncate(size)
+                self.assertEqual(stream.getvalue(), b'abc')
+            finally:
+                size.result.release()
+
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass(b'abc')
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), b'abc')
+
+    def test_write_overflow(self):
+        # gh-160781: overallocation at a position near sys.maxsize
+        # must raise OverflowError, not SystemError.
+        memio = self.ioclass()
+        memio.seek(sys.maxsize - 1)
+        self.assertRaises(OverflowError, memio.write, b"x")
+        self.assertEqual(memio.getvalue(), b"")
+        self.assertEqual(memio.tell(), sys.maxsize - 1)
+
+    def test_readinto_overlapping_buffer(self):
+        with self.ioclass(b'abcd') as stream:
+            with stream.getbuffer()[1:] as target:
+                self.assertEqual(stream.readinto(target), 3)
+            self.assertEqual(stream.getvalue(), b'aabc')
 
     def test_getstate(self):
         memio = self.ioclass()

@@ -841,8 +841,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 
 #ifndef MS_WINDOWS
     if (i != 0) {
-        const char *s = strerror(i);
-        message = PyUnicode_DecodeLocale(s, "surrogateescape");
+        message = _Py_strerror(i);
     }
     else {
         /* Sometimes errno didn't get set */

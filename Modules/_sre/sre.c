@@ -746,6 +746,10 @@ pattern_dealloc(PyObject *self)
 LOCAL(Py_ssize_t)
 sre_match(SRE_STATE* state, SRE_CODE* pattern)
 {
+    /* No match if pos > endpos. */
+    if (state->ptr > state->end) {
+        return 0;
+    }
     if (state->charsize == 1)
         return sre_ucs1_match(state, pattern, 1);
     if (state->charsize == 2)
@@ -2809,6 +2813,8 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
     ScannerObject *self = _ScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pattern);
+    Py_VISIT(self->state.string);
+    Py_VISIT(self->state.buffer.obj);
     return 0;
 }
 
@@ -2816,7 +2822,10 @@ static int
 scanner_clear(PyObject *op)
 {
     ScannerObject *self = _ScannerObject_CAST(op);
+    self->state.start = NULL;
     Py_CLEAR(self->pattern);
+    Py_CLEAR(self->state.string);
+    PyBuffer_Release(&self->state.buffer);
     return 0;
 }
 
@@ -2826,8 +2835,8 @@ scanner_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ScannerObject *scanner = _ScannerObject_CAST(self);
-    state_fini(&scanner->state);
     (void)scanner_clear(self);
+    state_fini(&scanner->state);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

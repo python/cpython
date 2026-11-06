@@ -1052,7 +1052,7 @@ mimalloc
 
 MIT License::
 
-   Copyright (c) 2018-2021 Microsoft Corporation, Daan Leijen
+   Copyright (c) 2018-2025 Microsoft Corporation, Daan Leijen
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal

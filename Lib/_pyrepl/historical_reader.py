@@ -295,9 +295,14 @@ class HistoricalReader(Reader):
 
     @contextmanager
     def suspend_history(self) -> SimpleContextManager:
+        with self.suspend_history_writes():
+            del self.history[:]
+            yield
+
+    @contextmanager
+    def suspend_history_writes(self) -> SimpleContextManager:
         try:
             old_history = self.history[:]
-            del self.history[:]
             yield
         finally:
             self.history[:] = old_history

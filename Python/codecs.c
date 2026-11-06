@@ -66,28 +66,27 @@ PyCodec_Unregister(PyObject *search_function)
 
     PyObject *codec_search_path = interp->codecs.search_path;
     assert(PyList_CheckExact(codec_search_path));
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->codecs.search_path_mutex);
+#endif
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(codec_search_path); i++) {
+        if (PyList_GET_ITEM(codec_search_path, i) == search_function) {
+            // Keep the function alive until after releasing the mutex.
+            Py_INCREF(search_function);
+            int ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
 #ifdef Py_GIL_DISABLED
-        PyMutex_Lock(&interp->codecs.search_path_mutex);
+            PyMutex_Unlock(&interp->codecs.search_path_mutex);
 #endif
-        PyObject *item = PyList_GetItemRef(codec_search_path, i);
-        int ret = 1;
-        if (item == search_function) {
-            // We hold a reference to the item, so its destructor can't run
-            // while we hold search_path_mutex.
-            ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
-        }
-#ifdef Py_GIL_DISABLED
-        PyMutex_Unlock(&interp->codecs.search_path_mutex);
-#endif
-        Py_DECREF(item);
-        if (ret != 1) {
+            Py_DECREF(search_function);
             assert(interp->codecs.search_cache != NULL);
             assert(PyDict_CheckExact(interp->codecs.search_cache));
             PyDict_Clear(interp->codecs.search_cache);
             return ret;
         }
     }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->codecs.search_path_mutex);
+#endif
     return 0;
 }
 
@@ -1178,7 +1177,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF16BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')
@@ -1197,7 +1197,8 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
             }
             if (*encoding == '-' || *encoding == '_' )
                 encoding++;
-            if (Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
+            if (encoding[0] != '\0' &&
+                Py_TOLOWER(encoding[1]) == 'e' && encoding[2] == '\0') {
                 if (Py_TOLOWER(encoding[0]) == 'b')
                     return ENC_UTF32BE;
                 if (Py_TOLOWER(encoding[0]) == 'l')

@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import cpython_only, import_helper, os_helper
 from test.support.import_helper import ensure_lazy_imports
+from test.support.script_helper import assert_python_ok
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -454,6 +455,70 @@ if has_c_implementation:
     class CPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
+
+        @support.requires_subprocess()
+        def test_clear_unpickler_memo_memory_error(self):
+            import_helper.import_module('_testcapi')
+            code = dedent('''
+                import _testcapi
+                import io
+                import pickle
+                from test.support import SuppressCrashReport
+
+                value = [b'repeated'] * 2
+                data = pickle.dumps(value, protocol=4)
+                unpickler = pickle.Unpickler(io.BytesIO(data * 2))
+                assert unpickler.load() == value
+                memo = unpickler.memo.copy()
+                clear = unpickler.memo.clear
+                reset = _testcapi.remove_mem_hooks
+                failed = False
+                with SuppressCrashReport():
+                    # Fail the replacement memo allocation, with all callable
+                    # lookups performed before enabling the allocator hook.
+                    _testcapi.set_nomemory(0, 1)
+                    try:
+                        clear()
+                    except MemoryError:
+                        failed = True
+                    finally:
+                        reset()
+                    assert failed
+                    assert unpickler.memo.copy() == memo
+                    clear()
+                    assert unpickler.memo.copy() == {}
+                    assert unpickler.load() == value
+            ''')
+            assert_python_ok('-c', code)
+
+        @support.requires_subprocess()
+        def test_clear_unpickler_memo_reentrant(self):
+            code = dedent(r'''
+                import io
+                import pickle
+                from test.support import gc_collect, SuppressCrashReport
+
+                snapshots = []
+                class Entry:
+                    def __del__(self):
+                        snapshots.append(unpickler.memo.copy())
+
+                value = [b'repeated'] * 2
+                # Create the entry through the C unpickler so clearing its
+                # sole reference runs the finalizer even without the GIL.
+                data = b'\x80\x02c__main__\nEntry\n)\x81q\x00.'
+                unpickler = pickle.Unpickler(
+                    io.BytesIO(data + pickle.dumps(value, protocol=4)))
+                unpickler.load()
+                gc_collect()
+                with SuppressCrashReport():
+                    unpickler.memo.clear()
+                    gc_collect()
+                    assert snapshots == [{}]
+                    assert unpickler.memo.copy() == {}
+                    assert unpickler.load() == value
+            ''')
+            assert_python_ok('-c', code)
 
         def test_issue18339(self):
             unpickler = self.unpickler_class(io.BytesIO())

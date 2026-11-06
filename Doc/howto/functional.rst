@@ -631,7 +631,7 @@ Two of Python's built-in functions, :func:`map` and :func:`filter` duplicate the
 features of generator expressions:
 
 :func:`map(f, iterA, iterB, ...) <map>` returns an iterator over the sequence
- ``f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
+``f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
 
     >>> def upper(s):
     ...     return s.upper()

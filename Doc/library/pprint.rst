@@ -96,6 +96,12 @@ Functions
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.10
+      Added the *underscore_numbers* parameter.
+
+   .. versionchanged:: 3.11
+      No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
+
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False, sort_dicts=True, underscore_numbers=False)

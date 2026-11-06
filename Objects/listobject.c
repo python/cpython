@@ -91,6 +91,10 @@ ensure_shared_on_resize(PyListObject *self)
 #endif
 }
 
+#define LIST_SMALL_ALLOCATED 32
+
+static int py_list_resize(PyListObject *self, Py_ssize_t newsize);
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -103,22 +107,36 @@ ensure_shared_on_resize(PyListObject *self)
  * imagine a realloc implementation where it wouldn't be true).
  * Note that self->ob_item may change, and even if newsize is less
  * than ob_size on entry.
+ *
+ * Always inlining list_resize() makes the fast path a few instructions
+ * in each caller instead of a function call.
  */
-static int
+static inline Py_ALWAYS_INLINE int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated, target_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
        to accommodate the newsize.  If the newsize falls lower than half
        the allocated size, then proceed with the realloc() to shrink the list.
+       gh-158592: do not shrink a small list, the realloc() cost is bigger
+       than the memory we get back.
     */
-    if (allocated >= newsize && newsize >= (allocated >> 1)) {
+    if (allocated >= newsize
+        && (newsize >= (allocated >> 1) || allocated <= LIST_SMALL_ALLOCATED))
+    {
         assert(self->ob_item != NULL || newsize == 0);
         Py_SET_SIZE(self, newsize);
         return 0;
     }
+    return py_list_resize(self, newsize);
+}
+
+/* Slow path of list_resize(): allocate or reallocate ob_item. */
+static int
+py_list_resize(PyListObject *self, Py_ssize_t newsize)
+{
+    size_t new_allocated, target_bytes;
 
     /* This over-allocates proportional to the list size, making room
      * for additional growth.  The over-allocation is mild, but is
@@ -140,9 +158,12 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0)
         new_allocated = 0;
 
+    assert(newsize > self->allocated || new_allocated < (size_t)self->allocated);
+
     ensure_shared_on_resize(self);
 
 #ifdef Py_GIL_DISABLED
+    Py_ssize_t allocated = self->allocated;
     _PyListArray *array = list_allocate_array(new_allocated);
     if (array == NULL) {
         PyErr_NoMemory();
@@ -1093,7 +1114,7 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
         for (Py_ssize_t idx = i; idx < size - 1; idx++) {
             FT_ATOMIC_STORE_PTR_RELAXED(a->ob_item[idx], a->ob_item[idx + 1]);
         }
-        Py_SET_SIZE(a, size - 1);
+        list_resize(a, size - 1);  // NB: shrinking a list can't fail
     }
     else {
         FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[i], Py_NewRef(v));
@@ -3539,10 +3560,12 @@ list___sizeof___impl(PyListObject *self)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
 #ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    PyObject **ob_item = self->ob_item;
     if (ob_item != NULL) {
         res += list_capacity(ob_item) * sizeof(PyObject *);
     }
+    Py_END_CRITICAL_SECTION();
 #else
     res += (size_t)self->allocated * sizeof(PyObject *);
 #endif
