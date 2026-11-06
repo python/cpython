@@ -6465,6 +6465,45 @@ class TestSSLDebug(unittest.TestCase):
             msg
         )
 
+    def test_msg_callback_header_version_unsigned(self):
+        # OpenSSL passes the record header to the callback before it
+        # validates the version, and both version bytes are controlled by
+        # the peer.
+        received = []
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            if (direction == "read" and
+                    content_type == _TLSContentType.HEADER):
+                received.append((version, data))
+
+        versions = [
+            (b"\x80\x03", 0x8003),
+            (b"\x03\x80", 0x0380),
+            (b"\x80\x80", 0x8080),
+        ]
+        if IS_AWS_LC:
+            # AWS-LC validates the record version before invoking the
+            # callback, so headers whose major version byte is not 3
+            # never reach it.
+            versions = [(b"\x03\x80", 0x0380)]
+
+        for version_bytes, expected_version in versions:
+            with self.subTest(version_bytes=version_bytes):
+                received.clear()
+                context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                context._msg_callback = msg_cb
+                incoming = ssl.MemoryBIO()
+                outgoing = ssl.MemoryBIO()
+                sslobj = context.wrap_bio(incoming, outgoing, server_side=True)
+
+                header = b"\x16" + version_bytes + b"\x00\x00"
+                incoming.write(header)
+
+                with self.assertRaises(ssl.SSLError):
+                    sslobj.do_handshake()
+
+                self.assertEqual(received, [(expected_version, header)])
+
     def test_msg_callback_deadlock_bpo43577(self):
         client_context, server_context, hostname = testing_context()
         server_context2 = testing_context()[1]
