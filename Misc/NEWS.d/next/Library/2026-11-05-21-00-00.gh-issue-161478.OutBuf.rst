@@ -1,0 +1,4 @@
+Fix a performance regression on macOS and Windows: decompressing a few MiB
+or more with :mod:`zlib`, :mod:`gzip`, :mod:`lzma` or :mod:`compression.zstd`
+was up to three times slower than in 3.14, and on macOS the process kept
+memory it no longer used.

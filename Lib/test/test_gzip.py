@@ -1337,5 +1337,28 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
 
 
+class TestOutputBuffer(unittest.TestCase):
+    # Outputs at and around the boundaries of the internal output buffer's
+    # blocks (Include/internal/pycore_blocks_output_buffer.h): the first four
+    # (32 KiB, 64 KiB, 256 KiB and 1 MiB) are one buffer grown by realloc();
+    # the next one (4 MiB) is a separate block on most platforms.
+    HEAD = (32 + 64 + 256 + 1024) * 1024
+    SIZES = [HEAD - 1, HEAD, HEAD + 1,
+             HEAD + 4 * 1024 * 1024 - 1, HEAD + 4 * 1024 * 1024,
+             HEAD + 4 * 1024 * 1024 + 1]
+    # a pattern every codec compresses quickly: 256 varied bytes per 4 KiB
+    PATTERN = bytes(range(256)) + bytes(4096 - 256)
+
+    @classmethod
+    def data(cls, size):
+        return (cls.PATTERN * (size // len(cls.PATTERN) + 1))[:size]
+
+    def test_decompress(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                data = self.data(size)
+                self.assertEqual(gzip.decompress(gzip.compress(data, 1)), data)
+
+
 if __name__ == "__main__":
     unittest.main()
