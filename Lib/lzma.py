@@ -138,7 +138,7 @@ class LZMAFile(_streams.BaseStream):
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(self._fp, LZMADecompressor,
                 trailing_error=LZMAError, stream_magic=_stream_magic(format),
-                format=format, filters=filters)
+                stream_padding=True, format=format, filters=filters)
             self._buffer = io.BufferedReader(raw)
 
     def close(self):
@@ -356,6 +356,7 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
     """
     return _streams._decompress_all(data, LZMADecompressor, LZMAError,
                                     stream_magic=_stream_magic(format),
+                                    stream_padding=True,
                                     truncated_error=LZMAError,
                                     format=format, memlimit=memlimit,
                                     filters=filters)

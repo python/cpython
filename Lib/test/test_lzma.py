@@ -585,6 +585,28 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
                     self.assertRaises(LZMAError, lzma.decompress,
                                       COMPRESSED_XZ + damaged, format)
 
+    def test_decompress_stream_padding(self):
+        # Null bytes in multiples of four can follow each .xz stream.
+        cdata = (COMPRESSED_XZ + bytes(4) + COMPRESSED_XZ + bytes(20) +
+                 COMPRESSED_XZ + bytes(100_000) + COMPRESSED_XZ + bytes(8))
+        for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+            with self.subTest(format=format):
+                self.assertEqual(lzma.decompress(COMPRESSED_XZ + bytes(4),
+                                                 format), INPUT)
+                self.assertEqual(lzma.decompress(cdata, format), INPUT * 4)
+                # A damaged stream after padding is not trailing junk.
+                damaged = bytearray(COMPRESSED_XZ)
+                damaged[-20] ^= 1
+                self.assertRaises(LZMAError, lzma.decompress,
+                                  COMPRESSED_XZ + bytes(4) + damaged, format)
+                self.assertRaises(LZMAError, lzma.decompress,
+                                  bytes(4) + COMPRESSED_XZ, format)
+        # Not after an .lzma stream.
+        for format in lzma.FORMAT_AUTO, lzma.FORMAT_ALONE:
+            with self.subTest(format=format):
+                self.assertRaises(LZMAError, lzma.decompress,
+                                  COMPRESSED_ALONE + bytes(4), format)
+
 
 class TempFile:
     """Context manager - creates a file, and deletes it on __exit__."""
@@ -964,6 +986,39 @@ class FileTestCase(unittest.TestCase):
                                 pass
                     with LZMAFile(BytesIO(cdata), format=format) as f:
                         self.assertRaises(LZMAError, f.seek, 0, 2)
+
+    def test_read_stream_padding(self):
+        # Null bytes in multiples of four can follow each .xz stream,
+        # whatever the size of the reads.
+        cdata = (COMPRESSED_XZ + bytes(4) + COMPRESSED_XZ + bytes(20) +
+                 COMPRESSED_XZ + bytes(10_000) + COMPRESSED_XZ + bytes(8))
+        damaged = bytearray(COMPRESSED_XZ)
+        damaged[-20] ^= 1
+        damaged = COMPRESSED_XZ + bytes(4) + damaged
+        for buffer_size in _streams.BUFFER_SIZE, len(COMPRESSED_XZ) + 2, 3:
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                with (self.subTest(buffer_size=buffer_size, format=format),
+                      support.swap_attr(_streams, "BUFFER_SIZE",
+                                        buffer_size)):
+                    with LZMAFile(BytesIO(COMPRESSED_XZ + bytes(4)),
+                                  format=format) as f:
+                        self.assertEqual(f.read(), INPUT)
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertEqual(f.read(), INPUT * 4)
+                        self.assertEqual(f.seek(0), 0)
+                        chunks = []
+                        while result := f.read(10):
+                            chunks.append(result)
+                        self.assertEqual(b"".join(chunks), INPUT * 4)
+                    # A damaged stream after padding is not trailing junk.
+                    with LZMAFile(BytesIO(damaged), format=format) as f:
+                        self.assertRaises(LZMAError, f.read)
+        # Not after an .lzma stream.
+        for format in lzma.FORMAT_AUTO, lzma.FORMAT_ALONE:
+            with self.subTest(format=format):
+                with LZMAFile(BytesIO(COMPRESSED_ALONE + bytes(4)),
+                              format=format) as f:
+                    self.assertRaises(EOFError, f.read)
 
     def test_read_from_file(self):
         with TempFile(TESTFN, COMPRESSED_XZ):
