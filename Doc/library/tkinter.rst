@@ -2491,6 +2491,10 @@ Base and mixin classes
    Setting an attribute overrides what Tk exposes for the widget;
    reading an attribute that has not been set raises
    :exc:`~tkinter.TclError`.
+   A widget must have a role before any other attribute is set or read,
+   otherwise :exc:`~tkinter.TclError` is raised.
+   Tk sets the role of most standard widgets when they are mapped;
+   for other widgets, or before that, set :attr:`!role` first.
    The supported roles are ``Button``, ``Canvas``, ``Checkbutton``,
    ``Combobox``, ``Entry``, ``Label``, ``Listbox``, ``Menu``,
    ``Notebook``, ``Progressbar``, ``Scale``, ``Scrollbar``,

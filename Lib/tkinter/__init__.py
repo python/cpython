@@ -2353,6 +2353,7 @@ class Accessible:
     If no assistive technology is active when the application starts,
     setting an attribute has no effect and reading it returns 0.
     Reading an attribute that has not been set raises TclError.
+    A widget must have a role before other attributes can be used.
     """
 
     def __init__(self, widget):
