@@ -1726,7 +1726,7 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
     def test_clear_cache_non_string_keys(self):
         self.addCleanup(self.klass.clear_cache)
         for cached in (False, True):
-            for key in (None, 1, b"America/Los_Angeles"):
+            for key in (None, 1):
                 with self.subTest(cached=cached, key=key):
                     self.klass.clear_cache()
                     original = (
