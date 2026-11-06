@@ -1,0 +1,2 @@
+Fix the ``utf-7-imap`` incremental decoder and stream reader raising
+:exc:`UnicodeDecodeError` when a chunk ends inside a shift sequence.
