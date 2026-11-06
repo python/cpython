@@ -2812,7 +2812,6 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
 
-        Py_ssize_t nbytes = PyBytes_GET_SIZE(input_chunk);
         snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
         if (snapshot == NULL) {
             goto fail;
@@ -2825,14 +2824,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         if (check_decoded(decoded) < 0)
             goto fail;
 
-        Py_ssize_t nchars = PyUnicode_GET_LENGTH(decoded);
         textiowrapper_set_decoded_chars(self, decoded);
-        if (nchars > 0) {
-            self->b2cratio = (double) nbytes / nchars;
-        }
-        else {
-            self->b2cratio = 0.0;
-        }
 
         /* Skip chars_to_skip of the decoded characters. */
         if (PyUnicode_GetLength(self->decoded_chars) < cookie.chars_to_skip) {
@@ -2990,9 +2982,16 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     /* Fast search for an acceptable start point, close to our
        current pos */
-    skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
+    double skip_bytes_estimate = self->b2cratio * chars_to_skip;
+    if (skip_bytes_estimate >= 0 &&
+        skip_bytes_estimate <= PyBytes_GET_SIZE(next_input))
+    {
+        skip_bytes = (Py_ssize_t)skip_bytes_estimate;
+    }
+    else {
+        skip_bytes = 0;
+    }
     skip_back = 1;
-    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */

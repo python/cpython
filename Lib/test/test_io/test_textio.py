@@ -706,8 +706,7 @@ class TextIOWrapperTest:
             self.assertEqual(remaining, "")
 
     def test_tell_after_seek_past_cr(self):
-        # seek() to a position after a carriage return must not leave a
-        # stale bytes-per-char ratio behind for tell().
+        # tell() must tolerate a stale bytes-per-char ratio after seek().
         for data in (b'one\rtwo\rthree\r', 'ab\r\u20ac\u20ac\u20ac'.encode()):
             expected = data.decode().replace('\r', '\n')
             for i in range(len(expected)):
@@ -1787,6 +1786,17 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_tell_with_invalid_b2cratio(self):
+        for ratio in (float('nan'), float('inf'), -float('inf'), 1e100):
+            with self.subTest(ratio=ratio):
+                with self.TextIOWrapper(self.BytesIO(b'abc'),
+                                        encoding='utf-8') as f:
+                    self.assertEqual(f.read(1), 'a')
+                    f._b2cratio = ratio
+                    position = f.tell()
+                    f.seek(position)
+                    self.assertEqual(f.read(), 'bc')
 
 
 class IncrementalNewlineDecoderTest:
