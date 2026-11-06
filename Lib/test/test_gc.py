@@ -330,6 +330,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(gc.collect(), 1)
 
     def test_saveall(self):
+        self.addCleanup(gc.collect)
         # Verify that cyclic garbage like lists show up in gc.garbage if the
         # SAVEALL option is enabled.
 
@@ -352,6 +353,31 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(gc.garbage), 1)
         obj = gc.garbage.pop()
         self.assertEqual(id(obj), id_L)
+        obj.clear()
+
+        # A no-op generator finalizer must still set the finalized marker.
+        gen = (item for item in ())
+        next(gen, None)
+        self.assertTrue(gc.is_tracked(gen))
+        self.assertIsNone(gen.gi_frame)
+        self.assertFalse(gc.is_finalized(gen))
+        L = [gen]
+        L.append(L)
+        id_L = id(L)
+        del gen
+
+        try:
+            gc.set_debug(gc.DEBUG_SAVEALL)
+            del L
+            gc.collect()
+            saved = next(obj for obj in gc.garbage if id(obj) == id_L)
+            self.assertTrue(gc.is_finalized(saved[0]))
+        finally:
+            gc.set_debug(debug)
+            for obj in gc.garbage:
+                if id(obj) == id_L:
+                    obj.clear()
+            gc.garbage.clear()
 
     def test_del(self):
         # __del__ methods can trigger collection, make this to happen
@@ -657,6 +683,123 @@ class GCTests(unittest.TestCase):
 
         lazarus = storage.pop()
         self.assertTrue(gc.is_finalized(lazarus))
+
+    def test_weakref_callback_installs_finalizer(self):
+        """A callback can make a finalizer eligible before the object is cleared."""
+        self.addCleanup(gc.collect)
+        events = []
+
+        class C:
+            """A self-cycle whose weakref callback installs its finalizer."""
+            __slots__ = ("cycle", "__weakref__")
+
+        def finalize(obj):
+            """Record whether finalization sees the intact cycle."""
+            events.append(("finalizer", getattr(obj, "cycle", None) is obj))
+
+        def callback(reference):
+            """Install the finalizer after observing the cleared weakref."""
+            events.append(("callback", reference() is None))
+            C.__del__ = finalize
+
+        obj = C()
+        obj.cycle = obj
+        reference = weakref.ref(obj, callback)
+        gc.collect()
+        del obj
+
+        self.assertEqual(gc.collect(), 1)
+        self.assertEqual(events, [("callback", True), ("finalizer", True)])
+        self.assertIsNone(reference())
+
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_debug_output_resurrects_without_callbacks(self):
+        """Debug output can resurrect garbage without pending callbacks."""
+        was_enabled = gc.isenabled()
+        gc.disable()
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        resurrected = []
+
+        class C:
+            """An object with a cycle and no finalizer."""
+            __slots__ = ("cycle", "__weakref__")
+
+        class Stderr:
+            """Retain the target when collection reports it as collectable."""
+
+            def write(self, text):
+                """Retain the target on collectable debug output.
+
+                text: Debug text written by the collector.
+                Returns: Number of characters accepted.
+                """
+                if text.startswith("gc: collectable") and not resurrected:
+                    target = reference()
+                    if target is not None:
+                        resurrected.append(target)
+                return len(text)
+
+        writer = Stderr()
+        gc.collect()
+        obj = C()
+        obj.cycle = obj
+        reference = weakref.ref(obj)
+        del obj
+
+        debug = gc.get_debug()
+        try:
+            with unittest.mock.patch.object(sys, "stderr", writer):
+                gc.set_debug(gc.DEBUG_COLLECTABLE)
+                self.assertEqual(gc.collect(), 0)
+            self.assertEqual(len(resurrected), 1)
+            self.assertIs(reference(), resurrected[0])
+            self.assertIs(resurrected[0].cycle, resurrected[0])
+        finally:
+            gc.set_debug(debug)
+            for obj in resurrected:
+                obj.cycle = None
+            resurrected.clear()
+
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_debug_output_precedes_weakref_preparation(self):
+        """Debug output can observe weakrefs with callbacks before they are cleared."""
+        was_enabled = gc.isenabled()
+        debug = gc.get_debug()
+        gc.disable()
+        gc.set_debug(0)
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        self.addCleanup(gc.set_debug, debug)
+        observed = []
+        callbacks = []
+        self.addCleanup(callbacks.clear)
+
+        class Stderr:
+            """Record whether the target is visible during collectable debug output."""
+
+            def write(self, text):
+                """Record target visibility on the first collectable debug message.
+
+                text: Debug text written by the collector.
+                Returns: Number of characters accepted.
+                """
+                if text.startswith("gc: collectable") and not observed:
+                    observed.append(reference() is not None)
+                return len(text)
+
+        writer = Stderr()
+        gc.collect()
+        obj = C1055820(0)
+        reference = weakref.ref(obj, callbacks.append)
+        del obj
+
+        with unittest.mock.patch.object(sys, "stderr", writer):
+            gc.set_debug(gc.DEBUG_COLLECTABLE)
+            gc.collect(0)
+        self.assertEqual(observed, [True])
+        self.assertEqual(callbacks, [reference])
+        self.assertIsNone(reference())
 
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
@@ -1093,6 +1236,36 @@ class GCTests(unittest.TestCase):
 
         gc.enable()
 
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_callback_free_weakref_clear_without_pending_callbacks(self):
+        """Clear callback-free weakrefs before tp_clear can expose garbage."""
+        was_enabled = gc.isenabled()
+        gc.disable()
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        observed = []
+        self.addCleanup(observed.clear)
+
+        class Observer:
+            """Inspect a young target when its clearing releases this object."""
+
+            def __del__(self):
+                """Record whether the weakref still exposes the target."""
+                observed.append(reference())
+
+        observer = Observer()
+        gc.collect()
+        # The older observer does not open the callback path for generation 0.
+        # Clearing the target releases it, so the weakref must already be dead.
+        target = C1055820(0)
+        target.observer = observer
+        reference = weakref.ref(target)
+        del observer, target
+
+        self.assertEqual(gc.collect(0), 1)
+        self.assertEqual(observed, [None])
+        self.assertIsNone(reference())
+
     @unittest.skipIf(ContainerNoGC is None,
                      'requires ContainerNoGC extension type')
     def test_trash_weakref_clear(self):
@@ -1289,6 +1462,54 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
 
+    @requires_gil_enabled("tests fused full-collection reference accounting")
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_full_collection_preserves_refs_while_untracking_immortal(self):
+        """Untracking an immortal preserves adjacent candidates and heap accounting."""
+        import_module("ctypes")
+        source = textwrap.dedent("""
+            import ctypes
+            import gc
+            import _testinternalcapi
+
+            set_immortal = ctypes.pythonapi._Py_SetImmortal
+            set_immortal.argtypes = [ctypes.py_object]
+            set_immortal.restype = None
+            track = ctypes.pythonapi.PyObject_GC_Track
+            track.argtypes = [ctypes.py_object]
+            track.restype = None
+            may_have_foreign_gc_objects = ctypes.pythonapi._PyInterpreterState_MayHaveForeignGcObjects
+            may_have_foreign_gc_objects.argtypes = []
+            may_have_foreign_gc_objects.restype = ctypes.c_bool
+
+            gc.disable()
+            gc.collect(2)
+            candidates_before = gc.get_stats()[2]["candidates"]
+            parent = []
+            middle = []
+            set_immortal(middle)
+            track(middle)
+            child = []
+            parent.append(child)
+            child.append(parent)
+
+            # Traversing parent initializes child before the intervening
+            # immortal is removed from the forward chain.
+            del parent, child
+            assert gc.get_freeze_count() == 0
+            assert not may_have_foreign_gc_objects()
+            # Every tracked object except middle is a candidate here.
+            expected_candidates = _testinternalcapi.get_tracked_heap_size() - 1
+            assert gc.collect(2) == 2
+            assert not gc.is_tracked(middle)
+            assert gc.get_stats()[2]["candidates"] - candidates_before == expected_candidates
+
+            # get_objects() omits the result list itself.
+            objects = gc.get_objects()
+            assert _testinternalcapi.get_tracked_heap_size() == len(objects) + 1
+        """)
+        assert_python_ok("-c", source)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
@@ -1384,7 +1605,8 @@ class GCCallbackTests(unittest.TestCase):
         Uncollectable()
         Uncollectable()
         C1055820(666)
-        gc.collect()
+        # Exercise legacy-finalizer discovery in a partial collection.
+        gc.collect(0)
         for v in self.visit:
             if v[1] != "stop":
                 continue
