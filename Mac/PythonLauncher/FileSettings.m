@@ -119,7 +119,7 @@
     dict = [factorySettings objectForKey: filetype];
     if (dict == NULL) {
         NSLog(@"factorySettings.plist misses file type \"%@\"", filetype);
-        interpreter = [@"no default found" retain];
+        interpreter = @"no default found";
         return NULL;
     }
     [self applyValuesFromDict: dict];
@@ -134,7 +134,7 @@
         }
     }
     if (interpreter == NULL)
-        interpreter = [@"no default found" retain];
+        interpreter = @"no default found";
     origsource = NULL;
     return self;
 }
@@ -159,7 +159,7 @@
     self = [self initWithFileSettings: fsdefaults];
     if (!self) return self;
     interpreters = [fsdefaults->interpreters retain];
-    scriptargs = [@"" retain];
+    scriptargs = @"";
     [self applyUserDefaults: filetype];
     prefskey = [filetype retain];
     return self;
