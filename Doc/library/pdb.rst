@@ -279,7 +279,7 @@ access further features, you have to do this yourself:
 
    By default, Pdb sets a handler for the SIGINT signal (which is sent when the
    user presses :kbd:`Ctrl-C` on the console) when you resume execution with
-   :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`, or :pdbcmd:`until`.
+   :pdbcmd:`continue`, :pdbcmd:`next`, :pdbcmd:`until`, or :pdbcmd:`return`.
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
@@ -330,8 +330,8 @@ access further features, you have to do this yourself:
       always stop the program at calling frame, ignoring the *skip* pattern (if any).
 
    .. versionchanged:: 3.16
-      SIGINT handling also applies to :pdbcmd:`step`, :pdbcmd:`next`, and
-      :pdbcmd:`until`.
+      SIGINT handling also applies to :pdbcmd:`next`, :pdbcmd:`until`, and
+      :pdbcmd:`return`.
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)

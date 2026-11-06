@@ -699,13 +699,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Override Bdb methods
 
-    def dispatch_call(self, frame, arg):
-        # Do not step into the debugger's own signal handler.
-        if frame.f_code is Pdb.sigint_handler.__code__:
-            self.stop_trace()
-            return
-        return super().dispatch_call(frame, arg)
-
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
         that we ever need to stop in this function."""
@@ -2076,7 +2069,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         self.set_step()
-        self._install_sigint_handler()
         return 1
     do_s = do_step
 
@@ -2129,6 +2121,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         self.set_return(self.curframe)
+        self._install_sigint_handler()
         return 1
     do_r = do_return
 

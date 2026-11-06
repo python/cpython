@@ -3009,30 +3009,6 @@ def test_pdb_sigint_continue():
     """
 
 
-def test_pdb_sigint_step():
-    """SIGINT during step stops in the debuggee, not in Pdb's handler.
-
-    >>> def test_function():
-    ...     signal.raise_signal(signal.SIGINT)
-    ...     return 42
-
-    >>> with PdbTestInput(['step', 'continue']):
-    ...     try:
-    ...         pdb.Pdb(readrc=False).runcall(test_function)
-    ...     except KeyboardInterrupt:
-    ...         raise AssertionError('SIGINT unwound the debuggee')
-    > <doctest test.test_pdb.test_pdb_sigint_step[0]>(2)test_function()
-    -> signal.raise_signal(signal.SIGINT)
-    (Pdb) step
-    <BLANKLINE>
-    Program interrupted. (Use 'cont' to resume).
-    > <doctest test.test_pdb.test_pdb_sigint_step[0]>(2)test_function()
-    -> signal.raise_signal(signal.SIGINT)
-    (Pdb) continue
-    42
-    """
-
-
 def test_pdb_sigint_next():
     """SIGINT during next stops inside a previously untraced callee.
 
@@ -3081,6 +3057,33 @@ def test_pdb_sigint_until():
     <BLANKLINE>
     Program interrupted. (Use 'cont' to resume).
     > <doctest test.test_pdb.test_pdb_sigint_until[0]>(2)callee()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) continue
+    42
+    """
+
+
+def test_pdb_sigint_return():
+    """SIGINT during return stops inside a previously untraced callee.
+
+    >>> def callee():
+    ...     signal.raise_signal(signal.SIGINT)
+    ...     return 42
+    >>> def caller():
+    ...     result = callee()
+    ...     return result
+
+    >>> with PdbTestInput(['return', 'continue']):
+    ...     try:
+    ...         pdb.Pdb(readrc=False).runcall(caller)
+    ...     except KeyboardInterrupt:
+    ...         raise AssertionError('SIGINT unwound the debuggee')
+    > <doctest test.test_pdb.test_pdb_sigint_return[1]>(2)caller()
+    -> result = callee()
+    (Pdb) return
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint_return[0]>(2)callee()
     -> signal.raise_signal(signal.SIGINT)
     (Pdb) continue
     42
