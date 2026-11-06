@@ -1087,61 +1087,45 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
 
-    def test_mime_parameter_folding_no_infinite_loop(self):
-        msg = self._make_message()
-        msg.add_attachment(
-            b"test content",
-            maintype="text",
-            subtype="plain",
-            filename="test.txt"
-        )
-        maxlen = 78
-        extra_chrome = "utf-8''"
-        section = 0
+    def test_fold_mime_parameters_long_name(self):
+        # gh-138223: _fold_mime_parameters() used to loop forever when the
+        # parameter name left no room for even one (encoded) character of
+        # the value.  How long the name must be depends on the value.
+        name = 'x' * 62
+        m = self._make_message()
+        m.set_content('hi')
+        m.set_param(name, '\U0001F600')
+        self.assertEqual(
+            m['Content-Type'].fold(policy=m.policy),
+            'Content-Type: text/plain; charset="utf-8";\n'
+            f" {name}*0*=utf-8''%F0%9F%98%80\n")
 
-        # Test with various parameter name and value lengths
-        test_cases = [
-            # (name_len, value_len)
-            (maxlen - 3 - len(str(section)) - 3 - len(extra_chrome), 100),
-            (50, 200),
-            (60, 150),
-            (70, 50),
-        ]
+        name = 'x' * 66
+        m = self._make_message()
+        m.set_content('hi')
+        m.set_param(name, 'abcdefgh')
+        self.assertEqual(
+            m['Content-Type'].fold(policy=m.policy),
+            'Content-Type: text/plain; charset="utf-8";\n'
+            f" {name}*0*=us-ascii''a;\n"
+            f" {name}*1*=bcdefg;\n"
+            f" {name}*2*=h\n")
 
-        for name_len, value_len in test_cases:
-            with self.subTest(name_len=name_len, value_len=value_len):
-                msg_test = self._make_message()
-                msg_test.add_attachment(
-                    b"test content",
-                    maintype="text",
-                    subtype="plain",
-                    filename="test.txt"
-                )
-                param_name = "a" * name_len
-                param_value = "b" * value_len
-                msg_test.set_param(param_name, param_value)
-                result = msg_test.as_string()
-
-                # Check that the result is a valid string
-                self.assertIsInstance(result, str)
-
-                # Check that the parameter name appears in the result
-                self.assertIn(param_name, result)
-
-                # Check that the header is properly formatted:
-                # - Should have param_name*0*= followed by the first char of encoded value
-                lines = result.split('\n')
-                found_param = False
-                for line in lines:
-                    if param_name in line:
-                        found_param = True
-                        # Check that we have the expected format: param_name*N*=...
-                        self.assertRegex(line, rf'{param_name}\*\d+\*=')
-                        # Verify the line starts with proper continuation if not first
-                        if not line.startswith('Content-'):
-                            self.assertTrue(line.startswith(' '),
-                                          f"Continuation line should start with space: {line}")
-                self.assertTrue(found_param, f"Parameter {param_name} not found in output")
+    def test_fold_mime_parameters_long_name_round_trip(self):
+        # gh-138223
+        values = ['abcdefgh', 'abc def 123', 'b' * 100,
+                  '\xe9', '\u65e5', '\U0001F600',
+                  '\u65e5' * 20, '\U0001F600' * 20]
+        for name_len in (40, 60, 61, 62, 63, 64, 66, 70, 80, 100, 120):
+            for value in values:
+                with self.subTest(name_len=name_len, value=value):
+                    name = 'x' * name_len
+                    m = self._make_message()
+                    m.set_content('hi')
+                    m.set_param(name, value)
+                    m2 = message_from_string(
+                        m.as_string(), policy=policy.default)
+                    self.assertEqual(m2['Content-Type'].params[name], value)
 
 if __name__ == '__main__':
     unittest.main()
