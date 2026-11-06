@@ -54,7 +54,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 #ifdef SSL3_RT_HEADER
       case SSL3_RT_HEADER:
         /* frame header encodes version in bytes 1..2 */
-        version = cbuf[1] << 8 | cbuf[2];
+        version = ((unsigned char)cbuf[1] << 8) | (unsigned char)cbuf[2];
         msg_type = (int)cbuf[0];
         break;
 #endif
