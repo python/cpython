@@ -1,0 +1,3 @@
+With the GIL enabled, garbage collection skips the finalization scan when no
+finalizers or weakref callbacks are pending and debug output for collectable
+objects is disabled.
