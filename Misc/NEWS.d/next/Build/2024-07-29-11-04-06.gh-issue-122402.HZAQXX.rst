@@ -1,0 +1,1 @@
+Eliminate conflicts between build variants installed to a common prefix.
