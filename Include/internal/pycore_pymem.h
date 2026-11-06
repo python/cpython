@@ -129,6 +129,10 @@ extern void _PyMem_AbandonDelayed(PyThreadState *tstate);
 // On interpreter shutdown, frees all delayed free requests.
 extern void _PyMem_FiniDelayed(PyInterpreterState *interp);
 
+// Free every empty page parked on each thread's page_list that has reached its
+// QSBR goal
+extern void _PyMem_FreeParkedQSBRPages(PyInterpreterState *interp);
+
 #ifdef __cplusplus
 }
 #endif

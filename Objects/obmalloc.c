@@ -226,16 +226,26 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
 #endif
 }
 
-static void
-_PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
-{
 #ifdef Py_GIL_DISABLED
-    if (!heap->page_use_qsbr) {
+// Free the empty pages on `target`'s QSBR page list whose QSBR goal has been
+// reached.
+//
+// `cur` must be the calling thread's state: _Py_qsbr_poll() must be called
+// with the caller's own QSBR state. The goals themselves are global, so `cur`
+// can check pages parked by any thread.
+//
+// `target` is the thread whose page list is drained. It must be `cur`, or a
+// thread that is suspended (e.g., during a stop-the-world pause), because
+// _mi_page_free() modifies the heap and segment state of the thread that owns
+// the page.
+static void
+_PyMem_mi_collect_tstate_page_list(_PyThreadStateImpl *cur, _PyThreadStateImpl *target)
+{
+    if (!_Py_atomic_load_int(&target->mimalloc.initialized)) {
+        // The thread may not have called tstate_mimalloc_bind() yet.
         return;
     }
-
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    struct llist_node *head = &tstate->mimalloc.page_list;
+    struct llist_node *head = &target->mimalloc.page_list;
     if (llist_empty(head)) {
         return;
     }
@@ -249,13 +259,26 @@ _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
             continue;
         }
 
-        if (!_Py_qsbr_poll(tstate->qsbr, page->qsbr_goal)) {
+        if (!_Py_qsbr_poll(cur->qsbr, page->qsbr_goal)) {
             return;
         }
 
         _PyMem_mi_page_clear_qsbr(page);
         _mi_page_free(page, mi_page_queue_of(page), false);
     }
+}
+#endif
+
+static void
+_PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
+{
+#ifdef Py_GIL_DISABLED
+    if (!heap->page_use_qsbr) {
+        return;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    _PyMem_mi_collect_tstate_page_list(tstate, tstate);
 #endif
 }
 
@@ -1701,6 +1724,19 @@ _PyMem_FiniDelayed(PyInterpreterState *interp)
         PyMem_Free(buf);
     }
 }
+
+#ifdef Py_GIL_DISABLED
+void
+_PyMem_FreeParkedQSBRPages(PyInterpreterState *interp)
+{
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) _PyThreadState_GET();
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyMem_mi_collect_tstate_page_list(tstate, (_PyThreadStateImpl *) p);
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+}
+#endif
+
 
 /**************************/
 /* the "object" allocator */
