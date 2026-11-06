@@ -47,7 +47,7 @@ jobs:
         which gdb
         ./.github/workflows/macos-setup-gdb-codesign.sh
         sudo codesign --entitlements .github/workflows/gdb-entitlement.xml -fs gdb_codesign $(which gdb)
-        sudo killall taskgated
+        sudo killall taskgated || true
     - name: Configure CPython
       run: |
         MACOSX_DEPLOYMENT_TARGET=10.15 \
