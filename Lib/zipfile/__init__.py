@@ -1581,17 +1581,18 @@ class _ZipRepacker:
             entry_size = entry_size_list[i]
             used_entry_size = used_entry_size_list[i]
 
-            # update the header and move entry data to the new position
+            # move entry data to the new position, then update the header
             old_header_offset = zinfo.header_offset
-            zinfo.header_offset -= entry_offset
+            new_header_offset = old_header_offset - entry_offset
 
             if zinfo in removed_zinfos:
                 self._copy_bytes(
                     fp,
                     old_header_offset + used_entry_size,
-                    zinfo.header_offset,
+                    new_header_offset,
                     entry_size - used_entry_size,
                 )
+                zinfo.header_offset = new_header_offset
 
                 # update entry_offset for subsequent files to follow
                 entry_offset += used_entry_size
@@ -1601,7 +1602,7 @@ class _ZipRepacker:
                     self._copy_bytes(
                         fp,
                         old_header_offset,
-                        zinfo.header_offset,
+                        new_header_offset,
                         used_entry_size,
                     )
 
@@ -1615,12 +1616,13 @@ class _ZipRepacker:
                     self._copy_bytes(
                         fp,
                         old_header_offset + used_entry_size + stale_entry_size,
-                        zinfo.header_offset + used_entry_size,
+                        new_header_offset + used_entry_size,
                         entry_size - used_entry_size - stale_entry_size,
                     )
 
                     # update entry_offset for subsequent files to follow
                     entry_offset += stale_entry_size
+                zinfo.header_offset = new_header_offset
 
         # update state
         zfile.start_dir -= entry_offset
