@@ -2,6 +2,7 @@ import array
 import threading
 import time
 import unittest
+from itertools import product
 
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
@@ -24,6 +25,30 @@ else:
         ctypes.resize(obj, len(data))
         memoryview(obj).cast("B")[:] = data
         return obj
+
+
+def check_readinto_readonly_buffer(testcase, stream_factory, *,
+                                  empty_and_eof=False, prefill=False):
+    data = b"abcdef"
+    buffers = [b"xxx", memoryview(b"xxx")]
+    positions = [0, 4]
+    if empty_and_eof:
+        buffers.extend([b"", memoryview(b"")])
+        positions.append(10)
+    methods = ("readinto", "readinto1")
+    prefilled = (False, True) if prefill else (False,)
+    for method, buffer, position, buffered in product(
+            methods, buffers, positions, prefilled):
+        with testcase.subTest(method=method, buffer=buffer, position=position,
+                              buffered=buffered):
+            with stream_factory(data) as stream:
+                stream.seek(position)
+                if buffered:
+                    stream.peek(1)
+                op = getattr(stream, method)
+                testcase.assertRaises(TypeError, op, buffer)
+                testcase.assertEqual(stream.tell(), position)
+                testcase.assertEqual(stream.read(), data[position:])
 
 
 class MockRawIOWithoutRead:
