@@ -584,6 +584,41 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.seek(1, 1)
         self.assertEqual(memio.read(), buf[1:])
 
+    def test_truncate_extend(self):
+        # gh-71448: Extending zero-fills, within the allocation or past it,
+        # and never writes into a buffer shared with the caller.
+        buf = self.buftype("abcdef")
+        private = self.ioclass()
+        private.write(buf)
+        for memio in self.ioclass(buf), private:
+            memio.seek(7)
+            self.assertEqual(memio.truncate(3), 3)
+            self.assertEqual(memio.truncate(5), 5)
+            self.assertEqual(memio.getvalue(), b"abc\0\0")
+            self.assertEqual(memio.truncate(), 7)
+            self.assertEqual(memio.getvalue(), b"abc\0\0\0\0")
+            self.assertEqual(memio.tell(), 7)
+        self.assertEqual(buf, b"abcdef")
+
+    def test_truncate_extend_too_large(self):
+        for size in sys.maxsize, sys.maxsize - 1:
+            private = self.ioclass()
+            private.write(b"abc")
+            for memio in self.ioclass(b"abc"), private:
+                with self.subTest(size=size, shared=memio is not private):
+                    self.assertRaises((MemoryError, OverflowError),
+                                      memio.truncate, size)
+                    self.assertEqual(memio.getvalue(), b"abc")
+
+    @support.bigmemtest(size=support._2G, memuse=1, dry_run=False)
+    def test_truncate_extend_bigmem(self, size):
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        memio = self.ioclass(b"abc")
+        self.assertEqual(memio.truncate(size), size)
+        with memio.getbuffer() as buf:
+            self.assertEqual(len(buf), size)
+            self.assertEqual(buf[:4], b"abc\0")
+
     def test_issue141311(self):
         memio = self.ioclass()
         # Seek allows PY_SSIZE_T_MAX, read should handle that.
@@ -983,12 +1018,6 @@ class CBytesIOTest(PyBytesIOTest):
                 self.assertEqual(stream.getvalue(), b'abc')
             finally:
                 size.result.release()
-
-        # Sizes above 2**31 - 1 must work where C long is 32-bit.
-        if sys.maxsize > 2**31:
-            stream = self.ioclass(b'abc')
-            self.assertEqual(stream.truncate(2**31), 2**31)
-            self.assertEqual(stream.getvalue(), b'abc')
 
     def test_write_overflow(self):
         # gh-160781: overallocation at a position near sys.maxsize
