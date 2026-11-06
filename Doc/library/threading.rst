@@ -567,7 +567,10 @@ since it is impossible to detect the termination of alien threads.
       of control.
 
       This method will raise a :exc:`RuntimeError` if called more than once
-      on the same thread object.
+      on the same thread object.  It also raises :exc:`RuntimeError` if the
+      new thread terminates before it has fully started, which can happen
+      under memory pressure (for example when a :exc:`MemoryError` occurs
+      while the thread is bootstrapping).
 
       If supported, set the operating system thread name to
       :attr:`threading.Thread.name`. The name can be truncated depending on the
@@ -575,6 +578,10 @@ since it is impossible to detect the termination of alien threads.
 
       .. versionchanged:: 3.14
          Set the operating system thread name.
+
+      .. versionchanged:: next
+         :exc:`RuntimeError` is now raised if the thread dies before it has
+         fully started; previously this method could hang forever.
 
    .. method:: run()
 
