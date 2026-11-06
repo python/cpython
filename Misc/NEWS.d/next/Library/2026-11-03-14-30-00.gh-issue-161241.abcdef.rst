@@ -1,0 +1,1 @@
+Fix pathlib.Path.copy failing with PermissionError when the FICLONE reflink ioctl returns EPERM; it now falls back to other copy methods.
