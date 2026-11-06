@@ -1,0 +1,3 @@
+Add Hypothesis property tests for the :mod:`codecs` machinery: the
+incremental, stream and error-handler interfaces of every text codec are
+compared against the stateless codec functions on generated input.
