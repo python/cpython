@@ -137,6 +137,8 @@ if not sysconfig.is_python_build():
         'test_asdl_parser',
         # Tools/clinic/ is not installed
         'test_clinic',
+        # python-gdb.py is not installed
+        'test_gdb',
         # Tools/cases_generator is not installed
         'test_generated_cases',
     }
