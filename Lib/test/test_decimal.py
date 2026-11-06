@@ -3745,6 +3745,27 @@ class ContextAPItests:
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
+
+    def test_current_context_var_wrong_type(self):
+        # gh-161387
+        if not self.decimal.HAVE_CONTEXTVAR:
+            self.skipTest("_decimal built without context variables")
+        value = object()
+        context_vars = [var for var in contextvars.copy_context()
+                        if var.name == "decimal_context"]
+        self.assertTrue(context_vars)
+        tokens = [var.set(value) for var in context_vars]
+
+        def restore():
+            for var, token in zip(context_vars, tokens):
+                var.reset(token)
+
+        self.addCleanup(restore)
+        with self.assertRaisesRegex(TypeError, "got object"):
+            self.decimal.Decimal(1) + self.decimal.Decimal(2)
+        for var in context_vars:
+            self.assertIs(var.get(), value)
+
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
 
