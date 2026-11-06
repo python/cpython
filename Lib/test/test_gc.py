@@ -330,6 +330,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(gc.collect(), 1)
 
     def test_saveall(self):
+        self.addCleanup(gc.collect)
         # Verify that cyclic garbage like lists show up in gc.garbage if the
         # SAVEALL option is enabled.
 
@@ -352,6 +353,31 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(gc.garbage), 1)
         obj = gc.garbage.pop()
         self.assertEqual(id(obj), id_L)
+        obj.clear()
+
+        # A no-op generator finalizer must still set the finalized marker.
+        gen = (item for item in ())
+        next(gen, None)
+        self.assertTrue(gc.is_tracked(gen))
+        self.assertIsNone(gen.gi_frame)
+        self.assertFalse(gc.is_finalized(gen))
+        L = [gen]
+        L.append(L)
+        id_L = id(L)
+        del gen
+
+        try:
+            gc.set_debug(gc.DEBUG_SAVEALL)
+            del L
+            gc.collect()
+            saved = next(obj for obj in gc.garbage if id(obj) == id_L)
+            self.assertTrue(gc.is_finalized(saved[0]))
+        finally:
+            gc.set_debug(debug)
+            for obj in gc.garbage:
+                if id(obj) == id_L:
+                    obj.clear()
+            gc.garbage.clear()
 
     def test_del(self):
         # __del__ methods can trigger collection, make this to happen
@@ -657,6 +683,83 @@ class GCTests(unittest.TestCase):
 
         lazarus = storage.pop()
         self.assertTrue(gc.is_finalized(lazarus))
+
+    def test_weakref_callback_installs_finalizer(self):
+        """A callback can make a finalizer eligible before the object is cleared."""
+        self.addCleanup(gc.collect)
+        events = []
+
+        class C:
+            """A self-cycle whose weakref callback installs its finalizer."""
+            __slots__ = ("cycle", "__weakref__")
+
+        def finalize(obj):
+            """Record whether finalization sees the intact cycle."""
+            events.append(("finalizer", getattr(obj, "cycle", None) is obj))
+
+        def callback(reference):
+            """Install the finalizer after observing the cleared weakref."""
+            events.append(("callback", reference() is None))
+            C.__del__ = finalize
+
+        obj = C()
+        obj.cycle = obj
+        reference = weakref.ref(obj, callback)
+        gc.collect()
+        del obj
+
+        self.assertEqual(gc.collect(), 1)
+        self.assertEqual(events, [("callback", True), ("finalizer", True)])
+        self.assertIsNone(reference())
+
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_debug_output_resurrects_without_callbacks(self):
+        """Debug output can resurrect garbage without pending callbacks."""
+        was_enabled = gc.isenabled()
+        gc.disable()
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        self.addCleanup(gc.collect)
+        resurrected = []
+
+        class C:
+            """An object with a cycle and no finalizer."""
+            __slots__ = ("cycle", "__weakref__")
+
+        class Stderr:
+            """Retain the target when collection reports it as collectable."""
+
+            def write(self, text):
+                """Retain the target on collectable debug output.
+
+                text: Debug text written by the collector.
+                Returns: Number of characters accepted.
+                """
+                if text.startswith("gc: collectable") and not resurrected:
+                    target = reference()
+                    if target is not None:
+                        resurrected.append(target)
+                return len(text)
+
+        writer = Stderr()
+        gc.collect()
+        obj = C()
+        obj.cycle = obj
+        reference = weakref.ref(obj)
+        del obj
+
+        debug = gc.get_debug()
+        try:
+            with unittest.mock.patch.object(sys, "stderr", writer):
+                gc.set_debug(gc.DEBUG_COLLECTABLE)
+                self.assertEqual(gc.collect(), 0)
+            self.assertEqual(len(resurrected), 1)
+            self.assertIs(reference(), resurrected[0])
+            self.assertIs(resurrected[0].cycle, resurrected[0])
+        finally:
+            gc.set_debug(debug)
+            for obj in resurrected:
+                obj.cycle = None
+            resurrected.clear()
 
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
