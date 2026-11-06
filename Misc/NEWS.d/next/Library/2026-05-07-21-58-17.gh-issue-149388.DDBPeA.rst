@@ -1,1 +1,0 @@
-Make :class:`!asyncio.windows_utils.PipeHandle` closing idempotent.

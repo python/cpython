@@ -22,6 +22,7 @@ import sysconfig
 import tempfile
 import threading
 import textwrap
+import types
 import unittest
 import unittest.mock
 from xml.etree import ElementTree
@@ -37,7 +38,9 @@ from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
 from test.libregrtest.filter import get_match_tests, match_test
-from test.libregrtest.result import TestStats
+from test.libregrtest.reporter import GitHubActionsReporter
+from test.libregrtest.result import State, TestResult, TestStats
+from test.libregrtest.results import TestResults
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -48,7 +51,7 @@ ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = (
     r'[0-9]+:[0-9]+:[0-9]+ '
     r'(?:load avg: [0-9]+\.[0-9]{2} )?'
-    r'(?:mem: [0-9]+\.[0-9] (?:MiB|GiB) )?'
+    r'(?:mem: +[0-9]+\.[0-9] (?:MiB|GiB) )?'
 )
 RESULT_REGEX = (
     'passed',
@@ -627,6 +630,10 @@ class BaseTestCase(unittest.TestCase):
 
         self.tmptestdir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, self.tmptestdir)
+
+        # Don't report the failures of the tests to the CI running this test
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset('GITHUB_STEP_SUMMARY')
 
     def create_test(self, name=None, code=None):
         if not name:
@@ -1315,29 +1322,47 @@ class ArgsTestCase(BaseTestCase):
                                   forever=True)
 
     @support.requires_jit_disabled
-    def check_leak(self, code, what, *, run_workers=False):
-        test = self.create_test('huntrleaks', code=code)
+    def check_leak(self, code, what, *, run_workers=False,
+                   name='huntrleaks', deltas=(1, 1, 1)):
+        test = self.create_test(name, code=code)
 
+        leak = all(delta >= 1 for delta in deltas)
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
         cmd = ['--huntrleaks', '3:3:']
         if run_workers:
             cmd.append('-j1')
         cmd.append(test)
-        output = self.run_tests(*cmd,
-                                exitcode=EXITCODE_BAD_TEST,
-                                stderr=subprocess.STDOUT)
-        self.check_executed_tests(output, [test], failed=test, stats=1)
+        if leak:
+            exitcode = EXITCODE_BAD_TEST
+            kwargs = dict(failed=test)
+        else:
+            exitcode = 0
+            kwargs = {}
 
-        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        try:
+            os_helper.unlink(filename)
+        except FileNotFoundError:
+            pass
+        output = self.run_tests(*cmd,
+                                exitcode=exitcode,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], stats=1, **kwargs)
+
+        digits = ''.join('1' if delta >= 1 else '.' for delta in deltas)
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} %s\n' % digits
         self.check_line(output, line)
 
-        line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
-        self.assertIn(line2, output)
+        if leak:
+            line2 = f'{test} leaked {repr(list(deltas))} {what}, sum=3\n'
+            self.assertIn(line2, output)
 
-        with open(filename) as fp:
-            reflog = fp.read()
-            self.assertIn(line2, reflog)
+        if leak:
+            with open(filename) as fp:
+                reflog = fp.read()
+                self.assertIn(line2, reflog)
+        else:
+            self.assertFalse(os.path.exists(filename))
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def check_huntrleaks(self, *, run_workers: bool):
@@ -1413,6 +1438,60 @@ class ArgsTestCase(BaseTestCase):
                     # bug: never close the file descriptor
         """)
         self.check_leak(code, 'file descriptors')
+
+        # Ignore false positive: deltas [1, -1, 0]
+        code = textwrap.dedent("""
+            import os
+            import unittest
+
+            RUN = 0
+            FD = None
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global RUN, FD
+                    RUN += 1
+                    if RUN == 4:
+                        # Create a fd without closing it: leak! (delta=1)
+                        FD = os.open(__file__, os.O_RDONLY)
+                    elif RUN == 5:
+                        # Close fd created in previous run (delta=-1)
+                        os.close(FD)
+                    else:
+                        # Do nothing at the warmup (steps 1-3) and step 6 (delta=0)
+                        pass
+        """)
+        self.check_leak(code, 'file descriptors',
+                        name='no_fd_leak', deltas=(1, -1, 0))
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    @unittest.skipUnless(support.MS_WINDOWS, 'test specific to Windows')
+    def test_huntrleaks_handle_leak(self):
+        # test --huntrleaks for Windows handle leak
+        code = textwrap.dedent("""
+            import unittest
+            import _winapi
+
+            handle = None
+
+            class HandleLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    global handle
+                    if handle is None:
+                        handle = _winapi.CreateFile(
+                                        __file__, _winapi.GENERIC_READ,
+                                        0, _winapi.NULL,
+                                        _winapi.OPEN_EXISTING,
+                                        0, _winapi.NULL)
+                    else:
+                        hproc = _winapi.GetCurrentProcess()
+                        copy = _winapi.DuplicateHandle(
+                                    hproc, handle,
+                                    hproc, 0, False,
+                                    _winapi.DUPLICATE_SAME_ACCESS)
+                    # bug! the new handle is never closed
+        """)
+        self.check_leak(code, 'handles')
 
     def test_list_tests(self):
         # test --list-tests
@@ -1566,6 +1645,35 @@ class ArgsTestCase(BaseTestCase):
                                               match=None,
                                               success=True),
                                   stats=2)
+
+    def test_reporter(self):
+        code = textwrap.dedent("""
+            import os, unittest
+
+            class Tests(unittest.TestCase):
+                def test_fail(self):
+                    self.fail()
+        """)
+        fail = self.create_test('reporter_fail', code)
+        crash = self.create_test('reporter_crash',
+                                 code.replace('self.fail()', 'os._exit(1)'))
+        summary = os.path.join(self.tmptestdir, 'summary.md')
+        env = dict(os.environ, GITHUB_STEP_SUMMARY=summary)
+
+        def reported(*args, exitcode=EXITCODE_BAD_TEST):
+            output = self.run_tests('-j1', *args, env=env, exitcode=exitcode)
+            return re.findall(r'^::error file=.*,title=(\w+)', output,
+                              re.MULTILINE)
+
+        self.assertEqual(reported(self.create_test(), exitcode=0), [])
+        self.assertFalse(os.path.exists(summary))
+        # Quiet mode doesn't print the failure, but reports it
+        self.assertEqual(reported(fail), ['test_fail'])
+        # Only the re-run is reported
+        self.assertEqual(reported('--rerun', fail, crash),
+                         ['test_fail', crash])
+        with open(summary, encoding='utf-8') as fp:
+            self.assertIn('2 test files and 1 test case failed', fp.read())
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
@@ -2184,6 +2292,18 @@ class ArgsTestCase(BaseTestCase):
                                   failed=[testname],
                                   parallel=True,
                                   stats=TestStats(1, 2, 1))
+        # A single -v reports the test names, not the examples.
+        self.assertNotIn('Trying:', output)
+
+        # -vv reports every example, without changing what is run.
+        output = self.run_tests("--fail-env-changed", "-vv", "-j1", testname,
+                                exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, [testname],
+                                  failed=[testname],
+                                  parallel=True,
+                                  stats=TestStats(1, 2, 1))
+        self.assertIn('Trying:\n    1 + 1\n', output)
+        self.assertIn('Expecting:\n    2\n', output)
 
     def _check_random_seed(self, run_workers: bool):
         # gh-109276: When -r/--randomize is used, random.seed() is called
@@ -2862,7 +2982,73 @@ class TestUtils(unittest.TestCase):
                          'valid t\xe9xt \u20ac')
 
 
-from test.libregrtest.results import TestResults
+class GitHubActionsReporterTestCase(unittest.TestCase):
+    def setUp(self):
+        self.reporter = GitHubActionsReporter()
+        self.reporter.run_started(types.SimpleNamespace(
+            final_run=True, fail_env_changed=True, test_dir=None))
+
+    def test_test_case_failed(self):
+        stdlib_dir = os.path.dirname(os.__file__)
+        traceback = textwrap.dedent(f"""\
+            Traceback (most recent call last):
+              File "{stdlib_dir}/test/test_x.py", line 3, in test_x
+                helper()
+              File "{stdlib_dir}/helper.py", line 9, in helper
+                raise ValueError('50%')
+            ValueError: 50%
+            more
+        """)
+        stream = io.StringIO()
+        self.reporter.test_case_failed('test_x (a: b, c)', traceback, stream)
+        self.assertEqual(
+            stream.getvalue(),
+            '::error file=Lib/test/test_x.py,line=3,'
+            'title=test_x (a%3A b%2C c)::ValueError: 50%25%0Amore\n')
+
+    def test_test_result(self):
+        result = TestResult('test_x', state=State.ENV_CHANGED,
+                            env_changed_reasons=['dangling thread'])
+        with support.captured_stdout() as stdout:
+            self.reporter.test_result(result)
+        self.assertEqual(stdout.getvalue(),
+                         '::error title=test_x::'
+                         'test_x failed (env changed)%0Adangling thread\n')
+
+    def test_summary(self):
+        results = TestResults()
+        results.rerun_results = [
+            TestResult('test_x', state=State.FAILED,
+                       failures=[('test_a (<T>)',
+                                  'Traceback\nAssertionError\n')]),
+            TestResult('test_y', state=State.ENV_CHANGED,
+                       env_changed_reasons=['dangling thread']),
+        ]
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with os_helper.EnvironmentVarGuard() as env:
+            env['GITHUB_STEP_SUMMARY'] = os_helper.TESTFN
+            self.reporter.summary(results, 'FAILURE')
+        with open(os_helper.TESTFN, encoding='utf-8') as fp:
+            summary = fp.read()
+        self.assertEqual(summary, textwrap.dedent("""\
+            ## FAILURE: 2 test files and 1 test case failed
+
+            ### test_x failed (1 failure)
+
+            <details open><summary>test_a (&lt;T&gt;)</summary>
+
+            ```pytb
+            Traceback
+            AssertionError
+            ```
+
+            </details>
+
+            ### test_y failed (env changed)
+
+            - dangling thread
+
+        """))
 
 
 class TestColorized(unittest.TestCase):

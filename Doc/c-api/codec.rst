@@ -47,7 +47,7 @@ Codec lookup API
 
 In the following functions, the *encoding* string is looked up converted to all
 lower-case characters, which makes encodings looked up through this mechanism
-effectively case-insensitive.  If no codec is found, a :exc:`KeyError` is set
+effectively case-insensitive.  If no codec is found, a :exc:`LookupError` is set
 and ``NULL`` returned.
 
 .. c:function:: PyObject* PyCodec_Encoder(const char *encoding)

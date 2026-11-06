@@ -846,6 +846,18 @@ class BasicTest(BaseTest):
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
 
+    def test_fish_quoting(self):
+        """
+        Test that the template strings are quoted properly (fish)
+        """
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        context.script_path = 'activate.fish'
+        context.prompt = r"x\'$(echo PWNED)'\'"
+        self.assertEqual(
+            builder.replace_variables('__VENV_PROMPT__', context),
+            r"'x\\\'$(echo PWNED)\'\\\''")
+
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_special_chars_windows(self):
@@ -945,6 +957,33 @@ class BasicTest(BaseTest):
             _, err = self.run_with_capture(builder.create, env_dir)
             filepath_regex = r"'[A-Z]:\\\\(?:[^\\\\]+\\\\)*[^\\\\]+'"
             self.assertRegex(err, rf"Unable to symlink {filepath_regex} to {filepath_regex}")
+
+    @requireVenvCreate
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_broken_symlink_in_existing_venv(self):
+        """
+        Test creating a venv when a stale venv with broken symlinks exists.
+        """
+        bindir = os.path.join(self.env_dir, self.bindir)
+        os.makedirs(bindir)
+        python = os.path.join(bindir, 'python3')
+        os.symlink('/path/to/deleted/env/bin/python3', python)
+        self.assertTrue(os.path.islink(python))
+        self.assertFalse(os.path.exists(python))
+
+        builder = venv.EnvBuilder(with_pip=False, symlinks=True)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertTrue(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
+
+        rmtree(self.env_dir)
+        os.makedirs(bindir)
+        os.symlink('/path/to/deleted/env/bin/python3', python)
+        builder = venv.EnvBuilder(with_pip=False, symlinks=False)
+        self.run_with_capture(builder.create, self.env_dir)
+        self.assertFalse(os.path.islink(python))
+        self.assertTrue(os.path.exists(python))
 
     @requireVenvCreate
     def test_multiprocessing(self):
@@ -1303,7 +1342,13 @@ class EnsurePipTest(BaseTest):
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
+        os.mkdir(self.env_dir)
+        # Both ensurepip and its pip subprocess run with the venv as cwd.
+        for name in ('ensurepip.py', 'subprocess.py'):
+            pathlib.Path(self.env_dir, name).write_text(
+                'raise AssertionError(__file__)\n', encoding='utf-8')
         with EnvironmentVarGuard() as envvars:
+            envvars["PYTHONSAFEPATH"] = ""
             # pip's cross-version compatibility may trigger deprecation
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.

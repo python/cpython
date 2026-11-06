@@ -6,6 +6,7 @@ Search the web for PEG Parsers for reference.
 """
 
 import argparse
+import pathlib
 import sys
 import time
 import token
@@ -87,10 +88,15 @@ subparsers = argparser.add_subparsers(help="target language for the generated co
 
 c_parser = subparsers.add_parser("c", help="Generate C code for inclusion into CPython")
 c_parser.set_defaults(func=generate_c_code)
-c_parser.add_argument("grammar_filename", help="Grammar description")
-c_parser.add_argument("tokens_filename", help="Tokens description")
+c_parser.add_argument("grammar_filename", type=pathlib.Path, help="Grammar description")
+c_parser.add_argument("tokens_filename", type=pathlib.Path, help="Tokens description")
 c_parser.add_argument(
-    "-o", "--output", metavar="OUT", default="parse.c", help="Where to write the generated parser"
+    "-o",
+    "--output",
+    metavar="OUT",
+    type=pathlib.Path,
+    default=pathlib.Path("parse.c"),
+    help="Where to write the generated parser",
 )
 c_parser.add_argument(
     "--compile-extension",
@@ -111,12 +117,13 @@ python_parser = subparsers.add_parser(
     help="Generate Python code, needs grammar definition with Python actions",
 )
 python_parser.set_defaults(func=generate_python_code)
-python_parser.add_argument("grammar_filename", help="Grammar description")
+python_parser.add_argument("grammar_filename", type=pathlib.Path, help="Grammar description")
 python_parser.add_argument(
     "-o",
     "--output",
     metavar="OUT",
-    default="parse.py",
+    type=pathlib.Path,
+    default=pathlib.Path("parse.py"),
     help="Where to write the generated parser",
 )
 python_parser.add_argument(

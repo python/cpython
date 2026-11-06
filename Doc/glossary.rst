@@ -505,6 +505,14 @@ Glossary
       of an object, such as the value of type aliases created with the :keyword:`type`
       statement.
 
+   exhausted
+      An :term:`iterator` that has produced all of its values is said to be
+      :dfn:`exhausted`.
+      Further attempts to get the next value (for example, calls to
+      :func:`next`) raise :exc:`StopIteration`
+      (or :exc:`StopAsyncIteration` in the case of an :term:`asynchronous
+      iterator`).
+
    expression
       A piece of syntax which can be evaluated to some value.  In other words,
       an expression is an accumulation of expression elements like literals,
@@ -719,9 +727,7 @@ Glossary
       when doing I/O.
 
       As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
-      build configuration. After building Python with this option, code must be
-      run with :option:`-X gil=0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
-      environment variable. This feature enables improved performance for
+      build configuration. This feature enables improved performance for
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
 
@@ -869,7 +875,7 @@ Glossary
       :meth:`~iterator.__next__` method (or passing it to the built-in function
       :func:`next`) return successive items in the stream.  When no more data
       are available a :exc:`StopIteration` exception is raised instead.  At this
-      point, the iterator object is exhausted and any further calls to its
+      point, the iterator object is :term:`exhausted` and any further calls to its
       :meth:`!__next__` method just raise :exc:`StopIteration` again.  Iterators
       are required to have an :meth:`~iterator.__iter__` method that returns the iterator
       object itself so every iterator is also iterable and may be used in most
@@ -942,7 +948,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements is *O*\ (1).
+      elements is *O*\ (1).  See :ref:`time-complexity`.
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and

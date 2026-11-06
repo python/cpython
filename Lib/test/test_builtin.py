@@ -542,6 +542,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
             '''a = [await sleep(0, x) async for x in arange(2)][1]''',
+            '''a = [await sleep(0, 1) for _ in [0]][0]''',
+            '''a = {await sleep(0, 1) for _ in [0]}.pop()''',
+            '''a = {0: await sleep(0, 1) for _ in [0]}[0]''',
+            '''a = (lambda x=[await sleep(0, 1) for _ in [0]]: x)()[0]''',
             # gh-121637: Make sure we correctly handle the case where the
             # async code is optimized away
             '''assert not await sleep(0); a = 1''',
@@ -610,7 +614,26 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''def f():
                    async with Lock() as l:
                        a = 1
-            '''
+            ''',
+            '''class C:
+                   [await x for x in y]
+            ''',
+            '''class C:
+                   [x async for x in arange(10)]
+            ''',
+            '''async def f():
+                   class C:
+                       [await x for x in y]
+            ''',
+            '''lambda: [await x for x in y]''',
+            '''class C:
+                   def f(self, x=[await y for y in z]):
+                       pass
+            ''',
+            '''type T = [await x for x in y]''',
+            '''async def f[T=[await x for x in y]]():
+                   pass
+            ''',
         ]
         for mode, code_sample in product(modes, code_samples):
             source = dedent(code_sample)
@@ -2228,6 +2251,31 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                          complex(2, -0.0))
         self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
                                          complex(2, -0.0))
+
+    def test_sum_float_subclass(self):
+        # gh-151060: the C fast-sum loop must not free a float subclass with
+        # the exact-float deallocator.  A generator keeps each item's only
+        # reference in sum(), so the specialized DECREF runs the deallocator.
+        class F(float):
+            count = 0
+            def __del__(self):
+                F.count += 1
+
+        self.assertEqual(sum((F(i) for i in range(5)), 1j), complex(10, 1))
+        self.assertEqual(F.count, 5)
+
+    def test_sum_int_subclass(self):
+        # gh-151060: likewise, the float and complex fast-sum loops must not
+        # free an int subclass with the exact-int deallocator.
+        class I(int):
+            count = 0
+            def __del__(self):
+                I.count += 1
+
+        self.assertEqual(sum((I(i) for i in range(5)), 1.0), 11.0)
+        self.assertEqual(I.count, 5)
+        self.assertEqual(sum((I(i) for i in range(5)), 1j), complex(10, 1))
+        self.assertEqual(I.count, 10)
 
     @requires_IEEE_754
     @skip_if_double_rounding

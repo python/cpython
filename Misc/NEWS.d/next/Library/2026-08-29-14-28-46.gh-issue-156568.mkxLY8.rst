@@ -1,0 +1,2 @@
+:func:`zipapp.create_archive` now correctly sets the executable bit on the
+target archive when copying a zipapp where the target is a path-like object.

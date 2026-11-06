@@ -1,0 +1,1 @@
+:exc:`bdb.BdbQuit` is now a subclass of :exc:`BaseException`, instead of :exc:`Exception`, to allow it to be used for cleanly exiting the debugger without being accidentally caught by user code.

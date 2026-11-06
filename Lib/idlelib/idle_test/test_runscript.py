@@ -29,6 +29,19 @@ class ScriptBindingTest(unittest.TestCase):
         sb = runscript.ScriptBinding(ew)
         ew._close()
 
+    def test_checksyntax_compile_error(self):
+        # gh-69919: any error raised by compile() is reported.
+        ew = EditorWindow(root=self.root)
+        sb = runscript.ScriptBinding(ew)
+        sb.flist = mock.Mock()
+        sb.errorbox = mock.Mock()
+        with (mock.patch('idlelib.runscript.compile', create=True,
+                         side_effect=MemoryError()),
+              mock.patch('idlelib.runscript.open', mock.mock_open(read_data=b'x\n'))):
+            self.assertFalse(sb.checksyntax('test.py'))
+        sb.errorbox.assert_called_once_with('MemoryError', '<no detail available>')
+        ew._close()
+
     def test_run_module_event_shell_busy_no_restart(self):
         # gh-82183: running without restarting the busy shell aborts.
         ew = EditorWindow(root=self.root)
