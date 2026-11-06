@@ -1898,9 +1898,6 @@ get_dst_offset(time_t now, long dst_offset)
         PyErr_Clear();
         return dst_offset;
     }
-    if (current.tm_mon < 0 || current.tm_mon > 11) {
-        return dst_offset;
-    }
 
     int found_dst = 0;
     for (int month = 0; month < 12; month++) {
@@ -1933,7 +1930,7 @@ get_dst_offset(time_t now, long dst_offset)
                 || (month < current.tm_mon && sample > now)
                 || (month > current.tm_mon && sample < now))
             {
-                break;
+                continue;
             }
         }
         if (p.tm_isdst > 0) {
@@ -1983,6 +1980,12 @@ init_timezone(PyObject *m)
 #ifdef _Py_HAVE_TIMEZONE_GLOBALS
     PyObject *otz0, *otz1;
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+    /* glibc caveat: tzset() returns early if TZ is unchanged since the
+       last call, and localtime() updates tzname and daylight for the rules
+       in effect at the converted time.  So when time.tzset() is called
+       without changing TZ, the values read here reflect the most recent
+       localtime() call rather than a fresh read of the zone data.  There
+       is no portable way to force a re-read. */
     tzset();
 #endif
     ADD_INT("timezone", _Py_timezone);
