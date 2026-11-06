@@ -195,6 +195,7 @@ if sys.platform in ("win32", "cygwin"):
 if support.is_android:
     # Missing dependencies on Android
     EXPECTED_SKIP |= {
+        'test_curses',                 # need _curses
         'test_dbm_gnu',                # need _gdbm
         'test_dbm_ndbm',               # need _dbm
         'test_grp',                    # need grp
