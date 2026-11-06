@@ -492,6 +492,28 @@ class WindowFunctionTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
             self.con.create_window_function("shouldfail", -100, WindowSumInt)
 
+    def test_win_value_on_empty_frame(self):
+        # gh-153800: when a window frame is empty for a given output row,
+        # SQLite may invoke the value() (or inverse()) callback before step()
+        # has ever run for that aggregate instance.  This must not crash.
+        class WindowConst:
+            def step(self, value): pass
+            def inverse(self, value): pass
+            def value(self): return 42
+            def finalize(self): return 42
+
+        self.con.create_window_function("winconst", 1, WindowConst)
+        # The frame "1 preceding and 1 preceding" is empty for the first row,
+        # so value() is called before any step() call for that row.
+        self.cur.execute("""
+            select x, winconst(y) over (
+                order by x rows between 1 preceding and 1 preceding
+            ) from test order by x
+        """)
+        self.assertEqual(self.cur.fetchall(),
+                         [("a", 42), ("b", 42), ("c", 42),
+                          ("d", 42), ("e", 42)])
+
     @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
         for meth in "__init__", "step", "value", "inverse":
