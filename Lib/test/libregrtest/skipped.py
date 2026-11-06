@@ -193,8 +193,10 @@ if sys.platform in ("win32", 'darwin'):
 if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 
-if not support.is_android:
+if support.is_android:
+    # Test specific to Android
     EXPECTED_SKIP.add('test_android')
+else:
     # _multiprocessing is not available on Android
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     # _tkinter is not available on Android
@@ -207,7 +209,10 @@ if support.is_apple_mobile:
     # configure disables multiple extension modules on Apple mobile
     EXPECTED_SKIP |= {
         'test_curses',                 # need _curses
+        'test_dbm_gnu',                # need _gdbm
         'test_grp',                    # need grp
+        'test_pwd',                    # need pwd
+        'test_readline',               # need readline
         'test_syslog',                 # need syslog
     }
     # configure disables _multiprocessing on Apple mobile
@@ -222,18 +227,31 @@ if support.is_emscripten:
         'test__interpreters',          # need _interpreters
         'test_crossinterp',            # need _interpreters
         'test_curses',                 # need _curses
+        'test_dbm_gnu',                # need _gdbm
+        'test_dbm_ndbm',               # need _dbm
         'test_grp',                    # need grp
         'test_pwd',                    # need pwd
+        'test_readline',               # need readline
         'test_resource',               # need resource
         'test_syslog',                 # need syslog
     }
     # configure disables _multiprocessing on Emscripten
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
+
+    # Missing os.openpty() function on Emscripten
+    EXPECTED_SKIP.add('test_openpty')
+
     EXPECTED_SKIP |= {
         # Incompatible with Emscripten's mmap emulation
         'test_mmap',
         # Cannot create socketpair on Emscripten/WASI
         'test_selectors',
+    }
+
+    # Missing dependencies on Emscripten
+    EXPECTED_SKIP |= {
+        'test_lzma',                   # need _lzma
+        'test_zstd',                   # need _zstd
     }
     # Missing OpenSSL dependency on Emscripten
     EXPECTED_SKIP |= NEED_SSL
@@ -249,12 +267,14 @@ if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI
     }
 
 if IS_WASI:
+    # configure disables multiple extension modules on WASI
     EXPECTED_SKIP |= {
-        # configure disables multiple extension modules on WASI
         'test__interpchannels',        # need _interpchannels
         'test__interpreters',          # need _interpreters
         'test_crossinterp',            # need _interpreters
         'test_curses',                 # need _curses
+        'test_dbm_gnu',                # need _gdbm
+        'test_dbm_ndbm',               # need _dbm
         'test_external_inspection',    # need _remote_debugging
         'test_fcntl',                  # need fcntl
         'test_gc_stats',               # need _remote_debugging
@@ -269,31 +289,32 @@ if IS_WASI:
         'test_termios',                # need termios
         'test_tty',                    # need termios
         'test_xxlimited',              # need xxlimited
-
-        # Missing functions on WASI
-        'test_openpty',                # need os.openpty()
-
-        # Missing dependencies on WASI
-        'test_bz2',                    # need _bz2
-        'test_ctypes',                 # need _ctypes
-        'test_dbm_sqlite3',            # need _sqlite3
-        'test_gzip',                   # need zlib
-        'test_lzma',                   # need _lzma
-        'test_sqlite3',                # need _sqlite3
-        'test_stable_abi_ctypes',      # need _ctypes
-        'test_zlib',                   # need zlib
-        'test_zstd',                   # need _zstd
     }
     # configure disables _multiprocessing and _testmultiphase
     # extension modules on WASI
     EXPECTED_SKIP |= NEED_MULTIPROCESSING
     EXPECTED_SKIP |= NEED_TESTMULTIPHASE
+
+    # Missing os.openpty() function on WASI
+    EXPECTED_SKIP.add('test_openpty')
+
+    # Missing dependencies on WASI
+    EXPECTED_SKIP |= {
+        'test_bz2',                    # need _bz2
+        'test_ctypes',                 # need _ctypes
+        'test_dbm_sqlite3',            # need _sqlite3
+        'test_gzip',                   # need zlib
+        'test_lzma',                   # need _lzma
+        'test_readline',               # need libreadline/libedit
+        'test_sqlite3',                # need _sqlite3
+        'test_stable_abi_ctypes',      # need _ctypes
+        'test_zlib',                   # need zlib
+        'test_zstd',                   # need _zstd
+    }
     # Missing OpenSSL dependency on WASI
     EXPECTED_SKIP |= NEED_SSL
     # Missing Tcl/Tk dependency on WASI
     EXPECTED_SKIP |= NEED_TKINTER
-    # Missing libreadline/libedit dependency on Emscripten
-    EXPECTED_SKIP.add('readline')
 
 
 def expected_to_be_skipped(test_name):
