@@ -4,17 +4,22 @@ set -e
 # Convert templates into Makefile and config.c, based on the module
 # definitions found in the file Setup.
 #
-# Usage: makesetup [-s dir] [-c file] [-m file] [Setup] ... [-n [Setup] ...]
+# Usage: makesetup [-s dir] [-c file] [-m file] [Setup] ... [-b Setup] ...
+#                  [-n [Setup] ...]
 #
 # Options:
 # -s directory: alternative source directory (default .)
 # -l directory: library source directory (default derived from $0)
 # -c file:      alternative config.c template (default $libdir/config.c.in)
-# -c -:         don't write config.c
+# -c -:         don't write config.c (nor config_bootstrap.c)
 # -m file:      alternative Makefile template (default ./Makefile.pre)
 # -m -:         don't write Makefile
 #
 # Remaining arguments are one or more Setup files (default ./Setup).
+# The Setup file following a -b option holds the *bootstrap* modules:
+# the static modules that the build helper programs (_freeze_module,
+# _bootstrap_python) are linked with. They are also regular modules of
+# the final build.
 # Setup files after a -n option are used for their variables, modules
 # and libraries but not for their .o files.
 #
@@ -28,6 +33,9 @@ set -e
 #   + insert 'extern PyObject* PyInit_<module>(void);' before MARKER 1
 #   + insert '{"<module>", PyInit_<module>},' before MARKER 2
 #
+# Copying config.c.in to config_bootstrap.c (only with a -b Setup file):
+# - same as config.c, but only for the modules of the -b Setup file
+#
 # Copying Makefile.pre to Makefile:
 # - insert an identifying comment at the start
 # - replace _MODBUILT_NAMES_ by the list of *static* and *shared* modules
@@ -37,6 +45,8 @@ set -e
 # - replace _MODOBJS_ by the list of objects from Setup (except for
 #   Setup files after a -n option)
 # - replace _MODLIBS_ by the list of libraries from Setup
+# - replace _BOOTSTRAP_MODOBJS_ and _BOOTSTRAP_MODLIBS_ by the objects and
+#   libraries of the -b Setup file
 # - for each object file mentioned in Setup, append a rule
 #   '<file>.o: <file>.c; <build commands>' to the end of the Makefile
 # - for each module mentioned in Setup, append a rule
@@ -47,13 +57,14 @@ set -e
 # Loop over command line options
 usage='
 usage: makesetup [-s srcdir] [-l libdir] [-c config.c.in] [-m Makefile.pre]
-                 [Setup] ... [-n [Setup] ...]'
+                 [Setup] ... [-b Setup] ... [-n [Setup] ...]'
 srcdir='.'
 libdir=''
 config=''
 makepre=''
 noobjects=''
 doconfig=yes
+bootstrap=
 while :
 do
 	case $1 in
@@ -93,7 +104,8 @@ do
 	echo ''  # Add a linebreak so we don't choke on files missing EOL.
 	case $i in
 	-n)	echo '*noobjects*';;
-	*)	echo '*doconfig*'; cat "$i";;
+	-b)	echo '*bootstrap*';;
+	*)	echo '*doconfig*'; cat "$i"; echo ''; echo '*nobootstrap*';;
 	esac
 done |
 sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
@@ -114,6 +126,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	LIBS=
 	LOCALLIBS=
 	BASELIBS=
+	BOOTMODS=
+	BOOTOBJS=
+	BOOTLIBS=
+	havebootstrap=
 	while read line
 	do
 		# to handle backslashes for sh's that don't automatically
@@ -136,6 +152,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			noobjects=yes;
 			continue;;
 		'*doconfig*')	doconfig=yes; continue;;
+		'*bootstrap*')	bootstrap=yes; havebootstrap=yes; continue;;
+		'*nobootstrap*')	bootstrap=; continue;;
 		'*static*')	doconfig=yes; continue;;
 		'*noconfig*')	doconfig=no; continue;;
 		'*shared*')	doconfig=no; continue;;
@@ -204,6 +222,18 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				# Detected multiple rules for a module, first rule wins. This
 				# allows users to disable modules in Setup.local.
 				echo 1>&2 "maksetup: '$mod' was handled by previous rule."
+				case $bootstrap in
+				yes)
+					# This module is in the bootstrap Setup file, but an
+					# earlier Setup file (e.g. Setup.local) already defined
+					# it, and that definition won. Give the build helpers
+					# that earlier definition, so they use the same module
+					# as the final interpreter.
+					eval "BOOTMODS=\"\$BOOTMODS \${STATICMOD_$mod}\""
+					eval "BOOTOBJS=\"\$BOOTOBJS \${STATICOBJS_$mod}\""
+					eval "BOOTLIBS=\"\$BOOTLIBS \${STATICLIBS_$mod}\""
+					;;
+				esac
 				continue 2;;
 			esac
 			CONFIGURED="$CONFIGURED,${mod},"
@@ -213,6 +243,12 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			LIBS="$LIBS $libs"
 			MODS="$MODS $mods"
 			BUILT="$BUILT $mods"
+			case $bootstrap in
+			yes)
+				BOOTLIBS="$BOOTLIBS $libs"
+				BOOTMODS="$BOOTMODS $mods"
+				;;
+			esac
 			;;
 		no)
 			BUILT="$BUILT $mods"
@@ -265,7 +301,21 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
-		yes)	OBJS="$OBJS $objs";;
+		yes)
+			OBJS="$OBJS $objs"
+			case $bootstrap in
+			yes)	BOOTOBJS="$BOOTOBJS $objs";;
+			esac
+			# Record each static module's objects and libs by name, so
+			# the bootstrap handling above can find a definition that
+			# won over a later line in the bootstrap Setup file.
+			for mod in $mods
+			do
+				eval "STATICMOD_$mod='$mod'"
+				eval "STATICOBJS_$mod='$objs'"
+				eval "STATICLIBS_$mod='$libs'"
+			done
+			;;
 		esac
 		for mod in $mods
 		do
@@ -295,24 +345,31 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	DEFS="BASEMODLIBS=$BASELIBS$NL$DEFS"
 	DEFS="LOCALMODLIBS=$LOCALLIBS$NL$DEFS"
 
-	EXTDECLS=
-	INITBITS=
-	for mod in $MODS
-	do
-		EXTDECLS="${EXTDECLS}extern PyObject* PyInit_$mod(void);$NL"
-		INITBITS="${INITBITS}    {\"$mod\", PyInit_$mod},$NL"
-	done
-
-
-	case $config in
-	-)  ;;
-	*)  sed -e "
+	# Generate a config.c from the template for the given modules
+	genconfig() {
+		out=$1; shift
+		EXTDECLS=
+		INITBITS=
+		for mod
+		do
+			EXTDECLS="${EXTDECLS}extern PyObject* PyInit_$mod(void);$NL"
+			INITBITS="${INITBITS}    {\"$mod\", PyInit_$mod},$NL"
+		done
+		sed -e "
 		1i$NL/* Generated automatically from $config by makesetup. */
 		/MARKER 1/i$NL$EXTDECLS
 
 		/MARKER 2/i$NL$INITBITS
 
-		" $config >config.c
+		" $config >$out
+	}
+
+	case $config in
+	-)  ;;
+	*)  genconfig config.c $MODS
+	    case $havebootstrap in
+	    yes)  genconfig config_bootstrap.c $BOOTMODS;;
+	    esac
 	    ;;
 	esac
 
@@ -331,6 +388,9 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "s%_MODBUILT_NAMES_%$BUILT%" >>$sedf
 		echo "s%_MODSHARED_NAMES_%$BUILT_SHARED%" >>$sedf
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
+		# _BOOTSTRAP_* first: _MODOBJS_ is a substring of _BOOTSTRAP_MODOBJS_
+		echo "s%_BOOTSTRAP_MODOBJS_%$BOOTOBJS%" >>$sedf
+		echo "s%_BOOTSTRAP_MODLIBS_%$BOOTLIBS%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
 		echo "/Definitions added by makesetup/r $sedr" >>$sedf

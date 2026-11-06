@@ -1,0 +1,3 @@
+Fix a crash in :c:func:`_PyTuple_Resize` when resizing a non-empty tuple to a
+negative or too large size. It now raises :exc:`SystemError` or
+:exc:`MemoryError` respectively.

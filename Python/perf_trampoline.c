@@ -254,10 +254,18 @@ perf_map_write_entry(void *state, const void *code_addr,
     const char *entry = "";
     if (co->co_qualname != NULL) {
         entry = PyUnicode_AsUTF8(co->co_qualname);
+        if (entry == NULL) {
+            PyErr_Clear();
+            entry = "";
+        }
     }
     const char *filename = "";
     if (co->co_filename != NULL) {
         filename = PyUnicode_AsUTF8(co->co_filename);
+        if (filename == NULL) {
+            PyErr_Clear();
+            filename = "";
+        }
     }
     size_t perf_map_entry_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
     char* perf_map_entry = (char*) PyMem_RawMalloc(perf_map_entry_size);
@@ -426,7 +434,8 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
-static PyObject *
+// gh-161288: the trampoline has no -fsanitize=function type signature
+static PyObject * _Py_NO_SANITIZE_FUNCTION
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
 {
