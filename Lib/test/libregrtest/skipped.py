@@ -64,7 +64,10 @@ if support.Py_GIL_DISABLED:
     EXPECTED_SKIP.add('test_interpreters')
 else:
     # Need Free Threading build
-    EXPECTED_SKIP.add('test_free_threading')
+    EXPECTED_SKIP |= {
+        'test_free_threading',
+        'test_io.test_free_threading',
+    }
 
 if not support.has_socket_support or IS_WASI:
     # Need socket support
@@ -178,9 +181,9 @@ else:
         'test_asyncio.test_windows_utils',
         'test_msvcrt',
         'test_os.test_windows',
+        'test_io.test_winconsoleio',
         'test_startfile',      # Need os.startfile()
         'test_winapi',
-        'test_winconsoleio',
         'test_winreg',
         'test_winsound',
         'test_wmi',
