@@ -2253,23 +2253,6 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
     return PyNumber_Power(base, exp, mod);
 }
 
-/* Write str(obj) by calling write. */
-static int
-print_write(PyObject *write, PyObject *obj)
-{
-    PyObject *str = PyObject_Str(obj);
-    if (str == NULL) {
-        return -1;
-    }
-    PyObject *result = PyObject_CallOneArg(write, str);
-    Py_DECREF(str);
-    if (result == NULL) {
-        return -1;
-    }
-    Py_DECREF(result);
-    return 0;
-}
-
 /*[clinic input]
 print as builtin_print
 
@@ -2332,28 +2315,21 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         return NULL;
     }
 
-    PyObject *write = PyObject_GetAttr(file, &_Py_ID(write));
-    if (write == NULL) {
-        Py_DECREF(file);
-        return NULL;
-    }
     for (i = 0; i < objects_length; i++) {
-        if (i > 0 && print_write(write, sep) < 0) {
+        if (i > 0 && PyFile_WriteObject(sep, file, Py_PRINT_RAW) < 0) {
             goto error;
         }
-        if (print_write(write, objects[i]) < 0) {
+        if (PyFile_WriteObject(objects[i], file, Py_PRINT_RAW) < 0) {
             goto error;
         }
     }
-    if (print_write(write, end) < 0) {
+    if (PyFile_WriteObject(end, file, Py_PRINT_RAW) < 0) {
         goto error;
     }
-    Py_DECREF(write);
 
     if (flush) {
         if (_PyFile_Flush(file) < 0) {
-            Py_DECREF(file);
-            return NULL;
+            goto error;
         }
     }
     Py_DECREF(file);
@@ -2361,7 +2337,6 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
     Py_RETURN_NONE;
 
 error:
-    Py_DECREF(write);
     Py_DECREF(file);
     return NULL;
 }
