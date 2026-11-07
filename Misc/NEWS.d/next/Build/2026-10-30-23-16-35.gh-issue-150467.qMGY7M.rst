@@ -1,0 +1,2 @@
+Fix linking ``python3.dll`` and ``python3t.dll`` on Windows when building with
+AddressSanitizer.
