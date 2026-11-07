@@ -1507,4 +1507,13 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=972e2543c4fcf1ba input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_operator_identity__doc__,
+"identity($module, obj, /)\n"
+"--\n"
+"\n"
+"Return the argument unchanged.");
+
+#define _OPERATOR_IDENTITY_METHODDEF    \
+    {"identity", (PyCFunction)_operator_identity, METH_O, _operator_identity__doc__},
+/*[clinic end generated code: output=6e375ead0c0a6464 input=a9049054013a1b77]*/
