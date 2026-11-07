@@ -149,8 +149,11 @@ class EnvBuilder:
         if os.pathsep in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir} because '
                              f'it contains the PATH separator {os.pathsep}.')
-        if os.path.exists(env_dir) and self.clear:
-            self.clear_directory(env_dir)
+        if self.clear:
+            if os.path.islink(env_dir) or os.path.isfile(env_dir):
+                raise ValueError('Unable to create directory %r' % env_dir)
+            if os.path.exists(env_dir):
+                self.clear_directory(env_dir)
         context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
