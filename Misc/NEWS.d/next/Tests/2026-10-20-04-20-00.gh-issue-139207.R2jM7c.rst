@@ -1,0 +1,2 @@
+Pass regrtest worker configuration through a temporary file to avoid operating
+system command-line size limits when using large match files.
