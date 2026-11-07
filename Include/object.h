@@ -383,6 +383,11 @@ PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
 PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
 PyAPI_FUNC(unsigned long) PyType_GetFlags(PyTypeObject*);
+PyAPI_FUNC(uint64_t) _PyType_GetFlags64(PyTypeObject*);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API >= _Py_PACK_VERSION(3, 16)
+#  define PyType_GetFlags _PyType_GetFlags64
+#endif
 
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GenericAlloc(PyTypeObject *, Py_ssize_t);
@@ -745,11 +750,13 @@ times.
 
 
 static inline int
-PyType_HasFeature(PyTypeObject *type, unsigned long feature)
+PyType_HasFeature(PyTypeObject *type, uint64_t feature)
 {
-    unsigned long flags;
+    uint64_t flags;
 #ifdef Py_LIMITED_API
-    // PyTypeObject is opaque in the limited C API
+    // PyTypeObject is opaque in the limited C API. Call _PyType_GetFlags64()
+    // (uint64_t) on the limited C API 3.16 and newer. Call legacy
+    // PyType_GetFlags() (unsigned long) on limited C API 3.15 and older.
     flags = PyType_GetFlags(type);
 #else
     flags = type->tp_flags;

@@ -41,7 +41,7 @@ Type Objects
       This function is now a no-op as the type cache is now implemented
       per-type. It still returns the current version tag.
 
-.. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
+.. c:function:: uint64_t PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with ``Py_LIMITED_API``; the individual flag bits are
@@ -52,6 +52,9 @@ Type Objects
 
    .. versionchanged:: 3.4
       The return type is now ``unsigned long`` rather than ``long``.
+
+   .. versionchanged:: next
+      The return type is now ``uint64_t`` rather than ``unsigned long``.
 
 
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
@@ -954,6 +957,8 @@ They will continue to work, but new features will be added as slots for
    .. c:member:: unsigned int flags
 
       Corresponds to :c:macro:`Py_tp_flags`.
+
+      If you need 64-bit flags, use :c:func:`PyType_FromSlots` API instead.
 
    .. c:member:: PyType_Slot *slots
 
