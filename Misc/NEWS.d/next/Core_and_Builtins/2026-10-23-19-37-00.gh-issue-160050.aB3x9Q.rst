@@ -1,0 +1,1 @@
+Use asymptotically faster :func:`divmod` implementation for integer modulo of large integers.
