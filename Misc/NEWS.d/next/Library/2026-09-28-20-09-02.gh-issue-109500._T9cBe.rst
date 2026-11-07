@@ -1,0 +1,2 @@
+Fix :class:`pstats.Stats` and :meth:`pstats.Stats.add` raising
+:exc:`TypeError` when loading files containing empty profiling data.
