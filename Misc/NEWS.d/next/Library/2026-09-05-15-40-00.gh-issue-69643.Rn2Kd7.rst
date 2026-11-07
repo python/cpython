@@ -1,0 +1,4 @@
+:func:`json.dump` and :func:`json.dumps` with ``sort_keys=True`` no longer
+fail for keys of different basic types or for unsupported keys skipped due
+to *skipkeys*.  Keys of mixed types are sorted by groups: strings, numbers
+and ``None``.

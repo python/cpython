@@ -78,10 +78,6 @@ class TestEncode(CTest):
         self.assertRaises(ZeroDivisionError, test, 'allow_nan')
         self.assertRaises(ZeroDivisionError, test, 'sort_keys')
 
-    def test_unsortable_keys(self):
-        with self.assertRaises(TypeError):
-            self.json.encoder.JSONEncoder(sort_keys=True).encode({'a': 1, 1: 'a'})
-
     def test_current_indent_level(self):
         enc = self.json.encoder.c_make_encoder(
             markers=None,
