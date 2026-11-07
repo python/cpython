@@ -489,6 +489,27 @@ class MimeTypesClassTestCase(unittest.TestCase):
         all = self.db.guess_all_extensions('test-type')
         self.assertNotIn('.no-such-ext', all)
 
+    def test_add_type_case_insensitive(self):
+        mime_type = 'Application/X-Unittest'
+        ext = '.PyUnit'
+        for strict in (True, False):
+            with self.subTest(strict=strict):
+                db = mimetypes.MimeTypes()
+                db.add_type(mime_type, ext, strict=strict)
+                self.assertEqual(
+                    db.guess_file_type('test' + ext, strict=strict),
+                    (mime_type, None))
+                for query in (mime_type, mime_type.lower(), mime_type.upper()):
+                    with self.subTest(query=query):
+                        self.assertEqual(
+                            db.guess_extension(query, strict=strict), ext)
+                        self.assertEqual(
+                            db.guess_all_extensions(query, strict=strict),
+                            [ext])
+                db.add_type(mime_type.lower(), ext, strict=strict)
+                self.assertEqual(
+                    db.guess_all_extensions(mime_type, strict=strict), [ext])
+
     def test_encoding(self):
         filename = support.findfile("mime.types")
         mimes = mimetypes.MimeTypes([filename])
