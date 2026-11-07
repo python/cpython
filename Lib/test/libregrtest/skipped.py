@@ -7,6 +7,7 @@ import os
 import sys
 import sysconfig
 from test import support
+from .utils import cleanup_test_name
 
 
 # On a WASI CI, the main regrtest process is run on the build Python and test
@@ -295,7 +296,7 @@ if IS_WASI:
 
 def expected_to_be_skipped(test_name):
     # Test EXPECTED_SKIP
-    test_name = test_name.removeprefix('test.')
+    test_name = cleanup_test_name(test_name)
     if test_name in EXPECTED_SKIP:
         return True
     package = test_name.split('.')[0]
