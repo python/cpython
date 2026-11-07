@@ -225,7 +225,11 @@ class EmailPolicy(Policy):
             elif refold_binary:
                 refold = _has_surrogates(value)
         if refold:
-            return self.header_factory(name, ''.join(lines)).fold(policy=self)
+            value = ''.join(lines)
+            if self.utf8:
+                value = value.encode('utf-8', 'surrogateescape').decode(
+                    'utf-8', 'surrogateescape')
+            return self.header_factory(name, value).fold(policy=self)
 
         return name + ': ' + self.linesep.join(lines) + self.linesep
 
