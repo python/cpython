@@ -1,0 +1,2 @@
+:func:`urllib.parse.parse_qsl` and :func:`urllib.parse.parse_qs` now reject
+characters not valid per :rfc:`3986` when *strict_parsing* is ``True``.
