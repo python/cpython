@@ -341,6 +341,7 @@ class _Target(typing.Generic[_S, _R]):
         *,
         comment: str = "",
         force: bool = False,
+        prebuilt: bool = False,
         jit_stencils: pathlib.Path,
         jit_shim_object: pathlib.Path,
         jit_unwind_info: pathlib.Path,
@@ -355,12 +356,15 @@ class _Target(typing.Generic[_S, _R]):
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"
+        stencils_current = (
+            not force
+            and jit_stencils.exists()
+            and (prebuilt or jit_stencils.read_text().startswith(digest))
+        )
         # The generated headers include the input digest as their first line.
         # If every generated artifact is current, skip the expensive rebuild.
         if (
-            not force
-            and jit_stencils.exists()
-            and jit_stencils.read_text().startswith(digest)
+            stencils_current
             and jit_shim_object.exists()
             and jit_unwind_info.exists()
             and jit_unwind_info.read_text().startswith(digest)
@@ -377,13 +381,14 @@ class _Target(typing.Generic[_S, _R]):
             lines=_writer.dump_unwind_info(unwind_info),
         )
         # Build the uop stencils after the shim metadata has been emitted.
-        stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
-        self._write_generated_header(
-            jit_stencils,
-            digest=digest,
-            comment=comment,
-            lines=_writer.dump(stencil_groups, self.known_symbols),
-        )
+        if not stencils_current:
+            stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
+            self._write_generated_header(
+                jit_stencils,
+                digest=digest,
+                comment=comment,
+                lines=_writer.dump(stencil_groups, self.known_symbols),
+            )
 
 
 class _COFF(
