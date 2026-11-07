@@ -5,7 +5,6 @@
 #include "pycore_object.h"
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
-#include "pycore_weakref.h"           // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>                   // offsetof()
 #include "_iomodule.h"
@@ -21,8 +20,6 @@ typedef struct {
     PyObject *buf;
     Py_ssize_t pos;
     Py_ssize_t string_size;
-    PyObject *dict;
-    PyObject *weakreflist;
     Py_ssize_t exports;
 #ifdef Py_GIL_DISABLED
     int buf_shared;
@@ -974,11 +971,16 @@ _io_BytesIO___getstate___impl(bytesio *self)
 
     if (initvalue == NULL)
         return NULL;
-    if (self->dict == NULL) {
+    if (_PyObject_IsInstanceDictEmpty((PyObject *)self)) {
         dict = Py_NewRef(Py_None);
     }
     else {
-        dict = PyDict_Copy(self->dict);
+        dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
+        Py_SETREF(dict, PyDict_Copy(dict));
         if (dict == NULL) {
             Py_DECREF(initvalue);
             return NULL;
@@ -1061,16 +1063,16 @@ _io_BytesIO___setstate___impl(bytesio *self, PyObject *state)
                          Py_TYPE(dict)->tp_name);
             return NULL;
         }
-        if (self->dict) {
-            /* Alternatively, we could replace the internal dictionary
-               completely. However, it seems more practical to just update it. */
-            if (PyDict_Update(self->dict, dict) < 0)
-                return NULL;
+        /* Alternatively, we could replace the internal dictionary
+           completely. However, it seems more practical to just update it. */
+        PyObject *self_dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (self_dict == NULL) {
+            return NULL;
         }
-        else {
-            /* The LOAD_ATTR specializations read the dict slot lock-free
-               with an acquire load, so pair it with a release store. */
-            FT_ATOMIC_STORE_PTR_RELEASE(self->dict, Py_NewRef(dict));
+        int rc = PyDict_Update(self_dict, dict);
+        Py_DECREF(self_dict);
+        if (rc < 0) {
+            return NULL;
         }
     }
 
@@ -1089,8 +1091,8 @@ bytesio_dealloc(PyObject *op)
         PyErr_Print();
     }
     Py_CLEAR(self->buf);
-    Py_CLEAR(self->dict);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearManagedDict(op);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1186,16 +1188,15 @@ bytesio_traverse(PyObject *op, visitproc visit, void *arg)
 {
     bytesio *self = bytesio_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
     Py_VISIT(self->buf);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 bytesio_clear(PyObject *op)
 {
     bytesio *self = bytesio_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) == 0) {
         Py_CLEAR(self->buf);
     }
@@ -1238,12 +1239,6 @@ static struct PyMethodDef bytesio_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-static PyMemberDef bytesio_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(bytesio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(bytesio, dict), Py_READONLY},
-    {NULL}
-};
-
 static PyType_Slot bytesio_slots[] = {
     {Py_tp_dealloc, bytesio_dealloc},
     {Py_tp_doc, (void *)_io_BytesIO___init____doc__},
@@ -1252,7 +1247,6 @@ static PyType_Slot bytesio_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, bytesio_iternext},
     {Py_tp_methods, bytesio_methods},
-    {Py_tp_members, bytesio_members},
     {Py_tp_getset, bytesio_getsetlist},
     {Py_tp_init, _io_BytesIO___init__},
     {Py_tp_new, bytesio_new},

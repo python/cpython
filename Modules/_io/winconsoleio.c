@@ -10,7 +10,6 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 
@@ -216,8 +215,6 @@ typedef struct {
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
-    PyObject *weakreflist;
-    PyObject *dict;
     char buf[SMALLBUF];
     wchar_t wbuf;
 } winconsoleio;
@@ -300,7 +297,6 @@ winconsoleio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->writable = 0;
         self->closefd = 0;
         self->blksize = 0;
-        self->weakreflist = NULL;
     }
 
     return (PyObject *) self;
@@ -498,15 +494,13 @@ winconsoleio_traverse(PyObject *op, visitproc visit, void *arg)
 {
     winconsoleio *self = winconsoleio_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 winconsoleio_clear(PyObject *op)
 {
-    winconsoleio *self = winconsoleio_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -519,8 +513,8 @@ winconsoleio_dealloc(PyObject *op)
     if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
-    Py_CLEAR(self->dict);
+    PyObject_ClearWeakRefs(op);
+    PyObject_ClearManagedDict(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1258,8 +1252,6 @@ static PyGetSetDef winconsoleio_getsetlist[] = {
 static PyMemberDef winconsoleio_members[] = {
     {"_blksize", Py_T_UINT, offsetof(winconsoleio, blksize), 0},
     {"_finalizing", Py_T_BOOL, offsetof(winconsoleio, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(winconsoleio, dict), Py_READONLY},
     {NULL}
 };
 

@@ -895,6 +895,41 @@ class TestIOCTypes(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = "bar"
 
+    def test_managed_dict(self):
+        # The _io types use Py_TPFLAGS_MANAGED_DICT: there is no explicit
+        # dict slot and instance attributes are stored as inline values.
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        _io = self._io
+        no_dict = {_io.IncrementalNewlineDecoder, _io._BytesIOBuffer}
+        for tp in self.types:
+            with self.subTest(tp=tp):
+                if tp in no_dict:
+                    self.assertEqual(tp.__dictoffset__, 0)
+                else:
+                    self.assertEqual(tp.__dictoffset__, -1)
+
+        # Use fresh subclasses: each class has its own shared keys, which
+        # may already be exhausted on the base types by earlier tests.
+        class BytesIO(_io.BytesIO): pass
+        class StringIO(_io.StringIO): pass
+        class BufferedReader(_io.BufferedReader): pass
+        class TextIOWrapper(_io.TextIOWrapper): pass
+        class RawIO(_io._RawIOBase):
+            def __init__(self):
+                self.attr = 1
+        instances = [
+            BytesIO(b"data"),
+            StringIO("data"),
+            BufferedReader(_io.BytesIO(b"data")),
+            TextIOWrapper(_io.BytesIO()),
+            RawIO(),
+        ]
+        for obj in instances:
+            with self.subTest(obj=type(obj).__name__):
+                obj.attr = 1
+                self.assertTrue(_testinternalcapi.has_inline_values(obj))
+                self.assertEqual(obj.__dict__["attr"], 1)
+
     def test_class_hierarchy(self):
         def check_subs(types, base):
             for tp in types:
