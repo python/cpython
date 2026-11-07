@@ -197,6 +197,13 @@ _in_weak_set(_abc_data *impl, PyObject **pset, PyObject *obj)
     }
     int res = PySet_Contains(set, ref);
     Py_DECREF(ref);
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_TypeError)) {
+        /* The weak reference hashes to the hash of its referent, so an
+           unhashable object cannot be an element of the set and therefore
+           was never added to it (gh-129589). */
+        PyErr_Clear();
+        return 0;
+    }
     return res;
 }
 
@@ -253,6 +260,22 @@ _add_to_weak_set(_abc_data *impl, PyObject **pset, PyObject *obj)
     int ret = PySet_Add(set, ref);
     Py_DECREF(wr);
     Py_DECREF(ref);
+    return ret;
+}
+
+/* Like _add_to_weak_set(), but for the sets that are only used as a cache.
+   An unhashable class cannot be stored in a set, so caching is skipped for
+   it and the check is recomputed on every call instead (gh-129589).  The
+   registry must keep using _add_to_weak_set(): dropping a registration would
+   turn a loud error into a silently wrong issubclass() answer. */
+static int
+_add_to_cache(_abc_data *impl, PyObject **pset, PyObject *obj)
+{
+    int ret = _add_to_weak_set(impl, pset, obj);
+    if (ret < 0 && PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyErr_Clear();
+        return 0;
+    }
     return ret;
 }
 
@@ -775,7 +798,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     if (ok == Py_True) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+        if (_add_to_cache(impl, &impl->_abc_cache, subclass) < 0) {
             goto end;
         }
         result = Py_True;
@@ -783,7 +806,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     if (ok == Py_False) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
+        if (_add_to_cache(impl, &impl->_abc_negative_cache, subclass) < 0) {
             goto end;
         }
         result = Py_False;
@@ -799,7 +822,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 4. Check if it's a direct subclass. */
     if (PyType_IsSubtype((PyTypeObject *)subclass, (PyTypeObject *)self)) {
-        if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+        if (_add_to_cache(impl, &impl->_abc_cache, subclass) < 0) {
             goto end;
         }
         result = Py_True;
@@ -829,7 +852,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
         if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+            if (_add_to_cache(impl, &impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -841,7 +864,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* No dice; update negative cache. */
-    if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
+    if (_add_to_cache(impl, &impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }
     result = Py_False;
@@ -904,7 +927,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
             break;
         }
         if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+            if (_add_to_cache(impl, &impl->_abc_cache, subclass) < 0) {
                 ret = -1;
                 break;
             }
