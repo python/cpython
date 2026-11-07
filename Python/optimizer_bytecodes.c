@@ -1528,6 +1528,18 @@ dummy_func(void) {
         gen_frame = PyJitRef_WrapInvalid(new_frame);
     }
 
+    op(_GUARD_ASYNC_CALL_TAIL, (--)) {
+        // Only needed in tier 1: executors are invalidated
+        // when the code is instrumented.
+        ADD_OP(_NOP, 0, 0);
+    }
+
+    op(_ASYNC_CALL_GEN_FRAME, (new_frame -- coro, null, gen_frame)) {
+        coro = sym_new_type(ctx, &PyCoro_Type);
+        null = sym_new_null(ctx);
+        gen_frame = new_frame;
+    }
+
     op(_SEND_GEN_FRAME, (receiver, null, v -- receiver, null, gen_frame)) {
         _Py_UOpsAbstractFrame *new_frame = frame_new_from_symbol(ctx, receiver, NULL, 0);
         if (new_frame == NULL) {

@@ -2573,6 +2573,49 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         self.assertEqual(call_data[0], (f, 1))
         self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
 
+    def test_async_call(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
+        async def coro(a):
+            return a
+
+        async def caller(n):
+            for i in range(n):
+                await coro(i)
+
+        def run(coro):
+            with self.assertRaises(StopIteration):
+                coro.send(None)
+
+        def call(code, offset, callable, arg0):
+            if code is caller.__code__:
+                calls.append((callable, arg0))
+
+        def start(code, offset):
+            if code is coro.__code__:
+                starts.append(code)
+
+        n = _testinternalcapi.SPECIALIZATION_THRESHOLD + 1
+        expected = [(range, n)] + [(coro, i) for i in range(n)]
+        # Specialize the CALL to ASYNC_CALL_* before it is instrumented.
+        run(caller(n))
+
+        calls = []
+        starts = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, call)
+        sys.monitoring.register_callback(0, E.PY_START, start)
+        sys.monitoring.set_events(0, E.CALL | E.PY_START)
+        run(caller(n))
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(calls, expected)
+        self.assertEqual(len(starts), n)
+
+        run(caller(n))
+        self.assertEqual(calls, expected)
+
     def test_instruction_explicit_callback(self):
         # gh-122247
         # Calling the instruction event callback explicitly should not
