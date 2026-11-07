@@ -8,7 +8,7 @@ from .result import State, TestResult, TestStats, Location
 from .skipped import expected_to_be_skipped
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
-    printlist, count, format_duration)
+    printlist, count, format_duration, cleanup_test_name)
 
 
 # Python uses exit code 1 when an exception is not caught
@@ -98,9 +98,7 @@ class TestResults:
         return exitcode
 
     def accumulate_result(self, result: TestResult, runtests: RunTests) -> None:
-        test_name = result.test_name
-        # Remove "test." prefix added by some test packages
-        test_name = test_name.removeprefix('test.')
+        test_name = cleanup_test_name(result.test_name)
         rerun = runtests.rerun
         fail_env_changed = runtests.fail_env_changed
 
@@ -218,6 +216,8 @@ class TestResults:
         return (skipped, expected)
 
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool) -> None:
+        tests = tuple(cleanup_test_name(name) for name in tests)
+
         ansi = get_colors()
         green = ansi.GREEN
         red = ansi.BOLD_RED
