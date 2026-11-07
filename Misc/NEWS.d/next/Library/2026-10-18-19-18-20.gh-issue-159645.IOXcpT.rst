@@ -1,0 +1,2 @@
+Fix :mod:`profiling.sampling` ``--async-aware`` profiles showing event loop
+frames under tasks. Patch by Timofei Ivankov.
