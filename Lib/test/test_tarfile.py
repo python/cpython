@@ -2759,6 +2759,32 @@ class PaxWriteTest(GNUWriteTest):
         finally:
             tar.close()
 
+    def test_invalid_size_pax_extended_header(self):
+        # When the value of the keyword 'size' is invalid, it should be
+        # ignored and proceeds to extract all the records instead of
+        # setting size to 0 and producing a single empty extracted file
+        t1sz = 89
+        t2sz = 64
+        with tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
+                          pax_headers={"size": "xyz"},
+                          encoding="iso8859-1") as tar:
+            t1 = tarfile.TarInfo()
+            t1.name = "foo"
+            t1.size = t1sz
+            tar.addfile(t1, io.BytesIO(b"a"*t1sz))
+
+            t2 = tarfile.TarInfo()
+            t2.name = "bar"
+            t2.size = t2sz
+            tar.addfile(t2, io.BytesIO(b"z"*t2sz))
+
+        t1_path = os.path.join(TEMPDIR, "foo")
+        t2_path = os.path.join(TEMPDIR, "bar")
+        with tarfile.open(tmpname, encoding="iso8859-1") as tar:
+            tar.extractall(path=TEMPDIR)
+            self.assertEqual(os.path.getsize(t1_path), t1sz)
+            self.assertEqual(os.path.getsize(t2_path), t2sz)
+
     def test_create_pax_header(self):
         # The ustar header should contain values that can be
         # represented reasonably, even if a better (e.g. higher
