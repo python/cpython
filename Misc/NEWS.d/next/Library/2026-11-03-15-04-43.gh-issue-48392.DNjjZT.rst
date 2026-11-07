@@ -1,0 +1,3 @@
+Fix :meth:`!smtplib.SMTP.close` not resetting the EHLO state, so an
+:class:`!SMTP` object reconnected with :meth:`~smtplib.SMTP.connect` sent
+``MAIL FROM`` without a new EHLO.
