@@ -1566,7 +1566,8 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
                            ca_certs=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
-    If 'ca_certs' is specified, validate the server cert against it.
+    If 'ca_certs' is specified, validate the server cert against it and
+    check that it matches the hostname.
     If 'ssl_version' is specified, use it in the connection attempt.
     If 'timeout' is specified, use it in the connection attempt.
     """
@@ -1578,6 +1579,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
         cert_reqs = CERT_NONE
     context = _create_stdlib_context(ssl_version,
                                      cert_reqs=cert_reqs,
+                                     check_hostname=ca_certs is not None,
                                      cafile=ca_certs)
     with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
