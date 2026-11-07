@@ -1,0 +1,3 @@
+When no fully qualified hostname is available, :mod:`smtplib` now uses the
+connected socket's local address for the HELO/EHLO address literal. Previously,
+IPv6 was not handled correctly.

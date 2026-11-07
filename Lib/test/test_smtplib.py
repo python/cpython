@@ -696,6 +696,70 @@ class DebuggingServerTests(unittest.TestCase):
             smtp.send_message(m)
         smtp.close()
 
+class LocalHostnameTests(unittest.TestCase):
+
+    def test_connected_address_literal(self):
+        cases = (
+            (socket.AF_INET, ('192.0.2.1', 1234), '[192.0.2.1]'),
+            (socket.AF_INET6, ('2001:db8::1', 1234, 0, 0),
+             '[IPv6:2001:db8::1]'),
+            (socket.AF_INET6, ('fe80::1%eth0', 1234, 0, 1), '[IPv6:fe80::1]'),
+        )
+        for family, address, expected in cases:
+            for connect_in_init in (True, False):
+                with self.subTest(family=family, address=address,
+                                  connect_in_init=connect_in_init):
+                    sock = Mock(family=family)
+                    sock.getsockname.return_value = address
+                    with mock.patch('smtplib.socket.getfqdn', return_value='host'), \
+                         mock.patch('smtplib.socket.gethostbyname',
+                                    return_value='127.0.0.1'), \
+                         mock.patch.object(smtplib.SMTP, '_get_socket',
+                                           return_value=sock), \
+                         mock.patch.object(smtplib.SMTP, 'getreply',
+                                           return_value=(220, b'OK')):
+                        smtp = smtplib.SMTP('server' if connect_in_init else '')
+                        self.addCleanup(smtp.close)
+                        if not connect_in_init:
+                            smtp.connect('server')
+                        self.assertEqual(smtp.local_hostname, expected)
+                        smtp.ehlo()
+                        sock.sendall.assert_called_with(
+                            ('ehlo ' + expected + '\r\n').encode('ascii'))
+
+    def test_address_literal_updated_on_reconnect(self):
+        sock = Mock(family=socket.AF_INET6)
+        sock.getsockname.side_effect = [
+            ('2001:db8::1', 1234, 0, 0), ('2001:db8::2', 1234, 0, 0)]
+        with mock.patch('smtplib.socket.getfqdn', return_value='host'), \
+             mock.patch('smtplib.socket.gethostbyname', return_value='127.0.0.1'), \
+             mock.patch.object(smtplib.SMTP, '_get_socket', return_value=sock), \
+             mock.patch.object(smtplib.SMTP, 'getreply', return_value=(220, b'OK')):
+            smtp = smtplib.SMTP('server')
+            self.addCleanup(smtp.close)
+            self.assertEqual(smtp.local_hostname, '[IPv6:2001:db8::1]')
+            smtp.close()
+            smtp.connect('other-server')
+            self.assertEqual(smtp.local_hostname, '[IPv6:2001:db8::2]')
+
+    def test_hostname_preserved(self):
+        for local_hostname, fqdn, expected in (
+            ('custom', 'host', 'custom'),
+            (None, 'host.example', 'host.example'),
+        ):
+            with self.subTest(local_hostname=local_hostname, fqdn=fqdn):
+                sock = Mock(family=socket.AF_INET6)
+                with mock.patch('smtplib.socket.getfqdn', return_value=fqdn), \
+                     mock.patch.object(smtplib.SMTP, '_get_socket',
+                                       return_value=sock), \
+                     mock.patch.object(smtplib.SMTP, 'getreply',
+                                       return_value=(220, b'OK')):
+                    smtp = smtplib.SMTP('server', local_hostname=local_hostname)
+                    self.addCleanup(smtp.close)
+                    self.assertEqual(smtp.local_hostname, expected)
+                    sock.getsockname.assert_not_called()
+
+
 class NonConnectingTests(unittest.TestCase):
 
     def testNotConnected(self):
