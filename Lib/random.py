@@ -1067,15 +1067,17 @@ def main(arg_list: list[str] | None = None) -> int | str:
         try:
             # Is it an integer?
             val = int(val)
-            return randint(1, val)
         except ValueError:
             try:
                 # Is it a float?
                 val = float(val)
-                return uniform(0, val)
             except ValueError:
                 # Split in case of space-separated string: "a b c"
                 return choice(val.split())
+            else:
+                return uniform(0, val)
+        else:
+            return randint(1, val)
 
     if len(args.input) >= 2:
         return choice(args.input)
@@ -1084,4 +1086,8 @@ def main(arg_list: list[str] | None = None) -> int | str:
 
 
 if __name__ == '__main__':
-    print(main())
+    import sys
+    try:
+        print(main())
+    except ValueError as exc:
+        sys.exit(f"error: {exc}")
