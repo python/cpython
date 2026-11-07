@@ -138,9 +138,9 @@ type_getflags(PyObject *module, PyObject *arg)
     NULLABLE(arg);
     PyTypeObject *type = (PyTypeObject*)arg;
 
-    unsigned long flags = PyType_GetFlags(type);
+    uint64_t long flags = PyType_GetFlags(type);
     assert(!PyErr_Occurred());
-    return PyLong_FromUnsignedLong(flags);
+    return PyLong_FromUInt64(flags);
 }
 
 
