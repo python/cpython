@@ -2244,8 +2244,15 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         return self->ttinfo_before;
     }
     else if (!num_trans || ts > local_transitions[self->num_transitions - 1]) {
-        return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold,
-                                  PyDateTime_GET_YEAR(dt));
+        _ttinfo *tti = find_tzrule_ttinfo(&(self->tzrule_after), ts, fold,
+                                        PyDateTime_GET_YEAR(dt));
+        // Do not extrapolate recurring rules before the last explicit
+        // transition.
+        if (num_trans && !self->tzrule_after.std_only &&
+            ts - tti->utcoff_seconds < self->trans_list_utc[num_trans - 1]) {
+            return self->trans_ttinfos[num_trans - 1];
+        }
+        return tti;
     }
     else {
         size_t idx = _bisect(ts, local_transitions, self->num_transitions) - 1;

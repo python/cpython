@@ -176,7 +176,15 @@ class ZoneInfo(tzinfo):
             return self._tti_before
         elif not num_trans or ts > lt[-1]:
             if isinstance(self._tz_after, _TZStr):
-                return self._tz_after.get_trans_info(ts, dt.year, dt.fold)
+                tti = self._tz_after.get_trans_info(ts, dt.year, dt.fold)
+                # Do not extrapolate recurring rules before the last
+                # explicit transition.
+                if (
+                    self._trans_utc
+                    and ts - tti.utcoff.total_seconds() < self._trans_utc[-1]
+                ):
+                    return self._ttinfos[-1]
+                return tti
             else:
                 return self._tz_after
         else:
