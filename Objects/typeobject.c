@@ -2827,6 +2827,10 @@ subtype_dealloc(PyObject *self)
         }
         _PyObject_GC_UNTRACK(self);
     }
+
+    /* Extract the type again; tp_finalize may have changed it */
+    type = Py_TYPE(self);
+
     /*
       If we added a weaklist, we clear it. Do this *before* calling tp_del,
       clearing slots, or clearing the instance dict.
