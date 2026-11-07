@@ -2,6 +2,7 @@ import itertools
 import io
 import json
 import os
+from pathlib import Path, PureWindowsPath
 import platform
 import sys
 import tempfile
@@ -9,6 +10,7 @@ import threading
 import time
 
 from .collector import Collector, filter_internal_frames
+from .module_utils import extract_module_name, get_python_path_info
 from .opcode_utils import get_opcode_info, format_opcode
 try:
     from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION, THREAD_STATUS_MAIN_THREAD
@@ -143,6 +145,8 @@ class GeckoCollector(Collector):
         self.skip_idle = skip_idle
         self.opcodes_enabled = opcodes
         self.start_time = time.monotonic() * 1000  # milliseconds since start
+
+        self._path_info = get_python_path_info()
 
         # Global string table (shared across all threads)
         self.global_strings = ["(root)"]  # Start with root
@@ -643,9 +647,32 @@ class GeckoCollector(Collector):
         resource_types = resource_table["type"]
 
         resource_idx = len(resource_names)
-        resource_name = (
-            os.path.basename(filename) if "/" in filename else filename
-        )
+        if not filename or filename.startswith("<"):
+            resource_name = filename
+        else:
+            module_name, module_type = extract_module_name(
+                filename.replace("\\", "/"), self._path_info
+            )
+            if module_type != "other":
+                resource_name = module_name
+            else:
+                path = (
+                    PureWindowsPath(filename)
+                    if ("\\" in filename or (len(filename) > 1 and filename[1] == ":"))
+                    else Path(filename)
+                )
+                if path.is_absolute() or bool(path.anchor):
+                    parent = path.parent.name
+                    name = path.name
+                    if name == "__init__.py" and parent:
+                        resource_name = parent
+                    elif parent:
+                        resource_name = f"{parent}/{name}"
+                    else:
+                        resource_name = name or filename
+                else:
+                    resource_name = module_name
+
         name_idx = self._intern_string(resource_name)
 
         resource_libs.append(None)

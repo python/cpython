@@ -1,0 +1,2 @@
+Record Python module names for resources in the Gecko sampling profiler
+(:mod:`profiling.sampling`) where available.
