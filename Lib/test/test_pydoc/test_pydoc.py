@@ -2295,11 +2295,12 @@ class TestHelper(unittest.TestCase):
                          sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
     def test_related_topics(self):
-        # Every related help topic must be something help() can document.
+        # Every related help topic and alias must be something help() can
+        # document.
         for name, target in (*pydoc.Helper.topics.items(),
                              *pydoc.Helper.keywords.items()):
-            if not isinstance(target, tuple):
-                continue
+            if isinstance(target, str):
+                target = ('', target)
             for xref in target[1].split():
                 with self.subTest(topic=name, xref=xref):
                     buf = StringIO()
