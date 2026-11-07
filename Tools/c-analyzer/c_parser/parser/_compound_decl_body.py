@@ -8,6 +8,7 @@ from ._common import (
     log_match,
     parse_var_decl,
     set_capture_groups,
+    skip_static_assert,
 )
 
 
@@ -31,6 +32,8 @@ def parse_struct_body(source, anon_name, parent):
     while not done:
         done = True
         for srcinfo in source:
+            if skip_static_assert(srcinfo):
+                continue
             m = STRUCT_MEMBER_RE.match(srcinfo.text)
             if m:
                 break
