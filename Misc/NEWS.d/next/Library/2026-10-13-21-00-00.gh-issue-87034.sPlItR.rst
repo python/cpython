@@ -1,0 +1,2 @@
+Fix iteration over :class:`tempfile.SpooledTemporaryFile` when the file rolls
+over to disk during iteration.
