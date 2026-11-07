@@ -247,7 +247,8 @@ or on combining URL components into a URL string.
 
    The optional *encoding* and *errors* parameters specify how to decode
    percent-encoded sequences into Unicode characters, as accepted by the
-   :meth:`bytes.decode` method.
+   :meth:`bytes.decode` method. See :func:`quote` for more about the
+   *encoding* and *errors* arguments.
 
    The optional argument *max_num_fields* is the maximum number of fields to
    read. If set, then throws a :exc:`ValueError` if there are more than
@@ -296,7 +297,8 @@ or on combining URL components into a URL string.
 
    The optional *encoding* and *errors* parameters specify how to decode
    percent-encoded sequences into Unicode characters, as accepted by the
-   :meth:`bytes.decode` method.
+   :meth:`bytes.decode` method. See :func:`quote` for more about the
+   *encoding* and *errors* arguments.
 
    The optional argument *max_num_fields* is the maximum number of fields to
    read. If set, then throws a :exc:`ValueError` if there are more than
@@ -652,7 +654,8 @@ task isn't already covered by the URL parsing functions above.
    Although these parameters default to ``None`` in the function signature,
    when processing :class:`str` inputs, *encoding* effectively defaults to ``'utf-8'``
    and *errors* to ``'strict'``, meaning unsupported characters raise a
-   :class:`UnicodeEncodeError`.
+   :class:`UnicodeEncodeError`. See :ref:`standard-encodings` and
+   :ref:`error-handlers` for the values that *encoding* and *errors* can take.
    *encoding* and *errors* must not be supplied if *string* is a
    :class:`bytes`, or a :class:`TypeError` is raised.
 
@@ -692,7 +695,8 @@ task isn't already covered by the URL parsing functions above.
 
    *encoding* defaults to ``'utf-8'``.
    *errors* defaults to ``'replace'``, meaning invalid sequences are replaced
-   by a placeholder character.
+   by a placeholder character. See :func:`quote` for more about the
+   *encoding* and *errors* arguments.
 
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
