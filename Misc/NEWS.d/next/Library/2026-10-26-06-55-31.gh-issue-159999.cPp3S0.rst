@@ -1,0 +1,4 @@
+Fix :meth:`bz2.BZ2Decompressor.decompress` sometimes returning only part of
+the available output, and setting :attr:`~bz2.BZ2Decompressor.needs_input` to
+true while output was still buffered. Fix the same :attr:`!needs_input` bug in
+the decompressor used by :mod:`gzip`.
