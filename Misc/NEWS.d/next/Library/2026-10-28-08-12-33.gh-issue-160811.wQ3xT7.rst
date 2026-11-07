@@ -1,3 +1,2 @@
-Fix :meth:`io.TextIOWrapper.tell` after :meth:`~io.TextIOWrapper.seek` to a
-position that follows a carriage return.  It now falls back to a byte-by-byte
-search when its bytes-per-character estimate is invalid.
+Fix :meth:`io.TextIOWrapper.tell` reading past the end of the buffer after
+:meth:`~io.TextIOWrapper.seek`.
