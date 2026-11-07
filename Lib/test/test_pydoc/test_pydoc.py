@@ -2200,6 +2200,19 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist + ['case', 'match', 'lazy']))
 
+    def test_related_topics(self):
+        # Every related help topic and alias must be something help() can
+        # document.
+        for name, target in (*pydoc.Helper.topics.items(),
+                             *pydoc.Helper.keywords.items()):
+            if isinstance(target, str):
+                target = ('', target)
+            for xref in target[1].split():
+                with self.subTest(topic=name, xref=xref):
+                    buf = StringIO()
+                    pydoc.Helper(output=buf).help(xref)
+                    self.assertNotIn('No help entry found', buf.getvalue())
+
     def test_symbols(self):
         # gh-161414
         for symbol in pydoc.Helper.symbols:
