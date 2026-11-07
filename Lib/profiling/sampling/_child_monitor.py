@@ -237,7 +237,6 @@ class ChildProcessMonitor:
                 cmd,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
             )
             with self._lock:
                 if self._stop_event.is_set():
