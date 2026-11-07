@@ -3614,3 +3614,10 @@ def inject_memory_error_cm(start=0, stop=0):
         yield
     finally:
         _testcapi.remove_mem_hooks()
+
+
+def supports_perf_trampoline_profiling():
+    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
+    if not perf_trampoline:
+        return False
+    return int(perf_trampoline) == 1
