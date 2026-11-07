@@ -1,0 +1,2 @@
+Fix :mod:`zipimport` to raise :exc:`zipimport.ZipImportError` instead of
+leaking :exc:`zlib.error` when a zip entry's deflate stream is corrupt.
