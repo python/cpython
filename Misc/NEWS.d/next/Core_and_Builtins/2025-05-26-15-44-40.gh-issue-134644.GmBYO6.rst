@@ -1,0 +1,1 @@
+Fix assertion failure when ``input`` is interrupted by another thread.
