@@ -1683,7 +1683,15 @@ application).
 
    Lists implement all of the :ref:`common <typesseq-common>` and
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
-   following additional method:
+   following additional methods:
+
+   .. method:: list.discard(value, /)
+
+      Remove the first item from the list where ``list[i] == value``
+      if such an item is present.  Return ``True`` if an item was removed,
+      ``False`` otherwise.
+
+      .. versionadded:: next
 
    .. method:: list.sort(*, key=None, reverse=False)
 

@@ -209,6 +209,7 @@ You can get the information from the list type:
      'clear',
      'copy',
      'count',
+     'discard',
      'extend',
      'index',
      'insert',

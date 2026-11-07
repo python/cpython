@@ -3462,6 +3462,29 @@ list_count_impl(PyListObject *self, PyObject *value)
     return PyLong_FromSsize_t(count);
 }
 
+static int
+list_remove_lock_held(PyListObject *self, PyObject *value)
+{
+    Py_ssize_t i;
+
+    for (i = 0; i < Py_SIZE(self); i++) {
+        PyObject *obj = self->ob_item[i];
+        Py_INCREF(obj);
+        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        Py_DECREF(obj);
+        if (cmp > 0) {
+            if (list_ass_slice_lock_held(self, i, i+1, NULL) < 0) {
+                return -1;
+            }
+            return 1;
+        }
+        else if (cmp < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 @critical_section
 list.remove
@@ -3478,23 +3501,38 @@ static PyObject *
 list_remove_impl(PyListObject *self, PyObject *value)
 /*[clinic end generated code: output=b9b76a6633b18778 input=26c813dbb95aa93b]*/
 {
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *obj = self->ob_item[i];
-        Py_INCREF(obj);
-        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
-        Py_DECREF(obj);
-        if (cmp > 0) {
-            if (list_ass_slice_lock_held(self, i, i+1, NULL) == 0)
-                Py_RETURN_NONE;
-            return NULL;
-        }
-        else if (cmp < 0)
-            return NULL;
+    int res = list_remove_lock_held(self, value);
+    if (res < 0) {
+        return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
-    return NULL;
+    if (res == 0) {
+        PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
+list.discard
+
+     value: object
+     /
+
+Remove first occurrence of value if it is present.
+
+Return True if an item was removed, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+list_discard_impl(PyListObject *self, PyObject *value)
+/*[clinic end generated code: output=4d8c1aee9a101f8c input=6330bc648285d994]*/
+{
+    int res = list_remove_lock_held(self, value);
+    if (res < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(res);
 }
 
 static int
@@ -3688,6 +3726,7 @@ static PyMethodDef list_methods[] = {
     LIST_EXTEND_METHODDEF
     LIST_POP_METHODDEF
     LIST_REMOVE_METHODDEF
+    LIST_DISCARD_METHODDEF
     LIST_INDEX_METHODDEF
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF

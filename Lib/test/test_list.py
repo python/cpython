@@ -356,6 +356,9 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises(ValueError):
             lst.remove(lst)
 
+        lst = L([X()])
+        lst.discard(lst)
+
         # bpo-39453: list.__contains__ was not holding strong references
         # to list elements while calling PyObject_RichCompareBool().
         lst = [X(), X()]
