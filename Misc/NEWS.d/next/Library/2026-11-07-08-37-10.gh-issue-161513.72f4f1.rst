@@ -1,0 +1,2 @@
+:mod:`platform` is now about 30% faster to import on Windows: the ``_wmi``
+extension module is loaded on first use instead of at import time.
