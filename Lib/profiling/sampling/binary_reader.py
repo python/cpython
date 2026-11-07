@@ -103,6 +103,28 @@ class BinaryReader:
         return self._reader.get_stats()
 
 
+def _set_replay_stats(collector, info, sample_interval_usec):
+    """Pass recorded statistics to a collector using the live sampling API."""
+    duration_sec = info.get("duration_sec")
+    sample_rate = info.get("sample_rate")
+    mode = info.get("mode")
+    if (
+        duration_sec is not None
+        and sample_rate is not None
+        and hasattr(collector, "set_stats")
+    ):
+        collector.set_stats(
+            sample_interval_usec,
+            duration_sec,
+            sample_rate,
+            error_rate=info.get("error_rate"),
+            missed_samples=info.get("missed_samples"),
+            mode=mode,
+        )
+    elif hasattr(collector, "set_mode"):
+        collector.set_mode(mode)
+
+
 def convert_binary_to_format(input_file, output_file, output_format,
                              sample_interval_usec=None, progress_callback=None):
     """Convert a binary profiling file to another format.
@@ -137,10 +159,7 @@ def convert_binary_to_format(input_file, output_file, output_format,
 
         # Replay samples through collector
         count = reader.replay_samples(collector, progress_callback)
-        if hasattr(collector, "set_replay_stats"):
-            collector.set_replay_stats(info)
-        if hasattr(collector, "set_mode"):
-            collector.set_mode(info.get("mode"))
+        _set_replay_stats(collector, info, interval)
 
         # Export to target format
         collector.export(output_file)

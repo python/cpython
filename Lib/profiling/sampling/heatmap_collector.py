@@ -752,6 +752,8 @@ class HeatmapCollector(StackTraceCollector):
             missed_samples_class = "good"
 
         # Populate template
+        duration_sec = self.stats.get('duration_sec')
+        sample_rate = self.stats.get('sample_rate')
         replacements = {
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.index_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.index_js}\n</script>",
@@ -759,8 +761,8 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- PYTHON_VERSION -->": f"{sys.version_info.major}.{sys.version_info.minor}",
             "<!-- NUM_FILES -->": f"{len(file_stats):n}",
             "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:n}",
-            "<!-- DURATION -->": fmt(self.stats.get('duration_sec', 0)),
-            "<!-- SAMPLE_RATE -->": fmt(self.stats.get('sample_rate', 0)),
+            "<!-- DURATION -->": f"{fmt(duration_sec)} sec" if duration_sec is not None else "N/A",
+            "<!-- SAMPLE_RATE -->": fmt(sample_rate) if sample_rate is not None else "N/A",
             "<!-- ERROR_RATE -->": error_rate_str,
             "<!-- ERROR_RATE_WIDTH -->": str(error_rate_width),
             "<!-- ERROR_RATE_CLASS -->": error_rate_class,
