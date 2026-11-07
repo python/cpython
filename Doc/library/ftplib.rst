@@ -549,6 +549,22 @@ FTP_TLS objects
 
       Set up clear text data connection.
 
+   .. note::
+      The TLS shutdown of the data connection is best-effort.  Once a
+      transfer has finished exchanging its payload,
+      :meth:`~FTP.retrbinary`, :meth:`~FTP.retrlines`,
+      :meth:`~FTP.storbinary` and :meth:`~FTP.storlines` attempt to
+      complete a TLS shutdown handshake on the data socket, but limit it
+      to a few seconds and ignore the errors it may raise.  Servers are
+      not required to perform a TLS shutdown on a connection which is
+      created for a single transfer and closed immediately afterwards,
+      and some of them never answer it at all.
+
+   .. versionchanged:: 3.16
+      A failed or unresponsive TLS shutdown of the data connection no
+      longer raises an exception or blocks indefinitely once the transfer
+      itself has completed.
+
 
 Module variables
 ^^^^^^^^^^^^^^^^
