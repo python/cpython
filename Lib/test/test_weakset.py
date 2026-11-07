@@ -461,23 +461,32 @@ class TestWeakSet(unittest.TestCase):
             s.x = ['x']
             s.z = ['z']
 
+            # A shallow copy contains the same elements, without the
+            # user-defined attributes (like copy()).
             dup = copy.copy(s)
             self.assertIsInstance(dup, cls)
             self.assertEqual(dup, s)
             self.assertIsNot(dup, s)
-            self.assertIs(dup.x, s.x)
-            self.assertIs(dup.z, s.z)
+            self.assertNotHasAttr(dup, 'x')
+            self.assertNotHasAttr(dup, 'z')
             self.assertNotHasAttr(dup, 'y')
 
-            dup = copy.deepcopy(s)
+            # A deep copy refers to the deep copies of the elements, so they
+            # must be deep-copied together with it.
+            dup, items = copy.deepcopy((s, self.items))
             self.assertIsInstance(dup, cls)
-            self.assertEqual(dup, s)
-            self.assertIsNot(dup, s)
+            self.assertEqual(dup, WeakSet(items))
+            self.assertEqual(set(map(id, dup)), set(map(id, items)))
+            self.assertNotEqual(set(map(id, dup)), set(map(id, s)))
             self.assertEqual(dup.x, s.x)
             self.assertIsNot(dup.x, s.x)
             self.assertEqual(dup.z, s.z)
             self.assertIsNot(dup.z, s.z)
             self.assertNotHasAttr(dup, 'y')
+            # Otherwise the copies of the elements are discarded.
+            dup = copy.deepcopy(s)
+            support.gc_collect()
+            self.assertEqual(len(dup), 0)
 
     def test_pickling(self):
         for cls in WeakSet, WeakSetWithSlots:
