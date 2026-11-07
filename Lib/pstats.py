@@ -187,6 +187,7 @@ class Stats:
                 self.max_name_len = item.max_name_len
 
             self.fcn_list = None
+            self.all_callees = None
 
             for func, stat in item.stats.items():
                 if func in self.stats:
