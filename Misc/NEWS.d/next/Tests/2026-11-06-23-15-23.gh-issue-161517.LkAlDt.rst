@@ -1,0 +1,3 @@
+Fix test_gdb when Python is built out-of-tree and Python is run from a
+virtual environment. Previously, test_gdb was just skipped. Patch by Victor
+Stinner.
