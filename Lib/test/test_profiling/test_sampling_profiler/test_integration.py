@@ -508,6 +508,9 @@ do_work()
                 if ";" in stack_trace:
                     stack_parts = stack_trace.split(";")
                     for part in stack_parts:
+                        # Synthetic frames contain only their name.
+                        if part in {"<GC>", "<native>", "<unreadable frame>"}:
+                            continue
                         # Each part should be file:function:line
                         self.assertIn(":", part)
 
