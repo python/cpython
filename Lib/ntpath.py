@@ -168,52 +168,59 @@ def splitdrive(p, /):
     return drive, root + tail
 
 
+def splitroot(p, /):
+    """Split a pathname into drive, root and tail.
+
+    The tail contains anything after the root."""
+    p = os.fspath(p)
+    if isinstance(p, bytes):
+        sep = b'\\'
+        altsep = b'/'
+        colon = b':'
+        unc_prefix = b'\\\\?\\UNC\\'
+        empty = b''
+    else:
+        sep = '\\'
+        altsep = '/'
+        colon = ':'
+        unc_prefix = '\\\\?\\UNC\\'
+        empty = ''
+    normp = p.replace(altsep, sep)
+    if normp[:1] == sep:
+        if normp[1:2] == sep:
+            # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+            # Device drives, e.g. \\.\device or \\?\device
+            start = 8 if normp[:8].upper() == unc_prefix else 2
+            index = normp.find(sep, start)
+            if index == -1:
+                return p, empty, empty
+            index2 = normp.find(sep, index + 1)
+            if index2 == -1:
+                return p, empty, empty
+            return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+        else:
+            # Relative path with root, e.g. \Windows
+            return empty, p[:1], p[1:]
+    elif normp[1:2] == colon:
+        if normp[2:3] == sep:
+            # Absolute drive-letter path, e.g. X:\Windows
+            return p[:2], p[2:3], p[3:]
+        else:
+            # Relative path with drive, e.g. X:Windows
+            return p[:2], empty, p[2:]
+    else:
+        # Relative path, e.g. Windows
+        return empty, empty, p
+
+
+# Kept under a private name so that nt._path_splitroot_ex() can delegate to it
+# for bytes paths that cannot be decoded with the filesystem encoding.
+_splitroot_fallback = splitroot
+
 try:
     from nt import _path_splitroot_ex as splitroot
 except ImportError:
-    def splitroot(p, /):
-        """Split a pathname into drive, root and tail.
-
-        The tail contains anything after the root."""
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            colon = b':'
-            unc_prefix = b'\\\\?\\UNC\\'
-            empty = b''
-        else:
-            sep = '\\'
-            altsep = '/'
-            colon = ':'
-            unc_prefix = '\\\\?\\UNC\\'
-            empty = ''
-        normp = p.replace(altsep, sep)
-        if normp[:1] == sep:
-            if normp[1:2] == sep:
-                # UNC drives, e.g. \\server\share or \\?\UNC\server\share
-                # Device drives, e.g. \\.\device or \\?\device
-                start = 8 if normp[:8].upper() == unc_prefix else 2
-                index = normp.find(sep, start)
-                if index == -1:
-                    return p, empty, empty
-                index2 = normp.find(sep, index + 1)
-                if index2 == -1:
-                    return p, empty, empty
-                return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
-            else:
-                # Relative path with root, e.g. \Windows
-                return empty, p[:1], p[1:]
-        elif normp[1:2] == colon:
-            if normp[2:3] == sep:
-                # Absolute drive-letter path, e.g. X:\Windows
-                return p[:2], p[2:3], p[3:]
-            else:
-                # Relative path with drive, e.g. X:Windows
-                return p[:2], empty, p[2:]
-        else:
-            # Relative path, e.g. Windows
-            return empty, empty, p
+    pass
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -470,45 +477,51 @@ def expandvars(path):
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A\B.
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
-try:
-    from nt import _path_normpath as normpath
-
-except ImportError:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            curdir = b'.'
-            pardir = b'..'
-        else:
-            sep = '\\'
-            altsep = '/'
-            curdir = '.'
-            pardir = '..'
-        path = path.replace(altsep, sep)
-        drive, root, path = splitroot(path)
-        prefix = drive + root
-        comps = path.split(sep)
-        i = 0
-        while i < len(comps):
-            if not comps[i] or comps[i] == curdir:
+def normpath(path):
+    """Normalize path, eliminating double slashes, etc."""
+    path = os.fspath(path)
+    if isinstance(path, bytes):
+        sep = b'\\'
+        altsep = b'/'
+        curdir = b'.'
+        pardir = b'..'
+    else:
+        sep = '\\'
+        altsep = '/'
+        curdir = '.'
+        pardir = '..'
+    path = path.replace(altsep, sep)
+    drive, root, path = _splitroot_fallback(path)
+    prefix = drive + root
+    comps = path.split(sep)
+    i = 0
+    while i < len(comps):
+        if not comps[i] or comps[i] == curdir:
+            del comps[i]
+        elif comps[i] == pardir:
+            if i > 0 and comps[i-1] != pardir:
+                del comps[i-1:i+1]
+                i -= 1
+            elif i == 0 and root:
                 del comps[i]
-            elif comps[i] == pardir:
-                if i > 0 and comps[i-1] != pardir:
-                    del comps[i-1:i+1]
-                    i -= 1
-                elif i == 0 and root:
-                    del comps[i]
-                else:
-                    i += 1
             else:
                 i += 1
-        # If the path is now empty, substitute '.'
-        if not prefix and not comps:
-            comps.append(curdir)
-        return prefix + sep.join(comps)
+        else:
+            i += 1
+    # If the path is now empty, substitute '.'
+    if not prefix and not comps:
+        comps.append(curdir)
+    return prefix + sep.join(comps)
+
+
+# Kept under a private name so that nt._path_normpath() can delegate to it for
+# bytes paths that cannot be decoded with the filesystem encoding.
+_normpath_fallback = normpath
+
+try:
+    from nt import _path_normpath as normpath
+except ImportError:
+    pass
 
 
 # Return an absolute path.
