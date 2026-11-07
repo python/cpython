@@ -5921,32 +5921,44 @@ class TestUopsOptimization(unittest.TestCase):
 
         async def inner(i):
             return i + 1
-        async def outer(n):
-            total = 0
-            for i in range(n):
-                total += await inner(i)
-            return total
-        def testfunc(n):
+        def make_closure(v):
+            async def inner(i):
+                return i + v
+            return inner
+        def make_outer(callee):
+            ns = {"callee": callee}
+            exec(textwrap.dedent("""
+                async def outer(n):
+                    total = 0
+                    for i in range(n):
+                        total += await callee(i)
+                    return total
+            """), ns)
+            return ns["outer"]
+        def run(coro):
             try:
-                outer(n).send(None)
+                coro.send(None)
             except StopIteration as ex:
                 return ex.value
 
         n = TIER2_THRESHOLD * 2
-        self.assertEqual(testfunc(n), sum(range(1, n + 1)))
-        ex = get_first_executor(outer)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
+        for callee in inner, make_closure(1):
+            with self.subTest(callee=callee):
+                outer = make_outer(callee)
+                self.assertEqual(run(outer(n)), sum(range(1, n + 1)))
+                ex = get_first_executor(outer)
+                self.assertIsNotNone(ex)
+                uops = get_opnames(ex)
 
-        # The coroutine is started without being returned to outer() first.
-        self.assertIn("_ASYNC_CALL_GEN_FRAME", uops)
-        self.assertNotIn("_RETURN_GENERATOR", uops)
-        self.assertNotIn("_SEND_GEN_FRAME", uops)
-        # The guard is only needed in tier 1.
-        self.assertNotIn("_GUARD_ASYNC_CALL_TAIL", uops)
-        # inner() returns to the END_SEND of outer().
-        self.assertIn("_RETURN_VALUE", uops)
-        self.assertIn("_END_SEND", uops)
+                # The coroutine is started without being returned to outer()
+                # first, and runs to its return within the trace.
+                self.assertIn("_ASYNC_CALL_GEN_FRAME", uops)
+                self.assertNotIn("_RETURN_GENERATOR", uops)
+                self.assertNotIn("_SEND_GEN_FRAME", uops)
+                self.assertIn("_RETURN_VALUE", uops)
+                self.assertIn("_END_SEND", uops)
+                # The guard is only needed in tier 1.
+                self.assertNotIn("_GUARD_ASYNC_CALL_TAIL", uops)
 
     def test_send_virtual(self):
 
