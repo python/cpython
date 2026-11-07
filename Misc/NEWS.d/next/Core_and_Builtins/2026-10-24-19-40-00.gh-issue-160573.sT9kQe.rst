@@ -1,0 +1,4 @@
+Fix a crash when a :class:`set` iterator that is shared between threads reaches
+its end in a free-threaded build: every thread that walked off the end of the
+table released the iterator's reference to the set, so the set was over-released.
+The reference is now dropped once, under the iterator's critical section.
