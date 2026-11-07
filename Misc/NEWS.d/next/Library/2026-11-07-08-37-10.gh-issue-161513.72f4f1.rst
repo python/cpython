@@ -1,3 +1,3 @@
-:mod:`platform` no longer imports the ``_wmi`` extension module eagerly on
-Windows. It is now resolved on first use, speeding up ``import platform``
-by not loading the OLE and property-system DLLs when WMI is not needed.
+:mod:`platform` is now faster to import on Windows: the ``_wmi`` extension
+module is loaded on first use instead of at import time, so ``import
+platform`` no longer pays for loading the OLE and property-system DLLs.

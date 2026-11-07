@@ -349,7 +349,7 @@ def _wmi_query(table, *keys):
             table,
         )).split("\0")
     except OSError:
-        _wmi = False
+        _wmi = None
         raise OSError("not supported")
     split_data = (i.partition("=") for i in data)
     dict_data = {i[0]: i[2] for i in split_data}

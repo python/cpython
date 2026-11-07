@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper, warnings_helper
+from test.support import import_helper, os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -440,17 +440,7 @@ class PlatformTest(unittest.TestCase):
     def test_wmi_is_lazily_imported(self):
         # gh-161513: importing platform must not import the _wmi
         # extension module; it is resolved on the first WMI query.
-        # A subprocess is used to get a clean sys.modules.
-        code = (
-            "import platform, sys\n"
-            "assert '_wmi' not in sys.modules\n"
-            "platform.win32_ver()\n"
-            "assert '_wmi' in sys.modules or not platform._wmi\n"
-        )
-        p = subprocess.run([sys.executable, "-I", "-c", code],
-                           capture_output=True, text=True)
-        if p.returncode != 0:
-            self.fail(p.stderr)
+        import_helper.ensure_lazy_imports('platform', {'_wmi'})
 
     def test_mac_ver(self):
         res = platform.mac_ver()
