@@ -1,0 +1,1 @@
+Request 64-byte function alignment for performance-oriented Linux and macOS builds. This can reduce performance variation caused by changes to the size of preceding functions.
