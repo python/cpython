@@ -640,11 +640,11 @@ _elementtree_SubElement_impl(PyObject *module, PyObject *parent,
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (PyDict_Update(attrib, extra) < 0) {
+        if (extra && PyDict_Update(attrib, extra) < 0) {
             Py_DECREF(attrib);
             return NULL;
         }
-    } else if (PyDict_GET_SIZE(extra)) {
+    } else if (extra && PyDict_GET_SIZE(extra)) {
         /* have keyword args */
         attrib = get_attrib_from_keywords(extra);
         if (!attrib)
