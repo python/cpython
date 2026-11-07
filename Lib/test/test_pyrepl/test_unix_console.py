@@ -401,6 +401,27 @@ class TestConsole(TestCase):
         thread.start()
         thread.join()  # this should not raise
 
+    @unittest.skipUnless(hasattr(signal, "SIGCONT"), "needs signal.SIGCONT")
+    def test_sigcont_is_armed_only_by_prepare(self, _os_write):
+        # gh-161254: A console must install its SIGCONT handler only while it
+        # owns the terminal, i.e. between prepare() and restore().
+        signal.signal(signal.SIGCONT, signal.SIG_DFL)
+        console = UnixConsole(term="xterm")
+        self.assertEqual(signal.getsignal(signal.SIGCONT), signal.SIG_DFL)
+        console.prepare()
+        self.assertEqual(
+            signal.getsignal(signal.SIGCONT), console._sigcont_handler
+        )
+        console.restore()
+        self.assertEqual(signal.getsignal(signal.SIGCONT), signal.SIG_DFL)
+
+    @unittest.skipUnless(hasattr(signal, "SIGCONT"), "needs signal.SIGCONT")
+    def test_restore_without_prepare(self, _os_write):
+        # gh-161254
+        console = UnixConsole(term="xterm")
+        self.assertFalse(hasattr(console, "_UnixConsole__svtermstate"))
+        console.restore()  # this should not raise
+
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):
