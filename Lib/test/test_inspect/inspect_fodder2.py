@@ -400,4 +400,21 @@ def func394():
 def func400():
     return 401
 
+# A multiline generic alias.
+type GenericAlias[
+    T,
+] = (
+    list[T]
+    | tuple[T, ...]
+)
+
+class TypeAliases:
+    # A nested alias.
+    type Nested = MissingName
+
+def make_type_alias():
+    # A local alias.
+    type Local = MissingName
+    return Local
+
 pass # end of file
