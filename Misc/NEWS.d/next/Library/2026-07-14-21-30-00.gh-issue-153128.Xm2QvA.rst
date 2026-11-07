@@ -1,0 +1,3 @@
+Fix the C implementation of :mod:`warnings` so the ``"once"`` action remains
+suppressed after unrelated warning filters are changed, matching the pure
+Python implementation.
