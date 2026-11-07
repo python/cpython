@@ -723,6 +723,79 @@ class NonConnectingTests(unittest.TestCase):
             self.assertIsNone(smtp.sock)
 
 
+class ConnectionStateTests(unittest.TestCase):
+
+    clients = ((smtplib.SMTP, HOST), (smtplib.LMTP, HOST),
+               (smtplib.LMTP, '/some/local/lmtp/delivery/program'))
+
+    def setUp(self):
+        self.enterContext(mock.patch.object(smtplib, 'socket', mock_socket))
+        self.enterContext(mock.patch.object(mock_socket, 'AF_UNIX',
+                                            object(), create=True))
+
+    def make_client(self, client_class, host):
+        mock_socket.reply_with(b'220 Hello world')
+        client = client_class(host, local_hostname='localhost')
+        self.addCleanup(client.close)
+        client.helo_resp = b'old hello'
+        client.ehlo_resp = b'old hello\nSIZE 1234'
+        client.esmtp_features = {'size': '1234'}
+        client.does_esmtp = True
+        return client
+
+    def check_reset(self, client):
+        self.assertIsNone(client.helo_resp)
+        self.assertIsNone(client.ehlo_resp)
+        self.assertEqual(client.esmtp_features, {})
+        self.assertFalse(client.does_esmtp)
+
+    def test_reconnect(self):
+        for client_class, host in self.clients:
+            with self.subTest(client=client_class, host=host):
+                client = self.make_client(client_class, host)
+                client.close()
+                mock_socket.reply_with(b'220 New server')
+                self.assertEqual(client.connect(host), (220, b'New server'))
+                self.check_reset(client)
+                with mock.patch.object(client, 'getreply',
+                                       return_value=(250, b'new hello\nSIZE 5678')):
+                    client.ehlo_or_helo_if_needed()
+                self.assertEqual(client.ehlo_resp, b'new hello\nSIZE 5678')
+                self.assertEqual(client.esmtp_features, {'size': '5678'})
+
+    def test_connect_failure_preserves_state(self):
+        for client_class, host in self.clients:
+            with self.subTest(client=client_class, host=host):
+                client = self.make_client(client_class, host)
+                with (mock.patch.object(smtplib.SMTP, '_get_socket',
+                                        side_effect=OSError),
+                      mock.patch.object(mock_socket.MockSocket, 'connect',
+                                        side_effect=OSError)):
+                    self.assertRaises(OSError, client.connect, host)
+                self.assertEqual(client.helo_resp, b'old hello')
+                self.assertEqual(client.ehlo_resp, b'old hello\nSIZE 1234')
+                self.assertEqual(client.esmtp_features, {'size': '1234'})
+                self.assertTrue(client.does_esmtp)
+
+    def test_greeting_failure_resets_state(self):
+        for client_class, host in self.clients:
+            for reply in ((554, b'Unavailable'),
+                          smtplib.SMTPServerDisconnected):
+                with self.subTest(client=client_class, host=host, reply=reply):
+                    client = self.make_client(client_class, host)
+                    client.close()
+                    if isinstance(reply, tuple):
+                        mock_reply = mock.Mock(return_value=reply)
+                    else:
+                        mock_reply = mock.Mock(side_effect=reply)
+                    with mock.patch.object(client, 'getreply', mock_reply):
+                        if isinstance(reply, tuple):
+                            self.assertEqual(client.connect(host), reply)
+                        else:
+                            self.assertRaises(reply, client.connect, host)
+                    self.check_reset(client)
+
+
 class DefaultArgumentsTests(unittest.TestCase):
 
     def setUp(self):
