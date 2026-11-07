@@ -1,0 +1,4 @@
+.. cve: CVE-2026-116566
+
+:func:`socket.getaddrinfo` now rejects null bytes within *host* and *port*
+parameters as this previously caused the values to be silently truncated.
