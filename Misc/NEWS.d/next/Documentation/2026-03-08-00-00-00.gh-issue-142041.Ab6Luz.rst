@@ -1,0 +1,8 @@
+Improve :mod:`concurrent.interpreters` documentation with fuller
+descriptions of :meth:`~concurrent.interpreters.Interpreter.prepare_main`,
+:meth:`~concurrent.interpreters.Interpreter.exec`,
+:meth:`~concurrent.interpreters.Interpreter.call` and
+:meth:`~concurrent.interpreters.Interpreter.call_in_thread`, document
+:func:`~concurrent.interpreters.is_shareable` and
+:attr:`Queue.maxsize <concurrent.interpreters.Queue.maxsize>`, and add more
+usage examples.
