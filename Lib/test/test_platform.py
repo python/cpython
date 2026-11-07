@@ -436,10 +436,9 @@ class PlatformTest(unittest.TestCase):
         res = platform.win32_ver(release, version, csd, ptype)
         self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
 
-    @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
+    @support.cpython_only
     def test_wmi_is_lazily_imported(self):
-        # gh-161513: importing platform must not import the _wmi
-        # extension module; it is resolved on the first WMI query.
+        # gh-161513: importing platform must not import the _wmi extension module.
         import_helper.ensure_lazy_imports('platform', {'_wmi'})
 
     def test_mac_ver(self):
