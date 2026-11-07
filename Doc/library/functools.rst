@@ -64,7 +64,7 @@ The :mod:`!functools` module defines the following functions:
 
    When :func:`cache` or :func:`lru_cache` are used on an instance method, the
    instance (``self``) will be stored in the cache. As a result, instances cannot be
-   garbage collected until the relevant caches are cleared.
+   garbage collected until the relevant cache entries are cleared.
    This decorator uses :func:`lru_cache`, but it wraps the unbound method to accept
    a weakref and ensures that caches are cleared when instances are garbage collected.
 
@@ -95,6 +95,10 @@ The :mod:`!functools` module defines the following functions:
    This decorator requires that the instance supports weak references.
    Some immutable types and slotted classes without ``__weakref__`` as one of
    the defined slots will encounter errors when the cached method is first used.
+
+   Hashability is not required: the cache is indexed by the :func:`id` of
+   the instances. This also means that distinct instances always get distinct
+   caches, even if they compare and hash equal.
 
    *maxsize* and *typed* are supported as keyword arguments to the decorator,
    and are passed to the underlying :func:`lru_cache`.
