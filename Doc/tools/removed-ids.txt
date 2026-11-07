@@ -45,6 +45,9 @@ tutorial/modules.html: packages-in-multiple-directories
 # Removed libmpdec
 using/configure.html: cmdoption-with-system-libmpdec
 
+--disable-safety is the default, documented under --enable-safety
+using/configure.html: cmdoption-disable-safety
+
 # Removed APIs
 library/symtable.html: symtable.Class.get_methods
 library/sys.html: sys._enablelegacywindowsfsencoding
