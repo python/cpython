@@ -186,7 +186,8 @@ cfg_builder_new_block(cfg_builder *g)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, location loc,
+                 basicblock *except)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -202,12 +203,14 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     i->i_oparg = oparg;
     i->i_target = NULL;
     i->i_loc = loc;
+    i->i_except = except;
 
     return SUCCESS;
 }
 
 static int
-basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
+basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc,
+                    basicblock *except)
 {
     cfg_instr *last = basicblock_last_instr(b);
     if (last && is_jump(last)) {
@@ -215,7 +218,7 @@ basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
     }
 
     RETURN_IF_ERROR(
-        basicblock_addop(b, opcode, target->b_label.id, loc));
+        basicblock_addop(b, opcode, target->b_label.id, loc, except));
     last = basicblock_last_instr(b);
     assert(last && last->i_opcode == opcode);
     last->i_target = target;
@@ -481,7 +484,7 @@ int
 _PyCfgBuilder_Addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
     RETURN_IF_ERROR(cfg_builder_maybe_start_new_block(g));
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc, NULL);
 }
 
 
@@ -542,7 +545,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
         RETURN_IF_ERROR(
-            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc, last->i_except));
         return SUCCESS;
     }
 
@@ -571,9 +574,11 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         return ERROR;
     }
     RETURN_IF_ERROR(
-        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
+        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc,
+                         last->i_except));
     RETURN_IF_ERROR(
-        basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+        basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc,
+                            last->i_except));
     backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -1275,7 +1280,8 @@ jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
 
         RETURN_IF_ERROR(
             basicblock_add_jump(
-                bb, opcode, target->i_target, target->i_loc));
+                bb, opcode, target->i_target, target->i_loc,
+                target->i_except));
 
         return true;
     }
@@ -3453,7 +3459,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
                 b->b_next->b_label.id = next_lbl++;
             }
             basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
-                             NO_LOCATION);
+                             NO_LOCATION, NULL);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             explicit_jump->b_predecessors = 1;

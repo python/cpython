@@ -2274,6 +2274,37 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.restart_events()
         sys.monitoring.set_events(0, 0)
 
+    def test_130279(self):
+        # gh-130279
+        # An exception raised by the BRANCH_LEFT callback of a forward
+        # branch must be caught by the enclosing try
+        class Boom(Exception):
+            pass
+
+        raised = False
+
+        def callback(code, src, dst):
+            nonlocal raised
+            if not raised:
+                raised = True
+                raise Boom
+
+        def foo(x):
+            try:
+                if x:
+                    pass
+            except Boom:
+                return "caught"
+            return "not raised"
+
+        sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
+        sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, E.BRANCH_LEFT)
+        try:
+            self.assertEqual(foo(True), "caught")
+        finally:
+            sys.monitoring.set_local_events(TEST_TOOL, foo.__code__, 0)
+            sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, None)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
