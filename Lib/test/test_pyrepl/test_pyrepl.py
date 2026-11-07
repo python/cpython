@@ -20,12 +20,13 @@ from test.support import (
     captured_stdout,
     captured_stderr,
     force_not_colorized,
+    gc_collect,
     make_clean_env,
     Py_DEBUG,
 )
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
-from test.support.os_helper import EnvironmentVarGuard, unlink
+from test.support.os_helper import EnvironmentVarGuard, fd_count, unlink
 
 from .support import (
     FakeConsole,
@@ -2723,3 +2724,40 @@ class TestWindowsConsoleEolWrap(TestCase):
         console, wc = self._make_mock_console(width=width)
         self._apply_changed_line(console, wc, y, "", "a" * width)
         self.assertEqual(console.posxy, (width - 1, y))
+
+
+@skipUnless(pty, "requires pty")
+class TestReadlineWrapperFileDescriptors(TestCase):
+    def setUp(self):
+        controller, self.worker = pty.openpty()
+        self.addCleanup(os.close, controller)
+        self.addCleanup(os.close, self.worker)
+        env = self.enterContext(EnvironmentVarGuard())
+        env["TERM"] = "ansi"
+
+    def redirect_stdio_to_pty(self):
+        sys.stdout.flush()
+        for fd in (0, 1):
+            saved = os.dup(fd)
+            self.addCleanup(os.close, saved)
+            self.addCleanup(os.dup2, saved, fd)
+            os.dup2(self.worker, fd)
+
+    def test_dupped_fds_are_closed_with_wrapper(self):
+        self.redirect_stdio_to_pty()
+        before = fd_count()
+        wrapper = _ReadlineWrapper()
+        self.assertEqual(fd_count(), before)
+        wrapper.get_reader()
+        self.assertEqual(fd_count(), before + 2)
+        del wrapper
+        gc_collect()
+        self.assertEqual(fd_count(), before)
+
+    def test_given_fds_are_not_closed_with_wrapper(self):
+        before = fd_count()
+        wrapper = _ReadlineWrapper(f_in=self.worker, f_out=self.worker)
+        wrapper.get_reader()
+        del wrapper
+        gc_collect()
+        self.assertEqual(fd_count(), before)

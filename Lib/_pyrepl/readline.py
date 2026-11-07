@@ -355,15 +355,23 @@ class _ReadlineWrapper:
     saved_history_length: int = -1
     startup_hook: Callback | None = None
     config: ReadlineConfig = field(default_factory=ReadlineConfig, repr=False)
+    owned_fds: list[int] = field(default_factory=list, init=False, repr=False)
 
-    def __post_init__(self) -> None:
-        if self.f_in == -1:
-            self.f_in = os.dup(0)
-        if self.f_out == -1:
-            self.f_out = os.dup(1)
+    def __del__(self, _close=os.close) -> None:
+        for fd in self.owned_fds:
+            try:
+                _close(fd)
+            except OSError:
+                pass
 
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
+            if self.f_in == -1:
+                self.f_in = os.dup(0)
+                self.owned_fds.append(self.f_in)
+            if self.f_out == -1:
+                self.f_out = os.dup(1)
+                self.owned_fds.append(self.f_out)
             console = Console(self.f_in, self.f_out, encoding=ENCODING)
             self.reader = ReadlineAlikeReader(console=console, config=self.config)
         return self.reader
