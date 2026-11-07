@@ -958,6 +958,52 @@ class AbstractUnpickleTests:
         self.assertEqual(self.loads(b'L010L\n.'), 10)
         self.assertEqual(self.loads(b'L-010L\n.'), -10)
 
+    def test_null_bytes_in_numeric_opcodes(self):
+        cases = (
+            (b'I', b'1'), (b'I', b'00'), (b'I', b'01'),
+            (b'I', b'123456789012345678901234567890'),
+            (b'L', b'1'), (b'L', b'1L'),
+            (b'L', b'-123456789012345678901234567890L'),
+            (b'F', b'1.25'), (b'F', b'inf'), (b'F', b'nan'),
+        )
+        for opcode, argument in cases:
+            for position in range(len(argument) + 1):
+                for suffix in (b'', b'junk'):
+                    malformed = (argument[:position] + b'\x00' + suffix
+                                 + argument[position:])
+                    data = opcode + malformed + b'\n.'
+                    with self.subTest(data=data):
+                        self.assertRaises(ValueError, self.loads, data)
+
+    def test_null_bytes_in_memo_indices(self):
+        for argument in (b'0', b'00', b'1'):
+            for position in range(len(argument) + 1):
+                malformed = (argument[:position] + b'\x00'
+                             + argument[position:])
+                cases = (
+                    b'Np' + malformed + b'\n.',
+                    b'Np' + argument + b'\n0g' + malformed + b'\n.',
+                )
+                for data in cases:
+                    with self.subTest(data=data):
+                        self.assertRaises(ValueError, self.loads, data)
+
+    def test_numeric_opcodes_without_null_bytes(self):
+        cases = (
+            (b'I00\n.', False), (b'I01\n.', True),
+            (b'I-10\n.', -10), (b'I010\n.', 10),
+            (b'I123456789012345678901234567890\n.',
+             123456789012345678901234567890),
+            (b'L10\n.', 10), (b'L10L\n.', 10),
+            (b'L-123456789012345678901234567890L\n.',
+             -123456789012345678901234567890),
+            (b'F1.25\n.', 1.25), (b'Finf\n.', float('inf')),
+            (b'Np0\n0g0\n.', None), (b'Np00\n0g00\n.', None),
+        )
+        for data, expected in cases:
+            with self.subTest(data=data):
+                self.assert_is_copy(expected, self.loads(data))
+
     def test_nondecimal_integers(self):
         self.assertRaises(ValueError, self.loads, b'I0b10\n.')
         self.assertRaises(ValueError, self.loads, b'I0o10\n.')
