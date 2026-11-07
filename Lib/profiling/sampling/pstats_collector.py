@@ -21,6 +21,8 @@ class PstatsCollector(Collector):
         )
         self.skip_idle = skip_idle
         self._seen_locations = set()
+        self.func_cumulative = collections.defaultdict(int)
+        self._seen_funcs = set()
 
     def _process_frames(self, frames, weight=1):
         """Process a single thread's frame stack."""
@@ -28,6 +30,7 @@ class PstatsCollector(Collector):
             return
 
         self._seen_locations.clear()
+        self._seen_funcs.clear()
 
         # Process each frame in the stack to track cumulative calls
         # frame.location is int, tuple (lineno, end_lineno, col_offset, end_col_offset), or None
@@ -37,6 +40,10 @@ class PstatsCollector(Collector):
             if location not in self._seen_locations:
                 self._seen_locations.add(location)
                 self.result[location]["cumulative_calls"] += weight
+            func = (frame.filename, frame.funcname)
+            if func not in self._seen_funcs:
+                self._seen_funcs.add(func)
+                self.func_cumulative[func] += weight
 
         # The top frame gets counted as an inline call (directly executing)
         top_lineno = extract_lineno(frames[0].location)
@@ -151,6 +158,7 @@ class PstatsCollector(Collector):
             stats_list.sort(key=lambda x: x[2], reverse=True)  # cumulative_calls
 
         # Apply limit if specified
+        all_stats = stats_list
         if limit is not None:
             stats_list = stats_list[:limit]
 
@@ -257,7 +265,7 @@ class PstatsCollector(Collector):
 
         # Print summary of interesting functions if enabled
         if show_summary and stats_list:
-            self._print_summary(stats_list, total_samples)
+            self._print_summary(all_stats, total_samples)
 
     @staticmethod
     def _determine_best_unit(max_value):
@@ -277,15 +285,20 @@ class PstatsCollector(Collector):
             f"\n{ANSIColors.BOLD_BLUE}Summary of Interesting Functions:{ANSIColors.RESET}"
         )
 
+        func_cumulative = collections.defaultdict(int)
+        for (filename, funcname), calls in self.func_cumulative.items():
+            filename, _, _ = pstats.func_strip_path((filename, 0, funcname))
+            func_cumulative[f"{filename}:{funcname}"] += calls
+
         # Aggregate stats by fully qualified function name (ignoring line numbers)
         func_aggregated = {}
         for (
             func,
             direct_calls,
-            cumulative_calls,
+            _,
             total_time,
             cumulative_time,
-            callers,
+            _,
         ) in stats_list:
             # Use filename:function_name as the key to get fully qualified name
             qualified_name = f"{func[0]}:{func[2]}"
@@ -297,7 +310,7 @@ class PstatsCollector(Collector):
                     0,
                 ]  # direct_calls, cumulative_calls, total_time, cumulative_time
             func_aggregated[qualified_name][0] += direct_calls
-            func_aggregated[qualified_name][1] += cumulative_calls
+            func_aggregated[qualified_name][1] = func_cumulative[qualified_name]
             func_aggregated[qualified_name][2] += total_time
             func_aggregated[qualified_name][3] += cumulative_time
 
