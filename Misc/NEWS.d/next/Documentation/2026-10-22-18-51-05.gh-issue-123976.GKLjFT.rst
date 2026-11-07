@@ -1,0 +1,3 @@
+Document the ``IDistribution`` and ``IPackagePath`` protocols, which
+``importlib.metadata`` shares with the ``importlib_metadata`` backport, and
+correct ``PackageMetadata``, which is itself such a protocol.
