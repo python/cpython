@@ -1,0 +1,3 @@
+Fix :func:`shutil.copytree` to determine whether relative symbolic links are
+dangling based on their parent directory rather than the current working
+directory when ``ignore_dangling_symlinks`` is true.
