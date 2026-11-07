@@ -1071,15 +1071,19 @@ void* _mi_malloc_generic(mi_heap_t* heap, size_t size, bool zero, size_t huge_al
   }
   mi_assert_internal(mi_heap_is_initialized(heap));
 
+  // free delayed frees from other threads (but skip contended ones)
+  // gh-161420: on every generic malloc, as in mimalloc 2.1, not every 100th. A block over
+  // MI_MEDIUM_OBJ_SIZE_MAX has a page of its own, so a free of it from another thread is a
+  // delayed free; processed every 100th generic malloc only, a heap could keep up to about 100
+  // such blocks from being reused.
+  _mi_heap_delayed_free_partial(heap);
+
   // do administrative tasks every N generic mallocs
   if mi_unlikely(++heap->generic_count >= 100) {
     heap->generic_collect_count += heap->generic_count;
     heap->generic_count = 0;
     // call potential deferred free routines
     _mi_deferred_free(heap, false);
-
-    // free delayed frees from other threads (but skip contended ones)
-    _mi_heap_delayed_free_partial(heap);
 
     // collect every once in a while (10000 by default)
     const long generic_collect = mi_option_get_clamp(mi_option_generic_collect, 1, 1000000L);

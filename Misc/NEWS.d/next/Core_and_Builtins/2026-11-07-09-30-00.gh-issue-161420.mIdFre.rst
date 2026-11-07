@@ -1,0 +1,6 @@
+Fix the :term:`free-threaded build`, and builds with :envvar:`PYTHONMALLOC`
+set to ``mimalloc``, holding on to memory that other threads freed: since the
+update to mimalloc 2.5.2, each thread could keep up to 100 large blocks (over
+64 KiB) that other threads had freed, so a thread pool producing large objects
+for another thread could reach peaks of several gigabytes. Such blocks are
+reused right away again.
