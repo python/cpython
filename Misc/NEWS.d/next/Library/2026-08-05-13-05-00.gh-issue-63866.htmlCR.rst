@@ -1,0 +1,4 @@
+Add :func:`html.htmlcharrefreplace_errors` which implements the
+``htmlcharrefreplace`` error handler: an unencodable character is replaced
+with the corresponding HTML named or numeric character reference.  It is not
+registered by default.
