@@ -370,6 +370,26 @@ class TestConsole(TestCase):
         console.restore()
         con.restore()
 
+    def test_sigcont_redraws_prompt(self, _os_write):
+        console = unix_console([])
+        console.get_event = UnixConsole.get_event.__get__(console)
+        reader = self._prepare_reader_with_prompts(console)
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
+        reader.prepare()
+        reader.refresh()
+
+        _os_write.reset_mock()
+
+        console._sigcont_handler(signal.SIGCONT, None)
+        self.assertTrue(reader.handle1(block=False))
+
+        self.assertIn(
+            b">>> ",
+            b"".join(c.args[1] for c in _os_write.mock_calls),
+        )
+        console.restore()
+
     def test_getheightwidth_with_invalid_environ(self, _os_write):
         # gh-128636
         console = UnixConsole(term="xterm")

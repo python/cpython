@@ -1,0 +1,2 @@
+Re-print the PyREPL prompt after the interpreter is resumed with ``fg``
+following suspension with ``Ctrl-Z``.
