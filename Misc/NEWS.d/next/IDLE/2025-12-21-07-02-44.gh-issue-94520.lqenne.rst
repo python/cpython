@@ -1,0 +1,3 @@
+"Calltip" windows now support text selection, scrolling and
+avoid truncating their content (in particular, docstrings
+are shown in full). Patch by Shixian Li.
