@@ -1,0 +1,3 @@
+:exc:`AttributeError` raised when setting a read-only property now includes
+"Did you mean" suggestions, matching the behaviour already present for
+attribute lookup and deletion.
