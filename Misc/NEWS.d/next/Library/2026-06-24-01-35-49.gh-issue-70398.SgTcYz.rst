@@ -1,0 +1,4 @@
+Fix :class:`html.parser.HTMLParser` crashing with an :exc:`AssertionError`
+when :meth:`~html.parser.HTMLParser.reset` is called from within one of its
+handler methods.  Parsing of the current data now stops, and the parser can
+be reused for subsequent input.
