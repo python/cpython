@@ -99,6 +99,8 @@ class TestResults:
 
     def accumulate_result(self, result: TestResult, runtests: RunTests) -> None:
         test_name = result.test_name
+        # Remove "test." prefix added by some test packages
+        test_name = test_name.removeprefix('test.')
         rerun = runtests.rerun
         fail_env_changed = runtests.fail_env_changed
 
