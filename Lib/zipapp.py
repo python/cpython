@@ -103,6 +103,8 @@ def create_archive(source, target=None, interpreter=None, main=None,
             source_is_file = True
 
     if source_is_file:
+        if main is not None:
+            raise ZipAppError("Cannot change the main function when copying")
         _copy_archive(source, target, interpreter)
         return
 
@@ -110,14 +112,14 @@ def create_archive(source, target=None, interpreter=None, main=None,
     if not source.exists():
         raise ZipAppError("Source does not exist")
     has_main = (source / '__main__.py').is_file()
-    if main and has_main:
+    if main is not None and has_main:
         raise ZipAppError(
             "Cannot specify entry point if the source has __main__.py")
-    if not (main or has_main):
+    if main is None and not has_main:
         raise ZipAppError("Archive has no entry point")
 
     main_py = None
-    if main:
+    if main is not None:
         # Check that main has the right format.
         mod, sep, fn = main.partition(':')
         mod_ok = all(part.isidentifier() for part in mod.split('.'))
@@ -219,7 +221,7 @@ def main(args=None):
         if args.output is None or (os.path.exists(args.output) and
                                    os.path.samefile(args.source, args.output)):
             raise SystemExit("In-place editing of archives is not supported")
-        if args.main:
+        if args.main is not None:
             raise SystemExit("Cannot change the main function when copying")
 
     create_archive(args.source, args.output,
