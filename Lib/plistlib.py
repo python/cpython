@@ -139,16 +139,22 @@ _dateParser = re.compile(r"(?P<year>\d\d\d\d)(?:-(?P<month>\d\d)(?:-(?P<day>\d\d
 
 def _date_from_string(s, aware_datetime):
     order = ('year', 'month', 'day', 'hour', 'minute', 'second')
-    gd = _dateParser.match(s).groupdict()
+    m = _dateParser.match(s)
+    if m is None:
+        raise ValueError(f"invalid date string: {s!r}")
+    gd = m.groupdict()
     lst = []
     for key in order:
         val = gd[key]
         if val is None:
             break
         lst.append(int(val))
-    if aware_datetime:
-        return datetime.datetime(*lst, tzinfo=datetime.UTC)
-    return datetime.datetime(*lst)
+    try:
+        if aware_datetime:
+            return datetime.datetime(*lst, tzinfo=datetime.UTC)
+        return datetime.datetime(*lst)
+    except (TypeError, ValueError):
+        raise ValueError(f"invalid date string: {s!r}") from None
 
 
 def _date_to_string(d, aware_datetime):
