@@ -6398,6 +6398,38 @@ class LoggerTest(BaseTest, AssertErrorMessage):
                 unpickled = pickle.loads(s)
                 self.assertIs(unpickled, logger)
 
+    def test_caching_unregistered_logger(self):
+        # A logger that is not in loggerDict must not keep a stale cache.
+        self.addCleanup(logging.root.manager._clear_cache)
+        logger = logging.Logger("unregistered")
+        self.assertEqual(logger._cache, {})
+        logger.setLevel(logging.DEBUG)
+        self.assertEqual(logger._cache, {})
+        self.assertTrue(logger.isEnabledFor(logging.DEBUG))
+        self.assertEqual(logger._cache, {logging.DEBUG: True})
+        logger.setLevel(logging.ERROR)
+        self.assertEqual(logger._cache, {})
+        self.assertFalse(logger.isEnabledFor(logging.DEBUG))
+        self.assertEqual(logger._cache, {logging.DEBUG: False})
+
+    def test_clear_cache_empties_cached_loggers(self):
+        manager = logging.root.manager
+        self.addCleanup(manager._clear_cache)
+        registered = logging.getLogger("cached.registered")
+        unregistered = logging.Logger("cached.unregistered")
+        # Start from a known state: other tests may have cached results.
+        manager._clear_cache()
+        self.assertEqual(len(manager._cached_loggers), 0)
+        for logger in (registered, unregistered):
+            logger.isEnabledFor(logging.DEBUG)
+            self.assertIn(logger, manager._cached_loggers)
+        self.assertEqual(len(manager._cached_loggers), 2)
+        registered.setLevel(logging.INFO)
+        self.assertEqual(len(manager._cached_loggers), 0)
+        # A later cache miss starts tracking the logger again.
+        registered.isEnabledFor(logging.DEBUG)
+        self.assertEqual(list(manager._cached_loggers), [registered])
+
     def test_caching(self):
         root = self.root_logger
         logger1 = logging.getLogger("abc")
