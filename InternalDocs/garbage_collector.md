@@ -133,22 +133,21 @@ by the collector, ensure that finalizers are called only once per object,
 and, during garbage collection, differentiate reachable vs. unreachable objects.
 
 ```
-    object -----> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ \
-                  |                     ob_tid                    | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
-                  | pad | ob_mutex | ob_gc_bits |  ob_ref_local   | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ | PyObject_HEAD
-                  |                  ob_ref_shared                | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
-                  |                    *ob_type                   | |
-                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ /
-                  |                      ...                      |
+    object -----> +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ \
+                  |                     ob_tid                       | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
+                  | ob_flags | ob_mutex | ob_gc_bits |  ob_ref_local | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ | PyObject_HEAD
+                  |                  ob_ref_shared                   | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |
+                  |                    *ob_type                      | |
+                  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ /
+                  |                      ...                         |
 ```
 
-Note that not all fields are to scale. `pad` is two bytes, `ob_mutex` and
-`ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. The
-other fields, `ob_tid`, `ob_ref_shared`, and `ob_type`, are all
-pointer-sized (that is, eight bytes on a 64-bit platform).
+Note that not all fields are to scale. `ob_flags` is two bytes, `ob_mutex` and
+`ob_gc_bits` are each one byte, and `ob_ref_local` is four bytes. As for the
+other fields, `ob_tid`, `ob_type`, are pointer-sized (that is, eight bytes on a 64-bit platform), and `ob_ref_shared` is [size_t-sized](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t).
 
 
 The garbage collector also temporarily repurposes the `ob_tid` (thread ID)
@@ -261,9 +260,9 @@ is reachable from the outside. To obtain the set of objects that are really
 unreachable, the garbage collector re-scans the container objects using the
 `tp_traverse` slot; this time with a different traverse function that marks objects with
 `gc_ref == 0` as "tentatively unreachable" and then moves them to the
-tentatively unreachable list. The following image depicts the state of the lists in a
-moment when the GC processed the `link_3` and `link_4` objects but has not
-processed `link_1` and `link_2` yet.
+tentatively unreachable list (or in the free-threaded build, sets the `_PyGC_BITS_UNREACHABLE` `ob_gc_bits` bit).
+The following image depicts the state of the lists in a moment when the GC processed
+the `link_3` and `link_4` objects but has not processed `link_1` and `link_2` yet.
 
 ![gc-image3](images/python-cyclic-gc-3-new-page.png)
 
@@ -282,27 +281,21 @@ state in the previous image and after examining the objects referred to by `link
 the GC knows that `link_3` is reachable after all, so it is moved back to the
 original list and its `gc_ref` field is set to 1 so that if the GC visits it again,
 it will know that it's reachable. To avoid visiting an object twice, the GC marks all
-objects that have already been visited once (by unsetting the `PREV_MASK_COLLECTING`
-flag) so that if an object that has already been processed is referenced by some other
-object, the GC does not process it twice.
+objects that have already been visited once (by unsetting a flag, e.g. in the non-free-threaded build,
+the `PREV_MASK_COLLECTING` flag) so that if an object that has already been processed
+is referenced by some other object, the GC does not process it twice.
 
 ![gc-image5](images/python-cyclic-gc-5-new-page.png)
 
 Notice that an object that was marked as "tentatively unreachable" and was later
-moved back to the reachable list will be visited again by the garbage collector
-as now all the references that the object has need to be processed as well. This
-process is really a breadth first search over the object graph. Once all the objects
+moved back to the reachable list (or on the free-threaded build, have the `_PyGC_BITS_UNREACHABLE` `ob_gc_bits` flag cleared)
+will be visited again by the garbage collector as now all the references
+that the object has need to be processed as well. Once all the objects
 are scanned, the GC knows that all container objects in the tentatively unreachable
 list are really unreachable and can thus be garbage collected.
 
-Pragmatically, it's important to note that no recursion is required by any of this,
-and neither does it in any other way require additional memory proportional to the
-number of objects, number of pointers, or the lengths of pointer chains.  Apart from
-`O(1)` storage for internal C needs, the objects themselves contain all the storage
-the GC algorithms require.
-
-Why moving unreachable objects is better
-----------------------------------------
+Why moving unreachable objects is better (non-free-threaded build only)
+-----------------------------------------------------------------------
 
 It sounds logical to move the unreachable objects under the premise that most objects
 are usually reachable, until you think about it: the reason it pays isn't actually
@@ -448,7 +441,7 @@ collections (that is, collections of the young and middle generations) will alwa
 examine roughly the same number of objects (determined by the aforementioned
 thresholds) the cost of a full collection is proportional to the total
 number of long-lived objects, which is virtually unbounded.  Indeed, it has
-been remarked that doing a full collection every <constant number> of object
+been remarked that doing a full collection every constant number of object
 creations entails a dramatic performance degradation in workloads which consist
 of creating and storing lots of long-lived objects (for example, building a large list
 of GC-tracked objects would show quadratic performance, instead of linear as
@@ -533,8 +526,8 @@ into the cache.  This is the mechanism that provides the window.
 
 When performing the transitive closure of "alive" status, the set of objects
 yet to visit are stored in one of two places.  First, they can be stored in the
-prefech buffer. Second, there is a LIFO stack, of unlimited size.  When object
-references are found using `tp_traverse`, they are enqueued in the buffer if
+prefetch buffer. Second, there is a LIFO stack, limited only by available memory.
+When object references are found using `tp_traverse`, they are enqueued in the buffer if
 it is not full, otherwise they are pushed to the stack.
 
 We must take special care not to access the memory referred to by an object
@@ -616,7 +609,7 @@ This optimization, as of March 2025, was tuned on the following hardware
 platforms:
 
 - Apple M3 Pro, 32 GB RAM, 192+128 KB L1, 16 MB L2, compiled with Clang 19
-- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 GB L2, 32 MB L3, compiled with GCC 12.2.0
+- AMD Ryzen 5 7600X, 64 GB RAM, 384 KB L1, 6 MB L2, 32 MB L3, compiled with GCC 12.2.0
 
 Benchmarking the effectiveness of this optimization is particularly difficult.
 It depends both on hardware details, like CPU cache sizes and memory latencies,
@@ -631,7 +624,7 @@ range of 20% to 40% faster for the entire full GC collection.
 Optimization: reusing fields to save memory
 ===========================================
 
-In order to save memory, the two linked list pointers in every object with GC
+In order to save memory, in the non-free-threaded build the two linked list pointers in every object with GC
 support are reused for several purposes. This is a common optimization known
 as "fat pointers" or "tagged pointers": pointers that carry additional data,
 "folded" into the pointer, meaning stored inline in the data representing the
