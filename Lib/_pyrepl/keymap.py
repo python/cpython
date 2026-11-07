@@ -98,6 +98,7 @@ _keynames = {
     "space": " ",
     "tab": "\t",
     "up": "up",
+    "bracketed paste": "bracketed paste",
 }
 
 
