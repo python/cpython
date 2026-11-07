@@ -1,0 +1,3 @@
+Invalid colors in user highlight themes no longer crash the IDLE Settings
+dialog. They are now reported at IDLE startup and replaced with the default
+colors.

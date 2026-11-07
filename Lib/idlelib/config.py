@@ -29,6 +29,7 @@ from configparser import ConfigParser, Error as ConfigParserError
 import os
 import sys
 
+from tkinter import TclError
 from tkinter.font import Font
 import idlelib
 
@@ -160,6 +161,7 @@ class IdleConf:
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
         self.file_load_errors = []  # (file, error) for unparsable cfg files.
+        self.highlight_errors = []  # (theme, element, color, error).
 
         # See https://bugs.python.org/issue4630#msg356516 for following.
         # self.blink_off_time = <first editor text>['insertofftime']
@@ -808,16 +810,47 @@ class IdleConf:
                 except OSError:
                     pass
 
-    def file_load_error_message(self):
-        "Return a warning about invalid config files, or None."
-        if not self.file_load_errors:
-            return None
-        files = '\n'.join(
-            f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
-            for file, err in self.file_load_errors)
-        return ('The following IDLE configuration files could not be read.  '
+    def check_highlight(self, root):
+        """Remove invalid colors from user themes (gh-85604).
+
+        Colors can only be checked with Tk, so this is called after
+        the root is created, while the config files are loaded on
+        import.  The default colors are used instead of the removed
+        ones.  The user file is not changed until the settings are
+        saved.
+        """
+        cfg = self.userCfg['highlight']
+        for theme in cfg.sections():
+            for element in cfg.options(theme):
+                color = cfg.Get(theme, element)
+                try:
+                    root.winfo_rgb(color)
+                except TclError as err:
+                    self.highlight_errors.append((theme, element, color, err))
+                    cfg.RemoveOption(theme, element)
+
+    def config_error_message(self, root):
+        "Check the config with Tk and return a warning, or None."
+        self.check_highlight(root)
+        parts = []
+        if self.file_load_errors:
+            files = '\n'.join(
+                f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
+                for file, err in self.file_load_errors)
+            parts.append(
+                'The following IDLE configuration files could not be read.  '
                 'They were renamed by appending ".bad", and default settings '
                 'are used instead:\n\n' + files)
+        if self.highlight_errors:
+            colors = '\n'.join(
+                f'  {theme}: {element} = {color} ({err})'
+                for theme, element, color, err in self.highlight_errors)
+            parts.append(
+                'The following colors in IDLE highlight themes are invalid, '
+                'and default colors are used instead:\n\n' + colors +
+                '\n\nYou can fix them in Options => Configure IDLE => '
+                'Highlights.')
+        return '\n\n'.join(parts) if parts else None
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."
