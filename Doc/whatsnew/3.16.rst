@@ -1354,6 +1354,12 @@ Build changes
 
   (Contributed by Stefano Rivera in :gh:`131372`.)
 
+* The paths in the installed ``build-details.json`` file (:pep:`739`) are
+  now relative to the file's location instead of absolute, so the file stays
+  correct when the installation is moved.
+
+  (Contributed by Itamar Oren in :gh:`119696`.)
+
 * Add the :option:`--with-curses` :program:`configure` option to select the
   curses backend for the :mod:`curses` and :mod:`curses.panel` modules.
   In addition to ``ncursesw`` and ``ncurses``, it can now build against the
