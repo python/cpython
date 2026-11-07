@@ -4,6 +4,7 @@ import sys
 import pstats
 import unittest
 import os
+import textwrap
 import warnings
 from difflib import unified_diff
 from io import StringIO
@@ -15,7 +16,8 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
     import profile
 from test.profilee import testfunc, timer
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import (
+    assert_python_failure, assert_python_ok, make_script)
 
 
 class ProfileTest(unittest.TestCase):
@@ -119,6 +121,23 @@ class ProfileTest(unittest.TestCase):
         # Test successful run
         assert_python_ok('-m', self.profilermodule.__name__,
                          '-m', 'timeit', '-n', '1')
+
+    def test_profile_module_as_main(self):
+        # The module must run as __main__, like with "python -m module".
+        with temp_dir() as tmpdir:
+            make_script(tmpdir, 'profiled_module', textwrap.dedent("""\
+                import pickle
+                import sys
+
+                class Foo:
+                    pass
+
+                assert sys.modules['__main__'].Foo is Foo
+                assert sys.argv[0].endswith('profiled_module.py')
+                pickle.dumps(Foo())
+                """))
+            assert_python_ok('-m', self.profilermodule.__name__,
+                             '-m', 'profiled_module', PYTHONPATH=tmpdir)
 
     def test_output_file_when_changing_directory(self):
         with temp_dir() as tmpdir, change_cwd(tmpdir):
