@@ -538,6 +538,8 @@ in a :ref:`traceback <traceback-objects>`.
 
       A string representing the source code for this frame, with leading and
       trailing whitespace stripped.
+      It is a single line, the one at :attr:`~FrameSummary.lineno`, even if
+      the source code for this frame spans several lines.
       If the source is not available, it is ``None``.
 
    .. attribute:: FrameSummary.end_lineno
