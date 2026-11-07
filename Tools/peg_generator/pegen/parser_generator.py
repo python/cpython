@@ -37,6 +37,8 @@ from pegen.grammar_analysis import (
     make_first_graph as make_first_graph,
 )
 
+KEYWORD_TYPE_BASE = 500
+
 
 class RuleCollectorVisitor(GrammarVisitor):
     """Visitor that invokes a provided callmaker visitor with just the NamedItem nodes"""
@@ -108,7 +110,7 @@ class ParserGenerator:
         self.level = 0
         self.first_graph, self.first_sccs = compute_left_recursives(self.rules)
         self.counter = 0  # For name_rule()/name_loop()
-        self.keyword_counter = 499  # For keyword_type()
+        self.keyword_counter = KEYWORD_TYPE_BASE - 1  # For keyword_type()
         self.all_rules: dict[str, Rule] = self.rules.copy()  # Rules + temporal rules
         self._local_variable_stack: list[list[str]] = []
 
