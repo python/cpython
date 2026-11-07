@@ -6,17 +6,19 @@ import os
 import tkinter as tk
 
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
-from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.tree import TreeItem, TreeWidget
 
 def StackBrowser(root, exc, flist=None, top=None):
-    global sc, item, node  # For testing.
+    global tree, item  # For testing.
     if top is None:
         top = tk.Toplevel(root, class_='Idle')
-    sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
-    sc.frame.pack(expand=1, fill="both")
     item = StackTreeItem(exc, flist)
-    node = TreeNode(sc.canvas, None, item)
-    node.expand()
+    tree = TreeWidget(top, item, columns=("line", "value"),
+                      headings=("Name", "Line", "Value"))
+    tree.tree.column("line", width=tree.font.measure("0") * 4,
+                     stretch=False, anchor="e")
+    tree.pack(expand=True, fill="both")
+    tree.expand()
 
 
 class StackTreeItem(TreeItem):
@@ -52,23 +54,21 @@ class FrameTreeItem(TreeItem):
         self.info = info
         self.flist = flist
 
-    def GetText(self):
+    def GetLabelText(self):
+        "Return the module and the function of the frame."
         frame, lineno = self.info
         try:
             modname = frame.f_globals["__name__"]
         except:
             modname = "?"
-        code = frame.f_code
-        filename = code.co_filename
-        funcname = code.co_name
-        sourceline = linecache.getline(filename, lineno)
-        sourceline = sourceline.strip()
-        if funcname in ("?", "", None):
-            item = "%s, line %d: %s" % (modname, lineno, sourceline)
-        else:
-            item = "%s.%s(...), line %d: %s" % (modname, funcname,
-                                             lineno, sourceline)
-        return item
+        funcname = frame.f_code.co_name
+        return f"{modname}.{funcname}(...)" if funcname else modname
+
+    def GetValues(self):
+        "Return the line number of the frame and the source of that line."
+        frame, lineno = self.info
+        sourceline = linecache.getline(frame.f_code.co_filename, lineno)
+        return lineno, sourceline.strip()
 
     def GetSubList(self):
         frame, lineno = self.info
@@ -108,7 +108,7 @@ class VariablesTreeItem(ObjectTreeItem):
                 continue
             def setfunction(value, key=key, object_=self.object):
                 object_[key] = value
-            item = make_objecttreeitem(key + " =", value, setfunction)
+            item = make_objecttreeitem(key, value, setfunction)
             sublist.append(item)
         return sublist
 
