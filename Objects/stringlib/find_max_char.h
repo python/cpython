@@ -56,9 +56,8 @@
    at the end, instead of comparing each character. The accumulation loop has
    no branches, so compilers vectorize it. The start is first read in pieces
    until the pointer is aligned, so the loops can use plain word loads on
-   every platform. The tail re-reads the last word of the buffer with memcpy,
-   which may overlap data already seen. Every 16 words, check whether the
-   widest kind is already known and exit early. */
+   every platform. Every 16 words, check whether the widest kind is already
+   known and exit early. */
 Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
@@ -66,75 +65,72 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     const unsigned char *_end = (const unsigned char *)end;
     size_t value = 0;
 
-    if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-#if STRINGLIB_SIZEOF_CHAR <= 1
-        if (!_Py_IS_ALIGNED(p, sizeof(uint16_t)) && p + 1 <= _end) {
-            value |= *p++;
-        }
+    if (p + SIZEOF_SIZE_T <= _end) {
+        if (!_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
+#if STRINGLIB_SIZEOF_CHAR == 1
+            if (!_Py_IS_ALIGNED(p, sizeof(uint16_t))) {
+                value |= *p++;
+            }
 #endif
 #if STRINGLIB_SIZEOF_CHAR <= 2
-        if (!_Py_IS_ALIGNED(p, sizeof(uint32_t)) && p + sizeof(uint16_t) <= _end) {
-            value |= *(const uint16_t *)p;
-            p += sizeof(uint16_t);
-        }
+            if (!_Py_IS_ALIGNED(p, sizeof(uint32_t))) {
+                value |= *(const uint16_t *)p;
+                p += sizeof(uint16_t);
+            }
 #endif
 #if SIZEOF_SIZE_T == 8
-        if (!_Py_IS_ALIGNED(p, SIZEOF_SIZE_T) && p + sizeof(uint32_t) <= _end) {
-            value |= *(const uint32_t *)p;
-            p += sizeof(uint32_t);
-        }
+            if (!_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+                value |= *(const uint32_t *)p;
+                p += sizeof(uint32_t);
+            }
 #endif
-    }
-
-    while (p + SIZEOF_SIZE_T * 16 <= _end) {
-        /* Four independent accumulators so the loop does not serialize on
-           one register when the compiler does not vectorize it. */
-        size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
-        for (int i = 0; i < 16 * SIZEOF_SIZE_T; i += 4 * SIZEOF_SIZE_T) {
-            const size_t *w = (const size_t *)(p + i);
-            v0 |= w[0];
-            v1 |= w[1];
-            v2 |= w[2];
-            v3 |= w[3];
+            assert(_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T));
         }
-        value |= v0 | v1 | v2 | v3;
-        if (value & MASK_MAX_CHAR) {
-            return MAX_CHAR;
+
+        while (p + SIZEOF_SIZE_T * 16 <= _end) {
+            /* Four independent accumulators so the loop does not serialize on
+               one register when the compiler does not vectorize it. */
+            size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
+            for (int i = 0; i < 16 * SIZEOF_SIZE_T; i += 4 * SIZEOF_SIZE_T) {
+                const size_t *w = (const size_t *)(p + i);
+                v0 |= w[0];
+                v1 |= w[1];
+                v2 |= w[2];
+                v3 |= w[3];
+            }
+            value |= v0 | v1 | v2 | v3;
+            if (value & MASK_MAX_CHAR) {
+                return MAX_CHAR;
+            }
+            p += SIZEOF_SIZE_T * 16;
         }
-        p += SIZEOF_SIZE_T * 16;
+
+        for (; p + SIZEOF_SIZE_T <= _end; p += SIZEOF_SIZE_T) {
+            value |= *(const size_t *)p;
+        }
     }
 
-    for (; p + SIZEOF_SIZE_T <= _end; p += SIZEOF_SIZE_T) {
-        value |= *(const size_t *)p;
-    }
-
+    /* Fewer than SIZEOF_SIZE_T bytes are left. Read them as two overlapping
+       pieces, one from each end. OR does not mind seeing a byte twice. */
     if (p < _end) {
-        const unsigned char *start = (const unsigned char *)begin;
-        size_t n = (size_t)(_end - start);
-        if (n >= SIZEOF_SIZE_T) {
-            size_t a;
-            memcpy(&a, _end - SIZEOF_SIZE_T, SIZEOF_SIZE_T);
-            value |= a;
-        }
-#if SIZEOF_SIZE_T == 8
-        else if (n >= 4) {
+        size_t n = (size_t)(_end - p);
+        if (n >= 4) {
             uint32_t a, b;
-            memcpy(&a, start, 4);
+            memcpy(&a, p, 4);
             memcpy(&b, _end - 4, 4);
             value |= a | b;
         }
-#endif
 #if STRINGLIB_SIZEOF_CHAR <= 2
         else if (n >= 2) {
             uint16_t a, b;
-            memcpy(&a, start, 2);
+            memcpy(&a, p, 2);
             memcpy(&b, _end - 2, 2);
             value |= a | b;
         }
 #endif
 #if STRINGLIB_SIZEOF_CHAR == 1
         else {
-            value |= *start;
+            value |= *p;
         }
 #endif
     }
