@@ -4608,7 +4608,8 @@ _PyExc_InitState(PyInterpreterState *interp)
     /* Add exceptions to errnomap */
     assert(state->errnomap == NULL);
     state->errnomap = PyDict_New();
-    if (!state->errnomap) {
+    state->strerror_cache = PyDict_New();
+    if (!state->errnomap || !state->strerror_cache) {
         return _PyStatus_NO_MEMORY();
     }
 
@@ -4699,6 +4700,7 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
+    Py_CLEAR(state->strerror_cache);
 
     _PyExc_FiniTypes(interp);
 }

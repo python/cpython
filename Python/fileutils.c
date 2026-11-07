@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_long.h"          // _PyLong_FromUnsignedChar()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_unicodeobject.h" // _Py_MAX_UNICODE
@@ -3304,13 +3305,8 @@ _Py_IsValidFD(int fd)
 }
 
 
-// Call strerror_r(code) if available, or use strerror() otherwise. Decode the
-// result from the locale encoding using surrogateescape error handler.
-//
-// On success, return a Unicode string. On error, set an exception and return
-// NULL.
-PyObject*
-_Py_strerror(int code)
+static PyObject *
+decode_strerror(int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
     const char *errors = "surrogateescape";
@@ -3395,4 +3391,30 @@ _Py_strerror(int code)
     }
     return PyUnicode_DecodeLocale(message, errors);
 #endif
+}
+
+
+// Call strerror_r(code) if available, or use strerror() otherwise. Decode the
+// result from the locale encoding using surrogateescape error handler.
+// Messages of codes 0-255 are cached until the next locale.setlocale():
+// decoding is a large part of the cost of raising OSError.
+//
+// On success, return a Unicode string. On error, set an exception and return
+// NULL.
+PyObject*
+_Py_strerror(int code)
+{
+    PyObject *cache = _PyInterpreterState_GET()->exc_state.strerror_cache;
+    if (cache == NULL || code < 0 || code >= 256) {
+        return decode_strerror(code);
+    }
+    PyObject *key = _PyLong_FromUnsignedChar((unsigned char)code);
+    PyObject *message;
+    if (PyDict_GetItemRef(cache, key, &message) == 0) {
+        message = decode_strerror(code);
+        if (message != NULL && PyDict_SetItem(cache, key, message) < 0) {
+            Py_CLEAR(message);
+        }
+    }
+    return message;
 }
