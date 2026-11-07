@@ -557,9 +557,9 @@ For example::
        {"example_method",
          (PyCFunction)(void(*)(void))example_method,
          METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
-         example_method_doc}
+         example_method_doc},
        {NULL},
-   }
+   };
 
 
 Module State Access from Slot Methods, Getters and Setters

@@ -1912,8 +1912,8 @@ C APIs pending removal are
 * :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
 * :func:`!importlib.util.module_for_loader`
-* :func:`!importlib.util.set_loader_wrapper`
-* :func:`!importlib.util.set_package_wrapper`
+* :func:`!importlib.util.set_loader`
+* :func:`!importlib.util.set_package`
 * :class:`!pkgutil.ImpImporter`
 * :class:`!pkgutil.ImpLoader`
 * :meth:`!pathlib.Path.link_to`

@@ -663,7 +663,7 @@ method attribute. Here is an example session that uses the ``PUT`` method::
     >>> conn.request("PUT", "/file", BODY)
     >>> response = conn.getresponse()
     >>> print(response.status, response.reason)
-    200, OK
+    200 OK
 
 .. _httpmessage-objects:
 
