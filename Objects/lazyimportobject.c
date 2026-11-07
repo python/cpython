@@ -611,6 +611,52 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
     return result;
 }
 
+// Return 1 if the module target is name or one of its submodules, 0 if not,
+// -1 with an exception set on error.
+static int
+lazy_import_is_within(PyObject *target, PyObject *name)
+{
+    Py_ssize_t length = PyUnicode_GET_LENGTH(name);
+    Py_ssize_t target_length = PyUnicode_GET_LENGTH(target);
+    if (target_length < length) {
+        return 0;
+    }
+    Py_ssize_t matches = PyUnicode_Tailmatch(target, name, 0, length, -1);
+    if (matches <= 0) {
+        return (int)matches;
+    }
+    return target_length == length ||
+           PyUnicode_READ_CHAR(target, length) == '.';
+}
+
+// Return 1 if resolving placeholder imports the module name or one of its
+// submodules, 0 if not, -1 with an exception set on error. Run eagerly,
+// such a statement would already have imported name.
+int
+_PyLazyImport_ImportsModule(PyObject *placeholder, PyObject *name)
+{
+    assert(PyLazyImport_CheckExact(placeholder));
+    PyLazyImportObject *root = PyLazyImportObject_CAST(placeholder);
+    PyLazyImportObject *projection = NULL;
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        projection = root;
+        root = PyLazyImportObject_CAST(root->lz_from);
+    }
+    int rc = lazy_import_is_within(root->lz_from, name);
+    if (rc != 0 || projection == NULL) {
+        return rc;
+    }
+    // "from pkg import child" imports pkg.child when it is a submodule.
+    PyObject *child = PyUnicode_FromFormat("%U.%U", root->lz_from,
+                                           projection->lz_attr);
+    if (child == NULL) {
+        return -1;
+    }
+    rc = lazy_import_is_within(child, name);
+    Py_DECREF(child);
+    return rc;
+}
+
 int
 _PyLazyImport_IsActive(PyObject *declaration)
 {

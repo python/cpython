@@ -36,4 +36,3 @@ test_subprocess
 test_symtable
 test_tools
 test_type_annotations
-test_unittest
