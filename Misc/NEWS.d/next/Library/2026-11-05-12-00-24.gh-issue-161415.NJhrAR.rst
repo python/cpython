@@ -1,0 +1,3 @@
+Remove ``FILES`` and ``unicode`` from the related help topics listed by
+:func:`help` for the ``TYPES`` and ``UNICODE`` topics. Neither exists in
+Python 3, so asking for help on them failed.
