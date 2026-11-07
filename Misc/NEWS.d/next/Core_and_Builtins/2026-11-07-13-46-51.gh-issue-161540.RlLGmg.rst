@@ -1,0 +1,2 @@
+Add a debug assertion to dict lookups that catches an out-of-range index in
+the hash table before it is used to read past the end of the entries array.
