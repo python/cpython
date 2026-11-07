@@ -1,0 +1,2 @@
+Improve the performance of the Tachyon profiler by avoiding unnecessary remote
+reads of the base frame sentinel. Patch by Maurycy Pawłowski-Wieroński.
