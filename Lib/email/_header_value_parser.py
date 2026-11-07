@@ -3125,12 +3125,15 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
         to_encode_word = to_encode[:text_space]
         encoded_word = _ew.encode(to_encode_word, charset=encode_as)
         excess = len(encoded_word) - remaining_space
-        while excess > 0:
+        while excess > 0 and len(to_encode_word) > 1:
             # Since the chunk to encode is guaranteed to fit into less than 100 characters,
             # shrinking it by one at a time shouldn't take long.
             to_encode_word = to_encode_word[:-1]
             encoded_word = _ew.encode(to_encode_word, charset=encode_as)
             excess = len(encoded_word) - remaining_space
+        # A single character may not fit even on a fresh line (a four byte
+        # UTF-8 sequence needs eight base64 characters).  Emit it anyway,
+        # going over maxlen, rather than looping forever on an empty word.
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
 
