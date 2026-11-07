@@ -1,0 +1,4 @@
+Speed up :meth:`str.lower`, :meth:`str.upper` and :meth:`str.casefold` for
+ASCII strings, and :meth:`bytes.lower`, :meth:`bytes.upper` and their
+:class:`bytearray` counterparts, by converting a machine word at a time.
+Patch by Parker Loflin.
