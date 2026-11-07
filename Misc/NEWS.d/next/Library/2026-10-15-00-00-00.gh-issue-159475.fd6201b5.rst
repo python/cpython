@@ -1,0 +1,8 @@
+:func:`email.utils.parseaddr` and :func:`email.utils.getaddresses` now
+reject, in the default ``strict=True`` mode, addresses in which a comment
+appears immediately before an atom (i.e. a comment embedded inside a
+dot-atom).  Such comments were previously silently dropped and the
+surrounding atoms spliced together: ``parseaddr('u(comment)ser@d.com')``
+returned ``('comment comment', 'user@d.com')`` even though the strict parser
+rejects the address.  The historical lenient behavior remains available via
+``strict=False``.
