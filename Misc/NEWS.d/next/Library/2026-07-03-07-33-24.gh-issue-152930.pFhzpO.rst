@@ -1,0 +1,2 @@
+:mod:`tomllib` now parses each table section in linear time instead of
+re-walking the section header for every key. Patch by tonghuaroot.
