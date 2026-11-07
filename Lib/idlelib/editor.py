@@ -610,14 +610,21 @@ class EditorWindow:
         return "break"
 
     def cut(self,event):
-        self.text.event_generate("<<Cut>>")
+        if not self.text.tag_ranges('sel'):
+            self.copy(event)
+            self.text.delete('insert', 'insert+1l')
+        else:
+            self.text.event_generate("<<Cut>>")
         return "break"
 
     def copy(self,event):
-        if not self.text.tag_ranges("sel"):
-            # There is no selection, so do nothing and maybe interrupt.
-            return None
-        self.text.event_generate("<<Copy>>")
+        if not self.text.tag_ranges('sel'):
+            self.text.mark_set('insert', 'insert linestart')
+            line = self.text.get('insert', 'insert+1l')
+            self.text.clipboard_clear()
+            self.text.clipboard_append(line)
+        else:
+            self.text.event_generate("<<Copy>>")
         return "break"
 
     def paste(self,event):

@@ -401,5 +401,51 @@ class DeletedFileEventTest(unittest.TestCase):
         stub.set_saved.assert_not_called()
 
 
+class CopyCutLineTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.window = Editor(root=cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
+        del cls.root
+
+    def test_copy_no_selection(self):
+        eq = self.assertEqual
+        text = self.window.text
+
+        insert(text, 'hello\nworld')
+        text.mark_set('insert', '1.2')
+        self.window.copy(event=None)
+
+        # Copy current line without being selected
+        eq(text.clipboard_get(), 'hello\n')
+        eq(text.tag_ranges('sel'), ())
+
+        # Cursor move to start of the line
+        eq(text.index('insert'), '1.0')
+
+    def test_cut_no_selection(self):
+        eq = self.assertEqual
+        text = self.window.text
+
+        insert(text, 'hello\nworld')
+        text.mark_set('insert', '1.2')
+        self.window.cut(event=None)
+
+        # Copy current line and remove it
+        eq(text.clipboard_get(), 'hello\n')
+        eq(text.get('1.0', 'end'), 'world\n')
+        eq(text.tag_ranges('sel'), ())
+
+        # Cursor move to start of the line
+        eq(text.index('insert'), '1.0')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
