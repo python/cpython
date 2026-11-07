@@ -1157,6 +1157,23 @@ class TestPyReplFancyCompleter(TestCase):
         )
 
 
+class TestPyReplMain(TestCase):
+    @skipUnless(has_subprocess_support, "test requires subprocess support")
+    @skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_nul_stdin_exits_cleanly(self):
+        proc = subprocess.run(
+            [sys.executable, "-I"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("tty required", proc.stderr)
+
+
 class TestPyReplReadlineSetup(TestCase):
     def test_setup_ignores_basic_completer_env_when_env_is_disabled(self):
         class FakeFancyCompleter:
