@@ -545,6 +545,13 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
         goto error;
     }
 
+#if defined(MS_WIN32) && !defined(MS_WINDOWS_DESKTOP)
+    if (Py_ffi_closure_make_executable(p->pcl_write,
+                                       sizeof(ffi_closure)) < 0) {
+        goto error;
+    }
+#endif
+
     p->converters = Py_NewRef(converters);
     p->callable = Py_NewRef(callable);
     return p;
