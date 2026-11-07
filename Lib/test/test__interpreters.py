@@ -104,6 +104,7 @@ class IsShareableTests(unittest.TestCase):
                 True,
                 False,
                 100.0,
+                1+2j,
                 (1, ('spam', 'eggs')),
                 ]
         for obj in shareables:
@@ -603,6 +604,7 @@ class RunStringTests(TestBase):
             'spam',
             b'spam',
             42,
+            1+2j,
         ]
         for obj in objects:
             with self.subTest(obj):
