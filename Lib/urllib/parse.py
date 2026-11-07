@@ -853,6 +853,15 @@ def unquote(string, encoding='utf-8', errors='replace'):
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
+    if string.isascii():
+        return _unquote_impl(string).decode(encoding, errors)
+    if encoding in ('utf-8', 'utf8'):
+        try:
+            data = string.encode('utf-8')
+        except UnicodeEncodeError:
+            pass  # lone surrogates must be passed through verbatim
+        else:
+            return _unquote_impl(data).decode(encoding, errors)
     return ''.join(_generate_unquoted_parts(string, encoding, errors))
 
 
