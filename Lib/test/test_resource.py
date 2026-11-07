@@ -1,9 +1,11 @@
 import contextlib
 import sys
+import textwrap
 import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import script_helper
 
 resource = import_helper.import_module('resource')
 
@@ -233,6 +235,35 @@ class ResourceTest(unittest.TestCase):
         limits = resource.getrlimit(resource.RLIMIT_AS)
         self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, BadSeq()),
                          limits)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
+    @unittest.skipIf(support.linked_to_musl(),
+                     'no C stack detection on musl, gh-159876')
+    @unittest.skipUnless(hasattr(resource, 'RLIMIT_STACK'),
+                         'requires resource.RLIMIT_STACK')
+    def test_lowered_stack_limit(self):
+        code = textwrap.dedent('''
+            import resource, sys
+            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+            limits = (1024 * 1024, hard)
+            if sys.argv[1] == 'setrlimit':
+                resource.setrlimit(resource.RLIMIT_STACK, limits)
+            else:
+                resource.prlimit(0, resource.RLIMIT_STACK, limits)
+            value = None
+            for _ in range(100_000):
+                value = [value]
+            try:
+                repr(value)
+            except RecursionError:
+                pass
+            del value
+        ''')
+        for func in 'setrlimit', 'prlimit':
+            with self.subTest(func=func):
+                if not hasattr(resource, func):
+                    self.skipTest(f'requires resource.{func}')
+                script_helper.assert_python_ok('-c', code, func)
 
 
 if __name__ == "__main__":
