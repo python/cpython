@@ -1533,6 +1533,52 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
 }
 
 static int
+encoder_write_float(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
+{
+    /* Write the JSON representation of a PyFloat into writer. */
+    double i = PyFloat_AS_DOUBLE(obj);
+    if (!isfinite(i)) {
+        if (!s->allow_nan) {
+            PyErr_Format(
+                    PyExc_ValueError,
+                    "Out of range float values are not JSON compliant: %R",
+                    obj
+                    );
+            return -1;
+        }
+
+        const char *str;
+        size_t len;
+        if (i > 0) {
+            str = "Infinity";
+            len = strlen("Infinity");
+        }
+        else if (i < 0) {
+            str = "-Infinity";
+            len = strlen("-Infinity");
+        }
+        else {
+            str = "NaN";
+            len = strlen("NaN");
+        }
+        return PyUnicodeWriter_WriteASCII(writer, str, len);
+    }
+
+    // Similar to float_repr(), but writes directly into writer
+    char *buf = PyOS_double_to_string(i,
+                                      'r', 0,
+                                      Py_DTSF_ADD_DOT_0,
+                                      NULL);
+    if (!buf) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    int res = PyUnicodeWriter_WriteASCII(writer, buf, strlen(buf));
+    PyMem_Free(buf);
+    return res;
+}
+
+static int
 encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
 {
     /* Return the JSON representation of a string */
@@ -1596,10 +1642,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         return _steal_accumulate(writer, encoded);
     }
     else if (PyFloat_Check(obj)) {
-        PyObject *encoded = encoder_encode_float(s, obj);
-        if (encoded == NULL)
-            return -1;
-        return _steal_accumulate(writer, encoded);
+        return encoder_write_float(s, writer, obj);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
