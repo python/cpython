@@ -3,11 +3,12 @@ import io
 import sys
 import warnings
 import unittest
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, MagicMock, patch
 from textwrap import dedent
 
-from test.support import force_not_colorized
+from test.support import force_colorized, force_not_colorized
 
+from _pyrepl import simple_interact
 from _pyrepl.console import InteractiveColoredConsole
 from _pyrepl.simple_interact import (
     _more_lines,
@@ -358,3 +359,150 @@ class TestWarnings(unittest.TestCase):
         count = sum("'return' in a 'finally' block" in str(w.message)
                     for w in caught)
         self.assertEqual(count, 1)
+
+
+class TestStatementSubmittedHook(unittest.TestCase):
+    def _run_interactive(self, statements, hook):
+        console = InteractiveColoredConsole()
+        statement_iter = iter(statements)
+
+        def fake_multiline_input(more_lines, ps1, ps2):
+            try:
+                return next(statement_iter)
+            except StopIteration:
+                raise EOFError
+
+        output = io.StringIO()
+        with (
+            patch.object(simple_interact, "statement_submitted_hook", hook),
+            patch.object(
+                simple_interact,
+                "multiline_input",
+                side_effect=fake_multiline_input,
+            ),
+            patch.object(simple_interact, "_get_reader"),
+            patch.object(simple_interact, "append_history_file"),
+            patch("_pyrepl.readline._setup"),
+            contextlib.redirect_stdout(output),
+            contextlib.redirect_stderr(output),
+        ):
+            simple_interact.run_multiline_interactive_console(console)
+
+        return output.getvalue(), console.locals
+
+    def test_hook_called_before_statement_execution(self):
+        statement = "if True:\n    print('statement executed')\n"
+        escape_sequence = "\x1b]633;C\x07"
+        hook = MagicMock(
+            side_effect=lambda statement: print(escape_sequence, end="")
+        )
+        output, _ = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with(statement)
+        self.assertEqual(output, f"{escape_sequence}statement executed\n")
+
+    def test_hook_receives_input_without_final_auto_indent(self):
+        statement = "if True:\n    x = 1\n    "
+        hook = MagicMock()
+
+        _, namespace = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with("if True:\n    x = 1\n")
+        self.assertEqual(namespace["x"], 1)
+
+    @force_not_colorized
+    def test_hook_exception_is_displayed(self):
+        hook = MagicMock(side_effect=RuntimeError("hook error"))
+
+        output, namespace = self._run_interactive(["x = 1"], hook)
+
+        self.assertIn(
+            "Error in statement_submitted_hook:\n"
+            "Traceback (most recent call last):\n",
+            output,
+        )
+        self.assertIn("statement_submitted_hook(", output)
+        self.assertIn("RuntimeError: hook error", output)
+        self.assertEqual(namespace["x"], 1)
+
+    @force_colorized
+    def test_hook_exception_is_colorized(self):
+        def hook(statement):
+            raise RuntimeError("hook error")
+
+        output, namespace = self._run_interactive(["x = 1"], hook)
+
+        self.assertIn("Error in statement_submitted_hook:\n", output)
+        self.assertRegex(output, r"\x1b\[[0-9;]+m")
+        self.assertIn("hook error", output)
+        self.assertEqual(namespace["x"], 1)
+
+    @force_not_colorized
+    def test_hook_exception_preserves_last_exception(self):
+        try:
+            raise ValueError("previous user error")
+        except ValueError as exc:
+            previous_exception = exc
+
+        last_attributes = {
+            "last_exc": previous_exception,
+            "last_type": type(previous_exception),
+            "last_value": previous_exception,
+            "last_traceback": previous_exception.__traceback__,
+        }
+        for initialized in (True, False):
+            with self.subTest(initialized=initialized), contextlib.ExitStack() as stack:
+                for name, value in last_attributes.items():
+                    stack.enter_context(patch.object(sys, name, value, create=True))
+                    if not initialized:
+                        delattr(sys, name)
+
+                hook = MagicMock(side_effect=RuntimeError("hook error"))
+                output, namespace = self._run_interactive(["x = 1"], hook)
+
+                self.assertIn("RuntimeError: hook error", output)
+                self.assertEqual(namespace["x"], 1)
+                for name, value in last_attributes.items():
+                    if initialized:
+                        self.assertIs(getattr(sys, name), value)
+                    else:
+                        self.assertFalse(hasattr(sys, name))
+
+    def test_hook_keyboard_interrupt_cancels_submission(self):
+        hook = MagicMock(side_effect=[KeyboardInterrupt, None])
+
+        output, namespace = self._run_interactive(["x = 1", "y = 2"], hook)
+
+        self.assertIn("\nKeyboardInterrupt\n", output)
+        self.assertNotIn("Error in statement_submitted_hook:", output)
+        self.assertNotIn("x", namespace)
+        self.assertEqual(namespace["y"], 2)
+        self.assertEqual(hook.call_count, 2)
+
+    def test_hook_system_exit_exits_repl(self):
+        hook = MagicMock(side_effect=SystemExit(42))
+        statement = "raise SystemExit(99)"
+
+        with self.assertRaises(SystemExit) as caught:
+            self._run_interactive([statement, "x = 1"], hook)
+
+        self.assertEqual(caught.exception.code, 42)
+        hook.assert_called_once_with(statement)
+
+    def test_hook_not_called_for_repl_commands(self):
+        hook = MagicMock()
+        self._run_interactive(["clear"], hook)
+
+        hook.assert_not_called()
+
+    @force_not_colorized
+    def test_hook_called_before_execution_exception(self):
+        statement = "1 / 0"
+        marker = "hook ran first"
+        hook = MagicMock(side_effect=lambda statement: print(marker))
+        output, _ = self._run_interactive([statement], hook)
+
+        hook.assert_called_once_with(statement)
+        marker_index = output.index(marker)
+        traceback_index = output.index("ZeroDivisionError")
+        self.assertLess(marker_index, traceback_index)

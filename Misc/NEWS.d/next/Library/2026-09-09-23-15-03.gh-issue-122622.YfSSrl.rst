@@ -1,0 +1,4 @@
+Add an optional ``_pyrepl.simple_interact.statement_submitted_hook`` callback
+that runs after input is submitted and before it is executed,
+allowing external tools to implement features such as shell integration.
+Hook failures are reported without replacing the last user exception.
