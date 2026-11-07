@@ -1,0 +1,5 @@
+:class:`typing.BinaryIO` now annotates ``write()`` and ``writelines()`` in
+terms of :class:`collections.abc.Buffer` rather than :class:`bytes`, and
+``writelines()`` on :class:`typing.IO` takes any iterable rather than a list.
+Binary streams accept all of this already, and typeshed says the same through
+overloads that a runtime stub has no way to spell.
