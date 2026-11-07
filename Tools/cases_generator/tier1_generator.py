@@ -8,6 +8,7 @@ import argparse
 from analyzer import (
     Analysis,
     Instruction,
+    Label,
     Uop,
     Part,
     analyze_files,
@@ -149,6 +150,7 @@ def generate_tier1(
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+#ifndef _Py_CEVAL_START_FRAME
 """)
     outfile.write(f"""
 #if !_Py_TAIL_CALL_INTERP
@@ -187,27 +189,41 @@ def generate_tier1(
     emitter = Emitter(out, analysis.labels)
     generate_tier1_labels(analysis, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
+    outfile.write("#endif /* _Py_CEVAL_START_FRAME */\n")
+    outfile.write("#if !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME)\n")
+    generate_tier1_start_frame(analysis, emitter)
+    outfile.write("#endif /* !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME) */\n")
     outfile.write(FOOTER)
 
 
 
-def generate_tier1_labels(
-    analysis: Analysis, emitter: Emitter
-) -> None:
+def generate_tier1_label(label: Label, emitter: Emitter) -> None:
+    if label.name == 'stop_tracing':
+        emitter.emit("#if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)\n")
+        emitter.emit("Py_GCC_ATTRIBUTE((unused))\n")
+        emitter.emit("#endif\n")
+    emitter.emit(f"LABEL({label.name})\n")
+    storage = Storage(Stack(), [], [], 0, False)
+    if label.spilled:
+        storage.spilled = 1
+        storage.stack.physical_sp = None
+    emitter.emit_tokens(label, storage, None)
+    emitter.emit("\n\n")
+
+
+def generate_tier1_labels(analysis: Analysis, emitter: Emitter) -> None:
     emitter.emit("\n")
     # Emit tail-callable labels as function defintions
-    for name, label in analysis.labels.items():
-        if name == 'stop_tracing':
-            emitter.emit("#if _Py_TAIL_CALL_INTERP && !defined(_Py_TIER2)\n")
-            emitter.emit("Py_GCC_ATTRIBUTE((unused))\n")
-            emitter.emit("#endif\n")
-        emitter.emit(f"LABEL({name})\n")
-        storage = Storage(Stack(), [], [], 0, False)
-        if label.spilled:
-            storage.spilled = 1
-            storage.stack.physical_sp = None
-        emitter.emit_tokens(label, storage, None)
-        emitter.emit("\n\n")
+    for label in analysis.labels.values():
+        if label.name != "start_frame":
+            generate_tier1_label(label, emitter)
+
+
+def generate_tier1_start_frame(analysis: Analysis, emitter: Emitter) -> None:
+    emitter.emit("\n")
+    label = analysis.labels.get("start_frame")
+    if label is not None:
+        generate_tier1_label(label, emitter)
 
 def get_popped(inst: Instruction, analysis: Analysis) -> str:
     stack = get_stack_effect(inst)
