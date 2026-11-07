@@ -173,6 +173,21 @@ class MiscTests(unittest.TestCase):
         r = e.get(X())
         self.assertIsNone(r)
 
+    @unittest.skipIf(support.Py_TRACE_REFS,
+                     'Py_TRACE_REFS builds abort on allocation failure')
+    @support.nomemtest
+    def test_iter_memory_error(self):
+        # gh-148731: Element.iter() must not crash if allocating
+        # the iterator's parent stack fails.
+        e = cET.Element('root')
+        # Warm up the type's method cache, which is allocated on first use.
+        e.iter()
+        with self.assertRaises(MemoryError):
+            # The first allocation creates the iterator object,
+            # the second one its parent stack.
+            with support.inject_memory_error_cm(1, 2):
+                e.iter()
+
     @support.cpython_only
     def test_immutable_types(self):
         root = cET.fromstring('<a></a>')
