@@ -411,6 +411,79 @@ field (or another synchronization primitive) to your object struct.
 an additional one.
 
 
+.. _freethreading-tsan:
+
+Testing with ThreadSanitizer
+============================
+
+Data races in C code are easy to introduce and hard to reproduce.
+`ThreadSanitizer <https://clang.llvm.org/docs/ThreadSanitizer.html>`_ (TSan) is
+a data race detector supported by Clang and GCC that reports conflicting
+accesses to the same memory location from different threads that are not
+ordered by a lock or an atomic operation.  It is a good way to find missing
+locks, critical sections or atomic operations in an extension.
+
+.. note::
+
+   TSan reports data races in C code, both in CPython and in extensions.  It
+   does not report races in the logic of Python code, such as two threads
+   running ``counter = counter + 1`` on a shared object.  Each of those
+   operations is synchronized internally, so the program is free of data races
+   even though it loses updates.
+
+To use it, build a free-threaded interpreter with TSan enabled:
+
+.. code-block:: shell
+
+    ./configure --disable-gil --with-thread-sanitizer --with-pydebug
+    make
+
+``--with-pydebug`` is optional, but enables assertions that catch some
+additional errors.  See :option:`--with-thread-sanitizer`.  TSan can also be
+used with a build that has the GIL enabled, but the GIL orders most
+accesses, so a free-threaded build is much more informative.
+
+The build records ``-fsanitize=thread`` in its compiler and linker flags
+(see :func:`sysconfig.get_config_var`), so extensions built with that
+interpreter by build tools that use these flags, such as ``setuptools``, are
+instrumented automatically.  If you build an extension by hand, pass
+``-fsanitize=thread`` when compiling and linking.  Code that is not
+instrumented, such as third-party libraries built without TSan, is not
+checked.
+
+Then run your tests with the TSan interpreter, using several threads that
+exercise the same objects.  When a race is found, TSan prints the conflicting
+accesses with stack traces and a summary line.  For example, for an extension
+function that increments a global variable without synchronization:
+
+.. code-block:: none
+
+    WARNING: ThreadSanitizer: data race (pid=36446)
+      Write of size 8 at 0x00010f1f8108 by thread T2:
+        #0 bump racy.c:8 (racy.cpython-316td-darwin.so:arm64+0x7a8)
+        ...
+      Previous write of size 8 at 0x00010f1f8108 by thread T1:
+        #0 bump racy.c:8 (racy.cpython-316td-darwin.so:arm64+0x7a8)
+        ...
+      Location is global 'counter' at 0x00010f1f8108 (racy.cpython-316td-darwin.so+0x8108)
+
+    SUMMARY: ThreadSanitizer: data race racy.c:8 in bump
+
+The TSan runtime can be configured with the ``TSAN_OPTIONS`` environment
+variable, for example ``TSAN_OPTIONS="suppressions=path/to/suppressions.txt"``
+to ignore known issues.  The CPython source tree has a suppressions file for
+the free-threaded build in :source:`Tools/tsan/suppressions_free_threading.txt`.
+On Linux, TSan may fail to start on kernels with high address space layout
+randomization; if that happens, lowering it with
+``sudo sysctl -w vm.mmap_rnd_bits=28`` is a common fix.
+
+CPython's own test suite can be run under TSan with
+``./python -m test --tsan``, which runs a subset of tests that use threads.
+Tests that do not use threads themselves can be run in several threads at once
+with ``./python -m test --tsan-parallel --parallel-threads=N``.  This is
+useful if you want to check a standard library or CPython change that touches
+code shared between threads.
+
 Building Extensions for the Free-Threaded Build
 ===============================================
 
