@@ -9,6 +9,7 @@ import unittest
 
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 TEST_CODE = """
@@ -445,6 +446,15 @@ class SymtableTest(unittest.TestCase):
         class_A = func_f.get_children()[0]
         self.assertEqual(repr(class_A.lookup('x')),
                          "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
+
+    @support.requires_subprocess()
+    def test_symbol_repr_lazy_imports(self):
+        # See https://github.com/python/cpython/issues/160810.
+        code = ("import symtable\n"
+                "top = symtable.symtable('x = 1', '?', 'exec')\n"
+                "print(repr(top.lookup('x')))\n")
+        _, out, _ = assert_python_ok('-X', 'lazy_imports=all', '-c', code)
+        self.assertEqual(out.strip(), b"<symbol 'x': LOCAL, DEF_LOCAL>")
 
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
