@@ -114,10 +114,10 @@ import sys
 import functools
 import itertools
 lazy import warnings
-try:
-    import _wmi
-except ImportError:
-    _wmi = None
+# _wmi is imported on first use (see _wmi_query): loading it maps the OLE
+# and property-system DLLs, which most users of this module never need.
+# None means not imported yet, False means unavailable.
+_wmi = None
 
 ### Globals & Constants
 
@@ -332,6 +332,12 @@ def _syscmd_ver(system='', release='', version='',
 
 def _wmi_query(table, *keys):
     global _wmi
+    if _wmi is None:
+        try:
+            import _wmi as wmi
+        except ImportError:
+            wmi = False
+        _wmi = wmi
     if not _wmi:
         raise OSError("not supported")
     table = {
@@ -344,7 +350,7 @@ def _wmi_query(table, *keys):
             table,
         )).split("\0")
     except OSError:
-        _wmi = None
+        _wmi = False
         raise OSError("not supported")
     split_data = (i.partition("=") for i in data)
     dict_data = {i[0]: i[2] for i in split_data}
