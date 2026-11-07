@@ -1,0 +1,14 @@
+On platforms where libc provides the ``timezone``, ``daylight`` and
+``tzname`` variables, :data:`time.timezone`, :data:`time.daylight` and
+:data:`time.tzname` are now taken from libc instead of being guessed from
+samples of the local time in January and July.  This fixes stale values for
+zones whose rules change during the year, such as ``America/Vancouver`` in
+2026.  Standard and DST are now classified by libc rather than by comparing
+offsets, so for zones with negative DST such as ``Europe/Dublin``,
+:data:`time.tzname` is now ``('IST', 'GMT')`` and :data:`time.timezone` is
+``-3600``, matching :attr:`~time.struct_time.tm_isdst`.  On some platforms
+:data:`time.daylight` may now be nonzero for zones that observed DST only in
+the past.  When libc does not provide ``altzone`` (including glibc and
+Windows), :data:`time.altzone` is now found by sampling the current year for
+a DST offset instead of assuming a one-hour shift, and equals
+:data:`time.timezone` for zones without DST.

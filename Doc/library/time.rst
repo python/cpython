@@ -1030,7 +1030,10 @@ Timezone Constants
 
 .. data:: daylight
 
-   Nonzero if a DST timezone is defined.  See note below.
+   Nonzero if a DST timezone is defined.  On some platforms, this includes
+   timezones that observed DST only in the past.  It does not indicate whether
+   DST is currently in effect; use :attr:`struct_time.tm_isdst` from
+   :func:`localtime` for that.  See note below.
 
 .. data:: timezone
 
@@ -1047,9 +1050,12 @@ Timezone Constants
 
    For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
    and :data:`tzname`), the value is determined by the timezone rules in effect
-   at module load time or the last time :func:`tzset` is called and may be incorrect
-   for times in the past.  It is recommended to use the :attr:`~struct_time.tm_gmtoff` and
-   :attr:`~struct_time.tm_zone` results from :func:`localtime` to obtain timezone information.
+   at module load time or the last time :func:`tzset` is called and may be
+   incorrect for times in the past.  On platforms that do not provide a DST
+   offset, :data:`altzone` is estimated by sampling dates in the current year.
+   It is recommended to use the :attr:`~struct_time.tm_gmtoff` and
+   :attr:`~struct_time.tm_zone` results from :func:`localtime` to obtain
+   timezone information.
 
 
 .. seealso::
