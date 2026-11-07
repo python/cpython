@@ -163,7 +163,6 @@ nitpick_ignore = [
     ('c:func', 'unlockpt'),
     ('c:func', 'vsnprintf'),
     # Standard C types
-    ('c:type', 'unsigned long'),
     ('c:type', 'FILE'),
     ('c:type', 'int8_t'),
     ('c:type', 'int16_t'),
