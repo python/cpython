@@ -201,7 +201,7 @@ class Error(Exception):
 class ProtocolError(Error):
     """Indicates an HTTP protocol error."""
     def __init__(self, url, errcode, errmsg, headers):
-        Error.__init__(self)
+        Error.__init__(self, url, errcode, errmsg, headers)
         self.url = url
         self.errcode = errcode
         self.errmsg = errmsg
@@ -233,7 +233,7 @@ class ResponseError(Error):
 class Fault(Error):
     """Indicates an XML-RPC fault package."""
     def __init__(self, faultCode, faultString, **extra):
-        Error.__init__(self)
+        Error.__init__(self, faultCode, faultString)
         self.faultCode = faultCode
         self.faultString = faultString
     def __repr__(self):
