@@ -1,5 +1,8 @@
+import multiprocessing as mp
 import os
 import queue
+import signal
+import struct
 import sys
 import threading
 import time
@@ -8,7 +11,7 @@ import unittest
 import unittest.mock
 import weakref
 from concurrent import futures
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, _check_system_limits
 
 from test import support
 from test.support import hashlib_helper, threading_helper, warnings_helper
@@ -16,8 +19,8 @@ from test.test_importlib.metadata.fixtures import parameterize
 
 from .executor import ExecutorTest, mul
 from .util import (
-    ProcessPoolForkMixin, ProcessPoolForkserverMixin, ProcessPoolSpawnMixin,
-    create_executor_tests, setup_module)
+    BaseTestCase, ProcessPoolForkMixin, ProcessPoolForkserverMixin,
+    ProcessPoolSpawnMixin, create_executor_tests, setup_module)
 
 
 class EventfulGCObj():
@@ -50,6 +53,40 @@ def _report_wait_return(queue, event, value):
     return value
 
 
+def _send_result_header_only(writer):
+    """Write a length header and exit before the message body."""
+    writer._send(struct.pack("!i", 100_000))
+
+
+def _send_object(writer):
+    writer.send({"ok": True})
+
+
+def _return_large_result():
+    # Larger than Connection._send_bytes' 16384-byte inline threshold, so the
+    # length header is written separately from the body.
+    return b"x" * (32 * 1024)
+
+
+def _pause_after_result_header(writer):
+    """Stop this worker after the result length is written, before the body."""
+    import multiprocessing.connection as connection
+
+    original = connection.Connection._send_bytes
+
+    def _send_bytes(self, buf):
+        n = len(buf)
+        if n > 16384:
+            self._send(struct.pack("!i", n))
+            writer.send_bytes(b"1")
+            os.kill(os.getpid(), signal.SIGSTOP)
+            self._send(buf)
+        else:
+            original(self, buf)
+
+    connection.Connection._send_bytes = _send_bytes
+
+
 class ProcessPoolExecutorTest(ExecutorTest):
 
     @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
@@ -57,6 +94,33 @@ class ProcessPoolExecutorTest(ExecutorTest):
         with self.assertRaisesRegex(ValueError,
                                     "max_workers must be <= 61"):
             futures.ProcessPoolExecutor(max_workers=62)
+
+    @unittest.skipUnless(hasattr(signal, "SIGSTOP"),
+                         "requires SIGSTOP to pause a worker mid-send")
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_killed_child_during_result_send(self):
+        # gh-159689: a worker killed after writing the result length but
+        # before the body must fail the future. The parent holds the
+        # result pipe's write end, so this is not delivered as EOF.
+        ctx = self.get_context()
+        reader, writer = ctx.Pipe(duplex=False)
+        executor = self.executor_type(
+            max_workers=1,
+            mp_context=ctx,
+            initializer=_pause_after_result_header,
+            initargs=(writer,))
+        try:
+            future = executor.submit(_return_large_result)
+            self.assertTrue(reader.poll(support.SHORT_TIMEOUT))
+            self.assertEqual(reader.recv_bytes(), b"1")
+            worker = next(iter(executor._processes.values()))
+            os.kill(worker.pid, signal.SIGKILL)
+            with self.assertRaises(BrokenProcessPool):
+                future.result(timeout=support.SHORT_TIMEOUT)
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
+            writer.close()
+            reader.close()
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_killed_child(self):
@@ -541,6 +605,67 @@ class ProcessPoolExecutorTest(ExecutorTest):
             for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
                 if not worker_process.is_alive():
                     break
+
+
+@unittest.skipUnless(sys.platform != "win32",
+                     "partial pipe reads are specific to Unix connections")
+class ResultPipeSentinelTest(BaseTestCase):
+    """Connection.recv(sentinels=...) when a writer dies mid-message.
+
+    The parent keeps its copy of the write end, which is how
+    ProcessPoolExecutor's result queue is set up. gh-159689.
+    """
+
+    def setUp(self):
+        super().setUp()
+        try:
+            _check_system_limits()
+        except NotImplementedError:
+            self.skipTest("ProcessPoolExecutor unavailable on this system")
+
+    def _context(self):
+        return mp.get_context("spawn")
+
+    def test_partial_message_raises_when_writer_exits(self):
+        ctx = self._context()
+        reader, writer = ctx.Pipe(duplex=False)
+        proc = ctx.Process(target=_send_result_header_only, args=(writer,))
+        started = False
+        try:
+            proc.start()
+            started = True
+            proc.join(support.SHORT_TIMEOUT)
+            self.assertEqual(proc.exitcode, 0)
+            t0 = time.monotonic()
+            with self.assertRaises(mp.connection._SentinelReady):
+                reader.recv(sentinels=[proc.sentinel])
+            self.assertLess(time.monotonic() - t0, support.SHORT_TIMEOUT)
+        finally:
+            writer.close()
+            reader.close()
+            if started:
+                proc.join(support.SHORT_TIMEOUT)
+                proc.close()
+
+    def test_complete_message_still_received(self):
+        ctx = self._context()
+        reader, writer = ctx.Pipe(duplex=False)
+        proc = ctx.Process(target=_send_object, args=(writer,))
+        started = False
+        try:
+            proc.start()
+            started = True
+            proc.join(support.SHORT_TIMEOUT)
+            self.assertEqual(proc.exitcode, 0)
+            writer.close()
+            self.assertEqual(reader.recv(sentinels=[proc.sentinel]),
+                             {"ok": True})
+        finally:
+            writer.close()
+            reader.close()
+            if started:
+                proc.join(support.SHORT_TIMEOUT)
+                proc.close()
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
