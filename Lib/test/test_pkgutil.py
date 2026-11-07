@@ -34,6 +34,25 @@ class PkgutilTests(unittest.TestCase):
     def tearDown(self):
         del sys.path[0]
 
+    def test_iter_modules_ignores_directories_with_module_suffixes(self):
+        directory = Path(self.dirname)
+        for name in ('fake.py', 'fake.pyc', 'shadow.py', 'package'):
+            (directory / name).mkdir()
+        for name in ('module.py', 'shadow.pyc', 'package/__init__.py'):
+            (directory / name).touch()
+
+        for prefix in ('', 'prefix.'):
+            with self.subTest(prefix=prefix):
+                modules = [
+                    (info.name, info.ispkg)
+                    for info in pkgutil.iter_modules([self.dirname], prefix)
+                ]
+                self.assertEqual(modules, [
+                    (prefix + 'module', False),
+                    (prefix + 'package', True),
+                    (prefix + 'shadow', False),
+                ])
+
     def test_getdata_filesys(self):
         pkg = 'test_getdata_filesys'
 
