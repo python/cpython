@@ -388,6 +388,7 @@ _PyXIData_InitWithSize(_PyXIData_t *xidata,
     _PyXIData_Init(xidata, interp, NULL, obj, new_object);
     xidata->data = PyMem_RawCalloc(1, size);
     if (xidata->data == NULL) {
+        PyErr_NoMemory();
         return -1;
     }
     xidata->free = PyMem_RawFree;
