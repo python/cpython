@@ -2,7 +2,9 @@ import bisect
 import calendar
 import collections
 import functools
+import operator
 import re
+import struct
 import weakref
 from datetime import datetime, timedelta, tzinfo
 
@@ -10,6 +12,10 @@ from . import _common, _tzpath
 
 EPOCH = datetime(1970, 1, 1)
 EPOCHORDINAL = datetime(1970, 1, 1).toordinal()
+
+# Match the integer conversions in the C implementation.
+_LONG_MAX = (1 << (struct.calcsize("l") * 8 - 1)) - 1
+_INT_MAX = (1 << (struct.calcsize("i") * 8 - 1)) - 1
 
 # It is relatively expensive to construct new timedelta objects, and in most
 # cases we're looking at the same deltas, like integer numbers of hours, etc.
@@ -168,15 +174,26 @@ class ZoneInfo(tzinfo):
 
         ts = self._get_local_timestamp(dt)
 
-        lt = self._trans_local[dt.fold]
+        fold = operator.index(dt.fold)
+        if not -_LONG_MAX - 1 <= fold <= _LONG_MAX:
+            raise OverflowError("Python int too large to convert to C long")
+        if not 0 <= fold <= 1:
+            raise ValueError(f"fold must be 0 or 1, not {fold}")
+
+        lt = self._trans_local[fold]
 
         num_trans = len(lt)
 
         if num_trans and ts < lt[0]:
             return self._tti_before
         elif not num_trans or ts > lt[-1]:
+            year = operator.index(dt.year)
+            if not -_INT_MAX - 1 <= year <= _INT_MAX:
+                raise OverflowError("Python int too large to convert to C int")
+            if not 1 <= year <= 9999:
+                raise ValueError(f"year must be in 1..9999, not {year}")
             if isinstance(self._tz_after, _TZStr):
-                return self._tz_after.get_trans_info(ts, dt.year, dt.fold)
+                return self._tz_after.get_trans_info(ts, year, fold)
             else:
                 return self._tz_after
         else:

@@ -1,0 +1,6 @@
+Fixes a segmentation fault that would happen if :class:`zoneinfo.ZoneInfo`
+were used with certain non-:class:`datetime.datetime` classes. Patch by Paul
+Ganssle.
+
+The pure-Python implementation now validates the ``fold`` and ``year``
+attributes of these objects consistently with the C implementation.
