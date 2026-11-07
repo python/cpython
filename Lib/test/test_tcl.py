@@ -601,6 +601,29 @@ class TclTest(unittest.TestCase):
         # event handle on Windows when test_tcl is run with -R 3:3 option.
         _tkinter._finalize_thread()
 
+    def test_setvar_evil(self):
+        # gh-161388
+        class StrRaises:
+            def __str__(self):
+                raise RuntimeError("setvar evil")
+
+        value = StrRaises()
+        tk = self.interp.tk
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name1", value)
+        self.assertRaises(TclError, tk.getvar, "local_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name2", "local_name3", value)
+        self.assertRaises(TclError, tk.getvar, "local_name2", "local_name3")
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name1", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name2", "global_name3", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name2", "global_name3")
+
     def test_user_command(self):
         result = None
         def testfunc(arg):
