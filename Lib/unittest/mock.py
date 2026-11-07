@@ -3107,14 +3107,12 @@ class ThreadingMixin(Base):
         return new_event
 
     def _mock_call(self, *args, **kwargs):
-        ret_value = super()._mock_call(*args, **kwargs)
-
         call_event = self.__get_event(args, kwargs)
         call_event.set()
 
         self._mock_event.set()
 
-        return ret_value
+        return super()._mock_call(*args, **kwargs)
 
     def _increment_mock_call(self, /, *args, **kwargs):
         with self._mock_calls_events_lock:
