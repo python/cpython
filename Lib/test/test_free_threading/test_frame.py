@@ -3,6 +3,7 @@ import sys
 import threading
 import unittest
 
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -103,6 +104,84 @@ class TestFrameRaces(unittest.TestCase):
             frame.f_trace = None
 
         run_with_frame([reader, writer, reader, writer])
+
+    def test_concurrent_f_trace_while_tracing(self):
+        frame_var = None
+        ready = threading.Event()
+        start = threading.Barrier(2, timeout=support.SHORT_TIMEOUT)
+
+        def trace(frame, event, arg):
+            if frame.f_code is runner.__code__:
+                return trace
+
+        def runner():
+            nonlocal frame_var
+            frame_var = sys._getframe()
+            ready.set()
+            start.wait()
+            for _ in range(100):
+                pass
+
+        def executor():
+            try:
+                sys.settrace(trace)
+                runner()
+            finally:
+                sys.settrace(None)
+
+        def reader():
+            self.assertTrue(ready.wait(support.SHORT_TIMEOUT))
+            frame = frame_var
+            start.wait()
+            for _ in range(100):
+                self.assertIs(frame.f_trace, trace)
+
+        threading_helper.run_concurrently([executor, reader])
+
+    def _test_concurrent_trace_flag_while_tracing(self, name):
+        frame_var = None
+        ready = threading.Event()
+        start = threading.Barrier(2, timeout=support.SHORT_TIMEOUT)
+
+        def trace(frame, event, arg):
+            if frame.f_code is runner.__code__:
+                return trace
+
+        def runner():
+            nonlocal frame_var
+            frame_var = sys._getframe()
+            ready.set()
+            start.wait()
+            for _ in range(100):
+                pass
+
+        def executor():
+            try:
+                sys.settrace(trace)
+                runner()
+            finally:
+                sys.settrace(None)
+
+        def writer():
+            self.assertTrue(ready.wait(support.SHORT_TIMEOUT))
+            frame = frame_var
+            start.wait()
+            original = getattr(frame, name)
+            try:
+                for _ in range(100):
+                    for value in (True, False):
+                        setattr(frame, name, value)
+                        self.assertIs(getattr(frame, name), value)
+            finally:
+                setattr(frame, name, original)
+
+        threading_helper.run_concurrently([executor, writer])
+
+    def test_concurrent_f_trace_lines_while_tracing(self):
+        self._test_concurrent_trace_flag_while_tracing('f_trace_lines')
+
+    def test_concurrent_f_trace_opcodes_while_tracing(self):
+        self._test_concurrent_trace_flag_while_tracing('f_trace_opcodes')
 
     def test_concurrent_f_trace_opcodes_write(self):
         def writer(frame):
