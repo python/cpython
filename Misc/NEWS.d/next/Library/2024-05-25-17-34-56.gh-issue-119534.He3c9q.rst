@@ -1,0 +1,4 @@
+Fix  maxsize exceeds ``SEM_VALUE_MAX`` issue in Queue() class init
+:func:`__init__(self, maxsize=0, *, ctx)` and automatically assign it
+``SEM_VALUE_MAX`` if ``SEM_VALUE_MAX`` is violated and a warning is
+issued to inform the user. Patch by Marwan Seliem.
