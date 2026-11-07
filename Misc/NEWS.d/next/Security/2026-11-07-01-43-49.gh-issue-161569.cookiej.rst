@@ -1,0 +1,7 @@
+.. cve: CVE-2026-124249
+
+Fix :class:`http.cookiejar.CookieJar` deleting a stored cookie when a
+response from an unrelated host sets an already expired cookie with a
+``Domain`` or ``Path`` attribute pointing at that cookie. The cookie policy
+is now consulted before an expired cookie is allowed to delete an existing
+one.
