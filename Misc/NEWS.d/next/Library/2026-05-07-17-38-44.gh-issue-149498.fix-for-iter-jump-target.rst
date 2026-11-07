@@ -1,0 +1,4 @@
+Fix :func:`dis.get_instructions` reporting the wrong ``jump_target`` for
+:opcode:`FOR_ITER`. The exhausted-iterator path now correctly points to
+:opcode:`POP_ITER` rather than :opcode:`END_FOR`, matching the runtime
+behaviour of ``JUMPBY(oparg + 1)``.
