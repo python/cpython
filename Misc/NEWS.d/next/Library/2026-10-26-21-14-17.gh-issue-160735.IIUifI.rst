@@ -1,0 +1,2 @@
+Fix Tachyon's Gecko export closing open markers too early when replaying a
+binary profile whose thread samples arrive out of time order.

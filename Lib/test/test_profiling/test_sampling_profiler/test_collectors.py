@@ -1072,6 +1072,38 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 f"Marker {i} should have valid category",
             )
 
+    def test_gecko_collector_replay_out_of_order_batches(self):
+        """Open markers are closed at the latest replayed sample."""
+        collector = GeckoCollector(1000)
+        # Binary replay can send thread 2's last batch after thread 1's later
+        # samples
+        batches = [
+            (1, [1000], THREAD_STATUS_ON_CPU),
+            (2, [1500], 0),
+            (1, [2000], THREAD_STATUS_ON_CPU),
+            (1, [3000, 4000], 0),
+            (2, [2500], 0),
+        ]
+        for tid, timestamps, status in batches:
+            frames = [MockFrameInfo(f"t{tid}.py", 10, f"func{tid}")]
+            collector.collect(
+                [MockInterpreterInfo(0, [MockThreadInfo(tid, frames, status=status)])],
+                timestamps_us=timestamps,
+            )
+
+        profile_data = collector._build_profile()
+
+        end_times = []
+        for thread_data in profile_data["threads"]:
+            markers = thread_data["markers"]
+            for start_time, end_time in zip(markers["startTime"],
+                                            markers["endTime"]):
+                self.assertLessEqual(start_time, end_time)
+                end_times.append(end_time)
+        self.assertEqual(max(end_times), 3.0)
+        # Six samples up to 3.0 ms
+        self.assertEqual(profile_data["meta"]["interval"], 0.5)
+
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
             sample_interval_usec=1000000
