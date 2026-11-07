@@ -1483,14 +1483,6 @@ class CommandLineTest(unittest.TestCase):
             random.seed(0)
             self.assertEqual(random.main(shlex.split(command)), expected)
 
-    def test_main_empty_integer_range(self):
-        # An integer input is the same as --integer, even when it is
-        # not positive.
-        for command in ["--integer 0", "0", "--integer -5", "-5"]:
-            with self.subTest(command=command):
-                with self.assertRaisesRegex(ValueError, "empty range"):
-                    random.main(shlex.split(command))
-
     def test_empty_integer_range_error(self):
         # An integer input is the same as --integer, even when it is
         # not positive.
