@@ -2029,7 +2029,7 @@ Display the current date with call_later()
 
 An example of a callback displaying the current date every second. The
 callback uses the :meth:`loop.call_later` method to reschedule itself
-after 5 seconds, and then stops the event loop::
+after 1 second, and eventually stops the event loop::
 
     import asyncio
     import datetime as dt

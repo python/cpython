@@ -770,7 +770,7 @@ call the :meth:`~TarInfo.replace` method to create a modified copy in one step.
 
 Several attributes can be set to ``None`` to indicate that a piece of metadata
 is unused or unknown.
-Different :class:`TarInfo` methods handle ``None`` differently:
+Different :class:`TarFile` methods handle ``None`` differently:
 
 - The :meth:`~TarFile.extract` or :meth:`~TarFile.extractall` methods will
   ignore the corresponding metadata, leaving it set to a default.
@@ -1450,7 +1450,7 @@ The same example using the :keyword:`with` statement::
 
 How to create and write an archive to stdout using
 :data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
-in :meth:`TarFile.add`::
+in :func:`~tarfile.open`::
 
     import sys
     import tarfile
