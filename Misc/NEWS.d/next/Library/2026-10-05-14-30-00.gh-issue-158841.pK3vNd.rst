@@ -1,0 +1,3 @@
+Fix a crash in :func:`pickle.load` and :class:`pickle.Unpickler` when the
+``read()`` method of the file object returns an instance of a :class:`bytes`
+subclass and the requested size is large.
