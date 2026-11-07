@@ -513,4 +513,8 @@ class perform_bracketed_paste(Command):
             l=len(data),
             s=time.time() - start,
         )
-        self.reader.insert(data.replace(done, ""))
+        data = data.replace(done, "")
+        self.process_paste(data)
+
+    def process_paste(self, data: str) -> None:
+        self.reader.insert(data)

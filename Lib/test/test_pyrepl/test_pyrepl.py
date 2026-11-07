@@ -11,6 +11,7 @@ import select
 import subprocess
 import sys
 import tempfile
+import textwrap
 from functools import partial
 from pkgutil import ModuleInfo
 from unittest import TestCase, skipUnless, SkipTest
@@ -22,6 +23,7 @@ from test.support import (
     force_not_colorized,
     make_clean_env,
     Py_DEBUG,
+    subTests,
 )
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
@@ -38,7 +40,7 @@ from .support import (
 )
 from _colorize import ANSIColors, get_theme
 from _pyrepl import terminfo
-from _pyrepl.console import Event
+from _pyrepl.console import Event, InteractiveColoredConsole
 from _pyrepl.completing_reader import stripcolor
 from _pyrepl._module_completer import (
     ImportParser,
@@ -2060,6 +2062,438 @@ class TestPasteEvent(TestCase):
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
+
+    def handle_session_events(self, events, **kwargs):
+        return handle_all_events(
+            events,
+            prepare_console=FakeConsole,
+            prepare_reader=partial(
+                ReadlineAlikeReader,
+                config=ReadlineConfig(readline_completer=None),
+                more_lines=more_lines,
+                paste_repl_sessions=True,
+                **kwargs,
+            ),
+        )
+
+    @subTests(
+        ("source", "expected"),
+        [
+            (">>> 1 + 1", "1 + 1"),
+            ("... 1 + 1", "1 + 1"),
+            ("... after = True\n... value = 42\n", "after = True\nvalue = 42\n"),
+            (
+                '... values = [1, 2, \\\n3, 4]\n',
+                'values = [1, 2, 3, 4]\n',
+            ),
+            ('... value = 1\nKeyboardInterrupt\n', ''),
+            (
+                """\
+                >>> 1 + 1
+                2
+                >>> """,
+                "1 + 1\n",
+            ),
+            (
+                """\
+                >>> def double(value):
+                ...     return value * 2
+                ...
+                >>> result = double(3)
+                >>> print(result)
+                6
+                """,
+                """\
+                def double(value):
+                    return value * 2
+
+                result = double(3)
+                print(result)
+                """,
+            ),
+            (
+                """\
+                >>> 1 / 0
+                Traceback (most recent call last):
+                  File "<stdin>", line 1, in <module>
+                ZeroDivisionError: division by zero
+                >>> print('hello')
+                hello
+                """,
+                """\
+                1 / 0
+                print('hello')
+                """,
+            ),
+            (
+                """\
+                >>> if True:
+                ...     print('hello')
+                ...
+                hello
+                >>>""",
+                """\
+                if True:
+                    print('hello')
+
+                """,
+            ),
+            (
+                '''\
+                >>> text = """hello
+                ... >>> world
+                ... ...
+                ... """
+                ''',
+                '''\
+                text = """hello
+                >>> world
+                ...
+                """
+                ''',
+            ),
+            (">>> print('caf\u00e9')\n", "print('caf\u00e9')\n"),
+            (
+                '>>> text = "\v\f\x85\u2028\u2029"\n',
+                'text = "\v\f\x85\u2028\u2029"\n',
+            ),
+            (
+                '>>> text = "abc\\\ndef\\\nghi"\n>>> text\nabcdefghi\n',
+                'text = "abcdefghi"\ntext\n',
+            ),
+            (
+                '>>> values = [1, 2, \\\n3, 4]\n>>> values.append(5)\n',
+                'values = [1, 2, 3, 4]\nvalues.append(5)\n',
+            ),
+            (
+                '>>> if True:\n...     text = "abc\\\ndef"\n...\n',
+                'if True:\n    text = "abcdef"\n\n',
+            ),
+            (
+                '>>> value = 1 + \\\n... 2\n',
+                'value = 1 + \\\n2\n',
+            ),
+            (
+                '>>> x = 1\n>>> x = 2\nKeyboardInterrupt\n>>> x\n1\n',
+                'x = 1\nx\n',
+            ),
+            (
+                '>>> x = 1\n>>> if True:\n...     x = 2\n'
+                '...\nKeyboardInterrupt\n>>> x\n1\n',
+                'x = 1\nx\n',
+            ),
+            (
+                '>>> raise KeyboardInterrupt\n'
+                'Traceback (most recent call last):\n'
+                '  File "<stdin>", line 1, in <module>\n'
+                'KeyboardInterrupt\n>>> x = 1\n',
+                'raise KeyboardInterrupt\nx = 1\n',
+            ),
+            (">>>", ""),
+            ("...", ""),
+        ],
+    )
+    @subTests("paste_mode", (False, True))
+    @subTests("newline", ("\n", "\r\n", "\r"))
+    def test_bracketed_paste_repl_session(self, source, expected, paste_mode, newline):
+        source = textwrap.dedent(source).replace("\n", newline)
+        expected = textwrap.dedent(expected).replace("\n", newline)
+        events = code_to_events("\x1b[200~" + source + "\x1b[201~")
+        if paste_mode:
+            events = itertools.chain([Event("key", "f3")], events)
+        reader, console = self.handle_session_events(events)
+        self.assertEqual(reader.get_unicode(), expected if paste_mode else source)
+        self.assertEqual(reader.pos, len(reader.buffer))
+        self.assertFalse(reader.finished)
+        if not paste_mode:
+            self.assertEndsWith(
+                stripcolor(reader.screen[-1]),
+                "press F3 (paste mode) to strip >>> and ... prompts",
+            )
+            console.events = iter([Event("key", "f3")])
+            reader.pos = len(reader.buffer) // 2
+            reader.handle1()
+            self.assertEqual(reader.get_unicode(), expected)
+            self.assertEqual(reader.pos, len(reader.buffer))
+            self.assertTrue(reader.paste_mode)
+            self.assertFalse(reader.finished)
+            self.assertFalse(reader.rendered_screen.overlays)
+
+    def test_repl_session_hint_follows_buffer(self):
+        events = code_to_events("\x1b[200~>>> 1 + 1\x1b[201~")
+        reader, console = self.handle_session_events(events)
+        hint = "press F3 (paste mode) to strip >>> and ... prompts"
+        console.events = itertools.chain(
+            code_to_events("\x022\x01"),
+            [Event("resize", "")],
+        )
+        with patch.object(console, "beep") as beep:
+            for _ in range(4):
+                reader.handle1()
+                self.assertEndsWith(stripcolor(reader.screen[-1]), hint)
+            beep.assert_not_called()
+
+            # A command error takes precedence, then the hint returns.
+            reader.do_cmd(("yank", []))
+            self.assertIn("nothing to yank", stripcolor(reader.screen[-1]))
+            console.events = code_to_events("\x01")
+            reader.handle1()
+            self.assertEndsWith(stripcolor(reader.screen[-1]), hint)
+            beep.assert_called_once()
+
+        # Removing the prompt dismisses the hint; restoring it brings it back.
+        console.events = code_to_events("\x04>")
+        reader.handle1()
+        self.assertFalse(reader.can_strip_repl_prompts)
+        self.assertFalse(reader.rendered_screen.overlays)
+        reader.handle1()
+        self.assertTrue(reader.can_strip_repl_prompts)
+        self.assertEndsWith(stripcolor(reader.screen[-1]), hint)
+
+        console.events = iter([Event("key", "f3")])
+        reader.handle1()
+        self.assertEqual(reader.get_unicode(), "1 + 21")
+        self.assertFalse(reader.can_strip_repl_prompts)
+        self.assertFalse(reader.rendered_screen.overlays)
+        self.assertFalse(reader.finished)
+
+    @subTests("initial", ("value = ", 'text = """\n'))
+    @subTests("next_keys", ("x", "\x02", "\x1b[200~ordinary\x1b[201~"))
+    def test_repl_session_hint_for_paste(self, initial, next_keys):
+        source = ">>> 1 + 1"
+        paste = "\x1b[200~" + source + "\x1b[201~"
+        reader = self.prepare_reader(code_to_events(paste * 2 + next_keys))
+        reader.more_lines = more_lines
+        reader.paste_repl_sessions = True
+        reader.insert(initial)
+
+        for count in (1, 2):
+            reader.handle1()
+            self.assertEqual(reader.get_unicode(), initial + source * count)
+            self.assertFalse(reader.can_strip_repl_prompts)
+            self.assertEndsWith(
+                stripcolor(reader.screen[-1]),
+                "press F3 (paste mode) to strip >>> and ... prompts",
+            )
+
+        reader.handle1()
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    @subTests(
+        "source",
+        (
+            "print('hello')\n",
+            "...value\n",
+            ".... value\n",
+            ">>>> value\n",
+            ">>>value\n",
+            textwrap.dedent('''\
+                text = """
+                >>> example
+                ... example
+                """
+                '''),
+        ),
+    )
+    def test_bracketed_paste_preserves_non_session(self, source):
+        events = itertools.chain(
+            code_to_events("\x1b[200~" + source + "\x1b[201~"),
+            [Event("key", "f3")] * 2,
+        )
+        reader, _ = self.handle_session_events(events, paste_mode=True)
+        self.assertEqual(reader.get_unicode(), source)
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    @subTests(
+        ("initial", "pos"),
+        (
+            (initial, pos)
+            for initial in (" ", "value = ", 'text = """\n')
+            for pos in sorted({0, len(initial) // 2, len(initial)})
+        ),
+    )
+    @subTests("paste_mode", (False, True))
+    def test_bracketed_paste_session_in_nonempty_buffer(
+        self, initial, pos, paste_mode
+    ):
+        source = textwrap.dedent("""\
+            >>> print('hello')
+            hello
+            """)
+
+        events = code_to_events("\x1b[200~" + source + "\x1b[201~")
+        reader, _ = self.handle_session_events(
+            events, buffer=list(initial), pos=pos, paste_mode=paste_mode,
+        )
+        pasted = "print('hello')\n" if paste_mode else source
+        self.assertEqual(
+            reader.get_unicode(), initial[:pos] + pasted + initial[pos:]
+        )
+        self.assertEqual(reader.pos, pos + len(pasted))
+        self.assertFalse(reader.finished)
+        if paste_mode:
+            self.assertFalse(reader.rendered_screen.overlays)
+        else:
+            self.assertEndsWith(
+                stripcolor(reader.screen[-1]),
+                "press F3 (paste mode) to strip >>> and ... prompts",
+            )
+
+    def test_bracketed_paste_preserves_prompts_in_input(self):
+        source = ">>> not a REPL session"
+        events = itertools.chain(
+            [Event("key", "f3")],
+            code_to_events("\x1b[200~" + source + "\x1b[201~"),
+            [Event("key", "f3")],
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        self.assertEqual(reader.readline(), source)
+
+    def _paste_session(self, source, edit="", *, paste_first=True):
+        toggle = [Event("key", "f3")]
+        events = itertools.chain(
+            () if paste_first else toggle,
+            code_to_events("\x1b[200~" + source + "\x1b[201~"),
+            toggle if paste_first else (),
+            toggle,
+            code_to_events(edit + "\n"),
+        )
+        reader = self.prepare_reader(events)
+        wrapper = _ReadlineWrapper(f_in=0, f_out=1, reader=reader)
+        result = wrapper.multiline_input(
+            more_lines, ">>> ", "... ", paste_repl_sessions=True,
+        )
+        self.assertFalse(reader.paste_repl_sessions)
+        self.assertFalse(reader.paste_mode)
+        return result
+
+    @subTests("paste_first", (False, True))
+    def test_bracketed_paste_repl_session_edit_and_run(self, paste_first):
+        source = self._paste_session(
+            ">>> 1 + 1", edit="\b2", paste_first=paste_first,
+        )
+        self.assertEqual(source, "1 + 2")
+        console = InteractiveColoredConsole()
+        with captured_stdout() as output:
+            self.assertFalse(console.push(source, _symbol="single"))
+        self.assertEqual(output.getvalue(), "3\n")
+
+    @subTests(
+        ("session", "expected"),
+        (
+            ('>>> value = "abc\\\ndef"\n', "abcdef"),
+            ('>>> value = [1, 2, \\\n3, 4]\n', [1, 2, 3, 4]),
+            ('>>> value = 1 + \\\n... 2\n', 3),
+            ('>>> value = 1\n>>> value = 2\nKeyboardInterrupt\n', 1),
+            (
+                '>>> value = 1\n>>> if True:\n...     value = 2\n'
+                '... \nKeyboardInterrupt\n',
+                1,
+            ),
+        ),
+    )
+    def test_bracketed_paste_repl_session_execution(self, session, expected):
+        source = self._paste_session(session)
+        namespace = {}
+        console = InteractiveColoredConsole(namespace)
+        with captured_stderr() as errors:
+            self.assertFalse(console.push(source, _symbol="single"))
+        self.assertEqual(errors.getvalue(), "")
+        self.assertEqual(namespace["value"], expected)
+
+    def test_bracketed_paste_repl_session_stops_at_exception(self):
+        source = self._paste_session(
+            ">>> before = True\n>>> 1 / 0\n"
+            "Traceback (most recent call last):\n"
+            "ZeroDivisionError: division by zero\n"
+            ">>> after = True\n>>> print('hello')\nhello\n"
+        )
+        namespace = {}
+        console = InteractiveColoredConsole(namespace)
+        with captured_stdout() as output, captured_stderr() as errors:
+            self.assertFalse(console.push(source, _symbol="single"))
+        self.assertTrue(namespace["before"])
+        self.assertNotIn("after", namespace)
+        self.assertEqual(output.getvalue(), "")
+        self.assertIn("ZeroDivisionError", errors.getvalue())
+
+    @subTests("pasted", (False, True))
+    @subTests("colorize", (False, True))
+    @subTests(("failing", "exception"), (
+        ("1 / 0", "ZeroDivisionError"),
+        ("return", "SyntaxError"),
+    ))
+    def test_retry_unexecuted_statements(self, pasted, colorize, failing, exception):
+        from _pyrepl import simple_interact
+
+        source = f"before = True\n{failing}\nafter = True\n"
+        toggle = [Event("key", "f3")]
+        if pasted:
+            first_input = code_to_events("\x1b[200~" + source + "\x1b[201~")
+        else:
+            first_input = itertools.chain(toggle, code_to_events(source), toggle)
+        events = itertools.chain(
+            first_input,
+            code_to_events("\n\x1b[200~... after = True\n\x1b[201~"),
+            toggle, toggle,
+            code_to_events("\n\x04"),
+        )
+        reader = self.prepare_reader(events)
+        reader.can_colorize = colorize
+        wrapper = _ReadlineWrapper(f_in=0, f_out=1, reader=reader)
+        console = InteractiveColoredConsole()
+        screens = []
+        with (
+            patch.object(pyrepl_readline, "_setup"),
+            patch.object(simple_interact, "_get_reader", return_value=reader),
+            patch.object(simple_interact, "multiline_input", wrapper.multiline_input),
+            patch.object(simple_interact, "append_history_file"),
+            patch.object(reader.console, "refresh", side_effect=screens.append),
+            captured_stderr() as errors,
+        ):
+            simple_interact.run_multiline_interactive_console(console)
+        self.assertTrue(console.locals["before"])
+        self.assertTrue(console.locals["after"])
+        self.assertIn(exception, errors.getvalue())
+        notice = "code after exception did not run"
+        failure_screens = [
+            screen
+            for screen in screens
+            if any(stripcolor(line).endswith(notice) for line in screen.screen_lines)
+        ]
+        self.assertTrue(failure_screens)
+        for screen in failure_screens:
+            lines = screen.overlays[-1].lines
+            self.assertEqual(len(lines), 1)
+            self.assertEndsWith(stripcolor(lines[0].text), notice)
+        self.assertFalse(reader.rendered_screen.overlays)
+
+    @subTests("paste_mode", (None, "before", "after"))
+    @subTests("source", (">>> q = 1", ">>> run = 1", ">>> c"))
+    def test_bracketed_paste_preserves_session_in_pdb(self, paste_mode, source):
+        import pdb
+
+        toggle = [Event("key", "f3")]
+        events = itertools.chain(
+            toggle if paste_mode == "before" else (),
+            code_to_events("\x1b[200~" + source + "\x1b[201~"),
+            toggle if paste_mode == "after" else (),
+            toggle if paste_mode else (),
+            code_to_events("\n"),
+        )
+        reader = self.prepare_reader(events)
+        wrapper = _ReadlineWrapper(f_in=0, f_out=1, reader=reader)
+        debugger = pdb.Pdb(stdin=io.StringIO(), stdout=io.StringIO(), readrc=False)
+        with (
+            patch("os.isatty", return_value=True),
+            patch.object(pyrepl_readline, "_ReadlineWrapper", return_value=wrapper),
+        ):
+            pdb_input = pdb.PdbPyReplInput(
+                debugger, Mock(), Mock(), debugger.prompt,
+            )
+        self.assertEqual(pdb_input.readline(), source + "\n")
+        self.assertFalse(reader.rendered_screen.overlays)
 
 
 @skipUnless(pty, "requires pty")
