@@ -1324,6 +1324,50 @@ class MiscTests(unittest.TestCase):
         self.assertStartsWith(bz2.bzlib_version, '%d.%d.%d' % v)
 
 
+class OutputBufferTest(unittest.TestCase):
+    # Outputs at and around the boundaries of the internal output buffer's
+    # blocks (Include/internal/pycore_blocks_output_buffer.h): the first four
+    # (32 KiB, 64 KiB, 256 KiB and 1 MiB) are one buffer grown by realloc();
+    # the next one (4 MiB) is a separate block on most platforms.
+    HEAD = (32 + 64 + 256 + 1024) * 1024
+    SIZES = [HEAD - 1, HEAD, HEAD + 1,
+             HEAD + 4 * 1024 * 1024 - 1, HEAD + 4 * 1024 * 1024,
+             HEAD + 4 * 1024 * 1024 + 1]
+    # a pattern every codec compresses quickly: 256 varied bytes per 4 KiB
+    PATTERN = bytes(range(256)) + bytes(4096 - 256)
+
+    @classmethod
+    def data(cls, size):
+        return (cls.PATTERN * (size // len(cls.PATTERN) + 1))[:size]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.compressed = {size: bz2.compress(cls.data(size), 1)
+                          for size in cls.SIZES}
+
+    def test_decompress(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                data = self.data(size)
+                self.assertEqual(bz2.decompress(self.compressed[size]), data)
+
+    def test_decompressor(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                data = self.data(size)
+                compressed = self.compressed[size]
+                self.assertEqual(
+                    BZ2Decompressor().decompress(compressed), data)
+                # max_length past the first blocks and short of the next one
+                max_length = self.HEAD + 100 * 1024
+                d = BZ2Decompressor()
+                first = d.decompress(compressed, max_length)
+                self.assertEqual(len(first), min(size, max_length))
+                rest = b'' if d.eof else d.decompress(b'')
+                self.assertEqual(first + rest, data)
+                self.assertTrue(d.eof)
+
+
 class TestModule(unittest.TestCase):
     def test_deprecated_module_attributes(self):
         support.check_deprecated_module_attributes(
