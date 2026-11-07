@@ -599,7 +599,8 @@ class Sniffer:
         counts = [[len(row) for row in rows] for rows in results]
         if counts[0] != counts[1]:
             # Prefer the more consistent row widths.
-            return len(set(counts[1])) <= len(set(counts[0]))
+            return (self._modal_share(counts[1])[1] >=
+                    self._modal_share(counts[0])[1])
         # Only some spaces are stripped.  A field differs only if
         # a space was skipped at its start, which tells the padding
         # apart from the spaces inside quoted or escaped fields.

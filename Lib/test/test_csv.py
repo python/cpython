@@ -1828,6 +1828,24 @@ ghi\0jkl
         self.assertEqual(next(csv.reader(StringIO(sample), dialect)),
                          ['a', ' b'])
 
+    def test_sniff_skipinitialspace_empty_field(self):
+        # Skipping the spaces loses the empty field, which makes the row
+        # widths less consistent, also when the sample has another short
+        # row or is cut off in the middle of the last row.
+        sniffer = csv.Sniffer()
+        sample = ('name age city\n'
+                  'alice 30 paris\n'
+                  'bob  london\n'
+                  'carol 25 "new york"\n'
+                  'dave 40 berlin\n')
+        for last in ('erin 35\n', 'erin 35'):
+            with self.subTest(last=last):
+                dialect = sniffer.sniff(sample + last)
+                self.assertEqual(dialect.delimiter, ' ')
+                self.assertIs(dialect.skipinitialspace, False)
+                rows = list(csv.reader(StringIO(sample), dialect))
+                self.assertEqual(rows[2], ['bob', '', 'london'])
+
     def test_sniff_skipinitialspace_not_skipped(self):
         # A quoted or escaped space is not skipped, so it is not
         # an evidence of the padding.
