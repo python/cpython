@@ -835,7 +835,7 @@ class UnixConsole(Console):
             planned_cells = diff.new_cells
             changed_cell = visible_new_cells[0]
             return LineUpdate(
-                kind="insert_char",
+                kind=("replace_char" if start_x == oldline.width else "insert_char"),
                 y=y,
                 start_cell=start_cell,
                 start_x=start_x,
