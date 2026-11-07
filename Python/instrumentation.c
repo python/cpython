@@ -2041,7 +2041,7 @@ check_tool(PyInterpreterState *interp, int tool_id)
 }
 
 /* We share the eval-breaker with flags, so the monitoring
- * version goes in the top 24 bits */
+ * version goes in the bits above _PY_EVAL_EVENTS_BITS */
 #define MONITORING_VERSION_INCREMENT (1 << _PY_EVAL_EVENTS_BITS)
 
 int
