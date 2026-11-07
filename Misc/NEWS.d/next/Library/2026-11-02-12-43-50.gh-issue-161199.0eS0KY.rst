@@ -1,0 +1,4 @@
+Speed up :class:`io.TextIOWrapper` for text with no characters above U+00FF
+when reading lines with ``newline=''`` (the mode recommended for :mod:`csv`)
+and when translating ``\r\n`` and ``\r`` line endings with the default
+``newline=None``. Patch by Parker Loflin.

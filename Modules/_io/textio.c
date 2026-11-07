@@ -324,6 +324,183 @@ check_decoded(PyObject *decoded)
 #define SEEN_CRLF 4
 #define SEEN_ALL (SEEN_CR | SEEN_LF | SEEN_CRLF)
 
+/* Count trailing zero bits; v must not be 0.  As in unicodeobject.c. */
+#if defined(__clang__) || defined(__GNUC__)
+#  define HAVE_CTZ 1
+static inline unsigned int
+ctz(size_t v)
+{
+    return __builtin_ctzll((unsigned long long)v);
+}
+#elif defined(_MSC_VER)
+#  define HAVE_CTZ 1
+static inline unsigned int
+ctz(size_t v)
+{
+    unsigned long pos;
+#  if SIZEOF_SIZE_T == 4
+    _BitScanForward(&pos, v);
+#  else
+    _BitScanForward64(&pos, v);
+#  endif
+    return pos;
+}
+#else
+#  define HAVE_CTZ 0
+#endif
+
+/* Skip a word at a time through the NUL-terminated UCS1 string [s, end).
+   Return a pointer to the first '\r' or '\n', or to an earlier character
+   from which the caller's loop finds it.  If out is not NULL, also copy
+   the skipped characters to out, which must be no further along than s
+   and have room for the whole input; up to sizeof(size_t) extra bytes
+   may be written past them. */
+static inline const char *
+skip_to_newline_ucs1(const char *s, const char *end, char *out)
+{
+    const size_t ones = (size_t)-1 / 0xFF;  /* 0x01 in every byte */
+    const size_t high = ones * 0x80;
+
+    /* Leave short lines to the caller's loop.  s[1] is only read when
+       s[0] is not the terminating NUL. */
+    if ((unsigned char)s[0] <= '\r') {
+        return s;
+    }
+    if ((unsigned char)s[1] <= '\r') {
+        if (out != NULL) {
+            out[0] = s[0];
+        }
+        return s + 1;
+    }
+    while (end - s >= (Py_ssize_t)sizeof(size_t)) {
+        size_t w;
+        memcpy(&w, s, sizeof(w));
+        if (out != NULL) {
+            memcpy(out, &w, sizeof(w));
+            out += sizeof(w);
+        }
+        /* (x - ones * n) & ~x & high is nonzero if a byte of x is below n.
+           Most words have no byte below 0x0E. */
+        if ((w - ones * 0x0E) & ~w & high) {
+            /* Flag the bytes equal to '\n' or '\r'.  Borrows can flag extra
+               bytes, but only above the first match. */
+            size_t lf = w ^ (ones * '\n');
+            size_t cr = w ^ (ones * '\r');
+            size_t m = (((lf - ones) & ~lf) | ((cr - ones) & ~cr)) & high;
+            if (m != 0) {
+#if PY_LITTLE_ENDIAN && HAVE_CTZ
+                return s + ctz(m) / 8;
+#else
+                return s;
+#endif
+            }
+        }
+        s += sizeof(w);
+    }
+    return s;
+}
+
+/* The universal newlines search of _PyIO_find_line_ending(), for the
+   NUL-terminated 1-byte string [start, end). */
+static Py_ssize_t
+find_line_ending_ucs1(const char *start, const char *end,
+                      Py_ssize_t *consumed)
+{
+    const char *s = start;
+    for (;;) {
+        unsigned char ch;
+        s = skip_to_newline_ucs1(s, end, NULL);
+        while ((unsigned char)*s > '\r') {
+            s++;
+        }
+        if (s >= end) {
+            *consumed = end - start;
+            return -1;
+        }
+        ch = (unsigned char)*s++;
+        if (ch == '\n') {
+            return s - start;
+        }
+        if (ch == '\r') {
+            return *s == '\n' ? s - start + 1 : s - start;
+        }
+    }
+}
+
+/* The newlines scan of _PyIncrementalNewlineDecoder_decode() below, for
+   the NUL-terminated 1-byte string [s, s + len), len > 0. */
+static Py_NO_INLINE int
+scan_newlines_ucs1(const char *s, Py_ssize_t len, int seennl)
+{
+    const char *end = s + len;
+    for (;;) {
+        unsigned char c;
+        s = skip_to_newline_ucs1(s, end, NULL);
+        while ((unsigned char)*s > '\r') {
+            s++;
+        }
+        c = (unsigned char)*s++;
+        if (c == '\n') {
+            seennl |= SEEN_LF;
+        }
+        else if (c == '\r') {
+            if (*s == '\n') {
+                seennl |= SEEN_CRLF;
+                s++;
+            }
+            else {
+                seennl |= SEEN_CR;
+            }
+        }
+        if (s >= end || seennl == SEEN_ALL) {
+            return seennl;
+        }
+    }
+}
+
+/* The translation loop of _PyIncrementalNewlineDecoder_decode() below,
+   for the NUL-terminated 1-byte string [in, in + len).  Write the result
+   to out, which has room for len characters, and return its length. */
+static Py_NO_INLINE Py_ssize_t
+translate_newlines_ucs1(const char *in, Py_ssize_t len, char *out,
+                        int *seennl)
+{
+    const char *s = in, *end = in + len;
+    char *o = out;
+    int seen = *seennl;
+    for (;;) {
+        unsigned char c;
+        const char *p = skip_to_newline_ucs1(s, end, o);
+        o += p - s;
+        s = p;
+        while ((c = (unsigned char)*s++) > '\r') {
+            *o++ = (char)c;
+        }
+        if (c == '\n') {
+            *o++ = '\n';
+            seen |= SEEN_LF;
+            continue;
+        }
+        if (c == '\r') {
+            if (*s == '\n') {
+                s++;
+                seen |= SEEN_CRLF;
+            }
+            else {
+                seen |= SEEN_CR;
+            }
+            *o++ = '\n';
+            continue;
+        }
+        if (s > end) {
+            break;
+        }
+        *o++ = (char)c;
+    }
+    *seennl = seen;
+    return o - out;
+}
+
 PyObject *
 _PyIncrementalNewlineDecoder_decode(PyObject *myself,
                                     PyObject *input, int final)
@@ -440,6 +617,10 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
             /* We have already seen all newline types, no need to scan again */
             if (seennl == SEEN_ALL)
                 goto endscan;
+            if (kind == PyUnicode_1BYTE_KIND) {
+                seennl = scan_newlines_ucs1(in_str, len, seennl);
+                goto endscan;
+            }
             for (;;) {
                 Py_UCS4 c;
                 /* Fast loop for non-control characters */
@@ -481,6 +662,11 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
                 goto error;
             }
             in = out = 0;
+            if (kind == PyUnicode_1BYTE_KIND) {
+                out = translate_newlines_ucs1(in_str, len, translated,
+                                              &seennl);
+                goto translated_all;
+            }
             for (;;) {
                 Py_UCS4 c;
                 /* Fast loop for non-control characters */
@@ -505,6 +691,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
                     break;
                 PyUnicode_WRITE(kind, translated, out++, c);
             }
+        translated_all:
             Py_DECREF(output);
             output = PyUnicode_FromKindAndData(kind, translated, out);
             PyMem_Free(translated);
@@ -2385,12 +2572,21 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
         line_len = PyUnicode_GET_LENGTH(line);
         kind = PyUnicode_KIND(line);
 
-        endpos = _PyIO_find_line_ending(
-            self->readtranslate, self->readuniversal, self->readnl,
-            kind,
-            ptr + kind * start,
-            ptr + kind * line_len,
-            &consumed);
+        if (kind == PyUnicode_1BYTE_KIND
+            && self->readuniversal && !self->readtranslate)
+        {
+            /* newline='' */
+            endpos = find_line_ending_ucs1(ptr + start, ptr + line_len,
+                                           &consumed);
+        }
+        else {
+            endpos = _PyIO_find_line_ending(
+                self->readtranslate, self->readuniversal, self->readnl,
+                kind,
+                ptr + kind * start,
+                ptr + kind * line_len,
+                &consumed);
+        }
         if (endpos >= 0) {
             endpos += start;
             if (limit >= 0 && (endpos - start) + chunked >= limit)

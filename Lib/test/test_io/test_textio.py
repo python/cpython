@@ -461,6 +461,27 @@ class TextIOWrapperTest:
             txt.seek(0)
             self.assertEqual(txt.read(), "".join(expected))
 
+    def test_newlines_input_long_lines(self):
+        # Lines shorter and longer than a machine word, some with control
+        # or non-ASCII characters.
+        lengths = [*range(20), *range(248, 272), 600]
+        for end in ("\n", "\r", "\r\n"):
+            for ctrl in ("", "\x00", "\t", "\x0c", "\x0e", "\xe9"):
+                lines = ["a" * n + ctrl + "b" * (n % 9) + end
+                         for n in lengths]
+                data = "".join(lines).encode("latin-1")
+                for newline in ("", None):
+                    if newline is None:
+                        expected = [line[:-len(end)] + "\n" for line in lines]
+                    else:
+                        expected = lines
+                    with self.subTest(end=end, ctrl=ctrl, newline=newline):
+                        txt = self.TextIOWrapper(self.BytesIO(data),
+                                                 encoding="latin-1",
+                                                 newline=newline)
+                        self.assertEqual(txt.readlines(), expected)
+                        self.assertEqual(txt.newlines, end)
+
     def test_newlines_output(self):
         testdict = {
             "": b"AAA\nBBB\nCCC\nX\rY\r\nZ",
