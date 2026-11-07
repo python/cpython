@@ -1,0 +1,2 @@
+Fix :mod:`ctypes` structures containing arrays of floating-point type
+returned by value on 64-bit Linux SPARC.
