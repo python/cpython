@@ -742,11 +742,11 @@ the upper-cased name. For example::
    >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
-   usage:  [-h] [--foo-bar FOO-BAR]
+   usage:  [-h] [--foo-bar FOO_BAR]
 
    optional arguments:
     -h, --help  show this help message and exit
-    --foo-bar FOO-BAR
+    --foo-bar FOO_BAR
 
 
 .. _action:

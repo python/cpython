@@ -1087,7 +1087,7 @@ each request is handled by a thread:
 
     # A dummy set of requests which will be used in the simulation - we'll just pick
     # from this list randomly. Note that all GET requests are from 192.168.2.XXX
-    # addresses, whereas POST requests are from 192.16.3.XXX addresses. Three users
+    # addresses, whereas POST requests are from 192.168.3.XXX addresses. Three users
     # are represented in the sample requests.
 
     REQUESTS = [
