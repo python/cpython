@@ -1,0 +1,3 @@
+:mod:`platform` no longer imports the ``_wmi`` extension module eagerly on
+Windows. It is now resolved on first use, speeding up ``import platform``
+by not loading the OLE and property-system DLLs when WMI is not needed.

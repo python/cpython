@@ -114,10 +114,9 @@ import sys
 import functools
 import itertools
 lazy import warnings
-# _wmi is imported on first use (see _wmi_query): loading it maps the OLE
+# _wmi is resolved on first use (see _wmi_query): loading it maps the OLE
 # and property-system DLLs, which most users of this module never need.
-# None means not imported yet, False means unavailable.
-_wmi = None
+lazy import _wmi
 
 ### Globals & Constants
 
@@ -332,12 +331,12 @@ def _syscmd_ver(system='', release='', version='',
 
 def _wmi_query(table, *keys):
     global _wmi
-    if _wmi is None:
-        try:
-            import _wmi as wmi
-        except ImportError:
-            wmi = False
-        _wmi = wmi
+    try:
+        # Force the deferred import. A failed lazy import would be retried
+        # on every access, so bind None to record that it is unavailable.
+        _wmi
+    except ImportError:
+        _wmi = None
     if not _wmi:
         raise OSError("not supported")
     table = {

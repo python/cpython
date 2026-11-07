@@ -436,6 +436,22 @@ class PlatformTest(unittest.TestCase):
         res = platform.win32_ver(release, version, csd, ptype)
         self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
 
+    @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
+    def test_wmi_is_lazily_imported(self):
+        # gh-161513: importing platform must not import the _wmi
+        # extension module; it is resolved on the first WMI query.
+        # A subprocess is used to get a clean sys.modules.
+        code = (
+            "import platform, sys\n"
+            "assert '_wmi' not in sys.modules\n"
+            "platform.win32_ver()\n"
+            "assert '_wmi' in sys.modules or not platform._wmi\n"
+        )
+        p = subprocess.run([sys.executable, "-I", "-c", code],
+                           capture_output=True, text=True)
+        if p.returncode != 0:
+            self.fail(p.stderr)
+
     def test_mac_ver(self):
         res = platform.mac_ver()
 
