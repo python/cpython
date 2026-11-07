@@ -8,6 +8,7 @@
 # $Id$
 #
 
+import unicodedata
 import unittest
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
@@ -1131,6 +1132,91 @@ class ShortenTestCase(BaseTestCase):
 
     def test_first_word_too_long_but_placeholder_fits(self):
         self.check_shorten("Helloo", 5, "[...]")
+
+
+class TextLenTestCase(BaseTestCase):
+    # The text_len option measures the width of a string, for text with
+    # characters that are not one column wide.
+
+    @staticmethod
+    def display_width(text):
+        # East Asian wide characters take two columns, combining characters
+        # take none.
+        return sum(
+            0 if unicodedata.combining(char)
+            else 2 if unicodedata.east_asian_width(char) in "FW"
+            else 1
+            for char in text
+        )
+
+    def check_shorten(self, text, width, expect, **kwargs):
+        self.check(shorten(text, width, **kwargs), expect)
+
+    def test_default_text_len_is_len(self):
+        self.assertIs(TextWrapper().text_len, len)
+
+    def test_explicit_len_matches_default(self):
+        text = "Hello there, how are you this fine day?  I'm glad to hear it!"
+        self.check_wrap(text, 12, wrap(text, 12), text_len=len)
+
+    def test_wide_characters(self):
+        text = "東京 大阪 京都 札幌"
+        self.check_wrap(text, 10, ["東京 大阪 京都", "札幌"])
+        self.check_wrap(text, 10, ["東京 大阪", "京都 札幌"],
+                        text_len=self.display_width)
+
+    def test_zero_width_characters(self):
+        text = "cafe\u0301 cafe\u0301 cafe\u0301"
+        self.check_wrap(text, 10, ["cafe\u0301"] * 3)
+        self.check_wrap(text, 10, ["cafe\u0301 cafe\u0301", "cafe\u0301"],
+                        text_len=self.display_width)
+
+    def test_lines_fit_width(self):
+        text = "東京 大阪 名古屋 札幌 福岡 神戸 京都 横浜 仙台 広島"
+        for width in range(2, 30):
+            with self.subTest(width=width):
+                for line in wrap(text, width, text_len=self.display_width):
+                    self.assertLessEqual(self.display_width(line), width)
+
+    def test_indent_width(self):
+        self.check_wrap("aa bb cc", 7, ["東東aa bb", "東東cc"],
+                        initial_indent="東東", subsequent_indent="東東")
+        self.check_wrap("aa bb cc", 7, ["東東aa", "東東bb", "東東cc"],
+                        initial_indent="東東", subsequent_indent="東東",
+                        text_len=self.display_width)
+
+    def test_break_long_word_by_width(self):
+        word = "東" * 10
+        self.check_wrap(word, 8, ["東" * 8, "東" * 2])
+        self.check_wrap(word, 8, ["東" * 4, "東" * 4, "東" * 2],
+                        text_len=self.display_width)
+
+    def test_break_long_word_keeps_one_character(self):
+        # A character wider than the line still goes on a line of its own.
+        self.check_wrap("東東", 1, ["東", "東"], text_len=self.display_width)
+
+    def test_break_long_word_moves_wide_character(self):
+        # A wide character that does not fit at the end of a line moves to
+        # the next one.
+        self.check_wrap("aaaa 東京大阪", 6, ["aaaa", "東京大阪"])
+        self.check_wrap("aaaa 東京大阪", 6, ["aaaa", "東京大", "阪"],
+                        text_len=self.display_width)
+
+    def test_doubled_measure_and_width_keep_layout(self):
+        # Doubling both the measure and the width must not move any line
+        # break, including a hyphen break inside an over-long word.
+        double = lambda s: 2 * len(s)
+        for text in ("aa bb cc dd", "1234-5678-9012", "spam-egg-ham-bacon"):
+            for width in range(1, len(text) + 1):
+                with self.subTest(text=text, width=width):
+                    self.assertEqual(wrap(text, 2 * width, text_len=double),
+                                     wrap(text, width))
+
+    def test_shorten_with_text_len(self):
+        text = "東京 大阪 京都 札幌"
+        self.check_shorten(text, 12, text)
+        self.check_shorten(text, 12, "東京 [...]",
+                           text_len=self.display_width)
 
 
 if __name__ == '__main__':
