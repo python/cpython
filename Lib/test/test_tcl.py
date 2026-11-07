@@ -606,20 +606,18 @@ class TclTest(unittest.TestCase):
         tk = self.interp.tk
 
         with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-            tk.setvar("name1", value)
+            tk.setvar("local_name1", value)
+        self.assertRaises(TclError, tk.getvar, "local_name1")
         with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-            tk.setvar("name1", "name2", value)
-
-        self.assertRaises(TclError, tk.getvar, "name1")
-        self.assertRaises(TclError, tk.getvar, "name1", "name2")
+            tk.setvar("local_name2", "local_name3", value)
+        self.assertRaises(TclError, tk.getvar, "local_name2", "local_name3")
 
         with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-            tk.globalsetvar("name1", value)
+            tk.globalsetvar("global_name1", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name1")
         with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-            tk.globalsetvar("name1", "name2", value)
-
-        self.assertRaises(TclError, tk.globalgetvar, "name1")
-        self.assertRaises(TclError, tk.globalgetvar, "name1", "name2")
+            tk.globalsetvar("global_name2", "global_name3", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name2", "global_name3")
 
     def test_user_command(self):
         result = None
