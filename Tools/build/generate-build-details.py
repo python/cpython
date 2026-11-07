@@ -10,6 +10,7 @@ import collections
 import importlib.machinery
 import json
 import os
+import re
 import sys
 import sysconfig
 
@@ -18,9 +19,50 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+PATCHLEVEL_H = os.path.join(
+    os.path.dirname(__file__), '..', '..', 'Include', 'patchlevel.h',
+)
+RELEASE_LEVELS = {0xA: 'alpha', 0xB: 'beta', 0xC: 'candidate', 0xF: 'final'}
+
+
 def version_info_to_dict(obj: sys._version_info) -> dict[str, Any]:
     field_names = ('major', 'minor', 'micro', 'releaselevel', 'serial')
     return {field: getattr(obj, field) for field in field_names}
+
+
+def get_version_info() -> dict[str, Any]:
+    """Return the target's version as a version_info dict.
+
+    sys.version_info describes the running interpreter, which under
+    --with-build-python can differ from the target in micro version and
+    release level. Read Include/patchlevel.h instead when it is available.
+    """
+    try:
+        with open(PATCHLEVEL_H, encoding='utf-8') as f:
+            patchlevel = f.read()
+    except FileNotFoundError:
+        return version_info_to_dict(sys.version_info)
+    defines = dict(re.findall(r'^#define\s+(PY_\w+)\s+(\S+)', patchlevel, re.M))
+    # PY_RELEASE_LEVEL is defined as another macro, e.g. PY_RELEASE_LEVEL_ALPHA.
+    level = int(defines[defines['PY_RELEASE_LEVEL']], 16)
+    return {
+        'major': int(defines['PY_MAJOR_VERSION']),
+        'minor': int(defines['PY_MINOR_VERSION']),
+        'micro': int(defines['PY_MICRO_VERSION']),
+        'releaselevel': RELEASE_LEVELS[level],
+        'serial': int(defines['PY_RELEASE_SERIAL']),
+    }
+
+
+def hexversion(version_info: dict[str, Any]) -> int:
+    level = {name: value for value, name in RELEASE_LEVELS.items()}
+    return int(
+        version_info['major'] << 24
+        | version_info['minor'] << 16
+        | version_info['micro'] << 8
+        | level[version_info['releaselevel']] << 4
+        | version_info['serial']
+    )
 
 
 def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
@@ -54,11 +96,13 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     )
     data['platform'] = sysconfig.get_platform()
 
+    version_info = get_version_info()
     data['language']['version'] = sysconfig.get_python_version()
-    data['language']['version_info'] = version_info_to_dict(sys.version_info)
+    data['language']['version_info'] = version_info
 
     data['implementation'] = vars(sys.implementation).copy()
-    data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
+    data['implementation']['version'] = version_info
+    data['implementation']['hexversion'] = hexversion(version_info)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
