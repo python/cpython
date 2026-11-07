@@ -433,7 +433,7 @@ def _fixup_namespaces(element, nsmap):
                 # Declarations already present in the document take precedence.
                 nsmap = _bind_namespace(
                     nsmap, inherited,
-                    attr.localName if attr.prefix else None, attr.value)
+                    attr.localName if ":" in name else None, attr.value)
                 attr_uri = None
             elif attr_uri == XML_NAMESPACE:
                 # The xml prefix is bound by definition.
