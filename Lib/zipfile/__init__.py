@@ -2384,7 +2384,8 @@ class ZipFile:
 
         targetpath = self._extract_member(member, path, pwd)
         if targetpath is not None:
-            self._apply_permissions(member, targetpath, preserve_permissions)
+            self._apply_permissions(member, targetpath, path,
+                                    preserve_permissions)
         return targetpath
 
     def extractall(self, path=None, members=None, pwd=None, *,
@@ -2415,14 +2416,15 @@ class ZipFile:
             if zipinfo.is_dir():
                 directories.append((targetpath, zipinfo))
             else:
-                self._apply_permissions(zipinfo, targetpath,
+                self._apply_permissions(zipinfo, targetpath, path,
                                         preserve_permissions)
 
         # Set directory modes last, deepest first, so a read-only
         # directory doesn't stop files being written into it.
         directories.sort(key=lambda item: item[0], reverse=True)
         for targetpath, zipinfo in directories:
-            self._apply_permissions(zipinfo, targetpath, preserve_permissions)
+            self._apply_permissions(zipinfo, targetpath, path,
+                                    preserve_permissions)
 
     def remove(self, zinfo_or_arcname):
         """Remove a member from the archive."""
@@ -2511,10 +2513,15 @@ class ZipFile:
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
 
-    def _apply_permissions(self, member, targetpath, preserve_permissions):
+    def _apply_permissions(self, member, targetpath, path,
+                           preserve_permissions):
         """Set the Unix permissions stored for 'member' on targetpath."""
         mask = _PRESERVE_MODE_MASKS[preserve_permissions]
         if not mask:
+            return
+        # A member such as "./" or "/" names the directory extracted into.
+        # Only change what was created inside it, never 'path' itself.
+        if targetpath == os.path.normpath(path):
             return
         if not isinstance(member, ZipInfo):
             member = self.getinfo(member)

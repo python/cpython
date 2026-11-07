@@ -30,6 +30,7 @@ from test.support import (
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
+    skip_unless_working_chmod, temp_umask,
     with_source_date_epoch, without_source_date_epoch,
 )
 from test.support.import_helper import ensure_lazy_imports
@@ -3969,7 +3970,7 @@ class ExtractTests(unittest.TestCase):
 
 
 @unittest.skipIf(sys.platform == 'win32', 'requires Unix permissions')
-@os_helper.skip_unless_working_chmod
+@skip_unless_working_chmod
 class PreservePermissionsTests(unittest.TestCase):
     # File modes saved in the test archive.
     FILE_MODES = {
@@ -3983,7 +3984,7 @@ class PreservePermissionsTests(unittest.TestCase):
 
     def setUp(self):
         # Fixed umask, so we know the default mode (0o644).
-        self.enterContext(os_helper.temp_umask(0o022))
+        self.enterContext(temp_umask(0o022))
         self.addCleanup(unlink, TESTFN2)
 
     def make_zip(self, members, dirs=()):
@@ -4032,10 +4033,25 @@ class PreservePermissionsTests(unittest.TestCase):
                            preserve_permissions=zipfile.PreserveMode.SAFE)
 
     def test_preserve_all(self):
-        # No setgid or sticky here: normal users can't always set them.
-        file_modes = {'private': 0o600, 'script': 0o755, 'setuid': 0o4755}
+        # Regular users can't always set the set-user-ID, set-group-ID and
+        # sticky bits: chmod() may fail or silently drop them.  Probe what
+        # works here and expect that (see also test_tarfile).
+        file_modes = {'private': 0o600, 'script': 0o755}
+        expected = dict(file_modes)
+        with temp_dir() as probe_dir:
+            probe = os.path.join(probe_dir, 'probe')
+            with open(probe, 'wb'):
+                pass
+            for name, mode in (('setuid', 0o4755), ('setgid', 0o2755),
+                               ('sticky', 0o1644)):
+                try:
+                    os.chmod(probe, mode)
+                except OSError:
+                    continue
+                file_modes[name] = mode
+                expected[name] = stat.S_IMODE(os.stat(probe).st_mode)
         self.make_unix_zip(file_modes)
-        self.check_extract(file_modes,
+        self.check_extract(expected,
                            preserve_permissions=zipfile.PreserveMode.ALL)
 
     def test_mode_not_used(self):
@@ -4056,6 +4072,23 @@ class PreservePermissionsTests(unittest.TestCase):
         self.check_extract({'ro': 0o555, 'ro/file': 0o644},
                            methods=['extractall'],
                            preserve_permissions=zipfile.PreserveMode.SAFE)
+
+    def test_extraction_root_unchanged(self):
+        # A "./" member names the directory extracted into.  Its stored
+        # permissions must not be applied to that directory.
+        self.make_unix_zip({'file': 0o644}, dirs=[('./', 0o777)])
+        ALL = zipfile.PreserveMode.ALL
+        for method in ('extract', 'extractall'):
+            with self.subTest(method=method), temp_dir() as extdir:
+                mode = os.stat(extdir).st_mode
+                with zipfile.ZipFile(TESTFN2) as zf:
+                    if method == 'extract':
+                        for name in zf.namelist():
+                            zf.extract(name, extdir, preserve_permissions=ALL)
+                    else:
+                        zf.extractall(extdir, preserve_permissions=ALL)
+                self.assertEqual(os.stat(extdir).st_mode, mode)
+                self.assertTrue(os.path.isfile(os.path.join(extdir, 'file')))
 
     def test_bad_value(self):
         self.make_unix_zip({'plain': 0o644})
