@@ -1,0 +1,2 @@
+Fix :func:`imaplib.Time2Internaldate` raising :exc:`IndexError` instead of
+:exc:`ValueError` when passed an empty string.
