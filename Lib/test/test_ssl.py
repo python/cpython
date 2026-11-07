@@ -2532,6 +2532,10 @@ class SimpleBackgroundTests(unittest.TestCase):
         # independent test method
         _test_get_server_certificate_fail(self, *self.server_addr)
 
+    def test_get_server_certificate_fail_by_hostname(self):
+        _, port = self.server_addr
+        _test_get_server_certificate_fail(self, socket_helper.HOSTv4, port, SIGNING_CA)
+
     def test_get_server_certificate_timeout(self):
         def servername_cb(ssl_sock, server_name, initial_context):
             time.sleep(0.2)
@@ -2722,10 +2726,10 @@ def _test_get_server_certificate(test, host, port, cert=None):
     if support.verbose:
         sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
-def _test_get_server_certificate_fail(test, host, port):
+def _test_get_server_certificate_fail(test, host, port, ca_certs=CERTFILE):
     with warnings_helper.check_no_resource_warning(test):
         try:
-            pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
+            pem = ssl.get_server_certificate((host, port), ca_certs=ca_certs)
         except ssl.SSLError as x:
             #should fail
             if support.verbose:
