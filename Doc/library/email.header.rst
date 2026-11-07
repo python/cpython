@@ -155,6 +155,19 @@ Here is the :class:`Header` class description:
       charset of ``'unknown-8bit'`` are decoded as ASCII using the ``'replace'``
       error handler.
 
+      This does not decode :rfc:`2047` encoded words that appear in the header
+      value itself. For example,
+      ``str(Header('=?utf-8?q?Caf=C3=A9?='))`` returns the string unchanged.
+      To decode a raw header string, use :func:`decode_header` and
+      :func:`make_header`::
+
+         >>> from email.header import decode_header, make_header
+         >>> str(make_header(decode_header('=?utf-8?q?Caf=C3=A9?=')))
+         'Café'
+
+      Alternatively, messages parsed with the :data:`email.policy.default`
+      policy decode their headers automatically.
+
       .. versionchanged:: 3.2
          Added handling for the ``'unknown-8bit'`` charset.
 
