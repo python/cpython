@@ -296,7 +296,7 @@ class BaseServer:
                 else:
                     if timeout is not None:
                         timeout = deadline - time()
-                        if timeout < 0:
+                        if timeout <= 0:
                             return self.handle_timeout()
 
     def _handle_request_noblock(self):
