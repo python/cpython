@@ -30,10 +30,6 @@ SELECT_TESTS = {
     'test_kqueue',
     'test_poll',
 }
-NEED_SSL = {
-    'test_smtpnet',
-    'test_ssl',
-}
 NEED_TESTMULTIPHASE = {
     # Lib/test/test_importlib/util.py requires _testmultiphase
     'test_compileall',
@@ -194,21 +190,7 @@ if sys.platform in ("win32", 'darwin'):
 if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
 
-if support.is_android:
-    # Missing dependencies on Android
-    EXPECTED_SKIP |= {
-        'test_curses',                 # need _curses
-        'test_dbm_gnu',                # need _gdbm
-        'test_dbm_ndbm',               # need _dbm
-        'test_grp',                    # need grp
-        'test_readline',               # need libreadline/libedit
-    }
-
-    # _multiprocessing is not available on Android
-    EXPECTED_SKIP |= NEED_MULTIPROCESSING
-    # _tkinter is not available on Android
-    EXPECTED_SKIP |= NEED_TKINTER
-else:
+if not support.is_android:
     # Test specific to Android
     EXPECTED_SKIP.add('test_android')
 
@@ -268,16 +250,6 @@ if support.is_emscripten:
         'test_selectors',
     }
 
-    # Missing dependencies on Emscripten
-    EXPECTED_SKIP |= {
-        'test_lzma',                   # need _lzma
-        'test_zstd',                   # need _zstd
-    }
-    # Missing OpenSSL dependency on Emscripten
-    EXPECTED_SKIP |= NEED_SSL
-    # Missing Tcl/Tk dependency on Emscripten
-    EXPECTED_SKIP |= NEED_TKINTER
-
 
 if support.is_android or support.is_apple_mobile or support.is_wasm32 or IS_WASI:
     EXPECTED_SKIP |= {
@@ -319,24 +291,6 @@ if IS_WASI:
 
     # Missing os.openpty() function on WASI
     EXPECTED_SKIP.add('test_openpty')
-
-    # Missing dependencies on WASI
-    EXPECTED_SKIP |= {
-        'test_bz2',                    # need _bz2
-        'test_ctypes',                 # need _ctypes
-        'test_dbm_sqlite3',            # need _sqlite3
-        'test_gzip',                   # need zlib
-        'test_lzma',                   # need _lzma
-        'test_readline',               # need libreadline/libedit
-        'test_sqlite3',                # need _sqlite3
-        'test_stable_abi_ctypes',      # need _ctypes
-        'test_zlib',                   # need zlib
-        'test_zstd',                   # need _zstd
-    }
-    # Missing OpenSSL dependency on WASI
-    EXPECTED_SKIP |= NEED_SSL
-    # Missing Tcl/Tk dependency on WASI
-    EXPECTED_SKIP |= NEED_TKINTER
 
 
 def expected_to_be_skipped(test_name):
