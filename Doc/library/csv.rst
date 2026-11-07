@@ -344,15 +344,18 @@ The :mod:`!csv` module defines the following classes:
 
       Analyze the sample text (presumed to be in CSV format) and return
       :const:`True` if the first row appears to be a series of column headers.
-      Inspecting each column, one of two key criteria will be considered to
-      estimate if the sample contains a header:
+      Up to twenty-one rows after the first row are examined. Rows with a
+      different number of fields from the first row are skipped. For each
+      column, the method checks whether the examined values are consistently
+      numeric or are nonnumeric strings of a consistent length. Columns with
+      inconsistent types or string lengths are excluded from the comparison.
 
-      - the second through n-th rows contain numeric values
-      - the second through n-th rows contain strings where at least one value's
-        length differs from that of the putative header of that column.
-
-      Twenty-one rows after the header are sampled; if more than half of the
-      columns + rows meet the criteria, :const:`True` is returned.
+      Each remaining column contributes one vote. A numeric column votes for
+      a header if its first-row value cannot be interpreted as numeric. A
+      string-length column votes for a header if its first-row value has a
+      different length. Otherwise, the column votes against a header.
+      :const:`True` is returned only when votes for a header outnumber votes
+      against it; a tie returns :const:`False`.
 
    .. note::
 
