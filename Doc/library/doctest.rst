@@ -1617,7 +1617,7 @@ DocTestRunner objects
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
       used.
 
-   :class:`DocTestParser` has the following attributes:
+   :class:`DocTestRunner` has the following attributes:
 
    .. attribute:: tries
 
