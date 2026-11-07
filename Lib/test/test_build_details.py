@@ -138,9 +138,31 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         with open(self.location, 'r', encoding='utf-8') as f:
             return f.read()
 
+    def resolve(self, value):
+        """Resolve a path from the file, as a PEP 739 consumer would."""
+        base_prefix = os.path.join(os.path.dirname(self.location),
+                                   self.key('base_prefix'))
+        return os.path.normpath(os.path.join(base_prefix, value))
+
     @needs_installed_python
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
+
+    @needs_installed_python
+    def test_paths_are_relative(self):
+        self.assertFalse(os.path.isabs(self.key('base_prefix')))
+        self.assertEqual(os.path.realpath(self.resolve('.')),
+                         os.path.realpath(sys.base_prefix))
+
+        for name in ('base_interpreter', 'libpython.dynamic',
+                     'libpython.dynamic_stableabi', 'libpython.static',
+                     'c_api.headers', 'c_api.pkgconfig_path'):
+            with self.subTest(key=name):
+                try:
+                    value = self.key(name)
+                except KeyError:
+                    continue
+                self.assertFalse(os.path.isabs(value))
 
     # Override generic format tests with tests for our specific implemenation.
 
@@ -150,11 +172,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         'Android and iOS run tests via a custom testbed method that changes sys.executable'
     )
     def test_base_interpreter(self):
-        value = self.key('base_interpreter')
-
-        # Skip check if installation is relocated
-        if sysconfig._installation_is_relocated():
-            self.skipTest("Installation is relocated")
+        value = self.resolve(self.key('base_interpreter'))
 
         self.assertEqual(os.path.realpath(value), os.path.realpath(sys.executable))
 
@@ -166,13 +184,11 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_c_api(self):
         value = self.key('c_api')
 
-        # Skip check if installation is relocated
-        if sysconfig._installation_is_relocated():
-            self.skipTest("Installation is relocated")
-
-        self.assertTrue(os.path.exists(os.path.join(value['headers'], 'Python.h')))
+        headers = self.resolve(value['headers'])
+        self.assertTrue(os.path.exists(os.path.join(headers, 'Python.h')))
         version = sysconfig.get_config_var('VERSION')
-        self.assertTrue(os.path.exists(os.path.join(value['pkgconfig_path'], f'python-{version}.pc')))
+        pkgconfig_path = self.resolve(value['pkgconfig_path'])
+        self.assertTrue(os.path.exists(os.path.join(pkgconfig_path, f'python-{version}.pc')))
 
     @needs_installed_python
     @unittest.skipIf(
@@ -184,11 +200,8 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         if 'static' not in value:
             self.skipTest("No static libpython")
 
-        if sysconfig._installation_is_relocated():
-            self.skipTest("Installation is relocated")
-
         # The path must name an installed static library (an 'ar' archive).
-        with open(value['static'], 'rb') as f:
+        with open(self.resolve(value['static']), 'rb') as f:
             self.assertEqual(f.read(8), b'!<arch>\n')
 
     @needs_installed_python
@@ -206,10 +219,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         if 'dynamic' not in value:
             self.skipTest("No dynamic libpython")
 
-        if sysconfig._installation_is_relocated():
-            self.skipTest("Installation is relocated")
-
-        self.assertTrue(os.path.isfile(value['dynamic']))
+        self.assertTrue(os.path.isfile(self.resolve(value['dynamic'])))
 
 
 @unittest.skipIf(
