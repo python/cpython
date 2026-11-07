@@ -1,0 +1,3 @@
+Fix :func:`inspect.signature` to omit ``self`` for bound
+:class:`functools.singledispatchmethod` objects wrapping plain Python
+functions. Patch by Xiao Yuan.
