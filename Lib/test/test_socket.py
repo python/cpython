@@ -3339,6 +3339,26 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFromNegative(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
+    # gh-160622: with MSG_TRUNC, recv() and recvfrom() must not return
+    # more bytes than requested, even if the datagram was longer.
+    @requireAttrs(socket, "MSG_TRUNC")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvTrunc(self):
+        msg = self.serv.recv(2, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:2])
+
+    def _testRecvTrunc(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvFromTrunc(self):
+        msg, addr = self.serv.recvfrom(2, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:2])
+
+    def _testRecvFromTrunc(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
           'UDPLITE sockets required for this test.')
