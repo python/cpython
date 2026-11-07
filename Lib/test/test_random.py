@@ -15,6 +15,7 @@ from fractions import Fraction
 from collections import abc, Counter
 
 from test.support import warnings_helper
+from test.support.script_helper import assert_python_failure
 
 
 class MyIndex:
@@ -1489,6 +1490,17 @@ class CommandLineTest(unittest.TestCase):
             with self.subTest(command=command):
                 with self.assertRaisesRegex(ValueError, "empty range"):
                     random.main(shlex.split(command))
+
+    def test_cli_empty_integer_range(self):
+        # The command line reports a short error message, not a traceback.
+        for command in ["--integer 0", "0", "--integer -5", "-5"]:
+            with self.subTest(command=command):
+                args = shlex.split(command)
+                rc, out, err = assert_python_failure("-m", "random", *args)
+                self.assertEqual(rc, 1)
+                self.assertEqual(out, b"")
+                expected = f"error: empty range in randint(1, {args[-1]})"
+                self.assertEqual(err.decode().rstrip(), expected)
 
 
 if __name__ == "__main__":
