@@ -4,6 +4,7 @@
 #                        All Rights Reserved
 """Colorful tab completion for Python prompt"""
 from _colorize import ANSIColors, get_colors, get_theme
+import builtins
 import rlcompleter
 import keyword
 import types
@@ -112,10 +113,8 @@ class Completer(rlcompleter.Completer):
             if keyword.iskeyword(clean_name) or keyword.issoftkeyword(clean_name):
                 values.append(None)
             else:
-                try:
-                    values.append(eval(name, self.namespace))
-                except Exception:
-                    values.append(None)
+                values.append(self.namespace.get(
+                    clean_name, builtins.__dict__.get(clean_name)))
         if self.use_colors and names:
             return self.colorize_matches(names, values)
         return names

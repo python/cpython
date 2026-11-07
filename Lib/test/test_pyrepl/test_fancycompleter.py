@@ -142,6 +142,13 @@ class FancyCompleterTests(unittest.TestCase):
             self.assertEqual(compl.attr_matches(f"{name}.j"), [f"{name}.json"])
             self.assertIs(type(module.__dict__["json"]), types.LazyImportType)
 
+    def test_globals_do_not_reify_lazy_imports(self):
+        namespace = {}
+        exec("lazy import json\nlazy import jsonz_missing\n", namespace)
+        compl = Completer(namespace, use_colors=True)
+        self.assertEqual(len(compl.global_matches("json")), 2)
+        self.assertIs(type(namespace["json"]), types.LazyImportType)
+
     def test_complete_colored_single_match(self):
         """No coloring, via commonprefix."""
         compl = Completer({'foobar': 42}, use_colors=True)
