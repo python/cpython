@@ -5422,7 +5422,7 @@ dummy_func(
 
         macro(ASYNC_CALL_PY_EXACT_ARGS) =
             _RECORD_CALLABLE +
-            unused/1 + // Skip over the counter
+            unused/1 +
             _CHECK_PEP_523 +
             _GUARD_ASYNC_CALL_TAIL +
             _CHECK_FUNCTION_VERSION +
@@ -5435,7 +5435,7 @@ dummy_func(
 
         macro(ASYNC_CALL_BOUND_METHOD_EXACT_ARGS) =
             _RECORD_BOUND_METHOD +
-            unused/1 + // Skip over the counter
+            unused/1 +
             _CHECK_PEP_523 +
             _GUARD_ASYNC_CALL_TAIL +
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
@@ -5451,7 +5451,7 @@ dummy_func(
 
         macro(ASYNC_CALL_PY_GENERAL) =
             _RECORD_CALLABLE +
-            unused/1 + // Skip over the counter
+            unused/1 +
             _CHECK_PEP_523 +
             _GUARD_ASYNC_CALL_TAIL +
             _CHECK_FUNCTION_VERSION +
@@ -5462,7 +5462,7 @@ dummy_func(
 
         macro(ASYNC_CALL_BOUND_METHOD_GENERAL) =
             _RECORD_BOUND_METHOD +
-            unused/1 + // Skip over the counter
+            unused/1 +
             _CHECK_PEP_523 +
             _GUARD_ASYNC_CALL_TAIL +
             _CHECK_METHOD_VERSION +
