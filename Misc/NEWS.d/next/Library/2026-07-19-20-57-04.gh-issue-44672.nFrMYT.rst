@@ -1,0 +1,4 @@
+:func:`urllib.request.urlopen` can now fetch ``ftp://`` URLs whose host is
+IPv6-only.  :class:`~urllib.request.FTPHandler` no longer pre-resolves the host
+with the IPv4-only :func:`socket.gethostbyname`; the unresolved host is passed to
+:mod:`ftplib`, which resolves it with :func:`socket.getaddrinfo`.
