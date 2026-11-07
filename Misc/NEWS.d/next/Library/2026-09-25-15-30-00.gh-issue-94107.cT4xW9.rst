@@ -1,0 +1,1 @@
+Make :class:`!_pydecimal.Context` hashable by inheriting :meth:`object.__hash__`, matching the behavior of :class:`!_decimal.Context` per :pep:`399`.
