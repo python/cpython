@@ -1710,22 +1710,28 @@ class TarInfo(object):
         """Replace fields with supplemental information from a previous
            pax extended or global header.
         """
+        keyword_to_remove = []
         for keyword, value in pax_headers.items():
-            if keyword == "GNU.sparse.name":
+            if keyword in ("GNU.sparse.name", "path"):
+                value = value.rstrip("/")
                 setattr(self, "path", value)
-            elif keyword == "GNU.sparse.size":
-                setattr(self, "size", int(value))
-            elif keyword == "GNU.sparse.realsize":
-                setattr(self, "size", int(value))
+            elif keyword in ("GNU.sparse.size", "GNU.sparse.realsize", "size"):
+                try:
+                    value = int(value)
+                except ValueError:
+                    keyword_to_remove.append(keyword)
+                else:
+                    setattr(self, "size", value)
             elif keyword in PAX_FIELDS:
                 if keyword in PAX_NUMBER_FIELDS:
                     try:
                         value = PAX_NUMBER_FIELDS[keyword](value)
                     except ValueError:
                         value = 0
-                if keyword == "path":
-                    value = value.rstrip("/")
                 setattr(self, keyword, value)
+
+        for k in keyword_to_remove:
+            pax_headers.pop(k)
 
         self.pax_headers = pax_headers.copy()
 
