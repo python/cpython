@@ -1,0 +1,3 @@
+sqlite Connection objects now expose a method
+:meth:`sqlite3.Connection.file_control`, which is a thin wrapper for
+`sqlite3_file_control <https://www.sqlite.org/c3ref/file_control.html>`_.
