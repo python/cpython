@@ -1,0 +1,2 @@
+Ensure that ``AF_DECnet`` is part of the :class:`!socket.AddressFamily`
+enum, when available.
