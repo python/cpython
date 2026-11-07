@@ -2647,6 +2647,45 @@ class TestQuantiles(unittest.TestCase):
             self.assertEqual(quantiles(data, method='inclusive'),
                             [10.0, 10.0, 10.0])
 
+    @support.subTests("x", [
+        math.pi,  # irrational
+        1.2,  # simple non-integer decimal
+        1/3,  # repeating binary fraction
+        0.1,  # non-exact decimal
+        2.0,  # exact power of two
+        1e300,  # large magnitude
+        1e-300,  # small magnitude
+        float.fromhex('0x1.fffffffffffffp+1023'),  # near max float
+        sys.float_info.min,  # smallest normal
+        float('inf'),
+        float('-inf'),
+    ])
+    @support.subTests("method", ["inclusive", "exclusive"])
+    def test_monotonic_with_duplicate_floats(self, x, method):
+        quantiles = statistics.quantiles
+        for n in range(2, 20):
+            result = quantiles([x, x], n=n, method=method)
+            self.assertListEqual(result, sorted(result))
+            self.assertSetEqual(set(result), {x})
+
+    def test_monotonic_with_adjacent_floats(self):
+        quantiles = statistics.quantiles
+        result = quantiles([0.09999999999999999, 0.1, 0.1],
+                           n=9, method='inclusive')
+        self.assertListEqual(result, sorted(result))
+
+    def test_mixed_types(self):
+        data = [Fraction(1, 2), 0.5, 2.0]
+        for method, expected in [
+            ('inclusive', [0.5, 0.5, 0.8, 1.4]),
+            ('exclusive', [0.5, 0.5, 1.1, 2.3]),
+        ]:
+            with self.subTest(method=method):
+                self.assertEqual(
+                    statistics.quantiles(data, n=5, method=method),
+                    expected,
+                )
+
     def test_equal_sized_groups(self):
         quantiles = statistics.quantiles
         total = 10_000
