@@ -1,0 +1,5 @@
+Fix a difference in behavior between the C and pure Python implementations of
+:mod:`pickle` when unpickling with the ``NEWOBJ`` and ``NEWOBJ_EX`` opcodes:
+the C implementation now performs an attribute lookup of ``cls.__new__`` when
+the class has a custom metaclass, so that a metaclass ``__getattribute__``
+hook observes the lookup as documented. Patched by Chaewon Kim
