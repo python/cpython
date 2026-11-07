@@ -33,10 +33,7 @@ To write a t-string, use a ``'t'`` prefix instead of an ``'f'``, like so:
 
    >>> pi = 3.14
    >>> t't-strings are new in Python {pi!s}!'
-   Template(
-      strings=('t-strings are new in Python ', '!'),
-      interpolations=(Interpolation(3.14, 'pi', 's', ''),)
-   )
+   <Template t't-strings are new in Python {pi!s=3.14}!' at 0x...>
 
 Types
 -----
@@ -118,7 +115,7 @@ Types
       >>> cheese = 'Camembert'
       >>> template = t'Ah! We do have {cheese}.'
       >>> template.interpolations
-      (Interpolation('Camembert', 'cheese', None, ''),)
+      (Interpolation('Camembert', 'cheese'),)
 
       The ``interpolations`` tuple may be empty and always contains one fewer
       values than the ``strings`` tuple:
@@ -153,7 +150,7 @@ Types
       ...     'Ah! We do have ', Interpolation(cheese, 'cheese'), '.'
       ... )
       >>> list(template)
-      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese'), '.']
 
       If multiple strings are passed consecutively, they will be concatenated
       into a single value in the :attr:`~Template.strings` attribute. For example,
@@ -184,7 +181,7 @@ Types
 
       >>> cheese = 'Camembert'
       >>> list(t'Ah! We do have {cheese}.')
-      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese'), '.']
 
       .. caution::
 
@@ -194,8 +191,8 @@ Types
          >>> cheese = 'Camembert'
          >>> list(t'Ah! {response}{cheese}.')  # doctest: +NORMALIZE_WHITESPACE
          ['Ah! ',
-          Interpolation('We do have ', 'response', None, ''),
-          Interpolation('Camembert', 'cheese', None, ''),
+          Interpolation('We do have ', 'response'),
+          Interpolation('Camembert', 'cheese'),
           '.']
 
    .. describe:: template + other
@@ -206,7 +203,7 @@ Types
 
       >>> cheese = 'Camembert'
       >>> list(t'Ah! ' + t'We do have {cheese}.')
-      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, ''), '.']
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese'), '.']
 
       Concatenating a :class:`!Template` and a ``str`` is **not** supported.
       This is because it is unclear whether the string should be treated as
@@ -224,7 +221,7 @@ Types
       >>> cheese = 'Camembert'
       >>> template += Template(Interpolation(cheese, 'cheese'))
       >>> list(template)
-      ['Ah! We do have ', Interpolation('Camembert', 'cheese', None, '')]
+      ['Ah! We do have ', Interpolation('Camembert', 'cheese')]
 
 
 .. class:: Interpolation
