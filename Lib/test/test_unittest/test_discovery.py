@@ -7,9 +7,12 @@ import pickle
 from importlib._bootstrap_external import NamespaceLoader
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 
 import unittest
 import unittest.mock
+import zipfile
+import zipimport
 import test.test_unittest
 from test.test_importlib import util as test_util
 
@@ -918,6 +921,110 @@ class TestDiscovery(unittest.TestCase):
                     self.assertEqual(str(cm.exception),
                                      'don\'t know how to discover from {!r}'
                                      .format(package))
+
+
+class TestDiscoveryInArchive(unittest.TestCase):
+    """Discovery of tests inside a zip archive on sys.path (gh-157144)."""
+
+    TEST_MODULE = """\
+import unittest
+
+class Test%s(unittest.TestCase):
+    def test_%s(self):
+        pass
+"""
+
+    def setUp(self):
+        self.tmpdir = self.enterContext(os_helper.temp_dir())
+        self.zip_path = os.path.join(self.tmpdir, 'tests.zip')
+        with zipfile.ZipFile(self.zip_path, 'w') as zf:
+            zf.writestr('zpkg/__init__.py', '')
+            zf.writestr('zpkg/test_a.py', self.TEST_MODULE % ('A', 'a'))
+            zf.writestr('zpkg/test_b.py', self.TEST_MODULE % ('B', 'b'))
+            # Does not match the pattern.
+            zf.writestr('zpkg/other.py', self.TEST_MODULE % ('X', 'x'))
+            # A sub-package is recursed into.
+            zf.writestr('zpkg/sub/__init__.py', '')
+            zf.writestr('zpkg/sub/test_c.py', self.TEST_MODULE % ('C', 'c'))
+            # A sub-package with load_tests() is not recursed into.
+            zf.writestr('zpkg/loaded/__init__.py',
+                        'def load_tests(loader, tests, pattern):\n'
+                        '    return tests\n')
+            zf.writestr('zpkg/loaded/test_d.py', self.TEST_MODULE % ('D', 'd'))
+            # A directory which is not a package is ignored.
+            zf.writestr('zpkg/data/test_e.py', self.TEST_MODULE % ('E', 'e'))
+        self.enterContext(import_helper.DirsOnSysPath())
+        self.addCleanup(self.forget_archive)
+
+    def forget_archive(self):
+        for name in list(sys.modules):
+            if name == 'zpkg' or name.startswith('zpkg.'):
+                del sys.modules[name]
+        for path in list(sys.path_importer_cache):
+            if path.startswith(self.zip_path):
+                del sys.path_importer_cache[path]
+        zipimport._zip_directory_cache.pop(self.zip_path, None)
+
+    def discover(self, start_dir, **kwargs):
+        loader = unittest.TestLoader()
+        suite = loader.discover(start_dir, **kwargs)
+        self.assertEqual(loader.errors, [])
+        return suite
+
+    def suite_ids(self, suite):
+        ids = []
+        for test in suite:
+            if isinstance(test, unittest.TestSuite):
+                ids.extend(self.suite_ids(test))
+            else:
+                ids.append(test.id())
+        return sorted(ids)
+
+    def test_discover_package_in_archive(self):
+        suite = self.discover(os.path.join(self.zip_path, 'zpkg'),
+                              top_level_dir=self.zip_path)
+        self.assertEqual(self.suite_ids(suite), [
+            'zpkg.sub.test_c.TestC.test_c',
+            'zpkg.test_a.TestA.test_a',
+            'zpkg.test_b.TestB.test_b',
+        ])
+        self.assertNotIn('zpkg.other', sys.modules)
+        self.assertNotIn('zpkg.loaded.test_d', sys.modules)
+        result = unittest.TestResult()
+        suite.run(result)
+        self.assertEqual(result.testsRun, 3)
+        self.assertTrue(result.wasSuccessful(), result.errors)
+
+    def test_discover_archive_root(self):
+        suite = self.discover(self.zip_path)
+        self.assertEqual(self.suite_ids(suite), [
+            'zpkg.sub.test_c.TestC.test_c',
+            'zpkg.test_a.TestA.test_a',
+            'zpkg.test_b.TestB.test_b',
+        ])
+
+    def test_discover_pattern(self):
+        suite = self.discover(os.path.join(self.zip_path, 'zpkg'),
+                              pattern='test_[ac]*',
+                              top_level_dir=self.zip_path)
+        self.assertEqual(self.suite_ids(suite), [
+            'zpkg.sub.test_c.TestC.test_c',
+            'zpkg.test_a.TestA.test_a',
+        ])
+
+    def test_discover_from_dotted_name_in_archive(self):
+        sys.path.insert(0, self.zip_path)
+        suite = self.discover('zpkg.sub')
+        self.assertEqual(self.suite_ids(suite),
+                         ['zpkg.sub.test_c.TestC.test_c'])
+
+    def test_discover_not_a_package(self):
+        loader = unittest.TestLoader()
+        for start_dir in ('zpkg/data', 'zpkg/nonexistent'):
+            with self.subTest(start_dir=start_dir):
+                with self.assertRaisesRegex(ImportError, 'not importable'):
+                    loader.discover(os.path.join(self.zip_path, start_dir),
+                                    top_level_dir=self.zip_path)
 
 
 if __name__ == '__main__':
