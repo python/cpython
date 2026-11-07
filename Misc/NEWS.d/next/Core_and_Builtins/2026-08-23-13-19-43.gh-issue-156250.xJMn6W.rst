@@ -1,0 +1,2 @@
+Speed up inherited C implementations of item assignment and deletion on
+Python subclasses of types that use the mapping assignment slot.
