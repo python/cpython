@@ -78,8 +78,14 @@ class BaseProcess(object):
         raise NotImplementedError
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None,
-                 *, daemon=None):
+                 *, daemon=None, env=None):
         assert group is None, 'group argument must be None for now'
+        # Snapshot an explicit environment at construction time.
+        if env is None:
+            self._env = None
+        else:
+            from .util import _encode_spawn_env
+            self._env = _encode_spawn_env(env)
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
         self._config = _current_process._config.copy()
@@ -117,6 +123,11 @@ class BaseProcess(object):
                'can only start a process object created by current process'
         assert not _current_process._config.get('daemon'), \
                'daemonic processes are not allowed to have children'
+        if self._env is not None:
+            from . import get_start_method
+            method = getattr(self, '_start_method', None) or get_start_method()
+            if os.name != 'posix' or method != 'spawn':
+                raise ValueError('env is only supported with POSIX spawn')
         _cleanup()
         self._popen = self._Popen(self)
         self._sentinel = self._popen.sentinel

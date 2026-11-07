@@ -362,6 +362,243 @@ class DummyCallable:
         q.put(5)
 
 
+@unittest.skipUnless(os.name == 'posix', 'env requires POSIX spawn')
+class _TestProcessEnvironment(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+    START_METHODS = {'spawn'}
+    ENV_KEY = 'MP_TEST_CHILD_ENV'
+
+    @staticmethod
+    def report_environment(conn):
+        with conn:
+            conn.send(dict(os.environ))
+
+    def make_process(self, env):
+        reader, writer = self.Pipe(duplex=False)
+        self.addCleanup(reader.close)
+        self.addCleanup(writer.close)
+        process = self.Process(target=self.report_environment,
+                               args=(writer,), env=env)
+        self.addCleanup(self.cleanup_process, process)
+        return process, reader
+
+    @staticmethod
+    def cleanup_process(process):
+        if process.pid is not None:
+            if process.is_alive():
+                process.kill()
+            process.join()
+        process.close()
+
+    def collect(self, process, reader):
+        process.start()
+        self.assertTrue(reader.poll(support.SHORT_TIMEOUT))
+        result = reader.recv()
+        join_process(process)
+        self.assertEqual(process.exitcode, 0)
+        return result
+
+    def test_environment_snapshot(self):
+        with os_helper.EnvironmentVarGuard() as parent_env:
+            parent_env[self.ENV_KEY] = 'parent'
+            env = dict(os.environ, **{self.ENV_KEY: 'child'})
+            process, reader = self.make_process(env)
+            env[self.ENV_KEY] = 'changed mapping'
+            parent_env[self.ENV_KEY] = 'changed parent'
+            actual = self.collect(process, reader)
+            self.assertEqual(actual[self.ENV_KEY], 'child')
+            self.assertEqual(os.environ[self.ENV_KEY], 'changed parent')
+
+    def test_none_inherits_environment(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env[self.ENV_KEY] = 'before construction'
+            process, reader = self.make_process(None)
+            env[self.ENV_KEY] = 'at start'
+            actual = self.collect(process, reader)
+            self.assertEqual(actual[self.ENV_KEY], 'at start')
+
+    def test_environment_replacement(self):
+        env = {self.ENV_KEY: 'child'}
+        with os_helper.EnvironmentVarGuard() as parent_env:
+            parent_env['MP_TEST_PARENT_ONLY'] = 'parent'
+            actual = self.collect(*self.make_process(env))
+        self.assertEqual(actual[self.ENV_KEY], 'child')
+        self.assertNotIn('MP_TEST_PARENT_ONLY', actual)
+
+    def test_empty_environment(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env[self.ENV_KEY] = 'parent'
+            actual = self.collect(*self.make_process({}))
+        self.assertNotIn(self.ENV_KEY, actual)
+
+    def test_unicode_environment(self):
+        env = dict(os.environ, **{self.ENV_KEY: '中文=value'})
+        actual = self.collect(*self.make_process(env))
+        self.assertEqual(actual[self.ENV_KEY], env[self.ENV_KEY])
+
+    def test_bytes_environment(self):
+        env = {os.fsencode(k): os.fsencode(v) for k, v in os.environ.items()}
+        env[os.fsencode(self.ENV_KEY)] = b'child=value'
+        actual = self.collect(*self.make_process(env))
+        self.assertEqual(actual[self.ENV_KEY], 'child=value')
+
+    def test_invalid_environment(self):
+        for env in ({'': 'x'}, {'a=b': 'c'}, {'a\0': 'b'}, {'a': 'b\0'}):
+            with self.subTest(env=env), self.assertRaises(ValueError):
+                self.Process(env=env)
+        for env in ({'a': 1}, {1: 'a'}):
+            with self.subTest(env=env), self.assertRaises(TypeError):
+                self.Process(env=env)
+
+    def test_other_start_methods_rejected(self):
+        for method in multiprocessing.get_all_start_methods():
+            if method == 'spawn':
+                continue
+            with self.subTest(method=method):
+                process = multiprocessing.get_context(method).Process(env={})
+                try:
+                    with self.assertRaisesRegex(ValueError, 'POSIX spawn'):
+                        process.start()
+                    self.assertIsNone(process.pid)
+                finally:
+                    process.close()
+
+    @unittest.skipUnless(sys.platform == 'linux', 'requires /proc/PID/environ')
+    def test_resource_tracker_environment(self):
+        # Use a fresh interpreter to control the shared tracker's first launch.
+        code = '''if True:
+            import multiprocessing as mp
+            from multiprocessing import resource_tracker as rt
+            import os, pathlib, signal, warnings
+            from test import support
+
+            key = 'MP_TEST_CHILD_ENV'
+
+            def start(value):
+                env = None if value is None else dict(os.environ, **{key: value})
+                p = mp.get_context('spawn').Process(env=env)
+                try:
+                    p.start()
+                    p.join(support.SHORT_TIMEOUT)
+                    assert p.exitcode == 0, p.exitcode
+                finally:
+                    if p.pid is not None:
+                        if p.is_alive():
+                            p.kill()
+                        p.join()
+                    p.close()
+
+            def check(value):
+                pid = rt._resource_tracker._pid
+                data = pathlib.Path(f'/proc/{pid}/environ').read_bytes()
+                assert (key + '=' + value).encode() in data.split(b'\\0')
+
+            def kill_tracker():
+                pid = rt._resource_tracker._pid
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+
+            try:
+                os.environ[key] = 'parent'
+                start('first')
+                check('first')
+                pid = rt._resource_tracker._pid
+                start('second')
+                assert rt._resource_tracker._pid == pid
+                check('first')
+                kill_tracker()
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter('always')
+                    rt.ensure_running()
+                assert caught
+                check('parent')
+                kill_tracker()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', UserWarning)
+                    start('third')
+                check('third')
+                kill_tracker()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', UserWarning)
+                    start(None)
+                check('parent')
+            finally:
+                rt._resource_tracker._stop()
+            '''
+        assert_python_ok('-c', code)
+
+    @staticmethod
+    def relaunch_tracker(conn):
+        from multiprocessing import resource_tracker
+
+        tracker = resource_tracker._resource_tracker
+        try:
+            conn.send('ready')
+            if not conn.poll(support.SHORT_TIMEOUT):
+                raise AssertionError('parent did not request tracker relaunch')
+            conn.recv()
+            os.environ[_TestProcessEnvironment.ENV_KEY] = 'changed in worker'
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', UserWarning)
+                resource_tracker.ensure_running()
+            data = pathlib.Path(f'/proc/{tracker._pid}/environ').read_bytes()
+            conn.send(data.split(b'\0'))
+        finally:
+            tracker._stop()
+            conn.close()
+
+    @unittest.skipUnless(sys.platform == 'linux', 'requires /proc/PID/environ')
+    def test_resource_tracker_relaunch_in_worker(self):
+        # Isolate tracker termination from the test runner's shared tracker.
+        code = '''if True:
+            import multiprocessing as mp
+            from multiprocessing import resource_tracker as rt, util
+            import os, signal
+            from test import support
+            from test._test_multiprocessing import _TestProcessEnvironment
+
+            key = _TestProcessEnvironment.ENV_KEY
+            ctx = mp.get_context('spawn')
+            for env, expected in (({key: 'worker'}, 'worker'),
+                                  ({}, None),
+                                  (None, 'changed in worker')):
+                rt.ensure_running(env=util._encode_spawn_env({key: 'tracker'}))
+                tracker_pid = rt._resource_tracker._pid
+                reader, writer = ctx.Pipe()
+                p = ctx.Process(target=_TestProcessEnvironment.relaunch_tracker,
+                                args=(writer,), env=env)
+                try:
+                    p.start()
+                    writer.close()
+                    assert reader.poll(support.SHORT_TIMEOUT)
+                    assert reader.recv() == 'ready'
+                    assert rt._resource_tracker._pid == tracker_pid
+                    os.kill(tracker_pid, signal.SIGKILL)
+                    os.waitpid(tracker_pid, 0)
+                    reader.send('relaunch')
+                    assert reader.poll(support.SHORT_TIMEOUT)
+                    entries = reader.recv()
+                    values = [e for e in entries if e.startswith(key.encode() + b'=')]
+                    if expected is None:
+                        assert not values, values
+                    else:
+                        assert values == [(key + '=' + expected).encode()], values
+                    p.join(support.SHORT_TIMEOUT)
+                    assert p.exitcode == 0, p.exitcode
+                finally:
+                    if p.pid is not None:
+                        if p.is_alive():
+                            p.kill()
+                        p.join()
+                    p.close()
+                    reader.close()
+                    writer.close()
+                    rt._resource_tracker._stop()
+            '''
+        assert_python_ok('-c', code)
+
+
 class _TestProcess(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
