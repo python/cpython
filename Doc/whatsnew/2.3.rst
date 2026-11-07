@@ -1357,7 +1357,7 @@ complete list of changes, or look through the CVS logs for all the details.
   other than ``e`` and ``10``.  (Contributed by Raymond Hettinger.)
 
 * Several new POSIX functions (:func:`!getpgid`, :func:`!killpg`, :func:`!lchown`,
-  :func:`!loadavg`, :func:`!major`, :func:`!makedev`, :func:`!minor`, and
+  :func:`!getloadavg`, :func:`!major`, :func:`!makedev`, :func:`!minor`, and
   :func:`!mknod`) were added to the :mod:`posix` module that underlies the
   :mod:`os` module. (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S.
   Otkidach.)
@@ -1658,7 +1658,7 @@ complete list of changes, or look through the CVS logs for all the details.
   has been added. The "idna" encoding can be used to convert between a Unicode
   domain name and the ASCII-compatible encoding (ACE) of that name. ::
 
-     >{}>{}> u"www.Alliancefrançaise.nu".encode("idna")
+     >>> u"www.Alliancefrançaise.nu".encode("idna")
      'www.xn--alliancefranaise-npb.nu'
 
   The :mod:`socket` module has also been extended to transparently convert
