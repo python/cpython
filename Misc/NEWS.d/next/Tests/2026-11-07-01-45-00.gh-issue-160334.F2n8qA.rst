@@ -1,0 +1,2 @@
+Fix the sampling profiler integration test for special frames without file and
+line information.
