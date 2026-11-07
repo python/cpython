@@ -460,7 +460,7 @@ class Future(object):
                 elif self._state == FINISHED:
                     return self.__get_result()
                 else:
-                    raise TimeoutError()
+                    raise TimeoutError('timed out')
         finally:
             # Break a reference cycle with the exception in self._exception
             self = None
@@ -496,7 +496,7 @@ class Future(object):
             elif self._state == FINISHED:
                 return self._exception
             else:
-                raise TimeoutError()
+                raise TimeoutError('timed out')
 
     # The following methods should only be used by Executors and in tests.
     def set_running_or_notify_cancel(self):
