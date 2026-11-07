@@ -2,7 +2,7 @@
  * Python UUID module:
  * - wraps libuuid or Windows rpcrt4.dll.
  * - implements fast version of the uuid.py:UUID class.
- * - re-implements uuid4() and uuid7() functions with improved performance
+ * - re-implements uuid4(), uuid6(), and uuid7() functions with improved performance
  *   by virtue of them being implemented in C and better entropy fetching
  *   strategy.
  *
@@ -167,6 +167,7 @@ typedef struct uuidobject {
 
 #define RANDOM_BUF_SIZE 256
 #define MAX_FREE_LIST_SIZE 32
+#define NODE_NOT_INITIALIZED UINT64_MAX
 
 /* State of the _uuid module */
 typedef struct {
@@ -179,6 +180,7 @@ typedef struct {
     PyObject *random_func;
     PyObject *random_size_int;
     PyObject *time_func;
+    PyObject *node_func;
 
     // A freelist for uuid objects -- 15-20% performance boost.
     uuidobject *freelist;
@@ -189,6 +191,12 @@ typedef struct {
     uint8_t random_buf[RANDOM_BUF_SIZE];
     uint64_t random_idx;
     uint64_t random_last_pid;
+
+    // UUID v6 state
+    PyMutex node_mutex;
+    uint64_t node_id;
+    uint64_t last_timestamp_v6;
+    uint8_t last_timestamp_v6_init;
 
     // UUID v7 state
     uint64_t last_timestamp_v7;
@@ -209,6 +217,7 @@ static int from_bytes_le(uuidobject *self, PyObject *bytes_le);
 static int from_int(uuidobject *self, PyObject *int_value, int validate);
 static int from_fields(uuidobject *self, PyObject *fields);
 static PyObject *get_SafeUUID(uuid_state *state);
+static PyObject *get_uuidmod_attr(const char *name);
 
 static uint64_t
 uuid_getpid(void)
@@ -381,6 +390,155 @@ _uuid_uuid4_impl(PyObject *module)
     return uuid_from_bytes_array(state->uuid_type, bytes);
 }
 
+static int
+uuid6_mask(PyObject *value, uint64_t mask, uint64_t *result)
+{
+    if (PyLong_CheckExact(value)) {
+        *result = PyLong_AsUnsignedLongLongMask(value) & mask;
+        return 0;
+    }
+
+    // Preserve overridden bitwise operations and reject objects that only
+    // implement __index__, which the Python implementation does not accept.
+    PyObject *mask_obj = PyLong_FromUnsignedLongLong(mask);
+    if (mask_obj == NULL) {
+        return -1;
+    }
+    PyObject *masked = PyNumber_And(value, mask_obj);
+    Py_DECREF(mask_obj);
+    if (masked == NULL) {
+        return -1;
+    }
+    int ret = PyLong_AsUInt64(masked, result);
+    Py_DECREF(masked);
+    return ret;
+}
+
+static int
+uuid6_get_node(uuid_state *state, uint64_t *result)
+{
+    // Cached reads need no lock. The sentinel is outside the 48-bit node range.
+    uint64_t node_id = _Py_atomic_load_uint64_relaxed(&state->node_id);
+    if (node_id == NODE_NOT_INITIALIZED) {
+        int ret = 0;
+        Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->node_mutex);
+        node_id = _Py_atomic_load_uint64_relaxed(&state->node_id);
+        if (node_id == NODE_NOT_INITIALIZED) {
+            PyObject *getnode = state->node_func != NULL
+                ? Py_NewRef(state->node_func) : get_uuidmod_attr("getnode");
+            PyObject *value = NULL;
+            if (getnode != NULL) {
+                value = PyObject_CallNoArgs(getnode);
+                Py_DECREF(getnode);
+            }
+            if (value == NULL) {
+                ret = -1;
+            }
+            else {
+                uint64_t resolved;
+                ret = uuid6_mask(value, 0xffffffffffff, &resolved);
+                Py_DECREF(value);
+                if (ret == 0) {
+                    // getnode() may suspend this critical section or reenter
+                    // uuid6(). Keep a value cached by an intervening call.
+                    node_id = _Py_atomic_load_uint64_relaxed(&state->node_id);
+                    if (node_id == NODE_NOT_INITIALIZED) {
+                        node_id = resolved;
+                        _Py_atomic_store_uint64_relaxed(&state->node_id, node_id);
+                    }
+                }
+            }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (ret < 0) {
+            return -1;
+        }
+    }
+    *result = node_id;
+    return 0;
+}
+
+/*[clinic input]
+_uuid.uuid6
+
+    node: object = None
+    clock_seq: object = None
+
+Generate a UUID with reordered UUIDv1 fields for improved DB locality.
+
+More precisely, given a 60-bit timestamp value as specified for UUIDv1,
+for UUIDv6 the first 48 most significant bits are stored first, followed
+by the 4-bit version (same position), followed by the remaining 12 bits
+of the original 60-bit timestamp.
+[clinic start generated code]*/
+
+static PyObject *
+_uuid_uuid6_impl(PyObject *module, PyObject *node, PyObject *clock_seq)
+/*[clinic end generated code: output=ee0446987b1efc6c input=64fd6ac090b44c37]*/
+{
+    uuid_state *state = get_uuid_state(module);
+    PyTime_t nanoseconds;
+    uint8_t random[2];
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(module);
+    ret = gen_time(state, &nanoseconds);
+    if (ret == 0 && clock_seq == Py_None) {
+        ret = gen_random_lock_held(module, state, random, sizeof(random));
+    }
+    Py_END_CRITICAL_SECTION();
+    if (ret < 0) {
+        return NULL;
+    }
+
+    uint64_t clock_s;
+    if (clock_seq == Py_None) {
+        clock_s = ((uint64_t)(random[0] & 0x3f) << 8) | random[1];
+    }
+    else if (uuid6_mask(clock_seq, 0x3fff, &clock_s) < 0) {
+        return NULL;
+    }
+
+    uint64_t node_id;
+    if (node == Py_None) {
+        if (uuid6_get_node(state, &node_id) < 0) {
+            return NULL;
+        }
+    }
+    else if (uuid6_mask(node, 0xffffffffffff, &node_id) < 0) {
+        return NULL;
+    }
+
+    // Match Python's floor division, including times before the Unix epoch.
+    int64_t ticks = nanoseconds / 100;
+    if (nanoseconds < 0 && nanoseconds % 100 != 0) {
+        ticks--;
+    }
+    // Number of 100-ns intervals from 1582-10-15 to 1970-01-01.
+    uint64_t timestamp = (uint64_t)(ticks + 0x01b21dd213814000);
+    // Calls above may release the module lock or reenter uuid6(). Read and
+    // advance the shared timestamp only after all Python callbacks have run.
+    Py_BEGIN_CRITICAL_SECTION(module);
+    if (state->last_timestamp_v6_init && timestamp <= state->last_timestamp_v6) {
+        timestamp = state->last_timestamp_v6 + 1;
+    }
+    state->last_timestamp_v6 = timestamp;
+    state->last_timestamp_v6_init = 1;
+    Py_END_CRITICAL_SECTION();
+
+    uint8_t bytes[UUID_SIZE];
+    // time_high(32) | time_mid(16) | version(4) | time_low(12) |
+    // variant(2) | clock_seq(14) | node(48)
+    for (int i = 0; i < 6; i++) {
+        bytes[i] = (uint8_t)(timestamp >> (52 - i * 8));
+        bytes[10 + i] = (uint8_t)(node_id >> (40 - i * 8));
+    }
+    bytes[6] = (uint8_t)(((timestamp >> 8) & 0x0f) | 0x60);
+    bytes[7] = (uint8_t)timestamp;
+    bytes[8] = (uint8_t)((clock_s >> 8) | 0x80);
+    bytes[9] = (uint8_t)clock_s;
+    return uuid_from_bytes_array(state->uuid_type, bytes);
+}
+
 static inline int
 uuid7_get_counter_and_tail(PyObject *module, uuid_state *state,
                           uint64_t *counter, uint8_t *tail)
@@ -499,21 +657,27 @@ _uuid._install_c_hooks
     *
     random_func: object
     time_func: object
+    node_func: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 _uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
-                            PyObject *time_func)
-/*[clinic end generated code: output=884aa6e91b2ea832 input=6c5017297067e2ea]*/
+                            PyObject *time_func, PyObject *node_func)
+/*[clinic end generated code: output=e742978b99d5a2ea input=beb6f73390b31d93]*/
 {
     uuid_state *state = get_uuid_state(module);
 
     // Reset bufferred entropy -- tests need to always start fresh
-    // when the random function is changed. Reset last_timestamp_v7 --
-    // important for repeatable tests
+    // when the random function is changed. Reset timestamps for repeatable tests.
     state->random_idx = RANDOM_BUF_SIZE;
+    state->last_timestamp_v6_init = 0;
     state->last_timestamp_v7_init = 0;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->node_mutex);
+    Py_XSETREF(state->node_func,
+               node_func == Py_None ? NULL : Py_NewRef(node_func));
+    _Py_atomic_store_uint64_relaxed(&state->node_id, NODE_NOT_INITIALIZED);
+    Py_END_CRITICAL_SECTION();
 
     if (random_func == Py_None) {
         Py_CLEAR(state->random_func);
@@ -1764,6 +1928,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->uint128_max);
     Py_VISIT(state->random_func);
     Py_VISIT(state->time_func);
+    Py_VISIT(state->node_func);
     Py_VISIT(state->random_size_int);
     return 0;
 }
@@ -1778,6 +1943,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->uint128_max);
     Py_CLEAR(state->random_func);
     Py_CLEAR(state->time_func);
+    Py_CLEAR(state->node_func);
     Py_CLEAR(state->random_size_int);
 
     if (state->freelist != NULL) {
@@ -1850,12 +2016,17 @@ uuid_exec(PyObject *module)
         return -1;
     }
 
+    state->node_mutex = (PyMutex){0};
+    _Py_atomic_store_uint64_relaxed(&state->node_id, NODE_NOT_INITIALIZED);
+    state->last_timestamp_v6 = 0;
+    state->last_timestamp_v6_init = 0;
     state->last_timestamp_v7 = 0;
     state->last_timestamp_v7_init = 0;
     state->last_counter_v7 = 0;
     state->random_last_pid = uuid_getpid();
 
     state->time_func = NULL;
+    state->node_func = NULL;
     state->random_func = NULL;
     state->random_size_int = PyLong_FromSize_t((Py_ssize_t)RANDOM_BUF_SIZE);
     if (state->random_size_int == NULL) {
@@ -1871,6 +2042,7 @@ uuid_exec(PyObject *module)
 
 static PyMethodDef uuid_methods[] = {
     _UUID_UUID4_METHODDEF
+    _UUID_UUID6_METHODDEF
     _UUID_UUID7_METHODDEF
     _UUID__INSTALL_C_HOOKS_METHODDEF
 #if defined(HAVE_UUID_UUID_H) || defined(HAVE_UUID_H)
