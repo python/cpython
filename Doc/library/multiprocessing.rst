@@ -2291,6 +2291,17 @@ Notice that applying :func:`str` to a proxy will return the representation of
 the referent, whereas applying :func:`repr` will return the representation of
 the proxy.
 
+.. note::
+
+   A proxy does not automatically lock its referent when calling a method.
+   Calls from different processes can run concurrently in separate threads in
+   the manager process, so the exposed methods of the referent must be
+   thread-safe.  For example, :class:`queue.Queue` provides its own locking.
+
+   This is separate from the requirement to protect a proxy object with a lock
+   when using it from multiple threads in the same process; see
+   :ref:`multiprocessing-programming`.
+
 An important feature of proxy objects is that they are picklable so they can be
 passed between processes.  As such, a referent can contain
 :ref:`multiprocessing-proxy_objects`.  This permits nesting of these managed
