@@ -1,0 +1,2 @@
+Fix :func:`tokenize.untokenize` to preserve the original line's whitespace
+when reconstructing source from a token iterator.
