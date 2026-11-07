@@ -8,6 +8,7 @@ import re
 from email import header
 from email import charset as _charset
 from email.utils import _has_surrogates
+from email.header import _HeaderValueWithRaw
 
 __all__ = [
     'Policy',
@@ -316,8 +317,7 @@ class Compat32(Policy):
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
-        return (name, value.rstrip('\r\n'))
+        return (name, _HeaderValueWithRaw(''.join((value, *sourcelines[1:]))))
 
     def header_store_parse(self, name, value):
         """+
