@@ -192,6 +192,17 @@ class HTMLParser(_markupbase.ParserBase):
                 # Nothing was parsed; wait until the buffer doubles.
                 self._parse_threshold = len(self.rawdata)
 
+    def flush(self):
+        """Process all data fed insofar as it consists of complete elements.
+        Incomplete data remains buffered.
+        """
+        if self._pending:
+            self.rawdata += ''.join(self._pending)
+            self._pending.clear()
+            self._pending_len = 0
+            self._parse_threshold = 1
+        self.goahead(0)
+
     def close(self):
         """Handle any buffered data."""
         if self._pending:
