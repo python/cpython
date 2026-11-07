@@ -139,23 +139,6 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    int is_remote_debugging_enabled = 0;
-    if (0 != read_memory(
-            handle,
-            interpreter_state_addr + (uintptr_t)debug_offsets.debugger_support.remote_debugging_enabled,
-            sizeof(int),
-            &is_remote_debugging_enabled))
-    {
-        return -1;
-    }
-
-    if (is_remote_debugging_enabled != 1) {
-        PyErr_SetString(
-            PyExc_RuntimeError,
-            "Remote debugging is not enabled in the remote process");
-        return -1;
-    }
-
     uintptr_t thread_state_addr;
     unsigned long this_tid = 0;
 
@@ -199,6 +182,39 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             return -1;
         }
     } else {
+        // The list head may be a subinterpreter. Find the main interpreter.
+        while (interpreter_state_addr != 0) {
+            int64_t interpreter_id;
+            if (0 != read_memory(
+                    handle,
+                    interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.id,
+                    sizeof(interpreter_id),
+                    &interpreter_id))
+            {
+                return -1;
+            }
+
+            if (interpreter_id == 0) {
+                break;
+            }
+
+            if (0 != read_memory(
+                    handle,
+                    interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.next,
+                    sizeof(void*),
+                    &interpreter_state_addr))
+            {
+                return -1;
+            }
+        }
+
+        if (interpreter_state_addr == 0) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Can't find the main interpreter in the remote process");
+            return -1;
+        }
+
         if (0 != read_memory(
                 handle,
                 interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.threads_main,
@@ -214,6 +230,23 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
                 "Can't find the main thread in the remote process");
             return -1;
         }
+    }
+
+    int is_remote_debugging_enabled = 0;
+    if (0 != read_memory(
+            handle,
+            interpreter_state_addr + (uintptr_t)debug_offsets.debugger_support.remote_debugging_enabled,
+            sizeof(int),
+            &is_remote_debugging_enabled))
+    {
+        return -1;
+    }
+
+    if (is_remote_debugging_enabled != 1) {
+        PyErr_SetString(
+            PyExc_RuntimeError,
+            "Remote debugging is not enabled in the remote process");
+        return -1;
     }
 
     // Ensure our path is not too long
