@@ -926,8 +926,6 @@ def gather(*coros_or_futures, return_exceptions=False):
             if fut.done():
                 done_futs.append(fut)
             else:
-                if cur_task is not None:
-                    futures.future_add_to_awaited_by(fut, cur_task)
                 fut.add_done_callback(_done_callback)
 
         else:
@@ -937,6 +935,11 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    # gh-161083: Invalid arguments must not leave stale awaited-by edges.
+    if cur_task is not None and len(done_futs) < nfuts:
+        for fut in arg_to_fut.values():
+            if not fut.done():
+                futures.future_add_to_awaited_by(fut, cur_task)
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
