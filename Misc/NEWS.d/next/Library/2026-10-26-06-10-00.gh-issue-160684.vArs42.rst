@@ -1,0 +1,2 @@
+Fix :meth:`configparser.ConfigParser.items` to convert non-``None`` values
+passed in *vars* to strings, consistently with :meth:`~configparser.ConfigParser.get`.
