@@ -123,6 +123,10 @@ class _SubprocessTest:
     def pid(self):
         return self._proc.pid
 
+    def kill(self):
+        """Kill the test, for example when it uses too much memory."""
+        self._proc.kill()
+
     def wait(self, timeout=None, tick=None, interval=1.0):
         """Wait for the test to finish, calling *tick* every *interval* seconds.
 
