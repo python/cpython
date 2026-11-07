@@ -1,0 +1,3 @@
+Fix ``"platform": ""`` in ``build-details.json`` for native builds configured
+with :option:`--with-build-python`: :envvar:`!_PYTHON_HOST_PLATFORM` is now
+only passed to the build interpreter when cross compiling.
