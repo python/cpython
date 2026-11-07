@@ -235,11 +235,25 @@ class IdleConfTest(unittest.TestCase):
                     self.assertEqual(conf.GetUserCfgDir(),
                                      '/home/foo/cpython/.idlerc')
 
-        # Check user dir not exists and created failed should raise SystemExit
+        # gh-58781: no directory and a warning if it cannot be created.
         with mock.patch('os.path.join', return_value='/path/not/exists'):
-            with self.assertRaises(SystemExit):
-                with self.assertRaises(FileNotFoundError):
-                    conf.GetUserCfgDir()
+            self.assertEqual(conf.GetUserCfgDir(), '')
+        self.assertEqual(len(conf.userdir_warnings), 1)
+        self.assertIn('/path/not/exists could not be created',
+                      conf.userdir_warnings[0])
+        self.assertIn('FileNotFoundError', conf.userdir_warnings[0])
+
+        # A nonexistent home directory is reported; cwd is used instead.
+        conf.userdir_warnings.clear()
+        with (mock.patch('os.path.expanduser', return_value='/home/none'),
+              mock.patch('os.getcwd', return_value='/home/foo/cpython'),
+              mock.patch('os.mkdir')):
+            self.assertEqual(conf.GetUserCfgDir(), '/home/foo/cpython/.idlerc')
+        self.assertEqual(conf.userdir_warnings,
+                         ['The home directory /home/none does not exist.'])
+        conf.userdir_warnings.clear()
+        conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        self.assertIsNone(conf.config_error_message(mock.Mock()))
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
@@ -258,11 +272,12 @@ class IdleConfTest(unittest.TestCase):
                     self.assertEqual(conf.GetUserCfgDir(),
                                      'C:\\foo\\cpython\\.idlerc')
 
-        # Check user dir not exists and created failed should raise SystemExit
+        # gh-58781: no directory and a warning if it cannot be created.
         with mock.patch('os.path.join', return_value='/path/not/exists'):
-            with self.assertRaises(SystemExit):
-                with self.assertRaises(FileNotFoundError):
-                    conf.GetUserCfgDir()
+            self.assertEqual(conf.GetUserCfgDir(), '')
+        self.assertEqual(len(conf.userdir_warnings), 1)
+        self.assertIn('/path/not/exists could not be created',
+                      conf.userdir_warnings[0])
 
     def test_create_config_handlers(self):
         conf = self.new_config(_utest=True)
@@ -323,7 +338,6 @@ class IdleConfTest(unittest.TestCase):
         conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
         conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
 
-        self.assertIsNone(conf.file_load_error_message())
         conf.LoadCfgFiles()  # Must not raise.
 
         self.assertEqual(len(conf.file_load_errors), 1)
@@ -333,7 +347,9 @@ class IdleConfTest(unittest.TestCase):
         self.assertFalse(os.path.exists(confpath))
         with open(confpath + '.bad') as f:
             self.assertEqual(f.read(), 'enable=1\n')
-        message = conf.file_load_error_message()
+        conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        root = mock.Mock()  # Not used by the check with no user themes.
+        message = conf.config_error_message(root)
         self.assertIn(confpath, message)
         self.assertIn('MissingSectionHeaderError', message)
 
@@ -598,6 +614,35 @@ class IdleConfTest(unittest.TestCase):
         self.assertCountEqual(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
+
+    def test_check_highlight(self):
+        # gh-85604: invalid colors are reported and removed.
+        from test.support import requires
+        from tkinter import Tk
+        conf = self.new_config(_utest=True)
+        cfg = conf.userCfg['highlight'] = config.IdleUserConfParser('')
+        cfg.SetOption('Good', 'keyword-foreground', '#ff7700')
+        cfg.SetOption('Bad', 'keyword-foreground', 'bpo-00224')
+        cfg.SetOption('Bad', 'keyword-background', 'white')
+        cfg.SetOption('Bad', 'comment-background', '#12345')
+
+        requires('gui')
+        root = Tk()
+        root.withdraw()
+        self.addCleanup(root.destroy)
+
+        message = conf.config_error_message(root)
+        self.assertIn('  Bad: keyword-foreground = bpo-00224 (', message)
+        self.assertIn('  Bad: comment-background = #12345 (', message)
+        self.assertNotIn('Good', message)
+        self.assertNotIn('white', message)
+        self.assertFalse(cfg.has_option('Bad', 'keyword-foreground'))
+        self.assertFalse(cfg.has_option('Bad', 'comment-background'))
+        self.assertTrue(cfg.has_option('Bad', 'keyword-background'))
+        self.assertTrue(cfg.has_option('Good', 'keyword-foreground'))
+        # Nothing left to report.
+        conf.highlight_errors.clear()
+        self.assertIsNone(conf.config_error_message(root))
 
     def test_get_font(self):
         from test.support import requires
