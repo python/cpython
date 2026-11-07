@@ -1763,7 +1763,7 @@ def _mean_stdev(data):
         # Handle Nans and Infs gracefully
         return float(xbar), float(xbar) / float(ss)
 
-
+_SQRTPROD_MIN = 2.0 ** -484
 def _sqrtprod(x: float, y: float) -> float:
     "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
 
@@ -1776,7 +1776,7 @@ def _sqrtprod(x: float, y: float) -> float:
             return _sqrtprod(scale * x, scale * y) / scale
         return h
 
-    if not h:
+    if h < _SQRTPROD_MIN:
         if x and y:
             # Non-zero inputs underflowed, so scale up, and recompute.
             # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
