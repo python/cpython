@@ -22,13 +22,10 @@ SAMPLE_RAWTEXT = SAMPLE_RCDATA + '&amp;&#9786;'
 
 class EventCollector(html.parser.HTMLParser):
 
-    def __init__(self, *args, autocdata=False, **kw):
-        self.autocdata = autocdata
+    def __init__(self, *args, **kw):
         self.events = []
         self.append = self.events.append
         html.parser.HTMLParser.__init__(self, *args, **kw)
-        if autocdata:
-            self._set_support_cdata(False)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -49,16 +46,12 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
-        if self.autocdata and tag == 'svg':
-            self._set_support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
         self.append(("startendtag", tag, attrs))
 
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
-        if self.autocdata and tag == 'svg':
-            self._set_support_cdata(False)
 
     # all other markup
 
@@ -441,7 +434,7 @@ text
             ('starttag', 'noscript', []),
             ('comment', ' not a comment '),
             ('starttag', 'not', [('a', 'start tag')]),
-            ('unknown decl', 'CDATA[not a cdata'),
+            ('comment', '[CDATA[not a cdata]]'),
             ('comment', 'not a bogus comment'),
             ('endtag', 'not'),
             ('data', '☃'),
@@ -890,10 +883,10 @@ text
     @support.subTests('content', ['', 'x', 'x]', 'x]]'])
     def test_eof_in_cdata(self, content):
         self._run_check('<![CDATA[' + content,
-                        [('unknown decl', 'CDATA[' + content)])
+                        [('comment', '[CDATA[' + content)])
         self._run_check('<![CDATA[' + content,
-                        [('comment', '[CDATA[' + content)],
-                        collector=EventCollector(autocdata=True))
+                        [('unknown decl', 'CDATA[' + content)],
+                        collector=EventCollector(support_cdata=True))
         self._run_check('<svg><text y="100"><![CDATA[' + content,
                         [('starttag', 'svg', []),
                          ('starttag', 'text', [('y', '100')]),
@@ -989,7 +982,6 @@ text
             ('endtag', 'svg'),
         ]
         self._run_check(html, expected)
-        self._run_check(html, expected, collector=EventCollector(autocdata=True))
 
     def test_cdata_section(self):
         # See "13.2.5.42 Markup declaration open state".
@@ -1007,7 +999,317 @@ text
             ('comment', '[CDATA[foo<br'),
             ('data', 'bar]]>'),
         ]
-        self._run_check(html, expected, collector=EventCollector(autocdata=True))
+        self._run_check(html, expected)
+
+    def test_cdata_in_foreign_content(self):
+        # A CDATA section is only recognized if the adjusted current node
+        # is not an element in the HTML namespace.
+        # See "13.2.5.42 Markup declaration open state".
+        for html, expected in [
+            ('<svg><![CDATA[x]]></svg>',
+             [('starttag', 'svg', []),
+              ('unknown decl', 'CDATA[x'),
+              ('endtag', 'svg')]),
+            ('<math><![CDATA[x]]></math>',
+             [('starttag', 'math', []),
+              ('unknown decl', 'CDATA[x'),
+              ('endtag', 'math')]),
+            # nested foreign elements
+            ('<svg><g><circle><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'g', []),
+              ('starttag', 'circle', []),
+              ('unknown decl', 'CDATA[x')]),
+            # after the foreign element is closed
+            ('<svg></svg><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('endtag', 'svg'),
+              ('comment', '[CDATA[x]]')]),
+            # a self-closing foreign element is immediately popped
+            ('<svg/><![CDATA[x]]>',
+             [('startendtag', 'svg', []),
+              ('comment', '[CDATA[x]]')]),
+            ('<svg><circle/><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('startendtag', 'circle', []),
+              ('unknown decl', 'CDATA[x')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected)
+
+    def test_cdata_at_integration_points(self):
+        # HTML integration points and MathML text integration points are
+        # themselves foreign elements, but HTML elements nested in them
+        # switch back to HTML content.
+        for html, expected in [
+            ('<svg><foreignObject><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('unknown decl', 'CDATA[x')]),
+            ('<svg><foreignObject><div><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('comment', '[CDATA[x]]')]),
+            ('<svg><foreignObject><div></div><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('endtag', 'div'),
+              ('unknown decl', 'CDATA[x')]),
+            ('<svg><foreignObject><div><svg><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('starttag', 'svg', []),
+              ('unknown decl', 'CDATA[x')]),
+            ('<math><mi><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'mi', []),
+              ('unknown decl', 'CDATA[x')]),
+            ('<math><mi><span><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'mi', []),
+              ('starttag', 'span', []),
+              ('comment', '[CDATA[x]]')]),
+            # "mglyph" and "malignmark" stay foreign at a MathML text
+            # integration point
+            ('<math><mi><mglyph><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'mi', []),
+              ('starttag', 'mglyph', []),
+              ('unknown decl', 'CDATA[x')]),
+            # "annotation-xml" is an HTML integration point only with an
+            # HTML "encoding" attribute
+            ('<math><annotation-xml encoding=text/HTML><mrow><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'annotation-xml', [('encoding', 'text/HTML')]),
+              ('starttag', 'mrow', []),
+              ('comment', '[CDATA[x]]')]),
+            ('<math><annotation-xml><mrow><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'annotation-xml', []),
+              ('starttag', 'mrow', []),
+              ('unknown decl', 'CDATA[x')]),
+            ('<math><annotation-xml><svg><![CDATA[x]]>',
+             [('starttag', 'math', []),
+              ('starttag', 'annotation-xml', []),
+              ('starttag', 'svg', []),
+              ('unknown decl', 'CDATA[x')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected)
+
+    def test_foreign_content_breakout(self):
+        # Most HTML elements break out of foreign content, up to an
+        # integration point.
+        for html, expected in [
+            ('<svg><div><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'div', []),
+              ('comment', '[CDATA[x]]')]),
+            ('<svg><font color=red><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'font', [('color', 'red')]),
+              ('comment', '[CDATA[x]]')]),
+            # "font" without a "color", "face" or "size" attribute is a
+            # foreign element
+            ('<svg><font><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'font', []),
+              ('unknown decl', 'CDATA[x')]),
+            # end tags "br" and "p" break out too
+            ('<svg><g></p><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'g', []),
+              ('endtag', 'p'),
+              ('comment', '[CDATA[x]]')]),
+            ('<svg><foreignObject><svg><div><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'svg', []),
+              ('starttag', 'div', []),
+              ('comment', '[CDATA[x]]')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected)
+
+    def test_foreign_content_end_tags(self):
+        for html, expected in [
+            # an end tag pops all elements up to the matching one
+            ('<svg><g><circle></svg><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'g', []),
+              ('starttag', 'circle', []),
+              ('endtag', 'svg'),
+              ('comment', '[CDATA[x]]')]),
+            # an unmatched end tag is ignored
+            ('<svg><g></nosuch><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'g', []),
+              ('endtag', 'nosuch'),
+              ('unknown decl', 'CDATA[x')]),
+            # an end tag does not match across an integration point
+            ('<svg><foreignObject><div></svg><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('endtag', 'svg'),
+              ('comment', '[CDATA[x]]')]),
+            # the element name is adjusted to "foreignObject", so it does
+            # not match an end tag in HTML content
+            ('<svg><foreignObject><div></foreignobject><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('endtag', 'foreignobject'),
+              ('comment', '[CDATA[x]]')]),
+            # but it does match an end tag in foreign content, where tag
+            # names are compared after conversion to lowercase
+            ('<svg><foreignObject></foreignobject><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('endtag', 'foreignobject'),
+              ('unknown decl', 'CDATA[x')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected)
+
+    def test_rawtext_in_foreign_content(self):
+        # RAWTEXT and RCDATA elements are only special in HTML content.
+        for html, expected in [
+            ('<svg><title>a<b>c</b></title></svg>',
+             [('starttag', 'svg', []),
+              ('starttag', 'title', []),
+              ('data', 'a'),
+              ('starttag', 'b', []),
+              ('data', 'c'),
+              ('endtag', 'b'),
+              ('endtag', 'title'),
+              ('endtag', 'svg')]),
+            ('<svg><script>a<b>c</b></script></svg>',
+             [('starttag', 'svg', []),
+              ('starttag', 'script', []),
+              ('data', 'a'),
+              ('starttag', 'b', []),
+              ('data', 'c'),
+              ('endtag', 'b'),
+              ('endtag', 'script'),
+              ('endtag', 'svg')]),
+            ('<svg><style>a<b></style>',
+             [('starttag', 'svg', []),
+              ('starttag', 'style', []),
+              ('data', 'a'),
+              ('starttag', 'b', []),
+              ('endtag', 'style')]),
+            # at an HTML integration point they are special again
+            ('<svg><foreignObject><title>a<b>c</b></title>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'title', []),
+              ('data', 'a<b>c</b>'),
+              ('endtag', 'title')]),
+            ('<svg></svg><script>a<b></script>',
+             [('starttag', 'svg', []),
+              ('endtag', 'svg'),
+              ('starttag', 'script', []),
+              ('data', 'a<b>'),
+              ('endtag', 'script')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected)
+
+    def test_support_cdata_true(self):
+        # CDATA sections are recognized in any context and foreign
+        # content is not detected (the previous default behavior).
+        for html, expected in [
+            ('<![CDATA[x]]>', [('unknown decl', 'CDATA[x')]),
+            ('<svg><![CDATA[x]]></svg>',
+             [('starttag', 'svg', []),
+              ('unknown decl', 'CDATA[x'),
+              ('endtag', 'svg')]),
+            ('<svg><foreignObject><div><![CDATA[x]]>',
+             [('starttag', 'svg', []),
+              ('starttag', 'foreignobject', []),
+              ('starttag', 'div', []),
+              ('unknown decl', 'CDATA[x')]),
+            # RAWTEXT and RCDATA elements are special even in foreign
+            # content
+            ('<svg><title>a<b>c</b></title>',
+             [('starttag', 'svg', []),
+              ('starttag', 'title', []),
+              ('data', 'a<b>c</b>'),
+              ('endtag', 'title')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected,
+                                collector=EventCollector(support_cdata=True))
+
+    def test_support_cdata_false(self):
+        # CDATA sections are parsed as bogus comments in any context and
+        # foreign content is not detected.
+        for html, expected in [
+            ('<![CDATA[x]]>', [('comment', '[CDATA[x]]')]),
+            ('<svg><![CDATA[x]]></svg>',
+             [('starttag', 'svg', []),
+              ('comment', '[CDATA[x]]'),
+              ('endtag', 'svg')]),
+            ('<svg><title>a<b>c</b></title>',
+             [('starttag', 'svg', []),
+              ('starttag', 'title', []),
+              ('data', 'a<b>c</b>'),
+              ('endtag', 'title')]),
+        ]:
+            with self.subTest(html=html):
+                self._run_check(html, expected,
+                                collector=EventCollector(support_cdata=False))
+
+    def test_set_support_cdata(self):
+        # Manual control of CDATA support from the start and end tag
+        # handlers (supported for backward compatibility).  The user's
+        # stack machinery can be simpler than the automatic detection of
+        # foreign content (here it only follows the "svg" tags), but it
+        # takes full control after the first _set_support_cdata() call,
+        # so such code works as before.
+        class Collector(EventCollector):
+            def __init__(self, **kw):
+                super().__init__(**kw)
+                self._set_support_cdata(False)
+            def handle_starttag(self, tag, attrs):
+                super().handle_starttag(tag, attrs)
+                if tag == 'svg':
+                    self._set_support_cdata(True)
+            def handle_endtag(self, tag):
+                super().handle_endtag(tag)
+                if tag == 'svg':
+                    self._set_support_cdata(False)
+        html = ('<![CDATA[a]]>'
+                '<svg>'
+                # the simple machinery does not detect the switch to HTML
+                # content, unlike the automatic detection
+                '<foreignObject><div><![CDATA[b]]></div></foreignObject>'
+                # RAWTEXT and RCDATA elements are special in manual mode
+                '<title>x<b>y</title>'
+                '<![CDATA[c]]>'
+                '</svg>'
+                '<![CDATA[d]]>')
+        expected = [
+            ('comment', '[CDATA[a]]'),
+            ('starttag', 'svg', []),
+            ('starttag', 'foreignobject', []),
+            ('starttag', 'div', []),
+            ('unknown decl', 'CDATA[b'),
+            ('endtag', 'div'),
+            ('endtag', 'foreignobject'),
+            ('starttag', 'title', []),
+            ('data', 'x<b>y'),
+            ('endtag', 'title'),
+            ('unknown decl', 'CDATA[c'),
+            ('endtag', 'svg'),
+            ('comment', '[CDATA[d]]'),
+        ]
+        self._run_check(html, expected, collector=Collector())
+        self._run_check([html], expected, collector=Collector())
 
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
