@@ -1,0 +1,2 @@
+Fix the pure Python implementation of ``BufferedReader.readinto()`` raising
+:exc:`ValueError` after partially filling the destination buffer.
