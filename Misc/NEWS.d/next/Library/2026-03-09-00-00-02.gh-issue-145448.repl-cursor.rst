@@ -1,0 +1,3 @@
+Fixed REPL tab completion cursor moving backward by one cell in terminals
+that correctly handle CUB (Cursor Backward) in pending wrap state, such as
+xterm and Ghostty.
