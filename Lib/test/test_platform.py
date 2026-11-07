@@ -438,7 +438,6 @@ class PlatformTest(unittest.TestCase):
 
     @support.cpython_only
     def test_wmi_is_lazily_imported(self):
-        # gh-161513: importing platform must not import the _wmi extension module.
         import_helper.ensure_lazy_imports('platform', {'_wmi'})
 
     def test_mac_ver(self):

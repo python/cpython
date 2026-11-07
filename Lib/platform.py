@@ -114,7 +114,6 @@ import sys
 import functools
 import itertools
 lazy import warnings
-# _wmi is resolved on first use, see _wmi_query.
 lazy import _wmi
 
 ### Globals & Constants
@@ -331,8 +330,6 @@ def _syscmd_ver(system='', release='', version='',
 def _wmi_query(table, *keys):
     global _wmi
     try:
-        # A failed lazy import is retried on every access, so bind None
-        # to record that _wmi is unavailable.
         _wmi  # Force the deferred import.
     except ImportError:
         _wmi = None
