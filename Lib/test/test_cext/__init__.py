@@ -140,6 +140,11 @@ class TestPublicC(BaseTests, unittest.TestCase):
         # Test with Py_TARGET_ABI3T
         self.check_build('_test_cext_abi3t', abi3t=True)
 
+    # gh-154643: Test that headers don't use undefined macros in #if
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support -Werror=undef")
+    def test_build_werror_undef(self):
+        self.check_build('_test_cext_undef', extra_cflags='-Werror=undef')
+
 
 class TestPublicCpp(BaseTests, unittest.TestCase):
     LANGUAGE = 'C++'
@@ -189,6 +194,11 @@ class TestPublicCpp(BaseTests, unittest.TestCase):
     def test_build_abi3t(self):
         # Test with Py_TARGET_ABI3T
         self.check_build('_test_cppext_abi3t', abi3t=True)
+
+    # gh-154643: Test that headers don't use undefined macros in #if
+    @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support -Werror=undef")
+    def test_build_werror_undef(self):
+        self.check_build('_testcppext_undef', extra_cflags='-Werror=undef')
 
 
 class TestInternalC(BaseTests, unittest.TestCase):
