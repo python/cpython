@@ -1,0 +1,3 @@
+Fix an offset calculation in :mod:`tarfile` when a PAX header with a ``size``
+record is followed by a GNU long-name header.  Such archives could duplicate or
+skip members while being read.

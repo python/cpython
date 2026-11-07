@@ -659,6 +659,7 @@ LIBEXPAT_OBJS= \
 LIBEXPAT_HEADERS= \
 		Modules/expat/ascii.h \
 		Modules/expat/asciitab.h \
+		Modules/expat/entities.h \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
@@ -1914,6 +1915,7 @@ regen-unicodedata:
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
+# Keep the list of targets to run manually in sync with Doc/using/configure.rst.
 .PHONY: regen-all
 regen-all: regen-cases regen-slots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
