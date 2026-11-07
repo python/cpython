@@ -2402,9 +2402,6 @@ class CoroutineTest(unittest.TestCase):
     "asyncio does not work under Emscripten/WASI yet."
 )
 class AwaitCallTest(unittest.TestCase):
-    # The CALL in `await f(...)` is specialized to ASYNC_CALL_* when f() is
-    # a coroutine function: the coroutine is then started without being
-    # returned to the caller first.
     # Run each call often enough to exercise the specialized forms too.
     N = 100
 
@@ -2415,8 +2412,8 @@ class AwaitCallTest(unittest.TestCase):
         async def caller():
             total = 0
             for i in range(self.N):
-                total += await add(i, 1)    # Exact arguments
-                total += await add(i)       # Default argument
+                total += await add(i, 1)
+                total += await add(i)
             return total
 
         expected = sum(i + 1 + i + 10 for i in range(self.N))

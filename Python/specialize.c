@@ -1751,7 +1751,6 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
     return 0;
 }
 
-/* Is the result of the CALL at "instr" awaited at once? */
 static bool
 call_is_awaited(_Py_CODEUNIT *instr)
 {

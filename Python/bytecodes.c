@@ -5393,7 +5393,6 @@ dummy_func(
             }
             assert(Py_TYPE(gen) == &PyCoro_Type);
             if (callee->instr_ptr->op.code == RETURN_GENERATOR) {
-                // Skip RETURN_GENERATOR and the POP_TOP that follows it.
                 assert(callee->instr_ptr[1].op.code == POP_TOP);
                 callee->instr_ptr += 2;
             }

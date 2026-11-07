@@ -1766,7 +1766,6 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(bound_method_general,
                               "CALL_BOUND_METHOD_GENERAL")
 
-        # __aenter__() and __aexit__() are awaited too.
         async def async_with():
             for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 async with obj as value:
@@ -1776,7 +1775,6 @@ class TestSpecializer(TestBase):
         self.assert_specialized(async_with, "ASYNC_CALL_PY_EXACT_ARGS")
         self.assert_specialized(async_with, "ASYNC_CALL_PY_GENERAL")
 
-        # Only calls of coroutine functions are merged with the await.
         async def not_a_coroutine_function():
             for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 self.assertEqual(await function(i), i + 1)
@@ -1786,7 +1784,6 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(not_a_coroutine_function,
                               "ASYNC_CALL_PY_EXACT_ARGS")
 
-        # Only awaited calls are merged.
         async def not_awaited():
             for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 c = coro(i)
