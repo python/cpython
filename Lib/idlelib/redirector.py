@@ -48,7 +48,7 @@ class WidgetRedirector:
 
     def __repr__(self):
         w = self.widget
-        return f"{self.__class__.__name__,}({w.__class__.__name__}<{w._w}>)"
+        return f"{self.__class__.__name__}({w.__class__.__name__}<{w._w}>)"
 
     def close(self):
         "Unregister operations and revert redirection created by .__init__."
@@ -143,7 +143,7 @@ class OriginalCommand:
         self.orig_and_operation = (redir.orig, operation)
 
     def __repr__(self):
-        return f"{self.__class__.__name__,}({self.redir!r}, {self.operation!r})"
+        return f"{self.__class__.__name__}({self.redir!r}, {self.operation!r})"
 
     def __call__(self, *args):
         return self.tk_call(self.orig_and_operation + args)
