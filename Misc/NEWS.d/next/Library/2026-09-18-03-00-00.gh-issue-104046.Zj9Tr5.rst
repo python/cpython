@@ -1,0 +1,4 @@
+Fix same-file detection in :func:`shutil.copyfile` on Windows when the
+source is an :class:`os.DirEntry`. This also prevents :func:`shutil.copytree`
+with ``copy_function=shutil.copy`` from truncating a source file reached
+through directory junctions or symbolic links.
