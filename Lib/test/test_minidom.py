@@ -6,6 +6,7 @@ import io
 from test import support
 import unittest
 
+import xml.dom.expatbuilder
 import xml.dom.minidom
 
 from xml.dom.minidom import parse, Attr, Node, Document, Element, parseString
@@ -1277,6 +1278,65 @@ class MinidomTest(unittest.TestCase):
         self.assertTrue(clone.toxml(), '<doc attr="value"><foo/></doc>')
         dom.unlink()
 
+    def create_dom1_element(self):
+        # DOM Level 1 nodes have no namespace, but their names can contain
+        # a colon.
+        doc = Document()
+        root = doc.appendChild(doc.createElement("root"))
+        root.setAttribute("xmlns", "http://xml.python.org/default")
+        root.setAttribute("xmlns:xsi", "http://xml.python.org/xsi")
+        root.setAttribute("xsi:type", "t")
+        root.appendChild(doc.createElement("svg:rect"))
+        return doc, root
+
+    def check_dom1_names(self, node, nodeName, prefix, localName):
+        self.assertEqual(node.nodeName, nodeName)
+        self.assertEqual(node.prefix, prefix)
+        self.assertEqual(node.localName, localName)
+        self.assertIsNone(node.namespaceURI)
+
+    def check_dom1_element(self, elem, doc):
+        self.assertIs(elem.ownerDocument, doc)
+        self.check_dom1_names(elem, "root", None, "root")
+        self.assertEqual(len(elem.attributes), 3)
+        for name, prefix, localName, value in [
+            ("xmlns", None, "xmlns", "http://xml.python.org/default"),
+            ("xmlns:xsi", "xmlns", "xsi", "http://xml.python.org/xsi"),
+            ("xsi:type", "xsi", "type", "t"),
+        ]:
+            with self.subTest(name=name):
+                attr = elem.getAttributeNode(name)
+                self.check_dom1_names(attr, name, prefix, localName)
+                self.assertEqual(attr.value, value)
+                self.assertIs(attr.ownerElement, elem)
+                self.assertIs(attr.ownerDocument, doc)
+        self.assertEqual(len(elem.childNodes), 1)
+        self.check_dom1_names(elem.firstChild, "svg:rect", "svg", "rect")
+        self.assertIs(elem.firstChild.ownerDocument, doc)
+
+    def testCloneElementDOM1Names(self):
+        doc, root = self.create_dom1_element()
+        clone = root.cloneNode(True)
+        self.assertIsNot(clone, root)
+        self.assertIsNone(clone.parentNode)
+        self.check_dom1_element(clone, doc)
+        doc.unlink()
+
+    def testCloneElementNoNamespaces(self):
+        doc = xml.dom.expatbuilder.parseString(
+            "<a:b xmlns:a='http://xml.python.org/a' a:x='1'><a:c/></a:b>",
+            namespaces=False)
+        clone = doc.documentElement.cloneNode(True)
+        self.check_dom1_names(clone, "a:b", "a", "b")
+        self.assertEqual(clone.getAttribute("xmlns:a"),
+                         "http://xml.python.org/a")
+        self.check_dom1_names(clone.getAttributeNode("xmlns:a"),
+                              "xmlns:a", "xmlns", "a")
+        self.assertEqual(clone.getAttribute("a:x"), "1")
+        self.check_dom1_names(clone.getAttributeNode("a:x"), "a:x", "a", "x")
+        self.check_dom1_names(clone.firstChild, "a:c", "a", "c")
+        doc.unlink()
+
     def testCloneDocumentShallow(self):
         doc = parseString("<?xml version='1.0'?>\n"
                     "<!-- comment -->"
@@ -1395,6 +1455,15 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.NotSupportedErr, target.importNode,
                           src.doctype, 1)
 
+    def testImportElementDOM1Names(self):
+        doc1, root = self.create_dom1_element()
+        doc2 = Document()
+        imported = doc2.importNode(root, True)
+        self.assertIsNone(imported.parentNode)
+        self.check_dom1_element(imported, doc2)
+        doc1.unlink()
+        doc2.unlink()
+
     # Testing attribute clones uses a helper, and should always be deep,
     # even if the argument to cloneNode is false.
     def check_clone_attribute(self, deep, testName):
@@ -1416,6 +1485,24 @@ class MinidomTest(unittest.TestCase):
 
     def testCloneAttributeDeep(self):
         self.check_clone_attribute(1, "testCloneAttributeDeep")
+
+    def testCloneAttributeDOM1Names(self):
+        doc1 = Document()
+        attr = doc1.createAttribute("a:b")
+        attr.value = "v"
+        doc2 = Document()
+        for method, clone, owner in [
+            ("cloneNode", attr.cloneNode(True), doc1),
+            ("importNode", doc2.importNode(attr, True), doc2),
+        ]:
+            with self.subTest(method=method):
+                self.check_dom1_names(clone, "a:b", "a", "b")
+                self.assertEqual(clone.value, "v")
+                self.assertTrue(clone.specified)
+                self.assertIsNone(clone.ownerElement)
+                self.assertIs(clone.ownerDocument, owner)
+        doc1.unlink()
+        doc2.unlink()
 
     def check_clone_pi(self, deep, testName):
         doc = parseString("<?target data?><doc/>")
