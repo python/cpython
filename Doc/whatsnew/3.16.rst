@@ -1025,6 +1025,19 @@ datetime and time
   (Contributed by Paul Ganssle in :gh:`158252`, based on work by
   Stan Ulbrych.)
 
+Interpreter
+-----------
+
+* A coroutine that is awaited as soon as it is called
+  (``await coro_func()``) now runs without creating a coroutine object
+  unless it suspends, making awaits that complete immediately about 40%
+  faster in a micro-benchmark (``await noop()``: 69 ns to 41 ns on x86-64).
+  This does not apply while coroutine origin tracking is enabled or inside
+  code compiled by the experimental JIT.
+  Until it first suspends, :attr:`frame.f_generator` is ``None`` for such a
+  coroutine; see :ref:`whatsnew316-porting`.
+  (Contributed by Andrew Svetlov in :gh:`161170`.)
+
 re
 --
 
@@ -1273,11 +1286,22 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 
+.. _whatsnew316-porting:
+
 Porting to Python 3.16
 ======================
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* :attr:`frame.f_generator` and :c:func:`PyFrame_GetGenerator` may now
+  return ``None``/``NULL`` for a coroutine frame before its first
+  suspension, because a coroutine that is awaited as soon as it is called
+  (``await coro_func()``) runs without a coroutine object until then.
+  Code that used ``frame.f_generator is None`` to detect frames of normal
+  functions should check ``frame.f_code.co_flags`` for
+  :data:`~inspect.CO_COROUTINE` instead.
+  (Contributed by Andrew Svetlov in :gh:`161170`.)
 
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
@@ -1332,6 +1356,15 @@ that may require changes to your code.
   opening a pipe in a read-write binary mode (``'r+b'`` or ``'w+b'``) now
   raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
   (Contributed by An Long in :gh:`86768`.)
+
+
+CPython bytecode changes
+========================
+
+* :opcode:`GET_AWAITABLE` now also pushes the ``NULL`` and ``None`` that
+  start the :opcode:`SEND` loop following it, so the compiler no longer
+  emits :opcode:`PUSH_NULL` and :opcode:`LOAD_COMMON_CONSTANT` after it.
+  (Contributed by Andrew Svetlov in :gh:`161170`.)
 
 
 Build changes

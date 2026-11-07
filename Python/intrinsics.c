@@ -144,7 +144,11 @@ static PyObject *
 stopiteration_error(PyThreadState* tstate, PyObject *exc)
 {
     _PyInterpreterFrame *frame = tstate->current_frame;
-    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    /* A coroutine that is awaited immediately runs in a thread-owned
+     * frame until it first suspends (see RETURN_GENERATOR). */
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR ||
+           (frame->owner == FRAME_OWNED_BY_THREAD &&
+            (_PyFrame_GetCode(frame)->co_flags & CO_COROUTINE)));
     assert(PyExceptionInstance_Check(exc));
     const char *msg = NULL;
     if (PyErr_GivenExceptionMatches(exc, PyExc_StopIteration)) {
