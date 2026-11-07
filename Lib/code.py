@@ -263,6 +263,7 @@ class InteractiveConsole(InteractiveInterpreter):
         try:
             while True:
                 try:
+                    received_eof = False
                     if more:
                         prompt = sys.ps2
                     else:
@@ -270,8 +271,26 @@ class InteractiveConsole(InteractiveInterpreter):
                     try:
                         line = self.raw_input(prompt)
                     except EOFError:
-                        self.write("\n")
-                        break
+                        received_eof = True
+                    if received_eof:
+                        if more:
+                            source = "\n".join(self.buffer)
+                            try:
+                                code = self.compile.compiler(
+                                    source,
+                                    self.filename,
+                                    "single",
+                                    incomplete_input=False,
+                                )
+                                self.runcode(code)
+                                self.write("\n")
+                            except (SyntaxError, IndentationError):
+                                self.showsyntaxerror(self.filename, source=source)
+                            self.resetbuffer()
+                            more = False
+                        else:
+                            self.write("\n")
+                            break
                     else:
                         more = self.push(line)
                 except KeyboardInterrupt:
