@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_XDecRefDelayed()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
@@ -135,12 +136,16 @@ get_handler(int i)
     return (PyObject *)_Py_atomic_load_ptr(&Handlers[i].func);
 }
 
-Py_LOCAL_INLINE(void)
-set_handler(int i, PyObject* func)
+Py_LOCAL_INLINE(PyObject *)
+swap_handler(int i, PyObject *func)
 {
-    /* Store func with atomic operation to ensure
-       that PyErr_SetInterrupt is async-signal-safe. */
-    _Py_atomic_store_ptr(&Handlers[i].func, func);
+    /* The slot is updated with an atomic operation so that
+       PyErr_SetInterrupt() stays async-signal-safe. */
+    PyObject *old = _Py_atomic_exchange_ptr(&Handlers[i].func,
+                                            Py_XNewRef(func));
+    PyObject *result = Py_XNewRef(old);
+    _PyObject_XDecRefDelayed(old);
+    return result;
 }
 
 
@@ -532,9 +537,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
 
-    old_handler = get_handler(signalnum);
-    set_handler(signalnum, Py_NewRef(handler));
-
+    old_handler = swap_handler(signalnum, handler);
     if (old_handler != NULL) {
         return old_handler;
     }
@@ -1595,9 +1598,7 @@ signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
         }
         // If signal_module_exec() is called more than one, we must
         // clear the strong reference to the previous function.
-        PyObject* old_func = get_handler(signum);
-        set_handler(signum, Py_NewRef(func));
-        Py_XDECREF(old_func);
+        Py_XDECREF(swap_handler(signum, func));
     }
 
     // Install Python SIGINT handler which raises KeyboardInterrupt
@@ -1609,8 +1610,8 @@ signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
             return -1;
         }
 
-        set_handler(SIGINT, int_handler);
-        Py_DECREF(sigint_func);
+        Py_XDECREF(swap_handler(SIGINT, int_handler));
+        Py_DECREF(int_handler);
         PyOS_setsig(SIGINT, signal_handler);
     }
     return 0;
@@ -1744,9 +1745,8 @@ _PySignal_Fini(void)
 
     // Restore default signals and clear handlers
     for (int signum = 1; signum < Py_NSIG; signum++) {
-        PyObject *func = get_handler(signum);
         _Py_atomic_store_int_relaxed(&Handlers[signum].tripped, 0);
-        set_handler(signum, NULL);
+        PyObject *func = swap_handler(signum, NULL);
         if (func != NULL
             && func != Py_None
             && !compare_handler(func, state->default_handler)
@@ -1857,6 +1857,7 @@ run_tripped_handlers(PyThreadState *tstate)
                                    "calling signal handler");
             continue;
         }
+        Py_INCREF(func);
         PyObject *arglist = NULL;
         if (frame == NULL) {
             arglist = Py_BuildValue("(iO)", i, Py_None);
@@ -1875,6 +1876,7 @@ run_tripped_handlers(PyThreadState *tstate)
         else {
             result = NULL;
         }
+        Py_DECREF(func);
         if (!result) {
             /* On error, re-schedule a call to _PyErr_CheckSignalsTstate() */
             _Py_atomic_store_int(&is_tripped, 1);
