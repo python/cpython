@@ -218,6 +218,12 @@ if not support.is_apple:
     EXPECTED_SKIP.add('test_apple')
 
 
+if sys.platform == "darwin":
+    # On macOS, running gdb fails badly:
+    # https://github.com/python/cpython/pull/161520
+    EXPECTED_SKIP.add('test_gdb')
+
+
 if support.is_apple_mobile:
     # configure disables multiple extension modules on Apple mobile
     EXPECTED_SKIP |= {
