@@ -353,7 +353,7 @@ class Reader:
             else:
                 pre = prompt
                 prelen = prompt_len
-                for wrap in range(wrapcount + 1):
+                while True:
                     index_to_wrap_before = 0
                     column = 0
                     for char_width in char_widths:
@@ -361,6 +361,8 @@ class Reader:
                             break
                         index_to_wrap_before += 1
                         column += char_width
+                    if index_to_wrap_before == 0 and not prelen:
+                        index_to_wrap_before = 1  # force progress
                     if len(chars) > index_to_wrap_before:
                         offset += index_to_wrap_before
                         post = "\\"
@@ -378,6 +380,8 @@ class Reader:
                     char_widths = char_widths[index_to_wrap_before:]
                     pre = ""
                     prelen = 0
+                    if not post:
+                        break
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg:
