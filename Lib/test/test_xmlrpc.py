@@ -16,6 +16,7 @@ import io
 import contextlib
 from test import support
 from test.support import os_helper
+from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
@@ -128,6 +129,56 @@ class XMLRPCTestCase(unittest.TestCase):
 
     def test_dump_bad_dict(self):
         self.assertRaises(TypeError, xmlrpclib.dumps, ({(1,2,3): 1},))
+
+    def test_dump_invalid_params(self):
+        for params in ([], ["x"], {"x": 1}, "abc", 1):
+            with self.subTest(params=params):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    "^argument must be tuple or Fault instance$",
+                ):
+                    xmlrpclib.dumps(params)
+
+    def test_dump_invalid_methodresponse(self):
+        for params in ((), (1, 2)):
+            with self.subTest(params=params):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "^response tuple must be a singleton$",
+                ):
+                    xmlrpclib.dumps(params, methodresponse=True)
+
+    def test_dump_invalid_params_optimized(self):
+        code = r"""
+import xmlrpc.client as xmlrpclib
+
+if __debug__:
+    raise AssertionError("expected optimized mode")
+
+def check(exc_type, message, func):
+    try:
+        func()
+    except exc_type as exc:
+        if str(exc) != message:
+            raise AssertionError(str(exc))
+    else:
+        raise AssertionError(f"{exc_type.__name__} not raised")
+
+for params in [], ["x"], {"x": 1}, "abc", 1:
+    check(
+        TypeError,
+        "argument must be tuple or Fault instance",
+        lambda params=params: xmlrpclib.dumps(params),
+    )
+
+for params in (), (1, 2):
+    check(
+        ValueError,
+        "response tuple must be a singleton",
+        lambda params=params: xmlrpclib.dumps(params, methodresponse=True),
+    )
+"""
+        script_helper.assert_python_ok("-O", "-c", code)
 
     def test_dump_recursive_seq(self):
         l = [1,2,3]
