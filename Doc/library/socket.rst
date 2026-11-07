@@ -1471,10 +1471,6 @@ The :mod:`!socket` module also offers various network-related services:
 
    .. versionadded:: 3.9
 
-   .. note::
-
-      Any truncated integers at the end of the list of file descriptors.
-
 
 .. _socket-objects:
 
