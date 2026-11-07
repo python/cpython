@@ -1,0 +1,5 @@
+The :mod:`asyncio` event loop now runs callbacks scheduled by other
+callbacks eagerly, before polling for I/O again, within limits set by the
+new :class:`asyncio.EventLoopSettings` and :meth:`loop.set_settings()
+<asyncio.loop.set_settings>`. :func:`asyncio.sleep` with a delay of 0 or less
+ends eager processing in the current iteration of the loop.

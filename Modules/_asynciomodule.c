@@ -2551,7 +2551,7 @@ _asyncio.Task.cancel
 Request that this task cancel itself.
 
 This arranges for a CancelledError to be thrown into the
-wrapped coroutine on the next cycle through the event loop.
+wrapped coroutine the next time the task runs.
 The coroutine then has a chance to clean up or even deny
 the request using try/except/finally.
 
@@ -2572,7 +2572,7 @@ This also increases the task's count of cancellation requests.
 
 static PyObject *
 _asyncio_Task_cancel_impl(TaskObj *self, PyObject *msg)
-/*[clinic end generated code: output=c66b60d41c74f9f1 input=6125d45b9a6a5abd]*/
+/*[clinic end generated code: output=c66b60d41c74f9f1 input=aadb870f189f82b5]*/
 {
     self->task_log_tb = 0;
 
