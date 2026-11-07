@@ -87,6 +87,7 @@ _PyLexer_BeginLine(struct tok_state *tok)
     int altcol = 0;
     tok->layout.at_bol = 0;
     int cont_line_col = 0;
+    int cont_line_altcol = 0;
     for (;;) {
         c = tok_nextc(tok);
         if (c == ' ') {
@@ -104,6 +105,7 @@ _PyLexer_BeginLine(struct tok_state *tok)
             // using backslashes. This means that if we found a backslash
             // preceded by whitespace, **the first one we find** determines
             // the level of indentation of whatever comes next.
+            cont_line_altcol = cont_line_col ? cont_line_altcol : altcol;
             cont_line_col = cont_line_col ? cont_line_col : col;
             if ((c = _PyLexer_ContinueLine(tok)) == -1) {
                 return -1;
@@ -144,7 +146,7 @@ _PyLexer_BeginLine(struct tok_state *tok)
     }
     if (!blankline && tok->level == 0) {
         col = cont_line_col ? cont_line_col : col;
-        altcol = cont_line_col ? cont_line_col : altcol;
+        altcol = cont_line_col ? cont_line_altcol : altcol;
         if (update_indentation(tok, col, altcol) < 0) {
             return -1;
         }

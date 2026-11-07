@@ -1,0 +1,3 @@
+Fix tab indentation checks for lines joined by explicit line continuation.
+Consistent tab indentation is accepted and ambiguous mixtures of tabs and
+spaces are rejected.
