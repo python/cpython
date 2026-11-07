@@ -1280,7 +1280,6 @@ class BaseTaskTests:
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
     def test_gather_invalid_arg_does_not_add_awaited_by(self):
-        # gh-161083
         async def coro():
             task = self.new_task(self.loop, asyncio.sleep(0))
             try:
