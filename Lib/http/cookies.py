@@ -624,7 +624,11 @@ class BaseCookie(dict):
                 # Invalid cookie string
                 return
 
-        # The cookie string is valid, apply it.
+        # The cookie string parsed cleanly.  Build the morsels in a temporary
+        # mapping and only mutate self once every key and attribute has been
+        # validated, so that an illegal key or attribute later in the string
+        # cannot leave the cookie jar partially updated (gh-154546).
+        built = {}       # key -> Morsel, staged until the whole string is valid
         M = None         # current morsel
         for tp, key, value in parsed_items:
             if tp == TYPE_ATTRIBUTE:
@@ -633,8 +637,18 @@ class BaseCookie(dict):
             else:
                 assert tp == TYPE_KEYVALUE
                 rval, cval = value
-                self.__set(key, rval, cval)
-                M = self[key]
+                if key in built:
+                    M = built[key]
+                elif key in self:
+                    # Preserve attributes already set on an existing morsel,
+                    # but work on a copy so self stays untouched until commit.
+                    M = self[key].copy()
+                else:
+                    M = Morsel()
+                M.set(key, rval, cval)
+                built[key] = M
+        for key, M in built.items():
+            dict.__setitem__(self, key, M)
 
 
 class SimpleCookie(BaseCookie):
