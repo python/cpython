@@ -707,6 +707,28 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_traceback_later_repeat(self):
         self.check_dump_traceback_later(repeat=True)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_gil_enabled()
+    def test_dump_traceback_later_does_not_wait_for_gil(self):
+        code = dedent("""
+            import faulthandler
+            import sys
+
+            sys.setswitchinterval(3600.0)
+            faulthandler.dump_traceback_later(0.05, exit=True)
+            while True:
+                pass
+        """)
+        with support.SuppressCrashReport():
+            process = subprocess.run(
+                [sys.executable, '-I', '-c', code],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=support.SHORT_TIMEOUT,
+            )
+        self.assertEqual(process.returncode, 1)
+        self.assertIn(b'Timeout', process.stderr)
+
     def test_dump_traceback_later_cancel(self):
         self.check_dump_traceback_later(cancel=True)
 
