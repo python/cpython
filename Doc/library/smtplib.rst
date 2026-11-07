@@ -320,16 +320,56 @@ An :class:`SMTP` instance has the following methods:
    by the server, :const:`False` otherwise. Case is ignored.
 
 
-.. method:: SMTP.verify(address)
+.. method:: SMTP.verify(address, *, smtputf8=False)
 
    Check the validity of an address on this server using SMTP ``VRFY``. Returns a
    tuple consisting of code 250 and a full :rfc:`822` address (including human
    name) if the user address is valid. Otherwise returns an SMTP error code of 400
    or greater and an error string.
 
+   If *smtputf8* is true, the address is sent as UTF-8 together with the
+   ``SMTPUTF8`` parameter (:rfc:`6531`), which also allows UTF-8 in the reply.
+   In that case, if there has been no previous ``EHLO`` or ``HELO`` command
+   this session, this method tries ESMTP ``EHLO`` first.
+
+   This method may raise the following exceptions:
+
+   :exc:`SMTPNotSupportedError`
+      *smtputf8* is true but the ``SMTPUTF8`` extension is not supported by
+      the server.
+
    .. note::
 
       Many sites disable SMTP ``VRFY`` in order to foil spammers.
+
+   .. versionchanged:: next
+      Added the *smtputf8* parameter.
+
+
+.. method:: SMTP.expn(address, *, smtputf8=False)
+
+   Expand a mailing list on this server using SMTP ``EXPN``. Returns a tuple
+   consisting of code 250 and the members of the list, one full :rfc:`822`
+   address (including human name) per line, if the list exists. Otherwise
+   returns an SMTP error code of 400 or greater and an error string.
+
+   If *smtputf8* is true, the list name is sent as UTF-8 together with the
+   ``SMTPUTF8`` parameter (:rfc:`6531`), which also allows UTF-8 in the reply.
+   In that case, if there has been no previous ``EHLO`` or ``HELO`` command
+   this session, this method tries ESMTP ``EHLO`` first.
+
+   This method may raise the following exceptions:
+
+   :exc:`SMTPNotSupportedError`
+      *smtputf8* is true but the ``SMTPUTF8`` extension is not supported by
+      the server.
+
+   .. note::
+
+      Many sites disable SMTP ``EXPN`` in order to foil spammers.
+
+   .. versionchanged:: next
+      Added the *smtputf8* parameter.
 
 
 .. method:: SMTP.login(user, password, *, initial_response_ok=True)

@@ -1,0 +1,3 @@
+Add the *smtputf8* parameter to :meth:`smtplib.SMTP.verify` and
+:meth:`smtplib.SMTP.expn` to send non-ASCII addresses to servers that
+support the ``SMTPUTF8`` extension (:rfc:`6531`).
