@@ -189,6 +189,30 @@ class _Chunk:
             size = self.chunksize - self.size_read
         if size > self.chunksize - self.size_read:
             size = self.chunksize - self.size_read
+        # The chunk size comes from the file header and is not trustworthy:
+        # a truncated or maliciously crafted file can claim a size far larger
+        # than the data actually present, which would make the read() below
+        # pre-allocate that many bytes (gh-151308).  When the underlying file
+        # is seekable, clamp the request to the bytes physically available so
+        # we never allocate more than the file can provide.  This leaves the
+        # data returned for valid files unchanged, since the requested bytes
+        # are always present.  We probe with tell()/seek() rather than trust
+        # seekable(), since some file objects report being seekable yet raise
+        # on the actual call; on any failure we fall back to the original
+        # behaviour.  We only probe the raw file object, never a parent
+        # _Chunk: seeking a _Chunk would seek the raw file to its (untrusted)
+        # chunk size, which may overflow on 32-bit platforms.  Clamping the
+        # raw read protects the nested chunks too, as they read through it.
+        if size > 0 and not isinstance(self.file, _Chunk):
+            try:
+                here = self.file.tell()
+                end = self.file.seek(0, 2)
+                self.file.seek(here, 0)
+            except (OSError, ValueError):
+                pass
+            else:
+                if isinstance(end, int):
+                    size = min(size, max(0, end - here))
         data = self.file.read(size)
         self.size_read = self.size_read + len(data)
         if self.size_read == self.chunksize and \
