@@ -308,6 +308,29 @@ default values. The arguments that are most commonly needed are:
    If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
    binary streams. No encoding or line ending conversion is performed.
 
+   .. warning::
+
+      In text mode, the encoding used when *encoding* is not given is a guess
+      about the child process rather than information about it.  If the guess is
+      wrong, the output is decoded incorrectly: either silently, producing
+      mojibake, or as a :exc:`UnicodeDecodeError` raised while the stream is
+      read, which is reported from inside this module rather than from the call
+      that is missing the argument.  Passing *encoding* explicitly, chosen for
+      the program being run, is recommended on every platform, and this stays
+      true where the default is UTF-8 (see :pep:`686`): what the child writes is
+      the child's choice, not the parent's.
+
+      A wrong guess is most likely on Windows, where more than one default is in
+      force at once -- the ANSI code page that
+      :func:`locale.getpreferredencoding` reports, and the console output code
+      page that console programs write in, reported by the Windows
+      ``GetConsoleOutputCP`` API.  These are commonly different values, so no
+      single encoding is correct for every child of one process: a console
+      program such as :program:`cmd` is read with the console output code page,
+      while a Python child can be told which encoding to write through the
+      :envvar:`PYTHONUTF8` and :envvar:`PYTHONIOENCODING` environment variables
+      in its *env*.
+
    .. versionchanged:: 3.6
       Added the *encoding* and *errors* parameters.
 
