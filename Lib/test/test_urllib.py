@@ -761,6 +761,17 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.assertEqual(report[1][1], 8192)
         self.assertEqual(report[2][1], 8192)
 
+    def test_file_url_no_filename(self):
+        # GH-156510: urlretrieve() with a file:// URL and no filename should
+        # return a valid local path, not a URL-formatted path with leading
+        # slashes that normpath() mishandles on Windows.
+        url = self.constructLocalFileUrl(os_helper.TESTFN)
+        filename, headers = urllib.request.urlretrieve(url)
+        self.assertEqual(
+            filename,
+            urllib.request.url2pathname(url, require_scheme=True, resolve_host=True),
+        )
+
 
 class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
     """Test urllib.urlretrieve() using fake http connections"""
