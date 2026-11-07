@@ -6611,7 +6611,9 @@ dummy_func(
             if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]
                 // Branch opcodes use the cache for branch history, not
                 // specialization counters.  Don't reset it.
-                && !IS_CONDITIONAL_JUMP_OPCODE(opcode)) {
+                // JUMP_BACKWARD uses the cache for its JIT warmup counter.
+                && !IS_CONDITIONAL_JUMP_OPCODE(opcode)
+                && _PyOpcode_Deopt[opcode] != JUMP_BACKWARD) {
                 (&next_instr[1])->counter = trigger_backoff_counter();
             }
 

@@ -5966,6 +5966,20 @@ class TestUopsOptimization(unittest.TestCase):
         # _POP_TOP_NOP is a sign the optimizer ran and didn't hit contradiction.
         self.assertGreaterEqual(count_ops(ex, "_POP_TOP_NOP"), 1)
 
+    def test_trace_does_not_reset_jump_backward_counter(self):
+        def inner(n):
+            for _ in range(n):
+                pass
+
+        def outer(n):
+            for i in range(n):
+                if i == n - 1:
+                    inner(4002)
+
+        outer(4002)
+        self.assertIsNotNone(get_first_executor(outer))
+        self.assertIsNotNone(get_first_executor(inner))
+
     def test_load_attr_property_frame(self):
         class B:
             @property
