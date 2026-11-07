@@ -4029,6 +4029,20 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
     if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "frozenset")
         && (arg_expr->kind == Set_kind || arg_expr->kind == SetComp_kind)) {
+        if (arg_expr->kind == SetComp_kind) {
+            /* A comprehension that is not inlined returns its set from a
+               call, so a trace function may still hold a reference to it. */
+            PySTEntryObject *entry = _PySymtable_Lookup(SYMTABLE(c),
+                                                        (void *)arg_expr);
+            if (entry == NULL) {
+                return ERROR;
+            }
+            int is_inlined = (entry->ste_type == InlinedComprehensionBlock);
+            Py_DECREF(entry);
+            if (!is_inlined) {
+                return 0;
+            }
+        }
         NEW_JUMP_TARGET_LABEL(c, skip_optimization);
 
         ADDOP_I(c, loc, COPY, 1);
