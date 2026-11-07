@@ -1290,6 +1290,35 @@ References:
         h = Header('x' * 80)
         eq(h.encode(), 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
+    def test_unfolded_long_header(self):
+        eq = self.ndiffAssertEqual
+        value = ' '.join(f'<id{i}@example.com>' for i in range(2000))
+        h = Header(value, header_name='References')
+        eq(h.encode(maxlinelen=0), value)
+        msg = Message()
+        msg['References'] = value
+        eq(msg.as_string(), f'References: {value}\n\n')
+
+    def test_accumulator_length(self):
+        from email.header import _Accumulator
+        acc = _Accumulator(10)
+        self.assertEqual(len(acc), 10)
+        acc.push(' ', 'abc')
+        acc.push('\t', 'de')
+        acc.push('', 'f')
+        self.assertEqual(len(acc), 10 + 4 + 3 + 1)
+        self.assertEqual(acc.pop(), ('', 'f'))
+        self.assertEqual(len(acc), 10 + 4 + 3)
+        self.assertEqual(acc.pop_from(1), [('\t', 'de')])
+        self.assertEqual(len(acc), 10 + 4)
+        acc.reset([(' ', 'gh'), ('', 'ijk')])
+        self.assertEqual(len(acc), 6)
+        self.assertEqual(acc.part_count(), 2)
+        acc.reset()
+        self.assertEqual(len(acc), 0)
+        self.assertEqual(acc.pop(), ('', ''))
+        self.assertEqual(len(acc), 0)
+
     def test_splitting_multiple_long_lines(self):
         eq = self.ndiffAssertEqual
         hstr = """\
