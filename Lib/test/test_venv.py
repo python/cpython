@@ -743,6 +743,21 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
+    @unittest.skipIf(os.name == 'nt', 'tests the POSIX activation script')
+    def test_activation_path_with_placeholder(self):
+        shell = shutil.which('sh')
+        if shell is None:
+            self.skipTest('sh required for this test')
+        project = pathlib.Path(self.env_dir) / '__VENV_PYTHON__$(pwd>marker)'
+        env_dir = project / '.venv'
+        venv.create(env_dir)
+        out = subprocess.check_output(
+            [shell, '-c', '. .venv/bin/activate && printf %s "$VIRTUAL_ENV"'],
+            cwd=project,
+        )
+        self.assertFalse((project / 'marker').exists())
+        self.assertEqual(os.fsdecode(out), str(env_dir))
+
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
     @unittest.skipIf(sys.platform == 'cygwin', 'fail to locate cygpython DLL')
