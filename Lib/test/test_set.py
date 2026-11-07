@@ -1,5 +1,6 @@
 import collections.abc
 import copy
+import functools
 import gc
 import itertools
 import operator
@@ -10,7 +11,7 @@ import warnings
 import weakref
 from random import randrange, shuffle
 from test import support
-from test.support import warnings_helper
+from test.support import import_helper, warnings_helper
 
 
 class PassThru(Exception):
@@ -685,6 +686,99 @@ class TestSet(TestJointOps, unittest.TestCase):
             myset.add(elem2)
         with self.assertRaises(KeyError):
             myset.discard(elem2)
+
+    def test_unhashable_element_chained(self):
+        # gh-149313: A traceback or a cause is preserved by chaining.
+        class Elem:
+            def __hash__(self):
+                exc = TypeError('error')
+                exc.add_note('note')
+                raise exc
+
+        with self.assertRaisesRegex(TypeError, "as a set element") as cm:
+            {Elem()}
+        cause = cm.exception.__cause__
+        self.assertEqual(str(cause), 'error')
+        self.assertIsNotNone(cause.__traceback__)
+        self.assertEqual(cause.__notes__, ['note'])
+        self.assertNotHasAttr(cm.exception, '__notes__')
+
+    def test_unhashable_element_format_error(self):
+        # gh-149313: An error raised when formatting the message is unchanged.
+        class BadStr:
+            def __str__(self):
+                raise RuntimeError('format') from ValueError('root')
+
+        class Elem:
+            def __hash__(self):
+                raise TypeError(BadStr())
+
+        with self.assertRaisesRegex(RuntimeError, 'format') as cm:
+            {Elem()}
+        self.assertIsInstance(cm.exception.__cause__, ValueError)
+
+        class Reraise:
+            def __str__(self):
+                raise exc
+
+        exc = TypeError(Reraise())
+
+        class Elem2:
+            def __hash__(self):
+                raise exc
+
+        with self.assertRaises(TypeError) as cm:
+            {Elem2()}
+        self.assertIs(cm.exception, exc)
+        self.assertIsNone(exc.__cause__)
+
+    def test_unhashable_element_not_chained(self):
+        # gh-149313: Chaining would only repeat the message.
+        with self.assertRaisesRegex(TypeError, "cannot use 'list'") as cm:
+            {[]}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertNotHasAttr(cm.exception, '__notes__')
+
+        try:
+            1/0
+        except ZeroDivisionError as exc:
+            handled = exc
+            with self.assertRaisesRegex(TypeError, "cannot use 'list'") as cm:
+                {[]}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertIs(cm.exception.__context__, handled)
+
+    def test_unhashable_element_notes_copied(self):
+        # gh-149313: Without a traceback or a cause, only notes are preserved.
+        _testcapi = import_helper.import_module('_testcapi')
+        exc = TypeError('error')
+        exc.add_note('note')
+
+        class Elem:
+            __hash__ = staticmethod(
+                functools.partial(_testcapi.err_set_raised, exc))
+
+        with self.assertRaisesRegex(TypeError, "as a set element") as cm:
+            {Elem()}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertEqual(cm.exception.__notes__, ['note'])
+        self.assertIsNot(cm.exception.__notes__, exc.__notes__)
+
+        # A list subclass is copied without calling its methods.
+        class Notes(list):
+            def __iter__(self):
+                raise RuntimeError
+
+        exc.__notes__ = Notes(['note2'])
+        with self.assertRaisesRegex(TypeError, "as a set element") as cm:
+            {Elem()}
+        self.assertEqual(cm.exception.__notes__, ['note2'])
+
+        # A cause alone is preserved by chaining.
+        exc.__cause__ = ValueError('cause')
+        with self.assertRaisesRegex(TypeError, "as a set element") as cm:
+            {Elem()}
+        self.assertIs(cm.exception.__cause__, exc)
 
     def test_hash_collision_remove_add(self):
         self.maxDiff = None
