@@ -1,0 +1,2 @@
+Fix data race on the recursion count of :class:`threading.RLock` in the
+:term:`free-threaded build`.
