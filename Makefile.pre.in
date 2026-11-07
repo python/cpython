@@ -68,6 +68,7 @@ DSYMUTIL=       @DSYMUTIL@
 DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 
 GNULD=		@GNULD@
+RELOCATABLE=	@RELOCATABLE@
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh -e
@@ -2940,6 +2941,24 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 		cp python-config.py python-config; \
 	fi
 
+# With --enable-relocatable, the installed pkg-config files define prefix
+# relative to their own location, when the pkgconfig directory is inside
+# the prefix.
+Misc/python-install.pc Misc/python-embed-install.pc: Misc/python.pc Misc/python-embed.pc
+	rel=; dir='$(LIBPC)'; \
+	if test "$(RELOCATABLE)" = yes; then \
+		while test "$$dir" != '$(prefix)' && test "$$dir" != /; do \
+			rel="$$rel/.."; dir=`dirname "$$dir"`; \
+		done; \
+	fi; \
+	for pc in python python-embed; do \
+		if test "$$dir" = '$(prefix)'; then \
+			sed "s|^prefix=.*|prefix=\$${pcfiledir}$$rel|" Misc/$$pc.pc > Misc/$$pc-install.pc; \
+		else \
+			cp Misc/$$pc.pc Misc/$$pc-install.pc; \
+		fi; \
+	done
+
 # macOS' make seems to ignore a dependency on a
 # "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.
 BUILD_SCRIPTS_DIR=build/scripts-$(VERSION)
@@ -3026,7 +3045,7 @@ LIBPL=		@LIBPL@
 LIBPC=		$(LIBDIR)/pkgconfig
 
 .PHONY: libainstall
-libainstall: all scripts
+libainstall: all scripts Misc/python-install.pc Misc/python-embed-install.pc
 	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -3059,8 +3078,8 @@ libainstall: all scripts
 	$(INSTALL_DATA) Modules/Setup.bootstrap $(DESTDIR)$(LIBPL)/Setup.bootstrap
 	$(INSTALL_DATA) Modules/Setup.stdlib $(DESTDIR)$(LIBPL)/Setup.stdlib
 	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
-	$(INSTALL_DATA) Misc/python.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc
-	$(INSTALL_DATA) Misc/python-embed.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc
+	$(INSTALL_DATA) Misc/python-install.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION).pc
+	$(INSTALL_DATA) Misc/python-embed-install.pc $(DESTDIR)$(LIBPC)/python-$(LDVERSION)-embed.pc
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	$(INSTALL_SCRIPT) python-config.py $(DESTDIR)$(LIBPL)/python-config.py
@@ -3426,7 +3445,8 @@ distclean: clobber docclean
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
 	    Modules/Setup.bootstrap Modules/Setup.stdlib \
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
-		Misc/python-embed.pc Misc/python-config.sh
+		Misc/python-embed.pc Misc/python-install.pc \
+		Misc/python-embed-install.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before

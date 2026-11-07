@@ -1759,6 +1759,18 @@ if test "x$enable_profiling" = xyes; then
   LDFLAGS="-pg $LDFLAGS"
 fi
 
+AC_MSG_CHECKING([for --enable-relocatable])
+AC_ARG_ENABLE([relocatable],
+  [AS_HELP_STRING([--enable-relocatable],
+                  [make the installation easier to relocate
+                   (work in progress; default is no)])],
+  [], [enable_relocatable=no])
+AS_CASE([$enable_relocatable],
+  [yes|no], [],
+  [AC_MSG_ERROR([--enable-relocatable must be yes or no])])
+AC_MSG_RESULT([$enable_relocatable])
+AC_SUBST([RELOCATABLE], [$enable_relocatable])
+
 AC_MSG_CHECKING([LDLIBRARY])
 
 # Apple framework builds need more magic. LDLIBRARY is the dynamic

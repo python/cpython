@@ -1,0 +1,4 @@
+Add the ``--enable-relocatable`` :program:`configure` option. It is a work
+in progress and does not yet make the installation fully relocatable: for
+now, it makes the installed pkg-config files define ``prefix`` relative to
+their own location.
