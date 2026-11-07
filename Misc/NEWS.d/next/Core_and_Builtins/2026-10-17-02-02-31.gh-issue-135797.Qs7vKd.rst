@@ -1,0 +1,3 @@
+Add an empty ``_field_types`` dictionary to :class:`ast.AST` and to the
+abstract :mod:`ast` classes that have no fields, such as ``ast.mod`` and
+``ast.stmt``.  The attribute was previously only set on classes with fields.
