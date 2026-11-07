@@ -257,6 +257,18 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(regular.interpolations[0].expression, expected)
         self.assertEqual(debug.interpolations[0].expression, expected)
 
+    def test_comment_after_escaped_quote(self):
+        # A comment after a string that ends with an escaped quote must be
+        # stripped from the interpolation expression (gh-154711).
+        t = t"{'a\'b' # comment
+}"
+        self.assertEqual(t.interpolations[0].expression, "'a\\'b' \n")
+
+        t = t"{'a\'b' = # comment
+}"
+        self.assertEqual(t.interpolations[0].expression, "'a\\'b' ")
+        self.assertEqual(t.strings, ("'a\\'b' = \n", ""))
+
     def test_raw_tstrings(self):
         path = r"C:\Users"
         t = rt"{path}\Documents"
