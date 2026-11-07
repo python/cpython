@@ -1,0 +1,3 @@
+:meth:`~selectors.BaseSelector.modify` of :class:`~selectors.PollSelector`,
+:class:`~selectors.EpollSelector` and :class:`~selectors.DevpollSelector` now
+raises :exc:`ValueError` for an invalid event mask, like the other selectors.

@@ -180,6 +180,17 @@ class BaseSelectorTestCase:
         self.assertFalse(s.register.called)
         self.assertFalse(s.unregister.called)
 
+    def test_modify_invalid_events(self):
+        rd, wr = self.make_socketpair()
+        for events in (0, -1, 999999):
+            with self.subTest(events=events):
+                s = self.SELECTOR()
+                self.addCleanup(s.close)
+                s.register(rd, selectors.EVENT_READ)
+                self.assertRaises(ValueError, s.modify, rd, events)
+                self.assertRaises(KeyError, s.get_key, rd)
+                self.assertRaises(KeyError, s.modify, wr, events)
+
     def test_modify_unregister(self):
         # Make sure the fd is unregister()ed in case of error on
         # modify(): http://bugs.python.org/issue30014
