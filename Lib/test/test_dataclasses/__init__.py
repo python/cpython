@@ -4530,6 +4530,34 @@ class TestStringAnnotations(unittest.TestCase):
         self.assertEqual([f.name for f in fields(m.C)], ['x', 'y'])
         self.assertNotIsInstance(vars(m)['t'], types.LazyImportType)
 
+    def test_lazy_import_forwardref_annotations(self):
+        m = import_helper.import_fresh_module(
+            'test.test_dataclasses.dataclass_lazy_initvar',
+            fresh=['test.test_dataclasses.dataclass_lazy_initvar_other'],
+        )
+        self.assertIsNotNone(m)
+        value = m.A()
+        for cls in (m.DirectInitVar, m.QualifiedInitVar, m.AliasedInitVar):
+            with self.subTest(cls=cls):
+                instance = cls(value)
+                self.assertIs(instance.received, value)
+                self.assertEqual(fields(cls), ())
+                self.assertNotIn('value', vars(instance))
+                field_type = cls.__dataclass_fields__['value'].type
+                self.assertIsInstance(field_type, InitVar)
+                self.assertIsInstance(field_type.type, annotationlib.ForwardRef)
+                self.assertEqual(field_type.type.__forward_arg__, 'A')
+
+        with self.subTest(cls=m.DeferredClassVar):
+            self.assertEqual(fields(m.DeferredClassVar), ())
+            self.assertEqual(vars(m.DeferredClassVar()), {})
+
+        with self.subTest(cls=m.DeferredField):
+            self.assertEqual([f.name for f in fields(m.DeferredField)], ['value'])
+            self.assertIs(m.DeferredField(value).value, value)
+            self.assertIsInstance(fields(m.DeferredField)[0].type,
+                                  annotationlib.ForwardRef)
+
     def test_text_annotations(self):
         from test.test_dataclasses import dataclass_textanno
 
