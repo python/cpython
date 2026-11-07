@@ -800,8 +800,18 @@ static PyObject* framelocalsproxy___contains__(PyObject *self, PyObject *key)
 static PyObject*
 framelocalsproxy_update(PyObject *self, PyObject *other)
 {
-    if (framelocalsproxy_merge(self, other) < 0) {
-        PyErr_SetString(PyExc_TypeError, "update() argument must be dict or another FrameLocalsProxy");
+    if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
+        other = PyObject_CallOneArg((PyObject *)&PyDict_Type, other);
+        if (other == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(other);
+    }
+    int result = framelocalsproxy_merge(self, other);
+    Py_DECREF(other);
+    if (result < 0) {
         return NULL;
     }
 
