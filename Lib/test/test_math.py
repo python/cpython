@@ -510,6 +510,9 @@ class MathTests(unittest.TestCase):
         self.ftest('fabs(-1)', math.fabs(-1), 1)
         self.ftest('fabs(0)', math.fabs(0), 0)
         self.ftest('fabs(1)', math.fabs(1), 1)
+        self.ftest('fabs(INF)', math.fabs(INF), INF)
+        self.ftest('fabs(NINF)', math.fabs(NINF), INF)
+        self.assertTrue(math.isnan(math.fabs(NAN)))
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
