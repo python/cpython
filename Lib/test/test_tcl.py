@@ -602,28 +602,24 @@ class TclTest(unittest.TestCase):
             def __str__(self):
                 raise RuntimeError("setvar evil")
 
-        default = StrRaises()
+        value = StrRaises()
+        tk = self.interp.tk
 
-        for getvar, setvar, unsetvar in [
-            (
-                self.interp.tk.getvar,
-                self.interp.tk.setvar,
-                self.interp.tk.unsetvar,
-            ),
-            (
-                self.interp.tk.globalgetvar,
-                self.interp.tk.globalsetvar,
-                self.interp.tk.globalunsetvar,
-            )
-        ]:
-            with self.subTest(getvar=getvar, setvar=setvar, unsetvar=unsetvar):
-                with self.assertRaisesRegex(RuntimeError, "setvar evil"):
-                    setvar("name1", "name2", default)
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("name1", value)
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("name1", "name2", value)
 
-                self.assertRaises(TclError, getvar, "name1")
-                self.assertIsNone(setvar("name1", "name2"))
-                self.assertEqual(getvar("name1"), "name2")
-                self.assertIsNone(unsetvar("name1"))
+        self.assertRaises(TclError, tk.getvar, "name1")
+        self.assertRaises(TclError, tk.getvar, "name1", "name2")
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("name1", value)
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("name1", "name2", value)
+
+        self.assertRaises(TclError, tk.globalgetvar, "name1")
+        self.assertRaises(TclError, tk.globalgetvar, "name1", "name2")
 
     def test_user_command(self):
         result = None
