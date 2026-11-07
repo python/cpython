@@ -5,6 +5,7 @@ import os
 import time
 import pickle
 import shlex
+import sys
 import warnings
 import test.support
 
@@ -122,6 +123,7 @@ class TestBasicOps:
             choice([])
         self.assertEqual(choice([50]), 50)
         self.assertIn(choice([25, 75]), [25, 75])
+        self.assertIn(choice(range(sys.maxsize * 2)), range(sys.maxsize * 2))
 
     def test_choice_with_numpy(self):
         # Accommodation for NumPy arrays which have disabled __bool__().
@@ -177,6 +179,11 @@ class TestBasicOps:
         self.gen.sample(range(20), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
         self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
+        population = range(sys.maxsize * 2)
+        sample = self.gen.sample(population, 10)
+        self.assertEqual(len(sample), 10)
+        self.assertEqual(len(set(sample)), 10)
+        self.assertTrue(all(element in population for element in sample))
 
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)

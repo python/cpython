@@ -21,6 +21,7 @@ PyAPI_FUNC(PyObject *) _PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
 PyAPI_FUNC(PyObject *) _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
 
 PyAPI_FUNC(int) _PyObject_HasLen(PyObject *o);
+PyAPI_FUNC(PyObject *) _PyObject_LengthAsPyLong(PyObject *o);
 
 /* === Sequence protocol ================================================ */
 

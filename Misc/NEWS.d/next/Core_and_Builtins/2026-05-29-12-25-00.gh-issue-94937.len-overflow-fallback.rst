@@ -1,0 +1,3 @@
+Allow :func:`len` to return values larger than :data:`sys.maxsize` when
+``__len__`` can provide a Python integer fallback, including for large
+:class:`range` objects.
