@@ -783,6 +783,13 @@ _PyJit_translate_single_bytecode_to_trace(
         goto unsupported;
     }
 
+    // The coroutine was created by ASYNC_CALL_*, so RETURN_GENERATOR
+    // did not leave its frame. _RETURN_GENERATOR cannot express that.
+    if (opcode == RETURN_GENERATOR && frame == tracer->prev_state.instr_frame) {
+        DPRINTF(2, "Unsupported: RETURN_GENERATOR in a running coroutine\n");
+        goto unsupported;
+    }
+
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
         unsupported:

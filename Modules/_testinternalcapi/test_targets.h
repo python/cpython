@@ -129,6 +129,10 @@ static void *opcode_targets_table[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&TARGET_RESUME,
+    &&TARGET_ASYNC_CALL_BOUND_METHOD_EXACT_ARGS,
+    &&TARGET_ASYNC_CALL_BOUND_METHOD_GENERAL,
+    &&TARGET_ASYNC_CALL_PY_EXACT_ARGS,
+    &&TARGET_ASYNC_CALL_PY_GENERAL,
     &&TARGET_BINARY_OP_ADD_FLOAT,
     &&TARGET_BINARY_OP_ADD_INT,
     &&TARGET_BINARY_OP_ADD_UNICODE,
@@ -219,10 +223,6 @@ static void *opcode_targets_table[256] = {
     &&TARGET_UNPACK_SEQUENCE_LIST,
     &&TARGET_UNPACK_SEQUENCE_TUPLE,
     &&TARGET_UNPACK_SEQUENCE_TWO_TUPLE,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -478,10 +478,10 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_TRACE_RECORD,
+    &&TARGET_TRACE_RECORD,
+    &&TARGET_TRACE_RECORD,
+    &&TARGET_TRACE_RECORD,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -531,6 +531,10 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_exit_unwind_notrace(TAIL_CALL_PA
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_start_frame(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_stop_tracing(TAIL_CALL_PARAMS);
 
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_ASYNC_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_ASYNC_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_ASYNC_CALL_PY_EXACT_ARGS(TAIL_CALL_PARAMS);
+static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_ASYNC_CALL_PY_GENERAL(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARAMS);
@@ -774,6 +778,10 @@ JUMP_TO_LABEL(error);
 }
 
 static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
+    [ASYNC_CALL_BOUND_METHOD_EXACT_ARGS] = _TAIL_CALL_ASYNC_CALL_BOUND_METHOD_EXACT_ARGS,
+    [ASYNC_CALL_BOUND_METHOD_GENERAL] = _TAIL_CALL_ASYNC_CALL_BOUND_METHOD_GENERAL,
+    [ASYNC_CALL_PY_EXACT_ARGS] = _TAIL_CALL_ASYNC_CALL_PY_EXACT_ARGS,
+    [ASYNC_CALL_PY_GENERAL] = _TAIL_CALL_ASYNC_CALL_PY_GENERAL,
     [BINARY_OP] = _TAIL_CALL_BINARY_OP,
     [BINARY_OP_ADD_FLOAT] = _TAIL_CALL_BINARY_OP_ADD_FLOAT,
     [BINARY_OP_ADD_INT] = _TAIL_CALL_BINARY_OP_ADD_INT,
@@ -1016,10 +1024,6 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [219] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [220] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [221] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [222] = _TAIL_CALL_UNKNOWN_OPCODE,
     [223] = _TAIL_CALL_UNKNOWN_OPCODE,
     [224] = _TAIL_CALL_UNKNOWN_OPCODE,
     [225] = _TAIL_CALL_UNKNOWN_OPCODE,
@@ -1032,6 +1036,10 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [232] = _TAIL_CALL_UNKNOWN_OPCODE,
 };
 static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
+    [ASYNC_CALL_BOUND_METHOD_EXACT_ARGS] = _TAIL_CALL_TRACE_RECORD,
+    [ASYNC_CALL_BOUND_METHOD_GENERAL] = _TAIL_CALL_TRACE_RECORD,
+    [ASYNC_CALL_PY_EXACT_ARGS] = _TAIL_CALL_TRACE_RECORD,
+    [ASYNC_CALL_PY_GENERAL] = _TAIL_CALL_TRACE_RECORD,
     [BINARY_OP] = _TAIL_CALL_TRACE_RECORD,
     [BINARY_OP_ADD_FLOAT] = _TAIL_CALL_TRACE_RECORD,
     [BINARY_OP_ADD_INT] = _TAIL_CALL_TRACE_RECORD,
@@ -1274,10 +1282,6 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [125] = _TAIL_CALL_UNKNOWN_OPCODE,
     [126] = _TAIL_CALL_UNKNOWN_OPCODE,
     [127] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [219] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [220] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [221] = _TAIL_CALL_UNKNOWN_OPCODE,
-    [222] = _TAIL_CALL_UNKNOWN_OPCODE,
     [223] = _TAIL_CALL_UNKNOWN_OPCODE,
     [224] = _TAIL_CALL_UNKNOWN_OPCODE,
     [225] = _TAIL_CALL_UNKNOWN_OPCODE,

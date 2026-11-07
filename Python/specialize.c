@@ -1751,6 +1751,19 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
     return 0;
 }
 
+/* Is the result of the CALL at "instr" awaited at once? */
+static bool
+call_is_awaited(_Py_CODEUNIT *instr)
+{
+    /* None of the first three instructions can end the code. */
+    _Py_CODEUNIT *next = instr + 1 + INLINE_CACHE_ENTRIES_CALL;
+    return next[0].op.code == GET_AWAITABLE
+        && next[1].op.code == PUSH_NULL
+        && next[2].op.code == LOAD_COMMON_CONSTANT
+        && next[2].op.arg == CONSTANT_NONE
+        && _PyOpcode_Deopt[next[3].op.code] == SEND;
+}
+
 static int
 specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    bool bound_method)
@@ -1781,10 +1794,25 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     write_u32(cache->func_version, version);
+    /* ASYNC_CALL_* start the new coroutine in place of the SEND that
+     * awaits it. GET_AWAITABLE never fails for a new coroutine. */
+    int coro_flags = code->co_flags &
+        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+    bool awaited = coro_flags == CO_COROUTINE && call_is_awaited(instr);
     uint8_t opcode;
     if (argcount == nargs + bound_method) {
-        opcode =
-            bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
+        if (awaited) {
+            opcode = bound_method ?
+                ASYNC_CALL_BOUND_METHOD_EXACT_ARGS : ASYNC_CALL_PY_EXACT_ARGS;
+        }
+        else {
+            opcode = bound_method ?
+                CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
+        }
+    }
+    else if (awaited) {
+        opcode = bound_method ?
+            ASYNC_CALL_BOUND_METHOD_GENERAL : ASYNC_CALL_PY_GENERAL;
     }
     else {
         opcode = bound_method ? CALL_BOUND_METHOD_GENERAL : CALL_PY_GENERAL;
