@@ -8,6 +8,9 @@ from tkinter import Text, Tk, Toplevel
 from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
+from idlelib.grep import GrepDialog
+from idlelib.replace import ReplaceDialog
+from idlelib.search import SearchDialog
 from idlelib.idle_test.mock_idle import Func
 ## from idlelib.idle_test.mock_tk import Var
 
@@ -73,7 +76,6 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.create_entries = Func()
         self.dialog.create_option_buttons = Func()
         self.dialog.create_other_buttons = Func()
-        self.dialog.create_command_buttons = Func()
 
         self.dialog.default_command = None
         self.dialog.create_widgets()
@@ -81,7 +83,35 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.assertTrue(self.dialog.create_entries.called)
         self.assertTrue(self.dialog.create_option_buttons.called)
         self.assertTrue(self.dialog.create_other_buttons.called)
-        self.assertTrue(self.dialog.create_command_buttons.called)
+        buttons = self.dialog.buttonframe.winfo_children()
+        self.assertEqual([button['text'] for button in buttons], ['Close'])
+        buttons[0].invoke()
+        self.assertEqual(self.dialog.top.state(), 'withdrawn')
+
+    def test_dialog_buttons(self):
+        for dialog_class, title, labels in (
+                (SearchDialog, 'Find', ['Find Next', 'Close']),
+                (ReplaceDialog, 'Replace',
+                 ['Find Next', 'Replace', 'Replace All', 'Close']),
+                (GrepDialog, 'Find in Files', ['Search', 'Close'])):
+            with self.subTest(dialog=title):
+                args = (None,) if dialog_class is GrepDialog else ()
+                dialog = dialog_class(self.root, self.engine, *args)
+                dialog.text = Text(self.root)
+                self.addCleanup(dialog.text.destroy)
+                dialog.create_widgets()
+                self.addCleanup(dialog.top.destroy)
+                self.assertEqual(dialog.top.title(), title)
+                buttons = sorted(dialog.buttonframe.winfo_children(),
+                                 key=lambda b: int(b.grid_info()['row']))
+                self.assertEqual([b['text'] for b in buttons], labels)
+                self.assertEqual(int(dialog.buttonframe.grid_info()['column']),
+                                 2)
+                self.assertEqual(int(dialog.ent.grid_info()['columnspan']), 1)
+                default = buttons[1 if dialog_class is ReplaceDialog else 0]
+                self.assertEqual(str(default['default']), 'active')
+                buttons[-1].invoke()
+                self.assertEqual(dialog.top.state(), 'withdrawn')
 
     def test_make_entry(self):
         equal = self.assertEqual
@@ -129,6 +159,8 @@ class SearchDialogBaseTest(unittest.TestCase):
                 var.set(state)
             frame, options = self.btn_test_setup(
                     self.dialog.create_option_buttons)
+            label = self.dialog.frame.grid_slaves(row=0, column=0)[0]
+            self.assertEqual(label['text'], 'Options:')
             for spec, button in zip (options, frame.pack_slaves()):
                 var, label = spec
                 self.assertEqual(button['text'], label)
@@ -158,12 +190,9 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_create_command_buttons(self):
         self.dialog.frame = Frame(self.root)
         self.dialog.create_command_buttons()
-        # Look for close button command in buttonframe
-        closebuttoncommand = ''
-        for child in self.dialog.buttonframe.winfo_children():
-            if child['text'] == 'Close':
-                closebuttoncommand = child['command']
-        self.assertIn('close', closebuttoncommand)
+        grid = self.dialog.buttonframe.grid_info()
+        self.assertEqual(int(grid['row']), 0)
+        self.assertEqual(int(grid['column']), 2)
 
 
 if __name__ == '__main__':

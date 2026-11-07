@@ -32,7 +32,7 @@ def replace(text, insert_tags=None):
 class ReplaceDialog(SearchDialogBase):
     "Dialog for finding and replacing a pattern in text."
 
-    title = "Replace Dialog"
+    title = "Replace"
     icon = "Replace"
 
     def __init__(self, root, engine):
@@ -74,17 +74,15 @@ class ReplaceDialog(SearchDialogBase):
     def create_command_buttons(self):
         """Create base and additional command buttons.
 
-        The additional buttons are for Find, Replace,
-        Replace+Find, and Replace All.
+        The additional buttons are for Find Next, Replace, and Replace All.
         """
         SearchDialogBase.create_command_buttons(self)
-        self.make_button("Find", self.find_it)
-        self.make_button("Replace", self.replace_it)
-        self.make_button("Replace+Find", self.default_command, isdef=True)
+        self.make_button("Find Next", self.find_it)
+        self.make_button("Replace", self.default_command, isdef=True)
         self.make_button("Replace All", self.replace_all)
 
     def find_it(self, event=None):
-        "Handle the Find button."
+        "Handle the Find Next button."
         self.do_find(False)
 
     def replace_it(self, event=None):
@@ -96,7 +94,7 @@ class ReplaceDialog(SearchDialogBase):
             self.do_replace()
 
     def default_command(self, event=None):
-        """Handle the Replace+Find button as the default command.
+        """Handle the Replace button as the default command.
 
         First performs a replace and then, if the replace was
         successful, a find next.
