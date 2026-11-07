@@ -1,6 +1,9 @@
 """PyUnit testing against strptime"""
 
 import unittest
+from unittest import mock
+from contextlib import nullcontext
+import datetime
 import time
 import locale
 import re
@@ -8,10 +11,261 @@ import os
 import platform
 import sys
 from test import support
-from test.support import skip_if_buggy_ucrt_strfptime, run_with_locales
+from test.support import (
+    skip_if_buggy_ucrt_strfptime, run_with_locales, warnings_helper,
+)
+from test.support.hypothesis_helper import hypothesis
 from datetime import date as datetime_date
 
 import _strptime
+
+
+_strptime_formats = hypothesis.strategies.lists(
+    hypothesis.strategies.sampled_from((
+        '%Y', '%y', '%m', '%d', '%H', '%M', '%S', '%f', '%b', '%B',
+        '%a', '%A', '%w', '%u', '%I', '%p', '%k', '%l', '%P',
+        '%z', '%:z', '%Z', '%F', '%D', '%T', '%R', '%e', '%n', '%t',
+        '%j', '%U', '%W', '%G', '%V', '%%',
+        '-', '/', ':', '.', ' ', '\t', '\n', '\x1c', 'T', 'Z', '年',
+    )), max_size=8,
+).map(''.join)
+
+
+class PublicStrptimeTests(unittest.TestCase):
+    def assert_matches_python(self, text, fmt, *, accelerated=False):
+        methods = (
+            (time.strptime, '_strptime_time', None),
+            (datetime.date.strptime, '_strptime_datetime_date', datetime.date),
+            (datetime.time.strptime, '_strptime_datetime_time', datetime.time),
+            (datetime.datetime.strptime, '_strptime_datetime_datetime',
+             datetime.datetime),
+        )
+        for parse, fallback, cls in methods:
+            message = f'{parse.__qualname__}({text!r}, {fmt!r})'
+            reference = getattr(_strptime, fallback)
+            args = (text, fmt) if cls is None else (cls, text, fmt)
+            try:
+                expected = reference(*args)
+            except (ValueError, re.PatternError, OverflowError) as error:
+                self.assertFalse(accelerated, message)
+                with self.assertRaises(type(error), msg=message) as caught:
+                    parse(text, fmt)
+                self.assertEqual(str(caught.exception), str(error), message)
+            else:
+                # Guard against accidentally falling back for every input.
+                # This mock can be removed if implementation changes make
+                # patching the fallback impractical; keep the comparisons.
+                guard = mock.patch.object(
+                    _strptime, fallback, autospec=True,
+                    side_effect=AssertionError('used the Python parser'),
+                ) if accelerated else nullcontext()
+                with guard:
+                    actual = parse(text, fmt)
+                self.assertEqual(actual, expected, message)
+                if isinstance(actual, time.struct_time):
+                    self.assertEqual(actual.tm_zone, expected.tm_zone, message)
+                    self.assertEqual(actual.tm_gmtoff, expected.tm_gmtoff,
+                                     message)
+                elif isinstance(actual, (datetime.time, datetime.datetime)):
+                    self.assertEqual(actual.tzname(), expected.tzname(), message)
+
+    @support.cpython_only
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_accelerated_formats(self):
+        for text, fmt in (
+            ('2024-02-29 12:34:56.123456', '%Y-%m-%d %H:%M:%S.%f'),
+            ('Jan 02 2024', '%b %d %Y'),
+            ('Tuesday 2024 January 02', '%A %Y %B %d'),
+            ('Tue 2024-01-02', '%a %Y-%m-%d'),
+            ('12 PM', '%I %p'), ('12', '%I'), (' 1 pm', '%l %P'),
+            (' 1', '%k'), ('2024  2', '%Y %e'),
+            ('+01:02:03.456789', '%:z'), ('-000001.5', '%z'),
+            ('UTC', '%Z'), ('+0530 gMt', '%z %Z'),
+            ('2024-02-29 12:34:56', '%F %T'),
+            ('02/29/24 12:34', '%D %R'),
+            ('2024\t02\n29', '%Y%t%m%n%d'),
+            ('2023 366', '%Y %j'),
+            ('2024 00 0', '%Y %W %w'),
+            ('2024 01 1', '%Y %U %u'),
+            ('2020-W53-7', '%G-W%V-%u'),
+        ):
+            self.assert_matches_python(text, fmt, accelerated=True)
+
+    # Missing-year formats deliberately exercise the deprecated behavior.
+    @support.run_with_locale('LC_TIME', 'C')
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(value=hypothesis.strategies.datetimes(),
+                      fmt=_strptime_formats)
+    @hypothesis.example(value=datetime.datetime(2024, 2, 29, 13, 24, 35),
+                        fmt='%Y%m%d%H%M%S')
+    @hypothesis.example(value=datetime.datetime(2021, 1, 1), fmt='%G-W%V-%u')
+    @hypothesis.example(value=datetime.datetime(2024, 2, 29, 13, 24, 35),
+                        fmt='%a %d %B %Y %I:%M:%S %p')
+    def test_strftime_output_matches_python(self, value, fmt):
+        try:
+            text = value.strftime(fmt)
+        except ValueError:
+            # Some strptime directives are unsupported by the platform's
+            # strftime. Arbitrary input tests still exercise their parsing.
+            hypothesis.reject()
+        self.assert_matches_python(text, fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(text=hypothesis.strategies.text(max_size=80),
+                      fmt=_strptime_formats)
+    @hypothesis.example(text='2024\x1c 112', fmt='%Y\x1c%d%m')
+    @hypothesis.example(text='34\x1c 123', fmt='%M%n%H%S')
+    @hypothesis.example(text='2023 366', fmt='%Y %j')
+    @hypothesis.example(text='2024 01 02 1', fmt='%Y %U %W %u')
+    @hypothesis.example(text='+01:0203', fmt='%z')
+    @hypothesis.example(text='1 pM', fmt='%I %p')
+    def test_arbitrary_input_matches_python(self, text, fmt):
+        self.assert_matches_python(text, fmt)
+
+    def test_inferred_weekday(self):
+        for text, fmt in (
+            ('0001-01-01', '%Y-%m-%d'),
+            ('2024-02-29', '%Y-%m-%d'),
+            ('9999-12-31', '%Y-%m-%d'),
+            ('2023 366', '%Y %j'),
+            ('2024 00 0', '%Y %W %w'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_mixed_directive_spellings(self):
+        groups = (
+            (('m', '01'), ('b', 'Feb'), ('B', 'March')),
+            (('d', '01'), ('e', ' 2')),
+            (('H', '13'), ('k', '14'), ('I', '03'), ('l', ' 4')),
+            (('w', '0'), ('u', '1'), ('a', 'Tue'), ('A', 'Wednesday')),
+            (('p', 'AM'), ('P', 'PM')),
+            (('z', '+0100'), (':z', '+02:00')),
+            (('U', '01'), ('W', '02')),
+        )
+        for group in groups:
+            for first, first_text in group:
+                for second, second_text in group:
+                    self.assert_matches_python(
+                        f'2024 {first_text} {second_text}',
+                        f'%Y %{first} %{second}')
+
+    def test_week_and_ordinal_dates(self):
+        for year in (1, 4, 100, 400, 1900, 1999, 2000, 2004, 2020, 9999):
+            for day in (1, 28, 59, 60, 61, 365, 366, 367):
+                self.assert_matches_python(f'{year:04d} {day:03d}', '%Y %j')
+            for week in (0, 1, 52, 53, 54):
+                for weekday in range(1, 8):
+                    for fmt in ('%Y %U %u', '%Y %W %u', '%G %V %u'):
+                        self.assert_matches_python(
+                            f'{year:04d} {week:02d} {weekday}', fmt)
+        for text, fmt in (
+            ('2023-02-31 060', '%Y-%m-%d %j'),
+            ('2024-12-31 001', '%Y-%m-%d %j'),
+            ('2023 366 1', '%Y %j %u'),
+            ('2024 53', '%Y %U'), ('366', '%j'),
+            ('2024 001 01 1', '%Y %j %W %u'),
+            ('2024 2020 01 1', '%Y %G %V %u'),
+            ('2024 001 01 1', '%G %j %V %u'),
+            ('2024 01 1', '%Y %V %u'), ('2024 01', '%G %V'),
+            ('2024', '%G'), ('0000 001', '%Y %j'),
+            ('2024 01 02 1', '%Y %U %W %u'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    def test_numeric_aliases(self):
+        for text, fmt in (
+            ('2024-02-29', '%F'), ('02/29/24', '%D'),
+            ('2024-02-29 12:34:56', '%F %T'),
+            ('2024-02-29T12:34:56Z', '%FT%TZ'),
+            ('12:34', '%R'), ('12:34:56', '%R:%S'),
+            ('2024  9', '%Y %e'), ('2024\t02\n29', '%Y%t%m%n%d'),
+            ('20240229', '%Y%t%m%n%d'),
+            ('2024-02-29 2024', '%F %Y'),
+            ('12:34:56 56', '%T %S'),
+            ('2023-02-29', '%F'), ('12:60', '%R'),
+            ('2024-02-29 2024-02-29', '%F %F'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    def test_whitespace_aliases_before_adjacent_fields(self):
+        for separator in ('\x1c', '\x1d', '\x1e', '\x1f'):
+            for whitespace in ('%n', '%t'):
+                for field in ('%d', '%e'):
+                    self.assert_matches_python(f'2024{separator} 112',
+                                               f'%Y{whitespace}{field}%m')
+                for field in ('%H', '%k', '%I', '%l'):
+                    self.assert_matches_python(f'34{separator} 123',
+                                               f'%M{whitespace}{field}%S')
+
+    def test_offsets_and_zone_names(self):
+        offsets = ('', 'Z', '+0530', '-03:30', '+01:02:03', '-000001.000001',
+                   '+01:02:03.456789', '+000000.5', '-00:00:00.5',
+                   '+2400', '+0060', '+01:0203', '+0102:03', '+01:02:99',
+                   '+01:02:03.', '+01:02:03.1234567', 'z', '+', '+000')
+        for offset in offsets:
+            for directive in ('%z', '%:z'):
+                for suffix, fmt_suffix in (('', ''), (' UTC', ' %Z'),
+                                           (' gMt', ' %Z'), (' 12:34', ' %H:%M')):
+                    self.assert_matches_python(offset + suffix,
+                                               directive + fmt_suffix)
+        for name in ('UTC', 'GMT', 'uTc', 'gmT', 'UTCx', 'LOCAL', ''):
+            self.assert_matches_python(name, '%Z')
+        self.assert_matches_python('+0100 +0200', '%z %:z')
+
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_twelve_hour_clock(self):
+        for hour in range(24):
+            value = datetime.datetime(2024, 1, 1, hour, 24, 35)
+            for fmt in ('%Y-%m-%d %I:%M:%S %p', '%p %I:%M:%S', '%I', '%p'):
+                self.assert_matches_python(value.strftime(fmt), fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_hour_aliases_and_precedence(self):
+        for text, fmt in (
+            ('12 AM', '%I %p'), ('12 PM', '%I %p'),
+            (' 1 pm', '%l %P'), (' 0', '%k'),
+            ('PM 12', '%p %I'), ('23 AM', '%H %p'),
+            ('12 13 PM', '%I %H %p'), ('13 12 PM', '%H %I %p'),
+            ('00 AM', '%I %p'), ('13 PM', '%I %p'),
+            ('1 pM', '%I %p'), ('1 PX', '%I %p'),
+            ('AM PM', '%p %P'),
+        ):
+            self.assert_matches_python(text, fmt)
+
+    @run_with_locales('LC_TIME', 'C', 'en_US', 'fr_FR', 'de_DE', 'ja_JP', '')
+    def test_locale_names(self):
+        for month in range(1, 13):
+            value = datetime.datetime(2024, month, 19, 13, 24, 35)
+            for fmt in ('%b %d %Y', '%B %d %Y', '%a %Y-%m-%d', '%A %Y-%m-%d'):
+                self.assert_matches_python(value.strftime(fmt), fmt)
+
+    @support.run_with_locale('LC_TIME', 'C')
+    def test_names_and_weekdays(self):
+        for month in range(1, 13):
+            value = datetime.datetime(2024, month, 19, 13, 24, 35)
+            for fmt in ('%b %d, %Y', '%d %B %Y',
+                        '%a, %d %b %Y %H:%M:%S GMT', '%A %Y-%m-%d'):
+                text = value.strftime(fmt)
+                for spelling in (text, text.lower(), text.upper()):
+                    self.assert_matches_python(spelling, fmt)
+        for directive in ('a', 'A', 'w', 'u'):
+            for day in range(1, 8):
+                # A supplied weekday is preserved even when it disagrees.
+                text = datetime.date(2024, 1, day).strftime('%' + directive)
+                self.assert_matches_python(text + ' 2024-02-29',
+                                           '%' + directive + ' %Y-%m-%d')
+        for text, fmt in (
+            ('2024 January 02 03', '%Y %B %m %d'),
+            ('2024 Jan January 03', '%Y %b %B %d'),
+            ('2024 Monday Tue', '%Y %A %a'),
+            ('2024 Jax 03', '%Y %b %d'),
+            ('2024 Feb 30', '%Y %b %d'),
+            ('Monday Monday', '%A %A'),
+            ('8', '%u'), ('7', '%w'),
+        ):
+            self.assert_matches_python(text, fmt)
 
 libc_ver = platform.libc_ver()
 if libc_ver[0] == 'glibc':
