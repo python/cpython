@@ -138,14 +138,14 @@ extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 // build mode.
 //
 // self->tp_flags = (self->tp_flags & ~mask) | flags;
-extern void _PyType_SetFlags(PyTypeObject *self, unsigned long mask,
-                             unsigned long flags);
+extern void _PyType_SetFlags(PyTypeObject *self, uint64_t mask,
+                             uint64_t flags);
 extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 
 // Like _PyType_SetFlags(), but apply the operation to self and any of its
 // subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
-extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
-                                      unsigned long flags);
+extern void _PyType_SetFlagsRecursive(PyTypeObject *self, uint64_t mask,
+                                      uint64_t flags);
 
 // Raise PyType_Modified with the type lock already held.
 extern void _PyType_Modified_Unlocked(PyTypeObject *type);

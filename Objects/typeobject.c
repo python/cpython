@@ -393,28 +393,28 @@ _PyStaticType_GetBuiltins(void)
 /* end static builtin helpers */
 
 static void
-type_set_flags(PyTypeObject *tp, unsigned long flags)
+type_set_flags(PyTypeObject *tp, uint64_t flags)
 {
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
     tp->tp_flags = flags;
 }
 
 static void
-type_set_flags_with_mask(PyTypeObject *tp, unsigned long mask, unsigned long flags)
+type_set_flags_with_mask(PyTypeObject *tp, uint64_t mask, uint64_t flags)
 {
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
-    unsigned long new_flags = (tp->tp_flags & ~mask) | flags;
+    uint64_t new_flags = (tp->tp_flags & ~mask) | flags;
     type_set_flags(tp, new_flags);
 }
 
 static void
-type_add_flags(PyTypeObject *tp, unsigned long flag)
+type_add_flags(PyTypeObject *tp, uint64_t flag)
 {
     type_set_flags(tp, tp->tp_flags | flag);
 }
 
 static void
-type_clear_flags(PyTypeObject *tp, unsigned long flag)
+type_clear_flags(PyTypeObject *tp, uint64_t flag)
 {
     type_set_flags(tp, tp->tp_flags & ~flag);
 }
@@ -6394,9 +6394,9 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
 }
 
 void
-_PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
+_PyType_SetFlags(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
-    unsigned long new_flags = (self->tp_flags & ~mask) | flags;
+    uint64_t new_flags = (self->tp_flags & ~mask) | flags;
     if (new_flags != self->tp_flags) {
         types_stop_world();
         // can't use new_flags here since they could be out-of-date
@@ -6424,7 +6424,7 @@ _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_
 }
 
 static void
-set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+set_flags_recursive(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
     if (PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) ||
         (self->tp_flags & mask) == flags)
@@ -6447,7 +6447,7 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 }
 
 void
-_PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+_PyType_SetFlagsRecursive(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
     BEGIN_TYPE_LOCK();
     // Immutable/static-builtin types are skipped because
@@ -7574,7 +7574,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsigned long flags)
+compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, uint64_t flags)
 {
     /* For __class__ assignment, the flags should be the same.
        For __bases__ assignment, the new base flags can only be set
@@ -8748,7 +8748,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 
     /* Setup fast subclass flags */
     PyObject *mro = lookup_tp_mro(base);
-    unsigned long flags = 0;
+    uint64_t flags = 0;
     if (is_subtype_with_mro(mro, base, (PyTypeObject*)PyExc_BaseException)) {
         flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
     }

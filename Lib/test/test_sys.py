@@ -1946,7 +1946,7 @@ class SizeofTest(unittest.TestCase):
             '11P'  # tp_init .. tp_del
             'I'    # tp_version_tag
             '2P'   # tp_finalize, tp_vectorcall
-            'c'    # tp_watched
+            'B'    # tp_watched
             'H'    # tp_versions_used (uint16_t)
             '2P'   # _tp_iteritem, _tp_cache
         )
