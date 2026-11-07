@@ -1406,7 +1406,6 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 static PyMemberDef type_members[] = {
     {"__basicsize__", Py_T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),Py_READONLY},
     {"__itemsize__", Py_T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), Py_READONLY},
-    {"__flags__", Py_T_ULONG, offsetof(PyTypeObject, tp_flags), Py_READONLY},
     /* Note that this value is misleading for static builtin types,
        since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", Py_T_PYSSIZET,
@@ -2366,6 +2365,14 @@ type_set_type_params(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 }
 
 
+static PyObject *
+type_get_flags(PyObject *tp, void *Py_UNUSED(closure))
+{
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    return PyLong_FromUInt64(type->tp_flags);
+}
+
+
 /*[clinic input]
 type.__instancecheck__ -> bool
 
@@ -2413,6 +2420,7 @@ static PyGetSetDef type_getsets[] = {
     {"__annotations__", type_get_annotations, type_set_annotations, NULL},
     {"__annotate__", type_get_annotate, type_set_annotate, NULL},
     {"__type_params__", type_get_type_params, type_set_type_params, NULL},
+    {"__flags__", type_get_flags, NULL, NULL},
     {0}
 };
 
