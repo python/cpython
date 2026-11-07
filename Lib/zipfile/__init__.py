@@ -2147,6 +2147,9 @@ class ZipFile:
 
         Return None if all files could be read successfully, or the name
         of the offending file otherwise."""
+        if not self.fp:
+            raise ValueError(
+                "Attempt to use ZIP archive that was already closed")
         chunk_size = 2 ** 20
         for zinfo in self.filelist:
             try:
@@ -2353,6 +2356,9 @@ class ZipFile:
            specify a different directory using 'path'. You can specify the
            password to decrypt the file using 'pwd'.
         """
+        if not self.fp:
+            raise ValueError(
+                "Attempt to use ZIP archive that was already closed")
         if path is None:
             path = os.getcwd()
         else:
@@ -2367,6 +2373,9 @@ class ZipFile:
            by namelist(). You can specify the password to decrypt all files
            using 'pwd'.
         """
+        if not self.fp:
+            raise ValueError(
+                "Attempt to use ZIP archive that was already closed")
         if members is None:
             members = self.namelist()
 
