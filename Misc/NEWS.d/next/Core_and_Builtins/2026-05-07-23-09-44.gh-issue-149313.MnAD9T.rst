@@ -1,0 +1,3 @@
+Preserve original exception's ``__notes__``, ``__traceback__``, and
+``__cause__`` when rewriting :exc:`TypeError` for unhashable dict keys and
+set elements.
