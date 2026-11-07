@@ -1,0 +1,4 @@
+:meth:`zipfile.ZipFile.open` now raises :exc:`~zipfile.BadZipFile` for negative
+file header offsets in corrupted archives. :meth:`~zipfile.ZipFile.testzip`
+reports the affected member instead of raising an :exc:`OSError` or
+:exc:`ValueError`.
