@@ -90,17 +90,22 @@ Node classes
                   end_lineno
                   end_col_offset
 
-      Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
-      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      A class has the :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`
+      and :attr:`end_col_offset` attributes when it is a subclass of one that
+      carries an ``attributes`` clause in the abstract grammar
+      :ref:`above <abstract-grammar>`, and no other class has them.
+      The :attr:`lineno` and :attr:`end_lineno`
       are the first and last line numbers of source text span (1-indexed so the
       first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
       are the corresponding UTF-8 byte offsets of the first and last tokens that
       generated the node. The UTF-8 offset is recorded because the parser uses
       UTF-8 internally.
 
-      Note that the end positions are not required by the compiler and are
-      therefore optional. The end offset is *after* the last symbol, for example
+      The end positions are optional on the classes that already existed when
+      they were added in Python 3.8, so that code written before then can still
+      build those nodes; a class added since then requires them.
+      The end offset is *after* the last
+      symbol, for example
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
 

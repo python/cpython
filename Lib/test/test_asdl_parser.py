@@ -74,6 +74,34 @@ class TestAsdlParser(unittest.TestCase):
         self.assertEqual(repr(stmt.attributes[2]), 'Field(int, end_lineno, quantifiers=[OPTIONAL])')
         self.assertEqual(repr(stmt.attributes[3]), 'Field(int, end_col_offset, quantifiers=[OPTIONAL])')
 
+    # Types that already existed when end positions were added in 3.8 keep
+    # them optional, so that code written before 3.8 can still build their
+    # nodes.  A type introduced afterwards has no such callers and requires
+    # them: pattern was given required end positions when it was added
+    # (gh-88058) and type_param was corrected to match (gh-106145).
+    OPTIONAL_END_POSITIONS = frozenset({
+        'stmt', 'expr', 'excepthandler', 'arg', 'keyword', 'alias',
+    })
+
+    def test_end_positions_are_required_for_new_types(self):
+        for name, type_ in self.types.items():
+            attributes = getattr(type_, 'attributes', None)
+            if not attributes:
+                continue
+            ends = [f for f in attributes
+                    if f.name in ('end_lineno', 'end_col_offset')]
+            with self.subTest(type=name):
+                self.assertEqual(len(ends), 2)
+                optional = [f.opt for f in ends]
+                if name in self.OPTIONAL_END_POSITIONS:
+                    self.assertEqual(optional, [True, True])
+                else:
+                    self.assertEqual(
+                        optional, [False, False],
+                        f'{name} postdates the 3.8 addition of end positions, '
+                        f'so end_lineno and end_col_offset should be declared '
+                        f'"int" rather than "int?"')
+
     def test_constructor_fields(self):
         ehandler = self.types['excepthandler']
         self.assertEqual(len(ehandler.types), 1)
