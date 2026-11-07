@@ -525,6 +525,7 @@ static const char usage_envvars[] =
 "                  set to an integer in the range [0,4294967295] to get hash\n"
 "                  values with a predictable seed.\n"
 "#E{PYTHON_HISTORY}  : the location of a .python_history file.\n"
+"#E{PYTHON_HISTORY_PDB}: the location of a .python_history.pdb file used by PyREPL.\n"
 "#E{PYTHONHOME}      : alternate <prefix> directory (or <prefix>#D<exec_prefix>).\n"
 "                  The default module search path uses #H.\n"
 "#E{PYTHONIOENCODING}: encoding[:errors] used for stdin/stdout/stderr\n"

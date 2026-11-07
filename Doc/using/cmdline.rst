@@ -1371,6 +1371,17 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_HISTORY_PDB
+
+   Set the location of the command history file used by :mod:`pdb` with
+   PyREPL. By default, it is the value of :envvar:`PYTHON_HISTORY` with ``.pdb``
+   appended, or ``.python_history.pdb`` in the user's home directory if
+   :envvar:`PYTHON_HISTORY` is unset or empty.
+   An empty value also selects the default. This variable is ignored with
+   :option:`-E` or :option:`-I`.
+
+   .. versionadded:: 3.16
+
 .. envvar:: PYTHON_GIL
 
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
