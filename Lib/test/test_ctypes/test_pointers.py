@@ -5,7 +5,7 @@ import sys
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, Structure,
                     POINTER, pointer, _Pointer,
-                    byref, sizeof,
+                    addressof, byref, sizeof,
                     c_void_p, c_char_p,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
@@ -481,6 +481,105 @@ class PointerTypeCacheTestCase(unittest.TestCase):
             self.assertIs(ptr._type_, C)
         ptr.set_type(c_int)
         self.assertIs(ptr._type_, c_int)
+
+    def test_pointer_lifecycle_basic(self):
+        i = c_long(1010)
+        p = pointer(i)
+        self.assertEqual(p[0], 1010)
+        self.assertIsNone(p._b_base_)
+        self.assertEqual(addressof(i), addressof(p.contents))
+
+    def test_pointer_lifecycle_set_contents(self):
+        i = c_long(2020)
+        p = pointer(c_long(1010))
+        p.contents = i
+        self.assertEqual(p[0], 2020)
+        self.assertIsNone(p._b_base_)
+        self.assertEqual(addressof(i), addressof(p.contents))
+
+    def test_pointer_lifecycle_set_pointer_contents(self):
+        i = c_long(3030)
+        p = pointer(c_long(1010))
+        pointer(p).contents.contents = i
+        self.assertEqual(p.contents.value, 3030)
+        self.assertEqual(addressof(i), addressof(p.contents))
+
+    def test_pointer_lifecycle_array_set_contents(self):
+        arr_type = POINTER(c_long) * 3
+        arr_obj = arr_type()
+        i = c_long(300300)
+        arr_obj[0] = pointer(c_long(100100))
+        arr_obj[1] = pointer(c_long(200200))
+        arr_obj[2] = pointer(i)
+        self.assertEqual(arr_obj[0].contents.value, 100100)
+        self.assertEqual(arr_obj[1].contents.value, 200200)
+        self.assertEqual(arr_obj[2].contents.value, 300300)
+        self.assertEqual(addressof(i), addressof(arr_obj[2].contents))
+
+    def test_pointer_lifecycle_array_set_pointer_contents(self):
+        arr_type = POINTER(c_long) * 3
+        arr_obj = arr_type()
+        i = c_long(200003)
+        arr_obj[0].contents = c_long(100001)
+        arr_obj[1].contents = c_long(200002)
+        arr_obj[2].contents = i
+        self.assertEqual(arr_obj[0].contents.value, 100001)
+        self.assertEqual(arr_obj[1].contents.value, 200002)
+        self.assertEqual(arr_obj[2].contents.value, 200003)
+        self.assertEqual(addressof(i), addressof(arr_obj[2].contents))
+
+    def test_pointer_lifecycle_array_set_pointer_contents_pointer(self):
+        arr_type = POINTER(c_long) * 3
+        arr_obj = arr_type()
+        i = c_long(200003)
+        pointer(arr_obj[0]).contents.contents = c_long(100001)
+        pointer(arr_obj[1]).contents.contents = c_long(200002)
+        pointer(arr_obj[2]).contents.contents = i
+        self.assertEqual(arr_obj[0].contents.value, 100001)
+        self.assertEqual(arr_obj[1].contents.value, 200002)
+        self.assertEqual(arr_obj[2].contents.value, 200003)
+        self.assertEqual(addressof(i), addressof(arr_obj[2].contents))
+
+    def test_pointer_lifecycle_struct_set_contents(self):
+        class S(Structure):
+            _fields_ = (("s", POINTER(c_long)),)
+        s = S(s=pointer(c_long(1111111)))
+        s.s.contents = c_long(2222222)
+        self.assertEqual(s.s.contents.value, 2222222)
+
+    def test_pointer_lifecycle_struct_set_contents_pointer(self):
+        class S(Structure):
+            _fields_ = (("s", POINTER(c_long)),)
+        s = S(s=pointer(c_long(1111111)))
+        pointer(s.s).contents.contents = c_long(2222222)
+        self.assertEqual(s.s.contents.value, 2222222)
+
+    def test_pointer_lifecycle_struct_set_pointer_contents(self):
+        class S(Structure):
+            _fields_ = (("s", POINTER(c_long)),)
+        s = S(s=pointer(c_long(1111111)))
+        s.s = pointer(c_long(3333333))
+        self.assertEqual(s.s.contents.value, 3333333)
+
+    def test_pointer_lifecycle_struct_with_extra_field(self):
+        class U(Structure):
+            _fields_ = (
+                ("s", POINTER(c_long)),
+                ("u", c_long),
+            )
+        u = U(s=pointer(c_long(1010101)))
+        u.s.contents = c_long(202020202)
+        self.assertEqual(u.s.contents.value, 202020202)
+
+    def test_pointer_lifecycle_struct_with_extra_field_pointer(self):
+        class U(Structure):
+            _fields_ = (
+                ("s", POINTER(c_uint)),
+                ("u", c_uint),
+            )
+        u = U(s=pointer(c_uint(1010101)))
+        pointer(u.s).contents.contents = c_uint(202020202)
+        self.assertEqual(u.s.contents.value, 202020202)
 
 
 if __name__ == '__main__':
