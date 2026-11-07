@@ -1,0 +1,3 @@
+Fix a bug in the garbage collector where frames could be kept alive longer
+than necessary, potentially distorting profiler statistics. Patch by Sergey
+Miryanov.
