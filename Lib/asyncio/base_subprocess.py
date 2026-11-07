@@ -5,6 +5,7 @@ import os
 import signal
 import sys
 
+from . import futures
 from . import protocols
 from . import transports
 from .log import logger
@@ -53,7 +54,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             logger.debug('process %r created: pid %s',
                          program, self._pid)
 
-        self._loop.create_task(self._connect_pipes(waiter))
+        task = self._loop.create_task(self._connect_pipes(waiter))
+        if waiter is not None:
+            futures.future_add_to_awaited_by(task, waiter)
+            task.add_done_callback(
+                lambda t: futures.future_discard_from_awaited_by(t, waiter)
+            )
 
     def __repr__(self):
         info = [self.__class__.__name__]
