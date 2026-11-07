@@ -1,0 +1,2 @@
+Add flags ``--include`` and ``--exclude`` to the CLI of the :mod:`zipapp` module. These flags accept glob patterns to
+indicate allow-list and/or deny-list of files to be included in the zipapp file.
