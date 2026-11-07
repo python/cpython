@@ -159,10 +159,11 @@ class TypeAnnotationTests(unittest.TestCase):
             partialexe.a.__annotations__,
             {"v1": int, "v2": int},
         )
+        # Module execution semantics differ based on the lazy imports mode:
         if sys.get_lazy_imports() == "all":
-            self.assertEqual(partialexe.b.annos, {"v1": int, "v2": int})
+            self.assertEqual(partialexe.b.annos, {"v1": int, "v2": int})  # full
         else:
-            self.assertEqual(partialexe.b.annos, {"v1": int})
+            self.assertEqual(partialexe.b.annos, {"v1": int})  # partial
 
     @cpython_only
     def test_no_cell(self):
