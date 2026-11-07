@@ -384,7 +384,7 @@ static void dtrace_function_return(_PyInterpreterFrame *);
     } while (0);
 #endif
 
-#ifdef ENABLE_SPECIALIZATION
+#if defined(ENABLE_SPECIALIZATION) && defined(_Py_TIER2)
 /* Multiple threads may execute these concurrently if thread-local bytecode is
  * disabled and they all execute the main copy of the bytecode. Specialization
  * is disabled in that case so the value is unused, but the RMW cycle should be
