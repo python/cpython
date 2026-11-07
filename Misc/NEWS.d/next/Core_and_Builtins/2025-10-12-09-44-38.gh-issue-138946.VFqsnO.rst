@@ -1,0 +1,2 @@
+Sorting is now faster for cases where data is already
+sorted to high degree in either forward or reversed order.
