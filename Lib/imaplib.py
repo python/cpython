@@ -1986,13 +1986,20 @@ class Idler:
         if __debug__ and imap.debug >= 4:
             imap._mesg(f'idle _pop({timeout}) reading')
 
+        deadline = None
         if timeout is not None:
             if timeout <= 0:
                 return default
             timeout = float(timeout)  # Required by socket.settimeout()
+            deadline = time.monotonic() + timeout
 
         try:
-            imap._get_response(timeout)  # Reads line, calls _append_untagged()
+            while not imap._idle_responses:
+                if deadline is not None:
+                    timeout = deadline - time.monotonic()
+                    if timeout <= 0:
+                        return default
+                imap._get_response(timeout)  # Reads line, calls _append_untagged()
         except IMAP4._responsetimeout:
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle _pop({timeout}) done')
