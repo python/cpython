@@ -113,6 +113,7 @@ Contents of the :mod:`!email` package documentation:
    email.contentmanager.rst
 
    email.examples.rst
+   email.saslprep.rst
 
 Legacy API:
 
