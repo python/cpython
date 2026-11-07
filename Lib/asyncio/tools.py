@@ -170,9 +170,17 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
     if cycles:
         raise CycleFoundException(cycles, id2name)
     labels, children = _build_tree(id2name, awaits, task_stacks)
+    future_ids = {
+        node.task_id
+        for thread in result
+        for node in thread.awaited_by
+        if node.is_future
+    }
 
     def pretty(node):
         flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
+        if node[0] == NodeType.TASK and node[1] in future_ids:
+            flag = "(F)"
         return f"{flag} {labels[node]}"
 
     def render(root):
