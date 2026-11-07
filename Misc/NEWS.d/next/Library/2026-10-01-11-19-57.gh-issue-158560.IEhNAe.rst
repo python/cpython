@@ -1,0 +1,3 @@
+Fix :meth:`!netrc.netrc.__repr__` writing values without quotes, so that an
+empty value or one containing whitespace, a quote or a backslash could not be
+parsed back correctly.
