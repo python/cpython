@@ -3307,7 +3307,7 @@ static Py_NO_INLINE void
 py_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
+    uint64_t gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = NULL;
     intptr_t margin = 0;

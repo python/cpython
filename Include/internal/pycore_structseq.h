@@ -14,13 +14,13 @@ extern "C" {
 // Export for '_curses' shared extension
 PyAPI_FUNC(PyTypeObject*) _PyStructSequence_NewType(
     PyStructSequence_Desc *desc,
-    unsigned long tp_flags);
+    uint64_t tp_flags);
 
 extern int _PyStructSequence_InitBuiltinWithFlags(
     PyInterpreterState *interp,
     PyTypeObject *type,
     PyStructSequence_Desc *desc,
-    unsigned long tp_flags);
+    uint64_t tp_flags);
 
 static inline int
 _PyStructSequence_InitBuiltin(PyInterpreterState *interp,

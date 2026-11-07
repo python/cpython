@@ -214,7 +214,7 @@ parse_task_name(
         return NULL;
     }
 
-    if ((GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_LONG_SUBCLASS)) {
+    if ((GET_MEMBER(uint64_t, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_LONG_SUBCLASS)) {
         long res = read_py_long(unwinder, task_name_addr);
         if (res == -1 && PyErr_Occurred()) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Task name PyLong parsing failed");
@@ -223,7 +223,7 @@ parse_task_name(
         return PyUnicode_FromFormat("Task-%ld", res);
     }
 
-    if(!(GET_MEMBER(unsigned long, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_UNICODE_SUBCLASS)) {
+    if(!(GET_MEMBER(uint64_t, type_obj, unwinder->debug_offsets.type_object.tp_flags) & Py_TPFLAGS_UNICODE_SUBCLASS)) {
         PyErr_SetString(PyExc_RuntimeError, "Invalid task name object");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Task name object is neither long nor unicode");
         return NULL;
@@ -253,7 +253,7 @@ get_coro_like_address(
 
     // Skip user classes that share a name with the generator types below
     uintptr_t type_addr;
-    unsigned long tp_flags;
+    uint64_t tp_flags;
     if (read_ptr(unwinder, addr + (uintptr_t)unwinder->debug_offsets.pyobject.ob_type,
                  &type_addr) < 0
         || _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle,

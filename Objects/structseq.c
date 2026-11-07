@@ -566,7 +566,7 @@ initialize_members(PyStructSequence_Desc *desc,
 static void
 initialize_static_fields(PyTypeObject *type, PyStructSequence_Desc *desc,
                          PyMemberDef *tp_members, Py_ssize_t n_members,
-                         unsigned long tp_flags)
+                         uint64_t tp_flags)
 {
     type->tp_name = desc->name;
     // Account for hidden members in tp_basicsize because they are not
@@ -607,7 +607,7 @@ int
 _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                                        PyTypeObject *type,
                                        PyStructSequence_Desc *desc,
-                                       unsigned long tp_flags)
+                                       uint64_t tp_flags)
 {
     if (Py_TYPE(type) == NULL) {
         Py_SET_TYPE(type, &PyType_Type);
@@ -735,7 +735,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 
 
 PyTypeObject *
-_PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
+_PyStructSequence_NewType(PyStructSequence_Desc *desc, uint64_t tp_flags)
 {
     PyMemberDef *members;
     PyTypeObject *type;
