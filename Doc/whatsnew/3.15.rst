@@ -1547,7 +1547,7 @@ ssl
     key agreement, extending the previous
     :meth:`ssl.SSLContext.set_ecdh_curve` method.
     This new API provides the ability to list multiple groups and
-    supports fixed-field and post-quantum groups in addition to ECDH
+    supports finite-field and post-quantum groups in addition to ECDH
     curves. This method can also be used to control what key shares
     are sent in the TLS handshake.
   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key

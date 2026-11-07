@@ -2568,7 +2568,7 @@ Visual inspection shows that the certificate does identify the desired service
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
-   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
+   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: www.python.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
    [b'HTTP/1.1 200 OK',
     b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
@@ -2777,7 +2777,7 @@ provided.
    When compared to :class:`SSLSocket`, this object lacks the following
    features:
 
-   - Any form of network IO; ``recv()`` and ``send()`` read and write only to
+   - Any form of network IO; ``read()`` and ``write()`` read and write only to
      the underlying :class:`MemoryBIO` buffers.
 
    - There is no *do_handshake_on_connect* machinery. You must always manually
