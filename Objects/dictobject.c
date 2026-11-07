@@ -2506,7 +2506,7 @@ dict_unhashable_type(PyObject *op, PyObject *key)
     else {
         errmsg = "cannot use '%T' as a dict key (%S)";
     }
-    PyErr_Format(PyExc_TypeError, errmsg, key, exc);
+    _PyErr_ReplaceTypeError(exc, errmsg, key, exc);
     Py_DECREF(exc);
 }
 
