@@ -769,6 +769,17 @@ class TestStandard(BaseTest):
                            {'a': "b", 'boo': None, 'foo': ["bar"]},
                            ["-"])
 
+    def test_runs_of_positional_args(self):
+        self.assertParseOK(["x", "y", "-a", "1", "z", "-", "", "w",
+                            "--foo", "2", "v", "-b3", "u", "t"],
+                           {'a': "1", 'boo': 3, 'foo': ["2"]},
+                           ["x", "y", "z", "-", "", "w", "v", "u", "t"])
+
+    def test_positional_args_before_separator(self):
+        self.assertParseOK(["x", "y", "--", "-a", "z"],
+                           {'a': None, 'boo': None, 'foo': None},
+                           ["x", "y", "-a", "z"])
+
     def test_no_append_versus_append(self):
         self.assertParseOK(["-b3", "-b", "5", "--foo=bar", "--foo", "baz"],
                            {'a': None, 'boo': 5, 'foo': ["bar", "baz"]},
@@ -1204,6 +1215,12 @@ class TestCallbackMeddleArgs(BaseTest):
                            {'things': [('foo', '--')]},
                            [2])
 
+    def test_callback_meddle_args_between_positional_args(self):
+        self.assertParseOK(["a", "b", "-1", "foo", "c", "d",
+                            "-2", "e", "f", "g"],
+                           {'things': [("foo",), ("e", "f")]},
+                           ["a", "b", 1, "c", "d", 2, "g"])
+
 class TestCallbackManyArgs(BaseTest):
     def setUp(self):
         options = [make_option("-a", "--apple", action="callback", nargs=2,
@@ -1282,6 +1299,14 @@ class TestCallbackVarArgs(BaseTest):
                             'b': None,
                             'c':["foo", "-", "bar"]},
                            ["hello"])
+
+    def test_positional_args_run_and_variable_args(self):
+        self.assertParseOK(["hello", "-", "world", "-c", "foo", "bar",
+                            "-b", "x", "y"],
+                           {'a': None,
+                            'b': True,
+                            'c': ["foo", "bar"]},
+                           ["hello", "-", "world", "x", "y"])
 
     def test_stop_at_option(self):
         self.assertParseOK(["-c", "foo", "-b"],
