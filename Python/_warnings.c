@@ -873,11 +873,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         }
 
         if (_PyUnicode_EqualToASCIIString(action, "once")) {
-            if (registry == NULL || registry == Py_None) {
-                registry = get_once_registry(interp);
-                if (registry == NULL)
-                    goto cleanup;
-            }
+            registry = get_once_registry(interp);
+            if (registry == NULL)
+                goto cleanup;
             /* WarningsState.once_registry[(text, category)] = 1 */
             rc = update_registry(interp, registry, text, category, 0);
         }
