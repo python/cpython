@@ -1,0 +1,3 @@
+Fix a :exc:`UnicodeEncodeError` in :mod:`profiling.sampling` binary mode
+when a sampled filename or function name contains surrogate characters.
+These characters are now written as backslash escapes in the binary file.
