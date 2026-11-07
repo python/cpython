@@ -1251,6 +1251,13 @@ New deprecations
     open them one by one instead.
     (Contributed by Serhiy Storchaka in :gh:`152638`.)
 
+* :mod:`typing`:
+
+  * :data:`typing.AnyStr` now raises :exc:`DeprecationWarning`
+    when used and is scheduled to be removed in Python 3.21.
+    Use :pep:`695` syntax instead.
+    (Contributed by Nikita Sobolev in :gh:`150190`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
@@ -1393,6 +1400,12 @@ New features
 
 * Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
   (Contributed by Victor Stinner in :gh:`161172`.)
+
+* Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable
+  of an internal interpreter frame by its localsplus index, and
+  :c:func:`PyUnstable_Code_GetLocalPlusNames` to get the matching variable
+  names.
+  (Contributed by Guilherme Leobas in :gh:`156133`.)
 
 Porting to Python 3.16
 ----------------------

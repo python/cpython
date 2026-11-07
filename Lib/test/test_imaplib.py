@@ -901,9 +901,8 @@ class NewIMAPTestsMixin:
                 SimpleIMAPHandler.handle(self)
 
         _, server = self._setup(TimeoutHandler)
-        addr = server.server_address[1]
         with self.assertRaises(TimeoutError):
-            client = self.imap_class("localhost", addr, timeout=0.001)
+            client = self.imap_class(*server.server_address, timeout=0.001)
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)

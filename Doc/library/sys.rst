@@ -2061,7 +2061,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
       *finalizer* method see the implementation of
-      ``asyncio.Loop.shutdown_asyncgens`` in
+      ``asyncio.BaseEventLoop._asyncgen_finalizer_hook`` in
       :source:`Lib/asyncio/base_events.py`
 
    .. note::

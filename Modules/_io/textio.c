@@ -3474,7 +3474,11 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return buffer_access_safe(self);
+    /* gh-160427: None once detached, matching the former member descriptor. */
+    if (self->buffer == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->buffer);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
