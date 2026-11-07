@@ -244,6 +244,7 @@ class TextIOWrapperTest:
         r = self.BytesIO()
         b = self.BufferedWriter(r)
         t = self.TextIOWrapper(b, encoding="ascii")
+        self.assertIs(t.buffer, b)
         self.assertIs(t.detach(), b)
 
         t = self.TextIOWrapper(b, encoding="ascii")
@@ -259,6 +260,7 @@ class TextIOWrapperTest:
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
         self.assertFalse(t.write_through)
+        self.assertIsNone(t.buffer)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -1721,9 +1723,7 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
                     self.BufferedReader(raw), encoding="utf-8")
                 method = getattr(wrapper, method_name)
                 self.assertEqual(method(), "ab\n")
-                with self.assertRaisesRegex(ValueError,
-                                            "underlying buffer has been detached"):
-                    getattr(wrapper, 'buffer')
+                self.assertIsNone(wrapper.buffer)
 
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
