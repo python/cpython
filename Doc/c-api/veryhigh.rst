@@ -151,6 +151,8 @@ the same library that the Python runtime is using.
    event loops, as done in :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   This function should block until stdin is readable.
+
    The function is called without an :term:`attached thread state`.
 
    .. versionchanged:: 3.12
