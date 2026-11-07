@@ -219,6 +219,12 @@ Compressing and decompressing data in memory
    fail with an :class:`LZMAError` if it is not possible to decompress the input
    within the given memory limit.
 
+   When *memlimit* is omitted, a default limit of 1.5 GiB (the maximum
+   dictionary size supported by liblzma) is used.  The dictionary is allocated
+   by liblzma up front from the stream's header, so an untrusted stream can
+   otherwise force a multi-gigabyte allocation from a few bytes of input.  Pass
+   an explicit *memlimit* to adjust the bound for trusted input.
+
    The *filters* argument specifies the filter chain that was used to create
    the stream being decompressed. This argument is required if *format* is
    :const:`FORMAT_RAW`, but should not be used for other formats.
