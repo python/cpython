@@ -1,0 +1,5 @@
+Make :func:`isinstance` checks against a :func:`runtime-checkable
+<typing.runtime_checkable>` :class:`typing.Protocol` take the cached fast path
+when the object's class sets a non-callable protocol member to ``None``. Such a
+class already passed the check, but was excluded from :class:`abc.ABCMeta`'s
+cache and so re-examined every protocol member on every call.
