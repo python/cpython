@@ -12,6 +12,7 @@ import threading
 import re
 import select
 import socket
+import warnings
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper, threading_helper
@@ -805,15 +806,25 @@ class NewIMAPTestsMixin:
     def test_login_cram_md5_bytes(self):
         client, _ = self._setup(AuthHandler_CRAM_MD5)
         self.assertIn('AUTH=CRAM-MD5', client.capabilities)
-        ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
-        self.assertEqual(ret, "OK")
+        with warnings.catch_warnings(record=True) as warn_list:
+            ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
+            self.assertEqual(len(warn_list), 1)
+            self.assertTrue(issubclass(warn_list[0].category, DeprecationWarning))
+            self.assertIn("This function is deprecated and will be removed in Python 3.18.",
+                           str(warn_list[0].message))
+            self.assertEqual(ret, "OK")
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
         client, _ = self._setup(AuthHandler_CRAM_MD5)
         self.assertIn('AUTH=CRAM-MD5', client.capabilities)
-        ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
-        self.assertEqual(ret, "OK")
+        with warnings.catch_warnings(record=True) as warn_list:
+            ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
+            self.assertEqual(len(warn_list), 1)
+            self.assertTrue(issubclass(warn_list[0].category, DeprecationWarning))
+            self.assertIn("This function is deprecated and will be removed in Python 3.18.",
+                           str(warn_list[0].message))
+            self.assertEqual(ret, "OK")
 
     @hashlib_helper.block_algorithm("md5")
     def test_login_cram_md5_blocked(self):
