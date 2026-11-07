@@ -1,6 +1,7 @@
 """Tests for base_events.py"""
 
 import concurrent.futures
+import contextvars
 import errno
 import math
 import platform
@@ -598,6 +599,75 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertRaises(TypeError,
             self.loop.run_until_complete, self.loop.subprocess_shell,
             asyncio.SubprocessProtocol, 'exit 0', bufsize=4096)
+
+    def test_default_exc_handler_runs_in_task_context(self):
+        var = contextvars.ContextVar('var', default='outer')
+        seen = []
+
+        def default_handler(context):
+            seen.append(var.get())
+
+        async def coro():
+            pass
+
+        self.loop._process_events = mock.Mock()
+        task_ctx = contextvars.copy_context()
+        task_ctx.run(var.set, 'task')
+        task = self.loop.create_task(coro(), context=task_ctx)
+        self.loop.run_until_complete(task)
+        with mock.patch.object(self.loop, 'default_exception_handler',
+                               default_handler):
+            self.loop.call_exception_handler({
+                'message': 'msg', 'task': task, 'exception': ValueError()})
+            ctx = contextvars.copy_context()
+            ctx.run(var.set, 'handle')
+            handle = asyncio.Handle(lambda: None, (), self.loop, ctx)
+            self.loop.call_exception_handler({
+                'message': 'msg', 'handle': handle})
+            # No context available: runs in the current context.
+            self.loop.call_exception_handler({'message': 'msg'})
+        self.assertEqual(seen, ['task', 'handle', 'outer'])
+
+    def test_default_exc_handler_from_inside_task(self):
+        # The task's context is already entered when reporting from
+        # inside the task; the original message must still be logged.
+        self.loop._process_events = mock.Mock()
+        var = contextvars.ContextVar('var', default='outer')
+        seen = []
+
+        def default_handler(context):
+            seen.append((var.get(), context['message']))
+
+        async def coro():
+            var.set('task')
+            self.loop.call_exception_handler({
+                'message': 'msg', 'task': asyncio.current_task()})
+
+        with mock.patch.object(self.loop, 'default_exception_handler',
+                               default_handler):
+            with mock.patch('asyncio.base_events.logger') as log:
+                self.loop.run_until_complete(coro())
+        self.assertEqual(seen, [('task', 'msg')])
+        self.assertFalse(log.error.called)
+
+    def test_custom_exc_handler_from_inside_task(self):
+        self.loop._process_events = mock.Mock()
+        var = contextvars.ContextVar('var', default='outer')
+        seen = []
+
+        def handler(loop, context):
+            seen.append((var.get(), context['message']))
+
+        async def coro():
+            var.set('task')
+            self.loop.call_exception_handler({
+                'message': 'msg', 'task': asyncio.current_task()})
+
+        self.loop.set_exception_handler(handler)
+        with mock.patch('asyncio.base_events.logger') as log:
+            self.loop.run_until_complete(coro())
+        self.assertEqual(seen, [('task', 'msg')])
+        self.assertFalse(log.error.called)
 
     def test_default_exc_handler_callback(self):
         self.loop._process_events = mock.Mock()
