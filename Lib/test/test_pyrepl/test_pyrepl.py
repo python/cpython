@@ -2725,10 +2725,10 @@ class TestWindowsConsoleEolWrap(TestCase):
         self.assertEqual(console.posxy, (width - 1, y))
 
 
-@skipUnless(pty, "requires pty")
+@skipUnless(hasattr(os, "openpty"), "need os.openpty()")
 class TestReadlineWrapperFileDescriptors(TestCase):
     def test_reader_does_not_open_file_descriptors(self):
-        controller, worker = pty.openpty()
+        controller, worker = os.openpty()
         self.addCleanup(os.close, controller)
         self.addCleanup(os.close, worker)
         env = self.enterContext(EnvironmentVarGuard())
