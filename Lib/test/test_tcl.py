@@ -595,6 +595,34 @@ class TclTest(unittest.TestCase):
         interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
                     % support.exceeds_recursion_limit())
         self.assertRaises(RecursionError, interp.getvar, 'x')
+        interp = None
+
+        # gh-161353: Clean up explicitly per-thread state to avoid leaking an
+        # event handle on Windows when test_tcl is run with -R 3:3 option.
+        _tkinter._finalize_thread()
+
+    def test_setvar_evil(self):
+        # gh-161388
+        class StrRaises:
+            def __str__(self):
+                raise RuntimeError("setvar evil")
+
+        value = StrRaises()
+        tk = self.interp.tk
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name1", value)
+        self.assertRaises(TclError, tk.getvar, "local_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name2", "local_name3", value)
+        self.assertRaises(TclError, tk.getvar, "local_name2", "local_name3")
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name1", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name2", "global_name3", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name2", "global_name3")
 
     def test_user_command(self):
         result = None

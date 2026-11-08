@@ -1,0 +1,2 @@
+Add context notes to :exc:`TypeError` raised while hashing a
+:class:`tuple`, identifying the index of the item whose hash failed.

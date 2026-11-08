@@ -432,7 +432,8 @@ Certificate handling
    same format as used for the *cafile* parameter in
    :meth:`SSLContext.load_verify_locations`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
-   if the validation attempt fails.  A timeout can be specified with the
+   if the validation attempt fails or the certificate hostname does not match
+   the server hostname.  A timeout can be specified with the
    ``timeout`` parameter.
 
    .. versionchanged:: 3.3
@@ -444,6 +445,11 @@ Certificate handling
 
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
+
+   .. versionchanged:: next
+      The function now raises :exc:`SSLCertVerificationError` if *ca_certs* is
+      specified but the certificate hostname does not match the server
+      hostname.
 
 .. function:: DER_cert_to_PEM_cert(der_cert_bytes)
 
@@ -2860,7 +2866,7 @@ Visual inspection shows that the certificate does identify the desired service
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
-   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
+   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: www.python.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
    [b'HTTP/1.1 200 OK',
     b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
@@ -3072,7 +3078,7 @@ provided.
    When compared to :class:`SSLSocket`, this object lacks the following
    features:
 
-   - Any form of network IO; ``recv()`` and ``send()`` read and write only to
+   - Any form of network IO; ``read()`` and ``write()`` read and write only to
      the underlying :class:`MemoryBIO` buffers.
 
    - There is no *do_handshake_on_connect* machinery. You must always manually
