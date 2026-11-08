@@ -360,12 +360,20 @@ class CAPITest(unittest.TestCase):
         lst = list("abc")
         self.assertEqual(list_as_tuple_and_clear(lst), ('a', 'b', 'c'))
         self.assertEqual(lst, [])
+        self.assertEqual(type(lst), list)
+
+        expected = tuple(object() for _ in range(10))
+        sub = ListSubclass(expected)
+        self.assertEqual(list_as_tuple_and_clear(sub), expected)
+        self.assertEqual(sub, [])
+        self.assertEqual(type(sub), ListSubclass)
 
         lst = list(range(4096))  # test larger list
         self.assertEqual(list_as_tuple_and_clear(lst), tuple(range(4096)))
         self.assertEqual(lst, [])
 
-        lst = []  # empty list
+        # Get the empty tuple singleton if the list is empty
+        lst = []
         self.assertIs(list_as_tuple_and_clear(lst), ())
         self.assertEqual(lst, [])
 
