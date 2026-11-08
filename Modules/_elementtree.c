@@ -394,7 +394,10 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
-        if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
+        if (attrib == NULL) {
+            return NULL;
+        }
+        if (PyDict_Update(attrib, kwds) < 0) {
             Py_DECREF(attrib);
             return NULL;
         }
