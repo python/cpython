@@ -853,7 +853,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
+.. function:: signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
    Return a :class:`Signature` object for the given *callable*:
 
