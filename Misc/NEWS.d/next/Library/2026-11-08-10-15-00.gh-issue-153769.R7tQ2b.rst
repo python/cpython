@@ -1,0 +1,5 @@
+:meth:`~ipaddress.IPv4Network.subnet_of`,
+:meth:`~ipaddress.IPv4Network.supernet_of` and their IPv6 equivalents now
+raise a clearer :exc:`TypeError` when an operand is not a network object:
+the message states that both must be network objects, and the internal
+:exc:`AttributeError` is no longer shown in the traceback.

@@ -881,6 +881,42 @@ class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
                 self.factory('2000:aaa::/56')))
 
 
+class SubnetContainmentArgumentErrors(unittest.TestCase):
+    def test_address_argument_raises_clear_type_error(self):
+        pairs = (
+            (ipaddress.IPv4Network('10.0.0.0/30'),
+             ipaddress.IPv4Address('10.0.0.1')),
+            (ipaddress.IPv6Network('::/0'),
+             ipaddress.IPv6Address('::1')),
+        )
+        for network, address in pairs:
+            for method_name in ('subnet_of', 'supernet_of'):
+                with self.subTest(network=network, method=method_name):
+                    with self.assertRaises(TypeError) as caught:
+                        getattr(network, method_name)(address)
+                    self.assertIn('network objects', str(caught.exception))
+                    self.assertTrue(caught.exception.__suppress_context__)
+
+    def test_other_non_network_objects_raise_clear_type_error(self):
+        network = ipaddress.IPv4Network('10.0.0.0/30')
+        for other in ('10.0.0.0/24', 42):
+            for method_name in ('subnet_of', 'supernet_of'):
+                with self.subTest(other=other, method=method_name):
+                    with self.assertRaisesRegex(TypeError, 'network objects'):
+                        getattr(network, method_name)(other)
+
+    def test_network_like_object_is_still_accepted(self):
+        class NetworkLike:
+            version = 4
+            network_address = ipaddress.IPv4Address('10.0.0.0')
+            broadcast_address = ipaddress.IPv4Address('10.255.255.255')
+
+        self.assertTrue(
+            ipaddress.IPv4Network('10.1.0.0/16').subnet_of(NetworkLike()))
+        self.assertTrue(
+            ipaddress.IPv4Network('10.0.0.0/8').supernet_of(NetworkLike()))
+
+
 class FactoryFunctionErrors(BaseTestCase):
 
     def assertFactoryError(self, factory, kind):

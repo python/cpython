@@ -1033,8 +1033,11 @@ class _BaseNetwork(_IPAddressBase):
             return (b.network_address <= a.network_address and
                     b.broadcast_address >= a.broadcast_address)
         except AttributeError:
-            raise TypeError(f"Unable to test subnet containment "
-                            f"between {a} and {b}")
+            # Duck typing accepts network-like objects; hide the internal
+            # AttributeError so the caller sees one clear TypeError.
+            raise TypeError(
+                f"Unable to test subnet containment between {a} and {b}: "
+                "both must be network objects") from None
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
