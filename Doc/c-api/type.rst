@@ -48,6 +48,11 @@ Type Objects
    guaranteed to be stable across Python releases, but access to
    :c:member:`~PyTypeObject.tp_flags` itself is not part of the :ref:`limited API <limited-c-api>`.
 
+   The function return type is ``unsigned long`` when using the limited C API
+   version 3.15 or older.
+   The return type is ``uint64_t`` when non-limited C API is used or when the
+   limited C API version 3.16 or newer is used.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
