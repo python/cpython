@@ -2974,119 +2974,66 @@ def test_pdb_with_inline_breakpoint():
     (Pdb) c
     """
 
-def test_pdb_sigint_continue():
-    """SIGINT interrupts continue with a breakpoint set.
+def test_pdb_sigint():
+    """SIGINT should pause continue, next, until and return
 
-    >>> def callee():
+    >>> def interrupt():
     ...     signal.raise_signal(signal.SIGINT)
-    ...     return 42
-    >>> def caller():
-    ...     result = callee()
-    ...     return result
 
-    With a breakpoint after the call, tracing remains active. The signal
-    stops in the callee, and continuing then reaches the breakpoint.
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(readrc=False).set_trace()
+    ...     interrupt()
+    ...     interrupt()
+    ...     interrupt()
+    ...     interrupt()
 
-    >>> with PdbTestInput(['break 3', 'continue', 'continue', 'continue']):
-    ...     try:
-    ...         pdb.Pdb(readrc=False).runcall(caller)
-    ...     except KeyboardInterrupt:
-    ...         raise AssertionError('SIGINT unwound the debuggee')
-    > <doctest test.test_pdb.test_pdb_sigint_continue[1]>(2)caller()
-    -> result = callee()
-    (Pdb) break 3
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_sigint_continue[1]>:3
-    (Pdb) continue
+    >>> with PdbTestInput([
+    ...     'n',
+    ...     'n',
+    ...     'up',
+    ...     'until 5',
+    ...     'up',
+    ...     'r',
+    ...     'up',
+    ...     'c',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(readrc=False).set_trace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(3)test_function()
+    -> interrupt()
+    (Pdb) n
     <BLANKLINE>
     Program interrupted. (Use 'cont' to resume).
-    > <doctest test.test_pdb.test_pdb_sigint_continue[0]>(2)callee()
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
     -> signal.raise_signal(signal.SIGINT)
-    (Pdb) continue
-    > <doctest test.test_pdb.test_pdb_sigint_continue[1]>(3)caller()
-    -> return result
-    (Pdb) continue
-    42
-    """
-
-
-def test_pdb_sigint_next():
-    """SIGINT during next stops inside a previously untraced callee.
-
-    >>> def callee():
-    ...     signal.raise_signal(signal.SIGINT)
-    ...     return 42
-    >>> def caller():
-    ...     result = callee()
-    ...     return result
-
-    >>> with PdbTestInput(['next', 'continue']):
-    ...     try:
-    ...         pdb.Pdb(readrc=False).runcall(caller)
-    ...     except KeyboardInterrupt:
-    ...         raise AssertionError('SIGINT unwound the debuggee')
-    > <doctest test.test_pdb.test_pdb_sigint_next[1]>(2)caller()
-    -> result = callee()
-    (Pdb) next
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(3)test_function()
+    -> interrupt()
+    (Pdb) until 5
     <BLANKLINE>
     Program interrupted. (Use 'cont' to resume).
-    > <doctest test.test_pdb.test_pdb_sigint_next[0]>(2)callee()
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
     -> signal.raise_signal(signal.SIGINT)
-    (Pdb) continue
-    42
-    """
-
-
-def test_pdb_sigint_until():
-    """SIGINT during until stops inside a previously untraced callee.
-
-    >>> def callee():
-    ...     signal.raise_signal(signal.SIGINT)
-    ...     return 42
-    >>> def caller():
-    ...     result = callee()
-    ...     return result
-
-    >>> with PdbTestInput(['until 3', 'continue']):
-    ...     try:
-    ...         pdb.Pdb(readrc=False).runcall(caller)
-    ...     except KeyboardInterrupt:
-    ...         raise AssertionError('SIGINT unwound the debuggee')
-    > <doctest test.test_pdb.test_pdb_sigint_until[1]>(2)caller()
-    -> result = callee()
-    (Pdb) until 3
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(4)test_function()
+    -> interrupt()
+    (Pdb) r
     <BLANKLINE>
     Program interrupted. (Use 'cont' to resume).
-    > <doctest test.test_pdb.test_pdb_sigint_until[0]>(2)callee()
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
     -> signal.raise_signal(signal.SIGINT)
-    (Pdb) continue
-    42
-    """
-
-
-def test_pdb_sigint_return():
-    """SIGINT during return stops inside a previously untraced callee.
-
-    >>> def callee():
-    ...     signal.raise_signal(signal.SIGINT)
-    ...     return 42
-    >>> def caller():
-    ...     result = callee()
-    ...     return result
-
-    >>> with PdbTestInput(['return', 'continue']):
-    ...     try:
-    ...         pdb.Pdb(readrc=False).runcall(caller)
-    ...     except KeyboardInterrupt:
-    ...         raise AssertionError('SIGINT unwound the debuggee')
-    > <doctest test.test_pdb.test_pdb_sigint_return[1]>(2)caller()
-    -> result = callee()
-    (Pdb) return
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(5)test_function()
+    -> interrupt()
+    (Pdb) c
     <BLANKLINE>
     Program interrupted. (Use 'cont' to resume).
-    > <doctest test.test_pdb.test_pdb_sigint_return[0]>(2)callee()
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
     -> signal.raise_signal(signal.SIGINT)
-    (Pdb) continue
-    42
+    (Pdb) c
     """
 
 def test_pdb_issue_20766():
