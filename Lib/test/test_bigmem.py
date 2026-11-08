@@ -901,7 +901,7 @@ class TupleTest(unittest.TestCase):
     def test_repeat_large(self, size):
         return self.basic_test_repeat(size)
 
-    @bigmemtest(size=_1G - 1, memuse=12)
+    @bigmemtest(size=_1G - 1, memuse=pointer_size * 3)
     def test_repeat_large_2(self, size):
         return self.basic_test_repeat(size)
 

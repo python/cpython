@@ -1,2 +1,0 @@
-Allow imports inside ``exec()`` calls within functions under
-``PYTHON_LAZY_IMPORTS=all``.

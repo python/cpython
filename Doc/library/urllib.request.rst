@@ -68,6 +68,16 @@ The :mod:`!urllib.request` module defines the following functions:
 
    Raises :exc:`~urllib.error.URLError` on protocol errors.
 
+   Exceptions raised while reading or parsing an HTTP response are not
+   wrapped in :exc:`~urllib.error.URLError` and propagate unchanged.
+   These include subclasses of :exc:`http.client.HTTPException`, such as
+   :exc:`~http.client.BadStatusLine` for a malformed status line, and
+   subclasses of :exc:`OSError`, such as :exc:`TimeoutError` if the server
+   does not respond within *timeout* seconds, or
+   :exc:`~http.client.RemoteDisconnected` if the server closes the
+   connection without sending a response.  :exc:`ValueError` is raised if
+   *url* is not a valid URL.
+
    Note that ``None`` may be returned if no handler handles the request (though
    the default installed global :class:`OpenerDirector` uses
    :class:`UnknownHandler` to ensure this never happens).
@@ -987,8 +997,14 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
    *uri* can be either a single URI, or a sequence of URIs. *realm*, *user* and
    *passwd* must be strings. This causes ``(user, passwd)`` to be used as
-   authentication tokens when authentication for *realm* and a super-URI of any of
-   the given URIs is given.
+   authentication tokens when authentication for *realm* and a super-URI of any
+   of the given URIs is given. If a URI includes a scheme, its credentials only
+   match authentication URIs with the same scheme or no scheme. A URI without a
+   scheme matches authentication URIs with any scheme.
+
+   .. versionchanged:: 3.16
+      Authentication credentials for URIs with a scheme are now scoped by
+      that scheme.
 
 
 .. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
@@ -1050,6 +1066,10 @@ AbstractBasicAuthHandler Objects
    authenticate for, *req* should be the (failed) :class:`Request` object, and
    *headers* should be the error headers.
 
+   *headers* must be a mapping-like object with case-insensitive lookup
+   that implements the ``get_all()`` method,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
+
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
    authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
@@ -1090,6 +1110,9 @@ AbstractDigestAuthHandler Objects
    is included in the request, *host* should be the host to authenticate to, *req*
    should be the (failed) :class:`Request` object, and *headers* should be the
    error headers.
+
+   *headers* must be a mapping-like object with case-insensitive lookup,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
 
 
 .. _http-digest-auth-handler:
@@ -1486,7 +1509,8 @@ some point in the future.
 .. function:: urlcleanup()
 
    Cleans up temporary files that may have been left behind by previous
-   calls to :func:`urlretrieve`.
+   calls to :func:`urlretrieve`.  It also resets the default global opener
+   installed by :func:`install_opener`.
 
 
 :mod:`!urllib.request` Restrictions
