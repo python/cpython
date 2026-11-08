@@ -311,7 +311,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
-    if (globals == NULL) {
+    if (globals == NULL || globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (globals == NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -320,7 +320,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
             return NULL;
         }
     }
-    if (locals == NULL) {
+    if (locals == NULL || locals == Py_None) {
         locals = globals;
     }
 
@@ -2987,15 +2987,15 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
-            if (PyLong_Check(item)) {
+            if (PyLong_CheckExact(item)) {
                 double value = PyLong_AsDouble(item);
                 if (value != -1.0 || !PyErr_Occurred()) {
                     re_sum = cs_add(re_sum, value);
-                    Py_DECREF(item);
+                    _Py_DECREF_SPECIALIZED(item, _PyLong_ExactDealloc);
                     continue;
                 }
                 else {
-                    Py_DECREF(item);
+                    _Py_DECREF_SPECIALIZED(item, _PyLong_ExactDealloc);
                     Py_DECREF(iter);
                     return NULL;
                 }
@@ -3039,20 +3039,20 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(item);
                 continue;
             }
-            if (PyLong_Check(item)) {
+            if (PyLong_CheckExact(item)) {
                 double value = PyLong_AsDouble(item);
                 if (value != -1.0 || !PyErr_Occurred()) {
                     re_sum = cs_add(re_sum, value);
-                    Py_DECREF(item);
+                    _Py_DECREF_SPECIALIZED(item, _PyLong_ExactDealloc);
                     continue;
                 }
                 else {
-                    Py_DECREF(item);
+                    _Py_DECREF_SPECIALIZED(item, _PyLong_ExactDealloc);
                     Py_DECREF(iter);
                     return NULL;
                 }
             }
-            if (PyFloat_Check(item)) {
+            if (PyFloat_CheckExact(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
                 re_sum = cs_add(re_sum, value);
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);

@@ -2447,6 +2447,14 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('::1').is_unspecified)
         self.assertEqual(False, ipaddress.ip_network('::/127').is_unspecified)
 
+        self.assertTrue(ipaddress.ip_interface('::/128').is_unspecified)
+        self.assertTrue(
+            ipaddress.ip_interface('::ffff:0.0.0.0/128').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('::/127').is_unspecified)
+        self.assertFalse(
+            ipaddress.ip_interface('::ffff:0.0.0.0/127').is_unspecified)
+        self.assertFalse(ipaddress.ip_interface('::1/128').is_unspecified)
+
         self.assertEqual(True,
                          ipaddress.ip_network('2001::1/128').is_private)
         self.assertEqual(True,
@@ -2527,6 +2535,17 @@ class IpaddrUnitTest(unittest.TestCase):
             with self.subTest(addr4):
                 ipv4 = ipaddress.IPv4Address(addr4)
                 ipv6 = ipaddress.IPv6Address(f"::ffff:{addr4}")
+
+                self.assertEqual(ipv4.is_global, ipv6.is_global)
+                self.assertEqual(ipv4.is_private, ipv6.is_private)
+                self.assertEqual(ipv4.is_reserved, ipv6.is_reserved)
+                self.assertEqual(ipv4.is_multicast, ipv6.is_multicast)
+                self.assertEqual(ipv4.is_unspecified, ipv6.is_unspecified)
+                self.assertEqual(ipv4.is_link_local, ipv6.is_link_local)
+                self.assertEqual(ipv4.is_loopback, ipv6.is_loopback)
+
+                ipv4 = ipaddress.IPv4Interface(addr4)
+                ipv6 = ipaddress.IPv6Interface(f"::ffff:{addr4}")
 
                 self.assertEqual(ipv4.is_global, ipv6.is_global)
                 self.assertEqual(ipv4.is_private, ipv6.is_private)

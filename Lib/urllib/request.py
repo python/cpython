@@ -101,7 +101,8 @@ from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
-    _splitattr, _splitvalue, _splittag,
+    _splitattr, _splitvalue, _splittag, _splitnetloc,
+    _WHATWG_C0_CONTROL_OR_SPACE, _UNSAFE_URL_BYTES_TO_REMOVE,
     unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
@@ -1085,8 +1086,58 @@ class AbstractDigestAuthHandler:
     def reset_retry_count(self):
         self.retried = 0
 
+    def _parse_challenges(self, header):
+        # Yield (scheme, challenge) for each challenge in a WWW-Authenticate
+        # header value.  Commas separate both challenges and the auth-params
+        # of a challenge, so an element which starts with a token that is not
+        # followed by "=" starts a new challenge (RFC 9110, section 11.6.1).
+        #
+        # For example, the header value
+        #
+        #     Basic realm="a", Digest realm="b", nonce="n"
+        #
+        # is split on commas into the elements 'Basic realm="a"',
+        # 'Digest realm="b"' and 'nonce="n"'.  "Basic" and "Digest" are not
+        # followed by "=", so they start challenges; 'nonce="n"' continues
+        # the Digest one.  This yields:
+        #
+        #     ('Basic', 'Basic realm="a"')
+        #     ('Digest', 'Digest realm="b", nonce="n"')
+        elements = []
+        start = 0
+        quote = escape = False
+        for i, c in enumerate(header):
+            if escape:
+                escape = False
+            elif quote:
+                if c == '\\':
+                    escape = True
+                elif c == '"':
+                    quote = False
+            elif c == '"':
+                quote = True
+            elif c == ',':
+                elements.append((start, i))
+                start = i + 1
+        elements.append((start, len(header)))
+
+        scheme = begin = end = None
+        for elt_start, elt_end in elements:
+            words = header[elt_start:elt_end].split(None, 1)
+            if not words:
+                continue
+            rest = words[1] if len(words) > 1 else ''
+            if '=' not in words[0] and not rest.startswith('='):
+                if scheme is not None:
+                    yield scheme, header[begin:end].strip()
+                scheme = words[0]
+                begin = elt_start
+            end = elt_end
+        if scheme is not None:
+            yield scheme, header[begin:end].strip()
+
     def http_error_auth_reqed(self, auth_header, host, req, headers):
-        authreq = headers.get(auth_header, None)
+        authreqs = headers.get_all(auth_header)
         if self.retried > 5:
             # Don't fail endlessly - if we failed once, we'll probably
             # fail a second time. Hm. Unless the Password Manager is
@@ -1101,13 +1152,21 @@ class AbstractDigestAuthHandler:
                             headers, None)
         else:
             self.retried += 1
-        if authreq:
-            scheme = authreq.split()[0]
-            if scheme.lower() == 'digest':
-                return self.retry_http_digest_auth(req, authreq)
-            elif scheme.lower() != 'basic':
-                raise ValueError("AbstractDigestAuthHandler does not support"
-                                 " the following scheme: '%s'" % scheme)
+        if not authreqs:
+            return None
+        unsupported = None
+        basic_found = False
+        for authreq in authreqs:
+            for scheme, challenge in self._parse_challenges(authreq):
+                if scheme.lower() == 'digest':
+                    return self.retry_http_digest_auth(req, challenge)
+                if scheme.lower() == 'basic':
+                    basic_found = True
+                elif unsupported is None:
+                    unsupported = scheme
+        if unsupported is not None and not basic_found:
+            raise ValueError("AbstractDigestAuthHandler does not support"
+                             " the following scheme: '%s'" % unsupported)
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
@@ -1695,7 +1754,22 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
-    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    # Match urlsplit()'s own control-character handling up front, so the
+    # except branch below can reuse this same cleaned-up string.
+    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, '')
+    try:
+        scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    except ValueError:
+        # The authority here is not a real host[:port] pair -- it may
+        # hold a Windows drive letter (e.g. 'C:\\') -- so urlsplit()'s
+        # eager port check doesn't apply; split without it instead.
+        scheme, _, url = url.partition(':')
+        scheme = scheme.lower()
+        authority = ''
+        if url[:2] == '//':
+            authority, url = _splitnetloc(url, 2)
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':

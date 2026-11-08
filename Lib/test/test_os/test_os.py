@@ -3544,6 +3544,12 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
 
     @requires_native_spawnv
+    def test_spawnve_empty_first_arg_message(self):
+        with self.assertRaisesRegex(ValueError,
+                                    r'^spawnve\(\) arg 2 first element'):
+            os.spawnve(os.P_NOWAIT, sys.executable, [''], {})
+
+    @requires_native_spawnv
     def test_spawnv_arg_conversion_errors(self):
         # A non-path argv item gets a TypeError naming the argument...
         with self.assertRaisesRegex(TypeError, 'must contain only strings'):

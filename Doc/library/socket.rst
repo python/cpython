@@ -1065,6 +1065,9 @@ The :mod:`!socket` module also offers various network-related services:
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
 
+   .. versionchanged:: next
+      Null characters are now rejected in the *host* and *port* parameters.
+
 .. _Happy Eyeballs: https://en.wikipedia.org/wiki/Happy_Eyeballs
 
 .. function:: getfqdn([name])

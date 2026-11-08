@@ -831,7 +831,8 @@ Here's an example that demonstrates use of the XInclude module. To include an XM
 
 By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
 
-To process this file, load it as usual, and pass the root element to the :mod:`!xml.etree.ElementTree` module:
+To process this file, load it as usual, and pass the root element to the
+:mod:`xml.etree.ElementInclude` module:
 
 .. code-block:: python
 

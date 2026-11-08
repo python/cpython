@@ -1213,8 +1213,9 @@ AsObjNested(PyObject *value, int depth)
 
     {
         PyObject *v = PyObject_Str(value);
-        if (!v)
-            return 0;
+        if (!v) {
+            return NULL;
+        }
         result = AsObjNested(v, depth);
         Py_DECREF(v);
         return result;
@@ -1963,6 +1964,9 @@ SetVar(TkappObject *self, PyObject *args, int flags)
 
         /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
+        if (newval == NULL) {
+            return NULL;
+        }
         if (self->trace) {
             if (flags & TCL_GLOBAL_ONLY) {
                 TRACE(self, ("((sssNO))", "uplevel", "#0", "set",
