@@ -299,7 +299,7 @@ gen_random_lock_held(PyObject *module, uuid_state *state, uint8_t *bytes,
             // entropy as a continuous stream.
             // The overhead here must be negligible, but we want the same
             // code to be run in production and in tests.
-            Py_ssize_t partial = RANDOM_BUF_SIZE - state->random_idx;
+            Py_ssize_t partial = RANDOM_BUF_SIZE - (Py_ssize_t)state->random_idx;
             memcpy(bytes, state->random_buf + state->random_idx, partial);
             bytes += partial;
             size -= partial;
