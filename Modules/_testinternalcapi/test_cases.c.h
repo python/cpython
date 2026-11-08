@@ -161,12 +161,10 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 assert(PyStackRef_FunctionCheck(callee->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-                tstate->current_frame = callee;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
                 _PyFrame_StackPointerInvalidate(frame);
-                tstate->current_frame = frame;
                 if (gen == NULL) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
@@ -179,31 +177,15 @@
                     assert(callee->instr_ptr[1].op.code == POP_TOP);
                     callee->instr_ptr += 2;
                 }
-                _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyFrame_Copy(callee, pushed_frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(callee->frame_obj == NULL);
-                pushed_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_UpdateLastProfiledFrame(tstate, callee, frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_PopFrame(tstate, callee);
-                _PyFrame_StackPointerInvalidate(frame);
+                gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                pushed_frame->previous = frame;
                 frame->instr_ptr += 4u + 3;
                 assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg);
+                gen_link_frame(tstate, gen, frame,
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
-                gen_frame = PyStackRef_Wrap(pushed_frame);
+                gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
             }
             // _PUSH_FRAME
             {
@@ -361,12 +343,10 @@
                 _PyInterpreterFrame *callee = PyStackRef_Unwrap(new_frame);
                 assert(PyStackRef_FunctionCheck(callee->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-                tstate->current_frame = callee;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
                 _PyFrame_StackPointerInvalidate(frame);
-                tstate->current_frame = frame;
                 if (gen == NULL) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
@@ -379,31 +359,15 @@
                     assert(callee->instr_ptr[1].op.code == POP_TOP);
                     callee->instr_ptr += 2;
                 }
-                _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyFrame_Copy(callee, pushed_frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(callee->frame_obj == NULL);
-                pushed_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_UpdateLastProfiledFrame(tstate, callee, frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_PopFrame(tstate, callee);
-                _PyFrame_StackPointerInvalidate(frame);
+                gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                pushed_frame->previous = frame;
                 frame->instr_ptr += 4u + 3;
                 assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg);
+                gen_link_frame(tstate, gen, frame,
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
-                gen_frame = PyStackRef_Wrap(pushed_frame);
+                gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
             }
             // _PUSH_FRAME
             {
@@ -545,12 +509,10 @@
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 assert(PyStackRef_FunctionCheck(callee->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-                tstate->current_frame = callee;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
                 _PyFrame_StackPointerInvalidate(frame);
-                tstate->current_frame = frame;
                 if (gen == NULL) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
@@ -563,31 +525,15 @@
                     assert(callee->instr_ptr[1].op.code == POP_TOP);
                     callee->instr_ptr += 2;
                 }
-                _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyFrame_Copy(callee, pushed_frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(callee->frame_obj == NULL);
-                pushed_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_UpdateLastProfiledFrame(tstate, callee, frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_PopFrame(tstate, callee);
-                _PyFrame_StackPointerInvalidate(frame);
+                gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                pushed_frame->previous = frame;
                 frame->instr_ptr += 4u + 3;
                 assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg);
+                gen_link_frame(tstate, gen, frame,
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
-                gen_frame = PyStackRef_Wrap(pushed_frame);
+                gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
             }
             // _PUSH_FRAME
             {
@@ -717,12 +663,10 @@
                 _PyInterpreterFrame *callee = PyStackRef_Unwrap(new_frame);
                 assert(PyStackRef_FunctionCheck(callee->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-                tstate->current_frame = callee;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
                 _PyFrame_StackPointerInvalidate(frame);
-                tstate->current_frame = frame;
                 if (gen == NULL) {
                     assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                     _PyFrame_StackPointerValidate(frame);
@@ -735,31 +679,15 @@
                     assert(callee->instr_ptr[1].op.code == POP_TOP);
                     callee->instr_ptr += 2;
                 }
-                _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyFrame_Copy(callee, pushed_frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(callee->frame_obj == NULL);
-                pushed_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_UpdateLastProfiledFrame(tstate, callee, frame);
-                _PyFrame_StackPointerInvalidate(frame);
-                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                _PyFrame_StackPointerValidate(frame);
-                _PyThreadState_PopFrame(tstate, callee);
-                _PyFrame_StackPointerInvalidate(frame);
+                gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                pushed_frame->previous = frame;
                 frame->instr_ptr += 4u + 3;
                 assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg);
+                gen_link_frame(tstate, gen, frame,
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
-                gen_frame = PyStackRef_Wrap(pushed_frame);
+                gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
             }
             // _PUSH_FRAME
             {
@@ -7201,10 +7129,7 @@
                 STAT_INC(FOR_ITER, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(pushed_frame, PyStackRef_None);
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                pushed_frame->previous = frame;
-                frame->return_offset = (uint16_t)( 2u + oparg);
+                gen_link_frame(tstate, gen, frame, (uint16_t)( 2u + oparg));
                 gen_frame = PyStackRef_Wrap(pushed_frame);
             }
             // _PUSH_FRAME
@@ -12218,7 +12143,7 @@
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, frame);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (gen == NULL) {
                     JUMP_TO_LABEL(error);
@@ -12226,16 +12151,11 @@
                 assert(STACK_LEVEL() <= 2);
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 frame->instr_ptr++;
-                _PyFrame_Copy(frame, gen_frame);
-                assert(frame->frame_obj == NULL);
-                gen->gi_frame_state = FRAME_CREATED;
-                gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                _Py_LeaveRecursiveCallPy(tstate);
                 _PyInterpreterFrame *prev = frame->previous;
-                _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
-                _PyThreadState_PopFrame(tstate, frame);
+                gen_take_frame(tstate, gen, frame, prev);
+                gen->gi_frame_state = FRAME_CREATED;
+                _Py_LeaveRecursiveCallPy(tstate);
                 frame = tstate->current_frame = prev;
                 LOAD_IP(frame->return_offset);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -12496,11 +12416,8 @@
                 STAT_INC(SEND, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(pushed_frame, PyStackRef_MakeHeapSafe(v));
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
                 assert( 2u + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)( 2u + oparg);
-                pushed_frame->previous = frame;
+                gen_link_frame(tstate, gen, frame, (uint16_t)( 2u + oparg));
                 gen_frame = PyStackRef_Wrap(pushed_frame);
             }
             // _PUSH_FRAME

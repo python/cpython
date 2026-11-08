@@ -1730,11 +1730,8 @@ dummy_func(
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
             _PyFrame_StackPush(pushed_frame, PyStackRef_MakeHeapSafe(v));
             DEAD(v);
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
             assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
-            pushed_frame->previous = frame;
+            gen_link_frame(tstate, gen, frame, (uint16_t)(INSTRUCTION_SIZE + oparg));
             gen_frame = PyStackRef_Wrap(pushed_frame);
         }
 
@@ -4078,11 +4075,8 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
             _PyFrame_StackPush(pushed_frame, PyStackRef_None);
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
-            pushed_frame->previous = frame;
             // oparg is the return offset from the next instruction.
-            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
+            gen_link_frame(tstate, gen, frame, (uint16_t)(INSTRUCTION_SIZE + oparg));
             gen_frame = PyStackRef_Wrap(pushed_frame);
         }
 
@@ -5382,11 +5376,7 @@ dummy_func(
             SYNC_SP();
             assert(PyStackRef_FunctionCheck(callee->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-            // _Py_MakeCoro() expects the current frame to be the frame
-            // of the coroutine function, as it is in RETURN_GENERATOR.
-            tstate->current_frame = callee;
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
-            tstate->current_frame = frame;
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
             if (gen == NULL) {
                 _PyEval_FrameClearAndPop(tstate, callee);
                 ERROR_NO_POP();
@@ -5399,24 +5389,17 @@ dummy_func(
             // Otherwise RETURN_GENERATOR is preceded by COPY_FREE_VARS or
             // MAKE_CELL. They run in the frame of the coroutine, where
             // RETURN_GENERATOR only pushes the None that POP_TOP discards.
-            _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
-            _PyFrame_Copy(callee, pushed_frame);
-            assert(callee->frame_obj == NULL);
-            pushed_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _PyThreadState_UpdateLastProfiledFrame(tstate, callee, frame);
-            _PyThreadState_PopFrame(tstate, callee);
+            gen_take_frame(tstate, gen, callee, frame);
             gen->gi_frame_state = FRAME_EXECUTING;
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
-            pushed_frame->previous = frame;
             // The coroutine yields and returns to the SEND, which follows
             // GET_AWAITABLE, PUSH_NULL and LOAD_COMMON_CONSTANT.
             frame->instr_ptr += INSTRUCTION_SIZE + 3;
             assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg);
+            gen_link_frame(tstate, gen, frame,
+                (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
             coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             null = PyStackRef_NULL;
-            gen_frame = PyStackRef_Wrap(pushed_frame);
+            gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
         }
 
         macro(ASYNC_CALL_PY_EXACT_ARGS) =
@@ -5940,20 +5923,15 @@ dummy_func(
             else {
                 assert(PyStackRef_FunctionCheck(frame->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, frame);
                 ERROR_IF(gen == NULL);
                 assert(STACK_LEVEL() <= 2);
                 SAVE_STACK();
-                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 frame->instr_ptr++;
-                _PyFrame_Copy(frame, gen_frame);
-                assert(frame->frame_obj == NULL);
-                gen->gi_frame_state = FRAME_CREATED;
-                gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-                _Py_LeaveRecursiveCallPy(tstate);
                 _PyInterpreterFrame *prev = frame->previous;
-                _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
-                _PyThreadState_PopFrame(tstate, frame);
+                gen_take_frame(tstate, gen, frame, prev);
+                gen->gi_frame_state = FRAME_CREATED;
+                _Py_LeaveRecursiveCallPy(tstate);
                 frame = tstate->current_frame = prev;
                 LOAD_IP(frame->return_offset);
                 RELOAD_STACK();

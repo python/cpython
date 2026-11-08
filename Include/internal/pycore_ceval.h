@@ -266,7 +266,9 @@ extern int _PyEval_EnsureBuiltinsWithModule(
     PyObject *,
     PyObject **p_builtins);
 
-PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
+// Create the generator object for the frame of a call to a generator
+// function; the frame has not started executing yet.
+PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func, _PyInterpreterFrame *frame);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

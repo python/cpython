@@ -1316,6 +1316,9 @@ enum {
     _SAVE_RETURN_OFFSET_r33,
     _SEND_ASYNC_GEN_r33,
     _SEND_ASYNC_GEN_TIER_TWO_r33,
+    _SEND_GEN_FRAME_r03,
+    _SEND_GEN_FRAME_r13,
+    _SEND_GEN_FRAME_r23,
     _SEND_GEN_FRAME_r33,
     _SEND_VIRTUAL_r33,
     _SEND_VIRTUAL_TIER_TWO_r03,
@@ -1451,7 +1454,7 @@ enum {
     _WITH_EXCEPT_START_r33,
     _YIELD_VALUE_r11,
 };
-#define MAX_UOP_REGS_ID 1662
+#define MAX_UOP_REGS_ID 1665
 
 #ifdef __cplusplus
 }
