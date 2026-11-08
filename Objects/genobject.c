@@ -1128,7 +1128,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
 }
 
 PyObject *
-_Py_MakeCoro(PyFunctionObject *func, _PyInterpreterFrame *frame)
+_Py_MakeCoroWithFrame(PyFunctionObject *func, _PyInterpreterFrame *frame)
 {
     int coro_flags = ((PyCodeObject *)func->func_code)->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -1171,6 +1171,12 @@ _Py_MakeCoro(PyFunctionObject *func, _PyInterpreterFrame *frame)
         }
     }
     return coro;
+}
+
+PyObject *
+_Py_MakeCoro(PyFunctionObject *func)
+{
+    return _Py_MakeCoroWithFrame(func, _PyThreadState_GET()->current_frame);
 }
 
 static PyObject *

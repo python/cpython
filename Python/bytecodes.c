@@ -5377,7 +5377,7 @@ dummy_func(
             SYNC_SP();
             assert(PyStackRef_FunctionCheck(callee->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoroWithFrame(func, callee);
             if (gen == NULL) {
                 _PyEval_FrameClearAndPop(tstate, callee);
                 ERROR_NO_POP();
@@ -5949,7 +5949,7 @@ dummy_func(
             else {
                 assert(PyStackRef_FunctionCheck(frame->f_funcobj));
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, frame);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
                 ERROR_IF(gen == NULL);
                 assert(STACK_LEVEL() <= 2);
                 SAVE_STACK();

@@ -20149,7 +20149,7 @@
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, callee);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoroWithFrame(func, callee);
             _PyFrame_StackPointerInvalidate(frame);
             if (gen == NULL) {
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
@@ -20989,7 +20989,7 @@
                 PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func, frame);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
                 _PyFrame_StackPointerInvalidate(frame);
                 if (gen == NULL) {
                     SET_CURRENT_CACHED_VALUES(0);
