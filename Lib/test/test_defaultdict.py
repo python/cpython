@@ -37,6 +37,9 @@ class TestDefaultDict(unittest.TestCase):
         self.assertIn(42, d2.keys())
         self.assertNotIn(12, d2)
         self.assertNotIn(12, d2.keys())
+        d2.default_factory = list
+        del d2.default_factory
+        self.assertEqual(d2.default_factory, None)
         d2.default_factory = None
         self.assertEqual(d2.default_factory, None)
         try:

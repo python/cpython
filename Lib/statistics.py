@@ -138,14 +138,15 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
+from math import hypot, sqrt, fabs, exp, erfc, log, fsum, sumprod
+from math import isfinite, isinf, pi, sin, cosh
+from math import sinpi, cospi, tanpi, asinpi, acospi, atanpi
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
-_SQRT2PI = sqrt(tau)
+_SQRT2PI = float.fromhex('0x1.40d931ff62706p+1')  # Correctly rounded sqrt(2*pi)
 _random = random
 
 ## Exceptions ##############################################################
@@ -820,8 +821,8 @@ def register(*kernels):
 
 @register('normal', 'gauss')
 def normal_kernel():
-    sqrt2pi = sqrt(2 * pi)
-    neg_sqrt2 = -sqrt(2)
+    sqrt2pi = _SQRT2PI
+    neg_sqrt2 = -_SQRT2
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
     cdf = lambda t: 1/2 * erfc(t / neg_sqrt2)
     invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)
@@ -840,12 +841,10 @@ def logistic_kernel():
 @register('sigmoid')
 def sigmoid_kernel():
     # (2/pi) / (exp(t) + exp(-t))
-    c1 = 1 / pi
-    c2 = 2 / pi
-    c3 = pi / 2
-    pdf = lambda t: c1 / cosh(t)
-    cdf = lambda t: c2 * atan(exp(t))
-    invcdf = lambda p: log(tan(p * c3))
+    recip_pi = 1 / pi
+    pdf = lambda t: recip_pi / cosh(t)
+    cdf = lambda t: 2.0 * atanpi(exp(t))
+    invcdf = lambda p: log(tanpi(p * 0.5))
     support = None
     return pdf, cdf, invcdf, support
 
@@ -869,7 +868,7 @@ def triangular_kernel():
 def parabolic_kernel():
     pdf = lambda t: 3/4 * (1.0 - t * t)
     cdf = lambda t: sumprod((-1/4, 3/4, 1/2), (t**3, t, 1.0))
-    invcdf = lambda p: 2.0 * cos((acos(2.0*p - 1.0) + pi) / 3.0)
+    invcdf = lambda p: 2.0 * cospi((acospi(2.0 * p - 1.0) + 1.0) / 3.0)
     support = 1.0
     return pdf, cdf, invcdf, support
 
@@ -894,7 +893,7 @@ def _quartic_invcdf_estimate(p):
 
 @register('quartic', 'biweight')
 def quartic_kernel():
-    pdf = lambda t: 15/16 * (1.0 - t * t) ** 2
+    pdf = lambda t: 15/16 * (u := 1.0 - t * t) * u
     cdf = lambda t: sumprod((3/16, -5/8, 15/16, 1/2),
                             (t**5, t**3, t, 1.0))
     invcdf = _newton_raphson(_quartic_invcdf_estimate, f=cdf, f_prime=pdf)
@@ -906,7 +905,7 @@ def _triweight_invcdf_estimate(p):
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.3400218741872791 - 1.0
     if 0.00001 < p < 0.499:
-        x -= 0.033 * sin(1.07 * tau * (p - 0.035))
+        x -= 0.033 * sinpi(2.14 * (p - 0.035))
     return x * sign
 
 @register('triweight')
@@ -921,10 +920,9 @@ def triweight_kernel():
 @register('cosine')
 def cosine_kernel():
     c1 = pi / 4
-    c2 = pi / 2
-    pdf = lambda t: c1 * cos(c2 * t)
-    cdf = lambda t: 1/2 * sin(c2 * t) + 1/2
-    invcdf = lambda p: 2.0 * asin(2.0 * p - 1.0) / pi
+    pdf = lambda t: c1 * cospi(0.5 * t)
+    cdf = lambda t: 1/2 * sinpi(0.5 * t) + 1/2
+    invcdf = lambda p: 2.0 * asinpi(2.0 * p - 1.0)
     support = 1.0
     return pdf, cdf, invcdf, support
 
@@ -1486,15 +1484,13 @@ def _sum(data):
     """
     count = 0
     types = set()
-    types_add = types.add
     partials = {}
-    partials_get = partials.get
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
-            partials[d] = partials_get(d, 0) + n
+            partials[d] = partials.get(d, 0) + n
 
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
@@ -1524,12 +1520,11 @@ def _ss(data, c=None):
 
     count = 0
     types = set()
-    types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
 
     for typ, values in groupby(data, type):
-        types_add(typ)
+        types.add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             sx_partials[d] += n

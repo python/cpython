@@ -9,8 +9,6 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Label,
-    CodeSection,
     Part,
     analyze_files,
     Skip,
@@ -24,13 +22,9 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
-    TokenIterator,
-    always_true,
-    emit_to,
 )
 from cwriter import CWriter
 from typing import TextIO
-from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -211,6 +205,7 @@ def generate_tier1_labels(
         storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
+            storage.stack.physical_sp = None
         emitter.emit_tokens(label, storage, None)
         emitter.emit("\n\n")
 

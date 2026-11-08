@@ -23,6 +23,8 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+import sys
+
 try:
     from _winapi import _mimetypes_read_windows_registry
 except ImportError:
@@ -40,17 +42,23 @@ __all__ = [
     "suffix_map", "encodings_map", "types_map", "common_types"
 ]
 
-knownfiles = [
-    "/etc/mime.types",
-    "/etc/httpd/mime.types",                    # Mac OS X
-    "/etc/httpd/conf/mime.types",               # Apache
-    "/etc/apache/mime.types",                   # Apache 1
-    "/etc/apache2/mime.types",                  # Apache 2
-    "/usr/local/etc/httpd/conf/mime.types",
-    "/usr/local/lib/netscape/mime.types",
-    "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
-    "/usr/local/etc/mime.types",                # Apache 1.3
-    ]
+if sys.platform == "win32":
+    # The default paths would resolve to the root of the current drive on Windows
+    # (e.g. C:\etc\mime.types), which unprivileged users can usually create.
+    # Only the registry is used by default.
+    knownfiles = []
+else:
+    knownfiles = [
+        "/etc/mime.types",
+        "/etc/httpd/mime.types",                    # Mac OS X
+        "/etc/httpd/conf/mime.types",               # Apache
+        "/etc/apache/mime.types",                   # Apache 1
+        "/etc/apache2/mime.types",                  # Apache 2
+        "/usr/local/etc/httpd/conf/mime.types",
+        "/usr/local/lib/netscape/mime.types",
+        "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
+        "/usr/local/etc/mime.types",                # Apache 1.3
+        ]
 
 inited = False
 _db = None
@@ -85,6 +93,9 @@ class MimeTypes:
         type will replace the old one. When the type
         is already known the extension will be added
         to the list of known extensions.
+
+        Registered lower-case extensions are matched
+        case-insensitively.
 
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
@@ -172,23 +183,33 @@ class MimeTypes:
 
     def _guess_file_type(self, path, strict, splitext):
         base, ext = splitext(path)
-        while (ext_lower := ext.lower()) in self.suffix_map:
-            base, ext = splitext(base + self.suffix_map[ext_lower])
+        while True:
+            if ext in self.suffix_map:
+                suffix = self.suffix_map[ext]
+            elif (ext_lower := ext.lower()) in self.suffix_map:
+                suffix = self.suffix_map[ext_lower]
+            else:
+                break
+            base, ext = splitext(base + suffix)
         # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = splitext(base)
         else:
             encoding = None
-        ext = ext.lower()
+        ext_lower = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
+        if ext_lower in types_map:
+            return types_map[ext_lower], encoding
         else:
             return None, encoding
 
@@ -237,7 +258,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        with open(filename, encoding='utf-8') as fp:
+        with open(filename, encoding='utf-8', errors='surrogateescape') as fp:
             self.readfp(fp, strict)
 
     def readfp(self, fp, strict=True):
@@ -386,6 +407,9 @@ def add_type(type, ext, strict=True):
     is already known the extension will be added
     to the list of known extensions.
 
+    Registered lower-case extensions are matched
+    case-insensitively.
+
     If strict is true, information will be added to
     list of standard types, else to the list of non-standard
     types.
@@ -428,7 +452,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file, encoding='utf-8')
+        f = open(file, encoding='utf-8', errors='surrogateescape')
     except OSError:
         return None
     with f:

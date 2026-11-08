@@ -1,0 +1,4 @@
+Fix false sharing between the per-thread QSBR states in the
+:term:`free-threaded build` on AArch64 CPUs with 128-byte cache lines, such
+as Apple Silicon. CPU-bound threads that share no objects now scale like
+processes there.

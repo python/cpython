@@ -1,4 +1,4 @@
-import ctypes
+import ctypes.util
 import unittest
 from test.support import import_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
@@ -26,8 +26,10 @@ class UnicodeTestCase(unittest.TestCase):
         self.assertEqual(buf[6:5:-1], "")
 
     def test_embedded_null(self):
-        class TestStruct(ctypes.Structure):
-            _fields_ = [("unicode", ctypes.c_wchar_p)]
+        @ctypes.util.struct
+        class TestStruct:
+            unicode: ctypes.c_wchar_p
+
         t = TestStruct()
         # This would raise a ValueError:
         t.unicode = "foo\0bar\0\0"

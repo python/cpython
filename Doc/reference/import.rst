@@ -665,6 +665,15 @@ shared libraries (e.g. ``.so`` files). When supported by the :mod:`zipimport`
 module in the standard library, the default path entry finders also handle
 loading all of these file types (other than shared libraries) from zipfiles.
 
+Within a single :term:`path entry`, the default path entry finders check for a
+:term:`regular package` first, then for extension modules, then for source
+files, and finally for bytecode files. For example, if the same directory
+contains both ``spam/__init__.py`` and ``spam.py``, ``import spam`` will
+import the package from ``spam/__init__.py``. A directory without an
+``__init__.py`` file is treated as a :term:`namespace package` portion only if
+no matching module is found. Note that this does not override the order of the
+:term:`import path`.
+
 Path entries need not be limited to file system locations.  They can refer to
 URLs, database queries, or any other location that can be specified as a
 string.

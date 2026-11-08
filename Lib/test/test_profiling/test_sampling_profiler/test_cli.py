@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 try:
@@ -22,10 +23,13 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
+from profiling.sampling.binary_reader import BinaryReader
 from profiling.sampling.cli import (
     FORMAT_EXTENSIONS,
     _create_collector,
     _generate_output_filename,
+    _handle_output,
+    _replay_with_reader,
     main,
 )
 from profiling.sampling.constants import (
@@ -727,6 +731,26 @@ class TestSampleProfilerCLI(unittest.TestCase):
             call_kwargs = mock_sample.call_args[1]
             self.assertEqual(call_kwargs.get("async_aware"), "running")
 
+    def test_handle_output_browser_not_opened_when_export_fails(self):
+        for format_type in ("flamegraph", "diff_flamegraph", "heatmap"):
+            with self.subTest(format=format_type):
+                collector = mock.MagicMock()
+                collector.export.return_value = False
+                args = SimpleNamespace(
+                    format=format_type,
+                    outfile="profile.html",
+                    browser=True,
+                )
+
+                with (
+                    mock.patch("profiling.sampling.cli.os.path.isdir", return_value=False),
+                    mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+                ):
+                    _handle_output(collector, args, pid=12345, mode=0)
+
+                collector.export.assert_called_once_with("profile.html")
+                mock_open.assert_not_called()
+
     def test_async_aware_with_async_mode_all(self):
         """Test --async-aware with --async-mode all."""
         test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "all"]
@@ -866,6 +890,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("--all-threads", error_msg)
         self.assertIn("incompatible with --async-aware", error_msg)
 
+    def test_async_aware_incompatible_with_binary(self):
+        """Test --async-aware is incompatible with --binary."""
+        test_args = ["profiling.sampling.cli", "attach", "12345",
+                     "--async-aware", "--binary"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--binary", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
     @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_nonexistent_script_exits_cleanly(self):
         """Test that running a non-existent script exits with a clean error."""
@@ -924,6 +965,41 @@ class TestSampleProfilerCLI(unittest.TestCase):
             "Error: Unsupported format version 2",
         )
 
+    def test_cli_replay_propagates_recorded_mode(self):
+        reader = mock.MagicMock()
+        reader.get_info.return_value = {
+            "sample_interval_us": 1000,
+            "sample_count": 0,
+            "compression_type": 0,
+            "mode": PROFILING_MODE_CPU,
+            "capture_config": {"all_threads": True},
+        }
+        reader.replay_samples.return_value = 0
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+        args = SimpleNamespace(
+            format="diff_flamegraph",
+            input_file="current.bin",
+            diff_baseline="baseline.bin",
+            outfile="diff.html",
+            browser=False,
+        )
+
+        with mock.patch(
+            "profiling.sampling.cli._create_collector",
+            return_value=collector,
+        ) as create_collector:
+            _replay_with_reader(args, reader)
+
+        create_collector.assert_called_once_with(
+            "diff_flamegraph",
+            1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+            diff_baseline="baseline.bin",
+            capture_config={"all_threads": True},
+        )
+
     def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
         """--jsonl and --pstats cannot be combined (mutually exclusive group)."""
         with (
@@ -965,6 +1041,26 @@ class TestSampleProfilerCLI(unittest.TestCase):
             records = [json.loads(line) for line in f]
         meta = next(r for r in records if r["type"] == "meta")
         self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_binary_create_collector_propagates_mode(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            binary_path = f.name
+        self.addCleanup(os.unlink, binary_path)
+        collector = _create_collector(
+            "binary",
+            sample_interval_usec=1000,
+            skip_idle=True,
+            mode=PROFILING_MODE_CPU,
+            output_file=binary_path,
+            compression="none",
+            capture_config={"native": True},
+        )
+        collector.export(None)
+
+        with BinaryReader(binary_path) as reader:
+            info = reader.get_info()
+            self.assertEqual(info["mode"], PROFILING_MODE_CPU)
+            self.assertTrue(info["capture_config"]["native"])
 
     def test_cli_jsonl_rejects_opcodes_combination(self):
         """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""

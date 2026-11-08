@@ -196,7 +196,13 @@ if hasattr(socket, 'TCP_NODELAY'):
         if (sock.family in {socket.AF_INET, socket.AF_INET6} and
                 sock.type == socket.SOCK_STREAM and
                 sock.proto == socket.IPPROTO_TCP):
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            except OSError:
+                # TCP_NODELAY is only a latency optimization.  It can fail
+                # on a connection already reset by the peer (e.g. EINVAL
+                # on macOS); the error will surface on the next I/O.
+                pass
 else:
     def _set_nodelay(sock):
         pass
@@ -432,7 +438,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
-        self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
         # The preserved state of async generator hooks.
@@ -488,10 +493,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         If factory is None the default task factory will be set.
 
         If factory is a callable, it should have a signature matching
-        '(loop, coro, **kwargs)', where 'loop' will be a reference to the active
-        event loop, 'coro' will be a coroutine object, and **kwargs will be
-        arbitrary keyword arguments that should be passed on to Task.
-        The callable must return a Task.
+        '(loop, coro, **kwargs)', where 'loop' will be a reference to the
+        active event loop, 'coro' will be a coroutine object, and **kwargs
+        will be arbitrary keyword arguments that should be passed on to
+        Task.  The callable must return a Task.
         """
         if factory is not None and not callable(factory):
             raise TypeError('task factory must be a callable or None')
@@ -590,7 +595,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             return_exceptions=True)
 
         for result, agen in zip(results, closing_agens):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 self.call_exception_handler({
                     'message': f'an error occurred during closing of '
                                f'asynchronous generator {agen!r}',
@@ -727,8 +732,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback already scheduled will still run.  This simply informs
-        run_forever to stop looping after a complete iteration.
+        Every callback already scheduled will still run.  This simply
+        informs run_forever to stop looping after a complete iteration.
         """
         self._stopping = True
 
@@ -1076,12 +1081,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Create a streaming transport connection to a given internet host and
         port: socket family AF_INET or socket.AF_INET6 depending on host (or
-        family if specified), socket type SOCK_STREAM. protocol_factory must be
-        a callable returning a protocol instance.
+        family if specified), socket type SOCK_STREAM. protocol_factory must
+        be a callable returning a protocol instance.
 
-        This method is a coroutine which will try to establish the connection
-        in the background.  When successful, the coroutine returns a
-        (transport, protocol) pair.
+        This method is a coroutine which will try to establish the
+        connection in the background.  When successful, the coroutine
+        returns a (transport, protocol) pair.
         """
         if server_hostname is not None and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
@@ -1219,26 +1224,32 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None, context=None):
 
-        sock.setblocking(False)
-        context = context if context is not None else contextvars.copy_context()
+        try:
+            sock.setblocking(False)
+            context = context if context is not None else contextvars.copy_context()
 
-        protocol = protocol_factory()
-        waiter = self.create_future()
-        if ssl:
-            sslcontext = None if isinstance(ssl, bool) else ssl
-            transport = self._make_ssl_transport(
-                sock, protocol, sslcontext, waiter,
-                server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout,
-                context=context)
-        else:
-            transport = self._make_socket_transport(sock, protocol, waiter, context=context)
+            protocol = protocol_factory()
+            waiter = self.create_future()
+            if ssl:
+                sslcontext = None if isinstance(ssl, bool) else ssl
+                transport = self._make_ssl_transport(
+                    sock, protocol, sslcontext, waiter,
+                    server_side=server_side, server_hostname=server_hostname,
+                    ssl_handshake_timeout=ssl_handshake_timeout,
+                    ssl_shutdown_timeout=ssl_shutdown_timeout,
+                    context=context)
+            else:
+                transport = self._make_socket_transport(sock, protocol, waiter, context=context)
+        except:
+            # gh-153133: close the socket if the transport is never created.
+            sock.close()
+            raise
 
         try:
             await waiter
         except:
             transport.close()
+            waiter = None
             raise
 
         return transport, protocol
@@ -1283,7 +1294,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     raise
 
         if not fallback:
-            raise RuntimeError(
+            raise exceptions.SendfileNotAvailableError(
                 f"fallback is disabled and native sendfile is not "
                 f"supported for transport {transport!r}")
         return await self._sendfile_fallback(transport, file,
@@ -1296,7 +1307,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def _sendfile_fallback(self, transp, file, offset, count):
         if hasattr(file, 'seek'):
             file.seek(offset)
-        blocksize = min(count, 16384) if count else 16384
+        blocksize = (
+            min(count, constants.SENDFILE_FALLBACK_READBUFFER_SIZE)
+            if count else constants.SENDFILE_FALLBACK_READBUFFER_SIZE
+        )
         buf = bytearray(blocksize)
         total_sent = 0
         proto = _SendfileFallbackProtocol(transp)
@@ -1373,6 +1387,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
+            waiter = None
             raise
 
         return ssl_protocol._app_transport
@@ -1489,7 +1504,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 raise exceptions[0]
 
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the socket yet, so close it.
+            sock.close()
+            raise
         waiter = self.create_future()
         transport = self._make_datagram_transport(
             sock, protocol, r_addr, waiter)
@@ -1550,11 +1570,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         The host parameter can be a string, in that case the TCP server is
         bound to host and port.
 
-        The host parameter can also be a sequence of strings and in that case
-        the TCP server is bound to all hosts of the sequence. If a host
-        appears multiple times (possibly indirectly e.g. when hostnames
-        resolve to the same IP address), the server is only bound once to that
-        host.
+        The host parameter can also be a sequence of strings and in that
+        case the TCP server is bound to all hosts of the sequence.  If
+        a host appears multiple times (possibly indirectly e.g. when
+        hostnames resolve to the same IP address), the server is only bound
+        once to that host.
 
         Return a Server object which can be used to stop the service.
 
@@ -1706,7 +1726,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_read_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
@@ -1722,7 +1747,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_write_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 
@@ -2032,7 +2062,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         now = self.time()
         # Ensure that `end_time` is strictly increasing
         # when the clock resolution is too small.
-        end_time = now + max(self._clock_resolution, math.ulp(now))
+        end_time = now + max(constants.CLOCK_RESOLUTION, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

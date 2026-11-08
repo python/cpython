@@ -81,17 +81,17 @@ This is a pointer to a function with the following signature:
 
 - *callable* is the object being called.
 - *args* is a C array consisting of the positional arguments followed by the
-   values of the keyword arguments.
-   This can be *NULL* if there are no arguments.
+  values of the keyword arguments.
+  This can be *NULL* if there are no arguments.
 - *nargsf* is the number of positional arguments plus possibly the
-   :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
-   To get the actual number of positional arguments from *nargsf*,
-   use :c:func:`PyVectorcall_NARGS`.
+  :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
+  To get the actual number of positional arguments from *nargsf*,
+  use :c:func:`PyVectorcall_NARGS`.
 - *kwnames* is a tuple containing the names of the keyword arguments;
-   in other words, the keys of the kwargs dict.
-   These names must be strings (instances of ``str`` or a subclass)
-   and they must be unique.
-   If there are no keyword arguments, then *kwnames* can instead be *NULL*.
+  in other words, the keys of the kwargs dict.
+  These names must be strings (instances of ``str`` or a subclass)
+  and they must be unique.
+  If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
 .. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
 

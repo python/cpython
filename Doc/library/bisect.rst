@@ -200,7 +200,7 @@ example uses :py:func:`~bisect.bisect` to look up a letter grade for an exam sco
 based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
 a 'B', and so on::
 
-   >>> def grade(score)
+   >>> def grade(score):
    ...     i = bisect([60, 70, 80, 90], score)
    ...     return "FDCBA"[i]
    ...

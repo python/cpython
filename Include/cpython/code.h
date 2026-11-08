@@ -34,9 +34,13 @@ typedef struct {
     char *entries[1];
 } _PyCodeArray;
 
+#define _PyCode_DEF_UNIQUE_ID() \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */
+
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
     _PyCodeArray *co_tlbc;
 #else
+#define _PyCode_DEF_UNIQUE_ID()
 #define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
 #endif
 
@@ -101,7 +105,7 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     struct _PyCoMonitoringData *_co_monitoring; /* Monitoring data */          \
-    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
+    _PyCode_DEF_UNIQUE_ID()                                                    \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
@@ -173,6 +177,11 @@ static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
     return op->co_nlocalsplus - op->co_nfreevars;
 }
 
+static inline PyObject *PyUnstable_Code_GetLocalPlusNames(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return Py_NewRef(op->co_localsplusnames);
+}
+
 Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     return PyUnstable_Code_GetFirstFree(op);
 }
@@ -228,9 +237,9 @@ PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, i
     V(DESTROY)
 
 typedef enum {
-    #define PY_DEF_EVENT(op) PY_CODE_EVENT_##op,
-    PY_FOREACH_CODE_EVENT(PY_DEF_EVENT)
-    #undef PY_DEF_EVENT
+    #define _Py_DEF_EVENT(op) PY_CODE_EVENT_##op,
+    PY_FOREACH_CODE_EVENT(_Py_DEF_EVENT)
+    #undef _Py_DEF_EVENT
 } PyCodeEvent;
 
 
