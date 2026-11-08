@@ -2317,28 +2317,28 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
 
     for (i = 0; i < objects_length; i++) {
         if (i > 0 && PyFile_WriteObject(sep, file, Py_PRINT_RAW) < 0) {
-            goto error;
+            Py_DECREF(file);
+            return NULL;
         }
         if (PyFile_WriteObject(objects[i], file, Py_PRINT_RAW) < 0) {
-            goto error;
+            Py_DECREF(file);
+            return NULL;
         }
     }
     if (PyFile_WriteObject(end, file, Py_PRINT_RAW) < 0) {
-        goto error;
+        Py_DECREF(file);
+        return NULL;
     }
 
     if (flush) {
         if (_PyFile_Flush(file) < 0) {
-            goto error;
+            Py_DECREF(file);
+            return NULL;
         }
     }
     Py_DECREF(file);
 
     Py_RETURN_NONE;
-
-error:
-    Py_DECREF(file);
-    return NULL;
 }
 
 
