@@ -103,6 +103,15 @@ test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+// Test PyList_AsTupleAndClear()
+static PyObject*
+list_as_tuple_and_clear(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyList_AsTupleAndClear(arg);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"list_get_size", list_get_size, METH_O},
     {"list_get_item", list_get_item, METH_VARARGS},
@@ -110,6 +119,7 @@ static PyMethodDef test_methods[] = {
     {"list_clear", list_clear, METH_O},
     {"list_extend", list_extend, METH_VARARGS},
     {"test_list_api", test_list_api, METH_NOARGS},
+    {"list_as_tuple_and_clear", list_as_tuple_and_clear, METH_O},
     {NULL},
 };
 
