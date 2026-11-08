@@ -390,6 +390,10 @@ copyreg.pickle(Pattern, _pickle, _compile)
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)
 
+# Scanner is undocumented. New code is better off starting from the
+# tokenizer example in the re documentation:
+# https://docs.python.org/3/library/re.html#writing-a-tokenizer
+
 class Scanner:
     def __init__(self, lexicon, flags=0):
         from ._constants import BRANCH, SUBPATTERN
