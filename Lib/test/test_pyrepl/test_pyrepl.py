@@ -732,6 +732,21 @@ class TestPyReplOutput(ScreenEqualMixin, TestCase):
         self.assertEqual(wrapper.input(), "new input")
         self.assertEqual(reader.history, ["previous input"])
 
+    def test_input_is_not_syntax_highlighted(self):
+        # gh-141998: Text read with input() is not Python code, so it must
+        # not be syntax highlighted, but the REPL input still is.
+        reader = self.prepare_reader(code_to_events("def f(): pass\n1+1\n"))
+        reader.can_colorize = True
+        gen_colors = Mock(wraps=reader.gen_colors)
+        reader.gen_colors = gen_colors
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+
+        self.assertEqual(wrapper.input(), "def f(): pass")
+        gen_colors.assert_not_called()
+        self.assertTrue(reader.can_colorize)
+        self.assertEqual(multiline_input(reader), "1+1")
+        gen_colors.assert_called()
+
     def test_input_error_does_not_modify_history(self):
         for text, exception in (
             ("partial input\x03", KeyboardInterrupt),
