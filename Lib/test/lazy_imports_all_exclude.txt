@@ -19,7 +19,6 @@
 test.test_inspect.test_inspect
 test___all__
 test__interpreters
-test_builtin
 test_clinic
 test_crossinterp
 test_datetime
