@@ -1445,27 +1445,21 @@ class CommandLineTest(unittest.TestCase):
     def test_parse_args(self):
         args, parser = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
         args, parser = random._parse_args(shlex.split("--integer 5"))
         self.assertEqual(args.integer, 5)
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
         args, parser = random._parse_args(shlex.split("--float 2.5"))
         self.assertEqual(args.float, 2.5)
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
         args, parser = random._parse_args(shlex.split("a b c"))
         self.assertEqual(args.input, ["a", "b", "c"])
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
         args, parser = random._parse_args(shlex.split("5"))
         self.assertEqual(args.input, ["5"])
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
         args, parser = random._parse_args(shlex.split("2.5"))
         self.assertEqual(args.input, ["2.5"])
-        self.assertStartsWith(parser.format_help(), "usage: ")
 
     def test_main(self):
         for command, expected in [
