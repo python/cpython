@@ -990,6 +990,7 @@ SYMBOL_NAMES = (
     "_PyState_AddModule",
     "_PyThreadState_Init",
     "_PyThreadState_Prealloc",
+    "_PyType_GetFlags64",
     "_PyWeakref_CallableProxyType",
     "_PyWeakref_ProxyType",
     "_PyWeakref_RefType",

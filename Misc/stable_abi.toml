@@ -2941,3 +2941,6 @@
     added = '3.16'
 [function.PyUnicodeWriter_DecodeUTF8Stateful]
     added = '3.16'
+[function._PyType_GetFlags64]
+    added = '3.16'
+    abi_only = true
