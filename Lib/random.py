@@ -1044,7 +1044,7 @@ if no options given, output depends on the input
     return args, parser.format_help()
 
 
-def main(arg_list: list[str] | None = None) -> int | str:
+def _main(arg_list: list[str] | None = None) -> int | str:
     args, help_text = _parse_args(arg_list)
 
     # Explicit arguments
@@ -1085,9 +1085,13 @@ def main(arg_list: list[str] | None = None) -> int | str:
     return help_text
 
 
-if __name__ == '__main__':
+def main(arg_list: list[str] | None = None) -> None:
     import sys
     try:
-        print(main())
-    except ValueError as exc:
+        print(_main(arg_list))
+    except Exception as exc:
         sys.exit(f"error: {exc}")
+
+
+if __name__ == '__main__':
+    main()

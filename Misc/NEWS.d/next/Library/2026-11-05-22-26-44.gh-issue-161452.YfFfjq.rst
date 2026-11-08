@@ -1,4 +1,5 @@
 Fix the :mod:`random` :ref:`command-line interface <random-cli>`
 printing a random float for a zero or negative integer input instead of
 failing like ``--integer`` does. Both now report a short error message
-instead of a traceback.
+instead of a traceback. :func:`!random.main` now prints the result instead
+of returning it, and exits with the error message on failure.

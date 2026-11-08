@@ -15,7 +15,6 @@ from fractions import Fraction
 from collections import abc, Counter
 
 from test.support import warnings_helper
-from test.support.script_helper import assert_python_failure
 
 
 class MyIndex:
@@ -1481,19 +1480,28 @@ class CommandLineTest(unittest.TestCase):
             ("2.5", 2.1110546288126204),
         ]:
             random.seed(0)
-            self.assertEqual(random.main(shlex.split(command)), expected)
+            self.assertEqual(random._main(shlex.split(command)), expected)
 
     def test_empty_integer_range_error(self):
         # An integer input is the same as --integer, even when it is
         # not positive.
         for value in ["0", "-5"]:
-            for args in [(value,), ("--integer", value)]:
+            for args in [[value], ["--integer", value]]:
                 with self.subTest(args=args):
-                    rc, out, err = assert_python_failure("-m", "random", *args)
-                    self.assertEqual(rc, 1)
-                    self.assertEqual(out, b"")
-                    expected = f"error: empty range in randint(1, {value})"
-                    self.assertEqual(err.decode().rstrip(), expected)
+                    with self.assertRaises(ValueError) as cm:
+                        random._main(args)
+                    self.assertEqual(str(cm.exception),
+                                     f"empty range in randint(1, {value})")
+
+    def test_main_error_no_traceback(self):
+        # An Exception from _main() is reported as a short error message,
+        # not a traceback.
+        EXC_MESSAGE = "boom"
+        with (unittest.mock.patch.object(random, "_main",
+                                         side_effect=Exception(EXC_MESSAGE)),
+              self.assertRaises(SystemExit) as cm):
+            random.main([])
+        self.assertEqual(cm.exception.code, f"error: {EXC_MESSAGE}")
 
 
 if __name__ == "__main__":
