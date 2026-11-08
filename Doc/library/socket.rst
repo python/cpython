@@ -1606,7 +1606,8 @@ Socket Objects
       waits until the connection completes for blocking sockets and sockets with
       a timeout. If the timeout expires before the connection completes, the
       method raises a :exc:`TimeoutError`. For non-blocking sockets, the method
-      raises an :exc:`InterruptedError` exception.
+      raises an :exc:`InterruptedError` exception if the connection is interrupted
+      by a signal and the signal handler does not raise an exception.
 
       .. audit-event:: socket.connect self,address socket.socket.connect
 
