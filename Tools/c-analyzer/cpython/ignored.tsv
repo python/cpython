@@ -50,6 +50,10 @@ Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
 Python/getversion.c	-	version	-
 
+## monotonic safety guards
+# Becomes true once tracked objects may outlive their interpreter.
+Python/pystate.c	-	may_have_foreign_gc_objects	-
+
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
