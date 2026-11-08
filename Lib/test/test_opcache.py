@@ -1792,6 +1792,7 @@ class TestSpecializer(TestBase):
         run_async(not_awaited())
         self.assert_specialized(not_awaited, "CALL_PY_GENERAL")
         self.assert_no_opcode(not_awaited, "ASYNC_CALL_PY_GENERAL")
+        self.assert_specialized(not_awaited, "SEND_GEN")
 
     @cpython_only
     @requires_specialization

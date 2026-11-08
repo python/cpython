@@ -5397,8 +5397,8 @@ dummy_func(
                 callee->instr_ptr += 2;
             }
             // Otherwise RETURN_GENERATOR is preceded by COPY_FREE_VARS or
-            // MAKE_CELL. They run in the frame of the coroutine and
-            // RETURN_GENERATOR does nothing in such a frame.
+            // MAKE_CELL. They run in the frame of the coroutine, where
+            // RETURN_GENERATOR only pushes the None that POP_TOP discards.
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
             _PyFrame_Copy(callee, pushed_frame);
             assert(callee->frame_obj == NULL);
