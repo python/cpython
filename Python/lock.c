@@ -432,6 +432,7 @@ _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags
 {
     PyThread_ident_t thread = PyThread_get_thread_ident_ex();
     if (recursive_mutex_is_owned_by(m, thread)) {
+        // Only the owner can change the level, so no atomic add is needed.
         FT_ATOMIC_STORE_SIZE_RELAXED(m->level, m->level + 1);
         return PY_LOCK_ACQUIRED;
     }

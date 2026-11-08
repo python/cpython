@@ -39,6 +39,24 @@ class TestRlock(unittest.TestCase):
 
         threading_helper.run_concurrently([repr_thread, recurse_thread])
 
+    def test_condition_wait_race(self):
+        # gh-154928
+        import threading
+        r = threading.RLock()
+        cond = threading.Condition(r)
+
+        def repr_thread():
+            for _ in range(2000):
+                repr(r)
+
+        def wait_thread():
+            with cond, cond:
+                for _ in range(2000):
+                    cond.wait(timeout=0)
+                    self.assertEqual(r._recursion_count(), 2)
+
+        threading_helper.run_concurrently([repr_thread, wait_thread])
+
 
 if __name__ == "__main__":
     unittest.main()
