@@ -365,7 +365,7 @@ static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
     if (reader_validate_count("string", reader->strings_count,
-                              file_size - reader->string_table_offset,
+                              file_size - (size_t)reader->string_table_offset,
                               MIN_STRING_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -376,7 +376,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
         return -1;
     }
 
-    size_t offset = reader->string_table_offset;
+    size_t offset = (size_t)reader->string_table_offset;
     for (uint32_t i = 0; i < reader->strings_count; i++) {
         size_t prev_offset = offset;
         uint32_t str_len = decode_varint_u32(data, &offset, file_size);
@@ -411,7 +411,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
 #endif
 
     if (reader_validate_count("frame", reader->frames_count,
-                              file_size - reader->frame_table_offset,
+                              file_size - (size_t)reader->frame_table_offset,
                               MIN_FRAME_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -423,7 +423,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 
-    size_t offset = reader->frame_table_offset;
+    size_t offset = (size_t)reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
         FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
@@ -694,7 +694,7 @@ binary_reader_open(PyObject *path)
 #endif
     } else {
         reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
-        reader->sample_data_size = reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
+        reader->sample_data_size = (size_t)reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
     }
 
     /* Parse string and frame tables */
@@ -871,7 +871,7 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -916,7 +916,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -1262,7 +1262,7 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             reader->stats.total_samples += count;
 
             /* Progress callback after batch */
-            if (replayed % PROGRESS_CALLBACK_INTERVAL < count) {
+            if ((uint64_t)replayed % PROGRESS_CALLBACK_INTERVAL < (uint64_t)count) {
                 if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
                     return -1;
                 }
