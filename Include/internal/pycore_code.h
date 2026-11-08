@@ -9,6 +9,8 @@ extern "C" {
 #endif
 
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_opcode_utils.h"  // CONSTANT_NONE
+#include "opcode_ids.h"           // GET_AWAITABLE
 #include "pycore_structs.h"     // _Py_CODEUNIT
 #include "pycore_tstate.h"      // _PyThreadStateImpl
 
@@ -541,6 +543,25 @@ PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_CODEUNIT) _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
+
+PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
+
+/* The SEND that awaits the result of the CALL or CALL_KW whose cache ends
+ * at `tail` at once, as in `await f(...)`, or NULL. */
+static inline _Py_CODEUNIT *
+_PyCode_AwaitedCallSend(_Py_CODEUNIT *tail)
+{
+    /* None of the first three instructions can end the code. */
+    if (tail[0].op.code == GET_AWAITABLE
+        && tail[1].op.code == PUSH_NULL
+        && tail[2].op.code == LOAD_COMMON_CONSTANT
+        && tail[2].op.arg == CONSTANT_NONE
+        && _PyOpcode_Deopt[tail[3].op.code] == SEND)
+    {
+        return &tail[3];
+    }
+    return NULL;
+}
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 

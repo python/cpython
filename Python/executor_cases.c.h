@@ -20027,8 +20027,6 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             #if TIER_ONE
-            assert(next_instr[1].op.code == PUSH_NULL);
-            assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
             if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
@@ -20039,6 +20037,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
             #endif
             SET_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
@@ -20050,8 +20049,6 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             #if TIER_ONE
-            assert(next_instr[1].op.code == PUSH_NULL);
-            assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
             if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
@@ -20064,6 +20061,7 @@
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
             #endif
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
@@ -20077,8 +20075,6 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             #if TIER_ONE
-            assert(next_instr[1].op.code == PUSH_NULL);
-            assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
             if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
@@ -20093,6 +20089,7 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
             #endif
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
@@ -20108,8 +20105,6 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             #if TIER_ONE
-            assert(next_instr[1].op.code == PUSH_NULL);
-            assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
             if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
@@ -20126,6 +20121,7 @@
                 SET_CURRENT_CACHED_VALUES(3);
                 JUMP_TO_JUMP_TARGET();
             }
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
             #endif
             _tos_cache2 = _stack_item_2;
             _tos_cache1 = _stack_item_1;
@@ -20166,10 +20162,11 @@
             }
             gen_take_frame(tstate, gen, callee, frame);
             gen->gi_frame_state = FRAME_EXECUTING;
-            frame->instr_ptr += 4u + 3;
-            assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+            _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+            assert(send != NULL);
+            frame->instr_ptr = send;
             gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
             coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             null = PyStackRef_NULL;
             gen_frame = PyStackRef_Wrap(&gen->gi_iframe);

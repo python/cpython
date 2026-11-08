@@ -1763,13 +1763,8 @@ call_is_awaited(PyCodeObject *code, _Py_CODEUNIT *instr)
     if (coro_flags != CO_COROUTINE) {
         return false;
     }
-    /* None of the first three instructions can end the code. */
     _Py_CODEUNIT *next = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[instr->op.code]];
-    return next[0].op.code == GET_AWAITABLE
-        && next[1].op.code == PUSH_NULL
-        && next[2].op.code == LOAD_COMMON_CONSTANT
-        && next[2].op.arg == CONSTANT_NONE
-        && _PyOpcode_Deopt[next[3].op.code] == SEND;
+    return _PyCode_AwaitedCallSend(next) != NULL;
 }
 
 static int

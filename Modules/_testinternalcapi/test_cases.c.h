@@ -48,8 +48,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -60,6 +58,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
@@ -179,10 +178,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
@@ -244,8 +244,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -256,6 +254,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_METHOD_VERSION
@@ -361,10 +360,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
@@ -427,8 +427,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
@@ -439,6 +437,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_METHOD_VERSION_KW
@@ -546,10 +545,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
@@ -612,8 +612,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
@@ -624,6 +622,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_FUNCTION_VERSION_KW
@@ -711,10 +710,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
@@ -776,8 +776,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -788,6 +786,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_FUNCTION_VERSION
@@ -877,10 +876,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
@@ -942,8 +942,6 @@
             // _GUARD_ASYNC_CALL_TAIL
             {
                 #if TIER_ONE
-                assert(next_instr[1].op.code == PUSH_NULL);
-                assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
                 if (next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -954,6 +952,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+                assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
                 #endif
             }
             // _CHECK_FUNCTION_VERSION
@@ -1031,10 +1030,11 @@
                 }
                 gen_take_frame(tstate, gen, callee, frame);
                 gen->gi_frame_state = FRAME_EXECUTING;
-                frame->instr_ptr += 4u + 3;
-                assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+                _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + 4u );
+                assert(send != NULL);
+                frame->instr_ptr = send;
                 gen_link_frame(tstate, gen, frame,
-                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                           (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
                 coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                 null = PyStackRef_NULL;
                 gen_frame = PyStackRef_Wrap(&gen->gi_iframe);

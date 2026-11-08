@@ -604,6 +604,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "gen_try_set_executing",
     "gen_link_frame",
+    "_PyCode_AwaitedCallSend",
     "gen_take_frame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",

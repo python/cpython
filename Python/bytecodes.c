@@ -5360,10 +5360,9 @@ dummy_func(
         // Executors are invalidated when the code is instrumented.
         op(_GUARD_ASYNC_CALL_TAIL, (--)) {
             #if TIER_ONE
-            assert(next_instr[1].op.code == PUSH_NULL);
-            assert(next_instr[2].op.code == LOAD_COMMON_CONSTANT);
             DEOPT_IF(next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE);
             DEOPT_IF(next_instr[3].op.code >= MIN_INSTRUMENTED_OPCODE);
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
             #endif
         }
 
@@ -5392,12 +5391,12 @@ dummy_func(
             // RETURN_GENERATOR only pushes the None that POP_TOP discards.
             gen_take_frame(tstate, gen, callee, frame);
             gen->gi_frame_state = FRAME_EXECUTING;
-            // The coroutine yields and returns to the SEND, which follows
-            // GET_AWAITABLE, PUSH_NULL and LOAD_COMMON_CONSTANT.
-            frame->instr_ptr += INSTRUCTION_SIZE + 3;
-            assert(_PyOpcode_Deopt[frame->instr_ptr->op.code] == SEND);
+            // The coroutine yields and returns to the SEND of the await.
+            _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + INSTRUCTION_SIZE);
+            assert(send != NULL);
+            frame->instr_ptr = send;
             gen_link_frame(tstate, gen, frame,
-                (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + frame->instr_ptr->op.arg));
+                (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
             coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             null = PyStackRef_NULL;
             gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
