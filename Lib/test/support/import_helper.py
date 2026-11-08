@@ -248,10 +248,9 @@ class DirsOnSysPath(object):
     """
 
     def __init__(self, *paths, force_eager_imports=False):
-        self._paths = tuple(paths)
         self.original_value = sys.path[:]
         self.original_object = sys.path
-        sys.path.extend(self._paths)
+        sys.path.extend(paths)
         self.force_eager_imports = force_eager_imports
         self._original_lazy_imports_filter = None
 
