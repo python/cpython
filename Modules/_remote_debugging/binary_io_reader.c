@@ -916,7 +916,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
