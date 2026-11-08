@@ -855,7 +855,7 @@ function.
 
 .. function:: signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
-   Return a :class:`Signature` object for the given *callable*:
+   Return a :class:`Signature` object for the given *obj*:
 
    .. doctest::
 
@@ -904,7 +904,7 @@ function.
    .. versionchanged:: 3.5
       The *follow_wrapped* parameter was added.
       Pass ``False`` to get a signature of
-      *callable* specifically (``callable.__wrapped__`` will not be used to
+      *obj* specifically (``obj.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
    .. versionchanged:: 3.10
