@@ -1041,18 +1041,24 @@ if no options given, output depends on the input
     integer: same as `--integer`
     float: same as `--float`""")
     args = parser.parse_args(arg_list)
-    return args, parser.format_help()
+    return args, parser
 
 
-def _main(arg_list: list[str] | None = None) -> int | str:
-    args, help_text = _parse_args(arg_list)
+def _randint_cli(parser, n: int) -> int:
+    if n < 1:
+        parser.error(f"integer must be 1 or greater, got {n}")
+    return randint(1, n)
+
+
+def main(arg_list: list[str] | None = None) -> int | str:
+    args, parser = _parse_args(arg_list)
 
     # Explicit arguments
     if args.choice:
         return choice(args.choice)
 
     if args.integer is not None:
-        return randint(1, args.integer)
+        return _randint_cli(parser, args.integer)
 
     if args.float is not None:
         return uniform(0, args.float)
@@ -1077,21 +1083,13 @@ def _main(arg_list: list[str] | None = None) -> int | str:
             else:
                 return uniform(0, val)
         else:
-            return randint(1, val)
+            return _randint_cli(parser, val)
 
     if len(args.input) >= 2:
         return choice(args.input)
 
-    return help_text
-
-
-def main(arg_list: list[str] | None = None) -> None:
-    import sys
-    try:
-        print(_main(arg_list))
-    except Exception as exc:
-        sys.exit(f"error: {exc}")
+    return parser.format_help()
 
 
 if __name__ == '__main__':
-    main()
+    print(main())
