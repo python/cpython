@@ -377,18 +377,17 @@ class FilecmpCommandLineTestCase(unittest.TestCase):
         os.mkdir(self.left)
         os.mkdir(self.right)
 
+    def _write_file(self, directory, name, contents):
+        with open(os.path.join(directory, name), 'w', encoding='utf-8') as f:
+            f.write(contents)
+
     def test_directory_report(self):
         for directory in (self.left, self.right):
-            with open(os.path.join(directory, 'same.txt'), 'w', encoding='utf-8') as f:
-                f.write('same')
-        with open(os.path.join(self.left, 'different.txt'), 'w', encoding='utf-8') as f:
-            f.write('left')
-        with open(os.path.join(self.right, 'different.txt'), 'w', encoding='utf-8') as f:
-            f.write('right side')
-        with open(os.path.join(self.left, 'left.txt'), 'w', encoding='utf-8') as f:
-            f.write('left only')
-        with open(os.path.join(self.right, 'right.txt'), 'w', encoding='utf-8') as f:
-            f.write('right only')
+            self._write_file(directory, 'same.txt', 'same')
+        self._write_file(self.left, 'different.txt', 'left')
+        self._write_file(self.right, 'different.txt', 'right side')
+        self._write_file(self.left, 'left.txt', 'left only')
+        self._write_file(self.right, 'right.txt', 'right only')
 
         _, stdout, stderr = script_helper.assert_python_ok(
             '-m', 'filecmp', self.left, self.right
@@ -407,8 +406,7 @@ class FilecmpCommandLineTestCase(unittest.TestCase):
         right_subdir = os.path.join(self.right, 'nested')
         os.mkdir(left_subdir)
         os.mkdir(right_subdir)
-        with open(os.path.join(left_subdir, 'left.txt'), 'w', encoding='utf-8') as f:
-            f.write('left only')
+        self._write_file(left_subdir, 'left.txt', 'left only')
 
         _, stdout, _ = script_helper.assert_python_ok(
             '-m', 'filecmp', self.left, self.right
