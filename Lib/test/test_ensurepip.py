@@ -115,8 +115,30 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         self.run_pip.assert_called_once_with(
             [
                 "install", "--no-cache-dir", "--no-index", "--find-links",
-                unittest.mock.ANY, "--root", "/foo/bar/", *COMPILE_OPT,
-                "pip",
+                unittest.mock.ANY, "--root", "/foo/bar/", "pip", *COMPILE_OPT,
+            ],
+            unittest.mock.ANY,
+        )
+
+    def test_bootstrapping_with_prefix(self):
+        ensurepip.bootstrap(prefix="/foo/bar/")
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--prefix", "/foo/bar/",
+                "--executable", unittest.mock.ANY, "pip",
+            ],
+            unittest.mock.ANY,
+        )
+
+    def test_bootstrapping_with_root_and_prefix(self):
+        ensurepip.bootstrap(root="/foo/root/", prefix="/foo/prefix/")
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--root", "/foo/root/",
+                "--prefix", "/foo/prefix/", "--executable",
+                unittest.mock.ANY, "pip",
             ],
             unittest.mock.ANY,
         )

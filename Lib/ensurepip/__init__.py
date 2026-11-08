@@ -70,8 +70,53 @@ def _run_pip(args, additional_paths=None):
     code = f"""
 import runpy
 import sys
+import os
+
+# Extract --executable from args if present to avoid "unknown option" error from pip
+# while still honoring the requested shebang.
+pip_args = {args}
+executable_path = None
+if "--executable" in pip_args:
+    try:
+        idx = pip_args.index("--executable")
+        executable_path = pip_args[idx + 1]
+        del pip_args[idx:idx + 2]
+    except (ValueError, IndexError):
+        pass
+
 sys.path = {additional_paths or []} + sys.path
-sys.argv[1:] = {args}
+
+if executable_path:
+    try:
+        import pip._internal.operations.install.wheel as w
+        from pip._vendor.distlib.scripts import ScriptMaker
+
+        def patched_fix_script(path):
+            with open(path, "rb") as script:
+                firstline = script.readline()
+                if not firstline.startswith(b"#!python"):
+                    return False
+                exename = executable_path.encode(sys.getfilesystemencoding())
+                firstline = b"#!" + exename + os.linesep.encode("ascii")
+                rest = script.read()
+            with open(path, "wb") as script:
+                script.write(firstline)
+                script.write(rest)
+            return True
+
+        w.fix_script = patched_fix_script
+
+        orig_init = ScriptMaker.__init__
+        def patched_init(self, *a, **kw):
+            orig_init(self, *a, **kw)
+            self.executable = executable_path
+        ScriptMaker.__init__ = patched_init
+    except ImportError:
+        # If pip internals changed, we might not be able to patch.
+        # But we still want to run pip.
+        pass
+
+sys.argv[1:] = pip_args
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
 
@@ -109,25 +154,25 @@ def _disable_pip_configuration_settings():
 
 def bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
-    directory).
+    and directory prefix).
 
     Note that calling this function will alter both sys.path and os.environ.
     """
     # Discard the return value
     _bootstrap(root=root, upgrade=upgrade, user=user,
                altinstall=altinstall, default_pip=default_pip,
-               verbosity=verbosity)
+               verbosity=verbosity, prefix=prefix)
 
 
 def _bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
-    directory). Returns pip command status code.
+    and directory prefix). Returns pip command status code.
 
     Note that calling this function will alter both sys.path and os.environ.
     """
@@ -170,16 +215,27 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
         # Construct the arguments to be passed to the pip command
         args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
-        if root:
-            args += ["--root", root]
         if upgrade:
             args += ["--upgrade"]
-        if user:
-            args += ["--user"]
         if verbosity:
             args += ["-" + "v" * verbosity]
         if sys.implementation.cache_tag is None:
             args += ["--no-compile"]
+
+        if root:
+            args += ["--root", root]
+
+        if user:
+            # --user is mutually exclusive with --root/--prefix,
+            # pip will enforce this.
+            args += ["--user"]
+        elif prefix:
+            args += ["--prefix", prefix]
+
+            # Force the script shebang to point to the correct, final
+            # executable path. This is necessary when --root is used.
+            executable_path = Path(prefix) / "bin" / Path(sys.executable).name
+            args += ["--executable", os.fsdecode(executable_path)]
 
         return _run_pip([*args, "pip"], [os.fsdecode(tmp_wheel_path)])
 
@@ -250,6 +306,11 @@ def _main(argv=None):
         help="Install everything relative to this alternate root directory.",
     )
     parser.add_argument(
+        "--prefix",
+        default=None,
+        help="Install everything using this prefix.",
+    )
+    parser.add_argument(
         "--altinstall",
         action="store_true",
         default=False,
@@ -268,6 +329,7 @@ def _main(argv=None):
 
     return _bootstrap(
         root=args.root,
+        prefix=args.prefix,
         upgrade=args.upgrade,
         user=args.user,
         verbosity=args.verbosity,
