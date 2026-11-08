@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 6)
 PyAPI_FUNC(PyObject *) PyOS_FSPath(PyObject *path);
 #endif
 

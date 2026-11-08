@@ -190,7 +190,7 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #endif
 
 // Soft deprecated since Python 3.14, use memcpy() instead.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_MEMCPY memcpy
 #endif
 

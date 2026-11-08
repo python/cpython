@@ -80,7 +80,7 @@ PyAPI_FUNC(void) PyThread_release_lock(PyThread_type_lock);
 PyAPI_FUNC(size_t) PyThread_get_stacksize(void);
 PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 #endif
 
@@ -103,7 +103,7 @@ Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_delete_key_value(int key);
 Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
 
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 7)
 /* New in 3.7 */
 /* Thread Specific Storage (TSS) API */
 

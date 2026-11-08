@@ -96,7 +96,7 @@ check by comparing the reference count field to the minimum immortality refcount
 // Py_REFCNT() implementation for the stable ABI
 PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
     // Stable ABI implements Py_REFCNT() as a function call
     // on limited C API version 3.14 and newer, and on abi3t.
 #elif defined(_Py_OPAQUE_PYOBJECT)
@@ -115,7 +115,7 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
                Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
     #endif
     }
-    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
     #else
     #  define Py_REFCNT(ob) _Py_REFCNT(ob)
@@ -153,7 +153,7 @@ PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     assert(refcnt >= 0);
-#if (defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000) \
+#if (defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)) \
     || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_SET_REFCNT() as a function call
     // on limited C API version 3.13 and newer, and abi3t.
@@ -197,7 +197,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
 #endif
 
@@ -254,13 +254,13 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12) || defined(Py_REF_DEBUG))) \
     || defined(_Py_OPAQUE_PYOBJECT)
     // Stable ABI implements Py_INCREF() as a function call on limited C API
     // version 3.12 and newer, abi3t, and on Python built in debug mode.
     // _Py_IncRef() was added to Python 3.10.0a7, use Py_IncRef() on older versions.
     // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_IncRef(op);
 #  else
     Py_IncRef(op);
@@ -306,7 +306,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
 #endif
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
@@ -324,14 +324,14 @@ PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
-#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
+#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12) || defined(Py_REF_DEBUG))) \
     || defined(_Py_OPAQUE_PYOBJECT)
 // Stable ABI implements Py_DECREF() as a function call on limited C API
 // version 3.12 and newer, abi3t, and on Python built in debug mode.
 // _Py_DecRef() was added to Python 3.10.0a7, use Py_DecRef() on older versions.
 // Py_DecRef() accepts NULL whereas _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_DecRef(op);
 #  else
     Py_DecRef(op);
@@ -607,7 +607,7 @@ static inline void Py_XINCREF(PyObject *op)
         Py_INCREF(op);
     }
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_XINCREF(op) Py_XINCREF(_PyObject_CAST(op))
 #endif
 
@@ -617,7 +617,7 @@ static inline void Py_XDECREF(PyObject *op)
         Py_DECREF(op);
     }
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
 #endif
 
@@ -643,7 +643,7 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
 // Names overridden with macros by static inline functions for best
 // performances.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
 #  define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
 #else

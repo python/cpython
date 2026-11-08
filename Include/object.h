@@ -317,7 +317,7 @@ typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
 typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
 typedef PyObject *(*allocfunc)(PyTypeObject *, Py_ssize_t);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000 // 3.12
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12) // 3.12
 typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
                                     size_t nargsf, PyObject *kwnames);
 #endif
@@ -336,31 +336,31 @@ typedef struct{
 } PyType_Spec;
 
 PyAPI_FUNC(PyObject*) PyType_FromSpec(PyType_Spec*);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject*) PyType_FromSpecWithBases(PyType_Spec*, PyObject*);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 4)
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 9)
 PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
 PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
 #endif
@@ -374,7 +374,7 @@ PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 static inline int PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
     return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyObject_TypeCheck(ob, type) PyObject_TypeCheck(_PyObject_CAST(ob), (type))
 #endif
 
@@ -403,21 +403,21 @@ PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttrString(PyObject *v, const char *name);
 PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyObject_GetOptionalAttr(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObject **);
 #endif
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
 #endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(int) PyObject_GenericSetDict(PyObject *, PyObject *, void *);
 #endif
 PyAPI_FUNC(Py_hash_t) PyObject_Hash(PyObject *);
@@ -506,7 +506,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
 /* Set if the type implements the vectorcall protocol (PEP 590) */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
 #ifndef Py_LIMITED_API
 // Backwards compatibility alias for API that was provisional in Python 3.8
@@ -598,7 +598,7 @@ given type object has a specified feature.
 #define Py_CONSTANT_EMPTY_BYTES 8
 #define Py_CONSTANT_EMPTY_TUPLE 9
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject*) Py_GetConstant(unsigned int constant_id);
 PyAPI_FUNC(PyObject*) Py_GetConstantBorrowed(unsigned int constant_id);
 #endif
@@ -610,7 +610,7 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_None Py_GetConstantBorrowed(Py_CONSTANT_NONE)
 #else
 #  define Py_None (&_Py_NoneStruct)
@@ -622,7 +622,7 @@ PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 
 /* Macro for returning Py_None from a function.
  * Only treat Py_None as immortal in the limited C API 3.12 and newer. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 12)
 #  define Py_RETURN_NONE return Py_NewRef(Py_None)
 #else
 #  define Py_RETURN_NONE return Py_None
@@ -634,7 +634,7 @@ not implemented for a given type combination.
 */
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_NotImplemented Py_GetConstantBorrowed(Py_CONSTANT_NOT_IMPLEMENTED)
 #else
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
@@ -642,7 +642,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 
 /* Macro for returning Py_NotImplemented from a function. Only treat
  * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 12)
 #  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
 #else
 #  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
@@ -656,7 +656,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_GT 4
 #define Py_GE 5
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 /* Result of calling PyIter_Send */
 typedef enum {
     PYGEN_RETURN = 0,
@@ -762,7 +762,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 static inline int PyType_Check(PyObject *op) {
     return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyType_Check(op) PyType_Check(_PyObject_CAST(op))
 #endif
 
@@ -772,15 +772,15 @@ static inline int PyType_Check(PyObject *op) {
 static inline int PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 

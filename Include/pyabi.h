@@ -37,10 +37,10 @@
    // Empty Py_LIMITED_API used to work; redefine to
    // Python 3.2 to be explicit.
 #  undef Py_LIMITED_API
-#  define Py_LIMITED_API 0x03020000
+#  define Py_LIMITED_API _Py_PACK_VERSION(3, 2)
 #endif
-#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < 0x030f0000
-#  error "Py_TARGET_ABI3T must be 0x030f0000 (3.15) or above"
+#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < _Py_PACK_VERSION(3, 15)
+#  error "Py_TARGET_ABI3T must be _Py_PACK_VERSION(3, 15) (3.15) or above"
 #endif
 
 /* Stable ABI for free-threaded builds (abi3t, introduced in PEP 803)

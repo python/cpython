@@ -23,7 +23,7 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleWithPathnames(
     const char *pathname,       /* decoded from the filesystem encoding */
     const char *cpathname       /* decoded from the filesystem encoding */
     );
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     PyObject *name,
     PyObject *co,
@@ -32,10 +32,10 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleObject(
     );
 #endif
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 7)
 PyAPI_FUNC(PyObject *) PyImport_GetModule(PyObject *name);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
     PyObject *name
     );
@@ -43,7 +43,7 @@ PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyImport_AddModuleRef(
     const char *name            /* UTF-8 encoded string */
     );
@@ -58,7 +58,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(
     PyObject *fromlist,
     int level
     );
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
     PyObject *name,
     PyObject *globals,
@@ -74,7 +74,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevelObject(
 PyAPI_FUNC(PyObject *) PyImport_GetImporter(PyObject *path);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
 PyAPI_FUNC(PyObject *) PyImport_ReloadModule(PyObject *m);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(int) PyImport_ImportFrozenModuleObject(
     PyObject *name
     );

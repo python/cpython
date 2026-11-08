@@ -141,7 +141,7 @@ extern "C" {
    This is the equivalent of the Python statement: del o.attr_name.
 
    Implemented as a macro in the limited C API 3.12 and older. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 13)
 #  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 #endif
 
@@ -155,7 +155,7 @@ extern "C" {
    statement: del o.attr_name.
 
    Implemented as a macro in the limited C API 3.12 and older. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 13)
 #  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 #endif
 
@@ -194,7 +194,7 @@ extern "C" {
    This function always succeeds. */
 
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 9)
 /* Call a callable Python object without any arguments */
 PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
 #endif
@@ -282,7 +282,7 @@ PyAPI_FUNC(Py_ssize_t) PyVectorcall_NARGS(size_t nargsf);
    "tuple" and keyword arguments "dict". "dict" may also be NULL */
 PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #define PY_VECTORCALL_ARGUMENTS_OFFSET \
     (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
@@ -407,7 +407,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    This function always succeeds. */
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 /* Return 1 and set 'item' to the next item of 'iter' on success.
  * Return 0 and set 'item' to NULL when there are no remaining values.
  * Return -1, set 'item' to NULL and set an exception on error.
@@ -426,7 +426,7 @@ PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
    Prefer PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 
 /* Takes generator, coroutine or iterator object and sends the value into it.
    Returns:
@@ -462,7 +462,7 @@ PyAPI_FUNC(PyObject *) PyNumber_Subtract(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 * o2. */
 PyAPI_FUNC(PyObject *) PyNumber_Multiply(PyObject *o1, PyObject *o2);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* This is the equivalent of the Python expression: o1 @ o2. */
 PyAPI_FUNC(PyObject *) PyNumber_MatrixMultiply(PyObject *o1, PyObject *o2);
 #endif
@@ -595,7 +595,7 @@ PyAPI_FUNC(PyObject *) PyNumber_InPlaceSubtract(PyObject *o1, PyObject *o2);
    This is the equivalent of the Python expression: o1 *= o2. */
 PyAPI_FUNC(PyObject *) PyNumber_InPlaceMultiply(PyObject *o1, PyObject *o2);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* This is the equivalent of the Python expression: o1 @= o2. */
 PyAPI_FUNC(PyObject *) PyNumber_InPlaceMatrixMultiply(PyObject *o1, PyObject *o2);
 #endif
@@ -885,7 +885,7 @@ PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
    If an error other than KeyError is raised, return -1 and
    set *result to NULL.
 */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
 #endif

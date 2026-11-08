@@ -161,7 +161,7 @@ PyAPI_FUNC(PyObject *) PyCodec_XMLCharRefReplaceErrors(PyObject *exc);
 /* replace the unicode encode error with backslash escapes (\x, \u and \U) */
 PyAPI_FUNC(PyObject *) PyCodec_BackslashReplaceErrors(PyObject *exc);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* replace the unicode encode error with backslash escapes (\N, \x, \u and \U) */
 PyAPI_FUNC(PyObject *) PyCodec_NameReplaceErrors(PyObject *exc);
 #endif

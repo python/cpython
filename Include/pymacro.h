@@ -318,7 +318,6 @@
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 // Version helpers. These are primarily macros, but have exported equivalents.
-#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
 PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);

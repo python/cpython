@@ -18,11 +18,11 @@ PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_Restore(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_GetRaisedException(void);
 PyAPI_FUNC(void) PyErr_SetRaisedException(PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_FUNC(PyObject*) PyErr_GetHandledException(void);
 PyAPI_FUNC(void) PyErr_SetHandledException(PyObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(void) PyErr_GetExcInfo(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #endif
@@ -76,7 +76,7 @@ PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 PyAPI_DATA(PyObject *) PyExc_BaseException;
 PyAPI_DATA(PyObject *) PyExc_Exception;
 PyAPI_DATA(PyObject *) PyExc_BaseExceptionGroup;
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 PyAPI_DATA(PyObject *) PyExc_StopAsyncIteration;
 #endif
 PyAPI_DATA(PyObject *) PyExc_StopIteration;
@@ -94,7 +94,7 @@ PyAPI_DATA(PyObject *) PyExc_ImportError;
 #if !defined(Py_LIMITED_API)
 PyAPI_DATA(PyObject *) PyExc_ImportCycleError;
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 6)
 PyAPI_DATA(PyObject *) PyExc_ModuleNotFoundError;
 #endif
 PyAPI_DATA(PyObject *) PyExc_IndexError;
@@ -104,7 +104,7 @@ PyAPI_DATA(PyObject *) PyExc_MemoryError;
 PyAPI_DATA(PyObject *) PyExc_NameError;
 PyAPI_DATA(PyObject *) PyExc_OverflowError;
 PyAPI_DATA(PyObject *) PyExc_RuntimeError;
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 PyAPI_DATA(PyObject *) PyExc_RecursionError;
 #endif
 PyAPI_DATA(PyObject *) PyExc_NotImplementedError;
@@ -123,7 +123,7 @@ PyAPI_DATA(PyObject *) PyExc_UnicodeTranslateError;
 PyAPI_DATA(PyObject *) PyExc_ValueError;
 PyAPI_DATA(PyObject *) PyExc_ZeroDivisionError;
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_DATA(PyObject *) PyExc_BlockingIOError;
 PyAPI_DATA(PyObject *) PyExc_BrokenPipeError;
 PyAPI_DATA(PyObject *) PyExc_ChildProcessError;
@@ -171,7 +171,7 @@ PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrno(PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObject(
     PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 4)
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObjects(
     PyObject *, PyObject *, PyObject *);
 #endif
@@ -185,7 +185,7 @@ PyAPI_FUNC(PyObject *) PyErr_Format(
     const char *format,   /* ASCII-encoded string  */
     ...
     );
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 PyAPI_FUNC(PyObject *) PyErr_FormatV(
     PyObject *exception,
     const char *format,
@@ -200,7 +200,7 @@ PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErr(int);
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObject(
     PyObject *,int, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 4)
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObjects(
     PyObject *,int, PyObject *, PyObject *);
 #endif
@@ -212,11 +212,11 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilename(
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 #endif /* MS_WINDOWS */
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 6)
 PyAPI_FUNC(PyObject *) PyErr_SetImportErrorSubclass(PyObject *, PyObject *,
     PyObject *, PyObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject *) PyErr_SetImportError(PyObject *, PyObject *,
     PyObject *);
 #endif
@@ -239,7 +239,7 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 /* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 PyAPI_FUNC(int) PyErr_SetInterruptEx(int signum);
 #endif
 

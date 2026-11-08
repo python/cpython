@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 PyAPI_FUNC(wchar_t *) Py_DecodeLocale(
     const char *arg,
     size_t *size);
