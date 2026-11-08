@@ -180,9 +180,10 @@ else:
         # Tests specific to Windows
         'test_asyncio.test_windows_events',
         'test_asyncio.test_windows_utils',
+        'test_io.test_winconsoleio',
+        'test_launcher',
         'test_msvcrt',
         'test_os.test_windows',
-        'test_io.test_winconsoleio',
         'test_startfile',      # Need os.startfile()
         'test_winapi',
         'test_winreg',
