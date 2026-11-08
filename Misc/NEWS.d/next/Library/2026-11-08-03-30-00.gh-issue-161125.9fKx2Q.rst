@@ -1,0 +1,3 @@
+Fix a :mod:`re` compilation performance regression (:gh:`161125`) by
+skipping the set-operation fusion pass for patterns that contain no
+fusable constructs.

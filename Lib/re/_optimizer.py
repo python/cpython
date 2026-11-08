@@ -505,5 +505,10 @@ def _walk(seq):
 
 def optimize(pattern):
     """Rewrite a parsed pattern in place and return it."""
-    _walk(pattern.data)
+    # The parser records whether the tree holds a construct that the
+    # peepholes below can rewrite.  For an ordinary pattern the walk would
+    # only add a full pass over the tree, so skip it.  A tree that was not
+    # produced by the parser has an unknown marker and must be optimized.
+    if getattr(pattern.state, 'fusable', None) is not False:
+        _walk(pattern.data)
     return pattern
