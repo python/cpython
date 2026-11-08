@@ -114,7 +114,6 @@ if not support.has_subprocess_support or IS_WASI:
         'test_perf_profiler',
         'test_regrtest',
         'test_repl',
-        'test_samply_profiler',
         'test_subprocess',
         'test_tools',
     }
@@ -194,6 +193,12 @@ if sys.platform in ("win32", 'darwin'):
     EXPECTED_SKIP.add('test_multiprocessing_fork')
 if sys.platform in ("win32", "cygwin"):
     EXPECTED_SKIP.add('test_multiprocessing_forkserver')
+
+
+if sys.platform != 'linux':
+    # Test specific to Linux
+    EXPECTED_SKIP.add('test_perfmaps')
+
 
 if not support.is_android:
     # Test specific to Android
@@ -325,7 +330,7 @@ def expected_to_be_skipped(test_name):
         name = test_name.removeprefix('test_')
         return not hasattr(select, name)
 
-    if test_name in ('test_perf_profiler', 'test_perfmaps', 'test_samply_profiler'):
+    if test_name == 'test_perf_profiler':
         # Need perf trampoline profiling: configure defines the
         # PY_HAVE_PERF_TRAMPOLINE macro on Linux (x86-64 and AArch64)
         # and on macOS.
