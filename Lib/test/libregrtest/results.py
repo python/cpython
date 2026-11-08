@@ -5,6 +5,7 @@ lazy from xml.etree.ElementTree import Element
 
 from .runtests import RunTests
 from .result import State, TestResult, TestStats, Location
+from .skipped import expected_to_be_skipped
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
@@ -98,6 +99,8 @@ class TestResults:
 
     def accumulate_result(self, result: TestResult, runtests: RunTests) -> None:
         test_name = result.test_name
+        # Remove "test." prefix added by some test packages
+        test_name = test_name.removeprefix('test.')
         rerun = runtests.rerun
         fail_env_changed = runtests.fail_env_changed
 
@@ -204,6 +207,16 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
+    def split_expected_skip(self, tests):
+        skipped = []
+        expected = []
+        for name in tests:
+            if expected_to_be_skipped(name):
+                expected.append(name)
+            else:
+                skipped.append(name)
+        return (skipped, expected)
+
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool) -> None:
         ansi = get_colors()
         green = ansi.GREEN
@@ -221,13 +234,20 @@ class TestResults:
         all_tests = []
         omitted = set(tests) - self.get_executed()
 
+        # Filter tests expected to be skipped
+        skipped, expected_skip = self.split_expected_skip(self.skipped)
+        if expected_skip:
+            print()
+            count_text = count(len(expected_skip), "test")
+            print(f"{count_text} expected to be skipped (not listed)")
+
         # less important
         all_tests.append(
             (sorted(omitted), "test", f"{yellow}{{}} omitted:{reset}")
         )
         if not quiet:
             all_tests.append(
-                (self.skipped, "test", f"{yellow}{{}} skipped:{reset}")
+                (skipped, "test", f"{yellow}{{}} skipped:{reset}")
             )
             all_tests.append(
                 (
