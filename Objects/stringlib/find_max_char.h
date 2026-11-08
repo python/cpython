@@ -90,7 +90,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
             assert(_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T));
         }
 
-        while (p + SIZEOF_SIZE_T * 16 <= _end) {
+        for (; p + SIZEOF_SIZE_T * 16 <= _end; p += SIZEOF_SIZE_T * 16) {
             /* Four independent accumulators so the loop does not serialize on
                one register when the compiler does not vectorize it. */
             size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0;
@@ -106,7 +106,6 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
                 return MAX_CHAR;
             }
             value |= block;
-            p += SIZEOF_SIZE_T * 16;
         }
 
         for (; p + SIZEOF_SIZE_T <= _end; p += SIZEOF_SIZE_T) {
