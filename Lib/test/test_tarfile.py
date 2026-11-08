@@ -3,6 +3,7 @@ import errno
 import sys
 import os
 import io
+import ntpath
 from hashlib import sha256
 from contextlib import contextmanager, ExitStack
 from random import Random
@@ -1509,6 +1510,34 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
         with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
             self.assertEqual(tar.getnames(), ["sparse", "last"])
             self.assertEqual(tar.extractfile("last").read(), data)
+
+    def test_pax_size_with_gnu_longname(self):
+        # gh-159435: a GNU long-name header between a pax header and its
+        # member must not make the member header get read a second time.
+        long_name = "long-name-" * 12 + "file.txt"
+
+        def header(name, type, size):
+            info = tarfile.TarInfo(name)
+            info.type = type
+            info.size = size
+            return info.tobuf(tarfile.USTAR_FORMAT)
+
+        def padded(data):
+            return data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        pax_record = b"9 size=5\n"
+        buf = header("././@PaxHeader", tarfile.XHDTYPE, len(pax_record))
+        buf += padded(pax_record)
+        longname = long_name.encode() + b"\0"
+        buf += header("././@LongLink", tarfile.GNUTYPE_LONGNAME, len(longname))
+        buf += padded(longname)
+        buf += header("member-short", tarfile.REGTYPE, 5) + padded(b"hello")
+        buf += header("next.txt", tarfile.REGTYPE, 3) + padded(b"bye")
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), [long_name, "next.txt"])
+            self.assertEqual(tar.extractfile("next.txt").read(), b"bye")
 
     @staticmethod
     def _fs_supports_holes():
@@ -4297,6 +4326,47 @@ class TestExtractionFilters(unittest.TestCase):
                     self.expect_exception(
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
+
+    def test_drive_relative(self):
+        # Test names and link targets that have a drive but no root.
+        # They are not absolute, but os.path.join() does not put them
+        # below a destination that has no drive or another drive.
+        # Windows path handling is used on all platforms.
+        dest = r'C:\outerdir\dest'
+        with support.swap_attr(os, 'path', ntpath):
+            for name in 'C:escaped.evil', 'x/../C:escaped.evil':
+                for filter in tarfile.tar_filter, tarfile.data_filter:
+                    with self.subTest(name=name, filter=filter.__name__):
+                        with self.assertRaises(tarfile.AbsolutePathError):
+                            filter(tarfile.TarInfo(name), dest)
+
+            for linkname in 'C:escaped.evil', 'x/../C:escaped.evil', './C:evil':
+                for type in tarfile.SYMTYPE, tarfile.LNKTYPE:
+                    with self.subTest(linkname=linkname, type=type):
+                        member = tarfile.TarInfo('link')
+                        member.type = type
+                        member.linkname = linkname
+                        with self.assertRaises(tarfile.AbsoluteLinkError):
+                            tarfile.data_filter(member, dest)
+
+            member = tarfile.TarInfo('x/../C/benign.txt')
+            member = tarfile.data_filter(member, dest)
+            self.assertEqual(member.name, r'C\benign.txt')
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows drives')
+    def test_drive_relative_to_cwd(self):
+        # Test a name like 'C:escaped.evil' with a destination that has no
+        # drive. The file must not be created in the current directory.
+        with os_helper.temp_cwd() as cwd:
+            drive = os.path.splitdrive(cwd)[0]
+            with ArchiveMaker() as arc:
+                arc.add(f'{drive}escaped.evil')
+
+            for filter in 'tar', 'data':
+                with self.subTest(filter=filter), arc.open() as tar:
+                    with self.assertRaises(tarfile.AbsolutePathError):
+                        tar.extractall('dest', filter=filter)
+                    self.assertFalse(os.path.lexists('escaped.evil'))
 
     def test_parent_dir_out_and_back(self):
         # Test a member that leaves the destination and comes back.

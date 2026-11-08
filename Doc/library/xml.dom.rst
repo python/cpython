@@ -515,7 +515,7 @@ NodeList Objects
 A :class:`NodeList` represents a sequence of nodes.  These objects are used in
 two ways in the DOM Core recommendation:  an :class:`Element` object provides
 one as its list of child nodes, and the :meth:`~Element.getElementsByTagName`
-and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Node` return
+and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Element` return
 objects with this interface to represent query results.
 
 :class:`NodeList` does *not* inherit from :class:`Node`.
