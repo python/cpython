@@ -153,6 +153,9 @@ class WorkerThread(threading.Thread):
                 # On OpenBSD getsid() is only allowed for a process in the
                 # same session, so the failure means that it is not.
                 use_killpg = True
+            except ProcessLookupError:
+                # The process completed in the meanwhile
+                return
 
         if use_killpg:
             what = f"{self} process group"
