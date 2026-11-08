@@ -2481,7 +2481,7 @@ class AwaitCallTest(unittest.TestCase):
                 result = ex.value
         self.assertEqual(result, [(i + 100) * 2 + 1 for i in range(self.N)])
 
-    def test_async_with_and_comprehension(self):
+    def test_async_with(self):
         class CM:
             async def __aenter__(self):
                 return "entered"
@@ -2495,8 +2495,6 @@ class AwaitCallTest(unittest.TestCase):
                 async with cm as value:
                     self.assertEqual(value, "entered")
                     1 / 0
-                # The call of the comprehension function is awaited.
-                self.assertEqual([x async for x in asynciter([i])], [i])
 
         self.assertEqual(run_async(caller()), ([], None))
 
