@@ -2570,7 +2570,7 @@ class AwaitCallTest(unittest.TestCase):
         async def func(a, b=1):
             return a
 
-        async def caller(*args):
+        async def caller():
             for i in range(self.N):
                 try:
                     await func()
