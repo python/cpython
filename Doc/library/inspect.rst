@@ -855,7 +855,7 @@ function.
 
 .. function:: signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
-   Return a :class:`Signature` object for the given *obj*:
+   Return a :class:`Signature` object for the given callable *obj*:
 
    .. doctest::
 
