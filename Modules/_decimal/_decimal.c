@@ -2003,6 +2003,13 @@ current_context(decimal_state *state)
     }
 
     if (tl_context != NULL) {
+        if (!PyDecContext_Check(state, tl_context)) {
+            PyErr_Format(PyExc_TypeError,
+                         "current decimal context must be a Context "
+                         "instance, got %T", tl_context);
+            Py_DECREF(tl_context);
+            return NULL;
+        }
         return tl_context;
     }
 
