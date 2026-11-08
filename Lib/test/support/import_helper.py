@@ -120,6 +120,20 @@ def frozen_modules(enabled=True):
 
 
 @contextlib.contextmanager
+def force_eager_imports():
+    """Force eager imports inside the context manager."""
+    original_lazy_imports_filter = sys.get_lazy_imports_filter()
+    sys.set_lazy_imports_filter(
+        # Tools must be imported eagerly under this context manager:
+        lambda importing, imported, fromlist: False
+    )
+    try:
+        yield
+    finally:
+        sys.set_lazy_imports_filter(original_lazy_imports_filter)
+
+
+@contextlib.contextmanager
 def multi_interp_extensions_check(enabled=True):
     """Force legacy modules to be allowed in subinterpreters (or not).
 
@@ -247,27 +261,17 @@ class DirsOnSysPath(object):
     will be reverted at the end of the block.
     """
 
-    def __init__(self, *paths, force_eager_imports=False):
+    def __init__(self, *paths):
         self.original_value = sys.path[:]
         self.original_object = sys.path
         sys.path.extend(paths)
-        self.force_eager_imports = force_eager_imports
-        self._original_lazy_imports_filter = None
 
     def __enter__(self):
-        if self.force_eager_imports:
-            self._original_lazy_imports_filter = sys.get_lazy_imports_filter()
-            sys.set_lazy_imports_filter(
-                # Tools must be imported eagerly under this context manager:
-                lambda importing, imported, fromlist: False
-            )
         return self
 
     def __exit__(self, *ignore_exc):
         sys.path = self.original_object
         sys.path[:] = self.original_value
-        if self.force_eager_imports:
-            sys.set_lazy_imports_filter(self._original_lazy_imports_filter)
 
 
 def modules_setup():
