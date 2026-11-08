@@ -97,15 +97,21 @@ id(42)
                'def bar():\n'
                '    foo()\n'
                'bar()\n')
+        # Full GIL collections may skip update_refs(). Stop at a visible phase
+        # after the collector marks collection active.
+        if support.Py_GIL_DISABLED:
+            gc_breakpoint = 'update_refs'
+        else:
+            gc_breakpoint = 'prepare_callbacks'
         # Verify with "py-bt":
         gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt'],
+                                          cmds_after_breakpoint=[f'break {gc_breakpoint}', 'continue', 'py-bt'],
                                           )
         self.assertIn('Garbage-collecting', gdb_output)
 
         # Verify with "py-bt-full":
         gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt-full'],
+                                          cmds_after_breakpoint=[f'break {gc_breakpoint}', 'continue', 'py-bt-full'],
                                           )
         self.assertIn('Garbage-collecting', gdb_output)
 
