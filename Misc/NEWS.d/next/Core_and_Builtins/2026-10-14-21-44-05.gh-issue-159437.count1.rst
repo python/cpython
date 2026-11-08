@@ -1,0 +1,1 @@
+Count collectable objects while clearing weak references, avoiding a separate pass during garbage collection.
