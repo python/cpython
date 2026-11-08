@@ -431,7 +431,8 @@ class FilecmpCommandLineTestCase(unittest.TestCase):
     def test_missing_arguments(self):
         _, stdout, stderr = script_helper.assert_python_failure('-m', 'filecmp')
         self.assertEqual(stdout, b'')
-        self.assertIn(b'getopt.GetoptError: need exactly two args', stderr)
+        self.assertIn(b'getopt.GetoptError', stderr)
+        self.assertIn(b'need exactly two args', stderr)
 
 
 if __name__ == "__main__":
