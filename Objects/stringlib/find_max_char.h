@@ -84,6 +84,9 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
                 p += sizeof(uint32_t);
             }
 #endif
+            if (value & MASK_MAX_CHAR) {
+                return MAX_CHAR;
+            }
             assert(_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T));
         }
 
@@ -98,10 +101,11 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
                 v2 |= w[2];
                 v3 |= w[3];
             }
-            value |= v0 | v1 | v2 | v3;
-            if (value & MASK_MAX_CHAR) {
+            size_t block = v0 | v1 | v2 | v3;
+            if (block & MASK_MAX_CHAR) {
                 return MAX_CHAR;
             }
+            value |= block;
             p += SIZEOF_SIZE_T * 16;
         }
 
