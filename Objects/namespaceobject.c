@@ -261,7 +261,9 @@ namespace___replace___impl(_PyNamespaceObject *self, PyObject *changes)
         Py_DECREF(result);
         return NULL;
     }
-    if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, changes) < 0) {
+    if (changes != NULL
+        && PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, changes) < 0)
+    {
         Py_DECREF(result);
         return NULL;
     }
