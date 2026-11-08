@@ -26,11 +26,11 @@ PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyLong_AsInt(PyObject *);
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(PyObject*) PyLong_FromInt32(int32_t value);
 PyAPI_FUNC(PyObject*) PyLong_FromUInt32(uint32_t value);
 PyAPI_FUNC(PyObject*) PyLong_FromInt64(int64_t value);
@@ -104,7 +104,7 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
 #define _Py_PARSE_PID "i"
 #define PyLong_FromPid PyLong_FromLong
-# if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+# if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #   define PyLong_AsPid PyLong_AsInt
 # elif SIZEOF_INT == SIZEOF_LONG
 #   define PyLong_AsPid PyLong_AsLong
