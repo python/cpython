@@ -1,0 +1,4 @@
+Fix :meth:`~xml.dom.Document.getElementById` in :mod:`xml.dom.minidom` so
+that it returns the first element in document order when several elements
+have the same ID. Previously, the result could differ between calls on an
+unmodified document.
