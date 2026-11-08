@@ -354,6 +354,28 @@ class CAPITest(unittest.TestCase):
         lst = _testlimitedcapi.list_new(3)
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
 
+    def test_as_tuple_and_clear(self):
+        list_as_tuple_and_clear = _testcapi.list_as_tuple_and_clear
+
+        lst = list("abc")
+        self.assertEqual(list_as_tuple_and_clear(lst), ('a', 'b', 'c'))
+        self.assertEqual(lst, [])
+
+        lst = list(range(4096))  # test larger list
+        self.assertEqual(list_as_tuple_and_clear(lst), tuple(range(4096)))
+        self.assertEqual(lst, [])
+
+        lst = []  # empty list
+        self.assertIs(list_as_tuple_and_clear(lst), ())
+        self.assertEqual(lst, [])
+
+        # CRASHES list_as_tuple_and_clear(NULL)
+
+        # Wrong type
+        for obj in (tuple("abc"), {'key': 'value'}, 123):
+            with self.subTest(obj=obj):
+                self.assertRaises(TypeError, list_as_tuple_and_clear, obj)
+
 
 if __name__ == "__main__":
     unittest.main()

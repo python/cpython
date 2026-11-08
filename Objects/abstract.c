@@ -2066,7 +2066,7 @@ PySequence_Tuple(PyObject *v)
         }
     }
     Py_DECREF(it);
-    PyObject *res = _PyList_AsTupleAndClear(list);
+    PyObject *res = PyList_AsTupleAndClear(_PyObject_CAST(list));
     Py_DECREF(list);
     return res;
 fail:
