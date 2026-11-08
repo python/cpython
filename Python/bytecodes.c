@@ -5941,9 +5941,7 @@ dummy_func(
 
         inst(RETURN_GENERATOR, (-- res)) {
             if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-                // ASYNC_CALL_* has already created the coroutine and it is
-                // running in this frame. See _ASYNC_CALL_GEN_FRAME.
-                // Push the value that the following POP_TOP discards.
+                // Handled by ASYNC_CALL_* already.
                 res = PyStackRef_None;
             }
             else {
