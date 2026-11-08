@@ -1,0 +1,2 @@
+Fix :meth:`annotationlib.ForwardRef.evaluate` returning the value of a
+nonlocal variable instead of a class attribute with the same name.
