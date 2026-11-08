@@ -2434,6 +2434,28 @@ class AwaitCallTest(unittest.TestCase):
         expected = sum(2 * (i + 1 + i + 10) for i in range(self.N))
         self.assertEqual(run_async(caller()), ([], expected))
 
+    def test_keyword_arguments(self):
+        async def add(a, b=10):
+            return a + b
+
+        class A:
+            async def add(self, a, b=10):
+                return a + b
+
+        async def caller():
+            obj = A()
+            bound = obj.add
+            total = 0
+            for i in range(self.N):
+                total += await add(i, b=1)
+                total += await add(a=i)
+                total += await obj.add(i, b=1)
+                total += await bound(b=1, a=i)
+            return total
+
+        expected = sum(i + 1 + i + 10 + 2 * (i + 1) for i in range(self.N))
+        self.assertEqual(run_async(caller()), ([], expected))
+
     def test_closure(self):
         # COPY_FREE_VARS and MAKE_CELL precede RETURN_GENERATOR
         def outer(free):

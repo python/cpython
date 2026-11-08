@@ -5343,7 +5343,8 @@ dummy_func(
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
-        // The ASYNC_CALL_* instructions are specializations of CALL for
+        // The ASYNC_CALL_* instructions are specializations of CALL and
+        // CALL_KW for
         // calls to coroutine functions that are awaited at once, as in
         // `await f(...)`. They are superinstructions: they merge the CALL
         // with the first execution of the instructions that follow it,
@@ -5460,6 +5461,8 @@ dummy_func(
             CALL_KW_BOUND_METHOD,
             CALL_KW_PY,
             CALL_KW_NON_PY,
+            ASYNC_CALL_KW_BOUND_METHOD,
+            ASYNC_CALL_KW_PY,
         };
 
         op(_MONITOR_CALL_KW, (callable, self_or_null, args[oparg], unused -- callable, self_or_null, args[oparg], unused)) {
@@ -5625,6 +5628,29 @@ dummy_func(
             flush + // so that self is in the argument array
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_KW_PY) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_KW +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_KW_BOUND_METHOD) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_METHOD_VERSION_KW +
+            _EXPAND_METHOD_KW +
+            flush + // so that self is in the argument array
+            _PY_FRAME_KW +
+            _ASYNC_CALL_GEN_FRAME +
             _PUSH_FRAME;
 
         specializing op(_SPECIALIZE_CALL_KW, (counter/1, callable, self_or_null, unused[oparg], unused -- callable, self_or_null, unused[oparg], unused)) {

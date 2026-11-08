@@ -196,6 +196,8 @@ const _PyOpcodeRecordEntry _PyOpcode_RecordEntries[256] = {
         [ASYNC_CALL_BOUND_METHOD_GENERAL] = {1, {_RECORD_CALLABLE_INDEX}},
         [CALL_KW_PY] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_KW_BOUND_METHOD] = {1, {_RECORD_CALLABLE_KW_INDEX}},
+        [ASYNC_CALL_KW_PY] = {1, {_RECORD_CALLABLE_KW_INDEX}},
+        [ASYNC_CALL_KW_BOUND_METHOD] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_KW] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_KW_NON_PY] = {1, {_RECORD_CALLABLE_KW_INDEX}},
         [CALL_FUNCTION_EX] = {1, {_RECORD_4OS_INDEX}},
@@ -251,6 +253,8 @@ const _PyOpcodeRecordSlotMap _PyOpcode_RecordSlotMaps[256] = {
         [ASYNC_CALL_BOUND_METHOD_GENERAL] = {1, 1, {0}},
         [CALL_KW_PY] = {1, 0, {0}},
         [CALL_KW_BOUND_METHOD] = {1, 0, {0}},
+        [ASYNC_CALL_KW_PY] = {1, 0, {0}},
+        [ASYNC_CALL_KW_BOUND_METHOD] = {1, 0, {0}},
         [CALL_EX_PY] = {1, 0, {0}},
         [BINARY_OP] = {2, 2, {1, 0}},
 };

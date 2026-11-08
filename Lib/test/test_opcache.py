@@ -1763,6 +1763,24 @@ class TestSpecializer(TestBase):
         run_async(bound_method_general())
         self.assert_specialized(bound_method_general,
                                 "ASYNC_CALL_BOUND_METHOD_GENERAL")
+
+        async def kw_py():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await coro(i, b=2), i + 2)
+                self.assertEqual(await obj.method(i, b=2), i + 2)
+
+        run_async(kw_py())
+        self.assert_specialized(kw_py, "ASYNC_CALL_KW_PY")
+        self.assert_no_opcode(kw_py, "CALL_KW_PY")
+
+        async def kw_bound_method():
+            bound = obj.method
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await bound(i, b=2), i + 2)
+
+        run_async(kw_bound_method())
+        self.assert_specialized(kw_bound_method, "ASYNC_CALL_KW_BOUND_METHOD")
+        self.assert_no_opcode(kw_bound_method, "CALL_KW_BOUND_METHOD")
         self.assert_no_opcode(bound_method_general,
                               "CALL_BOUND_METHOD_GENERAL")
 

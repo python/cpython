@@ -1751,11 +1751,20 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
     return 0;
 }
 
+/* Is the result of the CALL or CALL_KW at "instr" awaited at once, so
+ * that the call to a coroutine function can be specialized to one of the
+ * ASYNC_CALL_* instructions? These start the new coroutine in place of
+ * the SEND that awaits it. GET_AWAITABLE never fails for a new coroutine. */
 static bool
-call_is_awaited(_Py_CODEUNIT *instr)
+call_is_awaited(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
+    int coro_flags = code->co_flags &
+        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+    if (coro_flags != CO_COROUTINE) {
+        return false;
+    }
     /* None of the first three instructions can end the code. */
-    _Py_CODEUNIT *next = instr + 1 + INLINE_CACHE_ENTRIES_CALL;
+    _Py_CODEUNIT *next = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[instr->op.code]];
     return next[0].op.code == GET_AWAITABLE
         && next[1].op.code == PUSH_NULL
         && next[2].op.code == LOAD_COMMON_CONSTANT
@@ -1793,11 +1802,7 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     write_u32(cache->func_version, version);
-    /* ASYNC_CALL_* start the new coroutine in place of the SEND that
-     * awaits it. GET_AWAITABLE never fails for a new coroutine. */
-    int coro_flags = code->co_flags &
-        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
-    bool awaited = coro_flags == CO_COROUTINE && call_is_awaited(instr);
+    bool awaited = call_is_awaited(code, instr);
     uint8_t opcode;
     if (argcount == nargs + bound_method) {
         if (awaited) {
@@ -1847,7 +1852,14 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     write_u32(cache->func_version, version);
-    specialize(instr, bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY);
+    uint8_t opcode;
+    if (call_is_awaited(code, instr)) {
+        opcode = bound_method ? ASYNC_CALL_KW_BOUND_METHOD : ASYNC_CALL_KW_PY;
+    }
+    else {
+        opcode = bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY;
+    }
+    specialize(instr, opcode);
     return 0;
 }
 
