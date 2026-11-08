@@ -1,0 +1,2 @@
+Document that :class:`ctypes.CDLL` on macOS may not find libraries in
+:file:`/usr/local/lib` or user folders unless given a full path.
