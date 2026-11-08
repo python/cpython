@@ -2397,10 +2397,6 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(yielded, [])
         self.assertEqual(result, 42)
 
-@unittest.skipIf(
-    support.is_emscripten or support.is_wasi,
-    "asyncio does not work under Emscripten/WASI yet."
-)
 class AwaitCallTest(unittest.TestCase):
     # Run each call often enough to exercise the specialized forms too.
     N = 100
@@ -2735,6 +2731,10 @@ class AwaitCallTest(unittest.TestCase):
         self.assertEqual(lines, [1] + [3, 2, 1] * self.N)
 
 
+@unittest.skipIf(
+    support.is_emscripten or support.is_wasi,
+    "asyncio does not work under Emscripten/WASI yet."
+)
 class CoroAsyncIOCompatTest(unittest.TestCase):
 
     def test_asyncio_1(self):
