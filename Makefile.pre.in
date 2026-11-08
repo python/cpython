@@ -2914,12 +2914,12 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		patch --force --reject-file "$(abs_builddir)/app-store-compliance.rej" --strip 2 --directory "$(DESTDIR)$(LIBDEST)" --input "$(abs_srcdir)/$(APP_STORE_COMPLIANCE_PATCH)" || true ; \
 	fi
 	@ # Build PYC files for the 3 optimization levels (0, 1, 2)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED_FOR_BUILD) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages' \
 		$(DESTDIR)$(LIBDEST)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED_FOR_BUILD) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
