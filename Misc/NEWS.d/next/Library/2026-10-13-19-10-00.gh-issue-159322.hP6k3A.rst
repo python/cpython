@@ -1,0 +1,2 @@
+Fix :mod:`tarfile` to NUL-terminate user and group names in PAX archive
+headers and use extended headers for names longer than 31 characters.

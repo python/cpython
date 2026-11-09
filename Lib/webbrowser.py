@@ -505,7 +505,8 @@ def register_standard_browsers():
         # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
-    if sys.platform == "ios":
+    if sys.platform in {"ios", "visionos"}:
+        # iOS and visionOS provide a browser; tvOS and watchOS don't.
         register("iosbrowser", None, IOSBrowser(), preferred=True)
 
     if sys.platform == "serenityos":
@@ -744,9 +745,10 @@ if sys.platform == 'darwin':
             return not rc
 
 #
-# Platform support for iOS
+# Platform support for Apple Mobile platforms that provide a browser
+# (i.e., iOS and visionOS)
 #
-if sys.platform == "ios":
+if sys.platform in {"ios", "visionos"}:
     from _ios_support import objc
     if objc:
         # If objc exists, we know ctypes is also importable.

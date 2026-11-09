@@ -28,8 +28,8 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
-__author__ = ('Ka-Ping Yee <ping@lfw.org>',
-              'Yury Selivanov <yselivanov@sprymix.com>')
+# Original authors: Ka-Ping Yee,
+#                   Yury Selivanov <yselivanov@sprymix.com>
 
 __all__ = [
     "AGEN_CLOSED",
@@ -160,6 +160,7 @@ import token
 import types
 import functools
 import builtins
+lazy import warnings
 from keyword import iskeyword
 from operator import attrgetter
 from collections import namedtuple, OrderedDict
@@ -441,7 +442,8 @@ def isbuiltin(object):
     Built-in functions and methods provide these attributes:
         __doc__         documentation string
         __name__        original name of this function or method
-        __self__        instance to which a method is bound, or None"""
+        __self__        instance to which a method is bound, or module object
+                        a function was defined in, or None"""
     return isinstance(object, types.BuiltinFunctionType)
 
 def ismethodwrapper(object):
@@ -1396,6 +1398,14 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
+# A placeholder with <deleted> as repr (using a string would have '<deleted>'
+# with quotes). This is used in formatargvalues function.
+class _Deleted:
+    def __repr__(self):
+        return '<deleted>'
+
+_deleted = _Deleted()
+del _Deleted
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -1410,14 +1420,19 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
+        formatted_name = formatarg(name)
+        try:
+            value = locals[name]
+        except KeyError:
+            value = _deleted
+        return formatted_name + formatvalue(value)
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
     if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
+        specs.append(convert(varargs, formatarg=formatvarargs))
     if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
+        specs.append(convert(varkw, formatarg=formatvarkw))
     return '(' + ', '.join(specs) + ')'
 
 def _missing_arguments(f_name, argnames, pos, values):
@@ -3524,6 +3539,14 @@ def _main():
             sys.exit(error)
         else:
             print(getsource(obj))
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return ('Ka-Ping Yee',
+                'Yury Selivanov <yselivanov@sprymix.com>')  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":

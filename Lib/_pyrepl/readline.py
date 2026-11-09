@@ -120,9 +120,6 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         self.commands["backspace_dedent"] = backspace_dedent
         self.commands["backspace-dedent"] = backspace_dedent
 
-    def error(self, msg: str = "none") -> None:
-        pass  # don't show error messages by default
-
     def get_stem(self) -> str:
         b = self.buffer
         p = self.pos - 1
@@ -344,7 +341,7 @@ class backspace_dedent(commands.Command):
             del b[r.pos : r.pos + repeat]
             r.invalidate_buffer(r.pos)
         else:
-            self.reader.error("can't backspace at start")
+            self.reader.debug("can't backspace at start")
 
 
 # ____________________________________________________________

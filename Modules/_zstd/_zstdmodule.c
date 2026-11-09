@@ -493,12 +493,12 @@ _zstd.get_frame_info
     frame_buffer: Py_buffer
         A bytes-like object, containing the header of a Zstandard frame.
 
-Get Zstandard frame infomation from a frame header.
+Get Zstandard frame information from a frame header.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
-/*[clinic end generated code: output=56e033cf48001929 input=94b240583ae22ca5]*/
+/*[clinic end generated code: output=56e033cf48001929 input=6b350490b0f58ede]*/
 {
     uint64_t decompressed_size;
     uint32_t dict_id;

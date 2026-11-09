@@ -1,0 +1,4 @@
+Fix :mod:`time` functions returning a negative year or failing to accept
+their own output for large timestamps on platforms that support them. Avoid
+reporting an incorrect year in errors raised by :mod:`datetime` for those
+timestamps.

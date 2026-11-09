@@ -2104,13 +2104,16 @@ def describe_code(code):
 def compile_and_describe(source, use_ast):
     """Compile source; return the code object and what depends on identity.
 
-    If use_ast is true, compile an AST in which the set displays are
-    frozenset constants.
+    If use_ast is true, compile an AST in which the set displays of
+    constants are frozenset constants.
     """
     if use_ast:
         class Transformer(ast.NodeTransformer):
             def visit_Set(self, node):
-                value = frozenset(ast.literal_eval(node))
+                try:
+                    value = frozenset(ast.literal_eval(node))
+                except ValueError:
+                    return node
                 return ast.copy_location(ast.Constant(value), node)
         source = Transformer().visit(ast.parse(source))
     # The marshal format also depends on reference counts (gh-156504),
@@ -2177,10 +2180,6 @@ class TestConstantsIdentity(unittest.TestCase):
         # and the number of distinct objects among them.
         frozensets_and_slices: int = 0
         distinct: int = 0
-        # Compile an AST with frozenset constants.  In the free-threaded
-        # build, the constants of code compiled from an AST are also
-        # interned.
-        use_ast: bool = False
 
     @dataclasses.dataclass(frozen=True)
     class Job:
@@ -2370,30 +2369,24 @@ class TestConstantsIdentity(unittest.TestCase):
                         self.ID_a = 1
                 """,
             strings=['ID_a']),
-        'ast_constants': Case(
-            source="""
-                def f(x):
-                    return "f", x in {"ID_a", ("ID_b", "ID_c")}
-                def g(x):
-                    return "g", x in {"ID_a", ("ID_b", "ID_c")}
-                """,
-            strings=['ID_a', 'ID_b', 'ID_c'],
-            frozensets_and_slices=2, distinct=1,
-            use_ast=True),
     }
 
     @classmethod
     def jobs(cls, tag):
-        # A Job for each of the cases.  The prefix depends on tag: a
-        # process compiles a source with given strings only once.
+        # Two Jobs for each of the cases: compiled from the source and
+        # from an AST.  The prefix depends on tag and on use_ast: a process
+        # compiles a source with given strings only once.
         jobs = []
         for name, case in cls.CASES.items():
-            prefix = f'gh129724{tag}_{name}'
-            jobs.append(cls.Job(
-                key=f'{tag}:{name}',
-                source=textwrap.dedent(case.source).replace('ID', prefix),
-                strings=[s.replace('ID', prefix) for s in case.strings],
-                use_ast=case.use_ast))
+            source = textwrap.dedent(case.source)
+            for use_ast in False, True:
+                kind = 'ast' if use_ast else 'str'
+                prefix = f'gh129724{tag}{kind}_{name}'
+                jobs.append(cls.Job(
+                    key=f'{tag}:{kind}:{name}',
+                    source=source.replace('ID', prefix),
+                    strings=[s.replace('ID', prefix) for s in case.strings],
+                    use_ast=use_ast))
         return jobs
 
     @classmethod
@@ -2458,9 +2451,11 @@ class TestConstantsIdentity(unittest.TestCase):
     def test_fresh(self):
         # equal constants are the same object
         for name, case in self.CASES.items():
-            with self.subTest(name):
-                self.assertEqual(self.fresh[f'c:{name}']['shared'],
-                                 [case.frozensets_and_slices, case.distinct])
+            expected = [case.frozensets_and_slices, case.distinct]
+            for kind in 'str', 'ast':
+                with self.subTest(name, kind=kind):
+                    self.assertEqual(self.fresh[f'c:{kind}:{name}']['shared'],
+                                     expected)
 
     def test_interned(self):
         self.check_child('interned')
@@ -2496,6 +2491,22 @@ class TestConstantsIdentity(unittest.TestCase):
                                              job.strings, job.use_ast)
                 code, result = compile_and_describe(job.source, job.use_ast)
                 self.check(job.key, result)
+
+    @support.cpython_only
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         'requires the free-threaded build')
+    def test_constants_not_immortal(self):
+        # compile() does not replace the constants by the immortal ones
+        # of the code objects which were created before.
+        source = 'x = (129724.5, 129724.25)'
+        exec(source, {})
+        for use_ast in False, True:
+            with self.subTest(use_ast=use_ast):
+                code = compile(ast.parse(source) if use_ast else source,
+                               '<test>', 'exec')
+                const, = [const for const in code.co_consts
+                          if isinstance(const, tuple)]
+                self.assertFalse(sys._is_immortal(const))
 
     def test_names_tuples(self):
         # Code objects with equal names share one tuple, and a constant

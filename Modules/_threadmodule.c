@@ -1542,10 +1542,25 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     assert(module != NULL);
     thread_module_state *state = get_thread_state(module);
 
-    localobject *self = (localobject *)type->tp_alloc(type, 0);
-    if (self == NULL) {
+    // A subclass finalizer may access attributes if construction fails.
+    PyObject *localdicts = PyDict_New();
+    if (localdicts == NULL) {
         return NULL;
     }
+    PyObject *thread_watchdogs = PySet_New(NULL);
+    if (thread_watchdogs == NULL) {
+        Py_DECREF(localdicts);
+        return NULL;
+    }
+
+    localobject *self = (localobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        Py_DECREF(localdicts);
+        Py_DECREF(thread_watchdogs);
+        return NULL;
+    }
+    self->localdicts = localdicts;
+    self->thread_watchdogs = thread_watchdogs;
 
     // gh-128691: Use deferred reference counting for thread-locals to avoid
     // contention on the shared object.
@@ -1553,16 +1568,6 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     self->args = Py_XNewRef(args);
     self->kw = Py_XNewRef(kw);
-
-    self->localdicts = PyDict_New();
-    if (self->localdicts == NULL) {
-        goto err;
-    }
-
-    self->thread_watchdogs = PySet_New(NULL);
-    if (self->thread_watchdogs == NULL) {
-        goto err;
-    }
 
     PyObject *localsdict = NULL;
     PyObject *sentinel_wr = NULL;

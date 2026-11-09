@@ -29,6 +29,7 @@ c-api/interp-lifecycle.html: global-configuration-variables
 c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections
+faq/library.html: none-of-my-threads-seem-to-run-why
 library/asyncio-task.html: terminating-a-task-group
 library/dis.html: opcode-DELETE_ATTR
 library/dis.html: opcode-DELETE_GLOBAL
@@ -121,3 +122,6 @@ library/turtle.html: introduction
 # Wrong exception names in 'concurrent.interpreters' docs (gh-136563)
 library/concurrent.interpreters.html: concurrent.interpreters.QueueEmptyError
 library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
+
+# Removed footnote
+c-api/exceptions.html: win

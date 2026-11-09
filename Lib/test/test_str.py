@@ -2605,7 +2605,7 @@ class StrTest(string_tests.StringLikeTest,
                 self.assertFalse(copy1 != copy2)
 
                 self.assertTrue(copy1 <= copy2)
-                self.assertTrue(copy2 >= copy2)
+                self.assertTrue(copy1 >= copy2)
 
         self.assertTrue(ascii < ascii2)
         self.assertTrue(ascii < latin)
