@@ -651,6 +651,9 @@
     <ClInclude Include="..\Include\internal\pycore_gil.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_gil_stats.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_global_objects.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1040,6 +1043,9 @@
     <ClCompile Include="..\Modules\_sysconfig.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_gilstatsmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_threadmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1326,6 +1332,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\gc_gil.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gil_stats.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\getargs.c">

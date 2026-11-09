@@ -16,6 +16,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_gil_stats.h"     // _PyGILStats_AfterForkChild()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -685,6 +686,9 @@ PyOS_AfterFork_Child(void)
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
+    /* Must run after the dead thread states (including the GIL statistics
+       aggregator's) were deleted. */
+    _PyGILStats_AfterForkChild(tstate);
 
     status = _PyInterpreterState_DeleteExceptMain(runtime);
     if (_PyStatus_EXCEPTION(status)) {
@@ -7946,7 +7950,12 @@ warn_about_fork_with_threads(
     assert(!_PyRuntime.stoptheworld.world_stopped);
 
     Py_ssize_t num_python_threads = num_os_threads;
-    if (num_python_threads <= 0) {
+    if (num_python_threads > 0) {
+        // The GIL statistics aggregator is fork-safe: it never holds the GIL
+        // across fork() and the child reinitializes its state.
+        num_python_threads -= _PyGILStats_ForkSafeThreadCount();
+    }
+    if (num_python_threads <= 0 && num_os_threads <= 0) {
         // Fall back to just the number our threading module knows about.
         // An incomplete view of the world, but better than nothing.
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));

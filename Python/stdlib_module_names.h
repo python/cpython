@@ -37,6 +37,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_frozen_importlib_external",
 "_functools",
 "_gdbm",
+"_gilstats",
 "_hashlib",
 "_heapq",
 "_imp",

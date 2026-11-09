@@ -27,6 +27,7 @@ extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
+extern PyObject* PyInit__gilstats(void);
 #ifdef WIN32
 extern PyObject* PyInit_msvcrt(void);
 extern PyObject* PyInit__locale(void);
@@ -106,6 +107,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
+    {"_gilstats", PyInit__gilstats},
     {"_tokenize", PyInit__tokenize},
     {"_typing", PyInit__typing},
     {"_statistics", PyInit__statistics},

@@ -11,6 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
+#include "pycore_gil_stats.h"     // _PyGILStats_InitMain()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1310,6 +1311,9 @@ init_interp_main(PyThreadState *tstate)
         Py_XDECREF(warnoptions);
 
         interp->runtime->initialized = 1;
+
+        /* PYTHONGILSTATS: start collecting GIL contention statistics. */
+        _PyGILStats_InitMain(tstate);
     }
 
     if (config->site_import) {
@@ -2050,6 +2054,10 @@ _Py_Finalize(_PyRuntimeState *runtime)
      */
 
     _PyAtExit_Call(tstate->interp);
+
+    /* Stop the GIL statistics aggregator while the runtime is intact: it may
+       need the GIL to finish a callback and delete its thread state. */
+    _PyGILStats_Fini(tstate);
 
     assert(_PyThreadState_GET() == tstate);
 

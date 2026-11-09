@@ -1,6 +1,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
+#include "pycore_gil_stats.h"     // _PyGILStats_BeginWait()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -330,10 +331,24 @@ take_gil(PyThreadState *tstate)
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
 
+    /* GIL contention statistics: when disabled, this relaxed load and the
+       branches on `stats_on` are the only cost. */
+    struct _gil_stats_state *stats = &gil->stats;
+    int stats_on = (_Py_atomic_load_int_relaxed(&stats->enabled) &&
+                    tstate != _Py_atomic_load_ptr_relaxed(&stats->agg_tstate));
+    int stats_waiting = 0;
+    PyTime_t stats_t0 = 0, stats_wait_ns = 0;
+    uint32_t stats_waiters = 0;
+
     MUTEX_LOCK(gil->mutex);
 
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
+        if (stats_on && !stats_waiting) {
+            /* Contended: timestamp lazily, only on this path. */
+            _PyGILStats_BeginWait(stats, &stats_t0, &stats_waiters);
+            stats_waiting = 1;
+        }
         unsigned long saved_switchnum = gil->switch_number;
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
@@ -349,6 +364,9 @@ take_gil(PyThreadState *tstate)
             PyThreadState *holder_tstate =
                 (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
             if (_PyThreadState_MustExit(tstate)) {
+                if (stats_waiting) {
+                    (void)_PyGILStats_EndWait(stats, stats_t0);
+                }
                 MUTEX_UNLOCK(gil->mutex);
                 // gh-96387: If the loop requested a drop request in a previous
                 // iteration, reset the request. Otherwise, drop_gil() can
@@ -368,6 +386,10 @@ take_gil(PyThreadState *tstate)
             _Py_set_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
             drop_requested = 1;
         }
+    }
+
+    if (stats_waiting) {
+        stats_wait_ns = _PyGILStats_EndWait(stats, stats_t0);
     }
 
 #ifdef Py_GIL_DISABLED
@@ -419,6 +441,14 @@ take_gil(PyThreadState *tstate)
     tstate->_status.holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
+
+    /* We hold the GIL and gil->mutex: we are the only producer. */
+    if (stats_waiting) {
+        _PyGILStats_RecordWait(stats, stats_wait_ns, stats_waiters);
+    }
+    else if (stats_on) {
+        _PyGILStats_HolderInc(&stats->uncontended);
+    }
 
     MUTEX_UNLOCK(gil->mutex);
 

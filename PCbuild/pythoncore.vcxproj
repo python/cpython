@@ -244,6 +244,7 @@
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
+    <ClInclude Include="..\Include\internal\pycore_gil_stats.h" />
     <ClInclude Include="..\Include\internal\pycore_global_objects.h" />
     <ClInclude Include="..\Include\internal\pycore_global_objects_fini_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
@@ -466,6 +467,7 @@
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_sysconfig.c" />
+    <ClCompile Include="..\Modules\_gilstatsmodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\_typingmodule.c" />
@@ -583,6 +585,7 @@
     <ClCompile Include="..\Python\gc.c" />
     <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\gc_gil.c" />
+    <ClCompile Include="..\Python\gil_stats.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />

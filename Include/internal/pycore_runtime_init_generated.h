@@ -802,6 +802,7 @@ extern "C" {
     INIT_ID(backtick), \
     INIT_ID(base), \
     INIT_ID(before), \
+    INIT_ID(below_threshold), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
     INIT_ID(block), \
@@ -897,6 +898,8 @@ extern "C" {
     INIT_ID(dklen), \
     INIT_ID(doc), \
     INIT_ID(dont_inherit), \
+    INIT_ID(drain_interval_max), \
+    INIT_ID(drain_interval_min), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
     INIT_ID(eager_start), \
@@ -1052,6 +1055,7 @@ extern "C" {
     INIT_ID(mapping), \
     INIT_ID(match), \
     INIT_ID(max_length), \
+    INIT_ID(max_period), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
@@ -1066,6 +1070,7 @@ extern "C" {
     INIT_ID(method), \
     INIT_ID(microsecond), \
     INIT_ID(milliseconds), \
+    INIT_ID(min_events), \
     INIT_ID(minute), \
     INIT_ID(mod), \
     INIT_ID(mode), \
@@ -1128,6 +1133,7 @@ extern "C" {
     INIT_ID(path), \
     INIT_ID(pattern), \
     INIT_ID(peek), \
+    INIT_ID(period), \
     INIT_ID(persistent_id), \
     INIT_ID(persistent_load), \
     INIT_ID(person), \
@@ -1159,6 +1165,7 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(record_threshold_us), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
@@ -1172,6 +1179,7 @@ extern "C" {
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
+    INIT_ID(ring_size), \
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
@@ -1238,6 +1246,7 @@ extern "C" {
     INIT_ID(term), \
     INIT_ID(text), \
     INIT_ID(threading), \
+    INIT_ID(threshold_us), \
     INIT_ID(throw), \
     INIT_ID(timeout), \
     INIT_ID(times), \

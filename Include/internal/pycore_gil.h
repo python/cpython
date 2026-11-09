@@ -19,6 +19,41 @@ extern "C" {
 #undef FORCE_SWITCHING
 #define FORCE_SWITCHING
 
+/* GIL contention statistics (see Python/gil_stats.c).
+
+   Fields marked "holder-only" are written only by the thread that has just
+   acquired the GIL, while it still holds gil->mutex, so writers are
+   serialized by the mutex and need no read-modify-write.  They are atomics
+   only so that the aggregator thread can read them without the mutex. */
+struct _gil_stats_ring;
+struct _gil_stats_agg;
+
+struct _gil_stats_state {
+    /* Non-zero when collection is enabled.  Read relaxed in take_gil(). */
+    int enabled;
+    /* Contended waits shorter than this are only counted (below_threshold),
+       not pushed to the ring. */
+    uint32_t threshold_us;
+    /* Threads currently waiting in take_gil()'s wait loop.  Modified under
+       gil->mutex. */
+    Py_ssize_t waiters;
+    /* High-water mark of `waiters` since the aggregator last reset it.
+       Updated under gil->mutex; reset by the aggregator via exchange. */
+    Py_ssize_t max_waiters_hw;
+    /* Cumulative counters (holder-only). */
+    uint64_t uncontended;
+    uint64_t below_threshold;
+    uint64_t dropped;
+    /* No lock event ring: produced by the GIL holder, consumed by the
+       aggregator. Only replaced while the caller holds the GIL. */
+    struct _gil_stats_ring *ring;
+    /* Thread state used by the aggregator to run the Python callback;
+       its own GIL acquisitions are excluded from the statistics. */
+    PyThreadState *agg_tstate;
+    /* Aggregator-side state (thread handle, histogram, snapshots). */
+    struct _gil_stats_agg *agg;
+};
+
 struct _gil_runtime_state {
 #ifdef Py_GIL_DISABLED
     /* If this GIL is disabled, enabled == 0.
@@ -58,6 +93,7 @@ struct _gil_runtime_state {
     PyCOND_T switch_cond;
     PyMUTEX_T switch_mutex;
 #endif
+    struct _gil_stats_state stats;
 };
 
 #ifdef __cplusplus
