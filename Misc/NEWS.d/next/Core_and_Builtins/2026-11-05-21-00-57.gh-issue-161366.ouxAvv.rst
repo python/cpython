@@ -1,0 +1,4 @@
+Fix a deadlock in the garbage collector of the :term:`free-threaded build`
+when :data:`gc.DEBUG_COLLECTABLE` is set and another thread is writing to
+:data:`sys.stderr`. The debug output is now written after the other threads
+are resumed.
