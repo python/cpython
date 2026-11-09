@@ -56,6 +56,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 
 ## thread-safe hashtable (internal locks)
 Python/parking_lot.c	-	buckets	-
+Python/pystate.c	-	state_freelists	-
 
 ## shared empty sentinel for the per-type method cache
 Python/typecache.c	-	empty_cache	-
