@@ -2757,6 +2757,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_interpreters \
 		test/test_io \
 		test/test_json \
+		test/test_lldb \
 		test/test_lazy_import \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
