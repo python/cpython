@@ -317,12 +317,15 @@ def run_path(path_name, init_globals=None, run_name=None):
 
 def _remove_sys_path0():
     """
-    Remove sys._path0 from sys.path.
-    Do nothing if it has already been removed.
-    Similar to using -P (safe path) command line option.
+    Remove sys._path0 from sys.path. Do nothing if sys._path0 is
+    sys._stdlib_dir or if it has already been removed. Similar to using -P
+    (safe path) command line option.
     """
     path0 = sys._path0
     if path0 is None:
+        return
+
+    if path0 == sys._stdlib_dir:
         return
 
     # Remove all path0 copies, not only the first one.
