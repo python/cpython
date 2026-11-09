@@ -7,6 +7,7 @@ Programming FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 General questions
 =================

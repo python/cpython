@@ -29,6 +29,7 @@ c-api/interp-lifecycle.html: global-configuration-variables
 c-api/threads.html: c.PyEval_InitThreads
 
 # Removed sections
+faq/library.html: none-of-my-threads-seem-to-run-why
 library/asyncio-task.html: terminating-a-task-group
 library/dis.html: opcode-DELETE_ATTR
 library/dis.html: opcode-DELETE_GLOBAL
