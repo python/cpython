@@ -489,7 +489,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: isgeneratorfunction(obj)
 
-   Return ``True`` if the obj is a Python generator function.
+   Return ``True`` if *obj* is a Python generator function.
 
    It also returns ``True`` for bound methods created from Python generator functions
    (see :ref:`typesmethods` for more information).
