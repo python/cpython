@@ -24,6 +24,7 @@ class Context:
 
     def __init__(self):
         self.here = pathlib.Path(__file__).parent
+        self.orig_cwd = pathlib.Path.cwd()
 
     @functools.cached_property
     def checkout(self):
@@ -39,10 +40,6 @@ class Context:
     def _pybuilddir(self, build_path):
         relative_dir = (build_path / "pybuilddir.txt").read_text().strip()
         return build_path / relative_dir
-
-    @functools.cached_property
-    def setup_local_path(self):
-        return self.checkout / "Modules" / "Setup.local"
 
     @functools.cached_property
     def host_triple(self):
@@ -184,9 +181,30 @@ class Context:
     @functools.cached_property
     def log_path(self):
         if self._log_path is not None:
-            return self._log_path
+            if not (path := self._log_path).is_absolute():
+                path = (self.orig_cwd / self._log_path).resolve()
+            return path
 
         return pathlib.Path(tempfile.gettempdir())
+
+    @functools.cached_property
+    def dist_path(self):
+        return self.checkout / "dist"
+
+    @functools.cached_property
+    def archive_stem(self):
+        version_info = self.wasi_build_details["language"]["version_info"]
+        version = f"python-{version_info['major']}.{version_info['minor']}.{version_info['micro']}"
+        if version_info["releaselevel"] != "final":
+            version += version_info["releaselevel"][0] + str(
+                version_info["serial"]
+            )
+
+        return f"{version}-{self.host_triple}"
+
+    @functools.cached_property
+    def archive_dir(self):
+        return self.dist_path / self.archive_stem
 
 
 def log(emoji, message, *, spacing=None):

@@ -2298,7 +2298,7 @@ and getting the pointer requires providing the name:
 
    void *vtable;
 
-   if (!PyCapsule_IsValid(capsule, "mymodule.CAPI") {
+   if (!PyCapsule_IsValid(capsule, "mymodule.CAPI")) {
            PyErr_SetString(PyExc_ValueError, "argument type invalid");
            return NULL;
    }

@@ -102,6 +102,7 @@ newSHA3object(PyTypeObject *type)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(newobj);
+    newobj->hash_state = NULL; // PyObject_GC_New() does not zero memory
     newobj->digest_size = newobj->block_size = 0;
     PyObject_GC_Track(newobj);
     return newobj;
@@ -234,7 +235,7 @@ SHA3_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)SHA3_clear(self);
-    tp->tp_free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 

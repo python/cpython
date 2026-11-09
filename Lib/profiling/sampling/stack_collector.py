@@ -68,6 +68,10 @@ class CollapsedStackCollector(StackTraceCollector):
         return True
 
 
+# Allow for tree conversion and the dict/list frames in the Python JSON encoder.
+_FLAMEGRAPH_RECURSION_MARGIN = 6000
+
+
 class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -162,36 +166,45 @@ class FlamegraphCollector(StackTraceCollector):
             missed_samples=info.get("missed_samples"),
             mode=self.stats.get("mode"),
         )
+    def set_mode(self, mode):
+        self.stats["mode"] = mode
 
     def export(self, filename):
-        flamegraph_data = self._convert_to_flamegraph_format()
+        # Converting the call tree recurses to the sampled stack depth.
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(old_limit + _FLAMEGRAPH_RECURSION_MARGIN)
+        try:
+            flamegraph_data = self._convert_to_flamegraph_format()
 
-        # Debug output with string table statistics
-        num_functions = len(flamegraph_data.get("children", []))
-        total_time = flamegraph_data.get("value", 0)
-        string_count = len(self._string_table)
-        s1 = "" if num_functions == 1 else "s"
-        s2 = "" if total_time == 1 else "s"
-        s3 = "" if string_count == 1 else "s"
-        print(
-            f"Flamegraph data: {num_functions} root function{s1}, "
-            f"{total_time} total sample{s2}, "
-            f"{string_count} unique string{s3}"
-        )
-
-        if num_functions == 0:
+            # Debug output with string table statistics
+            num_functions = len(flamegraph_data.get("children", []))
+            total_time = flamegraph_data.get("value", 0)
+            string_count = len(self._string_table)
+            s1 = "" if num_functions == 1 else "s"
+            s2 = "" if total_time == 1 else "s"
+            s3 = "" if string_count == 1 else "s"
             print(
-                "Warning: No functions found in profiling data. Check if sampling captured any data."
+                f"Flamegraph data: {num_functions} root function{s1}, "
+                f"{total_time} total sample{s2}, "
+                f"{string_count} unique string{s3}"
             )
-            return False
 
-        html_content = self._create_flamegraph_html(flamegraph_data)
+            if num_functions == 0:
+                print(
+                    "Warning: No functions found in profiling data. "
+                    "Check if sampling captured any data."
+                )
+                return False
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html_content)
+            html_content = self._create_flamegraph_html(flamegraph_data)
 
-        print(f"Flamegraph saved to: {filename}")
-        return True
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+
+            print(f"Flamegraph saved to: {filename}")
+            return True
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -485,7 +498,12 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        data_json = json.dumps(data)
+        try:
+            data_json = json.dumps(data)
+        except RecursionError:
+            # The C encoder can exhaust the C stack independently of the
+            # Python recursion limit. iterencode() uses the Python encoder.
+            data_json = "".join(json.JSONEncoder().iterencode(data))
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
@@ -566,13 +584,16 @@ class FlamegraphCollector(StackTraceCollector):
 class DiffFlamegraphCollector(FlamegraphCollector):
     """Differential flamegraph collector that compares against a baseline binary profile."""
 
-    def __init__(self, sample_interval_usec, *, baseline_binary_path, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, baseline_binary_path,
+                 skip_idle=False, mode=None, capture_config=None):
         super().__init__(sample_interval_usec, skip_idle=skip_idle)
         if not os.path.exists(baseline_binary_path):
             raise ValueError(f"Baseline file not found: {baseline_binary_path}")
         self.baseline_binary_path = baseline_binary_path
         self._baseline_collector = None
         self._elided_paths = set()
+        self.mode = mode
+        self.capture_config = capture_config
 
     def _load_baseline(self):
         """Load baseline profile from binary file."""
@@ -580,6 +601,32 @@ class DiffFlamegraphCollector(FlamegraphCollector):
 
         with BinaryReader(self.baseline_binary_path) as reader:
             info = reader.get_info()
+
+            baseline_mode = info.get("mode")
+            if (
+                baseline_mode is not None
+                and self.mode is not None
+                and baseline_mode != self.mode
+            ):
+                raise ValueError(
+                    "Baseline profiling mode does not match current mode"
+                )
+
+            baseline_config = info.get("capture_config")
+            if baseline_config is not None and self.capture_config is not None:
+                names = baseline_config.keys() | self.capture_config.keys()
+                mismatches = [
+                    name for name in names
+                    if baseline_config.get(name, False)
+                    != self.capture_config.get(name, False)
+                ]
+            else:
+                mismatches = []
+            if mismatches:
+                raise ValueError(
+                    "Baseline capture configuration does not match current "
+                    f"configuration: {', '.join(sorted(mismatches))}"
+                )
 
             baseline_collector = FlamegraphCollector(
                 sample_interval_usec=info['sample_interval_us'],
@@ -634,16 +681,16 @@ class DiffFlamegraphCollector(FlamegraphCollector):
         current_stats = self._aggregate_path_samples(self._root)
         baseline_stats = self._aggregate_path_samples(self._baseline_collector._root)
 
-        # Scale baseline values to make them comparable, accounting for both
-        # sample count differences and sample interval differences.
+        # Express baseline samples in units of the current sample interval.
+        # Do not normalize by total profile duration: doing so makes unchanged
+        # functions appear different when another function becomes faster or
+        # slower.
         baseline_total = self._baseline_collector._total_samples
-        if baseline_total > 0 and self._total_samples > 0:
-            current_time = self._total_samples * self.sample_interval_usec
-            baseline_time = baseline_total * self._baseline_collector.sample_interval_usec
-            scale = current_time / baseline_time
-        elif baseline_total > 0:
-            # Current profile is empty - use interval-based scale for elided display
-            scale = self.sample_interval_usec / self._baseline_collector.sample_interval_usec
+        if baseline_total > 0:
+            scale = (
+                self._baseline_collector.sample_interval_usec
+                / self.sample_interval_usec
+            )
         else:
             scale = 1.0
 
@@ -859,6 +906,10 @@ class DiffFlamegraphCollector(FlamegraphCollector):
             node["diff_pct"] = -100.0
         else:
             node["diff_pct"] = 0.0
+
+        # Scale geometry after computing metadata from raw baseline counts.
+        node["value"] = node.get("value", 0) * scale
+        node["self"] = node.get("self", 0) * scale
 
         if "children" in node and node["children"]:
             for child in node["children"]:

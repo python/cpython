@@ -152,27 +152,28 @@ Operating System Utilities
       <c-preinit>` and so that the LC_CTYPE locale is properly configured: see
       the :c:func:`Py_PreInitialize` function.
 
-   Decode a byte string from the :term:`filesystem encoding and error handler`.
-   If the error handler is :ref:`surrogateescape error handler
-   <surrogateescape>`, undecodable bytes are decoded as characters in range
-   U+DC80..U+DCFF; and if a byte sequence can be decoded as a surrogate
-   character, the bytes are escaped using the surrogateescape error handler
-   instead of decoding them.
+   Decode a byte string from the :term:`filesystem encoding <filesystem
+   encoding and error handler>` with the :ref:`surrogateescape error handler
+   <surrogateescape>`.
+
+   Undecodable bytes are decoded as characters in range U+DC80..U+DCFF. If a
+   byte sequence can be decoded as a surrogate character, escape the bytes
+   using the surrogateescape error handler instead of decoding them.
 
    Return a pointer to a newly allocated wide character string, use
    :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
    the number of wide characters excluding the null character into ``*size``
 
-   Return ``NULL`` on decoding error or memory allocation error. If *size* is
-   not ``NULL``, ``*size`` is set to ``(size_t)-1`` on memory error or set to
-   ``(size_t)-2`` on decoding error.
+   On memory allocation failure, set *\*size* to ``(size_t)-1`` and return
+   ``NULL``.
+
+   On decode error, set *\*size* to ``(size_t)-2`` and return ``NULL``.
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
 
    The :term:`filesystem encoding and error handler` are selected by
    :c:func:`PyConfig_Read`: see :c:member:`~PyConfig.filesystem_encoding` and
    :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
-
-   Decoding errors should never happen, unless there is a bug in the C
-   library.
 
    Use the :c:func:`Py_EncodeLocale` function to encode the character string
    back to a byte string.
@@ -195,17 +196,19 @@ Operating System Utilities
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
-   Encode a wide character string to the :term:`filesystem encoding and error
-   handler`. If the error handler is :ref:`surrogateescape error handler
-   <surrogateescape>`, surrogate characters in the range U+DC80..U+DCFF are
-   converted to bytes 0x80..0xFF.
+   Encode a wide character string to the :term:`filesystem encoding <filesystem
+   encoding and error handler>` with the :ref:`surrogateescape error handler
+   <surrogateescape>`. Surrogate characters in the range U+DC80..U+DCFF are
+   encoded to bytes 0x80..0xFF.
 
    Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
-   to free the memory. Return ``NULL`` on encoding error or memory allocation
-   error.
+   to free the memory.
 
-   If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
-   success,  or set to the index of the invalid character on encoding error.
+   On memory allocation failure, set *\*error_pos* to ``(size_t)-1`` and return
+   ``NULL``.
+
+   On encoding error, set *\*error_pos* to the index of the first unencodable
+   character and return ``NULL``.
 
    The :term:`filesystem encoding and error handler` are selected by
    :c:func:`PyConfig_Read`: see :c:member:`~PyConfig.filesystem_encoding` and

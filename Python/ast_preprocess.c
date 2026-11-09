@@ -867,11 +867,11 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTPreprocessState *st
     {
         case UnaryOp_kind:
         {
-            if (node->v.UnaryOp.op == USub &&
+            if ((node->v.UnaryOp.op == USub || node->v.UnaryOp.op == UAdd) &&
                 node->v.UnaryOp.operand->kind == Constant_kind)
             {
                 PyObject *operand = node->v.UnaryOp.operand->v.Constant.value;
-                PyObject *folded = PyNumber_Negative(operand);
+                PyObject *folded = node->v.UnaryOp.op == USub ? PyNumber_Negative(operand) : PyNumber_Positive(operand);
                 return make_const(node, folded, ctx_);
             }
             break;

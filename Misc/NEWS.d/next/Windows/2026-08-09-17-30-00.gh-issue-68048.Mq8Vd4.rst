@@ -1,2 +1,0 @@
-Creating a :class:`mmap.mmap` object on Windows no longer resets the position
-of the underlying file to zero, as on other platforms.

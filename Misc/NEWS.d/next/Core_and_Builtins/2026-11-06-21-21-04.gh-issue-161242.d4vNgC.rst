@@ -1,0 +1,3 @@
+Speed up :exc:`AttributeError`, :exc:`ImportError` and
+:exc:`NameError` by enabling :ref:`vectorcall`. Unexpected
+keyword arguments are now reported by name.

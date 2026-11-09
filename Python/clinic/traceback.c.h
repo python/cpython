@@ -83,16 +83,6 @@ exit:
     return return_value;
 }
 
-#if !defined(traceback_tb_next_DOCSTR)
-#  define traceback_tb_next_DOCSTR NULL
-#endif
-#if defined(TRACEBACK_TB_NEXT_GETSETDEF)
-#  undef TRACEBACK_TB_NEXT_GETSETDEF
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, traceback_tb_next_DOCSTR},
-#else
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, NULL, traceback_tb_next_DOCSTR},
-#endif
-
 static PyObject *
 traceback_tb_next_get_impl(PyTracebackObject *self);
 
@@ -108,28 +98,28 @@ traceback_tb_next_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(traceback_tb_next_DOCSTR)
-#  define traceback_tb_next_DOCSTR NULL
-#endif
-#if defined(TRACEBACK_TB_NEXT_GETSETDEF)
-#  undef TRACEBACK_TB_NEXT_GETSETDEF
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, traceback_tb_next_DOCSTR},
-#else
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", NULL, (setter)traceback_tb_next_set, NULL},
-#endif
-
 static int
 traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value);
 
 static int
-traceback_tb_next_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+traceback_tb_next_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'tb_next' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = traceback_tb_next_set_impl((PyTracebackObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=5361141395da963e input=a9049054013a1b77]*/
+#define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, NULL},
+
+/*[clinic end generated code: output=0f7bb7a58d9f8d65 input=a9049054013a1b77]*/
