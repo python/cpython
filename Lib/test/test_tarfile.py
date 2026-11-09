@@ -3923,6 +3923,9 @@ class TestExtractionFilters(unittest.TestCase):
                 self.expect_file('parent/evil')
 
     @symlink_test
+    @unittest.skipIf(os.name == 'nt',
+                     "tarfile keeps '/' in symlink targets on Windows "
+                     "(gh-57911), so the links cannot be followed")
     def test_parent_symlink3(self):
         # Test a dangling symlink reached through a symlink to a directory
 
@@ -3941,14 +3944,9 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(), 'fully_trusted'):
             if os_helper.can_symlink():
-                if os.name == 'nt':
-                    # Windows does not accept the '/' in the link target,
-                    # so writing through the link fails
-                    self.expect_exception(OSError)
-                else:
-                    self.expect_file('current', symlink_to='.')
-                    self.expect_file('link', symlink_to='../evil')
-                    self.expect_file('../evil', content='evil')
+                self.expect_file('current', symlink_to='.')
+                self.expect_file('link', symlink_to='../evil')
+                self.expect_file('../evil', content='evil')
             else:
                 self.expect_file('current/link', content='evil')
 
