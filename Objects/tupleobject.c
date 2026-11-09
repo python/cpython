@@ -1129,7 +1129,9 @@ _PyTuple_ResizeKeepOnError(PyTupleObject **pv, Py_ssize_t newsize, int gc_track)
         }
         Py_ssize_t steal = Py_MIN(oldsize, newsize);
         if (steal) {
-            // Steal items
+            // Steal items (avoid inefficient Py_INCREF/Py_DECREF dance):
+            // it is safe since Py_REFCNT(v) == 1 and the old tuple is
+            // destroyed above by Py_DECREF().
             memcpy(new_tuple->ob_item, v->ob_item,
                    steal * sizeof(v->ob_item[0]));
             memset(v->ob_item, 0,
