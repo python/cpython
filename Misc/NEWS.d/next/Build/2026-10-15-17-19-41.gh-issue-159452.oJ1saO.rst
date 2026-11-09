@@ -1,3 +1,2 @@
-``Tools/build/regen-configure.sh`` no longer leaves an ``autom4te.cache``
-directory owned by root in the source tree: the Autoconf container now runs as
-the invoking user, and the cache is removed when the script finishes.
+``Tools/build/regen-configure.sh`` no longer leaves
+root-owned files in the source tree.
