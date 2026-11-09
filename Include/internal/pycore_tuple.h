@@ -136,11 +136,11 @@ _PyTupleWriter_SET_ITEM_STEAL(PyTupleWriter *writer,
 {
     assert(_PyTupleWriter_CheckConsistency(writer));
     PyTupleObject *tuple = _PyTuple_CAST(writer);
+    assert(item != NULL);
 
     assert(_PyTuple_CanMutate(tuple));
     assert(0 <= index && index < Py_SIZE(tuple));
     assert(tuple->ob_item[index] == NULL);
-    assert(item != NULL);
 
     tuple->ob_item[index] = item;
 }

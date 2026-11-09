@@ -1424,31 +1424,38 @@ int
 PyTupleWriter_Resize(PyTupleWriter **writer, Py_ssize_t new_size)
 {
     assert(writer != NULL);
-    assert(*writer != NULL);
+    assert(_PyTupleWriter_CheckConsistency(*writer));
     PyTupleObject *tuple = _PyTuple_CAST(*writer);
 
     if (_PyTuple_ResizeKeepOnError(&tuple, new_size, 0) < 0) {
         assert(tuple != NULL);
+        assert(tuple == _PyTuple_CAST(*writer));
+        *writer = _PyTupleWriter_CAST(tuple);  // just in case
+        assert(_PyTupleWriter_CheckConsistency(*writer));
         return -1;
     }
-    assert(tuple != NULL);
 
+    assert(tuple != NULL);
     *writer = _PyTupleWriter_CAST(tuple);
     assert(_PyTupleWriter_CheckConsistency(*writer));
     return 0;
 }
 
 
-#ifndef NDEBUG
+#ifdef Py_DEBUG
 // Make sure that all items are set
-static void
+static int
 tuplewriter_check_final(PyTupleObject *tuple)
 {
     Py_ssize_t size = Py_SIZE(tuple);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        PyObject *item = tuple->ob_item[i];
-        assert(item != NULL);
+    for (Py_ssize_t index = 0; index < size; index++) {
+        PyObject *item = tuple->ob_item[index];
+        if (item == NULL) {
+            PyErr_Format(PyExc_SystemError, "item #%zd is NULL", index);
+            return -1;
+        }
     }
+    return 0;
 }
 #endif
 
@@ -1463,19 +1470,18 @@ PyTupleWriter_FinishWithSize(PyTupleWriter *writer, Py_ssize_t final_size)
         PyErr_SetString(PyExc_ValueError, "size must be positive");
         return NULL;
     }
-    if (final_size > Py_SIZE(tuple)) {
+    Py_ssize_t size = Py_SIZE(tuple);
+    if (final_size > size) {
         PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
         return NULL;
     }
 
     if (final_size == 0) {
-        Py_XDECREF(tuple);
+        Py_DECREF(tuple);
         tuple = (PyTupleObject*)tuple_get_empty();  // cannot fail
     }
     else {
-        Py_ssize_t size = PyTuple_GET_SIZE(tuple);
         if (final_size != size) {
-            assert(final_size < size);
             if (_PyTuple_ResizeKeepOnError(&tuple, final_size, 0) < 0) {
                 Py_DECREF(tuple);
                 return NULL;
@@ -1485,8 +1491,11 @@ PyTupleWriter_FinishWithSize(PyTupleWriter *writer, Py_ssize_t final_size)
         _PyObject_GC_TRACK(tuple);
     }
 
-#ifndef NDEBUG
-    tuplewriter_check_final(tuple);
+#ifdef Py_DEBUG
+    if (tuplewriter_check_final(tuple) < 0) {
+        Py_DECREF(tuple);
+        return NULL;
+    }
 #endif
 
     return _PyObject_CAST(tuple);
@@ -1498,9 +1507,6 @@ PyTupleWriter_Finish(PyTupleWriter *writer)
 {
     assert(_PyTupleWriter_CheckConsistency(writer));
     PyTupleObject *result = _PyTuple_CAST(writer);
-#ifndef NDEBUG
-    tuplewriter_check_final(result);
-#endif
 
     if (PyTuple_GET_SIZE(result) == 0) {
         assert(_PyObject_CAST(result) == tuple_get_empty());
@@ -1508,6 +1514,14 @@ PyTupleWriter_Finish(PyTupleWriter *writer)
     else {
         _PyObject_GC_TRACK(result);
     }
+
+#ifdef Py_DEBUG
+    if (tuplewriter_check_final(result) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+#endif
+
     return _PyObject_CAST(result);
 }
 
@@ -1515,9 +1529,13 @@ PyTupleWriter_Finish(PyTupleWriter *writer)
 void
 PyTupleWriter_Discard(PyTupleWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
+
     assert(_PyTupleWriter_CheckConsistency(writer));
-    PyObject *tuple = _PyObject_CAST(writer);  // can be NULL
-    Py_XDECREF(tuple);
+    PyObject *tuple = _PyObject_CAST(writer);
+    Py_DECREF(tuple);
 }
 
 
@@ -1551,7 +1569,7 @@ PyTupleWriter_SetItem(PyTupleWriter *writer, Py_ssize_t index, PyObject *item)
 
 #ifdef Py_DEBUG
     if (tuple->ob_item[index] != NULL) {
-        PyErr_Format(PyExc_SystemError, "tuple item %zd already set", index);
+        PyErr_Format(PyExc_SystemError, "tuple item %zd is already set", index);
         return -1;
     }
 #endif
@@ -1584,7 +1602,6 @@ PyTupleWriter_SetItems(PyTupleWriter *writer, Py_ssize_t start,
         PyErr_SetString(PyExc_ValueError, "nitem must be positive");
         return -1;
     }
-    // nitem can be 0
 
 #ifdef Py_DEBUG
     for (Py_ssize_t index = 0; index < nitem; index++) {
@@ -1604,7 +1621,7 @@ PyTupleWriter_SetItems(PyTupleWriter *writer, Py_ssize_t start,
     for (Py_ssize_t index = 0; index < nitem; index++) {
         if (tuple->ob_item[start + index] != NULL) {
             PyErr_Format(PyExc_SystemError,
-                         "tuple item %zd already set", start + index);
+                         "tuple item %zd is already set", start + index);
             return -1;
         }
     }
