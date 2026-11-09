@@ -157,12 +157,13 @@ def get_all_awaited_by(pid):
     return unwinder.get_all_awaited_by()
 
 
-def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
+def build_async_tree(result, task_emoji="(T)", cor_emoji="", fut_emoji="(F)"):
     """
     Build a list of strings for pretty-print an async call tree.
 
     The call tree is produced by `get_all_async_stacks()`, prefixing tasks
-    with `task_emoji` and coroutine frames with `cor_emoji`.
+    with `task_emoji`, futures with `fut_emoji`, and coroutine frames with
+    `cor_emoji`.
     """
     id2name, awaits, task_stacks = _index(result)
     g = _task_graph(awaits)
@@ -180,7 +181,7 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
     def pretty(node):
         flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
         if node[0] == NodeType.TASK and node[1] in future_ids:
-            flag = "(F)"
+            flag = fut_emoji
         return f"{flag} {labels[node]}"
 
     def render(root):
