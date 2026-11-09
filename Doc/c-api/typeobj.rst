@@ -1153,7 +1153,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    must be considered to have a zero or ``NULL`` value instead.
 
    .. versionchanged:: next
-      The type is now ``uint64_t`` rather than ``unsigned long``.
+      The :c:member:`~PyTypeObject.tp_flags` type is now ``uint64_t`` rather
+      than ``unsigned long``.
 
    **Inheritance:**
 

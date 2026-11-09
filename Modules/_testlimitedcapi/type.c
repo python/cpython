@@ -130,6 +130,7 @@ type_clearcache(PyObject *module, PyObject *Py_UNUSED(arg))
     return PyLong_FromUnsignedLong(version_tag);
 }
 
+
 // Test PyType_GetFlags()
 static PyObject *
 type_getflags(PyObject *module, PyObject *arg)
