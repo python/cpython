@@ -306,16 +306,15 @@ extern "C" {
  * Usage:
  *    int _Py_HOT_FUNCTION x(void) { return 3; }
  *
- * Issue #28618: This attribute must not be abused, otherwise it can have a
+ * Issue gh-72804: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
  * its time must use it. Use a profiler when running performance benchmark
  * suite to find these functions.
  */
-#if _Py__has_attribute(hot) || defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
-#define _Py_HOT_FUNCTION __attribute__((hot))
+#if _Py__has_attribute(hot)
+#   define _Py_HOT_FUNCTION __attribute__((hot))
 #else
-#define _Py_HOT_FUNCTION
+#   define _Py_HOT_FUNCTION
 #endif
 
 // Ask the compiler to always inline a static inline function. The compiler can
