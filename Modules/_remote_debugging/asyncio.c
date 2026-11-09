@@ -593,8 +593,8 @@ process_single_task_node(
     PyObject *coroutine_stack = NULL;
 
     char is_task;
-    // task_is_task == 1 - task
-    // task_is_task == 0 - future
+    // task_is_task = 1 => task
+    // task_is_task = 0 => future
     if (read_char(unwinder,
             task_addr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
             &is_task) < 0) {
