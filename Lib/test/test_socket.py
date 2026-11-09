@@ -1592,6 +1592,27 @@ class GeneralModuleTests(unittest.TestCase):
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
 
+    @requireAttrs(socket, "AF_UNIX", "AF_VSOCK")
+    def test_vsock_sol_socket_options(self):
+        # Use a Unix socket to exercise AF_VSOCK option handling without a VM.
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as raw:
+            sock = socket.fromfd(raw.fileno(), socket.AF_VSOCK, raw.type)
+        self.addCleanup(sock.close)
+
+        linger = struct.pack("ii", 1, 0)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
+        self.assertEqual(sock.getsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                                         len(linger)), linger)
+        self.assertEqual(sock.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE),
+                         socket.SOCK_STREAM)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2**32)
+        # The Unix socket rejects the VSOCK option after integer conversion.
+        with self.assertRaises(OSError):
+            sock.setsockopt(socket.AF_VSOCK, socket.SO_VM_SOCKETS_BUFFER_SIZE,
+                            2**32)
+
     def test_setsockopt_errors(self):
         # See issue #107546.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
