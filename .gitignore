@@ -164,6 +164,7 @@ Tools/unicode/data/
 /python.bat
 /python-gdb.py
 /python.exe-gdb.py
+/python_lldb.py
 /reflog.txt
 /coverage/
 /externals/
