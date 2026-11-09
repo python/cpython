@@ -170,28 +170,56 @@ would typically correspond to a Python function.
    .. The table is here to make the docs searchable, and to allow automatic
       links to the identifiers.
 
-   ================================================== =====================================
-   Macro                                              Event
-   ================================================== =====================================
-   .. c:macro:: PY_MONITORING_EVENT_BRANCH_LEFT       :monitoring-event:`BRANCH_LEFT`
-   .. c:macro:: PY_MONITORING_EVENT_BRANCH_RIGHT      :monitoring-event:`BRANCH_RIGHT`
-   .. c:macro:: PY_MONITORING_EVENT_CALL              :monitoring-event:`CALL`
-   .. c:macro:: PY_MONITORING_EVENT_C_RAISE           :monitoring-event:`C_RAISE`
-   .. c:macro:: PY_MONITORING_EVENT_C_RETURN          :monitoring-event:`C_RETURN`
-   .. c:macro:: PY_MONITORING_EVENT_EXCEPTION_HANDLED :monitoring-event:`EXCEPTION_HANDLED`
-   .. c:macro:: PY_MONITORING_EVENT_INSTRUCTION       :monitoring-event:`INSTRUCTION`
-   .. c:macro:: PY_MONITORING_EVENT_JUMP              :monitoring-event:`JUMP`
-   .. c:macro:: PY_MONITORING_EVENT_LINE              :monitoring-event:`LINE`
-   .. c:macro:: PY_MONITORING_EVENT_PY_RESUME         :monitoring-event:`PY_RESUME`
-   .. c:macro:: PY_MONITORING_EVENT_PY_RETURN         :monitoring-event:`PY_RETURN`
-   .. c:macro:: PY_MONITORING_EVENT_PY_START          :monitoring-event:`PY_START`
-   .. c:macro:: PY_MONITORING_EVENT_PY_THROW          :monitoring-event:`PY_THROW`
-   .. c:macro:: PY_MONITORING_EVENT_PY_UNWIND         :monitoring-event:`PY_UNWIND`
-   .. c:macro:: PY_MONITORING_EVENT_PY_YIELD          :monitoring-event:`PY_YIELD`
-   .. c:macro:: PY_MONITORING_EVENT_RAISE             :monitoring-event:`RAISE`
-   .. c:macro:: PY_MONITORING_EVENT_RERAISE           :monitoring-event:`RERAISE`
-   .. c:macro:: PY_MONITORING_EVENT_STOP_ITERATION    :monitoring-event:`STOP_ITERATION`
-   ================================================== =====================================
+   .. list-table::
+      :header-rows: 1
+      :widths: 50 37
+
+      * - Macro
+        - Event
+      * - .. c:macro:: PY_MONITORING_EVENT_BRANCH_LEFT
+        - :monitoring-event:`BRANCH_LEFT`
+      * - .. c:macro:: PY_MONITORING_EVENT_BRANCH_RIGHT
+        - :monitoring-event:`BRANCH_RIGHT`
+      * - .. c:macro:: PY_MONITORING_EVENT_CALL
+        - :monitoring-event:`CALL`
+      * - .. c:macro:: PY_MONITORING_EVENT_C_RAISE
+        - :monitoring-event:`C_RAISE`
+      * - .. c:macro:: PY_MONITORING_EVENT_C_RETURN
+        - :monitoring-event:`C_RETURN`
+      * - .. c:macro:: PY_MONITORING_EVENT_EXCEPTION_HANDLED
+        - :monitoring-event:`EXCEPTION_HANDLED`
+      * - .. c:macro:: PY_MONITORING_EVENT_INSTRUCTION
+        - :monitoring-event:`INSTRUCTION`
+      * - .. c:macro:: PY_MONITORING_EVENT_JUMP
+        - :monitoring-event:`JUMP`
+      * - .. c:macro:: PY_MONITORING_EVENT_LINE
+        - :monitoring-event:`LINE`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_RESUME
+        - :monitoring-event:`PY_RESUME`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_RETURN
+        - :monitoring-event:`PY_RETURN`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_START
+        - :monitoring-event:`PY_START`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_THROW
+        - :monitoring-event:`PY_THROW`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_UNWIND
+        - :monitoring-event:`PY_UNWIND`
+      * - .. c:macro:: PY_MONITORING_EVENT_PY_YIELD
+        - :monitoring-event:`PY_YIELD`
+      * - .. c:macro:: PY_MONITORING_EVENT_RAISE
+        - :monitoring-event:`RAISE`
+      * - .. c:macro:: PY_MONITORING_EVENT_RERAISE
+        - :monitoring-event:`RERAISE`
+      * - .. c:macro:: PY_MONITORING_EVENT_STOP_ITERATION
+        - :monitoring-event:`STOP_ITERATION`
+      * - .. c:macro:: PY_MONITORING_EVENT_BRANCH
+
+             .. deprecated:: 3.14
+                Use :c:macro:`PY_MONITORING_EVENT_BRANCH_LEFT`
+                and :c:macro:`PY_MONITORING_EVENT_BRANCH_RIGHT` instead.
+
+        - :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+
 
 .. c:function:: int PyMonitoring_ExitScope(void)
 

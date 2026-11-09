@@ -1,3 +1,0 @@
-Add a :option:`--with-build-details-suffix` configure flag to allow Linux
-distributions that co-install multiple versions of Python in the same tree
-to avoid ``build-details.json`` clashes.

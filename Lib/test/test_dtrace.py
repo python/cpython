@@ -84,24 +84,36 @@ def normalize_trace_output(output):
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+TERMINATE_TIMEOUT = 10
 
 def create_process_group(*args, **kwargs):
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
     return subprocess.Popen(*args, **kwargs)
 
-def kill_process_group(proc):
+def terminate_process_group(proc):
     if USE_PROCESS_GROUP:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
+            os.killpg(proc.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
     else:
-        proc.kill()
-    proc.communicate()  # Clean up
+        proc.terminate()
+
+    try:
+        proc.communicate(timeout=TERMINATE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        if USE_PROCESS_GROUP:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        else:
+            proc.kill()
+        proc.communicate(timeout=TERMINATE_TIMEOUT)  # Clean up
 
 
-def run_readelf(cmd):
+def run_command(cmd):
     # Force the C locale to disable localization.
     env = dict(os.environ, LC_ALL="C")
     try:
@@ -113,7 +125,7 @@ def run_readelf(cmd):
             env=env,
         )
     except OSError:
-        raise unittest.SkipTest("Couldn't find readelf on the path")
+        raise unittest.SkipTest(f"Couldn't find {cmd[0]!r} on the path")
 
     with proc:
         stdout, stderr = proc.communicate()
@@ -132,6 +144,7 @@ class TraceBackend:
     EXTENSION = None
     COMMAND = None
     COMMAND_ARGS = []
+    USABILITY_TIMEOUT = 10
 
     def run_case(self, name, optimize_python=None):
         try:
@@ -163,7 +176,7 @@ class TraceBackend:
         try:
             stdout, _ = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise
         if check_returncode and proc.returncode:
             raise AssertionError(
@@ -183,7 +196,7 @@ class TraceBackend:
     def assert_usable(self):
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION),
-                                timeout=10)
+                                timeout=self.USABILITY_TIMEOUT)
             output = output.strip()
         except subprocess.TimeoutExpired:
             raise unittest.SkipTest(
@@ -208,6 +221,7 @@ class SystemTapBackend(TraceBackend):
     EXTENSION = ".stp"
     COMMAND = ["stap", "-g"]
     PROBE_PLACEHOLDER = "@PYTHON_SYSTEMTAP_PROBE@"
+    USABILITY_TIMEOUT = 60
 
     @staticmethod
     def quote_systemtap_string(value):
@@ -228,6 +242,17 @@ class SystemTapBackend(TraceBackend):
             script = fp.read()
 
         return script.replace(self.PROBE_PLACEHOLDER, self.python_probe())
+
+    def generate_trace_command(self, script_file, subcommand=None):
+        probe_binary = get_probe_binary()
+        if subcommand and probe_binary != sys.executable:
+            library_path = os.path.dirname(probe_binary)
+            if existing_path := os.environ.get("LD_LIBRARY_PATH"):
+                library_path = os.pathsep.join((library_path, existing_path))
+            env = shlex.join(["env", f"LD_LIBRARY_PATH={library_path}"])
+            subcommand = f"{env} {subcommand}"
+
+        return super().generate_trace_command(script_file, subcommand)
 
     def trace(self, script_file, subcommand=None, *, timeout=None,
               check_returncode=False):
@@ -350,7 +375,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=60)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise AssertionError("bpftrace timed out")
         except (FileNotFoundError, PermissionError) as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -389,7 +414,7 @@ gc__done:1""",
             )
             stdout, stderr = proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
-            kill_process_group(proc)
+            terminate_process_group(proc)
             raise unittest.SkipTest("bpftrace timed out during usability check")
         except OSError as e:
             raise unittest.SkipTest(f"bpftrace not available: {e}")
@@ -503,6 +528,12 @@ class BPFTraceOptimizedTests(TraceTests, unittest.TestCase):
 class CheckDtraceProbes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if sys.platform == "sunos5":
+            # Solaris does not expose available probes through readable ELF
+            # section; it uses DTrace itself instead.
+            DTraceBackend().assert_usable()
+            return
+
         readelf_major_version, readelf_minor_version = cls.get_readelf_version()
         if support.verbose:
             print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
@@ -510,7 +541,7 @@ class CheckDtraceProbes(unittest.TestCase):
 
     @staticmethod
     def get_readelf_version():
-        version = run_readelf(["readelf", "--version"])
+        version = run_command(["readelf", "--version"])
 
         # Regex to parse:
         # 'GNU readelf (GNU Binutils) 2.40.0\n' -> 2.40
@@ -520,38 +551,50 @@ class CheckDtraceProbes(unittest.TestCase):
 
         return int(match.group(1)), int(match.group(2))
 
-    def get_readelf_output(self):
-        return run_readelf(["readelf", "-n", get_probe_binary()])
+    def get_probe_output(self):
+        if sys.platform == "sunos5":
+            # Get probes available in this process.
+            return run_command(
+                ["dtrace", "-l", "-P", f"python{os.getpid()}"]
+            )
+
+        return run_command(["readelf", "-n", get_probe_binary()])
+
+    def assert_probe_present(self, probe_name, output):
+        if sys.platform == "sunos5":
+            self.assertIn(probe_name.replace("__", "-"), output)
+        else:
+            self.assertIn(f"Name: {probe_name}", output)
 
     def test_check_probes(self):
-        readelf_output = self.get_readelf_output()
+        probe_output = self.get_probe_output()
 
         available_probe_names = [
-            "Name: import__find__load__done",
-            "Name: import__find__load__start",
-            "Name: audit",
-            "Name: gc__start",
-            "Name: gc__done",
-            "Name: function__entry",
-            "Name: function__return",
+            "import__find__load__done",
+            "import__find__load__start",
+            "audit",
+            "gc__start",
+            "gc__done",
+            "function__entry",
+            "function__return",
         ]
 
         for probe_name in available_probe_names:
             with self.subTest(probe_name=probe_name):
-                self.assertIn(probe_name, readelf_output)
+                self.assert_probe_present(probe_name, probe_output)
 
     @unittest.expectedFailure
     def test_missing_probes(self):
-        readelf_output = self.get_readelf_output()
+        probe_output = self.get_probe_output()
 
         # Missing probes will be added in the future.
         missing_probe_names = [
-            "Name: line",
+            "line",
         ]
 
         for probe_name in missing_probe_names:
             with self.subTest(probe_name=probe_name):
-                self.assertIn(probe_name, readelf_output)
+                self.assert_probe_present(probe_name, probe_output)
 
 
 if __name__ == '__main__':

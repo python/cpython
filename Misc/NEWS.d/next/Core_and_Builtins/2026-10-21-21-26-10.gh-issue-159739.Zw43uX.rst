@@ -1,0 +1,1 @@
+Raise :exc:`MemoryError` instead of returning an incorrect result if :func:`round` runs out of memory while rounding a float.
