@@ -595,6 +595,11 @@ class TclTest(unittest.TestCase):
         interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
                     % support.exceeds_recursion_limit())
         self.assertRaises(RecursionError, interp.getvar, 'x')
+        interp = None
+
+        # gh-161353: Clean up explicitly per-thread state to avoid leaking an
+        # event handle on Windows when test_tcl is run with -R 3:3 option.
+        _tkinter._finalize_thread()
 
     def test_setvar_evil(self):
         # gh-161388
