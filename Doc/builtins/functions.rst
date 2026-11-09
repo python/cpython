@@ -740,7 +740,7 @@ are always available.  They are listed here in alphabetical order.
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
-   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
+   occurs). If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
    section :ref:`file-input` in the Reference Manual). Be aware that the
    :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
@@ -1950,7 +1950,7 @@ are always available.  They are listed here in alphabetical order.
       >>> MISSING
       <MISSING>
 
-   Sentinel objects are truthy and compare equal only to themselves.  They are
+   Sentinel objects are true and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
 
    ``sentinel`` does not support subclassing.
@@ -2470,9 +2470,3 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       When the command line options :option:`-E` or :option:`-I` are being used,
       the environment variable :envvar:`PYTHONCASEOK` is now ignored.
-
-.. rubric:: Footnotes
-
-.. [#] Note that the parser only accepts the Unix-style end of line convention.
-   If you are reading the code from a file, make sure to use newline conversion
-   mode to convert Windows or Mac-style newlines.
