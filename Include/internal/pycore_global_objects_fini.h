@@ -42,7 +42,7 @@ _PyStaticObject_CheckLongSingleton(PyObject *obj, long value, int is_bool)
         lv_tag |= IMMORTALITY_BIT_MASK;
     }
     _PyObject_ASSERT(obj, long_value->lv_tag == lv_tag);
-    _PyObject_ASSERT(obj, long_value->ob_digit[0] == Py_ABS(value));
+    _PyObject_ASSERT(obj, long_value->ob_digit[0] == (digit)Py_ABS(value));
 }
 
 

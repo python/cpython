@@ -839,10 +839,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
     # Include os.sep (target OS directory separator) as well.
     if name.startswith(('/', os.sep)):
         name = new_attrs['name'] = member.path.lstrip('/' + os.sep)
-    if os.path.isabs(name):
-        # Path is absolute even after stripping.
-        # For example, 'C:/foo' on Windows.
-        raise AbsolutePathError(member)
     # Ensure we stay in the destination
     if '..' in name.replace(os.sep, '/').split('/'):
         # Directories are created from the name as given, so a name that
@@ -851,6 +847,11 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         normalized = os.path.normpath(name)
         if normalized != name:
             name = new_attrs['name'] = normalized
+    if os.path.isabs(name) or os.path.splitdrive(name)[0]:
+        # Path is absolute even after stripping, or has a drive.
+        # For example, 'C:/foo' or 'C:foo' on Windows.
+        # os.path.join() ignores a destination without a drive for 'C:foo'.
+        raise AbsolutePathError(member)
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
@@ -894,11 +895,11 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
             new_attrs['gname'] = None
         # Check link destination for 'data'
         if member.islnk() or member.issym():
-            if os.path.isabs(member.linkname):
-                raise AbsoluteLinkError(member)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
+            if os.path.isabs(normalized) or os.path.splitdrive(normalized)[0]:
+                raise AbsoluteLinkError(member)
             if member.issym():
                 # The symlink is created at `name` with trailing separators
                 # stripped, so its target is relative to the directory
@@ -1627,6 +1628,8 @@ class TarInfo(object):
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
+        data_offset = next.offset_data
+
         # Process GNU sparse information.
         if "GNU.sparse.map" in pax_headers:
             # GNU extended sparse format version 0.1.
@@ -1648,7 +1651,7 @@ class TarInfo(object):
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset + BLOCKSIZE
+                offset = data_offset
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
                     try:
                         size = PAX_NUMBER_FIELDS["size"](pax_headers["size"])
