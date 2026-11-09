@@ -312,11 +312,16 @@ _Py_COMP_DIAG_POP
 /* Remote profilers access interpreter and thread states without synchronizing
    with their lifetime.  Until the runtime is finalized, keep deleted states in
    per-type free lists, so that a stale access only reaches a state of the same
-   type.  Each state is preceded by the free-list link and the block to free. */
+   type. */
+typedef struct state_header {
+    struct state_header *next;  // Next entry in the free list
+    void *mem;                  // Block to free at finalization
+} state_header;
+
 static struct {
     PyMutex mutex;
-    void *tstates;
-    void *interpreters;
+    state_header *tstates;
+    state_header *interpreters;
 } state_freelists;
 
 #define LOCKS_INIT(runtime) \
@@ -402,15 +407,15 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 #endif
     gilstate_clear();
 
-    void **lists[] = {&state_freelists.tstates, &state_freelists.interpreters};
+    state_header **lists[] = {&state_freelists.tstates, &state_freelists.interpreters};
     for (size_t i = 0; i < Py_ARRAY_LENGTH(lists); i++) {
         PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
-        void **entry = *lists[i];
+        state_header *entry = *lists[i];
         *lists[i] = NULL;
         PyMutex_Unlock(&state_freelists.mutex);
         while (entry != NULL) {
-            void **next = entry[0];
-            PyMem_RawFree(entry[1]);
+            state_header *next = entry->next;
+            PyMem_RawFree(entry->mem);
             entry = next;
         }
     }
@@ -470,37 +475,37 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 }
 
 static void *
-alloc_state(void **freelist, size_t size, size_t alignment)
+alloc_state(state_header **freelist, size_t size, size_t alignment)
 {
     PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
-    void **entry = *freelist;
+    state_header *entry = *freelist;
     if (entry != NULL) {
-        *freelist = *entry;
+        *freelist = entry->next;
     }
     PyMutex_Unlock(&state_freelists.mutex);
     if (entry != NULL) {
-        return entry + 2;
+        return entry + 1;
     }
 
-    size_t allocsize = size + 2 * sizeof(void *) + alignment - 1;
+    size_t allocsize = size + sizeof(state_header) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    void *ptr = _Py_ALIGN_UP((char *)mem + 2 * sizeof(void *), alignment);
-    ((void **)ptr)[-1] = mem;
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(state_header), alignment);
+    ((state_header *)ptr - 1)->mem = mem;
     assert(_Py_IS_ALIGNED(ptr, alignment));
     return ptr;
 }
 
 static void
-recycle_state(void **freelist, void *state, size_t size)
+recycle_state(state_header **freelist, void *state, size_t size)
 {
     memset(state, 0, size);
-    void **entry = (void **)state - 2;
+    state_header *entry = (state_header *)state - 1;
 
     PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
-    entry[0] = *freelist;
+    entry->next = *freelist;
     // Keep the list consistent for a child forked by another thread.
     _Py_atomic_store_ptr_release(freelist, entry);
     PyMutex_Unlock(&state_freelists.mutex);
