@@ -967,7 +967,7 @@ class MiscTests(unittest.TestCase):
             runpy._remove_sys_path0()
             self.assertEqual(sys.path, expected)
 
-        # Do nothing is sys._path0 is None
+        # Do nothing if sys._path0 is None
         sys_path = ['', stdlib_path, other_path]
         with (support.swap_attr(sys, '_path0', None),
               support.swap_attr(sys, 'path', sys_path)):
