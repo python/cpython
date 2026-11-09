@@ -1,2 +1,0 @@
-Fix error handling in the :mod:`zoneinfo` accelerator module when a
-transition index is ``-1`` or a TZ string's ``__bool__`` raises.

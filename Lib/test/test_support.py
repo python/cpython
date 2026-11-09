@@ -838,6 +838,10 @@ class TestSupport(unittest.TestCase):
             for v in linked:
                 self.assertIsInstance(v, int)
 
+    def test_built_with_c_assertions(self):
+        # Check that calling the function doesn't raise an exception
+        result = support.built_with_c_assertions()
+        self.assertIsInstance(result, bool)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

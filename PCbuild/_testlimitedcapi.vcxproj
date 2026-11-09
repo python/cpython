@@ -110,6 +110,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\object.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\slice.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\slots.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\threadstate.c" />
@@ -122,6 +123,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\run.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\type.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\hash.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\build.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

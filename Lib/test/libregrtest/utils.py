@@ -67,6 +67,10 @@ FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
 
+def cleanup_test_name(name: TestName) -> TestName:
+    return name.removeprefix('test.')
+
+
 def format_duration(seconds: float) -> str:
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
@@ -397,7 +401,9 @@ def get_build_info():
 
     # --with-address-sanitizer
     sanitizers = []
-    if support.check_sanitizer(address=True):
+    if support.check_sanitizer(hwaddress=True):
+        sanitizers.append("HWASAN")
+    elif support.check_sanitizer(address=True):
         sanitizers.append("ASAN")
     # --with-memory-sanitizer
     if support.check_sanitizer(memory=True):
