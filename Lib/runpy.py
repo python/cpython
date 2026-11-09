@@ -317,7 +317,7 @@ def run_path(path_name, init_globals=None, run_name=None):
 
 def _remove_sys_path0():
     """
-    Remove sys._path0 from sys.argv.
+    Remove sys._path0 from sys.path.
     Do nothing if it has already been removed.
     Similar to using -P (safe path) command line option.
     """
