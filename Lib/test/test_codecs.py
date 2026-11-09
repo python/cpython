@@ -13,7 +13,7 @@ from unittest import mock
 import warnings
 
 from test import support
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from test.support import warnings_helper
 
 try:
@@ -3447,6 +3447,11 @@ class ExceptionNotesTest(unittest.TestCase):
                      'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
     CP_UTF8 = 65001
+
+    @support.cpython_only
+    def test_win_cp_codecs_is_lazily_imported(self):
+        import_helper.ensure_lazy_imports('encodings',
+                                          {'encodings._win_cp_codecs'})
 
     def test_invalid_code_page(self):
         self.assertRaises(ValueError, codecs.code_page_encode, -1, 'a')
