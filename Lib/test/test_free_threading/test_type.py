@@ -403,8 +403,8 @@ class TestType(TestCase):
                 Base.__subclasses__()
 
         def freezer():
-            # gh-158194: Freezing must keep the type lock pinned while
-            # waiting for stop-the-world, just like slot updates do.
+            # gh-158194: Exercise type freezing concurrently with slot
+            # updates and competing stop-the-world requests.
             barrier.wait()
             for _ in range(10):
                 class Frozen:
