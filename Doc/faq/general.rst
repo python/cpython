@@ -7,6 +7,7 @@ General Python FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 
 General Information
