@@ -354,14 +354,6 @@ when the final size is not known in advance.
 
    The writer instance is invalid after this call.
 
-.. c:function:: void PyTupleWriter_Discard(PyTupleWriter *writer)
-
-   Discard the internal tuple buffer and destroy the writer instance.
-
-   If *writer* is ``NULL``, no operation is performed.
-
-   The writer instance is invalid after this call.
-
 .. c:function:: Py_ssize_t PyTupleWriter_GetSize(PyTupleWriter *writer)
 
    Get the writer size.
