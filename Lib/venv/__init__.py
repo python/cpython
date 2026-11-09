@@ -141,6 +141,12 @@ class EnvBuilder:
         """
 
         def create_if_needed(d):
+            path = env_dir
+            for part in os.path.relpath(d, env_dir).split(os.sep)[:-1]:
+                path = os.path.join(path, part)
+                if os.path.islink(path) or os.path.isjunction(path):
+                    raise ValueError(f'Refusing to create a venv in {env_dir} '
+                                     f'because {path} is a link.')
             if not os.path.exists(d):
                 os.makedirs(d)
             elif os.path.islink(d) or os.path.isfile(d):
