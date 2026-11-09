@@ -1,0 +1,4 @@
+# HTML IDs excluded from the check-html-ids.py check.
+
+# Removed sections
+faq/library.html: none-of-my-threads-seem-to-run-why
