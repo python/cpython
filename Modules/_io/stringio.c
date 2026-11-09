@@ -1,7 +1,6 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
-#include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
@@ -142,12 +141,15 @@ shrink_writer(stringio *self)
     {
         return 0;
     }
-    PyObject *buffer = _PyUnicode_ResizeCompact(writer->buffer, writer->pos);
-    if (buffer == NULL) {
+    /* On failure, writer->buffer is left unchanged. */
+    if (PyUnicode_Resize(&writer->buffer, writer->pos) < 0) {
         return -1;
     }
-    writer->buffer = NULL;
-    _PyUnicodeWriter_SetBuffer(writer, buffer);
+    PyObject *buffer = writer->buffer;
+    writer->data = PyUnicode_DATA(buffer);
+    writer->kind = PyUnicode_KIND(buffer);
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
+    writer->size = PyUnicode_GET_LENGTH(buffer);
     return 0;
 }
 
