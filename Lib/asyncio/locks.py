@@ -489,6 +489,8 @@ class Barrier(mixins._LoopBoundMixin):
         self._parties = parties
         self._state = _BarrierState.FILLING
         self._count = 0       # count tasks in Barrier
+        # index number returned when barrier drains
+        self._index = self._parties - 1
 
     def __repr__(self):
         res = super().__repr__()
@@ -515,13 +517,14 @@ class Barrier(mixins._LoopBoundMixin):
         async with self._cond:
             await self._block() # Block while the barrier drains or resets.
             try:
-                index = self._count
                 self._count += 1
-                if index + 1 == self._parties:
+                if self._count == self._parties:
                     # We release the barrier
                     await self._release()
                 else:
                     await self._wait()
+                index = self._index
+                self._index = (self._index + 1) % self._parties
                 return index
             finally:
                 self._count -= 1
@@ -569,6 +572,7 @@ class Barrier(mixins._LoopBoundMixin):
         if self._count == 0:
             if self._state in (_BarrierState.RESETTING, _BarrierState.DRAINING):
                 self._state = _BarrierState.FILLING
+                self._index = self._parties - 1
             self._cond.notify_all()
 
     async def reset(self):
@@ -584,6 +588,7 @@ class Barrier(mixins._LoopBoundMixin):
                     self._state = _BarrierState.RESETTING
             else:
                 self._state = _BarrierState.FILLING
+                self._index = self._parties - 1
             self._cond.notify_all()
 
     async def abort(self):

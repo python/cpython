@@ -1,2 +1,0 @@
-Avoid prematurely terminating failing live sampling profiler test targets,
-which made stderr assertions flaky on ASAN buildbots.

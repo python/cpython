@@ -58,9 +58,6 @@ _PyLexer_PopFTString(struct tok_state *tok)
 void
 _PyTokenizer_Free(struct tok_state *tok)
 {
-    if (tok->encoding != NULL) {
-        PyMem_Free(tok->encoding);
-    }
     Py_XDECREF(tok->filename);
     Py_XDECREF(tok->module);
     _PyTok_ReaderFree(tok);
@@ -89,6 +86,7 @@ _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTo
 {
     token->level = tok->level;
     token->is_raw = 0;
+    token->is_incomplete = 0;
     assert((start == -1 && end == -1) || (start >= 0 && end >= start));
     token->span = (_PyTok_Span){start, end};
     if (start >= 0) {

@@ -25,6 +25,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
+from test.support import isolation
 from test.support import os_helper
 from test.support import (skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow,
@@ -102,6 +103,17 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError), self.assertWarns(DeprecationWarning):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    # gh-161354: Run the test in a subprocess to make it more deterministic.
+    # Inline values depend on Constant_type.ht_cached_keys which changes when
+    # ast.Constant instances are created, so they depend on other run tests.
+    @isolation.runInSubprocess()
+    def test_nodes_have_inline_values(self):
+        tree = ast.parse("x = f(y, z=1)")
+        for node in ast.walk(tree):
+            with self.subTest(node=type(node).__name__):
+                self.assertTrue(_testinternalcapi.has_inline_values(node))
 
     def test_AST_fields_NULL_check(self):
         # See: https://github.com/python/cpython/issues/126105
@@ -1024,6 +1036,19 @@ class AST_Tests(unittest.TestCase):
                 with self.assertRaises(SyntaxError):
                     ast.parse(sample, feature_version=(3, 12))
 
+    def test_lazy_imports_feature_version(self):
+        samples = [
+            "lazy import os",
+            "lazy from .. import name",
+            "lazy from mod import some",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                ast.parse(sample, feature_version=(3, 15))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 14))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))
@@ -1107,13 +1132,11 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
-    @support.run_with_limited_c_stack(
-        100_000 if sys.platform == "android" else 500_000)
+    @support.run_with_limited_c_stack(500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        # Android test devices have less memory.
-        crash_depth = 100_000 if sys.platform == "android" else 500_000
+        crash_depth = 500_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()

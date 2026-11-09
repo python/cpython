@@ -1,2 +1,0 @@
-Speed up :mod:`pdb` startup by only importing :mod:`asyncio` when the program
-being debugged has already imported it.

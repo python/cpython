@@ -135,6 +135,21 @@ exit:
     return return_value;
 }
 
+static PyObject *
+stringio_iternext_impl(stringio *self);
+
+static PyObject *
+stringio_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = stringio_iternext_impl((stringio *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_StringIO_truncate__doc__,
 "truncate($self, pos=None, /)\n"
 "--\n"
@@ -539,4 +554,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", (getter)_io_StringIO_newlines_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=4100afa5e4f295d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38a0385529d9cbef input=a9049054013a1b77]*/

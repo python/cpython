@@ -1,3 +1,0 @@
-Fix crash when :func:`sys._current_frames` or
-:func:`sys._current_exceptions` is called while another interpreter is
-running.
