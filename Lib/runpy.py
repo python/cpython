@@ -329,7 +329,7 @@ def _remove_sys_path0():
     # We are intentionally not trying to normalize & match alternate
     # representations of path0, this is only intended to remove copies
     # of the exact value the runtime itself may have have added.
-    sys.path = [path for path in sys.path if path != path0]
+    sys.path[:] = [path for path in sys.path if path != path0]
 
 
 if __name__ == "__main__":
