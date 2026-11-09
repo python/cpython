@@ -259,6 +259,14 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     assert(PyLong_Check(stop));
     assert(PyLong_Check(step));
 
+    /* fast path for start == 0 and step == 1: length is max(stop, 0) */
+    if (start == zero && step == one) {
+        if (_PyLong_IsPositive((const PyLongObject *)stop)) {
+            return Py_NewRef(stop);
+        }
+        return zero;
+    }
+
     /* fast path when all arguments fit into a long integer */
     long len = compute_range_length_long(start, stop, step);
     if (len >= 0) {
@@ -1158,10 +1166,16 @@ longrangeiter_dealloc(PyObject *op)
     PyObject_Free(r);
 }
 
+/*[clinic input]
+@critical_section
+longrange_iterator.__next__ as longrangeiter_next
+[clinic start generated code]*/
+
 static PyObject *
-longrangeiter_next_lock_held(PyObject *op)
+longrangeiter_next_impl(longrangeiterobject *self)
+/*[clinic end generated code: output=49bf9a9b89c07ba5 input=2c4ac537c23a92d3]*/
 {
-    longrangeiterobject *r = (longrangeiterobject*)op;
+    longrangeiterobject *r = self;
     if (PyObject_RichCompareBool(r->len, _PyLong_GetZero(), Py_GT) != 1)
         return NULL;
 
@@ -1177,16 +1191,6 @@ longrangeiter_next_lock_held(PyObject *op)
     PyObject *result = r->start;
     r->start = new_start;
     Py_SETREF(r->len, new_len);
-    return result;
-}
-
-static PyObject *
-longrangeiter_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = longrangeiter_next_lock_held(op);
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 

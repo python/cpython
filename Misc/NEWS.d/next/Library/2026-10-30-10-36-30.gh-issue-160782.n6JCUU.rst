@@ -1,0 +1,2 @@
+:mod:`venv`: a symbolic link or junction in place of a directory inside the
+environment now raises :exc:`ValueError` instead of being followed.

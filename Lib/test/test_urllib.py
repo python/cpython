@@ -7,6 +7,7 @@ import http.client
 import email.message
 import io
 import unittest
+import unittest.mock
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -400,11 +401,17 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
         host = "localhost\r\nX-injected: header\r\n"
         schemeless_url = "//" + host + ":8080/test/?test=a"
         try:
-            InvalidURL = http.client.InvalidURL
+            # Once \r\n are stripped from the URL, the ':' in
+            # "X-injected:" is mistaken for the port separator, and
+            # urlsplit()/urlparse() now reject the resulting
+            # non-numeric "port" at parse time, before a Request is
+            # even built -- rejecting the injection earlier than
+            # http.client's own InvalidURL check ever gets a chance to.
             with self.assertRaisesRegex(
-                InvalidURL, r"contain control.*\\r"):
+                ValueError, "Port could not be cast to integer value"):
                 urllib.request.urlopen(f"http:{schemeless_url}")
-            with self.assertRaisesRegex(InvalidURL, r"contain control.*\\n"):
+            with self.assertRaisesRegex(
+                ValueError, "Port could not be cast to integer value"):
                 urllib.request.urlopen(f"https:{schemeless_url}")
         finally:
             self.unfakehttp()
@@ -1671,6 +1678,17 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+
+    def test_url2pathname_win_netloc_not_validated_as_port(self):
+        # The Windows branch of url2pathname() stuffs things like drive
+        # letters into the netloc (e.g. '//C:\\' -> authority 'C:\\'),
+        # which is not a real host[:port] pair. url2pathname() must not
+        # reject it as an invalid port; run the Windows branch directly
+        # so this is exercised on every platform, not just win32.
+        with unittest.mock.patch('os.name', 'nt'):
+            fn = urllib.request.url2pathname
+            self.assertEqual(fn('//C:\\'), 'C:\\')
+            self.assertEqual(fn('//C:80/'), 'C:80\\')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')

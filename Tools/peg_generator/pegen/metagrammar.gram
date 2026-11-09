@@ -64,6 +64,7 @@ flags[frozenset[str]]:
     | '(' a=','.flag+ ')' { frozenset(a) }
 
 flag[str]:
+    | a=NAME '=' b=NAME { a.string + "=" + b.string }
     | NAME { name.string }
 
 alts[Rhs]:

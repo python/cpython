@@ -198,10 +198,11 @@ refchain_init(PyInterpreterState *interp)
         return 0;
     }
     _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
+        // Use directly malloc() and free() of the C library. Using
+        // PyMem_RawMalloc() and PyMem_RawFree() prevents testing
+        // _testcapi.set_nomemory().
+        .malloc = malloc,
+        .free = free,
     };
     REFCHAIN(interp) = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
@@ -582,13 +583,13 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
-        return;
-
-    tp->tp_finalize(self);
     if (_PyType_IS_GC(tp)) {
+        if (_PyGC_FINALIZED(self))
+            return;
+
         _PyGC_SET_FINALIZED(self);
     }
+    tp->tp_finalize(self);
 }
 
 int
@@ -955,6 +956,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
+    clear_freelist(&freelists->tracebacks, is_finalization, PyObject_GC_Del);
 }
 
 /*
@@ -1923,6 +1925,19 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (descr != NULL) {
         f = Py_TYPE(descr)->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
+            // gh-157840: We special-case member descriptors here to avoid
+            // allocating an extra AttributeError
+            if (suppress && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
+                PyMemberDef *member = ((PyMemberDescrObject *)descr)->d_member;
+                if (member->type == Py_T_OBJECT_EX
+                    && !(member->flags & Py_AUDIT_READ)
+                    && PyObject_TypeCheck(obj, PyDescr_TYPE(descr))) {
+                    PyObject **addr = _PyMember_GetOffset(obj, member);
+                    if (FT_ATOMIC_LOAD_PTR(*addr) == NULL) {
+                        goto done;
+                    }
+                }
+            }
             res = f(descr, obj, (PyObject *)Py_TYPE(obj));
             if (res == NULL && suppress &&
                     PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -2519,9 +2534,6 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyACallIter_Type;
-extern PyTypeObject _PyACallIterAwaitable_Type;
-extern PyTypeObject _PyAnextAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2614,9 +2626,6 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyACallIter_Type,
-    &_PyACallIterAwaitable_Type,
-    &_PyAnextAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -3294,8 +3303,8 @@ next" object in the chain to 0.  This can easily lead to stack overflows.
 To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
-void
-_Py_Dealloc(PyObject *op)
+static Py_NO_INLINE void
+py_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
@@ -3358,6 +3367,28 @@ _Py_Dealloc(PyObject *op)
     if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
+}
+
+/*
+ * gh-130706: Keep the GC/reftracer path in the non-inlined py_dealloc().
+ * Inlining it makes the compiler save callee-saved registers at entry,
+ * so the non-GC objects path would have unnecessary register spills.
+ */
+void
+_Py_Dealloc(PyObject *op)
+{
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
+    // gh-130706: Avoid unnecessary register spills for non-GC objects.
+    PyTypeObject *type = Py_TYPE(op);
+    if (_PyRuntime.ref_tracer.tracer_func == NULL
+        && !(type->tp_flags & Py_TPFLAGS_HAVE_GC))
+    {
+        type->tp_dealloc(op);
+        return;
+    }
+#endif
+    // GC objects (trashcan), reftracer set, or debug builds.
+    py_dealloc(op);
 }
 
 
@@ -3465,7 +3496,7 @@ _Py_GetConstant_Init(void)
     constants[Py_CONSTANT_ZERO] = _PyLong_GetZero();
     constants[Py_CONSTANT_ONE] = _PyLong_GetOne();
     constants[Py_CONSTANT_EMPTY_STR] = PyUnicode_New(0, 0);
-    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize(NULL, 0);
+    constants[Py_CONSTANT_EMPTY_BYTES] = PyBytes_FromStringAndSize("", 0);
     constants[Py_CONSTANT_EMPTY_TUPLE] = PyTuple_New(0);
 #ifndef NDEBUG
     for (size_t i=0; i < Py_ARRAY_LENGTH(constants); i++) {
