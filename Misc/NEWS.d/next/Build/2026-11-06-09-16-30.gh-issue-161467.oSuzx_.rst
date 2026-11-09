@@ -1,0 +1,1 @@
+Enable the use of ``__attribute__((hot))`` when building CPython with Clang and other compilers that support it.
