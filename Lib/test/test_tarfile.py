@@ -4173,9 +4173,14 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(), 'fully_trusted'):
             if os_helper.can_symlink():
-                self.expect_file('current', symlink_to='.')
-                self.expect_file('link', symlink_to='../evil')
-                self.expect_file('../evil', content='evil')
+                if os.name == 'nt':
+                    # Windows does not accept the '/' in the link target,
+                    # so writing through the link fails
+                    self.expect_exception(OSError)
+                else:
+                    self.expect_file('current', symlink_to='.')
+                    self.expect_file('link', symlink_to='../evil')
+                    self.expect_file('../evil', content='evil')
             else:
                 self.expect_file('current/link', content='evil')
 
