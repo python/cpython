@@ -562,6 +562,8 @@ class EventTests(BaseTestCase):
         for r, dt in results2:
             self.assertTrue(r)
 
+    # Use private attributes (event._cond._waiters)
+    @support.cpython_only
     def test_set_and_clear(self):
         # gh-57711: check that wait() returns true even when the event is
         # cleared before the waiting thread is woken up.
