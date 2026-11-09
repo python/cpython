@@ -707,7 +707,8 @@ class TextIOWrapperTest:
 
     def test_tell_after_seek_past_cr(self):
         # tell() must tolerate a stale bytes-per-char ratio after seek().
-        for data in (b'one\rtwo\rthree\r', 'ab\r\u20ac\u20ac\u20ac'.encode()):
+        for data in (b'one\rtwo\rthree\r',
+                     ('ab\r' + '\u20ac' * 15).encode()):
             expected = data.decode().replace('\r', '\n')
             for i in range(len(expected)):
                 with self.subTest(data=data, i=i):
