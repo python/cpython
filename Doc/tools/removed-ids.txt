@@ -4,6 +4,8 @@
 c-api/allocation.html: deprecated-aliases
 c-api/file.html: deprecated-api
 
+# Removed sections
+faq/library.html: none-of-my-threads-seem-to-run-why
 library/asyncio-task.html: terminating-a-task-group
 
 tutorial/modules.html: packages-in-multiple-directories
