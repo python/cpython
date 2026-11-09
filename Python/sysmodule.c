@@ -3961,6 +3961,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("path_importer_cache", PyDict_New());
     SET_SYS("path_hooks", PyList_New(0));
 
+    SET_SYS("_path0", Py_None);
+
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
