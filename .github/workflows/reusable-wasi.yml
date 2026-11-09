@@ -64,6 +64,4 @@ jobs:
     - name: "Display build info of the host/WASI Python"
       run: python3 Platforms/WASI pythoninfo-host
     - name: "Test"
-      run: |
-        CROSS_BUILD_WASI=$(python3 Platforms/WASI path)
-        make --directory "${CROSS_BUILD_WASI}" test
+      run: python3 Platforms/WASI test

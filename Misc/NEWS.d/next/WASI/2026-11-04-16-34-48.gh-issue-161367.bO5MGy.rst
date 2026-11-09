@@ -1,0 +1,3 @@
+Add a ``test`` command to :file:`Platforms/WASI` with ``--fast-ci`` and
+``--slow-ci`` to select fast CI or slow Buildbot tests and ``--target`` to
+test the build, gathered distribution, or release archive.
