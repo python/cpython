@@ -3373,6 +3373,23 @@ class TextIOWrapperTest(unittest.TestCase):
             remaining = f.read()
             self.assertEqual(remaining, "")
 
+    def test_tell_after_seek_past_cr(self):
+        # tell() must tolerate a stale bytes-per-char ratio after seek().
+        for data in (b'one\rtwo\rthree\r',
+                     ('ab\r' + '\u20ac' * 15).encode()):
+            expected = data.decode().replace('\r', '\n')
+            for i in range(len(expected)):
+                with self.subTest(data=data, i=i):
+                    f = self.TextIOWrapper(self.BytesIO(data),
+                                           encoding='utf-8')
+                    f.read(i)
+                    pos = f.tell()
+                    f.read(1)
+                    f.seek(pos)
+                    self.assertEqual(f.read(1), expected[i])
+                    f.seek(f.tell())
+                    self.assertEqual(f.read(), expected[i + 1:])
+
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
         f.write("\u00e6\u0300")
@@ -4411,6 +4428,17 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_tell_with_invalid_b2cratio(self):
+        for ratio in (float('nan'), float('inf'), -float('inf'), 1e100):
+            with self.subTest(ratio=ratio):
+                with self.TextIOWrapper(self.BytesIO(b'abc'),
+                                        encoding='utf-8') as f:
+                    self.assertEqual(f.read(1), 'a')
+                    f._b2cratio = ratio
+                    position = f.tell()
+                    f.seek(position)
+                    self.assertEqual(f.read(), 'bc')
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
