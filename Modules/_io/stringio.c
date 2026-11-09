@@ -146,8 +146,11 @@ shrink_writer(stringio *self)
     if (buffer == NULL) {
         return -1;
     }
-    writer->buffer = NULL;
-    _PyUnicodeWriter_SetBuffer(writer, buffer);
+    writer->buffer = buffer;
+    writer->data = PyUnicode_DATA(buffer);
+    writer->kind = PyUnicode_KIND(buffer);
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(buffer);
+    writer->size = PyUnicode_GET_LENGTH(buffer);
     return 0;
 }
 
