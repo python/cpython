@@ -508,7 +508,7 @@ do_work()
                 if ";" in stack_trace:
                     stack_parts = stack_trace.split(";")
                     for part in stack_parts:
-                        # Special frames, such as <GC> and unreadable frames,
+                        # Special frames, such as <GC> and <unreadable frame>,
                         # do not have file and line information.
                         if part.startswith("<") and part.endswith(">"):
                             continue
