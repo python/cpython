@@ -5,7 +5,7 @@
 #include "pycore_import.h"        // _PyImport_GetModules()
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_object.h"        // _PyObject_XDecRefDelayed()
+#include "pycore_object.h"        // _Py_XGetRef()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -145,6 +145,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         if (st->filters == NULL) {
             return -1;
         }
+        PyUnstable_EnableTryIncRef(st->filters);
     }
 
     if (st->once_registry == NULL) {
@@ -152,6 +153,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         if (st->once_registry == NULL) {
             return -1;
         }
+        PyUnstable_EnableTryIncRef(st->once_registry);
     }
 
     if (st->default_action == NULL) {
@@ -159,6 +161,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         if (st->default_action == NULL) {
             return -1;
         }
+        PyUnstable_EnableTryIncRef(st->default_action);
     }
 
     if (st->context == NULL) {
@@ -344,9 +347,9 @@ update_state_ref(PyObject **ptr, PyObject *value)
         return;
     }
 #ifdef Py_GIL_DISABLED
+    PyUnstable_EnableTryIncRef(value);
     PyObject *old = _Py_atomic_exchange_ptr(ptr, Py_NewRef(value));
-    // Readers (get_state_ref()) don't hold a reference to the old value.
-    _PyObject_XDecRefDelayed(old);
+    Py_XDECREF(old);
 #else
     Py_XSETREF(*ptr, Py_NewRef(value));
 #endif
@@ -356,9 +359,11 @@ update_state_ref(PyObject **ptr, PyObject *value)
 static PyObject *
 get_state_ref(PyObject **ptr)
 {
-    // Safe without holding a reference: the attached thread cannot reach a
-    // QSBR quiescent state before the incref, see update_state_ref().
-    return Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(*ptr));
+#ifdef Py_GIL_DISABLED
+    return _Py_XGetRef(ptr);
+#else
+    return Py_XNewRef(*ptr);
+#endif
 }
 
 // Returns a new reference to the list.
