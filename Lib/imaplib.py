@@ -1178,7 +1178,10 @@ class IMAP4:
         if typ == 'OK':
             if any(self._readbuf):
                 raise self.abort('unexpected data after STARTTLS response')
+            # Discard received state before TLS was established
+            # since data could have been injected by a MITM.
             self._readbuf = []
+            self.untagged_responses = {}
             self._close_imaplib_file()
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
