@@ -1029,6 +1029,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+RUNSHARED_FOR_BUILD
 PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
@@ -3832,6 +3833,9 @@ then :
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
 
 else case e in #(
   e)
@@ -3840,10 +3844,12 @@ else case e in #(
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
 
  ;;
 esac
 fi
+
 
 
 

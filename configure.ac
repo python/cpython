@@ -194,6 +194,9 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -202,6 +205,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
@@ -209,6 +213,7 @@ AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
+AC_SUBST([RUNSHARED_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
