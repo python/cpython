@@ -4089,6 +4089,22 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 }
 
 
+uint64_t
+PyType_GetFlags64(PyTypeObject *type)
+{
+    return type->tp_flags;
+}
+
+
+unsigned long
+PyType_GetFlags(PyTypeObject *type)
+{
+    // On Windows and on 32-bit platforms,
+    // truncate tp_flags (uint64_t) to 32 bits
+    return (unsigned long)type->tp_flags;
+}
+
+
 int
 PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
 {
@@ -13202,20 +13218,3 @@ PyTypeObject PySuper_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = super_vectorcall,
 };
-
-
-uint64_t
-PyType_GetFlags64(PyTypeObject *type)
-{
-    return type->tp_flags;
-}
-
-
-#undef PyType_GetFlags
-unsigned long
-PyType_GetFlags(PyTypeObject *type)
-{
-    // On Windows and on 32-bit platforms, truncate
-    // to 32 bits
-    return (unsigned long)type->tp_flags;
-}

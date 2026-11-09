@@ -130,10 +130,6 @@ type_clearcache(PyObject *module, PyObject *Py_UNUSED(arg))
     return PyLong_FromUnsignedLong(version_tag);
 }
 
-// Undefine PyType_GetFlags macro which overrides PyType_GetFlags()
-// with PyType_GetFlags64().
-#undef PyType_GetFlags
-
 // Test PyType_GetFlags()
 static PyObject *
 type_getflags(PyObject *module, PyObject *arg)
