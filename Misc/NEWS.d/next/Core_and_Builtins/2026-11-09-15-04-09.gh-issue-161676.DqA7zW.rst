@@ -1,0 +1,1 @@
+Allow the perf trampoline evaluator to tail-call the native trampoline.
