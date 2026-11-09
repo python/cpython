@@ -1,1 +1,3 @@
-Allow the perf trampoline evaluator to tail-call the native trampoline.
+Reduce the overhead of the perf trampoline. Its evaluator now tail-calls the
+trampoline, and specialized Python calls and generator resumes stay enabled
+while it is active.

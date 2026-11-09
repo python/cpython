@@ -133,6 +133,7 @@ any DWARF information available for them).
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
+#include "pycore_pystate.h"       // _PyEval_StopTheWorld()
 #include "pycore_runtime.h"       // _PyRuntime
 
 
@@ -581,6 +582,10 @@ _PyPerfTrampoline_Init(int activate)
         }
         trampoline_refcount = 1;  // Base refcount held by the system
         perf_status = PERF_STATUS_OK;
+        _PyEval_StopTheWorld(tstate->interp);
+        tstate->interp->eval_frame_is_perf =
+            prev_eval_frame == _PyEval_EvalFrameDefault;
+        _PyEval_StartTheWorld(tstate->interp);
     }
 #endif
     return 0;

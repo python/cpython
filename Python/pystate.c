@@ -3168,6 +3168,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     interp->eval_frame = eval_frame;
     // reset when evaluator is reset
     interp->eval_frame_allow_specialization = 0;
+    interp->eval_frame_is_perf = 0;
     _PyEval_StartTheWorld(interp);
 }
 
@@ -3189,7 +3190,8 @@ int
 _PyInterpreterState_IsSpecializationEnabled(PyInterpreterState *interp)
 {
     return interp->eval_frame == NULL
-        || interp->eval_frame_allow_specialization;
+        || interp->eval_frame_allow_specialization
+        || interp->eval_frame_is_perf;
 }
 
 

@@ -17228,7 +17228,11 @@
         case _CHECK_PEP_523_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            if (IS_PEP523_HOOKED(tstate)) {
+            bool hooked = IS_PEP523_HOOKED(tstate);
+            #if TIER_ONE
+            hooked = hooked && !tstate->interp->eval_frame_is_perf;
+            #endif
+            if (hooked) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -17242,7 +17246,11 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
-            if (IS_PEP523_HOOKED(tstate)) {
+            bool hooked = IS_PEP523_HOOKED(tstate);
+            #if TIER_ONE
+            hooked = hooked && !tstate->interp->eval_frame_is_perf;
+            #endif
+            if (hooked) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -17259,7 +17267,11 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            if (IS_PEP523_HOOKED(tstate)) {
+            bool hooked = IS_PEP523_HOOKED(tstate);
+            #if TIER_ONE
+            hooked = hooked && !tstate->interp->eval_frame_is_perf;
+            #endif
+            if (hooked) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = _stack_item_0;
@@ -17279,7 +17291,11 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            if (IS_PEP523_HOOKED(tstate)) {
+            bool hooked = IS_PEP523_HOOKED(tstate);
+            #if TIER_ONE
+            hooked = hooked && !tstate->interp->eval_frame_is_perf;
+            #endif
+            if (hooked) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = _stack_item_1;
@@ -17585,11 +17601,17 @@
             _PyStackRef new_frame;
             _PyStackRef _stack_item_0 = _tos_cache0;
             new_frame = _stack_item_0;
-            assert(!IS_PEP523_HOOKED(tstate));
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
             assert(temp->previous == frame || temp->previous->previous == frame);
+            #if TIER_ONE
+            if (IS_PEP523_HOOKED(tstate)) {
+                frame = temp;
+                JUMP_TO_LABEL(eval_frame_with_hook);
+            }
+            #endif
+            assert(!IS_PEP523_HOOKED(tstate));
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
@@ -18242,6 +18264,11 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0_32();
+            if (IS_PEP523_HOOKED(tstate)) {
+                UOP_STAT_INC(uopcode, miss);
+                SET_CURRENT_CACHED_VALUES(0);
+                JUMP_TO_JUMP_TARGET();
+            }
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             if (!PyStackRef_IsNull(self_or_null)) {
                 UOP_STAT_INC(uopcode, miss);

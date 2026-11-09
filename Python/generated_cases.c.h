@@ -733,7 +733,11 @@
             /* Skip 5 cache entries */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
@@ -783,13 +787,19 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -1957,7 +1967,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -1968,6 +1982,11 @@
                 self_or_null = stack_pointer[-1 - oparg];
                 callable = stack_pointer[-2 - oparg];
                 uint32_t type_version = read_u32(&this_instr[2].cache);
+                if (IS_PEP523_HOOKED(tstate)) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 if (!PyStackRef_IsNull(self_or_null)) {
                     UPDATE_MISS_STATS(CALL);
@@ -2063,11 +2082,17 @@
             // _PUSH_FRAME
             {
                 new_frame = init_frame;
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -2102,7 +2127,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -2211,13 +2240,19 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -2 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -2252,7 +2287,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -2349,11 +2388,17 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -2893,7 +2938,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL_FUNCTION_EX);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_FUNCTION_EX));
                     JUMP_TO_PREDICTED(CALL_FUNCTION_EX);
@@ -2984,11 +3033,17 @@
             // _PUSH_FRAME
             {
                 new_frame = ex_frame;
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -3517,7 +3572,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
                     JUMP_TO_PREDICTED(CALL_KW);
@@ -3616,11 +3675,17 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -3734,7 +3799,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
                     JUMP_TO_PREDICTED(CALL_KW);
@@ -3813,11 +3882,17 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -4626,7 +4701,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -4705,13 +4784,19 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -2 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -4745,7 +4830,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -4814,11 +4903,17 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -6408,7 +6503,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
@@ -6440,11 +6539,17 @@
             // _PUSH_FRAME
             {
                 new_frame = gen_frame;
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -8893,7 +8998,11 @@
             }
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -8938,13 +9047,19 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -9422,7 +9537,11 @@
             }
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
@@ -9462,13 +9581,19 @@
             }
             // _PUSH_FRAME
             {
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -11694,7 +11819,11 @@
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
-                if (IS_PEP523_HOOKED(tstate)) {
+                bool hooked = IS_PEP523_HOOKED(tstate);
+                #if TIER_ONE
+                hooked = hooked && !tstate->interp->eval_frame_is_perf;
+                #endif
+                if (hooked) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
                     JUMP_TO_PREDICTED(SEND);
@@ -11728,13 +11857,19 @@
             // _PUSH_FRAME
             {
                 new_frame = gen_frame;
-                assert(!IS_PEP523_HOOKED(tstate));
                 _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
                 assert(temp->previous == frame || temp->previous->previous == frame);
+                #if TIER_ONE
+                if (IS_PEP523_HOOKED(tstate)) {
+                    frame = temp;
+                    JUMP_TO_LABEL(eval_frame_with_hook);
+                }
+                #endif
+                assert(!IS_PEP523_HOOKED(tstate));
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = temp;
                 tstate->py_recursion_remaining--;
@@ -13658,6 +13793,36 @@ JUMP_TO_LABEL(error);
             stack_pointer -= 1;
             assert(WITHIN_STACK_BOUNDS());
             JUMP_TO_LABEL(error);
+        }
+
+        LABEL(eval_frame_with_hook)
+        {
+            _PyInterpreterFrame *callee = frame;
+            frame = tstate->current_frame;
+            assert(callee->previous == frame);
+            size_t return_offset = frame->return_offset;
+            bool is_generator = callee->owner == FRAME_OWNED_BY_GENERATOR;
+            callee->previous = NULL;
+            EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
+            PyObject *result = tstate->interp->eval_frame(tstate, callee, 0);
+            bool yielded = is_generator &&
+            ((_PyThreadStateImpl *)tstate)->generator_return_kind == GENERATOR_YIELD;
+            if (result == NULL) {
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_StackPointerInvalidate(frame);
+                JUMP_TO_LABEL(error);
+            }
+            assert(tstate->current_frame == frame);
+            _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(result));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            LOAD_IP(yielded ? 1 + INLINE_CACHE_ENTRIES_SEND : return_offset);
+            LLTRACE_RESUME_FRAME();
+            #if _Py_TAIL_CALL_INTERP
+            int opcode;
+            #endif
+            DISPATCH();
         }
 
         LABEL(error)

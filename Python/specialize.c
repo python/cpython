@@ -1684,6 +1684,9 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
     if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;
     }
+    if (_PyInterpreterState_GET()->eval_frame_is_perf) {
+        goto generic;
+    }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         unsigned int tp_version = 0;
         PyObject *init = get_init_for_simple_managed_python_class(tp, &tp_version);
