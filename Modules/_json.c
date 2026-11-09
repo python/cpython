@@ -25,8 +25,9 @@
 
 /*[clinic input]
 module _json
+class _json.make_encoder "PyEncoderObject *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f3373cb3d646c5f1]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
@@ -98,8 +99,6 @@ scanner_dealloc(PyObject *self);
 static int
 scanner_clear(PyObject *self);
 
-static PyObject *
-encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 encoder_dealloc(PyObject *self);
 static int
@@ -1306,21 +1305,30 @@ static PyType_Spec PyScannerType_spec = {
     .slots = PyScannerType_slots,
 };
 
+/*[clinic input]
+@vectorcall
+@classmethod
+_json.make_encoder.__new__ as encoder_new
+
+    markers: object
+    default as defaultfn: object
+    encoder: object
+    indent: object
+    key_separator: unicode
+    item_separator: unicode
+    sort_keys: bool
+    skipkeys: bool
+    allow_nan: bool
+[clinic start generated code]*/
+
 static PyObject *
-encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+encoder_new_impl(PyTypeObject *type, PyObject *markers, PyObject *defaultfn,
+                 PyObject *encoder, PyObject *indent,
+                 PyObject *key_separator, PyObject *item_separator,
+                 int sort_keys, int skipkeys, int allow_nan)
+/*[clinic end generated code: output=46071d17c87596ef input=d3e48f5426deb209]*/
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
-
     PyEncoderObject *s;
-    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
-    PyObject *item_separator;
-    int sort_keys, skipkeys, allow_nan;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
-        &markers, &defaultfn, &encoder, &indent,
-        &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
-        return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
         PyErr_Format(PyExc_TypeError,
@@ -2042,6 +2050,7 @@ static PyType_Slot PyEncoderType_slots[] = {
     {Py_tp_clear, encoder_clear},
     {Py_tp_members, encoder_members},
     {Py_tp_new, encoder_new},
+    {Py_tp_vectorcall, encoder_vectorcall},
     {0, 0}
 };
 
@@ -2049,7 +2058,7 @@ static PyType_Spec PyEncoderType_spec = {
     .name = "_json.Encoder",
     .basicsize = sizeof(PyEncoderObject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = PyEncoderType_slots
 };
 
