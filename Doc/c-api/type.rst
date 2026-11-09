@@ -41,7 +41,7 @@ Type Objects
       This function is now a no-op as the type cache is now implemented
       per-type. It still returns the current version tag.
 
-.. c:function:: uint64_t PyType_GetFlags(PyTypeObject* type)
+.. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with ``Py_LIMITED_API``; the individual flag bits are
@@ -53,19 +53,18 @@ Type Objects
    The return type is ``uint64_t`` when non-limited C API is used or when the
    limited C API version 3.16 or newer is used.
 
+   Use :c:func:`PyType_GetFlags64` to get access to 64-bit type flags.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
       The return type is now ``unsigned long`` rather than ``long``.
 
-   .. versionchanged:: next
-      The return type is now ``uint64_t`` rather than ``unsigned long``.
-
 
 .. c:function:: uint64_t PyType_GetFlags64(PyTypeObject* type)
 
-   Similar to :c:func:`PyType_GetFlags64` but return type flags as
-   ``uint64_t``.
+   Similar to :c:func:`PyType_GetFlags64`, but return type flags as
+   ``uint64_t`` to get access to 64-bit type flags.
 
    .. versionadded:: next
 
@@ -175,10 +174,14 @@ Type Objects
       The callback may now be called during deallocation of a watched heap type.
 
 
-.. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)
+.. c:function:: int PyType_HasFeature(PyTypeObject *o, uint64_t feature)
 
    Return non-zero if the type object *o* sets the feature *feature*.
    Type features are denoted by single bit flags.
+
+
+   .. versionchanged:: next
+      The *features* type is now ``uint64_t`` rather than ``int``.
 
 
 .. c:function:: int PyType_FastSubclass(PyTypeObject *type, int flag)
@@ -971,7 +974,7 @@ They will continue to work, but new features will be added as slots for
 
       Corresponds to :c:macro:`Py_tp_flags`.
 
-      If you need 64-bit flags, use :c:func:`PyType_FromSlots` API instead.
+      If you need 64-bit type flags, use :c:func:`PyType_FromSlots` API instead.
 
    .. c:member:: PyType_Slot *slots
 
