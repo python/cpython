@@ -1,4 +1,4 @@
-name: Docs
+name: Reusable Docs
 
 on:
   workflow_call:
@@ -12,12 +12,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_doc:
+  build-doc:
     name: 'Docs'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: 'Check out latest PR branch commit'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: 'Set up Python'
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
@@ -26,6 +29,8 @@ jobs:
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
+
+    # To annotate PRs with Sphinx nitpicks (missing references)
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'
@@ -55,10 +60,12 @@ jobs:
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/pip
