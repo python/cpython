@@ -188,6 +188,10 @@ Morsel Objects
    .. versionchanged:: 3.14
       Added support for the :attr:`partitioned` attribute.
 
+   .. versionchanged:: next
+      :meth:`!__setitem__` and :meth:`!__ior__` now raise :exc:`CookieError` if
+      a value string for any attribute except ``comment`` contains the reserved
+      separator character ``;``.
 
 .. attribute:: Morsel.value
 
@@ -253,6 +257,9 @@ Morsel Objects
    .. versionchanged:: 3.5
       an error is raised for invalid keys.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if a value string for any attribute
+      except ``comment`` contains the reserved separator character ``;``.
 
 .. method:: Morsel.copy(value)
 
@@ -267,6 +274,9 @@ Morsel Objects
    Raise an error if key is not a valid :rfc:`2109` attribute, otherwise
    behave the same as :meth:`dict.setdefault`.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if the value string for any attribute
+      except ``comment`` contains the reserved separator character ``;``.
 
 .. _cookie-example:
 

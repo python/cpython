@@ -300,20 +300,25 @@ class Morsel(dict):
     def coded_value(self):
         return self._coded_value
 
-    def __setitem__(self, K, V):
-        K = K.lower()
-        if not K in self._reserved:
-            raise CookieError("Invalid attribute %r" % (K,))
-        if _has_control_character(K, V):
-            raise CookieError(f"Control characters are not allowed in cookies {K!r} {V!r}")
-        dict.__setitem__(self, K, V)
-
-    def setdefault(self, key, val=None):
+    def _validate_attribute(self, key, val):
         key = key.lower()
         if key not in self._reserved:
             raise CookieError("Invalid attribute %r" % (key,))
         if _has_control_character(key, val):
-            raise CookieError("Control characters are not allowed in cookies %r %r" % (key, val,))
+            raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
+        # Comment is quoted like a cookie value so semicolons can be escaped.
+        # No other attribute expects `;` in the value, so refuse it.
+        if key != 'comment' and ';' in str(val):
+            raise CookieError(f"Reserved character ';' is not allowed in cookie attribute value {key!r} {val!r}")
+
+    def __setitem__(self, K, V):
+        K = K.lower()
+        self._validate_attribute(K, V)
+        dict.__setitem__(self, K, V)
+
+    def setdefault(self, key, val=None):
+        key = key.lower()
+        self._validate_attribute(key, val)
         return dict.setdefault(self, key, val)
 
     def __eq__(self, morsel):
@@ -336,11 +341,7 @@ class Morsel(dict):
         data = {}
         for key, val in dict(values).items():
             key = key.lower()
-            if key not in self._reserved:
-                raise CookieError("Invalid attribute %r" % (key,))
-            if _has_control_character(key, val):
-                raise CookieError("Control characters are not allowed in "
-                                  f"cookies {key!r} {val!r}")
+            self._validate_attribute(key, val)
             data[key] = val
         dict.update(self, data)
 

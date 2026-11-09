@@ -628,6 +628,33 @@ class MorselTests(unittest.TestCase):
             with self.assertRaises(cookies.CookieError):
                 morsel |= {c0: "val"}
 
+    def test_no_semicolons_in_attribute_values(self):
+        for attrkey, attrname in cookies.Morsel._reserved.items():
+            if attrname == "Comment":
+                continue
+            morsel = cookies.Morsel()
+            with self.subTest(method="__setitem__", attrname=attrname):
+                with self.assertRaises(cookies.CookieError):
+                    morsel[attrkey] = "foo; SameSite=none"
+            with self.subTest(method="setdefault", attrname=attrname):
+                with self.assertRaises(cookies.CookieError):
+                    morsel.setdefault(attrkey, "foo; SameSite=none")
+            with self.subTest(method="update", attrname=attrname):
+                with self.assertRaises(cookies.CookieError):
+                    morsel.update({attrkey: "foo; SameSite=none"})
+            with self.subTest(method="__ior__", attrname=attrname):
+                with self.assertRaises(cookies.CookieError):
+                    morsel |= {attrkey: "foo; SameSite=none"}
+
+    def test_semicolon_escaped_in_comment(self):
+        morsel = cookies.Morsel()
+        morsel.set("key", "value", "coded")
+        morsel["comment"] = "foo;SameSite=none;Domain=example.com"
+        self.assertEqual(
+            morsel.OutputString(),
+            f"key=coded; Comment=\"{morsel['comment'].replace(';', r'\073')}\"",
+        )
+
     def test_control_characters_output(self):
         # Tests that even if the internals of Morsel are modified
         # that a call to .output() has control character safeguards.
