@@ -962,6 +962,7 @@ class MiscTests(unittest.TestCase):
         proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE, env=env)
         self.assertEqual(proc.returncode, 0, proc.stderr)
 
+    @support.requires_subprocess()
     def test_remove_sys_path0_run_python(self):
         CODE = textwrap.dedent("""
             import runpy, sys
