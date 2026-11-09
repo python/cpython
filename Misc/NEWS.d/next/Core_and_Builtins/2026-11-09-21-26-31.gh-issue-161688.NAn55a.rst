@@ -1,0 +1,1 @@
+Fix :func: bytearray.strip from performing segmentation violation
