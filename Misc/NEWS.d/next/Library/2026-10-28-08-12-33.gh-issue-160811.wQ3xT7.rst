@@ -1,0 +1,2 @@
+Fix :meth:`io.TextIOWrapper.tell` reading past the end of the buffer after
+:meth:`~io.TextIOWrapper.seek`.
