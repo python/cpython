@@ -1389,10 +1389,6 @@ _PyTuple_DebugMallocStats(FILE *out)
 
 // --- PyTupleWriter API -----------------------------------------------------
 
-#ifdef Py_DEBUG
-#  define PyTupleWriter_INIT_ITEMS
-#endif
-
 #define _PyTupleWriter_CAST(obj) _Py_CAST(PyTupleWriter*, (obj))
 
 
@@ -1414,10 +1410,8 @@ PyTupleWriter_Create(Py_ssize_t size)
             return NULL;
         }
 
-#ifdef PyTupleWriter_INIT_ITEMS
-        // Initialize items to NULL for tuplewriter_check_final()
+        // Initialize items to NULL
         memset(tuple->ob_item, 0, size * sizeof(tuple->ob_item[0]));
-#endif
     }
 
     PyTupleWriter *writer = _PyTupleWriter_CAST(tuple);
@@ -1445,7 +1439,7 @@ PyTupleWriter_Resize(PyTupleWriter **writer, Py_ssize_t new_size)
 }
 
 
-#ifdef PyTupleWriter_INIT_ITEMS
+#ifndef NDEBUG
 // Make sure that all items are set
 static void
 tuplewriter_check_final(PyTupleObject *tuple)
@@ -1491,7 +1485,7 @@ PyTupleWriter_FinishWithSize(PyTupleWriter *writer, Py_ssize_t final_size)
         _PyObject_GC_TRACK(tuple);
     }
 
-#ifdef PyTupleWriter_INIT_ITEMS
+#ifndef NDEBUG
     tuplewriter_check_final(tuple);
 #endif
 
@@ -1504,7 +1498,7 @@ PyTupleWriter_Finish(PyTupleWriter *writer)
 {
     assert(_PyTupleWriter_CheckConsistency(writer));
     PyTupleObject *result = _PyTuple_CAST(writer);
-#ifdef PyTupleWriter_INIT_ITEMS
+#ifndef NDEBUG
     tuplewriter_check_final(result);
 #endif
 
@@ -1555,7 +1549,7 @@ PyTupleWriter_SetItem(PyTupleWriter *writer, Py_ssize_t index, PyObject *item)
     }
 #endif
 
-#ifdef PyTupleWriter_INIT_ITEMS
+#ifdef Py_DEBUG
     if (tuple->ob_item[index] != NULL) {
         PyErr_Format(PyExc_SystemError, "tuple item %zd already set", index);
         return -1;
@@ -1606,7 +1600,7 @@ PyTupleWriter_SetItems(PyTupleWriter *writer, Py_ssize_t start,
         return -1;
     }
 
-#ifdef PyTupleWriter_INIT_ITEMS
+#ifdef Py_DEBUG
     for (Py_ssize_t index = 0; index < nitem; index++) {
         if (tuple->ob_item[start + index] != NULL) {
             PyErr_Format(PyExc_SystemError,
