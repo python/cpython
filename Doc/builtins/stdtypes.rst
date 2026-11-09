@@ -1225,8 +1225,8 @@ the underlying generator function:
    If the asynchronous generator function then exits gracefully, is already
    closed, or raises :exc:`GeneratorExit` (by not catching the exception),
    then the returned awaitable will raise a :exc:`StopIteration` exception.
-   Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.
+   Awaitables returned by subsequent calls to :meth:`~agen.__anext__`
+   or :meth:`~agen.asend` will raise a :exc:`StopAsyncIteration` exception.
 
    If the asynchronous generator yields a value, a :exc:`RuntimeError` is
    raised by the awaitable.
@@ -2313,19 +2313,19 @@ expression support in the :mod:`re` module).
 
    Perform a string formatting operation.  The string on which this method is
    called can contain literal text or replacement fields delimited by braces
-   ``{}``.  Each replacement field contains either the numeric index of a
-   positional argument, or the name of a keyword argument.  Returns a copy of
+   ``{}``.  Each replacement field refers to a positional argument (numbered
+   explicitly or automatically) or a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
    the corresponding argument. For example:
 
    .. doctest::
 
-      >>> "The sum of 1 + 2 is {0}".format(1+2)
-      'The sum of 1 + 2 is 3'
-      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      >>> "The sum of {} + {} is {}".format(1, 2, 1+2)
       'The sum of 1 + 2 is 3'
       >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
       'Nobody expects the Spanish Inquisition!'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -3180,7 +3180,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with all the cased characters [4]_ converted to
    uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
-   contains uncased characters or if the Unicode category of the resulting
+   contains no cased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
@@ -3537,9 +3537,8 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
-For floating-point formats, the result should be correctly rounded to a given
-precision ``p`` of digits after the decimal point.  The rounding mode matches
-that of the :func:`round` builtin.
+For floating-point formats, the result should be correctly rounded to the
+specified precision.  The rounding mode matches that of the :func:`round` builtin.
 
 Notes:
 
@@ -5905,8 +5904,9 @@ can be used interchangeably to index the same dictionary entry.
 
 
    .. seealso::
-      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
-      create a read-only view of a :class:`dict`.
+      :class:`types.MappingProxyType` can be used to create a read-only view
+      of a :class:`dict`.  :class:`frozendict` is an immutable version of
+      :class:`dict`.
 
 .. seealso::
 
@@ -6059,8 +6059,7 @@ Frozen dictionaries
 
       Similar to :meth:`dict.fromkeys`, but call again the type constructor
       with an initialized :class:`frozendict` if the type is a
-      :class:`frozendict` subclass or if the constructor returned a
-      :class:`frozendict`.
+      :class:`frozendict` subclass.
 
    .. versionadded:: 3.15
 
@@ -6509,8 +6508,8 @@ The user-exposed type for the union object can be accessed from
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
-   override it:
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, it may override
+   the default behavior of creating a union:
 
    .. doctest::
 
