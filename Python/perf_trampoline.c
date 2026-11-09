@@ -441,7 +441,7 @@ get_trampoline(PyCodeObject *co)
 {
     py_trampoline trampoline = NULL;
     if (_PyCode_GetExtra((PyObject *)co, extra_code_index,
-                        (void **)&trampoline) != 0) {
+                         (void **)&trampoline) != 0) {
         return NULL;
     }
     return trampoline;
