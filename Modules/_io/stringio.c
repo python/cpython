@@ -174,7 +174,12 @@ make_intermediate(stringio *self)
         self->string_size = 0;
         return NULL;
     }
-    if (PyUnicodeWriter_WriteStr(self->writer, intermediate)) {
+    /* Without overallocation, writing to an empty writer shares the string
+       (copy-on-write) instead of copying it, so it does not allocate. */
+    ((_PyUnicodeWriter *)writer)->overallocate = 0;
+    int res = PyUnicodeWriter_WriteStr(writer, intermediate);
+    ((_PyUnicodeWriter *)writer)->overallocate = 1;
+    if (res < 0) {
         Py_DECREF(intermediate);
         self->string_size = 0;
         return NULL;
