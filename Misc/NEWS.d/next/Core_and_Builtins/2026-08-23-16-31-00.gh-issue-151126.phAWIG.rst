@@ -1,2 +1,1 @@
-Raise :exc:`MemoryError` on allocation failure in
-``_PyXIData_InitWithSize``.
+Fix a crash when allocation failure occurs during :ref:`interp-object-sharing`.
