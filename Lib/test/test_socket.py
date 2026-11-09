@@ -1188,6 +1188,8 @@ class GeneralModuleTests(unittest.TestCase):
             socket.sethostname(oldhn)
 
     @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
+    @unittest.skipIf(support.is_android and os.getuid() != 0,
+                     "sethostname() fails early on Android without root")
     def test_sethostname_buffer_error(self):
         # gh-161665
         class B(bytes):
