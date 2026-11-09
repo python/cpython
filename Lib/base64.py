@@ -304,7 +304,8 @@ def b16decode(s, casefold=False, *, ignorechars=b''):
         for b in b'abcdef':
             if b in s and b not in ignorechars:
                 raise binascii.Error('Non-base16 digit found')
-        s = s.translate(None, delete=b'abcdef')
+        if ignorechars:
+            s = s.translate(None, delete=b'abcdef')
     return binascii.unhexlify(s, ignorechars=ignorechars)
 
 #

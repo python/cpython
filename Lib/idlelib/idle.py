@@ -1,5 +1,11 @@
-import os.path
 import sys
+
+if __spec__ is not None and not sys.flags.safe_path:
+    # Remove the current directory, prepended by "python -m", so that
+    # user files do not shadow IDLE's imports (gh-70331).
+    del sys.path[0]
+
+import os.path
 
 
 # Enable running IDLE with idlelib in a non-standard location.

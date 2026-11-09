@@ -19,6 +19,10 @@
 #include <zstd.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 /* ============================================================================
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
@@ -28,6 +32,9 @@
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
+
+/* Cap per-batch RLE samples to bound the timestamp list (gh-151378) */
+#define MAX_RLE_BATCH_SAMPLES 8192
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
@@ -85,7 +92,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     /* Read header fields with byte-swapping if needed */
     uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
     uint64_t sample_count;
-    uint32_t thread_count, compression_type;
+    uint32_t thread_count, compression_type, profiling_config;
 
     memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
     memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
@@ -94,6 +101,7 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     memcpy(&string_table_offset, &data[HDR_OFF_STR_TABLE], HDR_SIZE_STR_TABLE);
     memcpy(&frame_table_offset, &data[HDR_OFF_FRAME_TABLE], HDR_SIZE_FRAME_TABLE);
     memcpy(&compression_type, &data[HDR_OFF_COMPRESSION], HDR_SIZE_COMPRESSION);
+    memcpy(&profiling_config, &data[HDR_OFF_CONFIG], HDR_SIZE_CONFIG);
 
     reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
     reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
@@ -102,6 +110,20 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
     reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
     reader->compression_type = (int)SWAP32_IF(reader->needs_swap, compression_type);
+    profiling_config = SWAP32_IF(reader->needs_swap, profiling_config);
+    uint32_t profiling_mode =
+        profiling_config & PROFILING_CONFIG_MODE_MASK;
+    if (profiling_mode > PROFILING_MODE_EXCEPTION + 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid profiling mode in header: %u", profiling_mode);
+        return -1;
+    }
+    reader->profiling_mode = (int)profiling_mode - 1;
+    reader->capture_features =
+        profiling_config & PROFILING_CONFIG_FEATURES_KNOWN
+        ? (int)((profiling_config >> PROFILING_CONFIG_FEATURES_SHIFT) &
+                PROFILING_FEATURE_MASK)
+        : -1;
 
     return 0;
 }
@@ -300,6 +322,7 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
             return -1;
         }
 
+        _Py_MSAN_UNPOISON(output.dst, output.pos);
         total_output += output.pos;
     }
 
@@ -342,7 +365,7 @@ static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
     if (reader_validate_count("string", reader->strings_count,
-                              file_size - reader->string_table_offset,
+                              file_size - (size_t)reader->string_table_offset,
                               MIN_STRING_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -353,7 +376,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
         return -1;
     }
 
-    size_t offset = reader->string_table_offset;
+    size_t offset = (size_t)reader->string_table_offset;
     for (uint32_t i = 0; i < reader->strings_count; i++) {
         size_t prev_offset = offset;
         uint32_t str_len = decode_varint_u32(data, &offset, file_size);
@@ -388,7 +411,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
 #endif
 
     if (reader_validate_count("frame", reader->frames_count,
-                              file_size - reader->frame_table_offset,
+                              file_size - (size_t)reader->frame_table_offset,
                               MIN_FRAME_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -400,7 +423,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 
-    size_t offset = reader->frame_table_offset;
+    size_t offset = (size_t)reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
         FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
@@ -671,7 +694,7 @@ binary_reader_open(PyObject *path)
 #endif
     } else {
         reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
-        reader->sample_data_size = reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
+        reader->sample_data_size = (size_t)reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
     }
 
     /* Parse string and frame tables */
@@ -848,7 +871,7 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -893,7 +916,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -1063,21 +1086,6 @@ emit_sample(RemoteDebuggingState *state, PyObject *collector,
     return 0;
 }
 
-/* Helper to trim timestamp list and emit batch. Returns 0 on success, -1 on error. */
-static int
-emit_batch(RemoteDebuggingState *state, PyObject *collector,
-           uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
-           const uint32_t *frame_indices, size_t stack_depth,
-           BinaryReader *reader, PyObject *timestamps_list, Py_ssize_t actual_size)
-{
-    /* Trim list to actual size */
-    if (PyList_SetSlice(timestamps_list, actual_size, PyList_GET_SIZE(timestamps_list), NULL) < 0) {
-        return -1;
-    }
-    return emit_sample(state, collector, thread_id, interpreter_id, status,
-                       frame_indices, stack_depth, reader, timestamps_list);
-}
-
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
 invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint64_t total)
@@ -1206,17 +1214,18 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 ts->prev_timestamp += delta;
 
                 /* Start new batch on first sample or status change */
-                if (i == 0 || status != batch_status) {
+                if (i == 0 || status != batch_status
+                        || batch_idx >= MAX_RLE_BATCH_SAMPLES) {
                     if (timestamps_list) {
-                        int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                            batch_status, ts->current_stack, ts->current_stack_depth,
-                                            reader, timestamps_list, batch_idx);
+                        int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                             batch_status, ts->current_stack, ts->current_stack_depth,
+                                             reader, timestamps_list);
                         Py_DECREF(timestamps_list);
                         if (rc < 0) {
                             return -1;
                         }
                     }
-                    timestamps_list = PyList_New(count - i);
+                    timestamps_list = PyList_New(0);
                     if (!timestamps_list) {
                         return -1;
                     }
@@ -1229,14 +1238,20 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                     Py_DECREF(timestamps_list);
                     return -1;
                 }
-                PyList_SET_ITEM(timestamps_list, batch_idx++, ts_obj);
+                int append_rc = PyList_Append(timestamps_list, ts_obj);
+                Py_DECREF(ts_obj);
+                if (append_rc < 0) {
+                    Py_DECREF(timestamps_list);
+                    return -1;
+                }
+                batch_idx++;
             }
 
             /* Emit final batch */
             if (timestamps_list) {
-                int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                    batch_status, ts->current_stack, ts->current_stack_depth,
-                                    reader, timestamps_list, batch_idx);
+                int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                     batch_status, ts->current_stack, ts->current_stack_depth,
+                                     reader, timestamps_list);
                 Py_DECREF(timestamps_list);
                 if (rc < 0) {
                     return -1;
@@ -1247,7 +1262,7 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             reader->stats.total_samples += count;
 
             /* Progress callback after batch */
-            if (replayed % PROGRESS_CALLBACK_INTERVAL < count) {
+            if ((uint64_t)replayed % PROGRESS_CALLBACK_INTERVAL < (uint64_t)count) {
                 if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
                     return -1;
                 }
@@ -1388,8 +1403,31 @@ binary_reader_get_info(BinaryReader *reader)
         Py_DECREF(error_rate);
         return NULL;
     }
+    PyObject *profiling_mode = reader->profiling_mode < 0
+        ? Py_NewRef(Py_None)
+        : PyLong_FromLong(reader->profiling_mode);
+    if (profiling_mode == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(duration);
+        Py_DECREF(sample_rate);
+        Py_DECREF(error_rate);
+        Py_DECREF(missed_samples);
+        return NULL;
+    }
+    PyObject *capture_features = reader->capture_features < 0
+        ? Py_NewRef(Py_None)
+        : PyLong_FromLong(reader->capture_features);
+    if (capture_features == NULL) {
+        Py_DECREF(py_version);
+        Py_DECREF(profiling_mode);
+        Py_DECREF(duration);
+        Py_DECREF(sample_rate);
+        Py_DECREF(error_rate);
+        Py_DECREF(missed_samples);
+        return NULL;
+    }
     return Py_BuildValue(
-        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N, s:N, s:N}",
+        "{s:I, s:N, s:K, s:K, s:K, s:I, s:I, s:I, s:i, s:N, s:N, s:N, s:N, s:N, s:N}",
         "version", BINARY_FORMAT_VERSION,
         "python_version", py_version,
         "start_time_us", reader->start_time_us,
@@ -1402,7 +1440,9 @@ binary_reader_get_info(BinaryReader *reader)
         "duration_sec", duration,
         "sample_rate", sample_rate,
         "error_rate", error_rate,
-        "missed_samples", missed_samples
+        "missed_samples", missed_samples,
+        "mode", profiling_mode,
+        "capture_features", capture_features
     );
 }
 

@@ -333,7 +333,7 @@ class DemoWindow(object):
         modname = 'turtledemo.' + filename
         __import__(modname)
         self.module = sys.modules[modname]
-        with open(self.module.__file__, 'r') as f:
+        with open(self.module.__file__, encoding='utf-8') as f:
             chars = f.read()
         self.text.delete("1.0", "end")
         self.text.insert("1.0", chars)

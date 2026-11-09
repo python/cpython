@@ -1,0 +1,2 @@
+Fix crashes with ``-X perf`` and ``-X perf_jit`` in BOLT builds.
+The ELF perf trampoline templates now use read-only data sections.
