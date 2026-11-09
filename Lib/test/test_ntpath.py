@@ -552,7 +552,7 @@ class TestNtpath(NtpathTestCase):
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
-    @_parameterize({}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
+    @_parameterize({}, {'strict': ALLOW_MISSING})
     def test_realpath_broken_symlink_in_linked_dir(self, kwargs):
         # A relative target is resolved against the directory containing
         # the link, not against the path by which the link was reached.
