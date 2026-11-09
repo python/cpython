@@ -4,6 +4,21 @@ preserve
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 
+static PyObject *
+set_repr_impl(PySetObject *so);
+
+static PyObject *
+set_repr(PyObject *so)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    return_value = set_repr_impl((PySetObject *)so);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
 "--\n"
@@ -552,4 +567,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=5800c0bf136a5a0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d794137d2614aaf input=a9049054013a1b77]*/

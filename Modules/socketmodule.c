@@ -190,7 +190,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_GETHOSTBYNAME_R
 # if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
-# elif defined(__sun) || defined(__sgi)
+# elif defined(__sun)
 #  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(__linux__)
 /* Rely on the configure script */
@@ -215,29 +215,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <netbt/hci.h>
 #  include <netbt/sco.h>
 #endif
-
-#if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
-/* make sure that the reentrant (gethostbyaddr_r etc)
-   functions are declared correctly if compiling with
-   MIPSPro 7.x in ANSI C mode (default) */
-
-/* XXX Using _SGIAPI is the wrong thing,
-   but I don't know what the right thing is. */
-#undef _SGIAPI /* to avoid warning */
-#define _SGIAPI 1
-
-#undef _XOPEN_SOURCE
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#ifdef _SS_ALIGNSIZE
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#endif
-
-#define HAVE_INET_PTON
-#include <netdb.h>
-#endif // __sgi
 
 /* Solaris fails to define this variable at all. */
 #if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
@@ -289,6 +266,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 /* Helpers needed for AF_HYPERV */
 # include <Rpc.h>
+
+#ifndef RPC_S_OK
+#define RPC_S_OK 0L
+#endif
 
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
 #define IPPROTO_ICMP IPPROTO_ICMP
@@ -414,16 +395,10 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 /* include Python's addrinfo.h unless it causes trouble */
-#if defined(__sgi) && _COMPILER_VERSION>700 && defined(_SS_ALIGNSIZE)
-  /* Do not include addinfo.h on some newer IRIX versions.
-   * _SS_ALIGNSIZE is defined in sys/socket.h by 6.5.21,
-   * for example, but not by 6.5.10.
-   */
-#elif defined(_MSC_VER) && _MSC_VER>1201
-  /* Do not include addrinfo.h for MSVC7 or greater. 'addrinfo' and
-   * EAI_* constants are defined in (the already included) ws2tcpip.h.
-   */
-#else
+/* Do not include addrinfo.h for MSVC. 'addrinfo' and
+ * EAI_* constants are defined in (the already included) ws2tcpip.h.
+ */
+#if !defined(_MSC_VER)
 #  include "addrinfo.h"
 #endif
 
@@ -631,14 +606,14 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
 #   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[python input]
 class NET_IFINDEX_converter(CConverter):
@@ -770,7 +745,9 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(iN)", h_error, decode_error_message(hstrerror(h_error)));
+    const char *errmsg = hstrerror(h_error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -797,7 +774,9 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(iN)", error, decode_error_message(gai_strerror(error)));
+    const char *errmsg = gai_strerror(error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -824,7 +803,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     int delay_flag, new_delay_flag;
 #endif
 
-    Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
 #if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
@@ -851,8 +829,6 @@ internal_setblocking(PySocketSockObject *s, int block)
     result = 0;
 
   done:
-    Py_END_ALLOW_THREADS
-
     if (result) {
 #ifndef MS_WINDOWS
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1778,6 +1754,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         PyObject *vmId = PyUnicode_FromWideChar(guidStr, -1);
         res = RpcStringFreeW(&guidStr);
         assert(res == RPC_S_OK);
+        if (vmId == NULL) {
+            return 0;
+        }
 
         res = UuidToStringW(&a->ServiceId, &guidStr);
         if (res != RPC_S_OK) {
@@ -3412,11 +3391,6 @@ sock_setsockopt(PyObject *self, PyObject *args)
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
-        if (!PyIndex_Check(optval)) {
-            PyErr_Format(PyExc_TypeError,
-                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
-                         optval);
-        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
@@ -3911,9 +3885,7 @@ _socket_socket_getsockname_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getsockname(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -3946,9 +3918,7 @@ _socket_socket_getpeername_impl(PySocketSockObject *s)
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
     memset(&addrbuf, 0, addrlen);
-    Py_BEGIN_ALLOW_THREADS
     res = getpeername(get_sock_fd(s), SAS2SA(&addrbuf), &addrlen);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return s->errorhandler();
     return makesockaddr(get_sock_fd(s), SAS2SA(&addrbuf), addrlen,
@@ -5924,10 +5894,12 @@ _socket_gethostname_impl(PyObject *module)
        Otherwise, gethostname apparently also returns the DNS name. */
     wchar_t buf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD size = Py_ARRAY_LENGTH(buf);
-    wchar_t *name;
-    PyObject *result;
 
+#ifdef MS_WINDOWS_DESKTOP
     if (GetComputerNameExW(ComputerNamePhysicalDnsHostname, buf, &size))
+#else
+    if (GetComputerNameW(buf, &size))
+#endif
         return PyUnicode_FromWideChar(buf, size);
 
     if (GetLastError() != ERROR_MORE_DATA)
@@ -5936,9 +5908,12 @@ _socket_gethostname_impl(PyObject *module)
     if (size == 0)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     /* MSDN says ERROR_MORE_DATA may occur because DNS allows longer
        names */
-    name = PyMem_New(wchar_t, size);
+    wchar_t* name = PyMem_New(wchar_t, size);
     if (!name) {
         PyErr_NoMemory();
         return NULL;
@@ -5952,15 +5927,14 @@ _socket_gethostname_impl(PyObject *module)
         return NULL;
     }
 
-    result = PyUnicode_FromWideChar(name, size);
+    PyObject* result = PyUnicode_FromWideChar(name, size);
     PyMem_Free(name);
     return result;
+#endif
 #else
     char buf[1024];
     int res;
-    Py_BEGIN_ALLOW_THREADS
     res = gethostname(buf, (int) sizeof buf - 1);
-    Py_END_ALLOW_THREADS
     if (res < 0)
         return set_error();
     buf[sizeof buf - 1] = '\0';
@@ -5987,6 +5961,15 @@ _socket_sethostname(PyObject *module, PyObject *hnobj)
 {
     Py_buffer buf;
     int res, flag = 0;
+
+#ifdef __ANDROID__
+    // On Android, calling this function as a non-root user leads to a process crash
+    // rather than returning a permission error.
+    if (getuid() != 0) {
+        errno = EPERM;
+        return set_error();
+    }
+#endif
 
 #if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
 /* issue #18259, sethostname is not declared in any useful header file on AIX
@@ -6503,6 +6486,7 @@ _socket_getservbyport_impl(PyObject *module, int port, const char *proto)
         PyErr_SetString(PyExc_OSError, "port/proto not found");
         return NULL;
     }
+    _Py_MSAN_UNPOISON_STRING(sp->s_name);
     return PyUnicode_FromString(sp->s_name);
 }
 
@@ -7034,6 +7018,7 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
     struct addrinfo *res0 = NULL;
     PyObject *pstr = NULL;
     const char *hptr, *pptr;
+    Py_ssize_t hlen = 0, plen = 0;
     int error;
     PyObject *all = (PyObject *)NULL;
     PyObject *idna = NULL;
@@ -7046,12 +7031,19 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
             return NULL;
         assert(PyBytes_Check(idna));
         hptr = PyBytes_AS_STRING(idna);
+        hlen = PyBytes_GET_SIZE(idna);
     } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
+        hptr = PyBytes_AS_STRING(hobj);
+        hlen = PyBytes_GET_SIZE(hobj);
     } else {
         PyErr_SetString(PyExc_TypeError,
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
+    }
+    if (hptr != NULL && strlen(hptr) != (size_t)hlen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() host must not contain null characters");
+        goto err;
     }
     if (PyIndex_Check(pobj)) {
         pstr = PyNumber_Index(pobj);
@@ -7062,19 +7054,25 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
-        pptr = PyUnicode_AsUTF8(pstr);
+        pptr = PyUnicode_AsUTF8AndSize(pstr, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = PyUnicode_AsUTF8(pobj);
+        pptr = PyUnicode_AsUTF8AndSize(pobj, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
+        plen = PyBytes_GET_SIZE(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");
+        goto err;
+    }
+    if (pptr != NULL && strlen(pptr) != (size_t)plen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() port must not contain null characters");
         goto err;
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
@@ -7312,7 +7310,7 @@ _socket_setdefaulttimeout(PyObject *module, PyObject *arg)
 }
 
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 /* Python API for getting interface indices and names */
 
 /*[clinic input]
@@ -7403,6 +7401,9 @@ _socket_if_nameindex_impl(PyObject *module)
 #endif
 }
 
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
+
+#if defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 _socket.if_nametoindex
@@ -7432,6 +7433,9 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     return PyLong_FromUnsignedLong(index);
 }
 
+#endif // defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
+
+#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 @permit_long_summary
@@ -7456,7 +7460,7 @@ _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
     return PyUnicode_DecodeFSDefault(name);
 }
 
-#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 
 #ifdef CMSG_LEN
@@ -9359,7 +9363,7 @@ socket_exec(PyObject *m)
 #endif
 #endif /* _MSTCPIP_ */
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     /* remove some flags on older version Windows during run-time */
     if (remove_unusable_flags(m) < 0) {
         goto error;

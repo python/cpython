@@ -440,7 +440,7 @@ Some smaller changes made to the core Python language are:
   references to local variables from the frame.  (Contributed by Antoine Pitrou
   in :issue:`17934`.)
 
-* :class:`memoryview` is now registered as a :class:`Sequence <collections.abc>`,
+* :class:`memoryview` is now registered as a :class:`~collections.abc.Sequence`,
   and supports the :func:`reversed` builtin.  (Contributed by Nick Coghlan
   and Claudiu Popa in :issue:`18690` and :issue:`19078`.)
 
@@ -2281,7 +2281,7 @@ Changes in the Python API
 * :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
-  :func:`!importlib.util.module_to_load` for module management.
+  :func:`!importlib.util._module_to_load` for module management.
 
 * Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
   ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
@@ -2298,7 +2298,7 @@ Changes in the Python API
 * Frozen modules no longer define a ``__file__`` attribute. It's semantically
   incorrect for frozen modules to set the attribute as they are not loaded from
   any explicit location. If you must know that a module comes from frozen code
-  then you can see if the module's ``__spec__.location`` is set to ``'frozen'``,
+  then you can see if the module's ``__spec__.origin`` is set to ``'frozen'``,
   check if the loader is a subclass of
   :class:`importlib.machinery.FrozenImporter`,
   or if Python 2 compatibility is necessary you can use :func:`!imp.is_frozen`.

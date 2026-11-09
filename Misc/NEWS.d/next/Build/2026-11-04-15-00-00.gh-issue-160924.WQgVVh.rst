@@ -1,0 +1,3 @@
+Fix cross-compilation failures with ``--enable-shared`` caused by the
+build Python loading the target's ``libpython`` through the shared-library
+search path (such as musl from glibc).

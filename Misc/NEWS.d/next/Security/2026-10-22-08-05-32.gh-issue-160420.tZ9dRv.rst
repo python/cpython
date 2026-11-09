@@ -1,0 +1,4 @@
+Fix :class:`zoneinfo.ZoneInfo` on Windows accepting keys in which a component
+after a ``/`` starts with a drive letter, such as ``America/C:\file``.  Such a
+key could open a file outside the ``tzdata`` package; it now raises
+:exc:`ValueError`.
