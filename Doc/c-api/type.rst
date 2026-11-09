@@ -62,6 +62,14 @@ Type Objects
       The return type is now ``uint64_t`` rather than ``unsigned long``.
 
 
+.. c:function:: uint64_t PyType_GetFlags64(PyTypeObject* type)
+
+   Similar to :c:func:`PyType_GetFlags64` but return type flags as
+   ``uint64_t``.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
 
    Return the type object's internal namespace, which is otherwise only

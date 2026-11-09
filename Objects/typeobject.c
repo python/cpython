@@ -13205,7 +13205,7 @@ PyTypeObject PySuper_Type = {
 
 
 uint64_t
-_PyType_GetFlags64(PyTypeObject *type)
+PyType_GetFlags64(PyTypeObject *type)
 {
     return type->tp_flags;
 }
