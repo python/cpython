@@ -397,6 +397,16 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             )
             return False
 
+        # RFC 9112, section 3.2: reject missing or duplicate Host fields.
+        hosts = self.headers.get_all('Host', [])
+        if not hosts and version_number >= (1, 1):
+            self.send_error(HTTPStatus.BAD_REQUEST, "Missing Host header")
+            return False
+
+        if len(hosts) > 1:
+            self.send_error(HTTPStatus.BAD_REQUEST, "Multiple Host headers")
+            return False
+
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
             self.close_connection = True

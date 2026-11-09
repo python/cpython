@@ -1075,7 +1075,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertIn(r'"GET /foo\\b"ar\x07 HTTP/1.0"', lines[4])
 
     def test_http_1_1(self):
-        result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n')
         self.verify_http_server_response(result[0])
         self.verify_expected_headers(result[1:-1])
         self.verify_get_called()
@@ -1084,7 +1084,17 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.handler.command, 'GET')
         self.assertEqual(self.handler.path, '/')
         self.assertEqual(self.handler.request_version, 'HTTP/1.1')
-        self.assertSequenceEqual(self.handler.headers.items(), ())
+        self.assertSequenceEqual(self.handler.headers.items(),
+                                 (("Host", "example.com"),))
+
+    def test_missing_or_duplicate_host(self):
+        for headers in (b'', b'Host: a.example\r\nhOsT: b.example\r\n'):
+            with self.subTest(headers=headers):
+                self.handler = SocketlessRequestHandler()
+                result = self.send_typical_request(
+                    b'GET / HTTP/1.1\r\n' + headers + b'\r\n')
+                self.assertStartsWith(result[0], b'HTTP/1.1 400 ')
+                self.assertFalse(self.handler.get_called)
 
     def test_http_1_0(self):
         result = self.send_typical_request(b'GET / HTTP/1.0\r\n\r\n')
@@ -1141,7 +1151,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertSequenceEqual(self.handler.headers.items(), headers)
 
     def test_with_continue_1_1(self):
-        result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\nHost: example.com\r\nExpect: 100-continue\r\n\r\n')
         self.assertEqual(result[0], b'HTTP/1.1 100 Continue\r\n')
         self.assertEqual(result[1], b'\r\n')
         self.assertEqual(result[2], b'HTTP/1.1 200 OK\r\n')
@@ -1152,7 +1162,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.handler.command, 'GET')
         self.assertEqual(self.handler.path, '/')
         self.assertEqual(self.handler.request_version, 'HTTP/1.1')
-        headers = (("Expect", "100-continue"),)
+        headers = (("Host", "example.com"), ("Expect", "100-continue"))
         self.assertSequenceEqual(self.handler.headers.items(), headers)
 
     def test_header_buffering_of_send_error(self):
@@ -1208,7 +1218,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
             f.seek(pos)
             return data
 
-        input = BytesIO(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
+        input = BytesIO(b'GET / HTTP/1.1\r\nHost: example.com\r\nExpect: 100-continue\r\n\r\n')
         output = BytesIO()
         self.handler.rfile = input
         self.handler.wfile = output
@@ -1224,7 +1234,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
     def test_with_continue_rejected(self):
         usual_handler = self.handler        # Save to avoid breaking any subsequent tests.
         self.handler = RejectingSocketlessRequestHandler()
-        result = self.send_typical_request(b'GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n')
+        result = self.send_typical_request(b'GET / HTTP/1.1\r\nHost: example.com\r\nExpect: 100-continue\r\n\r\n')
         self.assertEqual(result[0], b'HTTP/1.1 417 Expectation Failed\r\n')
         self.verify_expected_headers(result[1:-1])
         # The expect handler should short circuit the usual get method by
@@ -1258,7 +1268,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
 
     def test_html_escape_on_error(self):
         result = self.send_typical_request(
-            b'<script>alert("hello")</script> / HTTP/1.1')
+            b'<script>alert("hello")</script> / HTTP/1.1\r\nHost: example.com\r\n\r\n')
         result = b''.join(result)
         text = '<script>alert("hello")</script>'
         self.assertIn(html.escape(text, quote=False).encode('ascii'), result)
