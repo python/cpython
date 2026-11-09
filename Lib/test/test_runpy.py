@@ -926,7 +926,8 @@ class MiscTests(unittest.TestCase):
         OTHER_PATH = '/other/path'
         sys_path = [PATH0, STDLIB_PATH, PATH0, '', OTHER_PATH, PATH0]
         expected = [STDLIB_PATH, '', OTHER_PATH]
-        with (support.swap_attr(sys, '_path0', PATH0),
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', PATH0),
               support.swap_attr(sys, 'path', sys_path)):
             runpy._remove_sys_path0()
             self.assertEqual(sys.path, expected)
@@ -937,18 +938,21 @@ class MiscTests(unittest.TestCase):
 
         # Do nothing if sys._path0 is sys._stdlib_dir
         sys_path = ['', STDLIB_PATH, OTHER_PATH]
-        with (support.swap_attr(sys, '_stdlib_dir', None),
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
               support.swap_attr(sys, '_path0', STDLIB_PATH),
               support.swap_attr(sys, 'path', sys_path)):
             runpy._remove_sys_path0()
-            self.assertEqual(sys.path, sys_path)
+            self.assertEqual(sys.path, expected)
 
         # Do nothing if sys._path0 is None
         sys_path = ['', STDLIB_PATH, OTHER_PATH]
-        with (support.swap_attr(sys, '_path0', None),
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', None),
               support.swap_attr(sys, 'path', sys_path)):
             runpy._remove_sys_path0()
-            self.assertEqual(sys.path, sys_path)
+            self.assertEqual(sys.path, expected)
 
     def run_python(self, *args, PYTHONPATH=None):
         cmd = [sys.executable, *args]
