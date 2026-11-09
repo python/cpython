@@ -66,6 +66,10 @@ Type Objects
    .. versionchanged:: 3.4
       The return type is now ``unsigned long`` rather than ``long``.
 
+   .. soft-deprecated:: next
+
+      Use :c:func:`PyType_GetFlags64` instead to get all type flags.
+
 
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
 
