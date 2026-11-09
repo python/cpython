@@ -3462,12 +3462,20 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
 
     // gh-157299: the eager step must record the awaited_by edge
     int eager_edge = TaskOrFuture_Check(state, prevtask);
+    PyObject *stepres;
     Py_BEGIN_CRITICAL_SECTION(task);
-    if (eager_edge) {
-        future_awaited_by_add(state, (FutureObj *)task, prevtask);
+    if (eager_edge &&
+        future_awaited_by_add(state, (FutureObj *)task, prevtask) < 0)
+    {
+        eager_edge = 0;
+        task->task_log_destroy_pending = 0;
+        unregister_task(task);
+        stepres = NULL;
+    }
+    else {
+        stepres = task_step_impl(state, task, NULL);
     }
 
-    PyObject *stepres = task_step_impl(state, task, NULL);
     PyObject *exc = stepres == NULL ? PyErr_GetRaisedException() : NULL;
     if (eager_edge) {
         int res = future_awaited_by_discard(state, (FutureObj *)task, prevtask);
