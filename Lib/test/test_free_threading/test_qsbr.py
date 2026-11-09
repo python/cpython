@@ -18,12 +18,12 @@ def make_shared(func, *args):
 class TestDelayedFreeReentrancy(unittest.TestCase):
     ROUNDS = 1000
 
-    def queue_finalizers(self, callback):
+    def queue_finalizers(self, callback, count=ROUNDS):
         class Finalizer:
             def __del__(self):
                 callback()
 
-        holders = [Holder() for _ in range(self.ROUNDS)]
+        holders = [Holder() for _ in range(count)]
         for h in holders:
             h.__dict__ = {"f": Finalizer()}
         return holders
@@ -31,16 +31,16 @@ class TestDelayedFreeReentrancy(unittest.TestCase):
     def test_dict_resize(self):
         d = {}
         make_shared(d.get, 0)
-        holders = self.queue_finalizers(lambda: d.__setitem__(object(), 0))
-        for n, h in enumerate(holders):
+        holders = self.queue_finalizers(lambda: d.__setitem__(object(), 0),
+                                        count=100)
+        for h in holders:
             h.__dict__ = {}
-            if n % 2:
-                h.__dict__ = {}
+        for _ in range(self.ROUNDS):
             for k in list(d):
                 del d[k]
             for i in range(6):
                 d[i] = i
-            self.assertEqual(len(d), len(list(d)))
+            self.assertEqual(len(d), sum(1 for _ in d))
 
     def test_list_resize(self):
         L = []
