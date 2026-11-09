@@ -1187,6 +1187,18 @@ class GeneralModuleTests(unittest.TestCase):
         finally:
             socket.sethostname(oldhn)
 
+    @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
+    def test_sethostname_buffer_error(self):
+        # gh-161665
+        class B(bytes):
+            def __buffer__(self, flags):
+                raise KeyError("boom")
+        # Leave a non-zero errno behind.
+        with self.assertRaises(OSError):
+            os.stat(os_helper.TESTFN)
+        with self.assertRaisesRegex(KeyError, "boom"):
+            socket.sethostname(B(b"h"))
+
     @unittest.skipUnless(hasattr(socket, 'if_nameindex'),
                          'socket.if_nameindex() not available.')
     @support.skip_android_selinux('if_nameindex')
