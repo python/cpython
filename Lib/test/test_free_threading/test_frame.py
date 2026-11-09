@@ -1,4 +1,5 @@
 import functools
+import gc
 import sys
 import threading
 import unittest
@@ -351,8 +352,7 @@ class TestFrameRaces(unittest.TestCase):
         del frame.f_locals["extra_key"]
 
     def test_gen_setitem_old_value_destructor_stw(self):
-        # Same as above, but on a suspended generator frame, where the
-        # store happens under stop-the-world.
+        # Same as above, but on a suspended generator frame.
         deleted = []
 
         def gen_fn():
@@ -398,6 +398,63 @@ class TestFrameRaces(unittest.TestCase):
         frame.f_locals["x"] = "new"    # replace cell value: destructor runs
         self.assertEqual(deleted, ["new"])
         g.close()
+
+    def test_gen_f_locals_key_runs_python_code(self):
+        # key's __hash__ and __eq__ must not run with the world stopped
+        class Key:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                gc.collect()
+                return hash(self.value)
+
+            def __eq__(self, other):
+                gc.collect()
+                if isinstance(other, Key):
+                    other = other.value
+                return self.value == other
+
+        def gen_fn():
+            x = 1
+            yield
+
+        g = gen_fn()
+        next(g)
+        f_locals = g.gi_frame.f_locals
+        self.assertEqual(f_locals[Key("x")], 1)
+        self.assertIn(Key("x"), f_locals)
+        f_locals[Key("x")] = 2
+        self.assertEqual(f_locals["x"], 2)
+        with self.assertRaises(ValueError):
+            f_locals.pop(Key("x"))
+
+        self.assertNotIn(Key("extra"), f_locals)
+        f_locals[Key("extra")] = 3
+        self.assertEqual(f_locals[Key("extra")], 3)
+        self.assertIn(Key("extra"), f_locals)
+        self.assertEqual(f_locals.pop(Key("extra")), 3)
+        with self.assertRaises(KeyError):
+            f_locals[Key("extra")]
+        g.close()
+
+    def test_concurrent_f_locals_extra_iteration(self):
+        # iterate the extra locals while they are modified
+        frame = (lambda: sys._getframe())()
+
+        def writer():
+            for i in range(5000):
+                frame.f_locals[f"k{i % 32}"] = [i]
+                frame.f_locals.pop(f"k{i * 7 % 32}", None)
+
+        def reader():
+            for _ in range(2000):
+                f_locals = frame.f_locals
+                list(f_locals.keys())
+                list(f_locals.values())
+                list(f_locals.items())
+
+        threading_helper.run_concurrently([writer, writer, reader, reader])
 
     def test_gen_pop_extra_locals_concurrent(self):
         # pop() must be synchronized with the frame's owner like the

@@ -90,6 +90,33 @@ _frame_is_on_other_thread(PyFrameObject *frame)
 #endif
 
 
+// Returns a borrowed reference, the frame object keeps its code alive.
+static PyCodeObject *
+framelocalsproxy_getcode(PyFrameObject *frame)
+{
+    PyCodeObject *co;
+    Py_BEGIN_CRITICAL_SECTION(frame);
+    co = _PyFrame_GetCode(frame->f_frame);
+    Py_END_CRITICAL_SECTION();
+    return co;
+}
+
+// Returns a new reference to the extra locals dict or NULL. The running
+// frame never touches it, so no stop the world is needed.
+static PyObject *
+framelocalsproxy_get_extra(PyFrameObject *frame, bool create)
+{
+    PyObject *extra;
+    Py_BEGIN_CRITICAL_SECTION(frame);
+    extra = frame->f_extra_locals;
+    if (extra == NULL && create) {
+        extra = frame->f_extra_locals = PyDict_New();
+    }
+    Py_XINCREF(extra);
+    Py_END_CRITICAL_SECTION();
+    return extra;
+}
+
 // Returns new reference or NULL
 static PyObject *
 framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
@@ -160,7 +187,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
     // value_ptr should only be given if we are reading the value
     assert(read || value_ptr == NULL);
 
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyCodeObject *co = framelocalsproxy_getcode(frame);
 
     // Ensure that the key is hashable.
     Py_hash_t key_hash = PyObject_Hash(key);
@@ -176,7 +203,9 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (name == key) {
             if (read) {
-                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                PyObject *value;
+                FRAMELOCALSPROXY_LOCKED(frame,
+                    framelocalsproxy_getval(frame->f_frame, co, i), value);
                 if (value != NULL) {
                     if (value_ptr != NULL) {
                         *value_ptr = value;
@@ -214,7 +243,9 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
         }
         if (same) {
             if (read) {
-                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                PyObject *value;
+                FRAMELOCALSPROXY_LOCKED(frame,
+                    framelocalsproxy_getval(frame->f_frame, co, i), value);
                 if (value != NULL) {
                     if (value_ptr != NULL) {
                         *value_ptr = value;
@@ -236,8 +267,9 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
 }
 
 static PyObject *
-framelocalsproxy_getitem_lock_held(PyFrameObject *frame, PyObject *key)
+framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyObject *value = NULL;
 
     int i = framelocalsproxy_getkeyindex(frame, key, true, &value);
@@ -252,31 +284,17 @@ framelocalsproxy_getitem_lock_held(PyFrameObject *frame, PyObject *key)
 
     // Okay not in the fast locals, try extra locals
 
-    PyObject *extra = frame->f_extra_locals;
+    PyObject *extra = framelocalsproxy_get_extra(frame, false);
     if (extra != NULL) {
-        if (PyDict_GetItemRef(extra, key, &value) < 0) {
-            return NULL;
-        }
-        if (value != NULL) {
+        int found = PyDict_GetItemRef(extra, key, &value);
+        Py_DECREF(extra);
+        if (found != 0) {
             return value;
         }
     }
 
-    // KeyError is raised by the caller, outside the stop the world pause.
+    PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
     return NULL;
-}
-
-static PyObject *
-framelocalsproxy_getitem(PyObject *self, PyObject *key)
-{
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyObject *result;
-    FRAMELOCALSPROXY_LOCKED(frame,
-        framelocalsproxy_getitem_lock_held(frame, key), result);
-    if (result == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_KeyError, "local variable '%R' is not defined", key);
-    }
-    return result;
 }
 
 static int
@@ -306,15 +324,54 @@ add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
     return 0;
 }
 
-// The replaced value is returned in `*old_value` (strong reference or
-// NULL) so that its destructor runs outside the stop the world pause.
+// The replaced value is returned in `*old_value` so that it is decref'd
+// outside stop the world.
 static int
-framelocalsproxy_setitem_lock_held(PyFrameObject *frame, PyObject *key,
+framelocalsproxy_setfast_lock_held(PyFrameObject *frame, int i,
                                    PyObject *value, PyObject **old_value)
 {
     /* Merge locals into fast locals */
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+
+#if _Py_TIER2
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), co, 1);
+#endif
+
+    _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+    _PyStackRef oldvalue = fast[i];
+    PyObject *cell = NULL;
+    if (kind == CO_FAST_FREE) {
+        // The cell was set when the frame was created from
+        // the function's closure.
+        assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+        cell = PyStackRef_AsPyObjectBorrow(oldvalue);
+    } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
+        PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
+        if (PyCell_Check(as_obj)) {
+            cell = as_obj;
+        }
+    }
+    if (cell != NULL) {
+        Py_XINCREF(value);
+        *old_value = PyCell_SwapTakeRef((PyCellObject *)cell, value);
+    } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
+        PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+        if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
+            if (add_overwritten_fast_local(frame, old_obj) < 0) {
+                return -1;
+            }
+            PyStackRef_CLOSE(fast[i]);
+        }
+        fast[i] = PyStackRef_FromPyObjectNew(value);
+    }
+    return 0;
+}
+
+static int
+framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
+{
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
     int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
@@ -325,88 +382,32 @@ framelocalsproxy_setitem_lock_held(PyFrameObject *frame, PyObject *key,
             PyErr_SetString(PyExc_ValueError, "cannot remove local variables from FrameLocalsProxy");
             return -1;
         }
-
-#if _Py_TIER2
-        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), co, 1);
-#endif
-
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-        _PyStackRef oldvalue = fast[i];
-        PyObject *cell = NULL;
-        if (kind == CO_FAST_FREE) {
-            // The cell was set when the frame was created from
-            // the function's closure.
-            assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
-            cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-        } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
-            PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
-            if (PyCell_Check(as_obj)) {
-                cell = as_obj;
-            }
-        }
-        if (cell != NULL) {
-            Py_XINCREF(value);
-            *old_value = PyCell_SwapTakeRef((PyCellObject *)cell, value);
-        } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-            PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
-            if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
-                if (add_overwritten_fast_local(frame, old_obj) < 0) {
-                    return -1;
-                }
-                PyStackRef_CLOSE(fast[i]);
-            }
-            fast[i] = PyStackRef_FromPyObjectNew(value);
-        }
-        return 0;
+        PyObject *old_value = NULL;
+        int result;
+        FRAMELOCALSPROXY_LOCKED(frame,
+            framelocalsproxy_setfast_lock_held(frame, i, value, &old_value),
+            result);
+        Py_XDECREF(old_value);
+        return result;
     }
 
     // Okay not in the fast locals, try extra locals
 
-    PyObject *extra = frame->f_extra_locals;
-
+    PyObject *extra = framelocalsproxy_get_extra(frame, value != NULL);
     if (extra == NULL) {
         if (value == NULL) {
             _PyErr_SetKeyError(key);
-            return -1;
         }
-        extra = PyDict_New();
-        if (extra == NULL) {
-            return -1;
-        }
-        frame->f_extra_locals = extra;
+        return -1;
     }
 
-    assert(PyDict_Check(extra));
-
-    if (value == NULL) {
-        int res = PyDict_Pop(extra, key, old_value);
-        if (res < 0) {
-            return -1;
-        }
-        if (res == 0) {
-            _PyErr_SetKeyError(key);
-            return -1;
-        }
-        return 0;
-    }
-    else {
-        if (PyDict_GetItemRef(extra, key, old_value) < 0) {
-            return -1;
-        }
-        return PyDict_SetItem(extra, key, value);
-    }
-}
-
-static int
-framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
-{
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyObject *old_value = NULL;
     int result;
-    FRAMELOCALSPROXY_LOCKED(frame,
-        framelocalsproxy_setitem_lock_held(frame, key, value, &old_value),
-        result);
-    Py_XDECREF(old_value);
+    if (value == NULL) {
+        result = PyDict_DelItem(extra, key);
+    } else {
+        result = PyDict_SetItem(extra, key, value);
+    }
+    Py_DECREF(extra);
     return result;
 }
 
@@ -485,12 +486,19 @@ framelocalsproxy_keys_lock_held(PyFrameObject *frame)
         Py_ssize_t i = 0;
         PyObject *key = NULL;
         PyObject *value = NULL;
+        int err = 0;
 
+        Py_BEGIN_CRITICAL_SECTION(frame->f_extra_locals);
         while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
             if (PyList_Append(names, key) < 0) {
-                Py_DECREF(names);
-                return NULL;
+                err = -1;
+                break;
             }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            Py_DECREF(names);
+            return NULL;
         }
     }
 
@@ -703,11 +711,18 @@ framelocalsproxy_values_lock_held(PyFrameObject *frame)
         Py_ssize_t j = 0;
         PyObject *key = NULL;
         PyObject *value = NULL;
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(frame->f_extra_locals);
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
             if (PyList_Append(values, value) < 0) {
-                Py_DECREF(values);
-                return NULL;
+                err = -1;
+                break;
             }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            Py_DECREF(values);
+            return NULL;
         }
     }
 
@@ -754,15 +769,20 @@ framelocalsproxy_items_lock_held(PyFrameObject *frame)
         Py_ssize_t j = 0;
         PyObject *key = NULL;
         PyObject *value = NULL;
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(frame->f_extra_locals);
         while (PyDict_Next(frame->f_extra_locals, &j, &key, &value)) {
             PyObject *pair = _PyTuple_FromPair(key, value);
-            if (pair == NULL) {
-                goto error;
+            if (pair == NULL
+                || _PyList_AppendTakeRef((PyListObject *)items, pair) < 0)
+            {
+                err = -1;
+                break;
             }
-
-            if (_PyList_AppendTakeRef((PyListObject *)items, pair) < 0) {
-                goto error;
-            }
+        }
+        Py_END_CRITICAL_SECTION();
+        if (err < 0) {
+            goto error;
         }
     }
 
@@ -813,8 +833,10 @@ framelocalsproxy_length(PyObject *self)
 }
 
 static int
-framelocalsproxy_contains_lock_held(PyFrameObject *frame, PyObject *key)
+framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+
     int i = framelocalsproxy_getkeyindex(frame, key, true, NULL);
     if (i == -2) {
         return -1;
@@ -823,22 +845,14 @@ framelocalsproxy_contains_lock_held(PyFrameObject *frame, PyObject *key)
         return 1;
     }
 
-    PyObject *extra = frame->f_extra_locals;
+    PyObject *extra = framelocalsproxy_get_extra(frame, false);
     if (extra != NULL) {
-        return PyDict_Contains(extra, key);
+        int result = PyDict_Contains(extra, key);
+        Py_DECREF(extra);
+        return result;
     }
 
     return 0;
-}
-
-static int
-framelocalsproxy_contains(PyObject *self, PyObject *key)
-{
-    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    int result;
-    FRAMELOCALSPROXY_LOCKED(frame,
-        framelocalsproxy_contains_lock_held(frame, key), result);
-    return result;
 }
 
 static PyObject* framelocalsproxy___contains__(PyObject *self, PyObject *key)
@@ -920,17 +934,6 @@ framelocalsproxy_setdefault(PyObject* self, PyObject *const *args, Py_ssize_t na
     return result;
 }
 
-// Returns 1 if `key` was popped into `*result`, 0 if not found, -1 on error.
-static int
-framelocalsproxy_pop_lock_held(PyFrameObject *frame, PyObject *key,
-                               PyObject **result)
-{
-    if (frame->f_extra_locals == NULL) {
-        return 0;
-    }
-    return PyDict_Pop(frame->f_extra_locals, key, result);
-}
-
 static PyObject*
 framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
 {
@@ -958,19 +961,32 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     PyObject *result = NULL;
-    int found;
-    FRAMELOCALSPROXY_LOCKED(frame,
-        framelocalsproxy_pop_lock_held(frame, key, &result), found);
+
+    PyObject *extra = framelocalsproxy_get_extra(frame, false);
+    if (extra == NULL) {
+        if (default_value != NULL) {
+            return Py_XNewRef(default_value);
+        } else {
+            _PyErr_SetKeyError(key);
+            return NULL;
+        }
+    }
+
+    int found = PyDict_Pop(extra, key, &result);
+    Py_DECREF(extra);
     if (found < 0) {
         return NULL;
     }
-    if (found == 0) {
+
+    if (result == NULL) {
         if (default_value != NULL) {
             return Py_XNewRef(default_value);
+        } else {
+            _PyErr_SetKeyError(key);
+            return NULL;
         }
-        _PyErr_SetKeyError(key);
-        return NULL;
     }
+
     return result;
 }
 
