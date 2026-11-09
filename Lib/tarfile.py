@@ -3172,6 +3172,10 @@ open = TarFile.open
 
 def main():
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description)
