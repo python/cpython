@@ -534,14 +534,16 @@ groupby_next_lock_held(PyObject *op)
     PyObject *grouper;
     groupbyobject *gbo = groupbyobject_CAST(op);
 
+    PyObject *key = NULL;
     gbo->currgrouper = NULL;
     /* skip to next iteration group */
     for (;;) {
-        if (gbo->currkey == NULL)
+        if (gbo->currkey == NULL) {
             /* pass */;
-        else if (gbo->tgtkey == NULL)
+        } else if (gbo->tgtkey == NULL) {
+            key = Py_NewRef(gbo->currkey);
             break;
-        else {
+        } else {
             /* A user-defined __eq__ can re-enter groupby and advance the iterator,
                mutating gbo->tgtkey / gbo->currkey while we are comparing them.
                Take local snapshots and hold strong references so INCREF/DECREF
@@ -553,25 +555,30 @@ groupby_next_lock_held(PyObject *op)
             Py_INCREF(currkey);
             int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
             Py_DECREF(tgtkey);
-            Py_DECREF(currkey);
 
-            if (rcmp == -1)
+            if (rcmp == -1) {
+                Py_DECREF(currkey);
                 return NULL;
-            else if (rcmp == 0)
+            } else if (rcmp == 0) {
+                key = currkey;
                 break;
+            }
+            Py_DECREF(currkey);
         }
 
-        if (groupby_step(gbo) < 0)
+        if (groupby_step(gbo) < 0) {
             return NULL;
+        }
     }
-    Py_INCREF(gbo->currkey);
-    Py_XSETREF(gbo->tgtkey, gbo->currkey);
+    Py_XSETREF(gbo->tgtkey, Py_NewRef(key));
 
-    grouper = _grouper_create(gbo, gbo->tgtkey);
-    if (grouper == NULL)
+    grouper = _grouper_create(gbo, key);
+    if (grouper == NULL) {
+        Py_DECREF(key);
         return NULL;
+    }
 
-    return _PyTuple_FromPairSteal(Py_NewRef(gbo->currkey), grouper);
+    return _PyTuple_FromPairSteal(key, grouper);
 }
 
 static PyObject *
@@ -676,8 +683,10 @@ _grouper_next_lock_held(PyObject *op)
     PyObject *r;
     int rcmp;
 
-    if (gbo->currgrouper != igo)
+    if (gbo->currgrouper != igo) {
         return NULL;
+    }
+
     if (gbo->currvalue == NULL) {
         if (groupby_step(gbo) < 0)
             return NULL;
@@ -694,9 +703,10 @@ _grouper_next_lock_held(PyObject *op)
     Py_DECREF(tgtkey);
     Py_DECREF(currkey);
 
-    if (rcmp <= 0)
+    if (rcmp <= 0) {
         /* got any error or current group is end */
         return NULL;
+    }
 
     r = gbo->currvalue;
     gbo->currvalue = NULL;

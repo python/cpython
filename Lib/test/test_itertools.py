@@ -15,6 +15,7 @@ from functools import reduce
 import sys
 import struct
 import threading
+import time
 import gc
 
 maxsize = support.MAX_Py_ssize_t
@@ -789,27 +790,32 @@ class TestBasicOps(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_groupby_concurrent_next_does_not_crash(self):
         # regression test for gh-150791
-        # Concurrent next calls on a shared groupby object should
-        # not race / corrupt state.
+        # Concurrent next calls on a shared groupby object and its groupers
+        # should not crash, even when __eq__ suspends the critical section.
         class K:
             __slots__ = ("v",)
-            def __init__(self, v):
+            def __init__(self, v: int) -> None:
                 self.v = v
-            def __eq__(self, other):
+            def __eq__(self, other: object) -> bool:
                 if not isinstance(other, K):
                     return NotImplemented
+                # Blocking detaches the thread state, which suspends the
+                # critical section held on the groupby object.
+                time.sleep(0)
                 return self.v == other.v
-            def __hash__(self):
+            def __hash__(self) -> int:
                 return hash(self.v)
 
-        keys = [K(i) for i in range(5_000)]
-        g = itertools.groupby(keys)
-        errors = []
+        keys: list[K] = [K(i // 3) for i in range(5_000)]
+        g: groupby = itertools.groupby(keys)
+        errors: list[Exception] = []
 
-        def consume():
+        def consume() -> None:
             try:
                 while True:
-                    _, _ = next(g)
+                    _, grp = next(g)
+                    for _ in grp:
+                        pass
             except StopIteration:
                 pass
             except Exception as e:
