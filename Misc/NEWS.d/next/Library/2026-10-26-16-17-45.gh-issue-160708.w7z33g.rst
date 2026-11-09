@@ -1,0 +1,3 @@
+Fix out-of-bounds memory access in :func:`bool` on :mod:`ctypes` simple
+objects enlarged by :func:`ctypes.resize`, and when passing such objects to
+a foreign function.

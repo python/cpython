@@ -1225,8 +1225,8 @@ the underlying generator function:
    If the asynchronous generator function then exits gracefully, is already
    closed, or raises :exc:`GeneratorExit` (by not catching the exception),
    then the returned awaitable will raise a :exc:`StopIteration` exception.
-   Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.
+   Awaitables returned by subsequent calls to :meth:`~agen.__anext__`
+   or :meth:`~agen.asend` will raise a :exc:`StopAsyncIteration` exception.
 
    If the asynchronous generator yields a value, a :exc:`RuntimeError` is
    raised by the awaitable.
@@ -2129,12 +2129,22 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased.
+   rest lowercased. For example:
+
+   .. doctest::
+
+      >>> 'PYTHON IS AMAZING'.capitalize()
+      'Python is amazing'
+      >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
+      'ǋemačka starts with a non-ascii digraph'
+
+   See also :meth:`title`.
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
       This means that characters like digraphs will only have their first
       letter capitalized, instead of the full character.
+
 
 .. method:: str.casefold()
 
@@ -2303,19 +2313,19 @@ expression support in the :mod:`re` module).
 
    Perform a string formatting operation.  The string on which this method is
    called can contain literal text or replacement fields delimited by braces
-   ``{}``.  Each replacement field contains either the numeric index of a
-   positional argument, or the name of a keyword argument.  Returns a copy of
+   ``{}``.  Each replacement field refers to a positional argument (numbered
+   explicitly or automatically) or a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
    the corresponding argument. For example:
 
    .. doctest::
 
-      >>> "The sum of 1 + 2 is {0}".format(1+2)
-      'The sum of 1 + 2 is 3'
-      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      >>> "The sum of {} + {} is {}".format(1, 2, 1+2)
       'The sum of 1 + 2 is 3'
       >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
       'Nobody expects the Spanish Inquisition!'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -3137,7 +3147,7 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
-   See also :meth:`istitle`.
+   See also :meth:`istitle` and :meth:`capitalize`.
 
 
 .. method:: str.translate(table, /)
@@ -3170,7 +3180,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with all the cased characters [4]_ converted to
    uppercase.  Note that ``s.upper().isupper()`` might be ``False`` if ``s``
-   contains uncased characters or if the Unicode category of the resulting
+   contains no cased characters or if the Unicode category of the resulting
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
@@ -3527,9 +3537,8 @@ The conversion types are:
 |            | character in the result.                            |       |
 +------------+-----------------------------------------------------+-------+
 
-For floating-point formats, the result should be correctly rounded to a given
-precision ``p`` of digits after the decimal point.  The rounding mode matches
-that of the :func:`round` builtin.
+For floating-point formats, the result should be correctly rounded to the
+specified precision.  The rounding mode matches that of the :func:`round` builtin.
 
 Notes:
 
@@ -3780,8 +3789,8 @@ objects.
 
       If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
 
-      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
-      will be set to null bytes.
+      If the :class:`bytearray` needs to grow, all new bytes will be set to null
+      bytes.
 
 
       This is equivalent to:
@@ -5616,9 +5625,8 @@ Note, the non-operator versions of the :meth:`~set.update`,
 argument.
 
 Note, the *elem* argument to the :meth:`~object.__contains__`,
-:meth:`~set.remove`, and
-:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
-frozenset, a temporary one is created from *elem*.
+:meth:`~set.remove`, and :meth:`~set.discard` methods may be a set.  In this case,
+an equivalent frozenset is searched for.
 
 Sets and frozensets are :ref:`generic <generics>` over the type of their elements.
 
@@ -5668,7 +5676,7 @@ can be used interchangeably to index the same dictionary entry.
 
    * Use a comma-separated list of ``key: value`` pairs within braces:
      ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
-   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use a dict comprehension: ``{x: x ** 2 for x in range(10)}``
    * Use the type constructor: ``dict()``,
      ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
@@ -5879,9 +5887,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
-      An equality comparison between one ``dict.values()`` view and another
-      will always return ``False``. This also applies when comparing
-      ``dict.values()`` to itself::
+      An equality comparison between two distinct ``dict.values()`` views
+      will always return ``False``, even for views of the same dictionary::
 
          >>> d = {'a': 1}
          >>> d.values() == d.values()
@@ -5920,8 +5927,9 @@ can be used interchangeably to index the same dictionary entry.
 
 
    .. seealso::
-      :class:`frozendict` and :class:`types.MappingProxyType` can be used to
-      create a read-only view of a :class:`dict`.
+      :class:`types.MappingProxyType` can be used to create a read-only view
+      of a :class:`dict`.  :class:`frozendict` is an immutable version of
+      :class:`dict`.
 
 .. seealso::
 
@@ -6074,8 +6082,7 @@ Frozen dictionaries
 
       Similar to :meth:`dict.fromkeys`, but call again the type constructor
       with an initialized :class:`frozendict` if the type is a
-      :class:`frozendict` subclass or if the constructor returned a
-      :class:`frozendict`.
+      :class:`frozendict` subclass.
 
    .. versionadded:: 3.15
 
@@ -6524,8 +6531,8 @@ The user-exposed type for the union object can be accessed from
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
-   override it:
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, it may override
+   the default behavior of creating a union:
 
    .. doctest::
 

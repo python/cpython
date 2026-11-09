@@ -1,0 +1,4 @@
+:class:`urllib.request.HTTPDigestAuthHandler` and
+:class:`urllib.request.ProxyDigestAuthHandler` now parse all
+``WWW-Authenticate`` (or ``Proxy-Authenticate``) headers and accept
+multiple challenges per header: the first Digest challenge is used.
