@@ -27,13 +27,13 @@ def dist_test_args(context):
 
 @_shared.subdir("wasi_build_path")
 def test(context, _working_dir):
-    match context.speed:
+    match context.ci_mode:
         case "fast":
             make_target = "test"
         case "slow":
             make_target = "buildbottest"
         case _:
-            raise ValueError(f"Unknown speed {context.speed}")
+            raise ValueError(f"Unknown CI mode {context.ci_mode}")
     command = ["make", make_target]
     match context.target:
         case "archive":

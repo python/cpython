@@ -205,10 +205,10 @@ After building, you can run the CI tests with:
 python3 Platforms/WASI test
 ```
 
-The `--speed` flag can be:
+The mutually exclusive CI flags to select which tests to run:
 
-- `fast` (the default): `make test`
-- `slow`: `make buildbottest`
+- `--fast-ci` (the default): `make test`
+- `--slow-ci`: `make buildbottest`
 
 The `--target` flag selects the files to test:
 
@@ -219,7 +219,7 @@ The `--target` flag selects the files to test:
 To thoroughly test the contents of the release archive, use:
 
 ```shell
-python3 Platforms/WASI test --speed slow --target archive
+python3 Platforms/WASI test --slow-ci --target archive
 ```
 
 This requires an archive created by `package` or `release`. It deletes the

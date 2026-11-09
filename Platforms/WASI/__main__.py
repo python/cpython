@@ -79,11 +79,21 @@ def main():
         "release", help="Build and package for a release"
     )
     test = subcommands.add_parser("test", help="Run the tests")
-    test.add_argument(
-        "--speed",
-        choices={"fast", "slow"},
+    ci_mode = test.add_mutually_exclusive_group()
+    ci_mode.add_argument(
+        "--fast-ci",
+        action="store_const",
+        dest="ci_mode",
+        const="fast",
         default="fast",
-        help="Run `make test` (fast, the default) or `make buildbottest` (slow)",
+        help="Run `make test` (the default)",
+    )
+    ci_mode.add_argument(
+        "--slow-ci",
+        action="store_const",
+        dest="ci_mode",
+        const="slow",
+        help="Run `make buildbottest`",
     )
     test.add_argument(
         "--target",
