@@ -19,6 +19,10 @@
 #include <zstd.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 /* ============================================================================
  * CONSTANTS FOR BINARY FORMAT SIZES
  * ============================================================================ */
@@ -28,6 +32,9 @@
 
 /* Progress callback frequency */
 #define PROGRESS_CALLBACK_INTERVAL 1000
+
+/* Cap per-batch RLE samples to bound the timestamp list (gh-151378) */
+#define MAX_RLE_BATCH_SAMPLES 8192
 
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
@@ -315,6 +322,7 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
             return -1;
         }
 
+        _Py_MSAN_UNPOISON(output.dst, output.pos);
         total_output += output.pos;
     }
 
@@ -357,7 +365,7 @@ static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
     if (reader_validate_count("string", reader->strings_count,
-                              file_size - reader->string_table_offset,
+                              file_size - (size_t)reader->string_table_offset,
                               MIN_STRING_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -368,7 +376,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
         return -1;
     }
 
-    size_t offset = reader->string_table_offset;
+    size_t offset = (size_t)reader->string_table_offset;
     for (uint32_t i = 0; i < reader->strings_count; i++) {
         size_t prev_offset = offset;
         uint32_t str_len = decode_varint_u32(data, &offset, file_size);
@@ -403,7 +411,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
 #endif
 
     if (reader_validate_count("frame", reader->frames_count,
-                              file_size - reader->frame_table_offset,
+                              file_size - (size_t)reader->frame_table_offset,
                               MIN_FRAME_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -415,7 +423,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 
-    size_t offset = reader->frame_table_offset;
+    size_t offset = (size_t)reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
         FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
@@ -686,7 +694,7 @@ binary_reader_open(PyObject *path)
 #endif
     } else {
         reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
-        reader->sample_data_size = reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
+        reader->sample_data_size = (size_t)reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
     }
 
     /* Parse string and frame tables */
@@ -863,7 +871,7 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -908,7 +916,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
             return -1;
         }
     }
-    ts->current_stack_depth = final_depth;
+    ts->current_stack_depth = (size_t)final_depth;
     return 0;
 }
 
@@ -1078,21 +1086,6 @@ emit_sample(RemoteDebuggingState *state, PyObject *collector,
     return 0;
 }
 
-/* Helper to trim timestamp list and emit batch. Returns 0 on success, -1 on error. */
-static int
-emit_batch(RemoteDebuggingState *state, PyObject *collector,
-           uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
-           const uint32_t *frame_indices, size_t stack_depth,
-           BinaryReader *reader, PyObject *timestamps_list, Py_ssize_t actual_size)
-{
-    /* Trim list to actual size */
-    if (PyList_SetSlice(timestamps_list, actual_size, PyList_GET_SIZE(timestamps_list), NULL) < 0) {
-        return -1;
-    }
-    return emit_sample(state, collector, thread_id, interpreter_id, status,
-                       frame_indices, stack_depth, reader, timestamps_list);
-}
-
 /* Helper to invoke progress callback, returns -1 on error */
 static inline int
 invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint64_t total)
@@ -1221,17 +1214,18 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                 ts->prev_timestamp += delta;
 
                 /* Start new batch on first sample or status change */
-                if (i == 0 || status != batch_status) {
+                if (i == 0 || status != batch_status
+                        || batch_idx >= MAX_RLE_BATCH_SAMPLES) {
                     if (timestamps_list) {
-                        int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                            batch_status, ts->current_stack, ts->current_stack_depth,
-                                            reader, timestamps_list, batch_idx);
+                        int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                             batch_status, ts->current_stack, ts->current_stack_depth,
+                                             reader, timestamps_list);
                         Py_DECREF(timestamps_list);
                         if (rc < 0) {
                             return -1;
                         }
                     }
-                    timestamps_list = PyList_New(count - i);
+                    timestamps_list = PyList_New(0);
                     if (!timestamps_list) {
                         return -1;
                     }
@@ -1244,14 +1238,20 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
                     Py_DECREF(timestamps_list);
                     return -1;
                 }
-                PyList_SET_ITEM(timestamps_list, batch_idx++, ts_obj);
+                int append_rc = PyList_Append(timestamps_list, ts_obj);
+                Py_DECREF(ts_obj);
+                if (append_rc < 0) {
+                    Py_DECREF(timestamps_list);
+                    return -1;
+                }
+                batch_idx++;
             }
 
             /* Emit final batch */
             if (timestamps_list) {
-                int rc = emit_batch(state, collector, thread_id, interpreter_id,
-                                    batch_status, ts->current_stack, ts->current_stack_depth,
-                                    reader, timestamps_list, batch_idx);
+                int rc = emit_sample(state, collector, thread_id, interpreter_id,
+                                     batch_status, ts->current_stack, ts->current_stack_depth,
+                                     reader, timestamps_list);
                 Py_DECREF(timestamps_list);
                 if (rc < 0) {
                     return -1;
@@ -1262,7 +1262,7 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             reader->stats.total_samples += count;
 
             /* Progress callback after batch */
-            if (replayed % PROGRESS_CALLBACK_INTERVAL < count) {
+            if ((uint64_t)replayed % PROGRESS_CALLBACK_INTERVAL < (uint64_t)count) {
                 if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
                     return -1;
                 }

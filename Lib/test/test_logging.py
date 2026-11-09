@@ -6726,6 +6726,77 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.close()
 
 class TimedRotatingFileHandlerTest(BaseFileTest):
+    def assert_rollover_contents(self, when, timestamps, expected, **kwargs):
+        with tempfile.TemporaryDirectory() as dirname:
+            filename = os.path.join(dirname, 'app.log')
+            now = [timestamps[0]]
+            with patch('time.time', lambda: now[0]):
+                handler = logging.handlers.TimedRotatingFileHandler(
+                    filename, when=when, delay=True, encoding='utf-8', **kwargs)
+                try:
+                    for i, timestamp in enumerate(timestamps):
+                        now[0] = timestamp
+                        handler.emit(logging.makeLogRecord({'msg': str(i)}))
+                finally:
+                    handler.close()
+            actual = {}
+            for name in os.listdir(dirname):
+                with open(os.path.join(dirname, name), encoding='utf-8') as f:
+                    actual[name.removeprefix('app.log')] = f.read().splitlines()
+            self.assertEqual(actual, expected)
+
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_rollover_fixed_interval_dst(self):
+        DT = datetime.datetime
+        cases = (
+            ('H', DT(2026, 3, 8, 1, 30), 3),
+            ('H', DT(2026, 11, 1, 1, 30), 2),
+            ('D', DT(2026, 3, 7, 23, 30), 3),
+            ('D', DT(2026, 11, 1, 0, 30), 2),
+        )
+        for when, start, count in cases:
+            interval = 3600 if when == 'H' else 86400
+            timestamps = [start.timestamp() + i * interval for i in range(count)]
+            suffix = '.%Y-%m-%d_%H' if when == 'H' else '.%Y-%m-%d'
+            for utc in (False, True):
+                with self.subTest(when=when, start=start, utc=utc):
+                    convert = time.gmtime if utc else time.localtime
+                    expected = {
+                        time.strftime(suffix, convert(timestamp)): [str(i)]
+                        for i, timestamp in enumerate(timestamps[:-1])
+                    }
+                    expected[''] = [str(count - 1)]
+                    self.assert_rollover_contents(
+                        when, timestamps, expected, utc=utc)
+
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_rollover_delayed_dst(self):
+        DT = datetime.datetime
+        cases = (
+            ('MIDNIGHT', None,
+             [DT(2026, 10, day, hour).timestamp()
+              for day in (30, 31) for hour in (9, 18)] +
+             [DT(2026, 11, day, hour).timestamp()
+              for day in (1, 2, 3) for hour in (9, 18)],
+             {'.2026-10-30': ['0', '1'], '.2026-10-31': ['2', '3'],
+              '.2026-11-01': ['4', '5'], '.2026-11-02': ['6', '7'],
+              '': ['8', '9']}),
+            ('W6', None,
+             [DT(2026, 10, 23, 9).timestamp(),
+              DT(2026, 11, 1, 9).timestamp(),
+              DT(2026, 11, 2, 9).timestamp()],
+             {'.2026-10-19': ['0'], '.2026-10-26': ['1'], '': ['2']}),
+            ('MIDNIGHT', datetime.time(23, 30),
+             [DT(2026, month, 1, 12).timestamp() for month in (3, 4, 10, 12)],
+             {'.2026-02-28': ['0'], '.2026-03-31': ['1'],
+              '.2026-09-30': ['2'], '': ['3']}),
+        )
+        for when, at_time, timestamps, expected in cases:
+            for utc in (False, True):
+                with self.subTest(when=when, atTime=at_time, utc=utc):
+                    self.assert_rollover_contents(
+                        when, timestamps, expected, atTime=at_time, utc=utc)
+
     @unittest.skipIf(support.is_wasi, "WASI does not have /dev/null.")
     def test_should_not_rollover(self):
         # See bpo-45401. Should only ever rollover regular files
@@ -6901,6 +6972,75 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
     def test_rollover_at_weekday(self):
         self.test_rollover_at_midnight(weekly=True)
+
+    def _make_fake_time_handler(self, now, when='S', **kwargs):
+        dirname = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dirname)
+        fn = os.path.join(dirname, 'test.log')
+        with patch('time.time', lambda: now[0]):
+            fh = logging.handlers.TimedRotatingFileHandler(
+                fn, when=when, encoding='utf-8', delay=True, **kwargs)
+        self.addCleanup(fh.close)
+        return fh
+
+    def test_rollover_after_failed_rollover(self):
+        for target in 'os.remove', '_open':
+            with self.subTest(target=target):
+                now = [1_000_000_000]
+                fh = self._make_fake_time_handler(now, backupCount=1)
+                fn = fh.baseFilename
+                emit = lambda msg: fh.emit(logging.makeLogRecord({'msg': msg}))
+                with patch('time.time', lambda: now[0]):
+                    for msg in 'a', 'b':
+                        now[0] += 2
+                        emit(msg)
+                    now[0] += 2
+                    if target == '_open':
+                        failure = patch.object(fh, '_open', side_effect=OSError)
+                        fh.delay = False
+                    else:
+                        failure = patch('os.remove', side_effect=OSError)
+                    with failure as failed, support.captured_stderr():
+                        emit('c')
+                    failed.assert_called_once()
+                    self.assertGreater(fh.rolloverAt, now[0])
+                    fh.delay = True
+                    for msg in 'd', 'e':
+                        now[0] += 2
+                        emit(msg)
+                fh.close()
+                with open(fn, encoding='utf-8') as f:
+                    self.assertEqual(f.read(), 'e\n')
+                backups = [f for f in os.listdir(os.path.dirname(fn))
+                           if f != 'test.log']
+                self.assertEqual(len(backups), 1)
+
+    def test_rollover_existing_backup(self):
+        now = [1_000_000_000]
+        fh = self._make_fake_time_handler(now)
+        fn = fh.baseFilename
+        with patch('time.time', lambda: now[0]):
+            fh.emit(logging.makeLogRecord({'msg': 'a'}))
+            t = fh.rolloverAt - fh.interval
+            dfn = fh.rotation_filename(
+                fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
+            with open(dfn, 'w', encoding='utf-8') as f:
+                f.write('existing\n')
+            now[0] += 2
+            fh.emit(logging.makeLogRecord({'msg': 'b'}))
+            self.assertGreater(fh.rolloverAt, now[0])
+            t = fh.rolloverAt - fh.interval
+            next_dfn = fh.rotation_filename(
+                fn + '.' + time.strftime(fh.suffix, time.localtime(t)))
+            now[0] += 2
+            fh.emit(logging.makeLogRecord({'msg': 'c'}))
+        fh.close()
+        with open(dfn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'existing\n')
+        with open(next_dfn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'a\nb\n')
+        with open(fn, encoding='utf-8') as f:
+            self.assertEqual(f.read(), 'c\n')
 
     def test_invalid(self):
         assertRaises = self.assertRaises
@@ -7587,13 +7727,11 @@ class MiscTestCase(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__and__date__(self):
-        msg = "is deprecated and slated for removal in Python 3.20"
-        for attr in ("__version__", "__date__"):
-            with self.subTest(attr=attr):
-                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
-                    getattr(logging, attr)
-                self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, logging, "__version__", "__date__", "__author__",
+            remove=(3, 20),
+        )
 
 
 # Set the locale to the platform-dependent default.  I have no idea

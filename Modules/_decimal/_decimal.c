@@ -348,30 +348,6 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Underflow",
 };
 
-static const char *invalid_rounding_err =
-"valid values for rounding are:\n\
-  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n\
-   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n\
-   ROUND_05UP]";
-
-static const char *invalid_signals_err =
-"valid values for signals are:\n\
-  [InvalidOperation, FloatOperation, DivisionByZero,\n\
-   Overflow, Underflow, Subnormal, Inexact, Rounded,\n\
-   Clamped]";
-
-#ifdef EXTRA_FUNCTIONALITY
-static const char *invalid_flags_err =
-"valid values for _flags or _traps are:\n\
-  signals:\n\
-    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n\
-     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n\
-     DecClamped]\n\
-  conditions which trigger DecIEEEInvalidOperation:\n\
-    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n\
-     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]";
-#endif
-
 static int
 value_error_int(const char *mesg)
 {
@@ -442,7 +418,11 @@ exception_as_flag(decimal_state *state, PyObject *ex)
         }
     }
 
-    PyErr_SetString(PyExc_KeyError, invalid_signals_err);
+    PyErr_SetString(PyExc_KeyError,
+        "valid values for signals are:\n"
+        "  [InvalidOperation, FloatOperation, DivisionByZero,\n"
+        "   Overflow, Underflow, Subnormal, Inexact, Rounded,\n"
+        "   Clamped]");
     return DEC_INVALID_SIGNALS;
 }
 
@@ -601,7 +581,15 @@ long_as_flags(PyObject *v)
         return DEC_ERR_OCCURRED;
     }
     if (x < 0 || x > (long)MPD_Max_status) {
-        PyErr_SetString(PyExc_TypeError, invalid_flags_err);
+        PyErr_SetString(PyExc_TypeError,
+            "valid values for _flags or _traps are:\n"
+            "  signals:\n"
+            "    [DecIEEEInvalidOperation, DecFloatOperation, DecDivisionByZero,\n"
+            "     DecOverflow, DecUnderflow, DecSubnormal, DecInexact, DecRounded,\n"
+            "     DecClamped]\n"
+            "  conditions which trigger DecIEEEInvalidOperation:\n"
+            "    [DecInvalidOperation, DecConversionSyntax, DecDivisionImpossible,\n"
+            "     DecDivisionUndefined, DecFpuError, DecInvalidContext, DecMallocError]");
         return DEC_INVALID_SIGNALS;
     }
 
@@ -657,7 +645,11 @@ getround(decimal_state *state, PyObject *v)
         }
     }
 
-    return type_error_int(invalid_rounding_err);
+    return type_error_int(
+        "valid values for rounding are:\n"
+        "  [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n"
+        "   ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,\n"
+        "   ROUND_05UP]");
 }
 
 
@@ -671,7 +663,7 @@ getround(decimal_state *state, PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
-static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
+static const char *const INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
 
 static int
 signaldict_init(PyObject *self,
@@ -1170,6 +1162,9 @@ context_settraps_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {
@@ -1236,6 +1231,9 @@ context_setstatus_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {
@@ -2005,6 +2003,13 @@ current_context(decimal_state *state)
     }
 
     if (tl_context != NULL) {
+        if (!PyDecContext_Check(state, tl_context)) {
+            PyErr_Format(PyExc_TypeError,
+                         "current decimal context must be a Context "
+                         "instance, got %T", tl_context);
+            Py_DECREF(tl_context);
+            return NULL;
+        }
         return tl_context;
     }
 
@@ -3321,6 +3326,7 @@ PyDec_FromObject(PyObject *v, PyObject *context)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 _decimal.Decimal.__new__ as dec_new
 
@@ -3337,7 +3343,7 @@ trap is active.
 
 static PyObject *
 dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context)
-/*[clinic end generated code: output=35f48a40c65625ba input=5f8a0892d3fcef80]*/
+/*[clinic end generated code: output=35f48a40c65625ba input=0e5ca99183562cd9]*/
 {
     decimal_state *state = get_module_state_by_def(type);
     CONTEXT_CHECK_VA(state, context);
@@ -6198,6 +6204,7 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_methods, dec_methods},
     {Py_tp_getset, dec_getsets},
     {Py_tp_new, dec_new},
+    {Py_tp_vectorcall, dec_vectorcall},
 
     // Number protocol
     {Py_nb_add, nm_mpd_qadd},
@@ -6797,7 +6804,7 @@ _decimal.Context.power
 Compute a**b.
 
 If 'a' is negative, then 'b' must be integral. The result will be
-inexact unless 'a' is integral and the result is finite and can be
+inexact unless 'b' is integral and the result is finite and can be
 expressed exactly in 'precision' digits.  In the Python version the
 result is always correctly rounded, in the C version the result is
 almost always correctly rounded.
@@ -6815,7 +6822,7 @@ restrictions hold:
 static PyObject *
 _decimal_Context_power_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *base, PyObject *exp, PyObject *mod)
-/*[clinic end generated code: output=d06d40c37cdd69dc input=178a254468ec189b]*/
+/*[clinic end generated code: output=d06d40c37cdd69dc input=660210a6607ca4b0]*/
 {
     PyObject *a, *b, *c = NULL;
     PyObject *result;
@@ -7075,13 +7082,19 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Context.canonical = _decimal.Context.is_normal
 
-Return a new instance of x.
+Returns the same Decimal object.
+
+As we do not have different encodings for the same number, the
+received object already is in its canonical form.
+
+>>> ExtendedContext.canonical(Decimal('2.50'))
+Decimal('2.50')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_canonical_impl(PyObject *context, PyTypeObject *cls,
                                 PyObject *x)
-/*[clinic end generated code: output=f213e433e2032e5e input=025ecb106ac15bff]*/
+/*[clinic end generated code: output=f213e433e2032e5e input=d9f19ee3e7ed9433]*/
 {
     decimal_state *state = PyType_GetModuleState(cls);
     if (!PyDec_Check(state, x)) {
@@ -7756,6 +7769,104 @@ error:
     return NULL;
 }
 
+PyDoc_STRVAR(libmpdec_version_info__doc__,
+"decimal.libmpdec_version_info\n\
+\n\
+libmpdec version information as a named tuple.");
+
+static PyStructSequence_Field libmpdec_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"micro", "Micro release number"},
+    {0}
+};
+
+static PyStructSequence_Desc libmpdec_version_info_desc = {
+    "decimal.libmpdec_version_info",    /* name */
+    libmpdec_version_info__doc__,       /* doc */
+    libmpdec_version_info_fields,       /* fields */
+    3
+};
+
+static PyObject *
+make_libmpdec_version_info(PyTypeObject *type, int major, int minor, int micro)
+{
+    PyObject *version;
+    int pos = 0;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+    SetItem(PyLong_FromLong(micro))
+#undef SetItem
+
+    return version;
+}
+
+static PyObject *
+parse_libmpdec_version_info(PyTypeObject *type, const char *version)
+{
+    int major, minor, micro;
+    if (sscanf(version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unexpected libmpdec version string %s", version);
+        return NULL;
+    }
+    return make_libmpdec_version_info(type, major, minor, micro);
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    const char *version = mpd_version();
+    if (PyModule_AddStringConstant(m, "LIBMPDEC_VERSION", MPD_VERSION) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "libmpdec_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "__libmpdec_version__", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&libmpdec_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "LIBMPDEC_VERSION_INFO",
+            make_libmpdec_version_info(version_type, MPD_MAJOR_VERSION,
+                                       MPD_MINOR_VERSION,
+                                       MPD_MICRO_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "libmpdec_version_info",
+            parse_libmpdec_version_info(version_type, version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 static int minalloc_is_set = 0;
 
 static int
@@ -8004,7 +8115,7 @@ _decimal_exec(PyObject *m)
 
     /* Add specification version number */
     CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
-    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
+    CHECK_INT(add_version_constants(m));
 
     return 0;
 

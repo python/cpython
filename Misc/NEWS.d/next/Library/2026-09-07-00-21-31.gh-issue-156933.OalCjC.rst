@@ -1,2 +1,0 @@
-Fix incorrect integer return values from :mod:`ctypes` callbacks on some
-platforms, such as s390x.

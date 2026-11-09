@@ -562,6 +562,10 @@ class EventTests(BaseTestCase):
         for r, dt in results2:
             self.assertTrue(r)
 
+    def test_nan_timeout(self):
+        evt = self.eventtype()
+        self.assertRaises(ValueError, evt.wait, float('nan'))
+
     # Use private attributes (event._cond._waiters)
     @support.cpython_only
     def test_set_and_clear(self):
@@ -764,6 +768,14 @@ class ConditionTests(BaseTestCase):
             # This makes it hard to verify the result value.
             # In practice, this implementation has no spurious wakeups.
             self.assertFalse(result)
+
+    def test_nan_timeout(self):
+        cond = self.condtype()
+        nan = float('nan')
+        with cond:
+            self.assertRaises(ValueError, cond.wait, nan)
+            self.assertRaises(ValueError, cond.wait_for, lambda: False, nan)
+            self.assertEqual(len(cond._waiters), 0)
 
     def test_waitfor(self):
         cond = self.condtype()

@@ -1,3 +1,0 @@
-Fix IDLE crash at startup when the user configuration contains an invalid key
-binding, such as ``<Alt-Key-up>`` instead of ``<Alt-Key-Up>``.  The invalid
-binding is now ignored with a warning.

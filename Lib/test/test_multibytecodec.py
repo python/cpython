@@ -39,9 +39,25 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertEqual(str(b'', enc), '')
             self.assertEqual(''.encode(enc), b'')
 
+    def test_hz_tilde_at_buffer_boundary(self):
+        text = 'a' + '中a' * 6 + '~'
+        self.assertEqual(text.encode('hz').decode('hz'), text)
+
     def test_str_decode(self):
         for enc in ALL_CJKENCODINGS:
             self.assertEqual('abcd'.encode(enc), b'abcd')
+
+    def test_nonbmp_pair_modifier(self):
+        cases = [('big5hkscs', '\u00ca', '\u0304')]
+        cases.extend((encoding, '\u304b', '\u309a') for encoding in (
+            'euc_jis_2004', 'euc_jisx0213', 'shift_jis_2004', 'shift_jisx0213',
+            'iso2022_jp_2004', 'iso2022_jp_3'))
+        for encoding, base, modifier in cases:
+            with self.subTest(encoding=encoding):
+                pair = base + modifier
+                self.assertEqual(pair.encode(encoding).decode(encoding), pair)
+                nonbmp = base + chr(0x10000 + ord(modifier))
+                self.assertRaises(UnicodeEncodeError, nonbmp.encode, encoding)
 
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
@@ -78,6 +94,12 @@ class Test_MultibyteCodec(unittest.TestCase):
             self.assertRaises(TypeError, codecs.getdecoder(enc), "")
 
 class Test_IncrementalEncoder(unittest.TestCase):
+
+    def test_iso2022_kr_reset(self):
+        encoder = codecs.getincrementalencoder('iso2022_kr')()
+        encoder.encode('가')
+        encoder.reset()
+        self.assertEqual(encoder.encode('가', final=True), '가'.encode('iso2022_kr'))
 
     def test_stateless(self):
         # cp949 encoder isn't stateful at all.
@@ -230,6 +252,19 @@ class Test_IncrementalEncoder(unittest.TestCase):
 
 class Test_IncrementalDecoder(unittest.TestCase):
 
+    def test_iso2022_split_escape(self):
+        raw = b'\x1b$0000000B'
+        decoder = codecs.getincrementaldecoder('iso2022_jp')('replace')
+        decoded = decoder.decode(raw[:-1]) + decoder.decode(raw[-1:], final=True)
+        self.assertEqual(decoded, raw.decode('iso2022_jp', 'replace'))
+
+    def test_iso2022_reset(self):
+        decoder = codecs.getincrementaldecoder('iso2022_jp')()
+        decoder.decode(b'\x1b%')
+        decoder.reset()
+        with self.assertRaises(UnicodeDecodeError):
+            decoder.decode(b'\xff', final=True)
+
     def test_dbcs(self):
         # cp949 decoder is simple with only 1 or 2 bytes sequences.
         decoder = codecs.getincrementaldecoder('cp949')()
@@ -313,7 +348,7 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, 123)
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
-        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
+        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"0" * 17, 0))
 
     def test_setstate_invalid_designation(self):
         # gh-153603: an unknown charset designation in the state must not crash
@@ -425,6 +460,84 @@ class TestStateful(unittest.TestCase):
             for index, char in enumerate(self.text))
         self.assertEqual(output, self.expected_reset)
         self.assertEqual(encoder.encode('', final=True), b'')
+
+    def test_streamwriter_reset(self):
+        stream = io.BytesIO()
+        writer = codecs.getwriter(self.encoding)(stream)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), b'')
+        writer.write(self.text)
+        self.assertEqual(stream.getvalue(), self.expected)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset)
+        writer.write(self.text)
+        writer.reset()
+        self.assertEqual(stream.getvalue(), self.expected_reset * 2)
+
+    def test_streamwriter_seek0(self):
+        # The reset sequence is written before the stream is rewound.
+        info = codecs.lookup(self.encoding)
+        for wrap in (
+            info.streamwriter,
+            lambda stream: codecs.StreamReaderWriter(
+                stream, info.streamreader, info.streamwriter),
+            lambda stream: codecs.EncodedFile(stream, 'utf-8', self.encoding),
+        ):
+            stream = io.BytesIO()
+            writer = wrap(stream)
+            text = self.text
+            if isinstance(writer, codecs.StreamRecoder):
+                text = text.encode()
+            writer.write(text)
+            writer.seek(0)
+            self.assertEqual(stream.tell(), 0)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+            writer.write(text)
+            self.assertEqual(stream.getvalue(), self.expected_reset)
+
+    def test_incrementalencoder_error(self):
+        # The output of a failed encode() is lost, so the shift state
+        # must not be changed.
+        encoder = codecs.getincrementalencoder(self.encoding)()
+        state = encoder.getstate()
+        for final in False, True:
+            self.assertRaises(UnicodeEncodeError, encoder.encode,
+                              self.text + '\U0001f600', final)
+            self.assertEqual(encoder.getstate(), state)
+        self.assertEqual(encoder.encode(self.text), self.expected)
+        state = encoder.getstate()
+        for final in False, True:
+            self.assertRaises(UnicodeEncodeError, encoder.encode,
+                              'a\U0001f600', final)
+            self.assertEqual(encoder.getstate(), state)
+        self.assertEqual(encoder.encode('a'), self.reset + b'a')
+
+    def test_streamwriter_error(self):
+        stream = io.BytesIO()
+        writer = codecs.getwriter(self.encoding)(stream)
+        self.assertRaises(UnicodeEncodeError, writer.write,
+                          self.text + '\U0001f600')
+        self.assertEqual(stream.getvalue(), b'')
+        writer.write(self.text)
+        self.assertEqual(stream.getvalue(), self.expected)
+
+    def test_textiowrapper_error(self):
+        raw = io.BytesIO()
+        with io.TextIOWrapper(raw, encoding=self.encoding) as f:
+            self.assertRaises(UnicodeEncodeError, f.write,
+                              self.text + '\U0001f600')
+            f.write(self.text)
+            f.flush()
+            self.assertEqual(raw.getvalue(), self.expected)
+
+class TestISO2022KRStateful(TestStateful):
+    text = '\uac00\uac00'
+    encoding = 'iso-2022-kr'
+    expected = b'\x1b$)C\x0e0!0!'
+    reset = b'\x0f'
+    expected_reset = expected + reset
 
 class TestHZStateful(TestStateful):
     text = '\u804a\u804a'

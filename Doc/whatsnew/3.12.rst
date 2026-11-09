@@ -133,7 +133,7 @@ Security improvements:
 
 C API improvements:
 
-* :ref:`PEP 697 <whatsnew312-pep697>`, unstable C API tier
+* :ref:`PEP 689 <whatsnew312-pep689>`, unstable C API tier
 * :ref:`PEP 683 <whatsnew312-pep683>`, immortal objects
 
 CPython implementation improvements:
@@ -1035,13 +1035,13 @@ unittest
 
 Add a ``--durations`` command line option, showing the N slowest test cases::
 
-  python3 -m unittest --durations=3 lib.tests.test_threading
+  python3 -m unittest --durations=3 test.test_threading
   .....
   Slowest test durations
   ----------------------------------------------------------------------
-  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
-  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
-  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+  1.210s     test_timeout (test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (test.test_threading.BarrierTests)
+  0.518s     test_timeout (test.test_threading.EventTests)
 
   (0.000 durations hidden.  Use -v to show these durations.)
   ----------------------------------------------------------------------
@@ -1862,8 +1862,9 @@ New Features
 ------------
 
 .. _whatsnew312-pep697:
+.. _whatsnew312-pep689:
 
-* :pep:`697`: Introduce the :ref:`Unstable C API tier <unstable-c-api>`,
+* :pep:`689`: Introduce the :ref:`Unstable C API tier <unstable-c-api>`,
   intended for low-level tools like debuggers and JIT compilers.
   This API may change in each minor release of CPython without deprecation
   warnings.
@@ -1995,17 +1996,17 @@ New Features
   to bypass reference counts, and related changes to the C-API:
 
   - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
-      as immortal.
+    as immortal.
   - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
   - ``PyObject_HEAD_INIT`` This will now initialize reference count to
-      ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+    ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
   - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
-       that are immortal.
+    that are immortal.
   - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
-       objects that are immortal and static
+    objects that are immortal and static
   - ``sys.getunicodeinternedsize`` This returns the total number of unicode
-      objects that have been interned. This is now needed for :file:`refleak.py` to
-      correctly track reference counts and allocated blocks
+    objects that have been interned. This is now needed for :file:`refleak.py` to
+    correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
