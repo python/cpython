@@ -1218,8 +1218,8 @@ PyConfig
 
    .. c:member:: int safe_path
 
-      If equals to zero, ``Py_RunMain()`` prepends a potentially unsafe path to
-      :data:`sys.path` at startup:
+      If equals to zero, ``Py_RunMain()`` prepends a potentially unsafe
+      :data:`sys._path0` to :data:`sys.path` at startup:
 
       * If :c:member:`argv[0] <PyConfig.argv>` is equal to ``L"-m"``
         (``python -m module``), prepend the current working directory.

@@ -1625,6 +1625,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * Module :mod:`site` This describes how to use .pth files to
         extend :data:`sys.path`.
 
+.. data:: _path0
+
+   Path prepended to :data:`sys.path` at Python startup:
+
+   * Current directory if running a module
+     with ``python -m module`` command line.
+   * Script's directory if running a script
+     with ``python script.py``.
+   * Otherwise an empty string, which means the current working directory,
+     for ``python -c code`` or ``python`` (REPL) command line.
+
+   If :option:`-P` or :option:`-I` command line options are used or if
+   :envvar:`PYTHONSAFEPATH` environment variable is used, :data:`sys._path0` is
+   ``None`` and :data:`sys.path` is left unchanged.
+
+   .. versionadded:: next
+
+
 .. data:: path_hooks
 
     A list of callables that take a path argument to try to create a
