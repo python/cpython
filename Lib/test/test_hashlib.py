@@ -1236,6 +1236,9 @@ class KDFTests(unittest.TestCase):
         (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt',
          4096, -1),
         (b'pass\0word', b'sa\0lt', 4096, 16),
+        (b'password', b'salt'*4, 1, None),
+        (b'password', b'salt'*4, 2, None),
+        (b'password', b'salt'*4, 4096, None),
     ]
 
     pbkdf2_results = {
@@ -1247,7 +1250,12 @@ class KDFTests(unittest.TestCase):
             #(bytes.fromhex('eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'), None),
             (bytes.fromhex('3d2eec4fe41c849b80c8d83662c0e44a8b291a964c'
                            'f2f07038'), 25),
-            (bytes.fromhex('56fa6aa75548099dcc37d7f03425e0c3'), None),],
+            (bytes.fromhex('56fa6aa75548099dcc37d7f03425e0c3'), None),
+            # more test vectors with FIPS compatible salt
+            (bytes.fromhex('7f0d22e4398436acf7bcd2cfbb9903755def9522'), None),
+            (bytes.fromhex('f6d0ee787450939262e452e8f1b7ceca4ccc4cba'), None),
+            (bytes.fromhex('b7845a91aea7946bc875fcd9d19fd515381ddf94'), None),
+        ],
         "sha256": [
             (bytes.fromhex('120fb6cffcf8b32c43e7225256c4f837'
                            'a86548c92ccc35480805987cb70be17b'), None),
@@ -1259,7 +1267,14 @@ class KDFTests(unittest.TestCase):
             #               'f7f179e89b3b0bcb17ad10e3ac6eba46'), None),
             (bytes.fromhex('348c89dbcbd32b2f32d814b8116e84cf2b17'
                            '347ebc1800181c4e2a1fb8dd53e1c635518c7dac47e9'), 40),
-            (bytes.fromhex('89b69d0516f829893c696226650a8687'), None),],
+            (bytes.fromhex('89b69d0516f829893c696226650a8687'), None),
+            (bytes.fromhex('b13d6697e99cd6d1745da097ee03e4be'
+                           '501341e76fe9161a788de3d4cd0be219'), None),
+            (bytes.fromhex('b3a65a254dd590fab9aacfabd5695a0b'
+                           'd79727d2899a6a519d26f13b52d8e6f4'), None),
+            (bytes.fromhex('16e35b12b41f465ca64d069578d75005'
+                           '9775ccad5df3ad53d6b204acb122d1ee'), None),
+        ],
         "sha512": [
             (bytes.fromhex('867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5'
                            'd513554e1c8cf252c02d470a285a0501bad999bfe943c08f'
@@ -1273,7 +1288,17 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('8c0511f4c6e597c6ac6315d8f0362e225f3c501495ba23b8'
                            '68c005174dc4ee71115b59f9e60cd9532fa33e0f75aefe30'
                            '225c583a186cd82bd4daea9724a3d3b8'), 64),
-            (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),],
+            (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),
+            (bytes.fromhex('ccc6bd2cbf575bd344c9cf542877fc6e9372cbf1f1e1df39'
+                           '2c6cf5f6038bb5743834aeea6f0226c4a257bbbabe7c185d'
+                           '17999a8d2b62d89bb83d24273b8a3229'), None),
+            (bytes.fromhex('4dfa5258b4acd6db7d276988daf21d61ea07d44d370d81a9'
+                           'bc1770962829689030a8c7ffc1078593f9e27a90e79165b2'
+                           'd81a2f471ff6c10c82420a4fa76d7a06'), None),
+            (bytes.fromhex('7dc69993c22ab444a13574b9d71b2cafc54e68914d9ddfd0'
+                           '0ed5c23545b854d5e0e68b7f5614eef5df9087573bab8360'
+                           'b20267791ed7a77669005fd94b5731e2'), None),
+        ],
     }
 
     def _test_pbkdf2_hmac(self, pbkdf2, supported):
@@ -1282,6 +1307,8 @@ class KDFTests(unittest.TestCase):
                 continue
             for i, vector in enumerate(self.pbkdf2_test_vectors):
                 password, salt, rounds, dklen = vector
+                if self.fips_incompatible_salt(salt):
+                    continue
                 expected, overwrite_dklen = results[i]
                 if overwrite_dklen:
                     dklen = overwrite_dklen
@@ -1324,6 +1351,10 @@ class KDFTests(unittest.TestCase):
             out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
                 iterations=1, dklen=None)
             self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
+
+    # gh-161739: invalid salt length w/OpenSSL 4.0.3
+    def fips_incompatible_salt(self, salt):
+        return get_fips_mode() and len(salt) < 16
 
     @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
