@@ -506,7 +506,8 @@ codegen_add_yield_from(compiler *c, location loc, int await)
     USE_LABEL(c, send);
     ADDOP_JUMP(c, loc, SEND, exit);
     // Set up a virtual try/except to handle when StopIteration is raised during
-    // a close or throw call. The only way YIELD_VALUE raises if they do!
+    // a close or throw call. The only ways YIELD_VALUE raises are if they do,
+    // or if a lazily started coroutine (see RETURN_GENERATOR) can't be created.
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
     ADDOP_I(c, loc, YIELD_VALUE, 1);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
@@ -618,8 +619,6 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
-                ADDOP(c, *ploc, PUSH_NULL);
-                ADDOP_LOAD_CONST(c, *ploc, Py_None);
                 ADD_YIELD_FROM(c, *ploc, 1);
             }
             ADDOP(c, *ploc, POP_TOP);
@@ -5167,8 +5166,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
     }
 
@@ -5312,8 +5309,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
@@ -5349,8 +5344,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
      */
     RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP(c, loc, POP_TOP);
@@ -5364,8 +5357,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
 
@@ -5552,8 +5543,6 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
         break;
     case Compare_kind:

@@ -44,9 +44,13 @@ struct _PyInterpreterFrame {
     char owner;
     uint8_t visited:1;
     uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+    /* Set for a thread-owned frame running a coroutine body whose coroutine
+     * object has not been created yet (see RETURN_GENERATOR in bytecodes.c).
+     * Its own _PyErr_StackItem lives on the data stack right after it. */
+    uint8_t lazy_coro:1;
 #ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
-    uint8_t lltrace:5;
+    uint8_t lltrace:4;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];

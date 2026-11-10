@@ -45,7 +45,21 @@ The generator's frame is initialized as a copy of the frame in which
 `RETURN_GENERATOR` is executing, but its `owner` field is overwritten to indicate
 that it is owned by a generator. Finally, `RETURN_GENERATOR` pushes the new generator
 object to the stack and returns to the caller of the generator function (at
-which time its frame is destroyed). When the generator is next resumed by
+which time its frame is destroyed).
+
+There is one exception: a coroutine whose caller is about to await it right
+away (`await f()`, i.e. the caller's next instruction is `GET_AWAITABLE`,
+which the compiler only emits directly before a `SEND` loop) keeps running in the frame
+in which `RETURN_GENERATOR` is executing, with the `lazy_coro` flag set and its
+own `_PyErr_StackItem` pushed on the data stack right after the frame.
+The caller's frame is set up as if `SEND_GEN` had pushed the coroutine frame
+(`[None, NULL]` on its stack, instruction pointer at the `SEND`), so that a body
+that returns or raises without suspending never creates a coroutine object.
+If the body reaches `YIELD_VALUE`, the coroutine object is created then and
+the frame is moved into it (see `_PyCoro_MaterializeLazy()` and
+`_PyEval_MoveLazyCoroFrame()`).
+
+When the generator is next resumed by
 [`gen_send_ex2()`](../Objects/genobject.c), `_PyEval_EvalFrame()` is called
 to continue executing the generator function, in the frame that is embedded in
 the generator object.

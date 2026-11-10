@@ -806,7 +806,8 @@ not have to be) the original ``STACK[-2]``.
    Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
-   ``o.__await__``.
+   ``o.__await__``.  Then pushes ``NULL`` and ``None``, the initial stack
+   layout for the :opcode:`SEND` loop that follows.
 
     If the ``where`` operand is nonzero, it indicates where the instruction
     occurs:
@@ -818,6 +819,10 @@ not have to be) the original ``STACK[-2]``.
 
    .. versionchanged:: 3.11
       Previously, this instruction did not have an oparg.
+
+   .. versionchanged:: 3.16
+      Also pushes ``NULL`` and ``None``; previously the compiler emitted
+      :opcode:`PUSH_NULL` and :opcode:`LOAD_COMMON_CONSTANT` after it.
 
 
 .. opcode:: GET_AITER
