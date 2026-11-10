@@ -310,7 +310,7 @@ New, Improved, and Deprecated Modules
   CSV header, SQL field list, or user input::
 
     >>> query = input()
-    SELECT region, dept, count(*) FROM main GROUPBY region, dept
+    SELECT region, dept, count(*) FROM main GROUP BY region, dept
 
     >>> cursor.execute(query)
     >>> query_fields = [desc[0] for desc in cursor.description]

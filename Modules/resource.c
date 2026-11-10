@@ -22,22 +22,6 @@ module resource
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e89d38ed52609d7c]*/
 
-/*[python input]
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == -1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
-
 #include "clinic/resource.c.h"
 
 PyDoc_STRVAR(struct_rusage__doc__,

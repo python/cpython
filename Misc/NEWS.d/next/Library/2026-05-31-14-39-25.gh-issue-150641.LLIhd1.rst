@@ -1,2 +1,0 @@
-Fix bug where :func:`typing.evaluate_forward_ref` with the ``STRING`` format
-could leak internal names used by the annotation machinery.

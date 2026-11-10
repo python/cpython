@@ -27,13 +27,17 @@ _Py_DECLARE_STR(empty, "")
         }, \
     }
 
+/* The caller must initialize *incomplete to NULL if supplied. A returned AST
+   can also return an owned exception there for a missing line terminator.
+   Validate the AST before reporting that exception. */
 extern struct _mod* _PyParser_ASTFromString(
     const char *str,
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
     PyArena *arena,
-    PyObject *module);
+    PyObject *module,
+    PyObject **incomplete);
 
 extern struct _mod* _PyParser_ASTFromFile(
     FILE *fp,
