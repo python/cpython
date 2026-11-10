@@ -95,20 +95,6 @@ exit:
 
 PyDoc_STRVAR(_zstd_ZstdDict_dict_content__doc__,
 "The content of a Zstandard dictionary, as a bytes object.");
-#if defined(_zstd_ZstdDict_dict_content_DOCSTR)
-#   undef _zstd_ZstdDict_dict_content_DOCSTR
-#endif
-#define _zstd_ZstdDict_dict_content_DOCSTR _zstd_ZstdDict_dict_content__doc__
-
-#if !defined(_zstd_ZstdDict_dict_content_DOCSTR)
-#  define _zstd_ZstdDict_dict_content_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, (setter)_zstd_ZstdDict_dict_content_set, _zstd_ZstdDict_dict_content_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, NULL, _zstd_ZstdDict_dict_content_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_dict_content_get_impl(ZstdDict *self);
@@ -131,20 +117,6 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_digested_dict__doc__,
 "   level.  It\'s faster when loading again a digested dictionary with\n"
 "   the same compression level.\n"
 "3. No need to use this for decompression.");
-#if defined(_zstd_ZstdDict_as_digested_dict_DOCSTR)
-#   undef _zstd_ZstdDict_as_digested_dict_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_digested_dict_DOCSTR _zstd_ZstdDict_as_digested_dict__doc__
-
-#if !defined(_zstd_ZstdDict_as_digested_dict_DOCSTR)
-#  define _zstd_ZstdDict_as_digested_dict_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, (setter)_zstd_ZstdDict_as_digested_dict_set, _zstd_ZstdDict_as_digested_dict_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, NULL, _zstd_ZstdDict_as_digested_dict_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self);
@@ -166,20 +138,6 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_undigested_dict__doc__,
 "2. Loading an undigested dictionary is costly. If load an undigested\n"
 "   dictionary multiple times, consider reusing a compressor object.\n"
 "3. No need to use this for decompression.");
-#if defined(_zstd_ZstdDict_as_undigested_dict_DOCSTR)
-#   undef _zstd_ZstdDict_as_undigested_dict_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_undigested_dict_DOCSTR _zstd_ZstdDict_as_undigested_dict__doc__
-
-#if !defined(_zstd_ZstdDict_as_undigested_dict_DOCSTR)
-#  define _zstd_ZstdDict_as_undigested_dict_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, (setter)_zstd_ZstdDict_as_undigested_dict_set, _zstd_ZstdDict_as_undigested_dict_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, NULL, _zstd_ZstdDict_as_undigested_dict_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self);
@@ -201,20 +159,6 @@ PyDoc_STRVAR(_zstd_ZstdDict_as_prefix__doc__,
 "2. It only works for the first frame, then the\n"
 "   compressor/decompressor will return to no prefix state.\n"
 "3. When decompressing, must use the same prefix as when compressing.");
-#if defined(_zstd_ZstdDict_as_prefix_DOCSTR)
-#   undef _zstd_ZstdDict_as_prefix_DOCSTR
-#endif
-#define _zstd_ZstdDict_as_prefix_DOCSTR _zstd_ZstdDict_as_prefix__doc__
-
-#if !defined(_zstd_ZstdDict_as_prefix_DOCSTR)
-#  define _zstd_ZstdDict_as_prefix_DOCSTR NULL
-#endif
-#if defined(_ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF)
-#  undef _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF
-#  define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, (setter)_zstd_ZstdDict_as_prefix_set, _zstd_ZstdDict_as_prefix_DOCSTR},
-#else
-#  define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, NULL, _zstd_ZstdDict_as_prefix_DOCSTR},
-#endif
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self);
@@ -224,4 +168,12 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 {
     return _zstd_ZstdDict_as_prefix_get_impl((ZstdDict *)self);
 }
-/*[clinic end generated code: output=49b66061b4fcdb5f input=a9049054013a1b77]*/
+#define _ZSTD_ZSTDDICT_DICT_CONTENT_GETSETDEF {"dict_content", (getter)_zstd_ZstdDict_dict_content_get, (setter)NULL, _zstd_ZstdDict_dict_content__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_DIGESTED_DICT_GETSETDEF {"as_digested_dict", (getter)_zstd_ZstdDict_as_digested_dict_get, (setter)NULL, _zstd_ZstdDict_as_digested_dict__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_UNDIGESTED_DICT_GETSETDEF {"as_undigested_dict", (getter)_zstd_ZstdDict_as_undigested_dict_get, (setter)NULL, _zstd_ZstdDict_as_undigested_dict__doc__},
+
+#define _ZSTD_ZSTDDICT_AS_PREFIX_GETSETDEF {"as_prefix", (getter)_zstd_ZstdDict_as_prefix_get, (setter)NULL, _zstd_ZstdDict_as_prefix__doc__},
+
+/*[clinic end generated code: output=aa4d4b8fd985ae08 input=a9049054013a1b77]*/

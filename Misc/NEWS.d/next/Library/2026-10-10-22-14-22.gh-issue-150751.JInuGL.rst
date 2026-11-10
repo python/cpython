@@ -1,0 +1,5 @@
+:mod:`http.client` now ignores optional whitespace around the
+``Content-Length`` header value when validating it, as required by
+:rfc:`9112`. Previously a value with trailing whitespace (for example
+``Content-Length: 5`` followed by a space) was treated as missing and the
+response body was read until the connection was closed.

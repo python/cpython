@@ -1,0 +1,4 @@
+Fix a crash when :mod:`profiling.sampling` profiles a process that creates and
+destroys threads or subinterpreters quickly. Memory of deleted thread and
+interpreter states is now reused for new states instead of being freed until
+the runtime is finalized.

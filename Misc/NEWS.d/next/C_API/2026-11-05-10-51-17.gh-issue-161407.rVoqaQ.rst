@@ -1,0 +1,3 @@
+Fix a crash at exit when an audit hook was added with :c:func:`PySys_AddAuditHook`
+before :c:func:`Py_Initialize` and the raw memory allocator changed during startup, for
+example with ``PYTHONMALLOC=mimalloc`` or in the :ref:`Python Development Mode <devmode>`.

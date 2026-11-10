@@ -1,0 +1,2 @@
+Fixed crash on Android x86_64, API levels 27-28, caused by mimalloc calling
+system calls directly.

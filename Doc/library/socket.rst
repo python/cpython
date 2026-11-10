@@ -1065,6 +1065,9 @@ The :mod:`!socket` module also offers various network-related services:
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
 
+   .. versionchanged:: next
+      Null characters are now rejected in the *host* and *port* parameters.
+
 .. _Happy Eyeballs: https://en.wikipedia.org/wiki/Happy_Eyeballs
 
 .. function:: getfqdn([name])
@@ -1372,9 +1375,12 @@ The :mod:`!socket` module also offers various network-related services:
 
    .. audit-event:: socket.sethostname name socket.sethostname
 
-   .. availability:: Unix, not Android.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.16
+      Support for Android now exists.
 
 
 .. function:: if_nameindex()
@@ -1494,7 +1500,7 @@ Socket Objects
    of :meth:`socket.getpeername` but not the actual OS resource.  Unlike
    :func:`socket.fromfd`, *fileno* will return the same socket and not a
    duplicate. This may help close a detached socket using
-   :meth:`socket.close`.
+   :meth:`~socket.socket.close`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
@@ -1541,7 +1547,7 @@ Socket Objects
 
    .. versionchanged:: 3.2
       Support for the :term:`context manager` protocol was added.  Exiting the
-      context manager is equivalent to calling :meth:`~socket.close`.
+      context manager is equivalent to calling :meth:`~socket.socket.close`.
 
 
    .. method:: accept()
@@ -1766,7 +1772,7 @@ Socket Objects
 
       Closing the file object returned by :meth:`makefile` won't close the
       original socket unless all other file objects have been closed and
-      :meth:`socket.close` has been called on the socket object.
+      :meth:`~socket.socket.close` has been called on the socket object.
 
       .. note::
 

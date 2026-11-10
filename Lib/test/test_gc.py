@@ -12,7 +12,6 @@ from test.support import threading_helper, gc_threshold
 
 import gc
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
@@ -79,13 +78,6 @@ class Uncollectable(object):
     def __tp_del__(self):
         pass
 
-if sysconfig.get_config_vars().get('PY_CFLAGS', ''):
-    BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
-else:
-    # Usually, sys.gettotalrefcount() is only present if Python has been
-    # compiled in debug mode. If it's missing, expect that Python has
-    # been released in release mode: with NDEBUG defined.
-    BUILD_WITH_NDEBUG = (not hasattr(sys, 'gettotalrefcount'))
 
 ### Tests
 ###############################################################################
@@ -1422,8 +1414,8 @@ class GCCallbackTests(unittest.TestCase):
 
 
     @requires_subprocess()
-    @unittest.skipIf(BUILD_WITH_NDEBUG,
-                     'built with -NDEBUG')
+    @unittest.skipIf(not support.built_with_c_assertions(),
+                     'built without C assertions')
     def test_refcount_errors(self):
         self.preclean()
         # Verify the "handling" of objects with broken refcounts
@@ -1434,6 +1426,11 @@ class GCCallbackTests(unittest.TestCase):
         import subprocess
         code = textwrap.dedent('''
             from test.support import gc_collect, SuppressCrashReport
+            import ctypes.util
+
+            @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+            def Py_DecRef(o: ctypes.py_object) -> None:
+                pass
 
             a = [1, 2, 3]
             b = [a, a]
@@ -1445,8 +1442,7 @@ class GCCallbackTests(unittest.TestCase):
             # Simulate the refcount of "a" being too low (compared to the
             # references held on it by live data), but keeping it above zero
             # (to avoid deallocating it):
-            import ctypes
-            ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+            Py_DecRef(a)
             del a
             del b
 
@@ -1661,6 +1657,25 @@ class GCTogglingTests(unittest.TestCase):
             self.assertEqual(i, 10001)
         finally:
             gc.enable()
+
+    def test_get_count_nonnegative(self):
+        xs = [[] for _ in range(1500)]
+        gc.collect()
+        del xs[:1000]
+        self.assertGreaterEqual(gc.get_count()[0], 0)
+
+    @gc_threshold(1000, 0, 0)
+    def test_get_count_does_not_prevent_collection(self):
+        junk = []
+        gc.collect()
+        detector = GC_Detector()
+        for _ in range(10000):
+            junk.append([])
+            gc.get_count()
+            if detector.gc_happened:
+                break
+        else:
+            self.fail("gc didn't happen after 10000 iterations")
 
     # Ensure that setting *threshold0* to zero disables collection.
     @gc_threshold(0)

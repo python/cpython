@@ -117,7 +117,7 @@ class TestFunctions(unittest.TestCase):
     @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak(self):
         with skip_enotty_error(self, 'tcsendbreak',
-                               ('freebsd', 'netbsd', 'cygwin')):
+                               ('freebsd', 'netbsd', 'openbsd', 'dragonfly', 'cygwin')):
             termios.tcsendbreak(self.fd, 1)
             termios.tcsendbreak(self.stream, 1)
 
@@ -194,6 +194,9 @@ class TestFunctions(unittest.TestCase):
             termios.tcflow(self.fd, termios.TCOON)
             termios.tcflow(self.fd, termios.TCIOFF)
             termios.tcflow(self.fd, termios.TCION)
+            # Discard the transmitted STOP and START characters,
+            # otherwise closing the pseudo-terminal can block.
+            termios.tcflush(self.fd, termios.TCOFLUSH)
 
     @support.skip_android_selinux('tcflow')
     def test_tcflow_errors(self):

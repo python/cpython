@@ -5,6 +5,7 @@ Extending/Embedding FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 .. highlight:: c
 

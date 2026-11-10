@@ -182,6 +182,16 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('i'))
         self.assertGreaterEqual(struct.calcsize('n'), struct.calcsize('P'))
 
+    def test_cache_bytes_vs_str_bb(self):
+        # Mixing str and bytes formats must not raise BytesWarning under -bb.
+        code = (
+            'import struct\n'
+            'struct.calcsize(b"!d"); struct.calcsize("!d")\n'
+            'struct.calcsize(">d"); struct.calcsize(b">d")\n'
+            'struct.Struct(b"i"); struct.Struct("i")\n'
+        )
+        assert_python_ok('-bb', '-c', code)
+
     def test_integers(self):
         # Integer tests (bBhHiIlLqQnN).
         import binascii
@@ -413,6 +423,20 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(OverflowError, struct.pack, ">e", big)
         self.assertRaises(OverflowError, struct.pack, "<e", big)
         self.assertRaises(OverflowError, struct.pack, "e", big)
+
+    def test_float_complex_overflow(self):
+        for value in (
+            1e300 + 0.5j,  # big real
+            1.5 + 1e300j,  # big imag
+        ):
+            for format in (">Zf", "<Zf", "Zf"):
+                with self.subTest(value=value, format=format):
+                    self.assertRaises(OverflowError, struct.pack, format, value)
+
+                    ba = bytearray(8)
+                    with self.assertRaises(OverflowError):
+                        struct.Struct(format).pack_into(ba, 0, value)
+                    self.assertEqual(ba, bytearray(8))
 
     def test_1530559(self):
         for code, byteorder in iter_integer_formats():
