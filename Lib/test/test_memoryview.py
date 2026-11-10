@@ -769,7 +769,7 @@ class OtherTest(unittest.TestCase):
                 _testcapi.clear_memoryview(view)
                 return memoryview(data)
 
-        self.assertTrue(view == Other())
+        self.assertFalse(view == Other())
         with self.assertRaisesRegex(ValueError, "released"):
             view.tobytes()
         data.clear()
@@ -995,6 +995,20 @@ class OtherTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[0] = MyBool()
         self.assertEqual(ba[:8], b'\0'*8)
+
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size)).cast('c')
+        with self.assertRaisesRegex(ValueError, "operation forbidden"):
+            m[MyIndex()] = b'x'
+        self.assertEqual(ba[:8], b'\0'*8)
+
+        class MyBuffer:
+            def __buffer__(self, flags):
+                release()
+                return memoryview(b'\xff'*size)
+        ba = None
+        m = memoryview(bytearray(b'\xff'*size))
+        self.assertFalse(m == MyBuffer())
 
     def test_buffer_reference_loop(self):
         m = memoryview(b'abc').__buffer__(0)

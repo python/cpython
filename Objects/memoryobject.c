@@ -2268,6 +2268,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             return type_error_int(fmt);
         if (PyBytes_GET_SIZE(item) != 1)
             return value_error_int(fmt);
+        CHECK_RELEASED_INT_AGAIN(self);
         *ptr = PyBytes_AS_STRING(item)[0];
         break;
 
@@ -3551,6 +3552,11 @@ memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
             goto result; /* Py_NotImplemented */
         }
         ww = &wbuf;
+        /* w.__buffer__() may have released v. */
+        if (BASE_INACCESSIBLE(v)) {
+            equal = 0;
+            goto result;
+        }
     }
 
     if (!equiv_shape(vv, ww)) {
