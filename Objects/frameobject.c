@@ -1313,7 +1313,7 @@ peek(int64_t stack, int n)
     return (stack>>(BITS_PER_BLOCK*(n-1))) & MASK;
 }
 
-static Kind
+static int64_t
 stack_swap(int64_t stack, int n)
 {
     assert(n >= 1);
