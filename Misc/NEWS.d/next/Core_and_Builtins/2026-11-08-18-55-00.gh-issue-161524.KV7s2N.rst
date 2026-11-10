@@ -1,0 +1,2 @@
+Speed up copying dictionaries with many deleted entries by copying live
+entries directly into a compact table instead of inserting them one by one.
