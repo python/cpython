@@ -1,2 +1,0 @@
-Python no longer imports :mod:`time` and, on Windows, ``encodings._win_cp_codecs``
-at startup.
