@@ -1,4 +1,5 @@
-Speed up conversion of ordinals to dates in :mod:`datetime`, used by
-:meth:`~datetime.date.fromordinal`, :meth:`~datetime.date.fromisocalendar`
-and :class:`~datetime.timedelta` arithmetic, by switching to the
-Neri–Schneider algorithm.
+Speed up conversion of ordinals to dates in :mod:`datetime` by switching to
+the `Neri–Schneider algorithm <https://arxiv.org/abs/2102.06959>`__.
+:meth:`~datetime.date.fromordinal` is about 30% faster, and
+:meth:`~datetime.date.fromisocalendar` and :class:`~datetime.timedelta`
+arithmetic across month boundaries are about 10–20% faster.

@@ -473,16 +473,14 @@ days_before_month(int year, int month)
 
 /* ordinal -> year, month, day, considering 01-Jan-0001 as day 1.
  *
- * This is Figure 12 of Neri and Schneider [1], the algorithm also used by
- * the Linux kernel's rtc_time64_to_tm() and by libstdc++'s <chrono>.  It
- * works in a computational calendar whose years start on March 1, so that
- * the irregular February comes last, and evaluates every step (century,
- * year, month, day) as a Euclidean affine function (a*n + b) / d, with no
- * lookup tables and no estimate-and-correct step.  The year and the month
- * steps each take one multiplication whose high bits are the quotient and
- * whose low bits give the remainder.  The century step is done in 64 bits
- * so that every positive int ordinal gives the same result as the classic
- * algorithm.
+ * This is Figure 12 of Neri and Schneider [1], and the same steps as
+ * _ord2ymd() in Lib/_pydatetime.py.  It works in a computational calendar
+ * whose years start on March 1, so that the irregular February comes last,
+ * and computes each step (century, year, month, day) as a Euclidean affine
+ * function (a*n + b) / d, with no lookup tables and no estimate-and-correct
+ * step.  The divisors are constants, so compilers emit multiplications, not
+ * divisions.  The century step is done in 64 bits so that every positive
+ * int ordinal gives the same result as the classic algorithm.
  *
  * [1] Neri C, Schneider L. Euclidean affine functions and their application
  *     to calendar algorithms. Softw Pract Exper. 2023;53(4):937-970.
@@ -492,37 +490,25 @@ static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
     assert(ordinal >= 1);
-    /* Days since 0000-03-01, the start of the computational calendar. */
-    const uint64_t days = (uint64_t)ordinal + 305;
-
-    /* century = (4*days + 3) / DI400Y, and the day of the century. */
-    const uint64_t century_scaled = 4 * days + 3;
-    const uint32_t century = (uint32_t)(century_scaled / DI400Y);
-    const uint32_t day_of_century = (uint32_t)(century_scaled % DI400Y) / 4;
-
-    /* year_of_century = (4*day_of_century + 3) / DI4Y, and the day of the
-     * year (March 1 is day 0), from one product: 2939745 is
-     * ceil(2**32 / DI4Y), so the high 32 bits are the quotient and the low
-     * 32 bits encode the remainder. */
-    const uint32_t year_scaled = 4 * day_of_century + 3;
-    const uint64_t year_product = (uint64_t)2939745 * year_scaled;
-    const uint32_t year_of_century = (uint32_t)(year_product >> 32);
-    const uint32_t day_of_year = (uint32_t)year_product / 2939745 / 4;
-
-    /* month = (5*day_of_year + 461) / 153 (March = 3, ..., February = 14),
-     * and the day of the month, from one product: 2141 is about
-     * 2**16 * 5 / 153 and 197913 the matching offset, so the high 16 bits
-     * are the month and the low 16 bits encode the day. */
-    const uint32_t month_product = 2141 * day_of_year + 197913;
-    const uint32_t march_based_month = month_product >> 16;
-    const uint32_t day_of_month = (month_product & 0xFFFF) / 2141;
-
-    /* January and February belong to the next calendar year. */
-    const uint32_t is_jan_or_feb = day_of_year >= 306;
-
-    *year = (int)(100 * century + year_of_century + is_jan_or_feb);
-    *month = (int)(is_jan_or_feb ? march_based_month - 12 : march_based_month);
-    *day = (int)(day_of_month + 1);
+    const uint64_t days = (uint64_t)ordinal + 305;  /* day 0 is 0000-03-01 */
+    const uint32_t century = (uint32_t)((4 * days + 3) / DI400Y);
+    const uint32_t day_of_century = (uint32_t)((4 * days + 3) % DI400Y) / 4;
+    const uint32_t year_of_century = (4 * day_of_century + 3) / DI4Y;
+    const uint32_t day_of_year = (4 * day_of_century + 3) % DI4Y / 4;
+    /* Month lengths repeat every 5 months (153 days) from March on;
+     * month 3 is March, ..., month 14 is February. */
+    const uint32_t m = (5 * day_of_year + 461) / 153;
+    const uint32_t d = (5 * day_of_year + 461) % 153 / 5 + 1;
+    const uint32_t y = 100 * century + year_of_century;
+    if (m > 12) {  /* January or February */
+        *year = (int)(y + 1);
+        *month = (int)(m - 12);
+    }
+    else {
+        *year = (int)y;
+        *month = (int)m;
+    }
+    *day = (int)d;
 }
 
 /* year, month, day -> ordinal, considering 01-Jan-0001 as day 1. */
