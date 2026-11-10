@@ -63,9 +63,9 @@ Summary -- Release highlights
    Brevity is key.
 
 * :ref:`Set operations and Unicode properties in regular expressions
-  <whatsnew316-re>`.
-* :ref:`Encrypted Client Hello support in ssl <whatsnew316-ech>`.
-* :ref:`Faster interpreter startup <whatsnew316-optimizations>`.
+  <whatsnew316-re-set-operations-and-unicode-properties>`.
+* :ref:`Encrypted Client Hello support in ssl <whatsnew316-ssl-ech>`.
+* :ref:`Faster interpreter startup <whatsnew316-interpreter-startup>`.
 * :ref:`Faster UUID generation <whatsnew316-uuid-optimizations>`, with
   UUIDv4 and UUIDv7 about 15 and 30 times faster in microbenchmarks.
 * :ref:`Build support for tvOS, watchOS, and visionOS
@@ -681,10 +681,10 @@ quopri
   (Contributed by Serhiy Storchaka in :gh:`62222`.)
 
 
-.. _whatsnew316-re:
-
 re
 --
+
+.. _whatsnew316-re-set-operations-and-unicode-properties:
 
 * :mod:`re` now supports set operations and nested sets in character classes,
   as described in `Unicode Technical Standard #18
@@ -753,10 +753,10 @@ sqlite3
   (Contributed by Serhiy Storchaka in :gh:`157470`.)
 
 
-.. _whatsnew316-ech:
-
 ssl
 ---
+
+.. _whatsnew316-ssl-ech:
 
 * Added support for :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`
   (ECH) with OpenSSL 4.0 or later. Clients can supply an ECHConfigList
@@ -1055,10 +1055,10 @@ zlib
 
 .. Add improved modules above alphabetically, not here at the end.
 
-.. _whatsnew316-optimizations:
-
 Optimizations
 =============
+
+.. _whatsnew316-interpreter-startup:
 
 * Interpreter startup is faster, and several common operations have been
   optimized. Improvements include less work during garbage collection and
