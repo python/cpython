@@ -935,7 +935,7 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
-    # gh-161083: Invalid arguments must not leave stale awaited-by edges.
+    # Add the awaited-by edges only after all arguments are validated
     if cur_task is not None and len(done_futs) < nfuts:
         for fut in arg_to_fut.values():
             if not fut.done():
