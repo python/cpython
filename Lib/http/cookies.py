@@ -300,25 +300,31 @@ class Morsel(dict):
     def coded_value(self):
         return self._coded_value
 
-    def _validate_attribute(self, key, val):
+    def _check_attribute(self, key, val):
+        """Normalize and validate an attribute name and value
+
+        Raise `CookieError` if the key is not a recognized attribute name or
+        value contains illegal characters. Otherwise return the canonicalized
+        key.
+        """
         key = key.lower()
+        val_str = str(val)
         if key not in self._reserved:
             raise CookieError("Invalid attribute %r" % (key,))
-        if _has_control_character(key, val):
+        if _has_control_character(key, val_str):
             raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
         # Comment is quoted like a cookie value so semicolons can be escaped.
         # No other attribute expects `;` in the value, so refuse it.
-        if key != 'comment' and ';' in str(val):
+        if key != 'comment' and ';' in val_str:
             raise CookieError(f"Reserved character ';' is not allowed in cookie attribute value {key!r} {val!r}")
+        return key
 
     def __setitem__(self, K, V):
-        K = K.lower()
-        self._validate_attribute(K, V)
+        K = self._check_attribute(K, V)
         dict.__setitem__(self, K, V)
 
     def setdefault(self, key, val=None):
-        key = key.lower()
-        self._validate_attribute(key, val)
+        key = self._check_attribute(key, val)
         return dict.setdefault(self, key, val)
 
     def __eq__(self, morsel):
@@ -340,8 +346,7 @@ class Morsel(dict):
     def update(self, values):
         data = {}
         for key, val in dict(values).items():
-            key = key.lower()
-            self._validate_attribute(key, val)
+            key = self._check_attribute(key, val)
             data[key] = val
         dict.update(self, data)
 
