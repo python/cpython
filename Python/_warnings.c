@@ -689,14 +689,17 @@ registry_contains(PyObject *registry, PyObject *key)
     return rc;
 }
 
-/* Returns 1 if 'key' is recorded in 'registry' for filters 'version', 0 if
-   not, -1 on error. */
+/* Returns 1 if 'key' is recorded in 'registry' for the current filters version,
+   0 if not, -1 on error.  Stores the version checked in '*pversion'. */
 static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
-               Py_ssize_t version)
+               Py_ssize_t *pversion)
 {
     int rc;
     Py_BEGIN_CRITICAL_SECTION(registry);
+    WarningsState *st = warnings_get_state(interp);
+    Py_ssize_t version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
+    *pversion = version;
     rc = check_registry_version(interp, registry, version);
     if (rc > 0) {
         rc = registry_contains(registry, key);
@@ -941,7 +944,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         /* Hash outside the registry critical section (tuples cache it). */
         if (PyObject_Hash(key) == -1)
             goto cleanup;
-        rc = already_warned(interp, registry, key, version);
+        rc = already_warned(interp, registry, key, &version);
         if (rc == -1)
             goto cleanup;
         else if (rc == 1)
