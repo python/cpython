@@ -64,7 +64,7 @@ def filterfalse(names, pat):
     match = _compile_pattern(pat)
     return [
         name for name in names
-        if not match(os.path.normcase(name))
+        if not match(os.path.normcase(os.fspath(name)))
     ]
 
 
