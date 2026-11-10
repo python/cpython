@@ -1,0 +1,2 @@
+Fix stale task nodes left by :func:`asyncio.gather` when argument validation
+fails. Patch by Timofei Ivankov
