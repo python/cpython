@@ -4612,6 +4612,8 @@ _PyExc_InitState(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
 
+    state->strerror_cache = Py_None;
+
     ADD_ERRNO(BlockingIOError, EAGAIN);
     ADD_ERRNO(BlockingIOError, EALREADY);
     ADD_ERRNO(BlockingIOError, EINPROGRESS);
@@ -4699,7 +4701,8 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
-    Py_CLEAR(state->strerror_cache);
+    // Not NULL: _Py_strerror() can still run after this.
+    Py_XSETREF(state->strerror_cache, Py_None);
 
     _PyExc_FiniTypes(interp);
 }

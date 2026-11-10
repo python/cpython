@@ -3393,93 +3393,87 @@ decode_strerror(int code)
 #endif
 }
 
-// Swap to a new cache if locale does not match.
-static PyObject*
-_ensure_locale_specific_cache(void)
+
+// Return a strong reference to the tuple (codeset, LC_MESSAGES name,
+// {code: message}) of the current locale, replacing it if the locale changed.
+static PyObject *
+strerror_ensure_cache(struct _Py_exc_state *state)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *cache = Py_XNewRef(interp->exc_state.strerror_cache);
-
-    // Make a new cache if locale changed.
-    const char *codeset = NULL;
-    #ifdef LC_MESSAGES
-    codeset = setlocale(LC_MESSAGES, NULL);
-    #elif MS_WINDOWS  // no LC_MESSAGES
-    codeset = setlocale(LC_ALL, NULL);
-    #endif
-    if (codeset == NULL) {
-        codeset = "";
+    // C code can change the locale without locale.setlocale(). Messages depend
+    // on LC_MESSAGES (language) and the LC_CTYPE codeset (decoding). Windows
+    // has neither, and its messages are ASCII.
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+    const char *codeset = nl_langinfo(CODESET);
+    const char *messages = setlocale(LC_MESSAGES, NULL);
+#else
+    const char *codeset = "";
+    const char *messages = "";
+#endif
+    // Py_SETREF() isn't atomic.
+    PyObject *cache;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->strerror_lock);
+    cache = state->strerror_cache;
+    Py_IncRef(cache);
+    Py_END_CRITICAL_SECTION();
+    if (cache != Py_None
+        && PyUnicode_CompareWithASCIIString(
+               PyTuple_GET_ITEM(cache, 0), codeset) == 0
+        && PyUnicode_CompareWithASCIIString(
+               PyTuple_GET_ITEM(cache, 1), messages) == 0)
+    {
+        return cache;
     }
-
-    if (cache != NULL) {
-        PyObject *current;
-        if (PyDict_GetItemRef(cache, Py_None, &current) < 0) {
-            Py_DECREF(cache);
-            return NULL;
-        }
-
-        // Return cache if it's good for this locale.
-        if (current != NULL) {
-            if (strcmp(PyBytes_AS_STRING(current), codeset) == 0) {
-                Py_DECREF(current);
-                return cache;
-            }
-            Py_DECREF(current);
-        }
-        Py_CLEAR(cache);
-    }
-
-    // Need a new cache with this locale key.
-    PyObject *locale_val = PyBytes_FromString(codeset);
-    if (locale_val == NULL) {
-        return NULL;
-    }
-    cache = PyDict_New();
+    Py_DECREF(cache);
+    cache = PyTuple_New(3);
     if (cache == NULL) {
-        Py_DECREF(locale_val);
         return NULL;
     }
-    if (PyDict_SetItem(cache, Py_None, locale_val) == 0) {
-        Py_INCREF(cache); // Keep a strong reference to return.
-        Py_XSETREF(interp->exc_state.strerror_cache, cache);
-    } else {
-        Py_CLEAR(cache);
+    // Latin-1, which is how the comparison above reads a non-ASCII name.
+    PyTuple_SET_ITEM(cache, 0,
+                     PyUnicode_DecodeLatin1(codeset, strlen(codeset), NULL));
+    PyTuple_SET_ITEM(cache, 1,
+                     PyUnicode_DecodeLatin1(messages, strlen(messages), NULL));
+    PyTuple_SET_ITEM(cache, 2, PyDict_New());
+    if (PyTuple_GET_ITEM(cache, 0) == NULL
+        || PyTuple_GET_ITEM(cache, 1) == NULL
+        || PyTuple_GET_ITEM(cache, 2) == NULL)
+    {
+        Py_DECREF(cache);
+        return NULL;
     }
-    Py_DECREF(locale_val);
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->strerror_lock);
+    Py_SETREF(state->strerror_cache, Py_NewRef(cache));
+    Py_END_CRITICAL_SECTION();
     return cache;
 }
 
 // Call strerror_r(code) if available, or use strerror() otherwise. Decode the
 // result from the locale encoding using surrogateescape error handler.
-//
-// Cache encoded strings for a bounded number of common errors to save
-// str construction cost.
+// Messages of codes 0-255 are cached per locale: decoding is a large part of
+// the cost of raising OSError.
 //
 // On success, return a Unicode string. On error, set an exception and return
 // NULL.
 PyObject*
 _Py_strerror(int code)
 {
-    // Limited size cache which is emptied when locale changes.
     if (code < 0 || code >= 256) {
         return decode_strerror(code);
     }
-    PyObject *cache = _ensure_locale_specific_cache();
+    struct _Py_exc_state *state = &_PyInterpreterState_GET()->exc_state;
+    PyObject *cache = strerror_ensure_cache(state);
     if (cache == NULL) {
         return NULL;
     }
-
+    PyObject *dict = PyTuple_GET_ITEM(cache, 2);
     PyObject *key = _PyLong_FromUnsignedChar((unsigned char)code);
-    PyObject *message = NULL;
-    if (PyDict_GetItemRef(cache, key, &message) == 0) {
-        // Not cached.
-        PyObject *decoded = decode_strerror(code);
-        if (decoded != NULL) {
-            PyDict_SetDefaultRef(cache, key, decoded, &message);
-            Py_DECREF(decoded);
+    PyObject *message;
+    if (PyDict_GetItemRef(dict, key, &message) == 0) {
+        message = decode_strerror(code);
+        if (message != NULL && PyDict_SetItem(dict, key, message) < 0) {
+            Py_CLEAR(message);
         }
     }
-    Py_DECREF(key);
     Py_DECREF(cache);
     return message;
 }
