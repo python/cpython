@@ -1661,9 +1661,12 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
+        #
+        # gh-160303: If a slice is deleted or replaced by shorter data and
+        # shrinking the memory block fails (MemoryError), the bytearray
+        # must be modified anyway.
 
         offset = 3
-        front = slice(None, -2)
         for logical_offset in (False, True):
             with self.subTest(logical_offset=logical_offset):
                 # grow bytearray
@@ -1688,28 +1691,32 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
 
-                # gh-160303: When bytes are removed at the front, they are
-                # removed even if shrinking the memory block fails.
-                ba = bytearray(b'0123456789')
+                # shrink bytearray with a slice at the front, in the middle
+                # and at the end
+                data = b'0123456789'
                 if logical_offset:
-                    del ba[:offset]
-                with inject_memory_error(self):
-                    del ba[front]
-                self.assertEqual(ba, b'89')
-                ba.append(ord('a'))
-                del ba[:1]
-                self.assertEqual(ba, b'9a')
-
-                ba = bytearray(b'0123456789')
-                if logical_offset:
-                    del ba[:offset]
-                replacement = bytearray(b'xy')
-                with inject_memory_error(self):
-                    ba[front] = replacement
-                self.assertEqual(ba, b'xy89')
-                ba.append(ord('a'))
-                del ba[:1]
-                self.assertEqual(ba, b'y89a')
+                    data = data[offset:]
+                for start, stop in ((0, -2), (1, -1), (2, len(data))):
+                    for replacement in (b'', b'.'):
+                        with self.subTest(start=start, stop=stop,
+                                          replacement=replacement):
+                            ba = bytearray(b'0123456789')
+                            if logical_offset:
+                                del ba[:offset]
+                            index = slice(start, stop)
+                            value = bytearray(replacement)
+                            expected = data[:start] + replacement + data[stop:]
+                            with inject_memory_error(self):
+                                if replacement:
+                                    ba[index] = value
+                                else:
+                                    del ba[index]
+                            self.assertEqual(ba, expected)
+                            # float() relies on the null byte after the data.
+                            self.assertEqual(float(ba), float(expected))
+                            ba.append(ord('5'))
+                            del ba[:1]
+                            self.assertEqual(ba, expected[1:] + b'5')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
