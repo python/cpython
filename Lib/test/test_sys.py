@@ -1416,6 +1416,15 @@ class SysModuleTest(unittest.TestCase):
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
+    def test_path(self):
+        self.assertIsInstance(sys.path, list)
+        for path in sys.path:
+            self.assertIsInstance(path, str)
+
+    def test_path0(self):
+        self.assertTrue(sys._path0 is None or isinstance(sys._path0, str),
+                        sys._path0)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
