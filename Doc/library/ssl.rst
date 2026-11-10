@@ -341,7 +341,7 @@ Exceptions
       The server's ECH retry configuration as an ECHConfigList,
       or ``b""`` if the server did not provide one.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. exception:: CertificateError
 
@@ -446,7 +446,7 @@ Certificate handling
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function now raises :exc:`SSLCertVerificationError` if *ca_certs* is
       specified but the certificate hostname does not match the server
       hostname.
@@ -906,7 +906,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_TRIALDECRYPT
 
@@ -915,7 +915,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_IGNORE_CID
 
@@ -923,7 +923,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_GREASE_RETRY_CONFIG
 
@@ -931,7 +931,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: HAS_ALPN
 
@@ -1033,7 +1033,7 @@ Constants
    Whether the OpenSSL library has built-in support for Encrypted Client
    Hello (ECH). This requires OpenSSL 4.0 or later with ECH enabled.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: CHANNEL_BINDING_TYPES
 
@@ -1110,33 +1110,33 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_SUCCESS
 
    ECH was accepted without a certificate verification error.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED
 
    An internal or protocol error occurred, or ECH was rejected without a retry
    configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH
 
    ECH was rejected and the server supplied an authenticated retry
    configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BAD_NAME
 
    ECH was accepted, but verification of the peer's certificate failed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH_BAD_NAME
 
@@ -1144,45 +1144,45 @@ Constants
    verification for the outer server name failed. The retry configuration
    must not be used.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_NOT_TRIED
 
    ECH is configured but has not been attempted (such as before the
    handshake starts).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_NOT_CONFIGURED
 
    No ECH configuration is set for this connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_GREASE
 
    ECH GREASE is enabled or was used, but no retry configuration was received.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_GREASE_ECH
 
    The client sent a GREASE ECH extension and received a retry configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BACKEND
 
    The server received a ClientHello marked as an inner ClientHello, as used
    by a backend server in an ECH split deployment.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BAD_CALL
 
    Invalid arguments were supplied to OpenSSL's ECH status API.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: Purpose.SERVER_AUTH
 
@@ -1538,7 +1538,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.get_ech_status()
 
@@ -1550,7 +1550,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.set_ech_config(ech_config)
 
@@ -1565,7 +1565,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.selected_alpn_protocol()
 
@@ -1647,7 +1647,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: SSLSocket.server_side
 
@@ -1849,7 +1849,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLContext.load_verify_locations(cafile=None, capath=None, cadata=None)
 
@@ -2078,7 +2078,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLContext.set_npn_protocols(npn_protocols)
 
@@ -2116,7 +2116,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: SSLContext.sni_callback
 
@@ -2284,7 +2284,7 @@ to speed up repeated connections from the same clients.
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *ech_config* argument was added.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -2326,7 +2326,7 @@ to speed up repeated connections from the same clients.
       *server_hostname* was accepted, and verified the certificate chain but
       never the peer's identity.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *ech_config* argument was added.
 
 .. attribute:: SSLContext.sslobject_class
@@ -3302,7 +3302,7 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 Encrypted Client Hello
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 Encrypted Client Hello (ECH) encrypts values in the ClientHello record sent when
 establishing a TLS connection. It requires an ECHConfigList containing algorithm

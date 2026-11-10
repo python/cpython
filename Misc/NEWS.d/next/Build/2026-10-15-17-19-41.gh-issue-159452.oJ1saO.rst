@@ -1,2 +1,0 @@
-``Tools/build/regen-configure.sh`` no longer leaves
-root-owned files in the source tree.

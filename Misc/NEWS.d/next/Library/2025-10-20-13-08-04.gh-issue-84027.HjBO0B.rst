@@ -1,1 +1,0 @@
-:mod:`shutil` now can unpack wheel packages using the ``whl`` format.

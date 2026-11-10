@@ -1,2 +1,0 @@
-Remove dead build and preprocessor code for SCO UnixWare, OpenUNIX, SCO
-OpenServer and ReliantUNIX.

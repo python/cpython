@@ -1,1 +1,0 @@
-Fix :class:`io.BytesIO` reads into overlapping views of the same buffer.

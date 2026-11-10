@@ -2088,7 +2088,7 @@ Argument groups
    to create instances.  Only the methods documented here are part of the
    public API; other attributes and methods are implementation details.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
       The private ``_ArgumentGroup`` name remains as an alias.
 
 
@@ -2165,7 +2165,7 @@ Mutual exclusion
    Only the ``add_argument`` method documented here is part of the public API;
    other attributes and methods are implementation details.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
       The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 

@@ -527,7 +527,7 @@ Dictionary objects
 
       Works with O(1) complexity.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. c:function:: int PyDict_AddWatcher(PyDict_WatchCallback callback)
