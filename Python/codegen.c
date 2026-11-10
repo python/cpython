@@ -4052,7 +4052,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         ADDOP(c, loc, POP_TOP);
 
         VISIT(c, expr, arg_expr);
-        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_FREEZE_SET);
 
         ADDOP_JUMP(c, loc, JUMP, end);
 
@@ -4151,7 +4151,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
             // result is already a set
         }
         else if (const_oparg == CONSTANT_BUILTIN_FROZENSET) {
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_FREEZE_SET);
         }
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);
