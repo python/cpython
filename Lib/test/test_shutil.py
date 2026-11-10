@@ -2614,6 +2614,10 @@ class TestWhich(BaseTest, unittest.TestCase):
         rv = shutil.which(self.file, path=self.dir)
         self.assertEqual(rv, self.filepath)
 
+    def test_pathlike_cmd(self):
+        rv = shutil.which(FakePath(self.file), path=self.dir)
+        self.assertEqual(rv, self.filepath)
+
     def test_absolute_cmd(self):
         # When given the fully qualified path to an executable that exists,
         # it should be returned.

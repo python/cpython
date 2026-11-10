@@ -1608,6 +1608,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
+    cmd = os.fspath(cmd)
     use_bytes = isinstance(cmd, bytes)
 
     # If we're given a path with a directory part, look it up directly rather
