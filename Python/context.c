@@ -168,13 +168,11 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     while (bits) {
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
-            // Pairs with the release store in PyContext_AddWatcher(), so that
-            // observing the active bit implies observing the callback pointer
-            // (and whatever the registering thread published before it).
+            // Pairs with the release store in PyContext_AddWatcher().
             PyContext_WatchCallback cb =
                 FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->context_watchers[i]);
-            // PyContext_ClearWatcher() may have cleared this slot after the
-            // bitmask was read, so the callback can legitimately be NULL.
+            // A previous callback or another thread may have cleared this
+            // watcher.
             if (cb != NULL && cb(event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
@@ -904,19 +902,24 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Assoc will
+    // not free the HAMT during traversal.
+    PyHamtObject *old_vars = context_get_current_vars(ctx);
+    Py_INCREF(old_vars);
     PyHamtObject *new_vars = _PyHamt_Assoc(
-        context_get_current_vars(ctx), (PyObject *)var, val);
+        old_vars, (PyObject *)var, val);
+    Py_DECREF(old_vars);
     if (new_vars == NULL) {
         return -1;
     }
-
-    context_set_vars(ctx, new_vars);
 
 #ifndef Py_GIL_DISABLED
     var->var_cached = val;  /* borrow */
     var->var_cached_tsid = ts->id;
     var->var_cached_tsver = ts->context_ver;
 #endif
+    /* Releasing the old variables may run a finalizer that updates the cache. */
+    context_set_vars(ctx, new_vars);
     return 0;
 }
 
@@ -932,8 +935,12 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Without will
+    // not free the HAMT during traversal.
     PyHamtObject *vars = context_get_current_vars(ctx);
+    Py_INCREF(vars);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
+    Py_DECREF(vars);
     if (new_vars == NULL) {
         return -1;
     }

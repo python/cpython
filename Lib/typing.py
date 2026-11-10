@@ -123,7 +123,6 @@ __all__ = [
     'TextIO',
 
     # One-off things.
-    'AnyStr',
     'assert_type',
     'assert_never',
     'cast',
@@ -475,6 +474,9 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
+        if isinstance(t, _LiteralGenericAlias):
+            # Unlike other generic aliases, Literal arguments aren't type expressions
+            return t
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
@@ -2837,11 +2839,6 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
 
-# A useful type variable with constraints.  This represents string types.
-# (This one *is* for export!)
-AnyStr = TypeVar('AnyStr', bytes, str)
-
-
 # Various ABCs mimicking those in collections.abc.
 _alias = _SpecialGenericAlias
 
@@ -3545,8 +3542,9 @@ Text = str
 # Constant that's True when type checking, but False here.
 TYPE_CHECKING = False
 
-
-class IO(Generic[AnyStr]):
+# Since `AnyStr` public API is deprecated since 3.16 and will be removed
+# in 3.21, we need to keep `IO` protocol the same as it used to be:
+class IO[AnyStr: (bytes, str)]:
     """Generic base class for TextIO and BinaryIO.
 
     This is an abstract, generic version of the return of open().
@@ -3946,6 +3944,20 @@ def __getattr__(attr):
             )
 
         return ByteString
+    elif attr == "AnyStr":
+        import warnings
+
+        warnings._deprecated(
+            "typing.AnyStr",
+            message=(
+                "{name!r} is deprecated and slated for removal "
+                "in Python {remove}. Use PEP 695 type parameters "
+                "with constraints instead"
+            ),
+            remove=(3, 21),
+        )
+        AnyStr = globals()["AnyStr"] = TypeVar('AnyStr', bytes, str)
+        return AnyStr
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj

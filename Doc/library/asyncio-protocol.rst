@@ -333,6 +333,9 @@ Write-only Transports
    This method does not block; it buffers the data and arranges for it
    to be sent out asynchronously.
 
+   The transport keeps a reference to *data* rather than copying. *data*
+   must not be mutated while being sent.
+
 .. method:: WriteTransport.writelines(list_of_data)
 
    Write a list (or any iterable) of data bytes to the transport.
@@ -734,14 +737,14 @@ received data, and close the connection::
     class EchoServerProtocol(asyncio.Protocol):
         def connection_made(self, transport):
             peername = transport.get_extra_info('peername')
-            print('Connection from {}'.format(peername))
+            print(f'Connection from {peername}')
             self.transport = transport
 
         def data_received(self, data):
             message = data.decode()
-            print('Data received: {!r}'.format(message))
+            print(f'Data received: {message!r}')
 
-            print('Send: {!r}'.format(message))
+            print(f'Send: {message!r}')
             self.transport.write(data)
 
             print('Close the client socket')
@@ -787,10 +790,10 @@ data, and waits until the connection is closed::
 
         def connection_made(self, transport):
             transport.write(self.message.encode())
-            print('Data sent: {!r}'.format(self.message))
+            print(f'Data sent: {message!r}')
 
         def data_received(self, data):
-            print('Data received: {!r}'.format(data.decode()))
+            print(f'Data received: {data.decode()!r}')
 
         def connection_lost(self, exc):
             print('The server closed the connection')
@@ -843,8 +846,8 @@ method, sends back received data::
 
         def datagram_received(self, data, addr):
             message = data.decode()
-            print('Received %r from %s' % (message, addr))
-            print('Send %r to %s' % (message, addr))
+            print(f'Received {message!r} from {addr}')
+            print(f'Send {message!r} to {addr}')
             self.transport.sendto(data, addr)
 
 

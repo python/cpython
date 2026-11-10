@@ -1,0 +1,2 @@
+Fix a crash caused by failing to set :exc:`MemoryError` on allocation
+failure when first using a Chinese, Japanese or Korean codec.
