@@ -39,6 +39,7 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                       |
 | |                       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
+| |                       | |                     | |                     | |  |func-lazy-import|_  |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
@@ -55,6 +56,7 @@ are always available.  They are listed here in alphabetical order.
 .. |func-range| replace:: ``range()``
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
+.. |func-lazy-import| replace:: ``__lazy_import__()``
 
 .. function:: abs(number, /)
 
@@ -2470,3 +2472,39 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       When the command line options :option:`-E` or :option:`-I` are being used,
       the environment variable :envvar:`PYTHONCASEOK` is now ignored.
+
+
+.. _func-lazy-import:
+
+.. function:: __lazy_import__(name, globals=None, locals=None, fromlist=(), level=0)
+
+   Import a module lazily. This is an advanced function; normally, use a
+   :ref:`lazy import statement <lazy-imports>` instead. The function must be
+   called at module scope. Calling it from a function or class body raises
+   :exc:`SyntaxError`.
+
+   The *name*, *fromlist*, and *level* arguments have the same purpose as in
+   :func:`__import__`, except that *fromlist* must be ``None``, a string, or a
+   tuple of strings. A string is treated as a one-element tuple. When
+   *fromlist* is ``None`` or an empty tuple, the selected module is the
+   top-level package of a dotted *name*. A non-empty tuple selects the module
+   named by *name*, not an individual member of that module.
+
+   If *globals* is omitted or ``None``, the caller's global namespace is used.
+   Otherwise, it must be a dictionary containing an ``__builtins__`` entry.
+   The global namespace supplies the package context for relative imports
+   and the built-in import function used to resolve the lazy import.
+   If *locals* is omitted or ``None``, it defaults to *globals*.
+
+   Normally, the result is a :class:`types.LazyImportType` proxy. Assigning
+   it to a global name defers loading the module until that name is used::
+
+      json = __lazy_import__('json')
+      # Using the global name resolves the lazy import.
+      data = json.loads('{"answer": 42}')
+
+   The filter installed by :func:`sys.set_lazy_imports_filter` can force an
+   eager import. If the filter returns false, the function returns the
+   imported module instead of a lazy proxy.
+
+   .. versionadded:: 3.15
