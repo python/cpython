@@ -2238,11 +2238,11 @@ to speed up repeated connections from the same clients.
    server-side or client-side behavior is desired from this socket.
 
    For client-side sockets, if *sock* is not yet connected, the underlying
-   SSL object is created when :meth:`connect` is called. For server-side
-   sockets, if the socket has no remote peer, it is assumed
+   SSL object is created when :meth:`~socket.socket.connect` is called.
+   For server-side sockets, if the socket has no remote peer, it is assumed
    to be a listening socket, and the server-side SSL wrapping is
    automatically performed on client connections accepted via the
-   :meth:`accept` method. The method may raise :exc:`SSLError`.
+   :meth:`~socket.socket.accept` method. The method may raise :exc:`SSLError`.
 
    On client connections, the optional parameter *server_hostname* specifies
    the hostname of the service which we are connecting to.  This allows a
