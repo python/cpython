@@ -42,9 +42,12 @@ def _listdir(testdir: StrPath) -> list[str]:
         # The test package may be inside an archive on sys.path, such as a
         # zip file, which the import system can still list.
         import pkgutil
-        if pkgutil.get_importer(testdir) is not None:
-            return [name if ispkg else f"{name}.py"
-                    for _, name, ispkg in pkgutil.iter_modules([testdir])]
+        names = [name if ispkg else f"{name}.py"
+                 for _, name, ispkg in pkgutil.iter_modules([testdir])]
+        if names:
+            return names
+    # Not in an archive, or the archive lists nothing at that path, in
+    # which case os.listdir() raises the error for a missing directory.
     return os.listdir(testdir)
 
 

@@ -2662,6 +2662,9 @@ class FindTestsTestCase(BaseTestCase):
         tests = findtests(testdir=testdir, split_test_dirs={'test_pkg'})
         self.assertEqual(tests, ['test.test_pkg.test_c', 'test_a', 'test_b'])
 
+        with self.assertRaises(OSError):
+            findtests(testdir=os.path.join(zip_path, 'nonexistent'))
+
 
 class MultiprocessIteratorTestCase(unittest.TestCase):
     def test_yields_all_groups_once(self):

@@ -78,32 +78,24 @@ def _is_archive_dir(path):
 
     A test package can live inside an archive such as a zip file, where
     os.listdir() does not work but the path entry finder for the archive
-    still knows the contents.  The path hooks are probed directly rather
-    than with pkgutil.get_importer(), which would cache a negative result
-    in sys.path_importer_cache and so hide a directory created at that
-    path later on.
+    still knows the contents.  A path hook may claim every path below its
+    archive, so this does not tell whether *path* exists there.
     """
-    if os.path.isdir(path):
-        return False
-    if sys.path_importer_cache.get(path) is not None:
-        return True
-    for hook in sys.path_hooks:
-        try:
-            hook(path)
-        except ImportError:
-            continue
-        return True
-    return False
+    return not os.path.isdir(path) and pkgutil.get_importer(path) is not None
 
 
 def _list_archive_dir(path):
     """The sorted (name, is_package) pairs of the modules in *path*.
 
     *path* is a directory inside an archive on sys.path; its path entry
-    finder lists it (see pkgutil.iter_modules()).
+    finder lists it (see pkgutil.iter_modules()).  Names which the finder
+    lists but cannot import, such as extension modules in a zip file, are
+    left out.
     """
+    finder = pkgutil.get_importer(path)
     return sorted((name, ispkg)
-                  for _, name, ispkg in pkgutil.iter_modules([path]))
+                  for _, name, ispkg in pkgutil.iter_modules([path])
+                  if finder.find_spec(name) is not None)
 
 
 class TestLoader(object):
@@ -340,6 +332,12 @@ class TestLoader(object):
                 parent, name = os.path.split(start_dir)
                 siblings = _list_archive_dir(parent)
                 is_not_importable = (name, True) not in siblings
+            else:
+                # A finder cannot say whether a directory exists in its
+                # archive, so apart from the archive file itself, one
+                # which lists no modules is taken not to exist.
+                is_not_importable = not (os.path.isfile(start_dir) or
+                                         _list_archive_dir(start_dir))
         else:
             # support for discovery from dotted module names
             try:
@@ -443,7 +441,7 @@ class TestLoader(object):
         if name != '.' and name not in self._loading_packages:
             # name is in self._loading_packages while we have called into
             # loadTestsFromModule with name.
-            tests, should_recurse = self._find_test_path(
+            tests, should_recurse = self._load_test_path(
                 start_dir, pattern, namespace,
                 _ARCHIVE_PACKAGE if in_archive else _FILESYSTEM_ENTRY)
             if tests is not None:
@@ -462,7 +460,7 @@ class TestLoader(object):
                      for path in sorted(os.listdir(start_dir))]
         for path, kind in paths:
             full_path = os.path.join(start_dir, path)
-            tests, should_recurse = self._find_test_path(
+            tests, should_recurse = self._load_test_path(
                 full_path, pattern, False, kind)
             if tests is not None:
                 yield tests
@@ -474,6 +472,14 @@ class TestLoader(object):
                     yield from self._find_tests(full_path, pattern, False)
                 finally:
                     self._loading_packages.discard(name)
+
+    def _load_test_path(self, full_path, pattern, namespace, kind):
+        # Subclasses override _find_test_path() without a *kind* parameter.
+        # Passing it for archive entries only keeps those overrides working
+        # for discovery on the file system.
+        if kind == _FILESYSTEM_ENTRY:
+            return self._find_test_path(full_path, pattern, namespace)
+        return self._find_test_path(full_path, pattern, namespace, kind)
 
     def _find_test_path(self, full_path, pattern, namespace=False,
                         kind=_FILESYSTEM_ENTRY):
