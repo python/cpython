@@ -1,8 +1,7 @@
 # -*- makefile -*-
 
-# These are the bootstrap modules, which makesetup gets with -b. The line
-# below says so as well, for the recipe of a Makefile from before -b
-# existed, which passes this file without it (gh-161364).
+# Mark bootstrap modules explicitly so older Makefile recipes work
+# without passing -b to makesetup (gh-161364).
 *bootstrap*
 
 # ---
