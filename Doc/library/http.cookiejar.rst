@@ -777,7 +777,7 @@ returned::
    import urllib.request
    from http.cookiejar import CookieJar, DefaultCookiePolicy
    policy = DefaultCookiePolicy(
-       rfc2965=True, strict_ns_domain=Policy.DomainStrict,
+       rfc2965=True, strict_ns_domain=DefaultCookiePolicy.DomainStrict,
        blocked_domains=["ads.net", ".ads.net"])
    cj = CookieJar(policy)
    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))

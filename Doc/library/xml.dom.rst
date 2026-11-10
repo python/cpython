@@ -515,7 +515,7 @@ NodeList Objects
 A :class:`NodeList` represents a sequence of nodes.  These objects are used in
 two ways in the DOM Core recommendation:  an :class:`Element` object provides
 one as its list of child nodes, and the :meth:`~Element.getElementsByTagName`
-and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Node` return
+and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Element` return
 objects with this interface to represent query results.
 
 :class:`NodeList` does *not* inherit from :class:`Node`.
@@ -687,6 +687,10 @@ inherits properties from :class:`Node`.
    :meth:`~Node.insertBefore` or :meth:`~Node.appendChild`.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   or if the prefix is ``'xml'``
+   and the namespace URI is not the XML namespace.
 
 
 .. method:: Document.createTextNode(data)
@@ -703,7 +707,7 @@ inherits properties from :class:`Node`.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: Document.createComment(data)
@@ -740,6 +744,11 @@ inherits properties from :class:`Node`.
    :class:`Element` object to use the newly created attribute instance.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. method:: Document.getElementById(id)
@@ -747,6 +756,12 @@ inherits properties from :class:`Node`.
    Return the element with the given ID, or ``None``.
    Only attributes declared as being of type ID in the DTD
    or by :meth:`Element.setIdAttribute` are searched.
+   If several elements have the same ID, the first one
+   in document order is returned.
+
+   .. versionchanged:: next
+      Previously, which of the elements with the same ID was returned
+      was unspecified and could change between calls.
 
 
 .. method:: Document.getElementsByTagName(tagName)
@@ -905,6 +920,11 @@ of that class.
    Note that a qname is the whole attribute name.  This is different than above.
 
    Raise :exc:`InvalidCharacterErr` if the name is not a valid XML name.
+   Raise :exc:`NamespaceErr` if the qualified name is malformed,
+   if it has a prefix and the namespace URI is empty,
+   if the prefix is ``'xml'`` and the namespace URI is not the XML namespace,
+   or if the name or the prefix is ``'xmlns'``
+   and the namespace URI is not the XMLNS namespace, or vice versa.
 
 
 .. _dom-attr-objects:
@@ -1285,7 +1305,7 @@ Its children are the replacement text of the entity, and are read-only.
 Parsers may expand entity references,
 so such a node only occurs in a document if it was created explicitly.
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 
 .. _dom-exceptions:

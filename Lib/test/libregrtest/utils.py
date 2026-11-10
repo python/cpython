@@ -67,6 +67,10 @@ FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
 
+def cleanup_test_name(name: TestName) -> TestName:
+    return name.removeprefix('test.')
+
+
 def format_duration(seconds: float) -> str:
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
@@ -397,7 +401,9 @@ def get_build_info():
 
     # --with-address-sanitizer
     sanitizers = []
-    if support.check_sanitizer(address=True):
+    if support.check_sanitizer(hwaddress=True):
+        sanitizers.append("HWASAN")
+    elif support.check_sanitizer(address=True):
         sanitizers.append("ASAN")
     # --with-memory-sanitizer
     if support.check_sanitizer(memory=True):
@@ -408,6 +414,9 @@ def get_build_info():
     # --with-thread-sanitizer
     if support.check_sanitizer(thread=True):
         sanitizers.append("TSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(function=True):
+        sanitizers.append("fsanitize=function")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -652,8 +661,7 @@ def display_header(use_resources: dict[str, str | None],
 
     cpu_count: object = os.cpu_count()
     if cpu_count:
-        # The function is new in Python 3.13; mypy doesn't know about it yet:
-        process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
+        process_cpu_count = os.process_cpu_count()
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
@@ -696,6 +704,7 @@ def display_header(use_resources: dict[str, str | None],
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
     tsan = support.check_sanitizer(thread=True)
+    function_san = support.check_sanitizer(function=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -705,12 +714,14 @@ def display_header(use_resources: dict[str, str | None],
         sanitizers.append("undefined behavior")
     if tsan:
         sanitizers.append("thread")
+    if function_san:
+        sanitizers.append("function")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
-            (ubsan, "UBSAN_OPTIONS"),
+            (ubsan or function_san, "UBSAN_OPTIONS"),
             (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)

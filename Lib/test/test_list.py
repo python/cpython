@@ -377,11 +377,12 @@ class ListTest(list_tests.CommonTest):
     def test_no_memory(self):
         # gh-118331: Make sure we don't crash if list allocation fails
         code = textwrap.dedent("""
-        import _testcapi, sys
+        from test import support
+        import sys
         # Prime the freelist
         l = [None]
         del l
-        _testcapi.set_nomemory(0)
+        support.inject_memory_error()
         l = [None]
         """)
         rc, _, _ = assert_python_failure("-c", code)

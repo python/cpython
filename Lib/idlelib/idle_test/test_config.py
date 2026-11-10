@@ -312,6 +312,49 @@ class IdleConfTest(unittest.TestCase):
         eq(conf.userCfg['foo'].Get('Foo Bar', 'foo'), 'newbar')
         eq(conf.userCfg['foo'].GetOptionList('Foo Bar'), ['foo'])
 
+    def test_load_cfg_files_bad_format(self):
+        # gh-66172: rename an unparsable user file and save the exception.
+        conf = self.new_config(_utest=True)
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        confpath = os.path.join(tmpdir.name, 'config-extensions.cfg')
+        with open(confpath, 'w') as f:
+            f.write('enable=1\n')  # No section header.
+        conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
+
+        self.assertIsNone(conf.file_load_error_message())
+        conf.LoadCfgFiles()  # Must not raise.
+
+        self.assertEqual(len(conf.file_load_errors), 1)
+        file, err = conf.file_load_errors[0]
+        self.assertEqual(file, confpath)
+        # The bad file is moved aside, not left to be overwritten or deleted.
+        self.assertFalse(os.path.exists(confpath))
+        with open(confpath + '.bad') as f:
+            self.assertEqual(f.read(), 'enable=1\n')
+        message = conf.file_load_error_message()
+        self.assertIn(confpath, message)
+        self.assertIn('MissingSectionHeaderError', message)
+
+    def test_load_cfg_files_bad_encoding(self):
+        # gh-66172: a file that is not valid UTF-8 is handled like a bad parse.
+        conf = self.new_config(_utest=True)
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        confpath = os.path.join(tmpdir.name, 'config-main.cfg')
+        with open(confpath, 'wb') as f:
+            f.write(b'[Section]\nkey = \xff\n')  # Invalid UTF-8.
+        conf.defaultCfg['foo'] = config.IdleConfParser('')  # Empty, valid.
+        conf.userCfg['foo'] = config.IdleUserConfParser(confpath)
+
+        conf.LoadCfgFiles()  # Must not raise.
+
+        self.assertEqual(len(conf.file_load_errors), 1)
+        self.assertIsInstance(conf.file_load_errors[0][1], UnicodeDecodeError)
+        self.assertFalse(os.path.exists(confpath))
+        self.assertTrue(os.path.exists(confpath + '.bad'))
+
     def test_save_user_cfg_files(self):
         conf = self.mock_config()
 

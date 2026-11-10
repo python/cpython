@@ -1,0 +1,2 @@
+Restore ``mimalloc``'s previous behavior of processing delayed frees from other
+threads on every generic malloc call, reverting the change introduced in v2.2.2.
