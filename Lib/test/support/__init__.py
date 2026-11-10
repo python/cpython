@@ -437,10 +437,11 @@ def skip_if_buildbot(reason=None):
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
-                    function=True):
+                    function=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub or thread):
-        raise ValueError('At least one of address, memory, ub or thread must be True')
+    if not (address or memory or ub or thread or function):
+        raise ValueError('At least one of address, memory, ub, '
+                         'thread or function must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -485,11 +486,13 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False,
+                      thread=False, function=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub,
+                           thread=thread, function=function)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
