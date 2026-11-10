@@ -1,6 +1,9 @@
 import contextvars
+import sys
+import threading
 import unittest
 
+from test import support
 from test.support import import_helper, threading_helper
 
 _testcapi = import_helper.import_module("_testcapi")
@@ -39,13 +42,55 @@ class TestContextWatcherThreadSafety(unittest.TestCase):
         threading_helper.run_concurrently(worker, NTHREADS)
         self.assertGreater(len(results), 0)
 
+    def test_concurrent_clear_same_watcher(self):
+        """Concurrent ClearWatcher calls on one ID: exactly one succeeds.
+
+        Called one after another, every call after the first raises
+        ValueError, so overlapping calls must give the same result.  The
+        threads busy-wait on a round counter instead of a Barrier so that
+        they reach PyContext_ClearWatcher() close enough together to overlap.
+        """
+        if sys._is_gil_enabled():
+            # The calls cannot overlap, and the busy-waits would just
+            # contend for the GIL.
+            self.skipTest("needs the GIL to be disabled")
+        ROUNDS = 100
+        round_no = 0
+        wid = None
+        successes = [0] * NTHREADS
+        done = threading.Barrier(NTHREADS + 1)
+
+        def worker(k):
+            for r in range(1, ROUNDS + 1):
+                while round_no < r:
+                    if done.broken:
+                        return
+                try:
+                    _testcapi.clear_context_watcher(wid)
+                    successes[k] += 1
+                except ValueError:
+                    pass
+                done.wait(support.SHORT_TIMEOUT)
+
+        threads = [threading.Thread(target=worker, args=(k,))
+                   for k in range(NTHREADS)]
+        with threading_helper.start_threads(threads):
+            try:
+                for r in range(1, ROUNDS + 1):
+                    before = sum(successes)
+                    wid = _testcapi.add_noop_context_watcher()
+                    round_no = r
+                    done.wait(support.SHORT_TIMEOUT)
+                    self.assertEqual(sum(successes) - before, 1)
+            finally:
+                done.abort()
+
     def test_clear_watcher_races_notification(self):
         """Race ClearWatcher against notification.
 
         notify_context_watchers() snapshots the bitmask, then loads
         context_watchers[i], which ClearWatcher may have set to NULL in
-        between.  A debug build reaches assert(cb != NULL); a release build
-        may call a NULL or stale function pointer.
+        between, so that load must be atomic and must tolerate NULL.
         """
         def switcher():
             # Context().run() enters and exits a context, and each switch

@@ -215,21 +215,24 @@ PyContext_AddWatcher(PyContext_WatchCallback callback)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
 
+    int watcher_id = -1;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&interp->context_watchers_mutex);
     for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
-        // Claim the slot with a single atomic step: a plain test-then-store
-        // lets two threads select the same slot and return the same ID.
-        // Losing the race means the slot is taken, so just try the next one.
-        PyContext_WatchCallback expected = NULL;
-        if (_Py_atomic_compare_exchange_ptr(&interp->context_watchers[i],
-                                            &expected, callback)) {
-            // Publish the callback before advertising the slot as active.
+        if (interp->context_watchers[i] == NULL) {
+            // Publish the callback before setting its bit.
+            FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[i], callback);
             set_context_watcher_bit(interp, i);
-            return i;
+            watcher_id = i;
+            break;
         }
     }
+    Py_END_CRITICAL_SECTION();
 
-    PyErr_SetString(PyExc_RuntimeError, "no more context watcher IDs available");
-    return -1;
+    if (watcher_id < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "no more context watcher IDs available");
+    }
+    return watcher_id;
 }
 
 
@@ -242,16 +245,21 @@ PyContext_ClearWatcher(int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid context watcher ID %d", watcher_id);
         return -1;
     }
-    if (FT_ATOMIC_LOAD_PTR_RELAXED(interp->context_watchers[watcher_id]) == NULL) {
+
+    int found = 0;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&interp->context_watchers_mutex);
+    if (interp->context_watchers[watcher_id] != NULL) {
+        // notify_context_watchers() skips a NULL callback.
+        clear_context_watcher_bit(interp, watcher_id);
+        FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[watcher_id], NULL);
+        found = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (!found) {
         PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
         return -1;
     }
-    // Stop notification selecting this slot before retiring the callback, so
-    // the window in which a notifier sees the bit but loads NULL is as short
-    // as possible.  That window is benign: notify_context_watchers() skips a
-    // NULL callback.
-    clear_context_watcher_bit(interp, watcher_id);
-    FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[watcher_id], NULL);
     return 0;
 }
 
