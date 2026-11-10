@@ -125,6 +125,13 @@ def _coerce_args(*args):
     #   - encoding function otherwise
     str_input = None
     for arg in args:
+        if not (arg is None or isinstance(arg, str) or hasattr(arg, 'decode')):
+            if arg:
+                raise TypeError("Expected str, bytes or None, "
+                                f"not {type(arg).__name__}")
+            warnings.warn(f"Accepting {type(arg).__name__} objects with false "
+                          f"value in urllib.parse is deprecated as of 3.16",
+                          DeprecationWarning, stacklevel=3)
         if arg:
             if str_input is None:
                 str_input = isinstance(arg, str)
@@ -712,12 +719,12 @@ def _urlunsplit(scheme, netloc, url, query, fragment):
 def urljoin(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
-    if not base:
-        return url
-    if not url:
-        return base
-
     base, url, _coerce_result = _coerce_args(base, url)
+    if not base:
+        return _coerce_result(url)
+    if not url:
+        return _coerce_result(base)
+
     bscheme, bnetloc, bpath, bquery, bfragment = \
             _urlsplit(base, None, allow_fragments)
     scheme, netloc, path, query, fragment = \

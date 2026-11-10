@@ -1258,6 +1258,16 @@ New deprecations
     Use :pep:`695` syntax instead.
     (Contributed by Nikita Sobolev in :gh:`150190`.)
 
+* :mod:`urllib.parse`:
+
+  * Accepting objects with false values (like ``0`` and ``[]``) except empty
+    strings, byte-like objects and ``None`` is now deprecated in the URL
+    parsing functions, and is scheduled to raise :exc:`TypeError` in Python
+    3.18.  This extends the same deprecation made in Python 3.14 for
+    :func:`~urllib.parse.parse_qsl`, :func:`~urllib.parse.parse_qs`, and
+    :func:`~urllib.parse.urlencode`.
+    (Contributed by Jacob Walls in :gh:`63293`.)
+
 .. Add deprecations above alphabetically, not here at the end.
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
