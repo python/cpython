@@ -1254,7 +1254,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_non_string_true_values_rejected(self):
         # True values raise informative TypeErrors
-        msg = "Expected a string, bytes, or None: got <class "
+        msg = "Expected str, bytes or None, not "
         with self.assertRaisesRegex(TypeError, msg):
             urllib.parse.urlsplit(1, b'http')
 
@@ -2007,7 +2007,7 @@ class DeprecationTest(unittest.TestCase):
         ]
         for func, args in cases:
             with self.subTest(callable=func.__name__, args=args):
-                with self.assertWarnsRegex(DeprecationWarning, "false values"):
+                with self.assertWarnsRegex(DeprecationWarning, "false value"):
                     func(*args)
 
 

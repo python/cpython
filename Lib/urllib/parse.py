@@ -125,19 +125,19 @@ def _coerce_args(*args):
     #   - encoding function otherwise
     str_input = None
     for arg in args:
+        if not (arg is None or isinstance(arg, str) or hasattr(arg, 'decode')):
+            if arg:
+                raise TypeError("Expected str, bytes or None, "
+                                f"not {type(arg).__name__}")
+            warnings.warn(f"Accepting {type(arg).__name__} objects with false "
+                          f"value in urllib.parse is deprecated as of 3.16",
+                          DeprecationWarning, stacklevel=3)
         if arg:
             if str_input is None:
                 str_input = isinstance(arg, str)
             else:
                 if isinstance(arg, str) != str_input:
                     raise TypeError("Cannot mix str and non-str arguments")
-            if not hasattr(arg, "decode") and str_input is False:
-                raise TypeError(f"Expected a string, bytes, or None: got {type(arg)}")
-        elif arg is not None and not isinstance(arg, str) and not hasattr(arg, "decode"):
-            warnings.warn(
-                f"Providing false values other than empty strings, bytes, or"
-                f"None to urllib.parse is deprecated: got {type(arg)}",
-                DeprecationWarning, stacklevel=3)
     if str_input is None:
         for arg in args:
             if arg is not None:
