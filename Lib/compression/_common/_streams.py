@@ -171,6 +171,10 @@ class DecompressReader(io.RawIOBase):
         return self._pos
 
 
+_TRUNCATED = ("Compressed data ended before the "
+              "end-of-stream marker was reached")
+
+
 def _decompress_all(data, decomp_factory, trailing_error=(), *,
                     stream_magic=(), truncated_error, **decomp_args):
     """Decompress all of the concatenated streams in *data*.
@@ -181,18 +185,27 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
     data, unless that stream starts with *stream_magic*.  A stream without
     an end-of-stream marker raises *truncated_error*.
     """
-    results = []
+    # There is usually a single stream: decompress all of the data in one
+    # go, without the views and lists needed for more streams.
+    decomp = decomp_factory(**decomp_args)
+    first = decomp.decompress(data)
+    if not decomp.eof:
+        raise truncated_error(_TRUNCATED)
+    unused = len(decomp.unused_data)
+    if not unused:
+        return first
+    results = [first]
     # The views are released on exit, so that the caller can resize a
     # bytearray argument again, also while handling an exception.
     with memoryview(data) as view, view.cast("B") as data:
-        pos = 0
-        # There is usually a single stream: the first chunk is all of the
-        # data, to decompress it in one go.
-        chunk_size = len(data)
+        pos = len(data) - unused
         while True:
             decomp = decomp_factory(**decomp_args)
             start = pos
             res = []
+            # Later streams start small: a larger first chunk reads further
+            # past the end of a short stream, a smaller one needs more calls.
+            chunk_size = 1024
             try:
                 # Feed the stream in chunks of increasing size, so that what
                 # is read past its end (and copied into unused_data) is
@@ -204,8 +217,6 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
                         pos += len(chunk)
                     chunk_size *= 2
             except trailing_error:
-                if not results:
-                    raise  # Error in the first stream; bail out.
                 if stream_magic:
                     if isinstance(stream_magic, bytes):
                         stream_magic = (stream_magic,)
@@ -217,12 +228,8 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
                 break
             results.extend(res)
             if not decomp.eof:
-                raise truncated_error("Compressed data ended before the "
-                                      "end-of-stream marker was reached")
+                raise truncated_error(_TRUNCATED)
             pos -= len(decomp.unused_data)
             if pos == len(data):
                 break
-            # Later streams start small: a larger first chunk reads further
-            # past the end of a short stream, a smaller one needs more calls.
-            chunk_size = 1024
     return b"".join(results)
