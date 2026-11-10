@@ -134,11 +134,11 @@ as possible without violating the denominator bound.
 The main loop, together with that partial Euclidean step, produces candidate
 approximations $r/s$ and $t/u$ which bracket the target fraction $m/n$, and
 whose denominators are no greater than the limit $\ell$. With just two
-additional pieces of information, namely that $ts - ru = ±1$ and that $\ell < s
-+ u$, we can deduce that _all_ fractions strictly between $r/s$ and $t/u$ have
-denominator greater than $\ell$, hence that either $r/s$ or $t/u$ is a best
-approximation. The final line of the code then determines which of these two
-fractions is better and returns it.
+additional pieces of information, namely that $ts - ru = ±1$ and that
+$\ell < s + u$, we can deduce that _all_ fractions strictly between $r/s$ and
+$t/u$ have denominator greater than $\ell$, hence that either $r/s$ or $t/u$
+is a best approximation. The final line of the code then determines which of
+these two fractions is better and returns it.
 
 In more detail, we'll show in the sections below that after exiting the `while`
 loop and defining $t$ and $u$, the following five properties hold:
@@ -156,12 +156,12 @@ any fraction $y/z$ strictly between $r/s$ and $t/u$ has $z > \ell$. We have:
 
 $$z = (ts - ru)vz = (tz - yu)vs + (ys - rz)vu.$$
 
-Now $v$ is either $1$ or $-1$. If $v = 1$ then $r/s < t/u$, so $r/s < y/z <
-t/u$. So $ys - rz$ and $tz - yu$ are positive, hence $(ys - rz)v$ and $(tz -
-yu)v$ are positive integers. Conversely if $v = -1$ then $t/u < r/s$, so $t/u <
-y/z < r/s$ and $ys - rz$ and $tz - yu$ are negative. So again $(ys - rz)v$ and
-$(tz - yu)v$ are positive integers. So in either case, $(tz - yu)v \ge 1$ and
-$(ys - rz)v \ge 1$, hence
+Now $v$ is either $1$ or $-1$. If $v = 1$ then $r/s < t/u$, so $r/s < y/z < t/u$.
+So $ys - rz$ and $tz - yu$ are positive, hence $(ys - rz)v$ and $(tz - yu)v$
+are positive integers. Conversely if $v = -1$ then $t/u < r/s$, so
+$t/u < y/z < r/s$ and $ys - rz$ and $tz - yu$ are negative. So again
+$(ys - rz)v$ and $(tz - yu)v$ are positive integers. So in either case,
+$(tz - yu)v \ge 1$ and $(ys - rz)v \ge 1$, hence
 $$z = [(tz-yu)v]s + [(ys - rz)v]u \ge s + u > \ell.$$
 
 At this point $r/s$ and $t/u$ are candidates, there are no candidates strictly
@@ -208,14 +208,14 @@ invariant $b < a$ is smaller than the old value of $a$.
 Here we prove that the five properties mentioned earlier hold.
 
 One of our two possible return values, $r/s$, comes directly from the loop. We
-construct the second candidate $t/u$ after the loop: $t = p + kr$ and $u = q +
-ks$, with $k = \lfloor (\ell - q) / s \rfloor$. Think of $t/u$ as the result of
-taking a _partial_ Euclidean step, as a replacement for the full Euclidean step
-which would have taken the denominator out of bounds.
+construct the second candidate $t/u$ after the loop: $t = p + kr$ and
+$u = q + ks$, with $k = \lfloor (\ell - q) / s \rfloor$. Think of $t/u$ as
+the result of taking a _partial_ Euclidean step, as a replacement for the
+full Euclidean step which would have taken the denominator out of bounds.
 
 That $0 < s \le \ell$ follows directly from the loop invariants. From the
-definition of $k$ we have $ks \le \ell - q < s + ks$, hence $ks + q \le \ell <
-s + ks + q$, that is
+definition of $k$ we have $ks \le \ell - q < s + ks$, hence
+$ks + q \le \ell < s + ks + q$, that is
 $$u \le \ell < s + u.$$
 That $u$ is positive follows from $s \le \ell < s + u$. So $t/u$ is also a
 valid candidate approximation.
@@ -225,8 +225,8 @@ analogous relation for $r/s$ and $t/u$:
 $$(ts - ru)v = 1.$$
 
 We also define an integer $c = a - kb$, the result of taking the partial
-Euclidean step that gives $t$ and $u$. It's immediate from the definitions and
-the earlier loop invariants that:
+Euclidean step that gives $t$ and $u$. It's immediate from the definitions
+and the earlier loop invariants that:
 $$(tn - mu)v = c$$
 and
 $$bt + cr = m$$
