@@ -190,8 +190,8 @@ Morsel Objects
 
    .. versionchanged:: next
       :meth:`!__setitem__` and :meth:`!__ior__` now raise :exc:`CookieError` if
-      a value string for any attribute except ``comment`` contains the reserved
-      separator character ``;``.
+      a value string for any attribute except :attr:`comment` contains the
+      reserved separator character ``;``.
 
 .. attribute:: Morsel.value
 
@@ -259,7 +259,7 @@ Morsel Objects
 
    .. versionchanged:: next
       :exc:`CookieError` is now raised if a value string for any attribute
-      except ``comment`` contains the reserved separator character ``;``.
+      except :attr:`comment` contains the reserved separator character ``;``.
 
 .. method:: Morsel.copy(value)
 
@@ -276,7 +276,7 @@ Morsel Objects
 
    .. versionchanged:: next
       :exc:`CookieError` is now raised if the value string for any attribute
-      except ``comment`` contains the reserved separator character ``;``.
+      except :attr:`comment` contains the reserved separator character ``;``.
 
 .. _cookie-example:
 
