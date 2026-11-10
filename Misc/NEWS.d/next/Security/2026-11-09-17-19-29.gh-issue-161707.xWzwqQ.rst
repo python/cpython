@@ -2,4 +2,4 @@
 
 :mod:`http.cookies` now raises :exc:`~http.cookies.CookieError` on any attempt
 to set a value string that contains the reserved separator character ``;`` to
-any attribute except :attr:`comment`.
+any attribute except :attr:`~http.cookies.Morsel.comment`.
