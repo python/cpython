@@ -65,6 +65,7 @@ Summary -- Release highlights
 * :ref:`Set operations and Unicode properties in regular expressions
   <whatsnew316-re>`.
 * :ref:`Encrypted Client Hello support in ssl <whatsnew316-ech>`.
+* :ref:`Faster interpreter startup <whatsnew316-optimizations>`.
 * :ref:`Faster UUID generation <whatsnew316-uuid-optimizations>`, with
   UUIDv4 and UUIDv7 about 15 and 30 times faster in microbenchmarks.
 * :ref:`Build support for tvOS, watchOS, and visionOS
@@ -1054,8 +1055,19 @@ zlib
 
 .. Add improved modules above alphabetically, not here at the end.
 
+.. _whatsnew316-optimizations:
+
 Optimizations
 =============
+
+* Interpreter startup is faster, and several common operations have been
+  optimized. Improvements include less work during garbage collection and
+  faster construction of :class:`list`, :class:`dict`, :class:`bytes`, and
+  :class:`bytearray` objects.
+  Startup performance is tracked on the `Python Speed Center
+  <https://speed.python.org/timeline/?exe=12&base=&ben=python_startup.legacy&env=1%2C7&revs=50&equid=off&quarts=on&extr=on>`__.
+  (Contributed by Pablo Galindo Salgado, Cody Maloney, and Pieter Eendebak in
+  :gh:`159138`, :gh:`159154`, :gh:`160859`, :gh:`160922`, and :gh:`158891`.)
 
 * Speed up iteration over asynchronous generators: values yielded to
   ``async for`` no longer create and discard a :exc:`StopIteration` exception
