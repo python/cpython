@@ -1,0 +1,4 @@
+.. cve: CVE-2026-115559
+
+:meth:`imaplib.IMAP4.starttls` now discards cached untagged responses received
+before STARTTLS, preventing them from being treated as TLS-protected data.
