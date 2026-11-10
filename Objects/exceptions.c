@@ -4593,6 +4593,7 @@ PyStatus
 _PyExc_InitState(PyInterpreterState *interp)
 {
     struct _Py_exc_state *state = &interp->exc_state;
+    state->strerror_cache = Py_None;
 
 #define ADD_ERRNO(TYPE, CODE) \
     do { \
@@ -4611,8 +4612,6 @@ _PyExc_InitState(PyInterpreterState *interp)
     if (!state->errnomap) {
         return _PyStatus_NO_MEMORY();
     }
-
-    state->strerror_cache = Py_None;
 
     ADD_ERRNO(BlockingIOError, EAGAIN);
     ADD_ERRNO(BlockingIOError, EALREADY);

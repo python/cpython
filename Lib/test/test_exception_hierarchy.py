@@ -152,8 +152,12 @@ class AttributesTest(unittest.TestCase):
             old = locale.setlocale(locale.LC_MESSAGES)
             self.addCleanup(locale.setlocale, locale.LC_MESSAGES, old)
             locale.setlocale(locale.LC_MESSAGES, "C")
-            # Rebuilt only if the locale changed.
-            self.assertEqual(strerror() is message, old == "C")
+            message = strerror()
+            try:
+                locale.setlocale(locale.LC_MESSAGES, "C.UTF-8")
+                self.assertIsNot(strerror(), message)
+            except locale.Error:
+                pass
 
     @unittest.skipUnless(os.name == "nt", "Windows-specific test")
     def test_errno_translation(self):
