@@ -828,6 +828,9 @@ class IMAP4:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
+            # Discard received state before TLS was established
+            # since data could have been injected by a MITM.
+            self.untagged_responses = {}
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
             self.file = self.sock.makefile('rb')
