@@ -186,10 +186,11 @@ typedef struct {
     (assert(PyUnicode_Check(op)), \
      _Py_CAST(PyASCIIObject*, (op)))
 #define _PyCompactUnicodeObject_CAST(op) \
-    (assert(PyUnicode_Check(op)), \
+    (assert(!(_PyASCIIObject_CAST(op)->state.ascii \
+              && _PyASCIIObject_CAST(op)->state.compact)), \
      _Py_CAST(PyCompactUnicodeObject*, (op)))
 #define _PyUnicodeObject_CAST(op) \
-    (assert(PyUnicode_Check(op)), \
+    (assert(!_PyASCIIObject_CAST(op)->state.compact), \
      _Py_CAST(PyUnicodeObject*, (op)))
 
 
