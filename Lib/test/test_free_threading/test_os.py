@@ -17,6 +17,7 @@ def _directory_scan_during_gc(directory, names):
     import os
     import threading
     import time
+    from test import support
 
     expected = set(names)
     barrier = threading.Barrier(5)
@@ -25,13 +26,13 @@ def _directory_scan_during_gc(directory, names):
     collections = []
 
     def collect():
-        barrier.wait(timeout=15)
+        barrier.wait(timeout=support.LONG_TIMEOUT)
         while not stop.is_set() and len(collections) < 512:
             collections.append(gc.collect())
             time.sleep(0.0001)
 
     def scan():
-        barrier.wait(timeout=15)
+        barrier.wait(timeout=support.LONG_TIMEOUT)
         for _ in range(256):
             try:
                 assert set(os.listdir(directory)) == expected
@@ -53,10 +54,10 @@ def _directory_scan_during_gc(directory, names):
         worker.start()
     try:
         for worker in workers:
-            worker.join(timeout=30)
+            worker.join(timeout=support.LONG_TIMEOUT)
     finally:
         stop.set()
-        collector.join(timeout=15)
+        collector.join(timeout=support.LONG_TIMEOUT)
     assert not collector.is_alive()
     assert all(not worker.is_alive() for worker in workers)
     assert collections
@@ -67,6 +68,7 @@ def _directory_scan_during_gc(directory, names):
 class TestOs(unittest.TestCase):
     def test_directory_io_during_subinterpreter_gc(self):
         from concurrent import interpreters
+        from test import support
         from concurrent.futures import ThreadPoolExecutor
         import json
         from pathlib import Path
@@ -85,7 +87,7 @@ class TestOs(unittest.TestCase):
                                                _directory_scan_during_gc,
                                                directory, names)
                                    for child in children]
-                        results = [future.result(timeout=90)
+                        results = [future.result(timeout=support.LONG_TIMEOUT)
                                    for future in futures]
                 finally:
                     for child in children:
