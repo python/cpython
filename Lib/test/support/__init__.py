@@ -2289,3 +2289,13 @@ def control_characters_c0() -> list[str]:
     C0 control characters defined as the byte range 0x00-0x1F, and 0x7F.
     """
     return [chr(c) for c in range(0x00, 0x20)] + ["\x7F"]
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
