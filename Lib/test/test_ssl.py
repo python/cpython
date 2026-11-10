@@ -4217,8 +4217,11 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
-                cipher = s.cipher()[0].split('-')
-                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+                # TLS 1.3 cipher suite names don't include the key exchange
+                # and authentication algorithms.
+                if s.version() == 'TLSv1.2':
+                    cipher = s.cipher()[0].split('-')
+                    self.assertEqual(cipher[:2], ['ECDHE', 'ECDSA'])
 
     @unittest.skipUnless(IS_OPENSSL_3_0_0,
                          "test requires RFC 5280 check added in OpenSSL 3.0+")
@@ -4276,7 +4279,7 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
-                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+                self.assertEqual(cipher[:2], ['ECDHE', 'ECDSA'])
 
     def test_check_hostname_idn(self, warnings_filters=True):
         if support.verbose:
