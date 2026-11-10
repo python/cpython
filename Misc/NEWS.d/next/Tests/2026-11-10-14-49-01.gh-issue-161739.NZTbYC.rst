@@ -1,3 +1,2 @@
 ``test_hashlibtest_pbkdf2_hmac_c`` from ``test_haslib`` no longer fails with
-``ValueError: [Provider routines] invalid salt length`` with FIPS enabled on
-OpenSSL 4.
+``ValueError: [Provider routines] invalid salt length`` with FIPS enabled.
