@@ -1060,6 +1060,44 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
+    def test_ignore_zeros_concatenated(self):
+        # gh-159643: reading past the end of the compressed data
+        # must not raise EOFError.
+        with self.open(tmpname, "wb") as fobj:
+            for name in ("a", "b"):
+                with tarfile.open(fileobj=fobj, mode="w") as tar:
+                    tar.addfile(tarfile.TarInfo(name))
+        with tarfile.open(tmpname, self.mode, ignore_zeros=True) as tar:
+            self.assertEqual(tar.getnames(), ["a", "b"])
+
+    def test_no_end_of_archive_blocks(self):
+        # gh-159643
+        tarinfo = tarfile.TarInfo("a")
+        tarinfo.size = 5
+        with self.open(tmpname, "wb") as fobj:
+            fobj.write(tarinfo.tobuf())
+            fobj.write(b"hello".ljust(tarfile.BLOCKSIZE, b"\0"))
+        with tarfile.open(tmpname, self.mode) as tar:
+            self.assertEqual(tar.getnames(), ["a"])
+
+    def test_data_after_end_of_stream(self):
+        # gh-159643: with a small bufsize, the compressed data spans
+        # several reads of the file and the padding that follows it
+        # is not read together with the end of the compressed data.
+        bufsize = tarfile.BLOCKSIZE
+        data = Random(0).randbytes(8 * bufsize)
+        tarinfo = tarfile.TarInfo("a")
+        tarinfo.size = len(data)
+        with self.open(tmpname, "wb") as fobj:
+            with tarfile.open(fileobj=fobj, mode="w") as tar:
+                tar.addfile(tarinfo, io.BytesIO(data))
+        with open(tmpname, "ab") as fobj:
+            fobj.write(bytes(4 * bufsize))
+        with tarfile.open(tmpname, self.mode, bufsize=bufsize,
+                          ignore_zeros=True) as tar:
+            members = [(m.name, tar.extractfile(m).read()) for m in tar]
+        self.assertEqual(members, [("a", data)])
+
 class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
     pass
 
