@@ -1434,6 +1434,23 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     self.assertEqual(d, self.theclass.fromordinal(n))
                     n += 1
 
+        # Check the first and last days of every month in years at the
+        # start and the end of the 4-, 100- and 400-year cycles.
+        for year in (1, 3, 4, 5, 99, 100, 101, 399, 400, 401, 1899, 1900,
+                     1901, 1999, 2001, 2100, 2399, 2400, 9996, 9999):
+            isleap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+            n = self.theclass(year, 1, 1).toordinal()
+            for month, maxday in zip(range(1, 13), dim):
+                if month == 2 and isleap:
+                    maxday += 1
+                for day, ordinal in (1, n), (maxday, n + maxday - 1):
+                    with self.subTest(year=year, month=month, day=day):
+                        d = self.theclass(year, month, day)
+                        self.assertEqual(d.toordinal(), ordinal)
+                        self.assertEqual(d, self.theclass.fromordinal(ordinal))
+                n += maxday
+            self.assertEqual(n, self.theclass(year, 12, 31).toordinal() + 1)
+
     def test_extreme_ordinals(self):
         a = self.theclass.min
         a = self.theclass(a.year, a.month, a.day)  # get rid of time parts

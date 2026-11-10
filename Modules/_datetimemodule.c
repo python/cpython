@@ -471,88 +471,58 @@ days_before_month(int year, int month)
 #define DI100Y  36524   /* _PyTime_DaysBeforeYear(101); days in 100 years */
 #define DI400Y  146097  /* _PyTime_DaysBeforeYear(401); days in 400 years  */
 
-/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1. */
+/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1.
+ *
+ * This is Figure 12 of Neri and Schneider [1], the algorithm also used by
+ * the Linux kernel's rtc_time64_to_tm() and by libstdc++'s <chrono>.  It
+ * works in a computational calendar whose years start on March 1, so that
+ * the irregular February comes last, and evaluates every step (century,
+ * year, month, day) as a Euclidean affine function (a*n + b) / d, with no
+ * lookup tables and no estimate-and-correct step.  The year and the month
+ * steps each take one multiplication whose high bits are the quotient and
+ * whose low bits give the remainder.  The century step is done in 64 bits
+ * so that every positive int ordinal gives the same result as the classic
+ * algorithm.
+ *
+ * [1] Neri C, Schneider L. Euclidean affine functions and their application
+ *     to calendar algorithms. Softw Pract Exper. 2023;53(4):937-970.
+ *     doi:10.1002/spe.3172
+ */
 static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
-    int n, n1, n4, n100, n400, leapyear, preceding;
-
-    /* ordinal is a 1-based index, starting at 1-Jan-1.  The pattern of
-     * leap years repeats exactly every 400 years.  The basic strategy is
-     * to find the closest 400-year boundary at or before ordinal, then
-     * work with the offset from that boundary to ordinal.  Life is much
-     * clearer if we subtract 1 from ordinal first -- then the values
-     * of ordinal at 400-year boundaries are exactly those divisible
-     * by DI400Y:
-     *
-     *    D  M   Y            n              n-1
-     *    -- --- ----        ----------     ----------------
-     *    31 Dec -400        -DI400Y       -DI400Y -1
-     *     1 Jan -399         -DI400Y +1   -DI400Y      400-year boundary
-     *    ...
-     *    30 Dec  000        -1             -2
-     *    31 Dec  000         0             -1
-     *     1 Jan  001         1              0          400-year boundary
-     *     2 Jan  001         2              1
-     *     3 Jan  001         3              2
-     *    ...
-     *    31 Dec  400         DI400Y        DI400Y -1
-     *     1 Jan  401         DI400Y +1     DI400Y      400-year boundary
-     */
     assert(ordinal >= 1);
-    --ordinal;
-    n400 = ordinal / DI400Y;
-    n = ordinal % DI400Y;
-    *year = n400 * 400 + 1;
+    /* Days since 0000-03-01, the start of the computational calendar. */
+    const uint64_t days = (uint64_t)ordinal + 305;
 
-    /* Now n is the (non-negative) offset, in days, from January 1 of
-     * year, to the desired date.  Now compute how many 100-year cycles
-     * precede n.
-     * Note that it's possible for n100 to equal 4!  In that case 4 full
-     * 100-year cycles precede the desired day, which implies the
-     * desired day is December 31 at the end of a 400-year cycle.
-     */
-    n100 = n / DI100Y;
-    n = n % DI100Y;
+    /* century = (4*days + 3) / DI400Y, and the day of the century. */
+    const uint64_t century_scaled = 4 * days + 3;
+    const uint32_t century = (uint32_t)(century_scaled / DI400Y);
+    const uint32_t day_of_century = (uint32_t)(century_scaled % DI400Y) / 4;
 
-    /* Now compute how many 4-year cycles precede it. */
-    n4 = n / DI4Y;
-    n = n % DI4Y;
+    /* year_of_century = (4*day_of_century + 3) / DI4Y, and the day of the
+     * year (March 1 is day 0), from one product: 2939745 is
+     * ceil(2**32 / DI4Y), so the high 32 bits are the quotient and the low
+     * 32 bits encode the remainder. */
+    const uint32_t year_scaled = 4 * day_of_century + 3;
+    const uint64_t year_product = (uint64_t)2939745 * year_scaled;
+    const uint32_t year_of_century = (uint32_t)(year_product >> 32);
+    const uint32_t day_of_year = (uint32_t)year_product / 2939745 / 4;
 
-    /* And now how many single years.  Again n1 can be 4, and again
-     * meaning that the desired day is December 31 at the end of the
-     * 4-year cycle.
-     */
-    n1 = n / 365;
-    n = n % 365;
+    /* month = (5*day_of_year + 461) / 153 (March = 3, ..., February = 14),
+     * and the day of the month, from one product: 2141 is about
+     * 2**16 * 5 / 153 and 197913 the matching offset, so the high 16 bits
+     * are the month and the low 16 bits encode the day. */
+    const uint32_t month_product = 2141 * day_of_year + 197913;
+    const uint32_t march_based_month = month_product >> 16;
+    const uint32_t day_of_month = (month_product & 0xFFFF) / 2141;
 
-    *year += n100 * 100 + n4 * 4 + n1;
-    if (n1 == 4 || n100 == 4) {
-        assert(n == 0);
-        *year -= 1;
-        *month = 12;
-        *day = 31;
-        return;
-    }
+    /* January and February belong to the next calendar year. */
+    const uint32_t is_jan_or_feb = day_of_year >= 306;
 
-    /* Now the year is correct, and n is the offset from January 1.  We
-     * find the month via an estimate that's either exact or one too
-     * large.
-     */
-    leapyear = n1 == 3 && (n4 != 24 || n100 == 3);
-    assert(leapyear == is_leap(*year));
-    *month = (n + 50) >> 5;
-    preceding = (_days_before_month[*month] + (*month > 2 && leapyear));
-    if (preceding > n) {
-        /* estimate is too large */
-        *month -= 1;
-        preceding -= days_in_month(*year, *month);
-    }
-    n -= preceding;
-    assert(0 <= n);
-    assert(n < days_in_month(*year, *month));
-
-    *day = n + 1;
+    *year = (int)(100 * century + year_of_century + is_jan_or_feb);
+    *month = (int)(is_jan_or_feb ? march_based_month - 12 : march_based_month);
+    *day = (int)(day_of_month + 1);
 }
 
 /* year, month, day -> ordinal, considering 01-Jan-0001 as day 1. */
