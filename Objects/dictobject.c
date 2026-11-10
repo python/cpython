@@ -4912,7 +4912,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || value == NULL) {
         value = default_value;
 
         // See comment to this function in insertdict.
