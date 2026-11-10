@@ -4684,8 +4684,21 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
 
     if (Py_TYPE(mp)->tp_iter == dict_iter && mp->ma_values == NULL)
     {
-        /* Clone compact tables as-is, but omit deleted entries from sparse
-           tables so copying an almost emptied dict stays inexpensive. */
+        /* Use fast-copy if:
+
+           (1) type(mp) doesn't override tp_iter; and
+
+           (2) 'mp' is not a split-dict.
+
+           Dicts don't compact themselves on del/pop operations, so a large
+           dict can have very few live entries. Previously, fast-copy was
+           restricted to tables with at most 1/3 non-used entries; otherwise
+           PyDict_Merge produced a compacted copy.
+
+           Clone tables with few deleted entries as-is. For sparse tables,
+           copy only live entries into a compact table instead of retaining
+           deleted slots or reinserting entries one by one.
+        */
         PyDictKeysObject *keys;
         if (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3) {
             keys = clone_combined_dict_keys(mp);
