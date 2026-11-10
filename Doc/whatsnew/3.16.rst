@@ -1083,7 +1083,8 @@ ast
   allocating a separate dictionary for each node. Benchmarks of this
   change measured about 16% faster :func:`ast.parse` calls and 52% less
   memory used by the resulting ASTs.
-  (Contributed by Lysandros Nikolaou in :gh:`153568`.)
+  (Contributed by Lysandros Nikolaou and Pablo Galindo Salgado
+  in :gh:`153568`.)
 
 
 datetime and time
