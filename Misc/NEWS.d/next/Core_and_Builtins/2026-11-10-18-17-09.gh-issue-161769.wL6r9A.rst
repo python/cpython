@@ -1,0 +1,3 @@
+Preserve :c:var:`errno` across thread-state attachment in release builds,
+preventing spurious directory I/O errors on free-threaded builds during
+concurrent garbage collection.
