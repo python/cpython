@@ -70,7 +70,10 @@ class TestContextWatcherThreadSafety(unittest.TestCase):
                     successes[k] += 1
                 except ValueError:
                     pass
-                done.wait(support.SHORT_TIMEOUT)
+                try:
+                    done.wait(support.SHORT_TIMEOUT)
+                except threading.BrokenBarrierError:
+                    return
 
         threads = [threading.Thread(target=worker, args=(k,))
                    for k in range(NTHREADS)]
@@ -82,8 +85,10 @@ class TestContextWatcherThreadSafety(unittest.TestCase):
                     round_no = r
                     done.wait(support.SHORT_TIMEOUT)
                     self.assertEqual(sum(successes) - before, 1)
-            finally:
+            except BaseException:
+                # Release the workers so that start_threads() can join them.
                 done.abort()
+                raise
 
     def test_clear_watcher_races_notification(self):
         """Race ClearWatcher against notification.
