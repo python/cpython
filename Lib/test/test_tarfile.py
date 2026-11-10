@@ -1080,6 +1080,24 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         with tarfile.open(tmpname, self.mode) as tar:
             self.assertEqual(tar.getnames(), ["a"])
 
+    def test_data_after_end_of_stream(self):
+        # gh-159643: with a small bufsize, the compressed data spans
+        # several reads of the file and the padding that follows it
+        # is not read together with the end of the compressed data.
+        bufsize = tarfile.BLOCKSIZE
+        data = Random(0).randbytes(8 * bufsize)
+        tarinfo = tarfile.TarInfo("a")
+        tarinfo.size = len(data)
+        with self.open(tmpname, "wb") as fobj:
+            with tarfile.open(fileobj=fobj, mode="w") as tar:
+                tar.addfile(tarinfo, io.BytesIO(data))
+        with open(tmpname, "ab") as fobj:
+            fobj.write(bytes(4 * bufsize))
+        with tarfile.open(tmpname, self.mode, bufsize=bufsize,
+                          ignore_zeros=True) as tar:
+            members = [(m.name, tar.extractfile(m).read()) for m in tar]
+        self.assertEqual(members, [("a", data)])
+
 class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
     pass
 
