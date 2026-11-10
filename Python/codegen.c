@@ -522,6 +522,170 @@ codegen_add_yield_from(compiler *c, location loc, int await)
 }
 
 static int
+codegen_yield_from_async(compiler *c, location loc, expr_ty e)
+{
+    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, exit);
+    NEW_JUMP_TARGET_LABEL(c, use_anext);
+    NEW_JUMP_TARGET_LABEL(c, got_awaitable);
+    NEW_JUMP_TARGET_LABEL(c, yield);
+    NEW_JUMP_TARGET_LABEL(c, throw);
+    NEW_JUMP_TARGET_LABEL(c, athrow);
+    NEW_JUMP_TARGET_LABEL(c, throw_exit);
+    NEW_JUMP_TARGET_LABEL(c, lookup_error);
+    NEW_JUMP_TARGET_LABEL(c, missing_method);
+
+    VISIT(c, expr, e->v.YieldFrom.value);
+    // Stack: [value]
+
+    ADDOP(c, loc, GET_AITER);
+    // Stack: [aiterator]
+
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, None]
+
+    USE_LABEL(c, send);
+
+    // Stack: [aiterator, asend_value]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, exit);
+    ADDOP_I(c, loc, COPY, 1);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, use_anext);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(asend), names);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, COPY, 3);
+    // Stack: [aiterator, asend_value, method, NULL, asend_value]
+    ADDOP_I(c, loc, CALL, 1);
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, got_awaitable);
+
+    USE_LABEL(c, use_anext);
+    // Stack: [aiterator, asend_value]
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP(c, loc, GET_ANEXT);
+    // Stack: [aiterator, asend_value, aiterator, await_iter]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+
+    USE_LABEL(c, got_awaitable);
+    // Stack: [aiterator, asend_value, await_iter]
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    // Stack: [aiterator, asend_value, await_iter, NULL, None]
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, asend_value, asend_result]
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, asend_result]
+
+    USE_LABEL(c, yield);
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
+    // Stack: [aiterator, wrapped_result]
+
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, throw);
+    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
+    // Stack: [aiterator, resumed_value]
+
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+
+    USE_LABEL(c, throw);
+    // Stack: [aiterator, resumed_value, exception]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_GENERATOREXIT);
+    ADDOP(c, loc, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, athrow);
+
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, lookup_error);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(aclose), names);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    // Stack: [aiterator, exception, method]
+
+    // GeneratorExit closes the delegate, then reraises the original
+    // exception. Awaiting aclose() may suspend, but must not yield an item.
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, CALL, 0);
+    // Stack: [aiterator, exception, awaitable]
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, exception, close_result]
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, athrow);
+    // Stack: [aiterator, exception]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, lookup_error);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_NAME(c, loc, LOAD_ATTR, &_Py_ID(athrow), names);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, method, exception]
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, throw_exit);
+    ADDOP_I(c, loc, COPY, 2);
+    ADDOP_I(c, loc, COPY, 2);
+    // Stack: [aiterator, method, exception, method, exception]
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP_I(c, loc, CALL, 1);
+    // Stack: [aiterator, method, exception, awaitable]
+    ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    // Stack: [aiterator, method, exception, result]
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, method, result]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, result]
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, yield);
+
+    USE_LABEL(c, lookup_error);
+    // Stack: [aiterator, exception, lookup_exception]
+    ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_ATTRIBUTEERROR);
+    ADDOP(c, loc, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, loc, POP_JUMP_IF_TRUE, missing_method);
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, missing_method);
+    // A missing aclose()/athrow() reraises the original exception.
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exception]
+    ADDOP_I(c, loc, RERAISE, 0);
+
+    USE_LABEL(c, throw_exit);
+    // Stack: [aiterator, method, exception, raised_exception]
+    ADDOP_I(c, loc, SWAP, 2);
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, method, raised_exception]
+
+    USE_LABEL(c, exit);
+    // Stack: [aiterator, send_value, exc_value] (from SETUP_FINALLY)
+
+    ADDOP_I(c, loc, SWAP, 2);
+    // Stack: [aiterator, exc_value, send_value]
+
+    ADDOP(c, loc, POP_TOP);
+    // Stack: [aiterator, exc_value]
+
+    ADDOP(c, loc, CLEANUP_ASYNC_THROW);
+    // Stack: [result]
+
+    return SUCCESS;
+}
+
+static int
 codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
@@ -2291,9 +2455,6 @@ codegen_return(compiler *c, stmt_ty s)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     if (!_PyST_IsFunctionLike(ste)) {
         return _PyCompile_Error(c, loc, "'return' outside function");
-    }
-    if (s->v.Return.value != NULL && ste->ste_coroutine && ste->ste_generator) {
-        return _PyCompile_Error(c, loc, "'return' with value in async generator");
     }
 
     if (preserve_tos) {
@@ -5542,7 +5703,7 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
             return _PyCompile_Error(c, loc, "'yield from' outside function");
         }
         if (SCOPE_TYPE(c) == COMPILE_SCOPE_ASYNC_FUNCTION) {
-            return _PyCompile_Error(c, loc, "'yield from' inside async function");
+            return codegen_yield_from_async(c, loc, e);
         }
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP_I(c, loc, GET_ITER, GET_ITER_YIELD_FROM);
