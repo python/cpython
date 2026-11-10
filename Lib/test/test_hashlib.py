@@ -1352,7 +1352,7 @@ class KDFTests(unittest.TestCase):
                 iterations=1, dklen=None)
             self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
-    # gh-161739: invalid salt length w/OpenSSL 4.0.3
+    # gh-161739: FIPS requires a salt of at least 128-bit (16 bytes)
     def fips_incompatible_salt(self, salt):
         return get_fips_mode() and len(salt) < 16
 
