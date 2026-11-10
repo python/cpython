@@ -1,0 +1,1 @@
+Speed up creating :class:`str` objects from non-ASCII character data.

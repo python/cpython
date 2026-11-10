@@ -58,6 +58,15 @@ def get_files(test):
         test.assertFalse(f.closed)
 
 
+@contextlib.contextmanager
+def save_restore_sys_path():
+    old_path = sys.path.copy()
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
+
+
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
@@ -4300,6 +4309,20 @@ class OtherTests(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile(fp))
         self.assertEqual(fp.tell(), mid)
 
+    def test_is_zip_bad_central_directory_offset(self):
+        """Check that is_zipfile() rejects a central directory before the file."""
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w") as zipf:
+            zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
+        data = bytearray(fp.getvalue())
+        endrec = len(data) - zipfile.sizeEndCentDir
+        struct.pack_into("<L", data, endrec + 12, len(data))
+        fp = io.BytesIO(data)
+        pos = fp.seek(5)
+        self.assertFalse(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), pos)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, io.BytesIO(data))
+
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
         # ZipFile instance is finalized; this tests for regression on SF tracker
@@ -5973,17 +5996,18 @@ class EncodedMetadataTests(unittest.TestCase):
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
-        with captured_stdout() as stdout:
-            with captured_stderr() as stderr:
+        with (captured_stdout() as stdout,
+              captured_stderr() as stderr,
+              save_restore_sys_path()):
                 self.assertRaises(SystemExit, zipfile.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
@@ -6002,7 +6026,9 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!a}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        with save_restore_sys_path():
+            zipfile.main(["--metadata-encoding=shift_jis", "-e",
+                          TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)

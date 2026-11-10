@@ -465,7 +465,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         uintptr_t tstate_addr;
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                current_interp + unwinder->debug_offsets.interpreter_state.threads_head,
+                current_interp + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &tstate_addr) < 0) {
             // Non-fatal: just skip clearing
@@ -486,7 +486,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
             // Move to next thread
             if (_Py_RemoteDebug_PagedReadRemoteMemory(
                     &unwinder->handle,
-                    tstate_addr + unwinder->debug_offsets.thread_state.next,
+                    tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.next,
                     sizeof(void*),
                     &tstate_addr) < 0) {
                 PyErr_Clear();
@@ -497,7 +497,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         // Move to next interpreter
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                current_interp + unwinder->debug_offsets.interpreter_state.next,
+                current_interp + (uintptr_t)unwinder->debug_offsets.interpreter_state.next,
                 sizeof(void*),
                 &current_interp) < 0) {
             PyErr_Clear();

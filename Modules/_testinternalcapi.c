@@ -38,6 +38,7 @@
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -208,6 +209,42 @@ get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
 }
+
+static PyObject *
+stop_the_world(PyObject *self, PyObject *args)
+{
+    PyObject *duration_obj = NULL;
+    PyTime_t duration = 0;
+    if (!PyArg_ParseTuple(args, "|O:stop_the_world", &duration_obj)) {
+        return NULL;
+    }
+    if (duration_obj != NULL &&
+        _PyTime_FromSecondsObject(&duration, duration_obj,
+                                 _PyTime_ROUND_TIMEOUT) < 0) {
+        return NULL;
+    }
+    if (duration < 0) {
+        PyErr_SetString(PyExc_ValueError, "duration must be non-negative");
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    if (duration != 0) {
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, duration, /*detach=*/0);
+    }
+    _PyEval_StartTheWorld(interp);
+#endif
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(stop_the_world_doc,
+"stop_the_world($module, duration=0, /)\n"
+"--\n"
+"\n"
+"Stop the world, wait for duration seconds, then restart it.\n"
+"Does nothing in GIL-enabled builds.");
 
 static PyObject *
 test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
@@ -1564,6 +1601,80 @@ iframe_getlasti(PyObject *self, PyObject *frame)
     }
     struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
+}
+
+// Reads the locals of the Python frame that called this C function using
+// PyUnstable_InterpreterFrame_GetLocal and returns them as a name -> value
+// dict, skipping NULL (unset or hidden) slots.
+static PyObject *
+get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    assert(frame != NULL); // there must be a caller frame
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    Py_ssize_t n = co->co_nlocalsplus;
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    PyObject *names = PyUnstable_Code_GetLocalPlusNames(co);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *value;
+        int rc = PyUnstable_InterpreterFrame_GetLocal(frame, i, &value);
+        if (rc < 0) {
+            Py_DECREF(names);
+            Py_DECREF(dict);
+            assert(value == NULL);
+            return NULL;
+        }
+        if (rc == 0) {
+            assert(value == NULL);
+            continue;  // unset or hidden slot
+        }
+        PyObject *name = PyTuple_GET_ITEM(names, i);
+        int err = PyDict_SetItem(dict, name, value);
+        Py_DECREF(value);
+        if (err < 0) {
+            Py_DECREF(names);
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    Py_DECREF(names);
+    return dict;
+}
+
+// Calls PyUnstable_InterpreterFrame_GetLocal on the caller's frame for a single
+// index and returns (rc, value), or raises if rc is -1.
+static PyObject *
+get_frame_local(PyObject *self, PyObject *arg)
+{
+    Py_ssize_t index = PyLong_AsSsize_t(arg);
+    if (index == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    assert(frame != NULL); // there must be a caller frame
+    PyObject *value;
+    int rc = PyUnstable_InterpreterFrame_GetLocal(frame, index, &value);
+    if (rc < 0) {
+        assert(value == NULL);
+        return NULL;
+    }
+    if (rc == 0) {
+        assert(value == NULL);
+        return Py_BuildValue("iO", rc, Py_None);
+    }
+    return Py_BuildValue("iN", rc, value);
+}
+
+static PyObject *
+code_get_localsplus_names(PyObject *self, PyObject *arg)
+{
+    assert(PyCode_Check(arg));
+    return PyUnstable_Code_GetLocalPlusNames((PyCodeObject *)arg);
 }
 
 static PyObject *
@@ -3363,6 +3474,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"stop_the_world", stop_the_world, METH_VARARGS, stop_the_world_doc},
     {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
@@ -3396,6 +3508,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_frame_locals", get_frame_locals, METH_NOARGS, NULL},
+    {"get_frame_local", get_frame_local, METH_O, NULL},
+    {"code_get_localsplus_names", code_get_localsplus_names, METH_O, NULL},
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},

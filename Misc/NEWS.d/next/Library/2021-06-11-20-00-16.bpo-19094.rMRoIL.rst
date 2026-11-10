@@ -1,0 +1,6 @@
+The :mod:`urllib.parse` URL parsing functions now raise :exc:`TypeError`
+instead of :exc:`AttributeError` when passed an object which is not a string,
+bytes, or ``None``.  Accepting objects with false values (like ``0`` and
+``[]``) except empty strings, byte-like objects and ``None`` is now
+deprecated, extending the deprecation made in Python 3.14 for
+:func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs`.

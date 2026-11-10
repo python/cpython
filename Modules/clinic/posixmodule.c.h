@@ -5617,7 +5617,7 @@ PyDoc_STRVAR(os_getppid__doc__,
 "Return the parent\'s process id.\n"
 "\n"
 "If the parent process has already exited, Windows machines will still\n"
-"return its id; others systems will return the id of the \'init\' proces\n"
+"return its id; other systems will return the id of the \'init\' process\n"
 "(1).");
 
 #define OS_GETPPID_METHODDEF    \
@@ -13763,4 +13763,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=8bf88a95035a0188 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c92854d21c8f6290 input=a9049054013a1b77]*/
