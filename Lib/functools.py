@@ -1139,6 +1139,7 @@ def _cached_method_weakref_callback(cache_dict, id_key):
 
 
 def _wrap_unbound_cached_method(ref, unbound_method, maxsize, typed):
+    @wraps(unbound_method)
     @lru_cache(maxsize, typed)
     def wrapped(*args, **kwargs):
         return unbound_method(ref(), *args, **kwargs)
@@ -1155,7 +1156,7 @@ class _cached_method:
         self.func = func
         update_wrapper(self, func)
 
-    def __call__(self, instance, *args, **kwargs):
+    def __call__(self, instance, /, *args, **kwargs):
         cached_func = self._get_or_create_cached_func(instance)
         return cached_func(*args, **kwargs)
 
@@ -1170,12 +1171,15 @@ class _cached_method:
         try:
             ref, cached_func = self._function_table[instance_id]
         except KeyError:
-            ref = weakref.ref(
-                instance,
-                _cached_method_weakref_callback(
-                    self._function_table, instance_id
-                ),
-            )
+            cb = _cached_method_weakref_callback(self._function_table, instance_id)
+            try:
+                ref = weakref.ref(instance, cb)
+            except TypeError as exc:
+                exc.__suppress_context__ = True
+                raise TypeError(
+                    "`cached_method` requires the instances of "
+                    f"{type(instance).__name__!r} to be weakly referencable"
+                ) from exc
             cached_func = _wrap_unbound_cached_method(
                 ref, self.func, self._maxsize, self._typed
             )
@@ -1194,12 +1198,12 @@ def cached_method(func=None, /, maxsize=None, typed=False):
 
     The instance must be weak-referencable.
 
-    By default, this provides an infinite sized cache similar to functools.cache. Use
+    By default, this provides an infinite sized cache similar to `functools.cache`. Use
     *maxsize* and *typed* to set these attributes of the underlying LRU cache.
     """
-    if maxsize is not None and not isinstance(maxsize, int) and not callable(maxsize):
+    if maxsize is not None and not isinstance(maxsize, int):
         raise TypeError(
-            'Expected maxsize to be an integer, a callable, or None')
+            'Expected maxsize to be an integer or None')
     if func is None:
         def decorator(func):
             return _cached_method(func, maxsize=maxsize, typed=typed)
