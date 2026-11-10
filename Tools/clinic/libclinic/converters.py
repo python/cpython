@@ -8,7 +8,7 @@ import libclinic
 from libclinic import fail, NullType, unspecified, NULL, c_bytes_repr, c_unichar_repr
 from libclinic.function import (
     Function, Parameter,
-    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW, SLOT,
     ACCESSORS)
 from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
@@ -1197,7 +1197,7 @@ def correct_name_for_self(
         f: Function,
         parser: bool = False
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT} | ACCESSORS:
+    if f.kind in {CALLABLE, METHOD_INIT, SLOT} | ACCESSORS:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -1449,15 +1449,5 @@ class var_keyword_dict_converter(VarKeywordCConverter):
         return f'Py_XDECREF({self.parser_name});\n'
 
     def parse_var_keyword(self) -> str:
-        param_name = self.parser_name
-        return f"""
-            if (kwargs == NULL) {{{{
-                {param_name} = PyDict_New();
-                if ({param_name} == NULL) {{{{
-                    goto exit;
-                }}}}
-            }}}}
-            else {{{{
-                {param_name} = Py_NewRef(kwargs);
-            }}}}
-            """
+        # NULL when there are no keywords: no call allocates an empty dict.
+        return f"{self.parser_name} = Py_XNewRef(kwargs);\n"

@@ -698,6 +698,20 @@ class WarnTests(BaseTest):
             with self.assertRaises(TypeError):
                 warn("msg", skip_file_prefixes="a sequence of strs")
 
+    def test_skip_file_prefixes_empty_tuple_subclass(self):
+        with warnings_state(self.module):
+            self.module.simplefilter("always")
+            warn = warning_tests.warnings.warn
+            class EmptyTuple(tuple):
+                pass
+            # Passing an empty tuple subclass used to lead to a crash.
+            for _ in range(3):
+                with self.module.catch_warnings(record=True) as w:
+                    warn("msg", skip_file_prefixes=EmptyTuple())
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-1].module, __name__)
+
     def test_exec_filename_module(self):
         filename = "<warnings-test>"
         codeobj = compile(("import warnings\n"

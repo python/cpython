@@ -2728,6 +2728,46 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(box.gather(), text + ' ')
 
     @requires_wide_build
+    def test_textbox_combining_fill_last_cell(self):
+        # A combining mark typed into the lower-right cell joins its base.
+        for text in [
+            'abe\u0301',        # COMBINING ACUTE ACCENT
+            'ab\u0e01\u0e31',   # THAI CHARACTER MAI HAN-AKAT, combining() == 0
+            'abx\u20dd',        # COMBINING ENCLOSING CIRCLE, combining() == 0
+        ]:
+            with self.subTest(text=text):
+                if not self._encodable(text):
+                    self.skipTest('the locale cannot encode %r' % text)
+                box, win = self._make_textbox(1, 3, stripspaces=False)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), text)
+
+    @requires_wide_build
+    def test_textbox_combining_typed_over(self):
+        # A combining mark joins the character typed just before it.
+        text = 'e\u0301'
+        if not self._encodable(text):
+            self.skipTest('the locale cannot encode %r' % text)
+        for insert_mode, x, expected in [
+            (False, 0, 'e\u0301bc'),
+            (False, 1, 'ae\u0301c'),
+            (False, 2, 'abe\u0301'),
+            (True, 0, 'e\u0301ab'),
+            (True, 1, 'ae\u0301b'),
+            (True, 2, 'abe\u0301'),
+        ]:
+            with self.subTest(insert_mode=insert_mode, x=x):
+                box, win = self._make_textbox(1, 3, stripspaces=False)
+                for ch in 'abc':
+                    box.do_command(ch)
+                box.insert_mode = insert_mode
+                win.move(0, x)
+                for ch in text:
+                    box.do_command(ch)
+                self.assertEqual(box.gather(), expected)
+
+    @requires_wide_build
     def test_textbox_double_width(self):
         # A double-width (East Asian) character occupies two cells.  gather()
         # reads a whole line at a time so that the second cell, which holds
@@ -3275,6 +3315,11 @@ class NewtermTestBase(unittest.TestCase):
         self.save_signals = SaveSignals()
         self.save_signals.save()
         self.addCleanup(self.save_signals.restore)
+        # A new pseudo-terminal has no size, so newterm() takes it from
+        # $LINES and $COLUMNS, or from the terminfo entry if they are unset.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['LINES'] = '24'
+        env['COLUMNS'] = '80'
 
     def tearDown(self):
         # Leave visual mode and reclaim the test's screens while their
@@ -3340,6 +3385,26 @@ class ScreenTests(NewtermTestBase):
         self.assertEqual(win.getmaxyx(), (24, 80))
         win.addstr(0, 0, 'hello')
         win.refresh()
+
+    def test_lines_columns_env(self):
+        # $LINES and $COLUMNS override the size from the terminfo entry
+        # (24x80 for xterm).
+        for lines, columns, size in [('30', '100', (30, 100)),
+                                     ('30', None, (30, 80)),
+                                     (None, '100', (24, 100)),
+                                     (None, None, (24, 80))]:
+            with self.subTest(lines=lines, columns=columns):
+                with os_helper.EnvironmentVarGuard() as env:
+                    for name, value in [('LINES', lines),
+                                        ('COLUMNS', columns)]:
+                        if value is None:
+                            env.unset(name)
+                        else:
+                            env[name] = value
+                    s = self.make_pty()
+                    screen = curses.newterm('xterm', s, s)
+                self.assertEqual(screen.stdscr.getmaxyx(), size)
+                self.assertEqual((curses.LINES, curses.COLS), size)
 
     def test_newterm_file_object(self):
         # type=None uses $TERM; the file arguments accept file objects too.

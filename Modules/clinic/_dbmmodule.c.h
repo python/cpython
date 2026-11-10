@@ -6,6 +6,66 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
+static Py_ssize_t
+dbm_length_impl(dbmobject *self);
+
+static Py_ssize_t
+dbm_length(PyObject *self)
+{
+    Py_ssize_t return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_length_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+dbm_bool_impl(dbmobject *self);
+
+static int
+dbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_bool_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+dbm_subscript_impl(dbmobject *self, PyObject *key);
+
+static PyObject *
+dbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_subscript_impl((dbmobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w);
+
+static int
+dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_ass_sub_impl((dbmobject *)self, v, w);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -56,6 +116,21 @@ _dbm_dbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static int
+dbm_contains_impl(dbmobject *self, PyObject *arg);
+
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_contains_impl((dbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -249,4 +324,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f9d904af4ea43d1d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fa1cc840de2abd3 input=a9049054013a1b77]*/

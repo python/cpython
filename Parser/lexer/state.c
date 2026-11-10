@@ -86,6 +86,7 @@ _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, _PyTo
 {
     token->level = tok->level;
     token->is_raw = 0;
+    token->is_incomplete = 0;
     assert((start == -1 && end == -1) || (start >= 0 && end >= start));
     token->span = (_PyTok_Span){start, end};
     if (start >= 0) {
