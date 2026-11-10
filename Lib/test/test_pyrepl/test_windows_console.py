@@ -436,6 +436,14 @@ class WindowsConsoleGetEventTests(TestCase):
         event = self.console.get_event(block=False)
         return event
 
+    def get_pending(self, input_records) -> Event:
+        self.console = WindowsConsole(encoding='utf-8')
+        recs = (len(input_records) * wc.INPUT_RECORD)(*input_records)
+        self.mock = MagicMock(return_value=(recs, len(input_records)))
+        self.console._read_input_bulk = self.mock
+        event = self.console.getpending()
+        return event
+
     def get_input_record(self, unicode_char, vcode=0, control=0):
         return wc.INPUT_RECORD(
             wc.KEY_EVENT,
@@ -647,6 +655,23 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertFalse(console.event_queue.empty())
         self.assertTrue(console.wait(0.0))
         self.assertEqual(console.wait_for_event.call_count, 0)
+
+    def test_getpending_raw(self):
+        ir_list = [
+            self.get_input_record("a"),
+            self.get_input_record("\ud83d"),
+            self.get_input_record("\ude00"),
+            self.get_input_record("\r")
+        ]
+        event = self.get_pending(ir_list)
+        self.assertEqual(event.data, "a😀\n")
+        self.assertEqual(event.raw, b"a\xf0\x9f\x98\x80\n")
+
+    def test_push_char(self):
+        self.console = WindowsConsole(encoding='utf-8')
+        self.console.push_char(ord("\n"))
+        event = self.console.get_event(block=False)
+        self.assertEqual(event.data, "\n")
 
 
 if __name__ == "__main__":
