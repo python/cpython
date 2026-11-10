@@ -2411,6 +2411,7 @@ class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
         self.assertEqual(client.capabilities, ('IMAP4REV1', 'AUTH=PLAIN'))
         client.logout()
 
+    @unittest.skipUnless(ssl, "SSL not available")
     def test_starttls_discards_untagged_responses(self):
         # Untagged responses received before STARTTLS could have been
         # injected by a MITM, so they must not survive the switch to TLS.
