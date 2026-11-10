@@ -22080,7 +22080,11 @@ if test ${ac_cv_unreliable_pthread_getattr_np+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e) if test "$cross_compiling" = yes
+  e) # Run the test with a finite stack limit (1 MiB),
+     # so the result does not depend on the limit configure runs under.
+     py_save_stack_limit=`ulimit -S -s 2>/dev/null`
+     ulimit -S -s 1024 2>/dev/null
+     if test "$cross_compiling" = yes
 then :
   ac_cv_unreliable_pthread_getattr_np=no
 else case e in #(
@@ -22122,7 +22126,11 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
 esac
 fi
- ;;
+
+     if test -n "$py_save_stack_limit"
+then :
+  ulimit -S -s "$py_save_stack_limit" 2>/dev/null
+fi ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_unreliable_pthread_getattr_np" >&5

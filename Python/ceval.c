@@ -119,23 +119,29 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         err |= pthread_attr_destroy(&attr);
     }
     if (err == 0) {
+        *top = (uintptr_t)stack_addr + stack_size;
 #    ifdef _Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
-        /* pthread_getattr_np on the main thread of a musl process reports a
-         * stack size based on the current stack rather than RLIMIT_STACK.
+        /* pthread_getattr_np on the main thread of a musl process reports
+         * only the part of the stack that is currently mapped, rather than
+         * the size allowed. The top is correct. Extend the stack downwards
+         * from it, by the current RLIMIT_STACK or the compile-time guess,
+         * Py_C_STACK_SIZE.
          * New threads are reported correctly even on musl, so this fallback
          * only applies to the main thread. */
         if ((pid_t)syscall(SYS_gettid) == getpid()) {
             struct rlimit rl;
-            if (getrlimit(RLIMIT_STACK, &rl) == 0 &&
-                rl.rlim_cur != RLIM_INFINITY &&
-                stack_size < rl.rlim_cur)
-            {
-                stack_size = rl.rlim_cur;
+            if (getrlimit(RLIMIT_STACK, &rl) == 0) {
+                size_t limit = Py_C_STACK_SIZE;
+                if (rl.rlim_cur != RLIM_INFINITY && rl.rlim_cur < *top) {
+                    limit = (size_t)rl.rlim_cur;
+                }
+                if (stack_size < limit) {
+                    stack_addr = (void *)(*top - limit);
+                }
             }
         }
 #    endif
         *base = ((uintptr_t)stack_addr) + guard_size;
-        *top = (uintptr_t)stack_addr + stack_size;
         return;
     }
 #  endif

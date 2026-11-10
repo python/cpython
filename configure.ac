@@ -5827,7 +5827,11 @@ PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 AS_IF([test "$ac_cv_func_pthread_getattr_np" = yes],
   [AC_CACHE_CHECK([whether pthread_getattr_np reports the main thread stack reliably],
     [ac_cv_unreliable_pthread_getattr_np],
-    [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+    [# Run the test with a finite stack limit (1 MiB),
+     # so the result does not depend on the limit configure runs under.
+     py_save_stack_limit=`ulimit -S -s 2>/dev/null`
+     ulimit -S -s 1024 2>/dev/null
+     AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #define _GNU_SOURCE
 #include <pthread.h>
 #include <stdlib.h>
@@ -5853,7 +5857,9 @@ int main(void) {
       ]])],
       [ac_cv_unreliable_pthread_getattr_np=no],
       [ac_cv_unreliable_pthread_getattr_np=yes],
-      [ac_cv_unreliable_pthread_getattr_np=no])])
+      [ac_cv_unreliable_pthread_getattr_np=no])
+     AS_IF([test -n "$py_save_stack_limit"],
+       [ulimit -S -s "$py_save_stack_limit" 2>/dev/null])])
    AS_VAR_IF([ac_cv_unreliable_pthread_getattr_np], [yes],
      [AC_DEFINE([_Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP], [1],
        [Define if pthread_getattr_np under-reports the main thread's stack size (musl behaviour).])])])
