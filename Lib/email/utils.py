@@ -387,9 +387,10 @@ def decode_rfc2231(s):
 def encode_rfc2231(s, charset=None, language=None):
     """Encode string according to RFC 2231.
 
-    If neither charset nor language is given, then s is returned as-is.  If
-    charset is given but not language, the string is encoded using the empty
-    string for language.
+    The string is always percent-encoded.  If neither charset nor language is
+    given, then the encoded string is returned without the charset and
+    language prefix.  If charset is given but not language, the string is
+    encoded using the empty string for language.
     """
     s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if charset is None and language is None:
