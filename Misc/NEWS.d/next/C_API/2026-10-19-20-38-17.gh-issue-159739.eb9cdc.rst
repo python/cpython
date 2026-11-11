@@ -1,2 +1,0 @@
-:c:func:`PyInitConfig_SetStr` now releases a previously configured value and
-preserves it if conversion of the replacement fails.

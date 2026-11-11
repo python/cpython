@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import contextlib
 import logging
 import math
 import os, sys
@@ -2612,6 +2613,37 @@ class PyUsabilityTest(UsabilityTest, unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
+    def test_helper__is_less_than_pow10a_use_str_slow_path(self):
+        # Test the "slow" path of _is_less_than_pow10a_use_str().
+        a, b = 2, 7
+
+        # Choose q1, q2 such that len(str(q1)) <= a < len(str(q2))
+        # and q1.bit_length() == q2.bit_length() == b to check that
+        # we cover the "slow" path correctly even for small values.
+        q1, q2 = 95, 105
+        b1, b2 = q1.bit_length(), q2.bit_length()
+
+        self.assertEqual(b1, b)
+        self.assertEqual(b2, b)
+
+        # ensure that the first "fast" check doesn't hold
+        self.assertGreaterEqual(b, a * self.decimal._LOG_10_BASE_2_LO)
+        # ensure that the second "fast" check doesn't hold
+        self.assertLess(b, 1 + a * self.decimal._LOG_10_BASE_2_HI)
+
+        cond_q1, str_q1 = self.decimal._is_less_than_pow10a_use_str(q1, a)
+        self.assertTrue(cond_q1)
+        self.assertIsNotNone(str_q1)
+
+        cond_q2, str_q2 = self.decimal._is_less_than_pow10a_use_str(q2, a)
+        self.assertFalse(cond_q2)
+        self.assertIsNotNone(str_q2)
+
+    def test_helper__is_less_than_pow10a(self):
+        # TODO(picnixz): find a simple test case with custom ulp_order.
+        pass
+
+
 class PythonAPItests:
 
     def test_abc(self):
@@ -3731,9 +3763,44 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.to_integral_value, '10')
         self.assertRaises(TypeError, c.to_integral_value, 10, 'x')
 
+    def test_crashing_signal_dict_traps(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().traps)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(traps=SignalDict())
+
+    def test_crashing_signal_dict_flags(self):
+        # gh-161389
+        Context = self.decimal.Context
+        SignalDict = type(Context().flags)
+        with self.assertRaisesRegex((KeyError, ValueError), "signal dict"):
+            Context(flags=SignalDict())
+
 @requires_cdecimal
 class CContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = C
+
+    def test_current_context_var_wrong_type(self):
+        # gh-161387
+        if not self.decimal.HAVE_CONTEXTVAR:
+            self.skipTest("_decimal built without context variables")
+        value = object()
+        context_vars = [var for var in contextvars.copy_context()
+                        if var.name == "decimal_context"]
+        self.assertTrue(context_vars)
+        tokens = [var.set(value) for var in context_vars]
+
+        def restore():
+            for var, token in zip(context_vars, tokens):
+                var.reset(token)
+
+        self.addCleanup(restore)
+        with self.assertRaisesRegex(TypeError, "got object"):
+            self.decimal.Decimal(1) + self.decimal.Decimal(2)
+        for var in context_vars:
+            self.assertIs(var.get(), value)
+
 class PyContextAPItests(ContextAPItests, unittest.TestCase):
     decimal = P
 
@@ -4556,6 +4623,15 @@ class CheckAttributes(unittest.TestCase):
 
 class Coverage:
 
+    @contextlib.contextmanager
+    def unbound_context(self, prec=None, Emax=None, Emin=None):
+        with self.decimal.localcontext() as c:
+            c.prec = self.decimal.MAX_PREC if prec is None else prec
+            c.Emax = self.decimal.MAX_EMAX if Emax is None else Emax
+            c.Emin = self.decimal.MIN_EMIN if Emin is None else Emin
+            c.traps[self.decimal.Inexact] = 1
+            yield c
+
     def test_adjusted(self):
         Decimal = self.decimal.Decimal
 
@@ -4722,6 +4798,32 @@ class Coverage:
             self.assertTrue(q.is_infinite() and r.is_nan())
             self.assertTrue(c.flags[InvalidOperation] and
                             c.flags[DivisionByZero])
+
+    def test_divide_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x // 1  # should be fast
+
+    def test_modulo_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x % 1  # should be fast
+
+    def test_divmod_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = divmod(x, 1)  # should be fast
+
+    def test_remainder_near(self):
+        L = 1000
+        limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(L)
+        self.addCleanup(sys.set_int_max_str_digits, limit)
+
+        with self.unbound_context(prec=2 * L) as c:
+            self.assertEqual(c.prec, 2 * L)
+            x = self.decimal.Decimal(f'1e{L}')
+            y = x.remainder_near(1)  # must not raise a ValueError
 
     def test_power(self):
         Decimal = self.decimal.Decimal
@@ -6032,13 +6134,10 @@ class SignatureTest(unittest.TestCase):
 
 
 class TestModule:
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(self.decimal, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, self.decimal, "__version__", remove=(3, 20),
+        )
 
 
 @requires_cdecimal

@@ -5,6 +5,7 @@ Design and History FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 
 Why does Python use indentation for grouping of statements?

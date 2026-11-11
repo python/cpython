@@ -197,7 +197,7 @@ Convenience macros
          {NAME, PySlot_INTPTR, {0}, {(void*)(VALUE)}}
 
       #define PySlot_PTR_STATIC(NAME, VALUE) \
-         {NAME, PySlot_INTPTR|Py_SLOT_STATIC, {0}, {(void*)(VALUE)}}
+         {NAME, PySlot_INTPTR|PySlot_STATIC, {0}, {(void*)(VALUE)}}
 
    .. versionadded:: 3.15
 
