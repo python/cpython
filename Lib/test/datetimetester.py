@@ -23,6 +23,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
 from test.support import os_helper, script_helper
+from test.support.hypothesis_helper import hypothesis
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -1434,22 +1435,24 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     self.assertEqual(d, self.theclass.fromordinal(n))
                     n += 1
 
-        # Check the first and last days of every month in years at the
-        # start and the end of the 4-, 100- and 400-year cycles.
-        for year in (1, 3, 4, 5, 99, 100, 101, 399, 400, 401, 1899, 1900,
-                     1901, 1999, 2001, 2100, 2399, 2400, 9996, 9999):
-            isleap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-            n = self.theclass(year, 1, 1).toordinal()
-            for month, maxday in zip(range(1, 13), dim):
-                if month == 2 and isleap:
-                    maxday += 1
-                for day, ordinal in (1, n), (maxday, n + maxday - 1):
-                    with self.subTest(year=year, month=month, day=day):
-                        d = self.theclass(year, month, day)
-                        self.assertEqual(d.toordinal(), ordinal)
-                        self.assertEqual(d, self.theclass.fromordinal(ordinal))
-                n += maxday
-            self.assertEqual(n, self.theclass(year, 12, 31).toordinal() + 1)
+    # The ends of the 4-, 100- and 400-year cycles are the tricky cases.
+    @hypothesis.given(hypothesis.strategies.dates())
+    @hypothesis.example(date(1, 1, 1))
+    @hypothesis.example(date(4, 2, 29))
+    @hypothesis.example(date(4, 12, 31))
+    @hypothesis.example(date(100, 2, 28))
+    @hypothesis.example(date(100, 3, 1))
+    @hypothesis.example(date(100, 12, 31))
+    @hypothesis.example(date(400, 2, 29))
+    @hypothesis.example(date(400, 12, 31))
+    @hypothesis.example(date(401, 1, 1))
+    @hypothesis.example(date(2000, 3, 1))
+    @hypothesis.example(date(9999, 12, 31))
+    def test_ordinal_roundtrip(self, d):
+        # Rebuild d with the class under test: the strategy and the examples
+        # may come from the other implementation.
+        d = self.theclass(d.year, d.month, d.day)
+        self.assertEqual(self.theclass.fromordinal(d.toordinal()), d)
 
     def test_extreme_ordinals(self):
         a = self.theclass.min
@@ -1471,6 +1474,13 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(a, b)
 
         self.assertRaises(ValueError, lambda: a.fromordinal(aord + 1))
+
+        # Past the maximum, the error still reports the year of the ordinal.
+        for n, year in ((aord + 1, 10000), (aord + 146097 + 1, 10400),
+                        (2**31 - 1, 5879611)):
+            with self.subTest(n=n):
+                with self.assertRaisesRegex(ValueError, rf"\b{year}\b"):
+                    self.theclass.fromordinal(n)
 
         b = a - timedelta(days=1)
         self.assertEqual(b.toordinal(), aord - 1)

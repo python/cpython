@@ -93,23 +93,43 @@ assert _DI100Y == 25 * _DI4Y - 1
 def _ord2ymd(ordinal):
     "ordinal -> (year, month, day), considering 01-Jan-0001 as day 1."
 
-    # This is Figure 12 of Neri and Schneider, "Euclidean affine functions
-    # and their application to calendar algorithms", Softw Pract Exper.
-    # 2023;53(4):937-970.  It works in a computational calendar whose years
-    # start on March 1, so that the irregular February comes last, and
-    # computes each step (century, year, month, day) as a Euclidean affine
-    # function (a*n + b) // d.  Floor division keeps it exact for every int.
-    days = ordinal + 305                      # day 0 is 0000-03-01
+    # This follows Neri and Schneider, "Euclidean affine functions and their
+    # application to calendar algorithms", Softw Pract Exper.
+    # 2023;53(4):937-970, https://doi.org/10.1002/spe.3172.
+    # ord_to_ymd() in Modules/_datetimemodule.c does the same steps.
+    #
+    # February is the irregular month, so count in a calendar whose years
+    # start on March 1.  Then the leap day, when there is one, is the last
+    # day of its year, and the long year of each 4-year cycle and the long
+    # century of each 400-year cycle come last as well.  0001-01-01 is 306
+    # days after 0000-03-01.
+    days = ordinal + 305
+
+    # A century is _DI400Y/4 = 36524.25 days on average, so century c starts
+    # on day floor(_DI400Y*c/4): the first three centuries of a 400-year
+    # cycle have 36524 days and the last one 36525.  Inverting that, day n
+    # is in century (4*n + 3) // _DI400Y, and the remainder // 4 is its day
+    # within the century.
     century, rest = divmod(4 * days + 3, _DI400Y)
     day_of_century = rest // 4
+
+    # Within a century, years follow the same pattern with _DI4Y/4 = 365.25
+    # days (three common years, then a leap year; a 36524-day century just
+    # ends one day early).
     year_of_century, rest = divmod(4 * day_of_century + 3, _DI4Y)
-    day_of_year = rest // 4                   # day 0 is March 1
-    # Month lengths repeat every 5 months (153 days) from March on;
-    # month 3 is March, ..., month 14 is February.
+    day_of_year = rest // 4                   # March 1 is day 0
+
+    # From March on, month lengths follow 31, 30, 31, 30, 31: a 153-day
+    # block that repeats for March-July, August-December, and then
+    # January-February, cut short by the end of the year.  So
+    # (5*day_of_year + 2) // 153 is the number of whole months before the
+    # day, and the remainder // 5 is the day within its month.  Adding
+    # 3*153 = 459 makes March month 3; months 13 and 14 are January and
+    # February of the next calendar year.
     month, rest = divmod(5 * day_of_year + 461, 153)
     day = rest // 5 + 1
     year = 100 * century + year_of_century
-    if month > 12:                            # January or February
+    if month > 12:
         return year + 1, month - 12, day
     return year, month, day
 
