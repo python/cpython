@@ -1697,8 +1697,8 @@ class PathTest(PurePathTest):
         self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
                          "this is file D\n")
         self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
-                        "this is file C\n")
+        self.assertEqual(target.joinpath('fileC').read_text(),
+                         "this is file C\n")
 
     @patch_replace
     def test_move_dir_other_fs(self):
