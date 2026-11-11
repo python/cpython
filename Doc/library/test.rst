@@ -1713,7 +1713,7 @@ Creating module objects
 
    Create a :term:`module` from a name or spec and add it to :data:`sys.modules`.
 
-   If *parents* is ``True`` then also create any missing parent modules.
+   If *parents* is ``True``, create any missing parent modules.
 
    Return the new module.
 
@@ -1744,7 +1744,7 @@ Manipulating sys.modules
 
 .. function:: modules_setup()
 
-   Return a tuple containing a copy of :data:`sys.modules`
+   Return a tuple containing a copy of :data:`sys.modules`.
 
 
 .. function:: modules_cleanup(oldmodules)
@@ -1904,7 +1904,7 @@ Manipulating internals
    modules from being allowed in subinterpreters.
 
    This only applies to modules that haven't been imported yet.
-   It overrides the :c:data:`PyInterpreterConfig.check_multi_interp_extensions`
+   It overrides the :c:member:`PyInterpreterConfig.check_multi_interp_extensions`
    setting.
 
 
