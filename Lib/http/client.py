@@ -87,8 +87,8 @@ __all__ = ["HTTPResponse", "HTTPConnection",
            "UnknownTransferEncoding", "UnimplementedFileMode",
            "IncompleteRead", "InvalidURL", "ImproperConnectionState",
            "CannotSendRequest", "CannotSendHeader", "ResponseNotReady",
-           "BadStatusLine", "LineTooLong", "RemoteDisconnected", "error",
-           "responses"]
+           "BadStatusLine", "LineTooLong", "RemoteDisconnected",
+           "ProxyTunnelError", "error", "responses"]
 
 HTTP_PORT = 80
 HTTPS_PORT = 443
@@ -1045,7 +1045,8 @@ class HTTPConnection:
 
             if code != http.HTTPStatus.OK:
                 self.close()
-                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+                raise ProxyTunnelError(code, message.strip(),
+                                       _parse_header_lines(self._raw_proxy_headers))
 
         finally:
             response.close()
@@ -1616,6 +1617,16 @@ class RemoteDisconnected(ConnectionResetError, BadStatusLine):
     def __init__(self, *pos, **kw):
         BadStatusLine.__init__(self, "")
         ConnectionResetError.__init__(self, *pos, **kw)
+
+class ProxyTunnelError(OSError):
+    def __init__(self, code, reason, headers):
+        OSError.__init__(self, f"Tunnel connection failed: {code} {reason}")
+        self.code = code
+        self.reason = reason
+        self.headers = headers
+
+    def __reduce__(self):
+        return self.__class__, (self.code, self.reason, self.headers)
 
 # for backwards compatibility
 error = HTTPException

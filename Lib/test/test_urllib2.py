@@ -8,6 +8,7 @@ from unittest import mock
 
 import os
 import io
+import hashlib
 import ftplib
 import socket
 import array
@@ -615,6 +616,42 @@ if hasattr(http.client, 'HTTPSConnection'):
 
         def https_open(self, req):
             return self.do_open(self.httpconn, req)
+
+
+class MockHTTPTunnelClass(MockHTTPClass):
+    # Stands in for a proxy that requires authentication: CONNECT fails
+    # with tunnel_code until the credentials arrive in the tunnel headers
+    # (tunnel_code=None: no authentication).  The origin then answers
+    # through the tunnel with origin_code.
+    def __init__(self, tunnel_code=407, challenge='Basic realm="proxy"',
+                 origin_code=200):
+        super().__init__()
+        self.tunnel_code = tunnel_code
+        self.challenge = challenge
+        self.origin_code = origin_code
+        self.tunnel_requests = []
+
+    def challenge_headers(self):
+        return http.client.parse_headers(io.BytesIO(
+            b'Proxy-Authenticate: %s\r\n\r\n' % self.challenge.encode()))
+
+    def request(self, method, url, body=None, headers=None, *,
+                encode_chunked=False):
+        self.tunnel_requests.append(dict(self._tunnel_headers))
+        if (self.tunnel_code is not None and
+                "Proxy-Authorization" not in self._tunnel_headers):
+            raise http.client.ProxyTunnelError(
+                self.tunnel_code, http.client.responses[self.tunnel_code],
+                self.challenge_headers())
+        super().request(method, url, body, headers,
+                        encode_chunked=encode_chunked)
+
+    def getresponse(self):
+        response = super().getresponse()
+        response.code = self.origin_code
+        if self.origin_code != 200:
+            response.info = self.challenge_headers
+        return response
 
 
 class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
@@ -1644,6 +1681,142 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+
+    def _open_through_tunnel(self, httpconn, password_mgr,
+                             auth_handler=urllib.request.ProxyBasicAuthHandler,
+                             url="https://www.example.com/path"):
+        https_handler = MockHTTPSHandler()
+        https_handler.httpconn = httpconn
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler(dict(https="proxy.example.com:3128")),
+            auth_handler(password_mgr),
+            https_handler)
+        return opener.open(url)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_basic_auth_handler(self):
+        # gh-51540: a 407 from the proxy to CONNECT is passed to
+        # ProxyBasicAuthHandler, which retries with credentials
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass()
+        response = self._open_through_tunnel(httpconn, password_mgr)
+        self.assertEqual(response.code, 200)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertEqual(httpconn.tunnel_requests[1]["Proxy-Authorization"],
+                         "Basic dXNlcjpwYXNz")
+        # The credentials go to the proxy only, not to the origin.
+        self.assertEqual(httpconn._tunnel_host, "www.example.com")
+        self.assertEqual(httpconn.selector, "/path")
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_proxy_https_digest_auth_handler(self):
+        # gh-51540: a 407 from the proxy to CONNECT is passed to
+        # ProxyDigestAuthHandler, which retries with credentials
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(
+            challenge='Digest realm="proxy", nonce="abcdef0123456789", '
+                      'qop="auth"')
+        response = self._open_through_tunnel(
+            httpconn, password_mgr, urllib.request.ProxyDigestAuthHandler)
+        self.assertEqual(response.code, 200)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertStartsWith(
+            httpconn.tunnel_requests[1]["Proxy-Authorization"],
+            'Digest username="user", realm="proxy", ')
+        self.assertEqual(httpconn.selector, "/path")
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_proxy_https_digest_auth_connect(self):
+        # Through an https tunnel, the digest covers the CONNECT request
+        # (method CONNECT, request-target host:port), not the request
+        # later sent to the origin
+        def md5(text):
+            return hashlib.md5(text.encode("ascii")).hexdigest()
+
+        nonce = "abcdef0123456789"
+        for url, target in [
+            ("https://www.example.com/path", "www.example.com:443"),
+            ("https://www.example.com:8443/path", "www.example.com:8443"),
+        ]:
+            with self.subTest(url=url):
+                password_mgr = urllib.request.HTTPPasswordMgr()
+                password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                          "user", "pass")
+                httpconn = MockHTTPTunnelClass(
+                    challenge='Digest realm="proxy", nonce="%s"' % nonce)
+                self._open_through_tunnel(
+                    httpconn, password_mgr,
+                    urllib.request.ProxyDigestAuthHandler, url)
+
+                expected = md5("%s:%s:%s" % (md5("user:proxy:pass"), nonce,
+                                             md5("CONNECT:" + target)))
+                auth = httpconn.tunnel_requests[1]["Proxy-Authorization"]
+                self.assertIn('uri="%s"' % target, auth)
+                self.assertIn('response="%s"' % expected, auth)
+                self.assertEqual(httpconn.selector, "/path")
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_origin_407(self):
+        # A 407 sent by the origin through the tunnel is retried like one
+        # from the proxy, but the credentials only go on the CONNECT
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(tunnel_code=None, origin_code=407)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        with cm.exception as err:
+            self.assertEqual(err.code, 407)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertEqual(httpconn.tunnel_requests[1]["Proxy-Authorization"],
+                         "Basic dXNlcjpwYXNz")
+        # Neither request to the origin carried the credentials.
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_basic_auth_handler_no_password(self):
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        httpconn = MockHTTPTunnelClass()
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        with cm.exception as err:
+            self.assertEqual(err.code, 407)
+            self.assertEqual(err.reason, "Proxy Authentication Required")
+            self.assertEqual(err.headers["Proxy-Authenticate"],
+                             'Basic realm="proxy"')
+            self.assertEqual(err.read(), b"")
+        self.assertEqual(len(httpconn.tunnel_requests), 1)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_tunnel_error(self):
+        # Other failures to CONNECT are still raised as URLError
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(tunnel_code=403)
+        with self.assertRaises(urllib.error.URLError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        self.assertNotIsInstance(cm.exception, urllib.error.HTTPError)
+        self.assertIsInstance(cm.exception.reason,
+                              http.client.ProxyTunnelError)
+        self.assertEqual(cm.exception.reason.code, 403)
 
     @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
     def test_winreg_proxy_bypass(self):

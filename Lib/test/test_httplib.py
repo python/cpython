@@ -4,6 +4,7 @@ from http import client, HTTPStatus
 import io
 import itertools
 import os
+import pickle
 import array
 import re
 import socket
@@ -2785,6 +2786,36 @@ class TunnelTests(TestCase):
         self.conn.request('PUT', '/', '')
         headers = self.conn.get_proxy_response_headers()
         self.assertIsNone(headers)
+
+    def test_tunnel_error(self):
+        response_text = (
+            'HTTP/1.1 407 Proxy Authentication Required\r\n'
+            'Proxy-Authenticate: Basic realm="proxy"\r\n\r\n'
+        )
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        with self.assertRaises(client.ProxyTunnelError) as cm:
+            self.conn.request('HEAD', '/', '')
+        exc = cm.exception
+        self.assertIsInstance(exc, OSError)
+        self.assertEqual(exc.code, 407)
+        self.assertEqual(exc.reason, 'Proxy Authentication Required')
+        self.assertEqual(exc.headers['Proxy-Authenticate'],
+                         'Basic realm="proxy"')
+        self.assertEqual(str(exc), 'Tunnel connection failed: '
+                                   '407 Proxy Authentication Required')
+        self.assertIsNone(self.conn.sock)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                copy = pickle.loads(pickle.dumps(exc, proto))
+                self.assertIs(type(copy), client.ProxyTunnelError)
+                self.assertEqual(copy.code, 407)
+                self.assertEqual(copy.reason, exc.reason)
+                self.assertEqual(copy.headers['Proxy-Authenticate'],
+                                 'Basic realm="proxy"')
+                self.assertEqual(str(copy), str(exc))
 
     def test_tunnel_leak(self):
         sock = None
