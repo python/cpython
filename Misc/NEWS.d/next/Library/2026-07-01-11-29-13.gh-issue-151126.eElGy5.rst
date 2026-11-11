@@ -1,0 +1,3 @@
+Fix a crash caused by failing to set :exc:`MemoryError` on allocation failure
+when passing :class:`ctypes.Structure` or :class:`ctypes.Union` instances by
+value to ctypes foreign functions.
