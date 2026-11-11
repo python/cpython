@@ -785,6 +785,11 @@ class CallStackTestBase:
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
 
+    async def test_call_graph_depth_beyond_task(self):
+        # gh-161124
+        graph = asyncio.capture_call_graph(depth=2)
+        self.assertEqual(graph.call_stack, ())
+
     async def test_capture_call_graph_positive_limit(self):
         captured = None
 
@@ -963,6 +968,23 @@ class CallStackTestBase:
 
         await main()
         self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
+
+    def set_eager_task_factory(self):
+        loop = asyncio.get_running_loop()
+        loop.set_task_factory(asyncio.create_eager_task_factory(asyncio.Task))
+        self.addCleanup(loop.set_task_factory, None)
+
+    async def test_stack_eager_task(self):
+        self.set_eager_task_factory()
+
+        async def child():
+            nonlocal stack
+            stack = capture_test_stack()
+
+        stack = None
+        await asyncio.gather(child())
+
+        self.assertEqual(stack[0][2], [['T<anon>', ['a test_stack_eager_task'], []]])
 
 
 @unittest.skipIf(

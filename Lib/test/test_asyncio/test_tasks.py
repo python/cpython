@@ -335,6 +335,55 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(runner())
 
+    def test_print_stack_exception_lineno(self):
+        # gh-161166
+        async def coro():
+            try:
+                1 / 0
+            finally:
+                cleaned = True
+
+        task = self.new_task(self.loop, coro())
+        test_utils.run_briefly(self.loop)
+        task.exception()
+        file = io.StringIO()
+        task.print_stack(file=file)
+        self.assertIn('    1 / 0\n', file.getvalue())
+
+    def test_get_stack_async_generator(self):
+        # gh-161178
+        async def gen():
+            try:
+                yield
+            except ValueError:
+                pass
+            finally:
+                await asyncio.sleep(0)
+            yield
+
+        async def runner(method, args):
+            agen = gen()
+            await anext(agen)
+            task = self.new_task(self.loop, getattr(agen, method)(*args))
+            await asyncio.sleep(0)
+            frame = agen.ag_frame
+            stack = task.get_stack()
+            await task
+            try:
+                self.assertEqual(stack, [frame])
+                self.assertEqual(task.get_stack(), [])
+            finally:
+                await agen.aclose()
+
+        for method, args in (
+            ('__anext__', ()),
+            ('asend', (None,)),
+            ('athrow', (ValueError(),)),
+            ('aclose', ()),
+        ):
+            with self.subTest(method=method):
+                self.loop.run_until_complete(runner(method, args))
+
     def test_task_repr(self):
         self.loop.set_debug(False)
 
@@ -1276,6 +1325,18 @@ class BaseTaskTests:
                                return_when=asyncio.FIRST_COMPLETED)
             self.assertFalse(immortal._asyncio_awaited_by)
             immortal.cancel()
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
+    def test_gather_invalid_arg_does_not_add_awaited_by(self):
+        async def coro():
+            task = self.new_task(self.loop, asyncio.sleep(0))
+            try:
+                with self.assertRaises(TypeError):
+                    asyncio.gather(task, None)
+                self.assertFalse(task._asyncio_awaited_by)
+            finally:
+                await task
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 

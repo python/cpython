@@ -2458,10 +2458,11 @@ class TextIOWrapper(TextIOBase):
             # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
-            # _b2cratio is only a hint and may not have been computed from
-            # this snapshot, so never guess past the end of next_input.
-            skip_bytes = min(int(self._b2cratio * chars_to_skip),
-                             len(next_input))
+            skip_estimate = self._b2cratio * chars_to_skip
+            if 0 <= skip_estimate <= len(next_input):
+                skip_bytes = int(skip_estimate)
+            else:
+                skip_bytes = 0
             skip_back = 1
             while skip_bytes > 0:
                 decoder.setstate((b'', dec_flags))

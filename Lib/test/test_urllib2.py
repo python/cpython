@@ -8,6 +8,7 @@ from unittest import mock
 
 import os
 import io
+import hashlib
 import ftplib
 import socket
 import array
@@ -29,6 +30,11 @@ import http.client
 
 
 support.requires_working_socket(module=True)
+
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
 
 # XXX
 # Request
@@ -103,6 +109,16 @@ class TrivialTests(unittest.TestCase):
         self.assertIs(err.reason, socket_error)
         self.assertEqual(err.errno, -2)
         self.assertEqual(err.strerror, 'Name or service not known')
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
+    def test_URLError_OSError_attributes_winerror(self):
+        # gh-50720: OSError(errno, strerror, filename, winerror):
+        # on Windows the constructor derives errno from winerror.
+        os_error = OSError(0, "The system cannot find the path specified", None, 3)
+
+        err = urllib.error.URLError(os_error)
+        self.assertEqual(err.winerror, 3)
+        self.assertEqual(err.strerror, os_error.strerror)
 
 
 class RequestHdrsTests(unittest.TestCase):
@@ -602,6 +618,42 @@ if hasattr(http.client, 'HTTPSConnection'):
             return self.do_open(self.httpconn, req)
 
 
+class MockHTTPTunnelClass(MockHTTPClass):
+    # Stands in for a proxy that requires authentication: CONNECT fails
+    # with tunnel_code until the credentials arrive in the tunnel headers
+    # (tunnel_code=None: no authentication).  The origin then answers
+    # through the tunnel with origin_code.
+    def __init__(self, tunnel_code=407, challenge='Basic realm="proxy"',
+                 origin_code=200):
+        super().__init__()
+        self.tunnel_code = tunnel_code
+        self.challenge = challenge
+        self.origin_code = origin_code
+        self.tunnel_requests = []
+
+    def challenge_headers(self):
+        return http.client.parse_headers(io.BytesIO(
+            b'Proxy-Authenticate: %s\r\n\r\n' % self.challenge.encode()))
+
+    def request(self, method, url, body=None, headers=None, *,
+                encode_chunked=False):
+        self.tunnel_requests.append(dict(self._tunnel_headers))
+        if (self.tunnel_code is not None and
+                "Proxy-Authorization" not in self._tunnel_headers):
+            raise http.client.ProxyTunnelError(
+                self.tunnel_code, http.client.responses[self.tunnel_code],
+                self.challenge_headers())
+        super().request(method, url, body, headers,
+                        encode_chunked=encode_chunked)
+
+    def getresponse(self):
+        response = super().getresponse()
+        response.code = self.origin_code
+        if self.origin_code != 200:
+            response.info = self.challenge_headers
+        return response
+
+
 class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
     # useful for testing auth
     # sends supplied code response
@@ -936,9 +988,9 @@ class HandlerTests(unittest.TestCase):
             parsed._replace(netloc='localhost:80').geturl(),
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
-            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+            "file://%s:80/%s/%s" % (socket.gethostbyname('localhost'),
                                    os.getcwd(), TESTFN),
-            "file://somerandomhost.ontheinternet.com%s/%s" %
+            "file://somerandomhost.ontheinternet.com/%s/%s" %
             (os.getcwd(), TESTFN),
             ]:
             try:
@@ -1630,6 +1682,142 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
+    def _open_through_tunnel(self, httpconn, password_mgr,
+                             auth_handler=urllib.request.ProxyBasicAuthHandler,
+                             url="https://www.example.com/path"):
+        https_handler = MockHTTPSHandler()
+        https_handler.httpconn = httpconn
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler(dict(https="proxy.example.com:3128")),
+            auth_handler(password_mgr),
+            https_handler)
+        return opener.open(url)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_basic_auth_handler(self):
+        # gh-51540: a 407 from the proxy to CONNECT is passed to
+        # ProxyBasicAuthHandler, which retries with credentials
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass()
+        response = self._open_through_tunnel(httpconn, password_mgr)
+        self.assertEqual(response.code, 200)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertEqual(httpconn.tunnel_requests[1]["Proxy-Authorization"],
+                         "Basic dXNlcjpwYXNz")
+        # The credentials go to the proxy only, not to the origin.
+        self.assertEqual(httpconn._tunnel_host, "www.example.com")
+        self.assertEqual(httpconn.selector, "/path")
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_proxy_https_digest_auth_handler(self):
+        # gh-51540: a 407 from the proxy to CONNECT is passed to
+        # ProxyDigestAuthHandler, which retries with credentials
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(
+            challenge='Digest realm="proxy", nonce="abcdef0123456789", '
+                      'qop="auth"')
+        response = self._open_through_tunnel(
+            httpconn, password_mgr, urllib.request.ProxyDigestAuthHandler)
+        self.assertEqual(response.code, 200)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertStartsWith(
+            httpconn.tunnel_requests[1]["Proxy-Authorization"],
+            'Digest username="user", realm="proxy", ')
+        self.assertEqual(httpconn.selector, "/path")
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
+    def test_proxy_https_digest_auth_connect(self):
+        # Through an https tunnel, the digest covers the CONNECT request
+        # (method CONNECT, request-target host:port), not the request
+        # later sent to the origin
+        def md5(text):
+            return hashlib.md5(text.encode("ascii")).hexdigest()
+
+        nonce = "abcdef0123456789"
+        for url, target in [
+            ("https://www.example.com/path", "www.example.com:443"),
+            ("https://www.example.com:8443/path", "www.example.com:8443"),
+        ]:
+            with self.subTest(url=url):
+                password_mgr = urllib.request.HTTPPasswordMgr()
+                password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                          "user", "pass")
+                httpconn = MockHTTPTunnelClass(
+                    challenge='Digest realm="proxy", nonce="%s"' % nonce)
+                self._open_through_tunnel(
+                    httpconn, password_mgr,
+                    urllib.request.ProxyDigestAuthHandler, url)
+
+                expected = md5("%s:%s:%s" % (md5("user:proxy:pass"), nonce,
+                                             md5("CONNECT:" + target)))
+                auth = httpconn.tunnel_requests[1]["Proxy-Authorization"]
+                self.assertIn('uri="%s"' % target, auth)
+                self.assertIn('response="%s"' % expected, auth)
+                self.assertEqual(httpconn.selector, "/path")
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_origin_407(self):
+        # A 407 sent by the origin through the tunnel is retried like one
+        # from the proxy, but the credentials only go on the CONNECT
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(tunnel_code=None, origin_code=407)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        with cm.exception as err:
+            self.assertEqual(err.code, 407)
+
+        self.assertEqual(len(httpconn.tunnel_requests), 2)
+        self.assertNotIn("Proxy-Authorization", httpconn.tunnel_requests[0])
+        self.assertEqual(httpconn.tunnel_requests[1]["Proxy-Authorization"],
+                         "Basic dXNlcjpwYXNz")
+        # Neither request to the origin carried the credentials.
+        self.assertNotIn("Proxy-Authorization",
+                         dict(httpconn.req_headers))
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_basic_auth_handler_no_password(self):
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        httpconn = MockHTTPTunnelClass()
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        with cm.exception as err:
+            self.assertEqual(err.code, 407)
+            self.assertEqual(err.reason, "Proxy Authentication Required")
+            self.assertEqual(err.headers["Proxy-Authenticate"],
+                             'Basic realm="proxy"')
+            self.assertEqual(err.read(), b"")
+        self.assertEqual(len(httpconn.tunnel_requests), 1)
+
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
+    def test_proxy_https_tunnel_error(self):
+        # Other failures to CONNECT are still raised as URLError
+        password_mgr = urllib.request.HTTPPasswordMgr()
+        password_mgr.add_password("proxy", "proxy.example.com:3128",
+                                  "user", "pass")
+        httpconn = MockHTTPTunnelClass(tunnel_code=403)
+        with self.assertRaises(urllib.error.URLError) as cm:
+            self._open_through_tunnel(httpconn, password_mgr)
+        self.assertNotIsInstance(cm.exception, urllib.error.HTTPError)
+        self.assertIsInstance(cm.exception.reason,
+                              http.client.ProxyTunnelError)
+        self.assertEqual(cm.exception.reason.code, 403)
+
     @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
     def test_winreg_proxy_bypass(self):
         proxy_override = "www.example.com;*.example.net; 192.168.0.1"
@@ -1772,6 +1960,7 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_proxy_digest_auth(self):
         # gh-60299: ProxyDigestAuthHandler must look up credentials using
         # the proxy's authority
@@ -1835,6 +2024,7 @@ class HandlerTests(unittest.TestCase):
         auth = http_handler.requests[1].get_header("Proxy-authorization")
         self.assertIn('uri="%s"' % request_url, auth)
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_digest_auth_uses_full_url(self):
         # The non-proxy case must keep using the full request URL (not
         # just the host) for the password lookup, so that sub-URI realm
@@ -1937,6 +2127,122 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(http_handler)
         self.assertRaises(ValueError, opener.open, "http://www.example.com")
 
+    def check_digest_auth(self, headers, realm):
+        with self.subTest(headers=headers):
+            opener = OpenerDirector()
+            password_manager = MockPasswordManager()
+            auth_handler = urllib.request.HTTPDigestAuthHandler(
+                password_manager)
+            auth_handler.add_password(realm, "http://acme.example.com/",
+                                      "wile", "coyote")
+            body = '\r\n'.join(headers) + '\r\n\r\n'
+            http_handler = MockHTTPHandlerRedirect(401, body)
+            opener.add_handler(auth_handler)
+            opener.add_handler(http_handler)
+            opener.open("http://acme.example.com/protected")
+            self.assertEqual(password_manager.target_realm, realm)
+            auth = http_handler.requests[1].unredirected_hdrs["Authorization"]
+            self.assertStartsWith(auth, "Digest ")
+            self.assertIn(f'realm="{realm}"', auth)
+            self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
+            self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
+
+    @skip_libssl_fips_mode
+    def test_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth, auth-int", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", '
+                  f'opaque="5ccc069c403ebaf9f0171e9517f40e41"')
+        basic = 'Basic realm="basic@example.com"'
+        other = 'Otherscheme xxx'
+
+        # Multiple challenges per header.
+        for challenges in (
+            digest,
+            f'{basic}, {digest}',
+            f'{digest}, {basic}',
+            f'{other}, {digest}',
+            f'{basic}, {digest}, {other}',
+        ):
+            self.check_digest_auth([f'WWW-Authenticate: {challenges}'], realm)
+
+        # Multiple headers: one challenge per header.
+        for challenges in (
+            [basic, digest],
+            [digest, basic],
+            [other, digest],
+        ):
+            headers = [f'WWW-Authenticate: {challenge}'
+                       for challenge in challenges]
+            self.check_digest_auth(headers, realm)
+
+    def test_digest_auth_handler_ignores_basic_challenge(self):
+        # Leave Basic challenges to HTTPBasicAuthHandler, even when an
+        # unsupported scheme is present as well.
+        for headers in (
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos, Basic realm="x"\r\n\r\n',
+            'WWW-Authenticate: Kerberos\r\n'
+            'WWW-Authenticate: Basic realm="x"\r\n\r\n',
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.HTTPDigestAuthHandler(None))
+                opener.add_handler(MockHTTPHandlerRedirect(401, headers))
+                self.assertIsNone(opener.open("http://www.example.com"))
+
+    def test_digest_auth_parse_challenges(self):
+        parse = AbstractDigestAuthHandler()._parse_challenges
+        self.assertEqual(list(parse('')), [])
+        self.assertEqual(list(parse('Digest realm="a"')),
+                         [('Digest', 'Digest realm="a"')])
+        # Commas and quotes inside a quoted string do not split challenges.
+        self.assertEqual(
+            list(parse(r'Digest realm="a, Basic realm=\"b\"", nonce="n", '
+                       r'Basic realm="c"')),
+            [('Digest', r'Digest realm="a, Basic realm=\"b\"", nonce="n"'),
+             ('Basic', 'Basic realm="c"')])
+        # Whitespace around "=" does not start a new challenge.
+        self.assertEqual(
+            list(parse('Digest realm = "a", nonce = "n", Basic realm="b"')),
+            [('Digest', 'Digest realm = "a", nonce = "n"'),
+             ('Basic', 'Basic realm="b"')])
+        self.assertEqual(
+            list(parse('Negotiate, Bearer abc==, Digest realm="a",, ')),
+            [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
+             ('Digest', 'Digest realm="a"')])
+
+    @skip_libssl_fips_mode
+    def test_proxy_digest_auth_multiple_challenges(self):
+        realm = "digest@example.com"
+        digest = (f'Digest realm="{realm}", '
+                  f'qop="auth", '
+                  f'nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"')
+        basic = 'Basic realm="basic@example.com"'
+        for headers in (
+            [f'Proxy-Authenticate: {basic}, {digest}'],
+            [f'Proxy-Authenticate: {basic}', f'Proxy-Authenticate: {digest}'],
+        ):
+            with self.subTest(headers=headers):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.ProxyHandler(
+                    dict(http="proxy.example.com:3128")))
+                password_manager = MockPasswordManager()
+                auth_handler = urllib.request.ProxyDigestAuthHandler(
+                    password_manager)
+                auth_handler.add_password(realm, "proxy.example.com:3128",
+                                          "wile", "coyote")
+                body = '\r\n'.join(headers) + '\r\n\r\n'
+                http_handler = MockHTTPHandlerRedirect(407, body)
+                opener.add_handler(auth_handler)
+                opener.add_handler(http_handler)
+                opener.open("http://acme.example.com/protected")
+                self.assertEqual(password_manager.target_realm, realm)
+                auth = http_handler.requests[1].unredirected_hdrs[
+                    "Proxy-authorization"]
+                self.assertStartsWith(auth, "Digest ")
+                self.assertIn(f'realm="{realm}"', auth)
     def test_digest_auth_failure_code(self):
         # gh-53852: a failed proxy digest auth must report 407, not 401.
         headers = http.client.HTTPMessage()
@@ -2229,12 +2535,6 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
-
-
-skip_libssl_fips_mode = unittest.skipIf(
-    support.is_libssl_fips_mode(),
-    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
-)
 
 
 class TestDigestAuthAlgorithms(unittest.TestCase):

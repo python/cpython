@@ -2981,10 +2981,16 @@ _io_TextIOWrapper_tell_impl(textio *self)
     } while (0)
 
     /* Fast search for an acceptable start point, close to our
-       current pos.  b2cratio is only a hint and may not have been computed
-       from this snapshot, so never guess past the end of next_input. */
-    skip_bytes = (Py_ssize_t) Py_MIN(self->b2cratio * chars_to_skip,
-                                     (double) PyBytes_GET_SIZE(next_input));
+       current pos */
+    double skip_estimate = self->b2cratio * chars_to_skip;
+    if (skip_estimate >= 0 &&
+        skip_estimate <= PyBytes_GET_SIZE(next_input))
+    {
+        skip_bytes = (Py_ssize_t)skip_estimate;
+    }
+    else {
+        skip_bytes = 0;
+    }
     skip_back = 1;
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
@@ -3475,7 +3481,11 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return buffer_access_safe(self);
+    /* gh-160427: None once detached, matching the former member descriptor. */
+    if (self->buffer == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->buffer);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {

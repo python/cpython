@@ -725,8 +725,32 @@ def decompress(data):
                 break
 
 
+def _create_output(filename, infile):
+    # Like "gzip -f": remove an existing file at the output name instead of
+    # writing through it (it may be a link to another file), and create the
+    # new file with the permission bits of the input file.
+    def opener(path, flags):
+        return os.open(path, flags, mode)
+
+    try:
+        mode = os.fstat(infile.fileno()).st_mode & 0o777
+        try:
+            os.unlink(filename)
+        except FileNotFoundError:
+            pass
+        return builtins.open(filename, "xb", opener=opener)
+    except:
+        infile.close()
+        raise
+
+
 def main():
     from argparse import ArgumentParser
+    import runpy
+
+    # Prevent shadowing a stdlib module from the extracted file
+    runpy._remove_sys_path0()
+
     parser = ArgumentParser(description=
         "A simple command line interface for the `gzip` module: act like `gzip`, "
         "but do not delete the input file.",
@@ -747,6 +771,7 @@ def main():
         compresslevel = _COMPRESS_LEVEL_BEST
 
     for arg in args.args:
+        outfile = None
         if args.decompress:
             if arg == "-":
                 f = GzipFile(filename="", mode="rb", fileobj=sys.stdin.buffer)
@@ -755,7 +780,7 @@ def main():
                 if arg[-3:] != ".gz":
                     sys.exit(f"filename doesn't end in .gz: {arg!r}")
                 f = open(arg, "rb")
-                g = builtins.open(arg[:-3], "wb")
+                g = outfile = _create_output(arg[:-3], f)
         else:
             if arg == "-":
                 f = sys.stdin.buffer
@@ -763,7 +788,9 @@ def main():
                              compresslevel=compresslevel)
             else:
                 f = builtins.open(arg, "rb")
-                g = open(arg + ".gz", "wb")
+                outfile = _create_output(arg + ".gz", f)
+                g = GzipFile(fileobj=outfile, mode="wb",
+                             compresslevel=compresslevel)
         while True:
             chunk = f.read(READ_BUFFER_SIZE)
             if not chunk:
@@ -771,6 +798,8 @@ def main():
             g.write(chunk)
         if g is not sys.stdout.buffer:
             g.close()
+        if outfile is not None:
+            outfile.close()
         if f is not sys.stdin.buffer:
             f.close()
 

@@ -205,7 +205,7 @@ High-level module interface
 
       def read_text(path, encoding=None):
           encoding = io.text_encoding(encoding)  # stacklevel=2
-          with open(path, encoding) as f:
+          with open(path, encoding=encoding) as f:
               return f.read()
 
    In this example, an :class:`EncodingWarning` is emitted for the caller of
