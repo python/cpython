@@ -104,7 +104,7 @@ jobs:
     name: 'Check for removed HTML IDs'
     needs: build-doc
     if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/reusable-check-html-ids.yml
+    uses: $/.github/workflows/reusable-check-html-ids.yml
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
