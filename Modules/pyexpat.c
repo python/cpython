@@ -385,15 +385,18 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     temp = call_with_frame("CharacterData", __LINE__,
                            self->handlers[CharacterData], args, self);
     /* temp is an owned reference again, or NULL */
-    self->in_callback = 0;
     Py_DECREF(args);
     if (temp == NULL) {
+        self->in_callback = 0;
         flag_error(self);
         XML_SetCharacterDataHandler(self->itself,
                                     noop_character_data_handler);
         return -1;
     }
+    /* Releasing the result can run arbitrary code, which must still be
+       treated as being within the callback by the handler setter. */
     Py_DECREF(temp);
+    self->in_callback = 0;
     return 0;
 }
 
@@ -582,14 +585,18 @@ my_ ## NAME ## Handler PARAMS {                     \
     PyObject *rv = call_with_frame(                 \
         #NAME, __LINE__,                            \
         self->handlers[NAME], args, self);          \
-    self->in_callback = 0;                          \
     Py_DECREF(args);                                \
     if (rv == NULL) {                               \
+        self->in_callback = 0;                      \
         flag_error(self);                           \
         return RETURN_VARIABLE;                     \
     }                                               \
     CONVERSION                                      \
+    /* Releasing the result can run arbitrary code, \
+       which must still be treated as being within  \
+       the callback by the handler setter. */       \
     Py_DECREF(rv);                                  \
+    self->in_callback = 0;                          \
     if (PyErr_Occurred()) {                         \
         invalid_expat_handler_rv(#NAME);            \
     }                                               \
@@ -2797,11 +2804,12 @@ clear_handlers(xmlparseobject *self, int initial)
             Py_CLEAR(self->handlers[i]);
             xmlhandler c_handler = NULL;
             if (i == Default || i == DefaultHandlerExpand) {
-                /* Like the character data handler, the default handler
-                   can't be removed from within a callback: for a document
-                   that is not UTF-8, Expat passes a long piece of text to
-                   it in several calls and re-reads the handler before each
-                   one (reportDefault() in xmlparse.c). */
+                /* This may be called from within a callback, where the
+                   default handler can't be removed: for a document that is
+                   not UTF-8, Expat passes a long piece of text to it in
+                   several calls and re-reads the handler before each one
+                   (reportDefault() in xmlparse.c).  The no-op handler is
+                   harmless otherwise. */
                 c_handler = (xmlhandler)noop_character_data_handler;
             }
             CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, c_handler);

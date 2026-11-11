@@ -861,16 +861,58 @@ class DefaultHandlerExceptionTest(unittest.TestCase):
     def test_DefaultHandlerExpand(self):
         self.check('DefaultHandlerExpand')
 
-    def test_unset_DefaultHandler_in_callback(self):
+    def check_unset_in_callback(self, name):
         parser = expat.ParserCreate()
         calls = []
         def handler(text):
             calls.append(text)
             if text.startswith('<!--'):
-                parser.DefaultHandler = None
-        parser.DefaultHandler = handler
+                setattr(parser, name, None)
+        setattr(parser, name, handler)
         parser.Parse(self.xml, True)
         self.assertTrue(calls[-1].startswith('<!--'), calls)
+
+    def test_unset_DefaultHandler_in_callback(self):
+        self.check_unset_in_callback('DefaultHandler')
+
+    def test_unset_DefaultHandlerExpand_in_callback(self):
+        self.check_unset_in_callback('DefaultHandlerExpand')
+
+    def check_unset_in_result_destructor(self, name):
+        # The handler's result is released after the handler has returned,
+        # but while Expat is still passing the comment to the default handler.
+        parser = expat.ParserCreate()
+        class Result:
+            def __del__(self):
+                setattr(parser, name, None)
+        calls = []
+        def handler(text):
+            calls.append(text)
+            if text.startswith('<!--'):
+                return Result()
+        setattr(parser, name, handler)
+        parser.Parse(self.xml, True)
+        self.assertTrue(calls[-1].startswith('<!--'), calls)
+
+    def test_unset_DefaultHandler_in_result_destructor(self):
+        self.check_unset_in_result_destructor('DefaultHandler')
+
+    def test_unset_DefaultHandlerExpand_in_result_destructor(self):
+        self.check_unset_in_result_destructor('DefaultHandlerExpand')
+
+    def test_unset_DefaultHandler_in_CharacterDataHandler_result(self):
+        # With buffer_text, the CharacterDataHandler is called, and its
+        # result released, just before the default handler is called.
+        parser = expat.ParserCreate()
+        class Result:
+            def __del__(self):
+                parser.DefaultHandler = None
+        parser.buffer_text = True
+        parser.CharacterDataHandler = lambda text: Result()
+        parser.DefaultHandler = lambda text: None
+        xml = ("<?xml version='1.0' encoding='iso8859'?><s>a<!--%s--></s>"
+               % ('a' * 2000)).encode('iso8859')
+        parser.Parse(xml, True)
 
     def test_CharacterDataHandler_with_buffer_text(self):
         # With buffer_text, buffered character data is passed to the
