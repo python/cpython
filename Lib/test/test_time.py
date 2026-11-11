@@ -562,7 +562,7 @@ class TimeTestCase(unittest.TestCase):
             # on some operating systems (e.g. FreeBSD), which is wrong. See for
             # example this bug:
             # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=93810
-            self.assertIn(time.tzname[0], ('AEST' 'EST'), time.tzname[0])
+            self.assertIn(time.tzname[0], ('AEST', 'EST'), time.tzname[0])
             self.assertTrue(time.tzname[1] in ('AEDT', 'EDT'), str(time.tzname[1]))
             self.assertEqual(len(time.tzname), 2)
             self.assertEqual(time.daylight, 1)
