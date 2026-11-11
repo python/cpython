@@ -1026,7 +1026,7 @@ class _FlagTests:
             self.assertIs(~(Y|Z), OpenXYZ(28))
             self.assertIs(~(X|Y|Z), OpenXYZ(24))
             self.assertIs(~XYZ_MASK, OpenXYZ(0))
-            self.assertTrue(~OpenXYZ(0), XYZ_MASK)
+            self.assertIs(~OpenXYZ(0), XYZ_MASK)
         else:
             self.assertIs(~X, Y|Z)
             self.assertIs(~Y, X|Z)
@@ -1036,7 +1036,7 @@ class _FlagTests:
             self.assertIs(~(Y|Z), X)
             self.assertIs(~(X|Y|Z), OpenXYZ(0))
             self.assertIs(~XYZ_MASK, OpenXYZ(0))
-            self.assertTrue(~OpenXYZ(0), (X|Y|Z))
+            self.assertIs(~OpenXYZ(0), (X|Y|Z))
 
 
 class TestPlainEnumClass(_EnumTests, _PlainOutputTests, unittest.TestCase):
@@ -1864,7 +1864,7 @@ class TestSpecial(unittest.TestCase):
     @reraise_if_not_enum(Name)
     def test_subclassing(self):
         self.assertEqual(Name.BDFL, 'Guido van Rossum')
-        self.assertTrue(Name.BDFL, Name('Guido van Rossum'))
+        self.assertIs(Name.BDFL, Name('Guido van Rossum'))
         self.assertIs(Name.BDFL, getattr(Name, 'BDFL'))
         test_pickle_dump_load(self.assertIs, Name.BDFL)
 
