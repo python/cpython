@@ -2335,7 +2335,7 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = fd->code;
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
-    memcpy(&parg->value, self->b_ptr, self->b_size);
+    memcpy(&parg->value, self->b_ptr, info->size);
     return parg;
 }
 
@@ -5522,12 +5522,25 @@ static PyMethodDef Simple_methods[] = {
 static int
 Simple_bool(PyObject *op)
 {
-    int cmp;
     CDataObject *self = _CDataObject_CAST(op);
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, op, &info) < 0) {
+        return -1;
+    }
+    assert(info != NULL);
+
+    int res = 0;
     Py_BEGIN_CRITICAL_SECTION(self);
-    cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    assert(info->size <= self->b_size);
+    for (Py_ssize_t i = 0; i < info->size; i++) {
+        if (self->b_ptr[i]) {
+            res = 1;
+            break;
+        }
+    }
     Py_END_CRITICAL_SECTION();
-    return cmp;
+    return res;
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
