@@ -50,7 +50,7 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlsplit(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
+.. function:: urlsplit(url, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
    Parse a URL into five components, returning a 5-item :term:`named tuple`
    :class:`SplitResult` or :class:`SplitResultBytes`.
@@ -125,7 +125,7 @@ or on combining URL components into a URL string.
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
-   (text or bytes) as *urlstring* or ``None``, except that the ``''`` is
+   (text or bytes) as *url* or ``None``, except that the ``''`` is
    always allowed, and is automatically converted to ``b''`` if appropriate.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
@@ -227,12 +227,12 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.16
       Passing an object that is not a string, bytes, or ``None`` as
-      *urlstring* or *scheme* now raises :exc:`TypeError` instead of
+      *url* or *scheme* now raises :exc:`TypeError` instead of
       :exc:`AttributeError`.
 
    .. deprecated:: 3.16
       Accepting objects with false values (like ``0`` and ``[]``) except empty
-      strings, byte-like objects and ``None`` as *urlstring* or *scheme* is
+      strings, byte-like objects and ``None`` as *url* or *scheme* is
       now deprecated.  They will raise :exc:`TypeError` in Python 3.18.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -331,11 +331,11 @@ or on combining URL components into a URL string.
       separator key, with ``&`` as the default separator.
 
 
-.. function:: urlunsplit(parts)
-              urlunsplit(parts, *, keep_empty)
+.. function:: urlunsplit(components)
+              urlunsplit(components, *, keep_empty)
 
-   Construct a URL from a tuple as returned by :func:`urlsplit`. The *parts*
-   argument can be any five-item iterable.
+   Construct a URL from a tuple as returned by :func:`urlsplit`.
+   The *components* argument can be any five-item iterable.
 
    This may result in a slightly different, but equivalent URL, if the
    URL that was parsed originally had unnecessary delimiters (for example,
@@ -345,23 +345,24 @@ or on combining URL components into a URL string.
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows rebuilding a URL that was parsed with option
    ``missing_as_none=True``.
-   By default, *keep_empty* is true if *parts* is the result of the
+   By default, *keep_empty* is true if *components* is the result of the
    :func:`urlsplit` call with ``missing_as_none=True``.
 
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
    .. versionchanged:: 3.16
-      Passing an object that is not a string, bytes, or ``None`` in *parts*
-      now raises :exc:`TypeError` instead of :exc:`AttributeError`.
+      Passing an object that is not a string, bytes, or ``None`` in
+      *components* now raises :exc:`TypeError` instead of
+      :exc:`AttributeError`.
 
    .. deprecated:: 3.16
       Accepting objects with false values (like ``0`` and ``[]``) except empty
-      strings, byte-like objects and ``None`` in *parts* is now deprecated.
-      They will raise :exc:`TypeError` in Python 3.18.
+      strings, byte-like objects and ``None`` in *components* is now
+      deprecated.  They will raise :exc:`TypeError` in Python 3.18.
 
 
-.. function:: urlparse(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
+.. function:: urlparse(url, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
    This is similar to :func:`urlsplit`, but additionally splits the *path*
    component on *path* and *params*.
@@ -379,19 +380,19 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.16
       Passing an object that is not a string, bytes, or ``None`` as
-      *urlstring* or *scheme* now raises :exc:`TypeError` instead of
+      *url* or *scheme* now raises :exc:`TypeError` instead of
       :exc:`AttributeError`.
 
    .. deprecated:: 3.16
       Accepting objects with false values (like ``0`` and ``[]``) except empty
-      strings, byte-like objects and ``None`` as *urlstring* or *scheme* is
+      strings, byte-like objects and ``None`` as *url* or *scheme* is
       now deprecated.  They will raise :exc:`TypeError` in Python 3.18.
 
-.. function:: urlunparse(parts)
-              urlunparse(parts, *, keep_empty)
+.. function:: urlunparse(components)
+              urlunparse(components, *, keep_empty)
 
    Combine the elements of a tuple as returned by :func:`urlparse` into a
-   complete URL as a string. The *parts* argument can be any six-item
+   complete URL as a string. The *components* argument can be any six-item
    iterable.
 
    This may result in a slightly different, but equivalent URL, if the
@@ -402,20 +403,21 @@ or on combining URL components into a URL string.
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows rebuilding a URL that was parsed with option
    ``missing_as_none=True``.
-   By default, *keep_empty* is true if *parts* is the result of the
+   By default, *keep_empty* is true if *components* is the result of the
    :func:`urlparse` call with ``missing_as_none=True``.
 
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
    .. versionchanged:: 3.16
-      Passing an object that is not a string, bytes, or ``None`` in *parts*
-      now raises :exc:`TypeError` instead of :exc:`AttributeError`.
+      Passing an object that is not a string, bytes, or ``None`` in
+      *components* now raises :exc:`TypeError` instead of
+      :exc:`AttributeError`.
 
    .. deprecated:: 3.16
       Accepting objects with false values (like ``0`` and ``[]``) except empty
-      strings, byte-like objects and ``None`` in *parts* is now deprecated.
-      They will raise :exc:`TypeError` in Python 3.18.
+      strings, byte-like objects and ``None`` in *components* is now
+      deprecated.  They will raise :exc:`TypeError` in Python 3.18.
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
@@ -728,7 +730,7 @@ task isn't already covered by the URL parsing functions above.
    Example: ``quote_plus('/El Niño/')`` yields ``'%2FEl+Ni%C3%B1o%2F'``.
 
 
-.. function:: quote_from_bytes(bytes, safe='/')
+.. function:: quote_from_bytes(bs, safe='/')
 
    Like :func:`quote`, but accepts a :class:`bytes` object rather than a
    :class:`str`, and does not perform string-to-bytes encoding.
