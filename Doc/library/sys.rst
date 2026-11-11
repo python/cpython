@@ -438,7 +438,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: WASI.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: pycache_prefix
@@ -1666,7 +1666,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :envvar:`PYTHONSAFEPATH` environment variable is used, :data:`sys._path0` is
    ``None`` and :data:`sys.path` is left unchanged.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: path_hooks

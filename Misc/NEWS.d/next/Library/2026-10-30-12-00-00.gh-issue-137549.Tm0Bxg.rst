@@ -1,3 +1,0 @@
-:func:`asyncio.timeout` now inserts :exc:`TimeoutError` into the context
-chain of sub-exceptions of a :exc:`BaseExceptionGroup`, as it already did for
-:exc:`ExceptionGroup`.
