@@ -1,0 +1,5 @@
+Fix :class:`multiprocessing.shared_memory.SharedMemory` leaking its file
+descriptor and printing an ignored :exc:`BufferError` when garbage collected
+while its :attr:`~multiprocessing.shared_memory.SharedMemory.buf` was still in
+use, for example by a NumPy array. :attr:`!buf` now also stays usable after
+the :class:`!SharedMemory` object is garbage collected.

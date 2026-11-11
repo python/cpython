@@ -913,7 +913,6 @@ class PyTypesVisitor(PickleVisitor):
 
 typedef struct {
     PyObject_HEAD
-    PyObject *dict;
 } AST_object;
 
 static void
@@ -923,7 +922,7 @@ ast_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
     assert(free_func != NULL);
     free_func(self);
@@ -935,15 +934,13 @@ ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
     AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 ast_clear(PyObject *op)
 {
-    AST_object *self = (AST_object*)op;
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1419,11 +1416,6 @@ cleanup:
     return result;
 }
 
-static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
-    {NULL}  /* Sentinel */
-};
-
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(ast_type_replace), METH_VARARGS | METH_KEYWORDS,
@@ -1668,7 +1660,6 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
     {Py_tp_clear, ast_clear},
-    {Py_tp_members, ast_type_members},
     {Py_tp_methods, ast_type_methods},
     {Py_tp_getset, ast_type_getsets},
     {Py_tp_init, ast_type_init},
@@ -1682,7 +1673,8 @@ static PyType_Spec AST_type_spec = {
     "ast.AST",
     sizeof(AST_object),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_MANAGED_DICT,
     AST_type_slots
 };
 

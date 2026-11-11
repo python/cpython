@@ -581,7 +581,7 @@ Or used as the annotate function for an object:
    >>> class C:
    ...   pass
    >>> C.__annotate__ = Annotate()
-   >>> get_annotations(Annotate(), format=Format.STRING)
+   >>> get_annotations(C, format=Format.STRING)
    {'x': 'MyType'}
 
 

@@ -1,3 +1,0 @@
-Update :mod:`configparser` and its tests to modern linter standards:
-printf-style and :meth:`str.format` call sites are now f-strings, and a
-handful of constructs have simpler spellings. No behavior change.

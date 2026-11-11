@@ -2189,6 +2189,21 @@ class TestArchives(BaseTest, unittest.TestCase):
             # root_dir must be None, so the archive path is relative.
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
+            # The archive does not contain itself.
+            with zipfile.ZipFile('test.zip') as zf:
+                self.assertEqual(zf.namelist(), [])
+
+    @support.requires_zlib()
+    @os_helper.skip_unless_symlink
+    def test_make_zipfile_symlink_to_archive(self):
+        root_dir, base_dir = self._create_files('')
+        os.symlink('archive.zip', os.path.join(root_dir, 'link'))
+        base_name = os.path.join(root_dir, 'archive')
+        with no_chdir:
+            archive = make_archive(base_name, 'zip', root_dir)
+        with zipfile.ZipFile(archive) as zf:
+            self.assertCountEqual(zf.namelist(),
+                    ['sub/', 'sub2/', 'file1', 'file2', 'sub/file3'])
 
     def test_make_archive_pathlike_cwd_default(self):
         called_args = []
@@ -2287,12 +2302,18 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
+        make_format = kwargs.pop("make_format", format)
+        extension = kwargs.pop("extension", None)
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
 
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        filename = make_archive(base_name, format, root_dir, base_dir)
+        filename = make_archive(base_name, make_format, root_dir, base_dir)
+        if extension is not None:
+            new_filename = os.path.splitext(filename)[0] + extension
+            os.rename(filename, new_filename)
+            filename = new_filename
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
@@ -2339,6 +2360,13 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    @support.requires_zlib()
+    def test_unpack_archive_whl(self):
+        self.check_unpack_archive('whl', make_format='zip', extension='.whl')
+        with self.assertRaises(TypeError):
+            self.check_unpack_archive('whl', filter='data', make_format='zip',
+                                      extension='.whl')
 
     def test_unpack_archive_zip_badpaths(self):
         srcdir = self.mkdtemp()
