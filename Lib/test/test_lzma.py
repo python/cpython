@@ -607,6 +607,33 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
                 self.assertRaises(LZMAError, lzma.decompress,
                                   COMPRESSED_ALONE + bytes(4), format)
 
+    def test_decompress_null_bytes_not_stream_padding(self):
+        # Null bytes that are not in multiples of four are not stream
+        # padding: they are decompressed like any other data.
+        def decompress(data, format, **kwargs):
+            try:
+                return _streams._decompress_all(
+                    data, LZMADecompressor, LZMAError,
+                    stream_magic=lzma._stream_magic(format),
+                    truncated_error=LZMAError, format=format, **kwargs)
+            except LZMAError:
+                return LZMAError
+
+        for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+            for size in 1, 3, 5, 13, 18, 30, 1001, 300_001:
+                for tail in b"", COMPRESSED_XZ, b"junk" * 4:
+                    with self.subTest(format=format, size=size, tail=tail):
+                        cdata = COMPRESSED_XZ + bytes(size) + tail
+                        self.assertEqual(
+                            decompress(cdata, format, xz_stream_padding=True),
+                            decompress(cdata, format))
+        # A stream after them is not decompressed.
+        self.assertRaises(LZMAError, lzma.decompress,
+                          COMPRESSED_XZ + bytes(5), lzma.FORMAT_XZ)
+        self.assertEqual(lzma.decompress(COMPRESSED_XZ + bytes(13) +
+                                         COMPRESSED_XZ, lzma.FORMAT_XZ),
+                         INPUT)
+
 
 class TempFile:
     """Context manager - creates a file, and deletes it on __exit__."""
@@ -1019,6 +1046,58 @@ class FileTestCase(unittest.TestCase):
                 with LZMAFile(BytesIO(COMPRESSED_ALONE + bytes(4)),
                               format=format) as f:
                     self.assertRaises(EOFError, f.read)
+
+    def test_read_null_bytes_not_stream_padding(self):
+        # Null bytes that are not in multiples of four are not stream
+        # padding.  However many there are, the decompressors are given
+        # the same blocks of data as without support for stream padding.
+        class Decompressor:
+            def __init__(self, **kwargs):
+                self.decomp = LZMADecompressor(**kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data, max_length):
+                blocks.append(len(data))
+                return self.decomp.decompress(data, max_length)
+
+        def read(data, format, **kwargs):
+            blocks.clear()
+            raw = _streams.DecompressReader(
+                BytesIO(data), Decompressor, trailing_error=LZMAError,
+                stream_magic=lzma._stream_magic(format), format=format,
+                **kwargs)
+            try:
+                result = raw.readall()
+            except (LZMAError, EOFError) as exc:
+                result = type(exc)
+            return result, blocks[:]
+
+        blocks = []
+        for buffer_size in 3, 64, len(COMPRESSED_XZ) + 2, 4096:
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                for size in 1, 3, 5, 13, 18, 30, 1001, 10_001:
+                    for tail in b"", COMPRESSED_XZ, b"junk" * 4:
+                        with (self.subTest(buffer_size=buffer_size,
+                                           format=format, size=size,
+                                           tail=tail),
+                              support.swap_attr(_streams, "BUFFER_SIZE",
+                                                buffer_size)):
+                            cdata = COMPRESSED_XZ + bytes(size) + tail
+                            result = read(cdata, format,
+                                          xz_stream_padding=True)
+                            self.assertEqual(result, read(cdata, format))
+                            self.assertLessEqual(max(result[1]), buffer_size)
+
+        # A stream after them is not read, also after seeking back.
+        cdata = COMPRESSED_XZ + bytes(300_001) + COMPRESSED_XZ
+        self.assertGreater(len(cdata), 2 * _streams.BUFFER_SIZE)
+        with LZMAFile(BytesIO(cdata), format=lzma.FORMAT_XZ) as f:
+            self.assertEqual(f.read(), INPUT)
+            self.assertEqual(f.seek(0), 0)
+            self.assertEqual(f.read(), INPUT)
+        with LZMAFile(BytesIO(COMPRESSED_XZ + bytes(5)),
+                      format=lzma.FORMAT_XZ) as f:
+            self.assertRaises(EOFError, f.read)
 
     def test_read_from_file(self):
         with TempFile(TESTFN, COMPRESSED_XZ):

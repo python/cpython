@@ -37,7 +37,7 @@ class DecompressReader(io.RawIOBase):
         return True
 
     def __init__(self, fp, decomp_factory, trailing_error=(), *,
-                 stream_magic=(), stream_padding=False, **decomp_args):
+                 stream_magic=(), xz_stream_padding=False, **decomp_args):
         self._fp = fp
         self._eof = False
         self._pos = 0  # Current offset in decompressed stream
@@ -62,11 +62,19 @@ class DecompressReader(io.RawIOBase):
         # stream rather than trailing data, so its error is not ignored.
         self._stream_magic = stream_magic
 
-        # Whether a stream that starts with stream_magic (bytes) may be
-        # followed by Stream Padding, as in the .xz format.  _head holds the
-        # first bytes of the current stream.
-        self._stream_padding = stream_padding and bool(stream_magic)
+        # Whether to skip the Stream Padding of the .xz format: null bytes,
+        # in multiples of four, after a stream that starts with stream_magic.
+        # No other format here has such padding, so only lzma sets this, and
+        # stream_magic must then be a single bytes object, not a tuple.
+        # _head holds the first bytes of the current stream.
+        self._xz_stream_padding = xz_stream_padding and bool(stream_magic)
         self._head = b""
+
+        # Null bytes that _skip_xz_padding() read past but did not skip
+        # (only their number is kept), and the data that was read after
+        # them.  _read_block() returns these before reading the file again.
+        self._unread_nulls = 0
+        self._unread_data = b""
 
     def close(self):
         self._decompressor = None
@@ -93,15 +101,16 @@ class DecompressReader(io.RawIOBase):
         while True:
             if self._decompressor.eof:
                 rawblock = (self._decompressor.unused_data or
-                            self._fp.read(BUFFER_SIZE))
-                if self._stream_padding and self._head == self._stream_magic:
-                    rawblock = self._skip_padding(rawblock)
+                            self._read_block())
+                if (self._xz_stream_padding
+                        and self._head == self._stream_magic):
+                    rawblock = self._skip_xz_padding(rawblock)
                 if not rawblock:
                     break
                 # Continue to next stream.
                 self._decompressor = self._decomp_factory(
                     **self._decomp_args)
-                if self._stream_padding:
+                if self._xz_stream_padding:
                     self._head = rawblock[:len(self._stream_magic)]
                 try:
                     data = self._decompressor.decompress(rawblock, size)
@@ -113,13 +122,13 @@ class DecompressReader(io.RawIOBase):
                     break
             else:
                 if self._decompressor.needs_input:
-                    rawblock = self._fp.read(BUFFER_SIZE)
+                    rawblock = self._read_block()
                     if not rawblock:
                         raise EOFError("Compressed file ended before the "
                                        "end-of-stream marker was reached")
                 else:
                     rawblock = b""
-                if (self._stream_padding
+                if (self._xz_stream_padding
                         and len(self._head) < len(self._stream_magic)):
                     self._head += rawblock[:len(self._stream_magic)
                                            - len(self._head)]
@@ -143,22 +152,43 @@ class DecompressReader(io.RawIOBase):
 
         return b"".join(chunks)
 
-    def _skip_padding(self, rawblock):
-        # Skip the null bytes at the start of the data following a stream
-        # if they are Stream Padding, whose size is a multiple of four.
+    def _read_block(self):
+        # Return the next block of compressed data: what _skip_xz_padding()
+        # left unread, if anything, and otherwise a block from the file.
+        if self._unread_nulls:
+            size = min(self._unread_nulls, BUFFER_SIZE)
+            self._unread_nulls -= size
+            return bytes(size)
+        if self._unread_data:
+            rawblock, self._unread_data = self._unread_data, b""
+            return rawblock
+        return self._fp.read(BUFFER_SIZE)
+
+    def _skip_xz_padding(self, rawblock):
+        # Skip the null bytes at the start of the data following an .xz
+        # stream if they are Stream Padding, whose size is a multiple of
+        # four.  Return the block of data to go on with.
+        first = rawblock
         size = 0
         while True:
             rest = rawblock.lstrip(b"\0")
             size += len(rawblock) - len(rest)
             if rest:
                 break
-            rawblock = self._fp.read(BUFFER_SIZE)
+            rawblock = self._read_block()
             if not rawblock:
                 break
-        if size % 4:
-            # Not Stream Padding: leave the null bytes to the decompressor.
-            return bytes(size) + rest
-        return rest
+        if size % 4 == 0:
+            return rest
+        # Not Stream Padding: the null bytes are left to the decompressor,
+        # in the blocks they were read in, as if nothing had been read past
+        # the first one.  There can be any number of null bytes, so the
+        # blocks of them between the first and the last are not kept.
+        if rawblock is not first:
+            self._unread_nulls = (size - len(first)
+                                  - (len(rawblock) - len(rest)))
+            self._unread_data = rawblock
+        return first
 
     # Rewind the file to the beginning of the data stream.
     def _rewind(self):
@@ -167,6 +197,8 @@ class DecompressReader(io.RawIOBase):
         self._pos = 0
         self._decompressor = self._decomp_factory(**self._decomp_args)
         self._head = b""
+        self._unread_nulls = 0
+        self._unread_data = b""
 
     def seek(self, offset, whence=io.SEEK_SET):
         # Recalculate offset as an absolute file position.
@@ -203,12 +235,14 @@ class DecompressReader(io.RawIOBase):
         return self._pos
 
 
-def _padding_size(data, pos):
-    """Return the size of the Stream Padding at *data[pos:]*, or 0.
+def _xz_padding_size(data, pos):
+    """Return the size of the .xz Stream Padding at *data[pos:]*, or 0.
 
     Stream Padding is a run of null bytes whose size is a multiple of four.
     """
     end = pos
+    # There is usually no padding, or little of it: the chunks to look at
+    # start small.  Each one is copied, so their size is limited too.
     chunk_size = 4
     while end < len(data):
         with data[end:end + chunk_size] as chunk:
@@ -217,23 +251,23 @@ def _padding_size(data, pos):
         end += len(block) - rest
         if rest:
             break
-        chunk_size *= 2
+        chunk_size = min(chunk_size * 2, BUFFER_SIZE)
     size = end - pos
     return 0 if size % 4 else size
 
 
 def _decompress_all(data, decomp_factory, trailing_error=(), *,
-                    stream_magic=(), stream_padding=False, truncated_error,
-                    **decomp_args):
+                    stream_magic=(), xz_stream_padding=False,
+                    truncated_error, **decomp_args):
     """Decompress all of the concatenated streams in *data*.
 
     Each stream is decompressed by a new decompressor, made by calling
     *decomp_factory* with *decomp_args*.  As in DecompressReader, an error
     of class *trailing_error* in a stream after the first one ends the
     data, unless that stream starts with *stream_magic*.  A stream without
-    an end-of-stream marker raises *truncated_error*.  If *stream_padding*
-    is true, a stream that starts with *stream_magic* (bytes) may be
-    followed by Stream Padding, as in the .xz format.
+    an end-of-stream marker raises *truncated_error*.  If *xz_stream_padding*
+    is true, the Stream Padding of the .xz format is skipped after a stream
+    that starts with *stream_magic*, which must then be a bytes object.
     """
     results = []
     # The views are released on exit, so that the caller can resize a
@@ -274,10 +308,10 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
                 raise truncated_error("Compressed data ended before the "
                                       "end-of-stream marker was reached")
             pos -= len(decomp.unused_data)
-            if stream_padding and stream_magic:
+            if xz_stream_padding and stream_magic:
                 with data[start:start + len(stream_magic)] as head:
                     if head == stream_magic:
-                        pos += _padding_size(data, pos)
+                        pos += _xz_padding_size(data, pos)
             if pos == len(data):
                 break
             # Later streams start small: a larger first chunk reads further
