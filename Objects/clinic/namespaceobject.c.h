@@ -25,15 +25,7 @@ namespace___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        changes = PyDict_New();
-        if (changes == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        changes = Py_NewRef(kwargs);
-    }
+    changes = Py_XNewRef(kwargs);
     return_value = namespace___replace___impl((_PyNamespaceObject *)self, changes);
 
 exit:
@@ -42,4 +34,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=67b5fcb6a6aee559 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b1c015f14360d64 input=a9049054013a1b77]*/

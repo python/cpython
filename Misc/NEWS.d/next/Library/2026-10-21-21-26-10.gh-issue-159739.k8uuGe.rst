@@ -1,3 +1,0 @@
-Raise :exc:`TypeError` if a string subclass returns a non-string during newline
-translation in :class:`io.TextIOWrapper`. Recheck the stream state if the
-replacement callback closes, detaches or reinitializes the stream.

@@ -1678,7 +1678,7 @@ variables:
 
         def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
-            # type_new() calls PyTypeReady() which calls add_methods()
+            # type_new() calls PyType_Ready() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
@@ -1754,7 +1754,7 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> isinstance(vars(H)['y'], Member)
     True
 
-When instances are created, they have a ``slot_values`` list where the
+When instances are created, they have a ``_slotvalues`` list where the
 attributes are stored:
 
 .. doctest::

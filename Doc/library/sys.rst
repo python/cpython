@@ -438,7 +438,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: WASI.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: pycache_prefix
@@ -1651,6 +1651,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * Module :mod:`site` This describes how to use .pth files to
         extend :data:`sys.path`.
 
+.. data:: _path0
+
+   Path prepended to :data:`sys.path` at Python startup:
+
+   * Current directory if running a module
+     with ``python -m module`` command line.
+   * Script's directory if running a script
+     with ``python script.py``.
+   * Otherwise an empty string, which means the current working directory,
+     for ``python -c code`` or ``python`` (REPL) command line.
+
+   If :option:`-P` or :option:`-I` command line options are used or if
+   :envvar:`PYTHONSAFEPATH` environment variable is used, :data:`sys._path0` is
+   ``None`` and :data:`sys.path` is left unchanged.
+
+   .. versionadded:: 3.16
+
+
 .. data:: path_hooks
 
     A list of callables that take a path argument to try to create a
@@ -2061,7 +2079,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
       *finalizer* method see the implementation of
-      ``asyncio.Loop.shutdown_asyncgens`` in
+      ``asyncio.BaseEventLoop._asyncgen_finalizer_hook`` in
       :source:`Lib/asyncio/base_events.py`
 
    .. note::

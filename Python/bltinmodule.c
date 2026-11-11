@@ -312,7 +312,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
-    if (globals == NULL) {
+    if (globals == NULL || globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (globals == NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -321,7 +321,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
             return NULL;
         }
     }
-    if (locals == NULL) {
+    if (locals == NULL || locals == Py_None) {
         locals = globals;
     }
 
@@ -2240,7 +2240,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
                    PyObject *file, int flush)
 /*[clinic end generated code: output=38d8def56c837bcc input=ff35cb3d59ee8115]*/
 {
-    int i, err;
+    int i;
 
     if (file == Py_None) {
         file = PySys_GetAttr(&_Py_ID(stdout));
@@ -2259,7 +2259,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
     }
 
     if (sep == Py_None) {
-        sep = NULL;
+        sep = _Py_LATIN1_CHR(' ');
     }
     else if (sep && !PyUnicode_Check(sep)) {
         PyErr_Format(PyExc_TypeError,
@@ -2269,7 +2269,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         return NULL;
     }
     if (end == Py_None) {
-        end = NULL;
+        end = _Py_LATIN1_CHR('\n');
     }
     else if (end && !PyUnicode_Check(end)) {
         PyErr_Format(PyExc_TypeError,
@@ -2280,32 +2280,16 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
     }
 
     for (i = 0; i < objects_length; i++) {
-        if (i > 0) {
-            if (sep == NULL) {
-                err = PyFile_WriteString(" ", file);
-            }
-            else {
-                err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
-            }
-            if (err) {
-                Py_DECREF(file);
-                return NULL;
-            }
+        if (i > 0 && PyFile_WriteObject(sep, file, Py_PRINT_RAW) < 0) {
+            Py_DECREF(file);
+            return NULL;
         }
-        err = PyFile_WriteObject(objects[i], file, Py_PRINT_RAW);
-        if (err) {
+        if (PyFile_WriteObject(objects[i], file, Py_PRINT_RAW) < 0) {
             Py_DECREF(file);
             return NULL;
         }
     }
-
-    if (end == NULL) {
-        err = PyFile_WriteString("\n", file);
-    }
-    else {
-        err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
-    }
-    if (err) {
+    if (PyFile_WriteObject(end, file, Py_PRINT_RAW) < 0) {
         Py_DECREF(file);
         return NULL;
     }

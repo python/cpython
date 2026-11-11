@@ -315,6 +315,26 @@ def run_path(path_name, init_globals=None, run_name=None):
                 pass
 
 
+def _remove_sys_path0():
+    """
+    Remove sys._path0 from sys.path. Do nothing if sys._path0 is
+    sys._stdlib_dir or if it has already been removed. Similar to using -P
+    (safe path) command line option.
+    """
+    path0 = sys._path0
+    if path0 is None:
+        return
+
+    if path0 == sys._stdlib_dir:
+        return
+
+    # Remove all path0 copies, not only the first one.
+    # We are intentionally not trying to normalize & match alternate
+    # representations of path0, this is only intended to remove copies
+    # of the exact value the runtime itself may have added.
+    sys.path[:] = [path for path in sys.path if path != path0]
+
+
 if __name__ == "__main__":
     # Run the module specified as the next command line argument
     if len(sys.argv) < 2:

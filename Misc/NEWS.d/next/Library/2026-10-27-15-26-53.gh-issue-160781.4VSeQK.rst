@@ -1,3 +1,0 @@
-Fix :class:`io.BytesIO` raising :exc:`SystemError` instead of
-:exc:`OverflowError` when writing at a position close to
-:data:`sys.maxsize`.
