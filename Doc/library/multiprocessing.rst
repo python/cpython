@@ -1012,7 +1012,7 @@ For an example of the usage of queues for interprocess communication see
    .. method:: shutdown([immediate])
 
       Shuts down the queue. If optional args *immediate* is ``False``
-      (the default), all remaining items could be retrieve until queue is empty.
+      (the default), all remaining items could be retrieved until queue is empty.
       If optional args *immediate* is ``True``, all remaining items from the
       queue are erased. When queue is empty, get an item raises
       a :exc:`queue.ShutDown` exception. Adding a new item into the queue
