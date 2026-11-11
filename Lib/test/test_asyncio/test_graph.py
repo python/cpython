@@ -619,7 +619,6 @@ class CallStackTestBase:
         self.addCleanup(loop.set_task_factory, None)
 
     async def test_stack_eager_task(self):
-        # gh-157299
         self.set_eager_task_factory()
 
         async def child():
