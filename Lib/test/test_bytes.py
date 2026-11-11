@@ -1590,6 +1590,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
+        #
+        # gh-160303: If a slice is deleted or replaced by shorter data and
+        # shrinking the memory block fails (MemoryError), the bytearray
+        # must be modified anyway.
 
         offset = 3
         for logical_offset in (False, True):
@@ -1615,6 +1619,33 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 with inject_memory_error(self):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
+
+                # shrink bytearray with a slice at the front, in the middle
+                # and at the end
+                data = b'0123456789'
+                if logical_offset:
+                    data = data[offset:]
+                for start, stop in ((0, -2), (1, -1), (2, len(data))):
+                    for replacement in (b'', b'.'):
+                        with self.subTest(start=start, stop=stop,
+                                          replacement=replacement):
+                            ba = bytearray(b'0123456789')
+                            if logical_offset:
+                                del ba[:offset]
+                            index = slice(start, stop)
+                            value = bytearray(replacement)
+                            expected = data[:start] + replacement + data[stop:]
+                            with inject_memory_error(self):
+                                if replacement:
+                                    ba[index] = value
+                                else:
+                                    del ba[index]
+                            self.assertEqual(ba, expected)
+                            # float() relies on the null byte after the data.
+                            self.assertEqual(float(ba), float(expected))
+                            ba.append(ord('5'))
+                            del ba[:1]
+                            self.assertEqual(ba, expected[1:] + b'5')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
