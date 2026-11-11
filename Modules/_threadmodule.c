@@ -570,10 +570,13 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     int detach = 1;
     while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
         if (deadline) {
-            // _PyDeadline_Get will return a negative value if the deadline has
-            // been exceeded.
+            // Read the clock once. _PyDeadline_Get() returns a negative value
+            // once the deadline has passed, and a negative timeout would mean
+            // no timeout at all (gh-161712).
             timeout_ns = _PyDeadline_Get(deadline);
-            timeout_ns = Py_MAX(timeout_ns, 0);
+            if (timeout_ns < 0) {
+                timeout_ns = 0;
+            }
         }
 
         if (timeout_ns) {
