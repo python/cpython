@@ -1003,7 +1003,7 @@ For an example of the usage of queues for interprocess communication see
 
       Can raise the :exc:`queue.ShutDown` when queue shuts down and is empty.
 
-      .. versionadded:: 3.16
+      .. versionadded:: next
 
    .. method:: get_nowait()
 
