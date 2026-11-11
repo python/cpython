@@ -131,7 +131,7 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_BYTES_OBJ sizeof(PyBytesObject)
 #define SIZEOF_CODE_OBJ sizeof(PyCodeObject)
 #define SIZEOF_GEN_OBJ sizeof(PyGenObject)
-#define SIZEOF_INTERP_FRAME sizeof(_PyInterpreterFrame)
+#define SIZEOF_INTERP_FRAME sizeof(_PyControlRecord)
 #define SIZEOF_LLIST_NODE sizeof(struct llist_node)
 #define SIZEOF_PAGE_CACHE_ENTRY sizeof(page_cache_entry_t)
 #define SIZEOF_PYOBJECT sizeof(PyObject)
@@ -160,12 +160,12 @@ typedef enum _WIN32_THREADSTATE {
                                               offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
                                           offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
                                       offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*)), \
-                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyInterpreterFrame *))
+                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyControlRecord *))
 #else
 #define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
                                           offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
                                       offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*)), \
-                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyInterpreterFrame *))
+                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyControlRecord *))
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 

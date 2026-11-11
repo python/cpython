@@ -21,7 +21,7 @@
 #include "pycore_dict.h"          // PyDictValues
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_frame.h"         // _PyControlRecord
 #include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
@@ -183,7 +183,7 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    return PyLong_FromLong(tstate->py_recursion_limit - tstate->py_recursion_remaining);
+    return PyLong_FromLong(_PyThreadState_GetRecursionDepth(tstate));
 }
 
 
@@ -1211,10 +1211,10 @@ set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+record_eval(PyThreadState *tstate, struct _PyControlRecord *f, int exc)
 {
-    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
-        PyFunctionObject *func = _PyFrame_GetFunction(f);
+    if (PyStackRef_FunctionCheck(f->data->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f->data);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
@@ -1245,7 +1245,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
 
 // Defined in interpreter.c
 extern PyObject*
-Test_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+Test_EvalFrame(PyThreadState *tstate, _PyControlRecord *frame, int throwflag);
 extern int Test_EvalFrame_Resumes, Test_EvalFrame_Loads;
 
 static PyObject *
@@ -1274,10 +1274,10 @@ get_eval_frame_stats(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-record_eval_interp(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+record_eval_interp(PyThreadState *tstate, struct _PyControlRecord *f, int exc)
 {
-    if (PyStackRef_FunctionCheck(f->f_funcobj)) {
-        PyFunctionObject *func = _PyFrame_GetFunction(f);
+    if (PyStackRef_FunctionCheck(f->data->f_funcobj)) {
+        PyFunctionObject *func = _PyFrame_GetFunction(f->data);
         PyObject *module = _get_current_module();
         assert(module != NULL);
         module_state *state = get_module_state(module);
@@ -1577,7 +1577,7 @@ iframe_getcode(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    struct _PyControlRecord *f = ((PyFrameObject *)frame)->f_frame;
     return PyUnstable_InterpreterFrame_GetCode(f);
 }
 
@@ -1588,7 +1588,7 @@ iframe_getline(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    struct _PyControlRecord *f = ((PyFrameObject *)frame)->f_frame;
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLine(f));
 }
 
@@ -1599,7 +1599,7 @@ iframe_getlasti(PyObject *self, PyObject *frame)
         PyErr_SetString(PyExc_TypeError, "argument must be a frame");
         return NULL;
     }
-    struct _PyInterpreterFrame *f = ((PyFrameObject *)frame)->f_frame;
+    struct _PyControlRecord *f = ((PyFrameObject *)frame)->f_frame;
     return PyLong_FromLong(PyUnstable_InterpreterFrame_GetLasti(f));
 }
 
@@ -1610,7 +1610,7 @@ static PyObject *
 get_frame_locals(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    _PyControlRecord *frame = _PyThreadState_GetFrame(tstate);
     assert(frame != NULL); // there must be a caller frame
     PyCodeObject *co = _PyFrame_GetCode(frame);
     Py_ssize_t n = co->co_nlocalsplus;
@@ -1655,7 +1655,7 @@ get_frame_local(PyObject *self, PyObject *arg)
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    _PyControlRecord *frame = _PyThreadState_GetFrame(tstate);
     assert(frame != NULL); // there must be a caller frame
     PyObject *value;
     int rc = PyUnstable_InterpreterFrame_GetLocal(frame, index, &value);

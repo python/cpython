@@ -1,5 +1,5 @@
 /* See InternalDocs/frames.md for an explanation of the frame stack
- * including explanation of the PyFrameObject and _PyInterpreterFrame
+ * including explanation of the PyFrameObject and _PyControlRecord
  * structs. */
 
 #ifndef Py_INTERNAL_FRAME_H
@@ -12,13 +12,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 
 
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
-    _PyInterpreterFrame *f_frame; /* points to the frame data */
+    _PyControlRecord *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */

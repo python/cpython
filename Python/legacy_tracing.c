@@ -675,11 +675,11 @@ set_monitoring_trace_events(PyInterpreterState *interp)
 static int
 maybe_set_opcode_trace(PyThreadState *tstate)
 {
-    _PyInterpreterFrame *iframe = tstate->current_frame;
+    _PyControlRecord *iframe = tstate->current_frame;
     if (iframe == NULL) {
         return 0;
     }
-    PyFrameObject *frame = iframe->frame_obj;
+    PyFrameObject *frame = iframe->data->frame_obj;
     if (frame == NULL || !frame->f_trace_opcodes) {
         return 0;
     }

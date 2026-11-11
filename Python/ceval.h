@@ -41,7 +41,7 @@
 #include "pycore_uop_ids.h"       // Uops
 
 #include "dictobject.h"
-#include "frameobject.h"          // _PyInterpreterFrame_GetLine
+#include "frameobject.h"          // _PyControlRecord_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -176,11 +176,12 @@ dump_item(_PyStackRef item)
 }
 
 static void
-dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
+dump_stack(_PyControlRecord *frame, _PyInterpreterDataFrame *fp,
+           _PyStackRef *stack_pointer)
 {
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    _PyStackRef *locals_base = _PyFrame_GetLocalsArray(frame);
-    _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
+    _PyStackRef *locals_base = _PyFrame_GetLocalsArray(fp);
+    _PyStackRef *stack_base = _PyFrame_Stackbase(frame, fp);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    locals=[");
     for (_PyStackRef *ptr = locals_base; ptr < stack_base; ptr++) {
@@ -222,7 +223,7 @@ dump_cache_item(_PyStackRef cache, int position, int depth)
 #endif
 
 static void
-lltrace_instruction(_PyInterpreterFrame *frame,
+lltrace_instruction(_PyControlRecord *frame, _PyInterpreterDataFrame *fp,
                     _PyStackRef *stack_pointer,
                     _Py_CODEUNIT *next_instr,
                     int opcode,
@@ -230,7 +231,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
 {
     int offset = 0;
     if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
-        dump_stack(frame, stack_pointer);
+        dump_stack(frame, fp, stack_pointer);
         offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     }
     const char *opname = _PyOpcode_OpName[opcode];
@@ -245,9 +246,9 @@ lltrace_instruction(_PyInterpreterFrame *frame,
 }
 
 static void
-lltrace_resume_frame(_PyInterpreterFrame *frame)
+lltrace_resume_frame(_PyControlRecord *frame, _PyInterpreterDataFrame *fp)
 {
-    PyObject *fobj = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    PyObject *fobj = PyStackRef_AsPyObjectBorrow(fp->f_funcobj);
     if (!PyStackRef_CodeCheck(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
@@ -283,8 +284,9 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 }
 
 static int
-maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
+maybe_lltrace_resume_frame(_PyControlRecord *frame, _PyInterpreterDataFrame *fp)
 {
+    PyObject *globals = fp->f_globals;
     if (globals == NULL) {
         return 0;
     }
@@ -305,7 +307,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
         }
     }
     if (lltrace >= 5) {
-        lltrace_resume_frame(frame);
+        lltrace_resume_frame(frame, fp);
     }
     return lltrace;
 }
@@ -313,20 +315,20 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
 #endif
 
 static void monitor_reraise(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
+                 _PyControlRecord *frame,
                  _Py_CODEUNIT *instr);
 static int monitor_stop_iteration(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
+                 _PyControlRecord *frame,
                  _Py_CODEUNIT *instr,
                  PyObject *value);
 static void monitor_unwind(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
+                 _PyControlRecord *frame,
                  _Py_CODEUNIT *instr);
 static int monitor_handled(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
+                 _PyControlRecord *frame,
                  _Py_CODEUNIT *instr, PyObject *exc);
 static void monitor_throw(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
+                 _PyControlRecord *frame,
                  _Py_CODEUNIT *instr);
 
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
@@ -335,13 +337,8 @@ static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 #include <errno.h>
 #endif
 
-typedef struct {
-    _PyInterpreterFrame frame;
-    _PyStackRef stack[1];
-} _PyEntryFrame;
-
 static int
-do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
+do_monitor_exc(PyThreadState *tstate, _PyControlRecord *frame,
                _Py_CODEUNIT *instr, int event)
 {
     assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
@@ -368,7 +365,7 @@ no_tools_for_global_event(PyThreadState *tstate, int event)
 }
 
 static inline bool
-no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
+no_tools_for_local_event(PyThreadState *tstate, _PyControlRecord *frame, int event)
 {
     assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
     _PyCoMonitoringData *data = _PyFrame_GetCode(frame)->_co_monitoring;
@@ -382,7 +379,7 @@ no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 static int
 monitor_handled(PyThreadState *tstate,
-                _PyInterpreterFrame *frame,
+                _PyControlRecord *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
@@ -393,7 +390,7 @@ monitor_handled(PyThreadState *tstate,
 
 static void
 monitor_throw(PyThreadState *tstate,
-              _PyInterpreterFrame *frame,
+              _PyControlRecord *frame,
               _Py_CODEUNIT *instr)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
@@ -403,7 +400,7 @@ monitor_throw(PyThreadState *tstate,
 }
 
 static void
-monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+monitor_reraise(PyThreadState *tstate, _PyControlRecord *frame,
               _Py_CODEUNIT *instr)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
@@ -413,7 +410,7 @@ monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
 }
 
 static int
-monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
+monitor_stop_iteration(PyThreadState *tstate, _PyControlRecord *frame,
                        _Py_CODEUNIT *instr, PyObject *value)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
@@ -431,7 +428,7 @@ monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
 static void
 monitor_unwind(PyThreadState *tstate,
-               _PyInterpreterFrame *frame,
+               _PyControlRecord *frame,
                _Py_CODEUNIT *instr)
 {
     if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
@@ -509,7 +506,7 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 
 
 #ifdef Py_DEBUG
-#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, fp, stack_pointer, (F), (L))
 #else
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif
@@ -614,6 +611,16 @@ raise_error:
     Py_XDECREF(type);
     Py_XDECREF(cause);
     return 0;
+}
+
+static inline PyObject *
+exit_interpreter(PyThreadState *tstate, _PyControlRecord *entry, _PyStackRef value)
+{
+    assert(entry->owner == FRAME_OWNED_BY_INTERPRETER);
+    tstate->current_frame = _PyFrame_GetCaller(entry);
+    entry->state = CONTROL_RESERVED;
+    assert(!_PyErr_Occurred(tstate));
+    return PyStackRef_AsPyObjectSteal(value);
 }
 
 /* Disable unused label warnings.  They are handy for debugging, even

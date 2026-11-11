@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 #include "pycore_jit_publish.h"
 #include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
@@ -141,7 +141,7 @@ typedef struct _PyJitTracerPreviousState {
     int instr_stacklevel;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
-    struct _PyInterpreterFrame *instr_frame;
+    struct _PyControlRecord *instr_frame;
     PyObject *recorded_values[MAX_RECORDED_VALUES]; // Strong, may be NULL
     int recorded_count;
 } _PyJitTracerPreviousState;
@@ -493,7 +493,7 @@ extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, PyThreadState *tstate);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyControlRecord *frame, PyThreadState *tstate);
 
 static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 {
@@ -513,10 +513,10 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 PyAPI_FUNC(void) _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
 
-PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
+PyAPI_FUNC(int) _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyControlRecord *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
 
 PyAPI_FUNC(int)
-_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyControlRecord *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
     _Py_CODEUNIT *close_loop_instr, _PyStackRef *stack_pointer, int chain_depth, _PyExitData *exit,
     int oparg, _PyExecutorObject *current_executor);
@@ -528,7 +528,7 @@ void _PyPrintExecutor(_PyExecutorObject *executor, const _PyUOpInstruction *mark
 void _PyJit_TracerFree(_PyThreadStateImpl *_tstate);
 
 #ifdef _Py_TIER2
-typedef void (*_Py_RecordFuncPtr)(_PyInterpreterFrame *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
+typedef void (*_Py_RecordFuncPtr)(_PyControlRecord *frame, _PyStackRef *stackpointer, int oparg, PyObject **recorded_value);
 PyAPI_DATA(const _Py_RecordFuncPtr) _PyOpcode_RecordFunctions[];
 
 typedef struct {

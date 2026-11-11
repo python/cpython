@@ -1174,7 +1174,7 @@ remove_local_tool(PyCodeObject *code, PyInterpreterState *interp,
 static int
 call_instrumentation_vector(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
+    _PyControlRecord *frame, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
 {
     if (tstate->tracing) {
         return 0;
@@ -1244,7 +1244,7 @@ call_instrumentation_vector(
 Py_NO_INLINE int
 _Py_call_instrumentation(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+    _PyControlRecord *frame, _Py_CODEUNIT *instr)
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 2, args);
@@ -1253,7 +1253,7 @@ _Py_call_instrumentation(
 Py_NO_INLINE int
 _Py_call_instrumentation_arg(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
     PyObject *args[4] = { NULL, NULL, NULL, arg };
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 3, args);
@@ -1262,7 +1262,7 @@ _Py_call_instrumentation_arg(
 Py_NO_INLINE int
 _Py_call_instrumentation_2args(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
 {
     PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 4, args);
@@ -1271,7 +1271,7 @@ _Py_call_instrumentation_2args(
 Py_NO_INLINE _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
+    _PyControlRecord *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
@@ -1298,7 +1298,7 @@ _Py_call_instrumentation_jump(
 static void
 call_instrumentation_vector_protected(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -1315,7 +1315,7 @@ call_instrumentation_vector_protected(
 Py_NO_INLINE void
 _Py_call_instrumentation_exc2(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
+    _PyControlRecord *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
@@ -1333,7 +1333,7 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, _PyCoLineInstrumentationData *li
 }
 
 Py_NO_INLINE int
-_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyControlRecord* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(tstate->tracing == 0);
@@ -1368,7 +1368,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
      * only to immediately unbox it. */
     if (tools & (1 << PY_MONITORING_SYS_TRACE_ID)) {
         if (tstate->c_tracefunc != NULL) {
-            PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
+            PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame, frame->data);
             if (frame_obj == NULL) {
                 return -1;
             }
@@ -1441,7 +1441,7 @@ done:
 }
 
 Py_NO_INLINE int
-_Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
+_Py_call_instrumentation_instruction(PyThreadState *tstate, _PyControlRecord* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
     int offset = (int)(instr - _PyFrame_GetBytecode(frame));
@@ -1988,7 +1988,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
 
     int err = 0;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
-        _PyInterpreterFrame *frame = ts->current_frame;
+        _PyControlRecord *frame = ts->current_frame;
         while (frame) {
             if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
                 err = instrument_lock_held(_PyFrame_GetCode(frame), interp);
@@ -1996,7 +1996,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
                     goto done;
                 }
             }
-            frame = frame->previous;
+            frame = _PyFrame_GetPrevious(frame);
         }
     }
 done:

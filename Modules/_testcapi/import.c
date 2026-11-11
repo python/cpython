@@ -13,7 +13,7 @@ pyimport_lazyimportwithoutframe(PyObject *self, PyObject *name)
     // Simulate being called with no running Python frame (e.g. from a freshly
     // attached C thread), so that PyEval_GetGlobals() returns NULL.
     PyThreadState *tstate = PyThreadState_Get();
-    struct _PyInterpreterFrame *saved = tstate->current_frame;
+    struct _PyControlRecord *saved = tstate->current_frame;
     tstate->current_frame = NULL;
     PyObject *res = PyObject_CallOneArg(lazy_import, name);
     tstate->current_frame = saved;

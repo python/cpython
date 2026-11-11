@@ -35,7 +35,7 @@ typedef struct {
 static PyObject *lazy_import_name(PyLazyImportObject *m);
 
 PyObject *
-_PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
+_PyLazyImport_New(_PyControlRecord *frame, PyObject *builtins,
                   PyObject *name, PyObject *fromlist)
 {
     if (!name || !(PyUnicode_Check(name) || PyLazyImport_CheckExact(name))) {
@@ -77,7 +77,7 @@ _PyLazyImport_New(_PyInterpreterFrame *frame, PyObject *builtins,
 
     if (frame != NULL) {
         m->lz_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
-        m->lz_instr_offset = _PyInterpreterFrame_LASTI(frame);
+        m->lz_instr_offset = _PyControlRecord_LASTI(frame);
     }
 
     _PyObject_GC_TRACK(m);
@@ -130,7 +130,7 @@ done:
 }
 
 PyObject *
-_PyEval_LazyImportFrom(PyThreadState *tstate, _PyInterpreterFrame *frame,
+_PyEval_LazyImportFrom(PyThreadState *tstate, _PyControlRecord *frame,
                        PyObject *v, PyObject *name)
 {
     assert(PyLazyImport_CheckExact(v));

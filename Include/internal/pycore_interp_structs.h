@@ -246,7 +246,7 @@ struct _gc_runtime_state {
     int collecting;
     // The frame that started the current collection. It might be NULL even when
     // collecting (if no Python frame is running):
-    _PyInterpreterFrame *frame;
+    _PyControlRecord *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
@@ -823,7 +823,7 @@ struct _Py_unique_id_pool {
 
 #endif
 
-typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
+typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyControlRecord *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 #define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
 

@@ -20,140 +20,63 @@ cleanup_stack_chunks(StackChunkList *chunks)
     PyMem_RawFree(chunks->chunks);
 }
 
-static int
-process_single_stack_chunk(
-    RemoteUnwinderObject *unwinder,
-    uintptr_t chunk_addr,
-    StackChunkInfo *chunk_info
-) {
-    // Start with default size assumption
-    size_t current_size = _PY_DATA_STACK_CHUNK_SIZE;
-
-    char *this_chunk = PyMem_RawMalloc(current_size);
-    if (!this_chunk) {
-        PyErr_NoMemory();
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate stack chunk buffer");
-        return -1;
-    }
-
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, current_size, this_chunk) < 0) {
-        PyMem_RawFree(this_chunk);
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read stack chunk");
-        return -1;
-    }
-
-    // Check actual size and reread if necessary
-    size_t actual_size = GET_MEMBER(size_t, this_chunk, offsetof(_PyStackChunk, size));
-    if (actual_size != current_size) {
-        // Validate size: reject garbage (too small or unreasonably large)
-        // Size must be at least enough for the header and reasonably bounded
-        if (actual_size <= offsetof(_PyStackChunk, data) || actual_size > MAX_STACK_CHUNK_SIZE) {
-            PyMem_RawFree(this_chunk);
-            PyErr_Format(PyExc_RuntimeError,
-                "Invalid stack chunk size %zu (corrupted remote memory)", actual_size);
-            set_exception_cause(unwinder, PyExc_RuntimeError,
-                "Invalid stack chunk size (corrupted remote memory)");
-            return -1;
-        }
-
-        char *tmp = PyMem_RawRealloc(this_chunk, actual_size);
-        if (!tmp) {
-            PyMem_RawFree(this_chunk);
-            PyErr_NoMemory();
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to reallocate stack chunk buffer");
-            return -1;
-        }
-        this_chunk = tmp;
-
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
-            PyMem_RawFree(this_chunk);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reread stack chunk with correct size");
-            return -1;
-        }
-        current_size = actual_size;
-    }
-
-    chunk_info->remote_addr = chunk_addr;
-    chunk_info->size = current_size;
-    chunk_info->local_copy = this_chunk;
-    return 0;
-}
-
 int
 copy_stack_chunks(RemoteUnwinderObject *unwinder,
                   uintptr_t tstate_addr,
                   StackChunkList *out_chunks)
 {
-    uintptr_t chunk_addr;
-    StackChunkInfo *chunks = NULL;
-    size_t count = 0;
-    size_t max_chunks = 16;
-
-    if (read_ptr(unwinder, tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.datastack_chunk, &chunk_addr)) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read initial stack chunk address");
+    // Control records are contiguous from the base record to the current one.
+    uintptr_t base;
+    uintptr_t top;
+    if (read_ptr(unwinder, tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.base_frame, &base) ||
+        read_ptr(unwinder, tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.current_frame, &top)) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read control stack bounds");
         return -1;
     }
+    size_t record_size = (size_t)unwinder->debug_offsets.interpreter_frame.size;
+    if (base == 0 || top < base || (top - base) % record_size != 0 ||
+        top - base >= MAX_STACK_CHUNK_SIZE) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid control stack bounds 0x%lx-0x%lx (corrupted remote memory)", base, top);
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "Invalid control stack bounds (corrupted remote memory)");
+        return -1;
+    }
+    size_t size = top - base + record_size;
 
-    chunks = PyMem_RawMalloc(max_chunks * sizeof(StackChunkInfo));
-    if (!chunks) {
+    StackChunkInfo *chunks = PyMem_RawMalloc(sizeof(StackChunkInfo));
+    char *copy = PyMem_RawMalloc(size);
+    if (!chunks || !copy) {
+        PyMem_RawFree(chunks);
+        PyMem_RawFree(copy);
         PyErr_NoMemory();
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate stack chunks array");
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate control stack copy");
         return -1;
     }
-
-    const size_t MAX_STACK_CHUNKS = 4096;
-    while (chunk_addr != 0 && count < MAX_STACK_CHUNKS) {
-        // Grow array if needed
-        if (count >= max_chunks) {
-            max_chunks *= 2;
-            StackChunkInfo *new_chunks = PyMem_RawRealloc(chunks, max_chunks * sizeof(StackChunkInfo));
-            if (!new_chunks) {
-                PyErr_NoMemory();
-                set_exception_cause(unwinder, PyExc_MemoryError, "Failed to grow stack chunks array");
-                goto error;
-            }
-            chunks = new_chunks;
-        }
-
-        // Process this chunk
-        if (process_single_stack_chunk(unwinder, chunk_addr, &chunks[count]) < 0) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process stack chunk");
-            goto error;
-        }
-
-        // Get next chunk address and increment count
-        chunk_addr = GET_MEMBER(uintptr_t, chunks[count].local_copy, offsetof(_PyStackChunk, previous));
-        count++;
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, base, size, copy) < 0) {
+        PyMem_RawFree(chunks);
+        PyMem_RawFree(copy);
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read control stack");
+        return -1;
     }
-
+    chunks[0].remote_addr = base;
+    chunks[0].size = size;
+    chunks[0].local_copy = copy;
     out_chunks->chunks = chunks;
-    out_chunks->count = count;
+    out_chunks->count = 1;
     return 0;
-
-error:
-    for (size_t i = 0; i < count; ++i) {
-        PyMem_RawFree(chunks[i].local_copy);
-    }
-    PyMem_RawFree(chunks);
-    return -1;
 }
 
 void *
 find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
 {
     for (size_t i = 0; i < chunks->count; ++i) {
-        // Validate size: reject garbage that would cause underflow
-        if (chunks->chunks[i].size <= offsetof(_PyStackChunk, data)) {
-            // Skip this chunk - corrupted size from remote memory
-            continue;
-        }
-        uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
-        size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
-
-        if (payload >= SIZEOF_INTERP_FRAME &&
+        uintptr_t base = chunks->chunks[i].remote_addr;
+        size_t size = chunks->chunks[i].size;
+        if (size >= SIZEOF_INTERP_FRAME &&
                 remote_ptr >= base &&
-                remote_ptr <= base + payload - SIZEOF_INTERP_FRAME) {
-            return (char *)chunks->chunks[i].local_copy + (remote_ptr - chunks->chunks[i].remote_addr);
+                remote_ptr <= base + size - SIZEOF_INTERP_FRAME) {
+            return (char *)chunks->chunks[i].local_copy + (remote_ptr - base);
         }
     }
     return NULL;
@@ -163,7 +86,26 @@ find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
  * FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
-enum { FRAME_PARSE_INTERPRETER = 2 };
+enum { FRAME_PARSE_INTERPRETER = 2, FRAME_PARSE_NATIVE = 3 };
+
+/* Control records are contiguous: a record's caller is the nearest record
+ * below it that is not reserved. Base and detached records have no caller. */
+static uint8_t
+parse_record_link(
+    RemoteUnwinderObject *unwinder,
+    const char *frame,
+    uintptr_t address,
+    uintptr_t *previous_frame
+) {
+    uint8_t state = GET_MEMBER(uint8_t, frame, unwinder->debug_offsets.interpreter_frame.state);
+    if (state == CONTROL_DETACHED || state == CONTROL_BASE) {
+        *previous_frame = 0;
+    }
+    else {
+        *previous_frame = address - unwinder->debug_offsets.interpreter_frame.size;
+    }
+    return state;
+}
 
 int
 is_frame_valid(
@@ -195,12 +137,16 @@ parse_frame_buffer(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
     const char *frame,
+    uintptr_t address,
     uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 ) {
     *address_of_code_object = 0;
 
-    *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
+    uint8_t state = parse_record_link(unwinder, frame, address, previous_frame);
+    if (state == CONTROL_RESERVED) {
+        return 0;
+    }
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
     int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
     if (frame_valid != 1) {
@@ -224,7 +170,8 @@ parse_frame_buffer(
         .instruction_pointer = instruction_pointer,
         .tlbc_index = tlbc_index,
     };
-    return parse_code_object(unwinder, result, &code_ctx);
+    int res = parse_code_object(unwinder, result, &code_ctx);
+    return res == 0 && state == CONTROL_NATIVE ? FRAME_PARSE_NATIVE : res;
 }
 
 int
@@ -249,7 +196,7 @@ parse_frame_object(
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
 
-    return parse_frame_buffer(unwinder, result, frame, address_of_code_object, previous_frame);
+    return parse_frame_buffer(unwinder, result, frame, address, address_of_code_object, previous_frame);
 }
 
 int
@@ -269,7 +216,10 @@ parse_frame_from_chunks(
     }
 
     char *frame = (char *)frame_ptr;
-    *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
+    uint8_t state = parse_record_link(unwinder, frame, address, previous_frame);
+    if (state == CONTROL_RESERVED) {
+        return 0;
+    }
     *stackpointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.stackpointer);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
     int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
@@ -292,7 +242,8 @@ parse_frame_from_chunks(
         .instruction_pointer = instruction_pointer,
         .tlbc_index = tlbc_index,
     };
-    return parse_code_object(unwinder, result, &code_ctx);
+    int res = parse_code_object(unwinder, result, &code_ctx);
+    return res == 0 && state == CONTROL_NATIVE ? FRAME_PARSE_NATIVE : res;
 }
 
 /* ============================================================================
@@ -308,6 +259,7 @@ process_frame_chain(
     uintptr_t prev_frame_addr = 0;
     uintptr_t last_frame_addr = 0;
     size_t frame_count = 0;
+    int pending_native = 0;
 
     ctx->stopped_at_cached_frame = 0;
     ctx->last_frame_visited = 0;
@@ -329,7 +281,7 @@ process_frame_chain(
         if (ctx->chunks && ctx->chunks->count > 0) {
             parse_result = parse_frame_from_chunks(
                 unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks);
-            if (parse_result == 0) {
+            if (parse_result == 0 || parse_result == FRAME_PARSE_NATIVE) {
                 goto parsed_frame;
             }
             PyErr_Clear();
@@ -338,7 +290,7 @@ process_frame_chain(
             uintptr_t address_of_code_object = 0;
             if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
                 parse_result = parse_frame_buffer(
-                    unwinder, &frame, ctx->prefetch.frame,
+                    unwinder, &frame, ctx->prefetch.frame, frame_addr,
                     &address_of_code_object, &next_frame_addr);
             }
             else {
@@ -355,6 +307,9 @@ process_frame_chain(
 parsed_frame:
         // Skip first frame if requested (used for cache miss continuation)
         if (ctx->skip_first_frame && frame_count == 1) {
+            pending_native = frame != NULL &&
+                parse_result == FRAME_PARSE_NATIVE &&
+                PyList_GET_SIZE(ctx->frame_info) > 0;
             Py_XDECREF(frame);
             frame_addr = next_frame_addr;
             continue;
@@ -365,19 +320,12 @@ parsed_frame:
             _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
-        // A leading frame without Python code marks no transition between
-        // Python frames: it is a frame being popped or C code the thread is
-        // returning into.
-        else if (unwinder->native &&
-                 frame == NULL &&
-                 parse_result == FRAME_PARSE_INTERPRETER &&
-                 next_frame_addr &&
-                 PyList_GET_SIZE(ctx->frame_info) > 0 &&
-                 !(unwinder->gc && next_frame_addr == ctx->gc_frame))
-        {
+        // A record entered from C is called by native code.
+        else if (unwinder->native && pending_native) {
             _Py_DECLARE_STR(native, "<native>");
             extra_frame = &_Py_STR(native);
         }
+        pending_native = 0;
         if (extra_frame) {
             PyObject *extra_frame_info = make_frame_info(
                 unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
@@ -416,6 +364,7 @@ parsed_frame:
                 ctx->frame_addrs[ctx->num_addrs++] = frame_addr;
             }
             Py_DECREF(frame);
+            pending_native = parse_result == FRAME_PARSE_NATIVE;
         }
 
         if (ctx->last_profiled.frame != 0 && frame_addr == ctx->last_profiled.frame) {
@@ -548,7 +497,7 @@ try_full_cache_hit(
     int parse_result;
     if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
         parse_result = parse_frame_buffer(unwinder, &current_frame,
-                                          ctx->prefetch.frame,
+                                          ctx->prefetch.frame, ctx->frame_addr,
                                           &code_object_addr, &previous_frame);
     }
     else {

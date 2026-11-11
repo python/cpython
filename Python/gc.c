@@ -471,9 +471,10 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
 }
 
 int
-_PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
+_PyGC_VisitFrameStack(_PyControlRecord *frame, _PyInterpreterDataFrame *fp,
+                      visitproc visit, void *arg)
 {
-    _PyStackRef *ref = _PyFrame_GetLocalsArray(frame);
+    _PyStackRef *ref = _PyFrame_GetLocalsArray(fp);
     /* locals and stack */
     for (; ref < frame->stackpointer; ref++) {
         if (!PyStackRef_IsTaggedInt(*ref)) {

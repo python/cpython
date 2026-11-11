@@ -72,11 +72,11 @@
 #endif
 
 #ifdef Py_STATS
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg, int lastopcode
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg, lastopcode
+#   define TAIL_CALL_PARAMS _PyControlRecord *frame, _PyInterpreterDataFrame *fp, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg, int lastopcode
+#   define TAIL_CALL_ARGS frame, fp, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg, lastopcode
 #else
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
+#   define TAIL_CALL_PARAMS _PyControlRecord *frame, _PyInterpreterDataFrame *fp, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg
+#   define TAIL_CALL_ARGS frame, fp, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
 #if _Py_TAIL_CALL_INTERP
@@ -116,12 +116,12 @@
 #   ifdef Py_STATS
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, fp, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
             } while (0)
 #   else
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, fp, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
             } while (0)
 #   endif
 #    define LABEL(name) TARGET(name)
@@ -171,7 +171,7 @@
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
-    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
+    lltrace_instruction(frame, fp, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -180,7 +180,7 @@
 #define LLTRACE_RESUME_FRAME() \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
-    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, fp); \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     frame->lltrace = lltrace; \
 } while (0)
@@ -224,8 +224,10 @@ do { \
         assert(!IS_PEP523_HOOKED(tstate));                       \
         _PyFrame_SetStackPointer(frame, stack_pointer);          \
         _PyFrame_StackPointerValidate(frame);                    \
-        assert((NEW_FRAME)->previous == frame);                  \
+        assert(_PyFrame_GetPrevious(NEW_FRAME) == frame);                  \
         frame = tstate->current_frame = (NEW_FRAME);             \
+        frame->state = CONTROL_ACTIVE;                          \
+        fp = frame->data;                                       \
         CALL_STAT_INC(inlined_py_calls);                         \
         JUMP_TO_LABEL(start_frame);                              \
     } while (0)
@@ -261,7 +263,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
-#define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
+#define STACK_LEVEL()     ((int)(stack_pointer - fp->localsplus - _PyFrame_GetCode(frame)->co_nlocalsplus))
 #define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
 
 #define WITHIN_STACK_BOUNDS() \
@@ -281,8 +283,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Local variable macros */
 
-#define LOCALS_ARRAY    (frame->localsplus)
-#define GETLOCAL(i)     (frame->localsplus[i])
+#define LOCALS_ARRAY    (fp->localsplus)
+#define GETLOCAL(i)     (fp->localsplus[i])
 
 
 #ifdef Py_STATS
@@ -323,15 +325,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #  define UNLOCK_OBJECT(op) ((void)0)
 #endif
 
-#define GLOBALS() frame->f_globals
-#define BUILTINS() frame->f_builtins
-#define LOCALS() frame->f_locals
+#define GLOBALS() fp->f_globals
+#define BUILTINS() fp->f_builtins
+#define LOCALS() fp->f_locals
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #if defined(WITH_DTRACE) && !defined(Py_BUILD_CORE_MODULE)
-static void dtrace_function_entry(_PyInterpreterFrame *);
-static void dtrace_function_return(_PyInterpreterFrame *);
+static void dtrace_function_entry(_PyControlRecord *);
+static void dtrace_function_return(_PyControlRecord *);
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
@@ -424,15 +426,6 @@ do { \
 } while (0);
 
 
-static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
-    return (tstate->py_recursion_remaining-- <= 0) &&
-        _Py_CheckRecursiveCallPy(tstate);
-}
-
-static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
-    tstate->py_recursion_remaining++;
-}
-
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
  * These need to treated differently by tier 1 and 2.
@@ -457,6 +450,7 @@ do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
+    fp = frame->data;                                  \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
     next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \
@@ -549,7 +543,7 @@ check_periodics(PyThreadState *tstate) {
 }
 
 static inline int
-check_periodics_at_end(PyThreadState *tstate, _PyInterpreterFrame *frame) {
+check_periodics_at_end(PyThreadState *tstate, _PyControlRecord *frame) {
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
     QSBR_QUIESCENT_STATE(tstate);
     if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {

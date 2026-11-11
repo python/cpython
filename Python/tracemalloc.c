@@ -3,7 +3,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyControlRecord
 #include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
@@ -314,7 +314,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 
 
 static void
-tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
+tracemalloc_get_frame(_PyControlRecord *pyframe, frame_t *frame)
 {
     assert(PyStackRef_CodeCheck(pyframe->f_executable));
     frame->filename = UNKNOWN_FILENAME;
@@ -390,7 +390,7 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback, PyThreadState *tstate)
 {
-    _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
+    _PyControlRecord *pyframe = _PyThreadState_GetFrame(tstate);
     while (pyframe) {
         if (traceback->nframe < tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
@@ -400,7 +400,7 @@ traceback_get_frames(traceback_t *traceback, PyThreadState *tstate)
         if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
         }
-        pyframe = _PyFrame_GetFirstComplete(pyframe->previous);
+        pyframe = _PyFrame_GetFirstComplete(_PyFrame_GetPrevious(pyframe));
     }
 }
 

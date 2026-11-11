@@ -18,7 +18,7 @@ Data members:
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_frame.h"         // _PyControlRecord
 #include "pycore_import.h"        // _PyImport_SetDLOpenFlags()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_interpframe.h"   // _PyFrame_GetFirstComplete()
@@ -1373,7 +1373,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 
     /* Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. */
-    int depth = tstate->py_recursion_limit - tstate->py_recursion_remaining;
+    int depth = _PyThreadState_GetRecursionDepth(tstate);
     if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
@@ -2085,11 +2085,11 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = tstate->current_frame;
+    _PyControlRecord *frame = tstate->current_frame;
 
     if (frame != NULL) {
         while (depth > 0) {
-            frame = _PyFrame_GetFirstComplete(frame->previous);
+            frame = _PyFrame_GetFirstComplete(_PyFrame_GetPrevious(frame));
             if (frame == NULL) {
                 break;
             }
@@ -2102,7 +2102,7 @@ sys__getframe_impl(PyObject *module, int depth)
         return NULL;
     }
 
-    PyObject *pyFrame = Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame));
+    PyObject *pyFrame = Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(frame, frame->data));
     if (pyFrame && _PySys_Audit(tstate, "sys._getframe", "(O)", pyFrame) < 0) {
         Py_DECREF(pyFrame);
         return NULL;
@@ -2591,14 +2591,14 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     if (PySys_Audit("sys._getframemodulename", "i", depth) < 0) {
         return NULL;
     }
-    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
+    _PyControlRecord *f = _PyThreadState_GET()->current_frame;
     while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
-        f = f->previous;
+        f = _PyFrame_GetPrevious(f);
     }
-    if (f == NULL || PyStackRef_IsNull(f->f_funcobj)) {
+    if (f == NULL || PyStackRef_IsNull(f->data->f_funcobj)) {
         Py_RETURN_NONE;
     }
-    PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
+    PyObject *func = PyStackRef_AsPyObjectBorrow(f->data->f_funcobj);
     PyObject *r = PyFunction_GetModule(func);
     if (!r) {
         PyErr_Clear();

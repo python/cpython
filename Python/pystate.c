@@ -25,6 +25,12 @@
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_stats.h"         // FT_STAT_WORLD_STOP_INC()
 #include "pycore_time.h"          // _PyTime_Init()
+#if defined(MS_WINDOWS)
+#  include <windows.h>
+#elif defined(HAVE_MMAP)
+#  include <sys/mman.h>
+#endif
+
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -1559,6 +1565,64 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
     return res;
 }
 
+static int
+commit_control_stack(PyThreadState *tstate, size_t size)
+{
+    if (size > tstate->controlstack_size) {
+        return -1;
+    }
+#ifdef MS_WINDOWS
+    if (VirtualAlloc(tstate->base_frame, size, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+        return -1;
+    }
+#elif defined(MAP_ANONYMOUS)
+    if (mprotect(tstate->base_frame, size, PROT_READ | PROT_WRITE) != 0) {
+        return -1;
+    }
+#endif
+    tstate->controlstack_end = tstate->base_frame + size / sizeof(_PyControlRecord);
+    return 0;
+}
+
+static int
+allocate_control_stack(PyThreadState *tstate)
+{
+    size_t size = SIZEOF_VOID_P > 4 ? (size_t)1 << 30 : (size_t)1 << 24;
+    void *base;
+#ifdef MS_WINDOWS
+    base = VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_NOACCESS);
+#elif defined(MAP_ANONYMOUS)
+    base = mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (base == MAP_FAILED) {
+        return -1;
+    }
+#else
+    size = (size_t)1 << 20;
+    base = PyMem_RawMalloc(size);
+#endif
+    if (base == NULL) {
+        return -1;
+    }
+    tstate->base_frame = base;
+    tstate->controlstack_size = size;
+    return commit_control_stack(tstate, 65536);
+}
+
+static void
+free_control_stack(PyThreadState *tstate)
+{
+    if (tstate->base_frame == NULL) {
+        return;
+    }
+#ifdef MS_WINDOWS
+    VirtualFree(tstate->base_frame, 0, MEM_RELEASE);
+#elif defined(MAP_ANONYMOUS)
+    munmap(tstate->base_frame, tstate->controlstack_size);
+#else
+    PyMem_RawFree(tstate->base_frame);
+#endif
+}
+
 static void
 reset_threadstate(_PyThreadStateImpl *tstate)
 {
@@ -1594,6 +1658,7 @@ static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
+    free_control_stack(&tstate->base);
 #ifdef Py_STATS
     _PyStats_ThreadFini(tstate);
 #endif
@@ -1655,38 +1720,27 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     // thread_id and native_thread_id are set in bind_tstate().
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
-    tstate->py_recursion_remaining = interp->ceval.recursion_limit;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
     // This is cleared when PyGILState_Ensure() creates the thread state.
     tstate->gilstate_counter = 1;
 
-    // Initialize the embedded base frame - sentinel at the bottom of the frame stack
-    _tstate->base_frame.previous = NULL;
-    _tstate->base_frame.f_executable = PyStackRef_None;
-    _tstate->base_frame.f_funcobj = PyStackRef_NULL;
-    _tstate->base_frame.f_globals = NULL;
-    _tstate->base_frame.f_builtins = NULL;
-    _tstate->base_frame.f_locals = NULL;
-    _tstate->base_frame.frame_obj = NULL;
-    _tstate->base_frame.instr_ptr = NULL;
-    _tstate->base_frame.stackpointer = _tstate->base_frame.localsplus;
-    _tstate->base_frame.return_offset = 0;
-    _tstate->base_frame.owner = FRAME_OWNED_BY_INTERPRETER;
-    _tstate->base_frame.visited = 0;
+    _PyControlRecord *base = tstate->base_frame;
+    memset(base, 0, sizeof(*base));
+    base->data = &_tstate->base_data;
+    base->f_executable = PyStackRef_None;
+    _tstate->base_data.f_funcobj = PyStackRef_NULL;
+    _tstate->base_data.localsplus[0] = PyStackRef_NULL;
+    base->stackpointer = _tstate->base_data.localsplus;
+    base->owner = FRAME_OWNED_BY_INTERPRETER;
+    base->state = CONTROL_BASE;
 #ifdef Py_DEBUG
-    _tstate->base_frame.lltrace = 0;
+    base->stackpointer_valid = 1;
 #endif
-#ifdef Py_GIL_DISABLED
-    _tstate->base_frame.tlbc_index = 0;
-#endif
-    _tstate->base_frame.localsplus[0] = PyStackRef_NULL;
-
-    // current_frame starts pointing to the base frame
-    tstate->current_frame = &_tstate->base_frame;
-    // base_frame pointer for profilers to validate stack unwinding
-    tstate->base_frame = &_tstate->base_frame;
+    tstate->current_frame = base;
+    tstate->controlstack_top = base + 1;
+    _PyThreadState_UpdateControlLimit(tstate);
     tstate->last_profiled_frame = NULL;
     tstate->last_profiled_frame_seq = 0;
     tstate->datastack_chunk = NULL;
@@ -1744,6 +1798,10 @@ new_threadstate(PyInterpreterState *interp, int whence)
     // Allocate the thread state.
     _PyThreadStateImpl *tstate = alloc_threadstate(interp);
     if (tstate == NULL) {
+        return NULL;
+    }
+    if (allocate_control_stack(&tstate->base) < 0) {
+        free_threadstate(tstate);
         return NULL;
     }
 
@@ -1846,10 +1904,10 @@ clear_datastack(PyThreadState *tstate)
         _PyObject_VirtualFree(chunk, chunk->size);
         chunk = prev;
     }
-    if (tstate->datastack_cached_chunk != NULL) {
-        _PyObject_VirtualFree(tstate->datastack_cached_chunk,
-                              tstate->datastack_cached_chunk->size);
-        tstate->datastack_cached_chunk = NULL;
+    chunk = tstate->datastack_cached_chunk;
+    tstate->datastack_cached_chunk = NULL;
+    if (chunk != NULL) {
+        _PyObject_VirtualFree(chunk, chunk->size);
     }
 }
 
@@ -2249,11 +2307,11 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    _PyInterpreterFrame *f = _PyThreadState_GetFrame(tstate);
+    _PyControlRecord *f = _PyThreadState_GetFrame(tstate);
     if (f == NULL) {
         return NULL;
     }
-    PyFrameObject *frame = _PyFrame_GetFrameObject(f);
+    PyFrameObject *frame = _PyFrame_GetFrameObject(f, f->data);
     if (frame == NULL) {
         PyErr_Clear();
     }
@@ -2903,7 +2961,7 @@ _PyThread_CurrentFrames(void)
     _PyEval_StopTheWorld(interp);
     HEAD_LOCK(runtime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) {
-        _PyInterpreterFrame *frame = t->current_frame;
+        _PyControlRecord *frame = t->current_frame;
         frame = _PyFrame_GetFirstComplete(frame);
         if (frame == NULL) {
             continue;
@@ -2912,7 +2970,7 @@ _PyThread_CurrentFrames(void)
         if (id == NULL) {
             goto fail;
         }
-        PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame);
+        PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame, frame->data);
         if (frameobj == NULL) {
             Py_DECREF(id);
             goto fail;
@@ -3316,23 +3374,11 @@ push_chunk(PyThreadState *tstate, int size)
     return res;
 }
 
-_PyInterpreterFrame *
-_PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
-{
-    assert(size < INT_MAX/sizeof(PyObject *));
-    if (_PyThreadState_HasStackSpace(tstate, (int)size)) {
-        _PyInterpreterFrame *res = (_PyInterpreterFrame *)tstate->datastack_top;
-        tstate->datastack_top += size;
-        return res;
-    }
-    return (_PyInterpreterFrame *)push_chunk(tstate, (int)size);
-}
-
 void
-_PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+_PyThreadState_PopDataFrame(PyThreadState *tstate, _PyInterpreterDataFrame *fp)
 {
     assert(tstate->datastack_chunk);
-    PyObject **base = (PyObject **)frame;
+    PyObject **base = (PyObject **)fp;
     if (base == &tstate->datastack_chunk->data[0]) {
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
@@ -3353,6 +3399,60 @@ _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame * frame)
         assert(tstate->datastack_top >= base);
         tstate->datastack_top = base;
     }
+}
+
+_PyControlRecord *
+_PyThreadState_PushControlSlow(PyThreadState *tstate)
+{
+    if (_Py_CheckRecursiveCallPy(tstate)) {
+        return NULL;
+    }
+    size_t used = (char *)tstate->controlstack_top - (char *)tstate->base_frame;
+    size_t size = (used + sizeof(_PyControlRecord) + 65535) & ~(size_t)65535;
+    if (commit_control_stack(tstate, size) < 0) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _PyThreadState_UpdateControlLimit(tstate);
+    return _PyThreadState_PushControlUnchecked(tstate);
+}
+
+_PyControlRecord *
+_PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
+{
+    assert(size < INT_MAX / sizeof(PyObject *));
+    if (_PyThreadState_HasStackSpace(tstate, (int)size)) {
+        return _PyThreadState_PushFrameUnchecked(tstate, (int)size);
+    }
+    _PyControlRecord *frame = _PyThreadState_PushControl(tstate);
+    if (frame == NULL) {
+        return NULL;
+    }
+    PyObject **data;
+    if (tstate->datastack_top != NULL &&
+        (int)size < tstate->datastack_limit - tstate->datastack_top)
+    {
+        data = tstate->datastack_top;
+        tstate->datastack_top += size;
+    }
+    else {
+        data = push_chunk(tstate, (int)size);
+        if (data == NULL) {
+            _PyThreadState_PopControl(tstate, frame);
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+    frame->data = (_PyInterpreterDataFrame *)data;
+    return frame;
+}
+
+void
+_PyThreadState_PopFrame(PyThreadState *tstate, _PyControlRecord *frame,
+                        _PyInterpreterDataFrame *fp)
+{
+    _PyThreadState_PopDataFrame(tstate, fp);
+    _PyThreadState_PopControl(tstate, frame);
 }
 
 

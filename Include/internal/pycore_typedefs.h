@@ -9,7 +9,9 @@
 extern "C" {
 #endif
 
-typedef struct _PyInterpreterFrame _PyInterpreterFrame;
+typedef struct _PyInterpreterDataFrame _PyInterpreterDataFrame;
+
+typedef struct _PyControlRecord _PyControlRecord;
 typedef struct pyruntimestate _PyRuntimeState;
 
 #ifdef __cplusplus

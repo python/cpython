@@ -1,7 +1,7 @@
 /* Structures used by pycore_debug_offsets.h.
  *
  * See InternalDocs/frames.md for an explanation of the frame stack
- * including explanation of the PyFrameObject and _PyInterpreterFrame
+ * including explanation of the PyFrameObject and _PyControlRecord
  * structs.
  */
 
@@ -13,7 +13,7 @@
 #endif
 
 #include "pycore_structs.h"       // _PyStackRef
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_typedefs.h"      // _PyControlRecord
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,30 +26,42 @@ enum _frameowner {
     FRAME_OWNED_BY_INTERPRETER = 3,
 };
 
-struct _PyInterpreterFrame {
+struct _PyInterpreterDataFrame {
+    _PyStackRef f_funcobj;
+    PyObject *f_globals;
+    PyObject *f_builtins;
+    PyObject *f_locals;
+    PyFrameObject *frame_obj;
+    _PyStackRef localsplus[1];
+};
+
+enum _controlstate {
+    CONTROL_DETACHED,
+    CONTROL_RESERVED,
+    CONTROL_ACTIVE,
+    CONTROL_BASE,
+    CONTROL_NATIVE,
+};
+
+struct _PyControlRecord {
     _PyStackRef f_executable; /* Deferred or strong reference (code object or None) */
-    struct _PyInterpreterFrame *previous;
-    _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
-    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     _PyStackRef *stackpointer;
+    _PyInterpreterDataFrame *data;
+    /* Address in the C frame of the evaluation loop that runs this record.
+       Only valid when state is CONTROL_NATIVE. */
+    void *c_frame;
 #ifdef Py_GIL_DISABLED
     /* Index of thread-local bytecode containing instr_ptr. */
     int32_t tlbc_index;
 #endif
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
-    uint8_t visited:1;
-    uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+    uint8_t state;
 #ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
     uint8_t lltrace:5;
 #endif
-    /* Locals and stack */
-    _PyStackRef localsplus[1];
 };
 
 
@@ -65,12 +77,14 @@ struct _PyInterpreterFrame {
     PyObject *prefix##_qualname;                                            \
     _PyErr_StackItem prefix##_exc_state;                                    \
     PyObject *prefix##_origin_or_finalizer;                                 \
+    struct _PyControlRecord *prefix##_live_frame;                           \
     int8_t prefix##_hooks_inited;                                           \
     int8_t prefix##_closed;                                                 \
     int8_t prefix##_running_async;                                          \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    _PyInterpreterFrame prefix##_iframe;                                    \
+    _PyControlRecord prefix##_iframe;                                       \
+    _PyInterpreterDataFrame prefix##_data;                                     \
 
 struct _PyGenObject {
     /* The gi_ prefix is intended to remind of generator-iterator. */
