@@ -346,13 +346,9 @@ update_state_ref(PyObject **ptr, PyObject *value)
     if (FT_ATOMIC_LOAD_PTR_ACQUIRE(*ptr) == value) {
         return;
     }
-#ifdef Py_GIL_DISABLED
     PyUnstable_EnableTryIncRef(value);
     PyObject *old = _Py_atomic_exchange_ptr(ptr, Py_NewRef(value));
     Py_XDECREF(old);
-#else
-    Py_XSETREF(*ptr, Py_NewRef(value));
-#endif
 }
 
 /* Return a new reference to the warnings state field '*ptr'. */
@@ -371,16 +367,17 @@ static PyObject *
 get_warnings_filters(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
-    PyObject *filters = GET_WARNINGS_ATTR(interp, filters, 0);
-    if (filters == NULL) {
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
-        filters = get_state_ref(&st->filters);
+        warnings_filters = get_state_ref(&st->filters);
     }
     else {
-        update_state_ref(&st->filters, filters);
+        update_state_ref(&st->filters, warnings_filters);
     }
 
+    PyObject *filters = warnings_filters;
     if (filters == NULL || !PyList_Check(filters)) {
         PyErr_SetString(PyExc_ValueError,
                         MODULE_NAME ".filters must be a list");
@@ -700,9 +697,16 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     WarningsState *st = warnings_get_state(interp);
     Py_ssize_t version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
     *pversion = version;
-    rc = check_registry_version(interp, registry, version);
+    rc = registry_version_matches(registry, version);
     if (rc > 0) {
         rc = registry_contains(registry, key);
+    }
+    else if (rc == 0) {
+        /* Stamped with an old version, reset it.  'key' can't be present. */
+        PyDict_Clear(registry);
+        if (set_registry_version(registry, version) < 0) {
+            rc = -1;
+        }
     }
     Py_END_CRITICAL_SECTION();
     return rc;
@@ -937,13 +941,8 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     /* The warnings lock is not held.  'version' ties the registry updates
        to the filters searched; a result from filters that changed since is
        never recorded. */
-    WarningsState *st = warnings_get_state(interp);
-    Py_ssize_t version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
-
+    Py_ssize_t version;
     if ((registry != NULL) && (registry != Py_None)) {
-        /* Hash outside the registry critical section (tuples cache it). */
-        if (PyObject_Hash(key) == -1)
-            goto cleanup;
         rc = already_warned(interp, registry, key, &version);
         if (rc == -1)
             goto cleanup;
@@ -953,6 +952,8 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
     else {
         registry = NULL;
+        WarningsState *st = warnings_get_state(interp);
+        version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
     }
 
     action = get_filter(interp, category, text, lineno, module, filename, &item);
@@ -988,7 +989,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
             if (once_registry == NULL)
                 goto cleanup;
             altkey = _PyTuple_FromPair(text, category);
-            if (altkey == NULL || PyObject_Hash(altkey) == -1)
+            if (altkey == NULL)
                 goto cleanup;
             rc = record_warning(interp, once_registry, NULL, altkey, version);
         }
@@ -997,7 +998,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
                registry[(text, category)] = 1 */
             if (is_once || is_module) {
                 altkey = _PyTuple_FromPair(text, category);
-                if (altkey == NULL || PyObject_Hash(altkey) == -1)
+                if (altkey == NULL)
                     goto cleanup;
             }
             rc = record_warning(interp, registry, key, altkey, version);
