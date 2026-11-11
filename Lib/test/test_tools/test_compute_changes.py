@@ -6,8 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from test.support import os_helper
-from test.test_tools import basepath, skip_if_missing, imports_under_tool
+from test.test_tools import skip_if_missing, imports_under_tool
 
 skip_if_missing("build")
 
@@ -16,7 +15,6 @@ with patch.dict(os.environ, {"GITHUB_DEFAULT_BRANCH": "main"}):
         compute_changes = importlib.import_module("compute-changes")
 
 process_changed_files = compute_changes.process_changed_files
-is_fuzzable_library_file = compute_changes.is_fuzzable_library_file
 Outputs = compute_changes.Outputs
 ANDROID_DIRS = compute_changes.ANDROID_DIRS
 IOS_DIRS = compute_changes.IOS_DIRS
@@ -24,7 +22,6 @@ MACOS_DIRS = compute_changes.MACOS_DIRS
 WASI_DIRS = compute_changes.WASI_DIRS
 RUN_TESTS_IGNORE = compute_changes.RUN_TESTS_IGNORE
 UNIX_BUILD_SYSTEM_FILE_NAMES = compute_changes.UNIX_BUILD_SYSTEM_FILE_NAMES
-LIBRARY_FUZZER_PATHS = compute_changes.LIBRARY_FUZZER_PATHS
 
 
 class TestProcessChangedFiles(unittest.TestCase):
@@ -45,20 +42,6 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_docs)
                 self.assertFalse(result.run_tests)
-
-    def test_ci_fuzz_stdlib(self):
-        with os_helper.change_cwd(basepath):
-            for p in LIBRARY_FUZZER_PATHS:
-                with self.subTest(p=p):
-                    if p.is_dir():
-                        f = p / "file"
-                    elif p.is_file():
-                        f = p
-                    else:
-                        continue
-                    result = process_changed_files({f})
-                    self.assertTrue(result.run_ci_fuzz_stdlib)
-                    self.assertTrue(is_fuzzable_library_file(f))
 
     def test_android(self):
         for d in ANDROID_DIRS:
