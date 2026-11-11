@@ -3433,14 +3433,14 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
             self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
