@@ -62,7 +62,7 @@ Creating Subprocesses
 =====================
 
 .. function:: create_subprocess_exec(program, *args, stdin=None, \
-                 stdout=None, stderr=None, limit=None, **kwds)
+                 stdout=None, stderr=None, limit=65536, **kwds)
    :async:
 
    Create a subprocess.
@@ -84,7 +84,7 @@ Creating Subprocesses
 
 
 .. function:: create_subprocess_shell(cmd, stdin=None, \
-                 stdout=None, stderr=None, limit=None, **kwds)
+                 stdout=None, stderr=None, limit=65536, **kwds)
    :async:
 
    Run the *cmd* shell command.
@@ -260,7 +260,7 @@ their completion.
 
          *stdin* gets closed when ``input=None`` too.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
 
          If :meth:`!communicate` is cancelled, the output that was
          already read is now preserved and returned by a subsequent

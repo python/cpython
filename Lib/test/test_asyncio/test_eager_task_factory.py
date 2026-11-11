@@ -69,6 +69,20 @@ class EagerTaskFactoryLoopTests:
 
         self.assertEqual(self.run_coro(run()), 'my message')
 
+    def test_awaited_by_during_eager_step(self):
+        async def run():
+            parent = asyncio.current_task()
+
+            async def coro():
+                self.assertEqual(asyncio.current_task()._asyncio_awaited_by,
+                                 frozenset({parent}))
+
+            t = self.loop.create_task(coro())
+            self.assertFalse(t._asyncio_awaited_by)
+            await t
+
+        self.run_coro(run())
+
     def test_eager_completion(self):
 
         async def coro():
@@ -217,7 +231,9 @@ class EagerTaskFactoryLoopTests:
         # See https://github.com/python/cpython/issues/124309
 
         async def fail():
-            await asyncio.sleep(0)
+            # Raise without suspending: staggered_race() cancels unfinished
+            # coroutines once another one wins, so yielding first could turn
+            # this into a CancelledError when the event loop is busy.
             raise ValueError("no good")
 
         async def blocked():
@@ -290,11 +306,29 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
         self._current_task = asyncio.current_task
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
+
+        futures = asyncio.futures
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._py_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+
+        futures = asyncio.futures
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
         return super().tearDown()
 
 
@@ -315,6 +349,49 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
         asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
+
+    def test_eager_step_with_non_native_parent(self):
+        async def child():
+            self.assertFalse(asyncio.current_task()._asyncio_awaited_by)
+
+        async def run():
+            parent = tasks._c_swap_current_task(self.loop, object())
+            try:
+                task = self.loop.create_task(child())
+            finally:
+                tasks._c_swap_current_task(self.loop, parent)
+            await task
+
+        self.run_coro(run())
+
+    def test_eager_step_preserves_exception(self):
+        # gh-157299: check that the exception is saved and cleared before
+        # discarding the awaited-by edge, and restored afterwards.
+        # A default task can still pass with the wrong order since its hash
+        # is in C. Overriding __hash__ makes cleanup call back into Python.
+        # If the exception is still pending, this raises SystemError.
+        class ParentTask(self.Task):
+            def __hash__(self):
+                return super().__hash__()
+
+        child_tasks = []
+        exc = SystemExit("eager step")
+
+        async def child():
+            task = asyncio.current_task()
+            child_tasks.append(task)
+            asyncio.future_add_to_awaited_by(task, self.loop.create_future())
+            raise exc
+
+        async def parent():
+            with self.assertRaises(SystemExit) as cm:
+                self.loop.create_task(child())
+            task, = child_tasks
+            self.assertIs(cm.exception, exc)
+            self.assertIs(task.exception(), exc)
+            self.assertNotIn(asyncio.current_task(), task._asyncio_awaited_by)
+
+        self.loop.run_until_complete(ParentTask(parent(), loop=self.loop))
 
     def test_issue105987(self):
         code = """if 1:

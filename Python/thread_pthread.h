@@ -231,7 +231,7 @@ pythread_wrapper(void *arg)
     pythread_callback *callback = arg;
     void (*func)(void *) = callback->func;
     void *func_arg = callback->arg;
-    PyMem_RawFree(arg);
+    free(callback);
 
     func(func_arg);
     return NULL;
@@ -271,7 +271,9 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
-    pythread_callback *callback = PyMem_RawMalloc(sizeof(pythread_callback));
+    // Use free() instead of PyMem_RawFree() in pythread_wrapper() to avoid a
+    // data race if another thread calls PyMem_SetAllocator() in parallel.
+    pythread_callback *callback = malloc(sizeof(pythread_callback));
 
     if (callback == NULL) {
       return -1;
@@ -293,7 +295,7 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
 #endif
 
     if (status != 0) {
-        PyMem_RawFree(callback);
+        free(callback);
         return -1;
     }
     *out_id = th;

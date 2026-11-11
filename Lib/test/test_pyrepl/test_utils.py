@@ -54,6 +54,13 @@ class TestUtils(TestCase):
         self.assertEqual(wlen('ab\b\b'), 0)
         self.assertEqual(wlen('\babc'), 3)
         self.assertEqual(wlen('樂\b'), 1)
+    def test_wlen_with_osc_sequence(self):
+        prompt = ">>> "
+        self.assertEqual(wlen("\x1b]633;A\x07" + prompt), len(prompt))
+
+    def test_wlen_with_unterminated_osc_sequence_as_individual_characters(self):
+        # \x1b is treated as a single character (ESC)
+        self.assertEqual(wlen("\x1b]633;A"), len("\x1b]633;A"))
 
     def test_prev_next_window(self):
         def gen_normal():

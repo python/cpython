@@ -29,12 +29,12 @@ class MyMapping(dict):
         return self.mapping
 
 
-@threading_helper.reap_threads
 @threading_helper.requires_working_threading()
 class TestJsonEncoding(CTest):
     # Test encoding json with concurrent threads modifying the data cannot
     # corrupt the interpreter
 
+    @threading_helper.reap_threads
     def test_json_mutating_list(self):
         def worker(barrier, data, index):
             barrier.wait()
@@ -48,6 +48,7 @@ class TestJsonEncoding(CTest):
         data = [[], []]
         encode_json_helper(self.json, worker, data)
 
+    @threading_helper.reap_threads
     def test_json_mutating_exact_dict(self):
         def worker(barrier, data, index):
             barrier.wait()
@@ -65,6 +66,7 @@ class TestJsonEncoding(CTest):
         data = [{}, {}]
         encode_json_helper(self.json, worker, data)
 
+    @threading_helper.reap_threads
     def test_json_mutating_mapping(self):
         def worker(barrier, data, index):
             barrier.wait()

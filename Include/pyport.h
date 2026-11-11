@@ -50,7 +50,7 @@
 // to prevent C++ compiler warnings. On C23 and newer and on C++11 and newer,
 // _Py_NULL is defined as nullptr.
 #if !defined(_MSC_VER) && \
-    ((defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) \
+    ((defined (_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L) \
         || (defined(__cplusplus) && __cplusplus >= 201103))
 #  define _Py_NULL nullptr
 #else
@@ -306,16 +306,15 @@ extern "C" {
  * Usage:
  *    int _Py_HOT_FUNCTION x(void) { return 3; }
  *
- * Issue #28618: This attribute must not be abused, otherwise it can have a
+ * Issue gh-72804: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
  * its time must use it. Use a profiler when running performance benchmark
  * suite to find these functions.
  */
-#if defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
-#define _Py_HOT_FUNCTION __attribute__((hot))
+#if _Py__has_attribute(hot)
+#   define _Py_HOT_FUNCTION __attribute__((hot))
 #else
-#define _Py_HOT_FUNCTION
+#   define _Py_HOT_FUNCTION
 #endif
 
 // Ask the compiler to always inline a static inline function. The compiler can
@@ -491,7 +490,7 @@ extern "C" {
 #ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
-#  elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
 #    define _Py_thread_local _Thread_local
 #  elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #    define _Py_thread_local __declspec(thread)
@@ -538,12 +537,21 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// On C23, use typeof(). Otherwise, the macro is only defined
-// if GCC or clang compiler is used.
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+// On C23, use typeof(). Otherwise, use __typeof__()
+// if on GCC, clang or MSVC 17.9 and newer.
+//
+// gh-157649: Do not use decltype() on C++, since it produces invalid code in
+// Py_CLEAR()/Py_SETREF().
+#if defined (_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
 #  define _Py_TYPEOF(expr) typeof(expr)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif (defined(__GNUC__) || defined(__clang__) \
+       || (defined(_MSC_VER) && _MSC_VER >= 1939 && !defined(__cplusplus)))
 #  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
+#ifdef _Py_TESTCEXT_NO_TYPEOF
+   // Exercise fallback implementations in test_cext.
+#  undef _Py_TYPEOF
 #endif
 
 
@@ -554,6 +562,7 @@ extern "C" {
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
+#      define _Py_MSAN_UNPOISON_STRING(STR)  (__msan_unpoison_string(STR))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
@@ -562,16 +571,28 @@ extern "C" {
 #      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
+#  if __has_feature(hwaddress_sanitizer)
+#    if !defined(_Py_ADDRESS_SANITIZER)
+#      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("hwaddress")))
+#    endif
+#  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#  elif defined(__SANITIZE_HWADDRESS__)
+#    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("hwaddress")))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
@@ -592,8 +613,14 @@ extern "C" {
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
 #endif
+#ifndef _Py_NO_SANITIZE_FUNCTION
+#  define _Py_NO_SANITIZE_FUNCTION
+#endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)
+#endif
+#ifndef _Py_MSAN_UNPOISON_STRING
+#  define _Py_MSAN_UNPOISON_STRING(STR)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */
@@ -618,10 +645,6 @@ extern "C" {
 #  else
 #    define PY_CXX_CONST
 #  endif
-#endif
-
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#  define _SGI_MP_SOURCE
 #endif
 
 // Explicit fallthrough in switch case to avoid warnings

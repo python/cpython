@@ -4,6 +4,7 @@ from http import client, HTTPStatus
 import io
 import itertools
 import os
+import pickle
 import array
 import re
 import socket
@@ -1347,6 +1348,49 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), b'Hello\r\n')
         self.assertTrue(resp.isclosed())
+
+    def test_malformed_content_length(self):
+        # RFC 9112: Content-Length = 1*DIGIT.  Values that int() accepts but
+        # the grammar forbids must not be used to frame the body.
+        for value in ('+5', '5_0', '5 0'):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\nHello\r\n' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertIsNone(resp.length)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
+    def test_content_length_with_whitespace(self):
+        # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+        # the field value is not part of the value, so it must not
+        # prevent the Content-Length from being used to frame the body.
+        for value in ('7 ', '7\t', '7 \t ', ' 7 '):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n'
+                    'Hello\r\nextra' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.length, 7)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
+    def test_malformed_chunk_size(self):
+        # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
+        # but the grammar forbids (a sign, an "0x" prefix, underscores or
+        # leading whitespace).
+        start = 'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+        for size in ('-5', '+5', '0x5', '1_f', ' 5'):
+            with self.subTest(size=size):
+                sock = FakeSocket(start + '%s\r\nHELLO\r\n0\r\n\r\n' % size)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertRaises(client.IncompleteRead, resp.read)
+                self.assertTrue(resp.isclosed())
+                resp.close()
 
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
@@ -2743,6 +2787,36 @@ class TunnelTests(TestCase):
         headers = self.conn.get_proxy_response_headers()
         self.assertIsNone(headers)
 
+    def test_tunnel_error(self):
+        response_text = (
+            'HTTP/1.1 407 Proxy Authentication Required\r\n'
+            'Proxy-Authenticate: Basic realm="proxy"\r\n\r\n'
+        )
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        with self.assertRaises(client.ProxyTunnelError) as cm:
+            self.conn.request('HEAD', '/', '')
+        exc = cm.exception
+        self.assertIsInstance(exc, OSError)
+        self.assertEqual(exc.code, 407)
+        self.assertEqual(exc.reason, 'Proxy Authentication Required')
+        self.assertEqual(exc.headers['Proxy-Authenticate'],
+                         'Basic realm="proxy"')
+        self.assertEqual(str(exc), 'Tunnel connection failed: '
+                                   '407 Proxy Authentication Required')
+        self.assertIsNone(self.conn.sock)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                copy = pickle.loads(pickle.dumps(exc, proto))
+                self.assertIs(type(copy), client.ProxyTunnelError)
+                self.assertEqual(copy.code, 407)
+                self.assertEqual(copy.reason, exc.reason)
+                self.assertEqual(copy.headers['Proxy-Authenticate'],
+                                 'Basic realm="proxy"')
+                self.assertEqual(str(copy), str(exc))
+
     def test_tunnel_leak(self):
         sock = None
 
@@ -2765,6 +2839,23 @@ class TunnelTests(TestCase):
             exc = e
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
+
+    def test_tunnel_nonstr_headers(self):
+        class CustomObject:
+            def __str__(self):
+                return 'custom-str'
+
+        self.conn.set_tunnel('destination.com', headers={
+            'None-Value': None,
+            'Integer-Value': 9,
+            'Custom-Value': CustomObject(),
+        })
+
+        self.conn.request('HEAD', '/', '')
+
+        self.assertIn(b'None-Value: None\r\n', self.conn.sock.data)
+        self.assertIn(b'Integer-Value: 9\r\n', self.conn.sock.data)
+        self.assertIn(b'Custom-Value: custom-str\r\n', self.conn.sock.data)
 
 
 if __name__ == '__main__':

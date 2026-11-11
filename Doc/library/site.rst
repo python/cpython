@@ -453,9 +453,10 @@ Module contents
 
    Return a list containing all global site-packages directories.
 
-   For each directory present in *prefixes* (or :data:`PREFIXES` if *prefixes*
-   is ``None``), this function will find its site-packages subdirectory
-   depending on the system environment, and will return a list of full paths.
+   For each directory given in *prefixes* (or :data:`PREFIXES` if *prefixes*
+   is ``None``), this function will compute its site-packages subdirectory
+   depending on the system environment, and will return a list of full paths,
+   which are not checked for existence.
 
    .. versionadded:: 3.2
 

@@ -230,6 +230,29 @@ The following exceptions are raised as appropriate:
       Previously, :exc:`BadStatusLine`\ ``('')`` was raised.
 
 
+.. exception:: ProxyTunnelError
+
+   A subclass of :exc:`OSError`.  Raised when the proxy server answers the
+   CONNECT request sent for :meth:`HTTPConnection.set_tunnel` with a status
+   other than 200.
+
+   .. attribute:: code
+
+      The HTTP status code of the proxy's response, such as ``407``.
+
+   .. attribute:: reason
+
+      The reason phrase of the proxy's response.
+
+   .. attribute:: headers
+
+      The headers of the proxy's response, as an
+      :class:`http.client.HTTPMessage` instance.
+
+   .. versionadded:: next
+      Previously, :exc:`OSError` was raised.
+
+
 The constants defined in this module are:
 
 .. data:: HTTP_PORT
@@ -277,7 +300,7 @@ HTTPConnection Objects
    instance of :class:`io.TextIOBase`, the data returned by the ``read()``
    method will be encoded as ISO-8859-1, otherwise the data returned by
    ``read()`` is sent as is.  If *body* is an iterable, the elements of the
-   iterable are sent as is until the iterable is exhausted.
+   iterable are sent as is until the iterable is :term:`exhausted`.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
    with the request. A :rfc:`Host header <2616#section-14.23>`
@@ -370,7 +393,8 @@ HTTPConnection Objects
    proxy server).
 
    The *headers* argument should be a mapping of extra HTTP headers to send with
-   the CONNECT request.
+   the CONNECT request. Non-string header values are converted to strings via
+   :func:`str`.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
    <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
@@ -396,6 +420,9 @@ HTTPConnection Objects
       protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
       one will be automatically generated and transmitted if not provided in
       the headers argument.
+
+   .. versionchanged:: next
+      :exc:`ProxyTunnelError` is raised if the proxy rejects the CONNECT request.
 
 
 .. method:: HTTPConnection.get_proxy_response_headers()
@@ -662,7 +689,7 @@ method attribute. Here is an example session that uses the ``PUT`` method::
     >>> conn.request("PUT", "/file", BODY)
     >>> response = conn.getresponse()
     >>> print(response.status, response.reason)
-    200, OK
+    200 OK
 
 .. _httpmessage-objects:
 
