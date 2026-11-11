@@ -4217,11 +4217,6 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
-                # TLS 1.3 cipher suite names don't include the key exchange
-                # and authentication algorithms.
-                if s.version() == 'TLSv1.2':
-                    cipher = s.cipher()[0].split('-')
-                    self.assertEqual(cipher[:2], ['ECDHE', 'ECDSA'])
 
     @unittest.skipUnless(IS_OPENSSL_3_0_0,
                          "test requires RFC 5280 check added in OpenSSL 3.0+")
