@@ -106,27 +106,20 @@ PyFile_GetLine(PyObject *f, int n)
 int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
-    PyObject *writer, *value, *result;
-
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = PyObject_GetAttr(f, &_Py_ID(write));
-    if (writer == NULL)
-        return -1;
-    if (flags & Py_PRINT_RAW) {
-        value = PyObject_Str(v);
-    }
-    else
-        value = PyObject_Repr(v);
+
+    Py_INCREF(f);
+    PyObject *value = (flags & Py_PRINT_RAW) ? PyObject_Str(v) : PyObject_Repr(v);
     if (value == NULL) {
-        Py_DECREF(writer);
+        Py_DECREF(f);
         return -1;
     }
-    result = PyObject_CallOneArg(writer, value);
+    PyObject *result = PyObject_CallMethodOneArg(f, &_Py_ID(write), value);
     Py_DECREF(value);
-    Py_DECREF(writer);
+    Py_DECREF(f);
     if (result == NULL)
         return -1;
     Py_DECREF(result);
@@ -217,6 +210,17 @@ PyObject_AsFileDescriptor(PyObject *o)
 }
 
 int
+_Py_Off_t_Converter(PyObject *arg, void *addr)
+{
+#ifdef HAVE_LARGEFILE_SUPPORT
+    *((Py_off_t *)addr) = PyLong_AsLongLong(arg);
+#else
+    *((Py_off_t *)addr) = PyLong_AsLong(arg);
+#endif
+    return PyErr_Occurred() ? 0 : 1;
+}
+
+int
 _PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
 {
     int fd = PyObject_AsFileDescriptor(o);
@@ -286,6 +290,13 @@ typedef struct {
     int fd;
 } PyStdPrinter_Object;
 
+/*[clinic input]
+class stdprinter "PyStdPrinter_Object *" "&PyStdPrinter_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=031bf557c18c5df5]*/
+
+#include "clinic/fileobject.c.h"
+
 PyObject *
 PyFile_NewStdPrinter(int fd)
 {
@@ -304,11 +315,19 @@ PyFile_NewStdPrinter(int fd)
     return (PyObject*)self;
 }
 
+/*[clinic input]
+stdprinter.write
+
+    text as unicode: unicode
+    /
+
+Write the text to the stream.
+[clinic start generated code]*/
+
 static PyObject *
-stdprinter_write(PyObject *op, PyObject *args)
+stdprinter_write_impl(PyStdPrinter_Object *self, PyObject *unicode)
+/*[clinic end generated code: output=069c9645803fe8ad input=65041d6d7a23aff4]*/
 {
-    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
-    PyObject *unicode;
     PyObject *bytes = NULL;
     const char *str;
     Py_ssize_t n;
@@ -323,10 +342,6 @@ stdprinter_write(PyObject *op, PyObject *args)
          * unlimited recursion in the case stderr is invalid.
          */
         Py_RETURN_NONE;
-    }
-
-    if (!PyArg_ParseTuple(args, "U", &unicode)) {
-        return NULL;
     }
 
     /* Encode Unicode to UTF-8/backslashreplace */
@@ -399,7 +414,7 @@ static PyMethodDef stdprinter_methods[] = {
     {"flush", stdprinter_noop, METH_NOARGS, ""},
     {"fileno", stdprinter_fileno, METH_NOARGS, ""},
     {"isatty", stdprinter_isatty, METH_NOARGS, ""},
-    {"write", stdprinter_write, METH_VARARGS, ""},
+    STDPRINTER_WRITE_METHODDEF
     {NULL,              NULL}  /*sentinel */
 };
 

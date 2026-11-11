@@ -508,7 +508,10 @@ do_work()
                 if ";" in stack_trace:
                     stack_parts = stack_trace.split(";")
                     for part in stack_parts:
-                        # Each part should be file:function:line
+                        # Special frames, such as <GC> and <unreadable frame>,
+                        # do not have file and line information.
+                        if part.startswith("<") and part.endswith(">"):
+                            continue
                         self.assertIn(":", part)
 
     def test_sampling_all_threads(self):

@@ -30,6 +30,7 @@
 import os
 import sys
 import unittest
+from test import support
 
 from ctypes.macholib.dyld import dyld_find
 from ctypes.macholib.dylib import dylib_info
@@ -109,15 +110,12 @@ class MachOTest(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
+    def test_deprecated_module_attributes(self):
         import ctypes.macholib
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(ctypes.macholib, "__version__")
-        self.assertEqual(cm.filename, __file__)
+        support.check_deprecated_module_attributes(
+            self, ctypes.macholib, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

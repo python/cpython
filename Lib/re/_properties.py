@@ -100,7 +100,7 @@ _CATEGORY_PROPERTIES = {
 # CATEGORY_DIGIT matches Nd (but, like \d, is restricted to ASCII under the
 # ASCII flag).  The gc group memberships (L = Lu|Ll|Lt|Lm|Lo, N = Nd|Nl|No)
 # are given by the Unicode Standard 4.5, Table 4-4 "General_Category Values"
-# (https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G124142)
+# (https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-4/#G124142)
 # and listed in
 # https://www.unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt
 # The compound categories Lu, N, Lm, Nl, No, Cf, Z, Zs, C and Cn are
@@ -127,7 +127,7 @@ _GC_CATEGORY = {
 # (private use) and the single code points Zl and Zp.  Cc, Cs and Co are the
 # control codes, surrogate and private-use areas, fixed by the Unicode
 # Standard 23.1, 23.6 and 23.5:
-# https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-23/
+# https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-23/
 # All five are listed in
 # https://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt
 _CC_RANGES = [(0x00, 0x1F), (0x7F, 0x9F)]
@@ -174,7 +174,7 @@ def _analytic_ranges():
     # normalised.
     # Noncharacter_Code_Point: U+FDD0..FDEF and the last two of every plane,
     # permanently reserved (the Unicode Standard 23.7, "Noncharacters":
-    # https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-23/).
+    # https://www.unicode.org/versions/Unicode18.0.0/core-spec/chapter-23/).
     noncharacter = [(0xFDD0, 0xFDEF)]
     noncharacter += [(plane | 0xFFFE, plane | 0xFFFF)
                      for plane in range(0, MAXUNICODE + 1, 0x10000)]
