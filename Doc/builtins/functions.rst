@@ -56,6 +56,11 @@ are always available.  They are listed here in alphabetical order.
 .. |func-range| replace:: ``range()``
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
+
+.. Use a substitution because :func:`__lazy_import__` is too wide for the table.
+   The trailing underscore in |func-lazy-import|_ links to the target above the
+   function definition.
+
 .. |func-lazy-import| replace:: ``__lazy_import__()``
 
 .. function:: abs(number, /)
