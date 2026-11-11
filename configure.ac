@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
@@ -194,6 +194,9 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -202,6 +205,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
@@ -209,6 +213,7 @@ AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
+AC_SUBST([RUNSHARED_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
@@ -238,11 +243,6 @@ AH_TOP([
 #define Py_PYCONFIG_H
 ])
 AH_BOTTOM([
-/* Define the macros needed if on a UnixWare 7.x system. */
-#if defined(__USLC__) && defined(__SCO_VERSION__)
-#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
-#endif
-
 #endif /*Py_PYCONFIG_H*/
 ])
 
@@ -377,8 +377,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -1008,19 +1007,6 @@ fi
 # (which may remove their limitations).
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 case $ac_sys_system/$ac_sys_release in
-  # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
-  # even though select is a POSIX function. Reported by J. Ribbens.
-  # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  # In addition, Stefan Krah confirms that issue #1244610 exists through
-  # OpenBSD 4.6, but is fixed in 4.7.
-  OpenBSD/2.* | OpenBSD/3.* | OpenBSD/4.@<:@0123456@:>@)
-    define_xopen_source=no
-    # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
-    # also defined. This can be overridden by defining _BSD_SOURCE
-    # As this has a different meaning on Linux, only define it on OpenBSD
-    AC_DEFINE([_BSD_SOURCE], [1],
-              [Define on OpenBSD to activate all library features])
-    ;;
   OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
     # also defined. This can be overridden by defining _BSD_SOURCE
@@ -1028,23 +1014,9 @@ case $ac_sys_system/$ac_sys_release in
     AC_DEFINE([_BSD_SOURCE], [1],
               [Define on OpenBSD to activate all library features])
     ;;
-  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
-  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
-  # Marc Recht
-  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
-    define_xopen_source=no;;
   # On Solaris, _XOPEN_SOURCE=800 hides platform specific features.
   # A lower level is defined below.
   SunOS/*)
-    define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.@<:@0-4@:>@)
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
     define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
@@ -1171,12 +1143,12 @@ if test -z "$CFLAGS"; then
 fi
 
 dnl Emscripten SDK and WASI SDK default to wasm32.
-dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl On Emscripten use -m64 to build target wasm64-emscripten.
 dnl for wasm64.
 AS_CASE([$host],
   [wasm64-*-emscripten], [
-    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
-    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([CFLAGS], [" -m64"])
+    AS_VAR_APPEND([LDFLAGS], [" -m64"])
   ],
 )
 
@@ -2640,11 +2612,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -2677,7 +2644,7 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
       AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
-      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -pthread"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
@@ -3012,10 +2979,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -3168,15 +3131,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 
         # end of Darwin* tests
         ;;
-    esac
-], [
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
     esac
 ])
 
@@ -3417,13 +3371,13 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
+  linux/netfilter_ipv4.h linux/random.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h \
   poll.h process.h pthread.h pthread_np.h pty.h \
-  sched.h setjmp.h shadow.h signal.h spawn.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
+  sched.h setjmp.h signal.h spawn.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
-  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
+  sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysctl.h \
   sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -3559,13 +3513,6 @@ AC_DEFINE([_LARGEFILE_SOURCE], [1],
 AC_DEFINE([_FILE_OFFSET_BITS], [64],
 [This must be set to 64 on some systems to enable large file support.])
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 AC_TYPE_MODE_T
@@ -3746,8 +3693,9 @@ AC_MSG_CHECKING([for --with-address-sanitizer])
 AC_ARG_WITH([address_sanitizer],
             AS_HELP_STRING([--with-address-sanitizer],
                            [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
-[
-AC_MSG_RESULT([$withval])
+[], [with_address_sanitizer=no])
+AC_MSG_RESULT([$with_address_sanitizer])
+AS_VAR_IF([with_address_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 AC_MSG_CHECKING([whether a program links with -fsanitize=address])
@@ -3755,8 +3703,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=address: the compiler does not support AddressSanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-hwaddress-sanitizer])
 AC_ARG_WITH(
@@ -3765,8 +3712,9 @@ AC_ARG_WITH(
     [--with-hwaddress-sanitizer],
     [enable HWAddressSanitizer memory error detector, 'hwasan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_hwaddress_sanitizer=no])
+AC_MSG_RESULT([$with_hwaddress_sanitizer])
+AS_VAR_IF([with_hwaddress_sanitizer], [no], [], [
 hwasan_flags="-fsanitize=hwaddress"
 # x86-64 lacks address tagging, so HWASan needs the page aliasing mode there.
 # See gh-156049 and
@@ -3781,8 +3729,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with $hwasan_flags: the compiler does not support HWAddressSanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-memory-sanitizer])
 AC_ARG_WITH(
@@ -3791,8 +3738,9 @@ AC_ARG_WITH(
     [--with-memory-sanitizer],
     [enable MemorySanitizer allocation error detector, 'msan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_memory_sanitizer=no])
+AC_MSG_RESULT([$with_memory_sanitizer])
+AS_VAR_IF([with_memory_sanitizer], [no], [], [
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 AC_MSG_CHECKING([whether a program links with -fsanitize=memory])
@@ -3800,8 +3748,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=memory: the compiler does not support MemorySanitizer or its runtime library is not installed; see config.log])])
-],
-[AC_MSG_RESULT([no])])
+])
 
 AC_MSG_CHECKING([for --with-undefined-behavior-sanitizer])
 AC_ARG_WITH(
@@ -3810,8 +3757,11 @@ AC_ARG_WITH(
     [--with-undefined-behavior-sanitizer],
     [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_undefined_behavior_sanitizer=no])
+AC_MSG_RESULT([$with_undefined_behavior_sanitizer])
+AS_VAR_IF([with_undefined_behavior_sanitizer], [no], [
+with_ubsan="no"
+], [
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
@@ -3820,10 +3770,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=undefined: the compiler does not support UndefinedBehaviorSanitizer or its runtime library is not installed; see config.log])])
-],
-[
-AC_MSG_RESULT([no])
-with_ubsan="no"
 ])
 
 AC_MSG_CHECKING([for --with-thread-sanitizer])
@@ -3833,8 +3779,11 @@ AC_ARG_WITH(
     [--with-thread-sanitizer],
     [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
   )],
-[
-AC_MSG_RESULT([$withval])
+[], [with_thread_sanitizer=no])
+AC_MSG_RESULT([$with_thread_sanitizer])
+AS_VAR_IF([with_thread_sanitizer], [no], [
+with_tsan="no"
+], [
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
@@ -3843,10 +3792,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
   [AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([cannot link with -fsanitize=thread: the compiler does not support ThreadSanitizer or its runtime library is not installed; see config.log])])
-],
-[
-AC_MSG_RESULT([no])
-with_tsan="no"
 ])
 
 # Set info about shared libraries.
@@ -3987,17 +3932,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not implemented yet
@@ -4045,16 +3979,6 @@ then
 		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -4105,9 +4029,6 @@ then
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -4486,6 +4407,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -5804,12 +5730,12 @@ AC_CHECK_FUNCS([ \
   clock closefrom close_range confstr \
   copy_file_range ctermid dladdr dup explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
-  fpathconf fstatat ftime ftruncate futimens futimes futimesat \
+  fpathconf fstatat ftruncate futimens futimes futimesat \
   gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
-  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam gettid getuid getwd grantpt if_indextoname if_nameindex \
+  getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
+  gettid getuid grantpt if_indextoname if_nameindex \
   if_nametoindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
@@ -5825,10 +5751,10 @@ AC_CHECK_FUNCS([ \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction \
-  sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
+  sigfillset siginterrupt sigpending sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf sysctlbyname tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
+  sysconf sysctlbyname tcgetpgrp tcsetpgrp timegm times tmpfile \
+  truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
@@ -6293,7 +6219,7 @@ if test "$ac_sys_system" != "tvOS" -a "$ac_sys_system" != "watchOS" ; then
 fi
 
 # check for long file support functions
-AC_CHECK_FUNCS([fseek64 fseeko fstatvfs ftell64 ftello statvfs])
+AC_CHECK_FUNCS([fseeko fstatvfs ftello statvfs])
 
 AC_REPLACE_FUNCS([dup2])
 AC_CHECK_FUNCS([getpgrp],
@@ -6379,8 +6305,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 
 dnl no longer used, now always defined for backwards compatibility
 AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
@@ -6591,28 +6516,6 @@ if test $ac_cv_struct_sockaddr_alg = yes; then
       [struct sockaddr_alg (linux/if_alg.h)])
 fi
 
-# checks for compiler characteristics
-
-AC_C_CONST
-
-AC_CACHE_CHECK([for working signed char], [ac_cv_working_signed_char_c], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[signed char c;]])],
-  [ac_cv_working_signed_char_c=yes], [ac_cv_working_signed_char_c=no])
-])
-AS_VAR_IF([ac_cv_working_signed_char_c], [no], [
-  AC_DEFINE([signed], [], [Define to empty if the keyword does not work.])
-])
-
-AC_CACHE_CHECK([for prototypes], [ac_cv_function_prototypes], [
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return foo(10);]])],
-  [ac_cv_function_prototypes=yes], [ac_cv_function_prototypes=no])
-])
-AS_VAR_IF([ac_cv_function_prototypes], [yes], [
-  AC_DEFINE([HAVE_PROTOTYPES], [1],
-     [Define if your compiler supports function prototype])
-])
-
-
 # check for socketpair
 PY_CHECK_FUNC([socketpair], [
 #include <sys/types.h>
@@ -6750,22 +6653,6 @@ then LIBC=$withval
 else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT([default LIBC="$LIBC"])])
-
-# **************************************
-# * Check for gcc x64 inline assembler *
-# **************************************
-
-
-AC_CACHE_CHECK([for x64 gcc inline assembler], [ac_cv_gcc_asm_for_x64], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
-  __asm__ __volatile__ ("movq %rcx, %rax");
-]])],[ac_cv_gcc_asm_for_x64=yes],[ac_cv_gcc_asm_for_x64=no])
-])
-
-AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_X64], [1],
-    [Define if we can use x64 gcc inline assembler])
-])
 
 # **************************************************
 # * Check for various properties of floating point *
@@ -8062,49 +7949,6 @@ for dir in $SRCDIRS; do
 done
 AC_MSG_RESULT([done])
 
-# Availability of -O2:
-AC_CACHE_CHECK([for -O2], [ac_cv_compile_o2], [
-saved_cflags="$CFLAGS"
-CFLAGS="-O2"
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])], [ac_cv_compile_o2=yes], [ac_cv_compile_o2=no])
-CFLAGS="$saved_cflags"
-])
-
-# _FORTIFY_SOURCE wrappers for memmove and bcopy are incorrect:
-# http://sourceware.org/ml/libc-alpha/2010-12/msg00009.html
-AC_MSG_CHECKING([for glibc _FORTIFY_SOURCE/memmove bug])
-saved_cflags="$CFLAGS"
-CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
-if test "$ac_cv_compile_o2" = no; then
-    CFLAGS=""
-fi
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-void foo(void *p, void *q) { memmove(p, q, 19); }
-int main(void) {
-  char a[32] = "123456789000000000";
-  foo(&a[9], a);
-  if (strcmp(a, "123456789123456789000000000") != 0)
-    return 1;
-  foo(a, &a[9]);
-  if (strcmp(a, "123456789000000000") != 0)
-    return 1;
-  return 0;
-}
-]])],
-[have_glibc_memmove_bug=no],
-[have_glibc_memmove_bug=yes],
-[have_glibc_memmove_bug=undefined])
-CFLAGS="$saved_cflags"
-AC_MSG_RESULT([$have_glibc_memmove_bug])
-if test "$have_glibc_memmove_bug" = yes; then
-    AC_DEFINE([HAVE_GLIBC_MEMMOVE_BUG], [1],
-    [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
-     for memmove and bcopy.])
-fi
-
 AC_MSG_CHECKING([if we need to manually block large inlining in ceval.c])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(void) {
@@ -8132,45 +7976,6 @@ if test "$block_huge_inlining_in_ceval" = yes && test "$ac_cv_computed_gotos" = 
     CFLAGS_CEVAL="$CFLAGS_CEVAL -finline-max-stacksize=512"
 fi
 AC_SUBST([CFLAGS_CEVAL])
-
-if test "$ac_cv_gcc_asm_for_x87" = yes; then
-    # Some versions of gcc miscompile inline asm:
-    # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46491
-    # http://gcc.gnu.org/ml/gcc/2010-11/msg00366.html
-    case $ac_cv_cc_name in
-        gcc)
-            AC_MSG_CHECKING([for gcc ipa-pure-const bug])
-            saved_cflags="$CFLAGS"
-            CFLAGS="-O2"
-            AC_RUN_IFELSE([AC_LANG_SOURCE([[
-            __attribute__((noinline)) int
-            foo(int *p) {
-              int r;
-              asm ( "movl \$6, (%1)\n\t"
-                    "xorl %0, %0\n\t"
-                    : "=r" (r) : "r" (p) : "memory"
-              );
-              return r;
-            }
-            int main(void) {
-              int p = 8;
-              if ((foo(&p) ? : p) != 6)
-                return 1;
-              return 0;
-            }
-            ]])],
-            [have_ipa_pure_const_bug=no],
-            [have_ipa_pure_const_bug=yes],
-            [have_ipa_pure_const_bug=undefined])
-            CFLAGS="$saved_cflags"
-            AC_MSG_RESULT([$have_ipa_pure_const_bug])
-            if test "$have_ipa_pure_const_bug" = yes; then
-                AC_DEFINE([HAVE_IPA_PURE_CONST_BUG], [1],
-                          [Define if gcc has the ipa-pure-const bug.])
-            fi
-        ;;
-    esac
-fi
 
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])
@@ -9210,12 +9015,12 @@ fi
 AC_MSG_NOTICE([creating Makefile])
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules \
-			Modules/Setup.local Modules/Setup.stdlib Modules/Setup.bootstrap $srcdir/Modules/Setup
+			Modules/Setup.local Modules/Setup.stdlib -b Modules/Setup.bootstrap $srcdir/Modules/Setup
 if test $? -ne 0; then
   AC_MSG_ERROR([makesetup failed])
 fi
 
-mv config.c Modules
+mv config.c config_bootstrap.c Modules
 
 if test -z "$PKG_CONFIG"; then
   AC_MSG_WARN([pkg-config is missing. Some dependencies may not be detected correctly.])

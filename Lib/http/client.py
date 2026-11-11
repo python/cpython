@@ -1,7 +1,8 @@
 r"""HTTP/1.1 client library
 
-<intro stuff goes here>
-<other stuff, too>
+This module implements the client side of the HTTP and HTTPS protocols.
+HTTPConnection and HTTPSConnection manage a single connection to a server;
+HTTPResponse wraps the reply.
 
 HTTPConnection goes through a number of "states", which define when a client
 may legally make another request or fetch the response for a particular
@@ -86,8 +87,8 @@ __all__ = ["HTTPResponse", "HTTPConnection",
            "UnknownTransferEncoding", "UnimplementedFileMode",
            "IncompleteRead", "InvalidURL", "ImproperConnectionState",
            "CannotSendRequest", "CannotSendHeader", "ResponseNotReady",
-           "BadStatusLine", "LineTooLong", "RemoteDisconnected", "error",
-           "responses"]
+           "BadStatusLine", "LineTooLong", "RemoteDisconnected",
+           "ProxyTunnelError", "error", "responses"]
 
 HTTP_PORT = 80
 HTTPS_PORT = 443
@@ -1044,7 +1045,8 @@ class HTTPConnection:
 
             if code != http.HTTPStatus.OK:
                 self.close()
-                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+                raise ProxyTunnelError(code, message.strip(),
+                                       _parse_header_lines(self._raw_proxy_headers))
 
         finally:
             response.close()
@@ -1615,6 +1617,16 @@ class RemoteDisconnected(ConnectionResetError, BadStatusLine):
     def __init__(self, *pos, **kw):
         BadStatusLine.__init__(self, "")
         ConnectionResetError.__init__(self, *pos, **kw)
+
+class ProxyTunnelError(OSError):
+    def __init__(self, code, reason, headers):
+        OSError.__init__(self, f"Tunnel connection failed: {code} {reason}")
+        self.code = code
+        self.reason = reason
+        self.headers = headers
+
+    def __reduce__(self):
+        return self.__class__, (self.code, self.reason, self.headers)
 
 # for backwards compatibility
 error = HTTPException
