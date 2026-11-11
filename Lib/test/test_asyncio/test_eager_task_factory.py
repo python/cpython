@@ -351,7 +351,6 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
         return super().tearDown()
 
     def test_eager_step_with_non_native_parent(self):
-        # gh-157299
         async def child():
             self.assertFalse(asyncio.current_task()._asyncio_awaited_by)
 
@@ -366,7 +365,11 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
         self.run_coro(run())
 
     def test_eager_step_preserves_exception(self):
-        # gh-157299
+        # gh-157299: check that the exception is saved and cleared before
+        # discarding the awaited-by edge, and restored afterwards.
+        # A default task can still pass with the wrong order since its hash
+        # is in C. Overriding __hash__ makes cleanup call back into Python.
+        # If the exception is still pending, this raises SystemError.
         class ParentTask(self.Task):
             def __hash__(self):
                 return super().__hash__()
