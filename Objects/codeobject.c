@@ -1501,6 +1501,42 @@ code_positionsiterator(PyObject *self, PyObject* Py_UNUSED(args))
     return (PyObject*)pi;
 }
 
+/* One position for inspect and traceback.
+
+   co_positions() yields one tuple per instruction, so islice() builds a
+   tuple for every instruction before the requested offset.
+   PyCode_Addr2Location walks the same table and only fills four ints.
+   The offset is a byte offset (f_lasti / tb_lasti), not an instruction index.
+*/
+static PyObject *
+code_co_position_at(PyObject *self, PyObject *indexobj)
+{
+    PyCodeObject *code = (PyCodeObject *)self;
+    int start_line, end_line, start_column, end_column;
+    long addrq;
+    Py_ssize_t nbytes;
+
+    addrq = PyLong_AsLong(indexobj);
+    if (addrq == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    nbytes = _PyCode_NBYTES(code);
+    if (addrq < 0 || addrq >= nbytes || addrq > INT_MAX) {
+        PyErr_SetString(PyExc_ValueError, "bytecode offset out of range");
+        return NULL;
+    }
+    if (!PyCode_Addr2Location(code, (int)addrq, &start_line, &start_column,
+                              &end_line, &end_column)) {
+        PyErr_SetString(PyExc_SystemError, "PyCode_Addr2Location failed");
+        return NULL;
+    }
+    return Py_BuildValue("(O&O&O&O&)",
+        _source_offset_converter, &start_line,
+        _source_offset_converter, &end_line,
+        _source_offset_converter, &start_column,
+        _source_offset_converter, &end_column);
+}
+
 
 /******************
  * "extra" frame eval info (see PEP 523)
@@ -2873,6 +2909,7 @@ static struct PyMethodDef code_methods[] = {
     {"co_lines", code_linesiterator, METH_NOARGS},
     {"co_branches", code_branchesiterator, METH_NOARGS},
     {"co_positions", code_positionsiterator, METH_NOARGS},
+    {"_co_position_at", code_co_position_at, METH_O},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
     {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,

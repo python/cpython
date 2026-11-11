@@ -1,0 +1,2 @@
+:mod:`inspect` and :mod:`traceback` now look up one bytecode position directly.
+Previously they built a tuple for every instruction before the requested offset.

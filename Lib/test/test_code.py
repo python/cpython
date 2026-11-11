@@ -583,6 +583,39 @@ class CodeTest(unittest.TestCase):
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
+    def test_co_position_at_matches_co_positions(self):
+        # _co_position_at is the single-offset form of co_positions().
+        # The argument is a byte offset, and each instruction is 2 bytes.
+        import inspect
+        import traceback
+
+        def func(x):
+            return x + 1
+
+        samples = [
+            func.__code__,
+            (lambda y: y).__code__,
+            func.__code__.replace(co_linetable=b''),
+        ]
+        for code in samples:
+            with self.subTest(code=code):
+                for index, expected in enumerate(code.co_positions()):
+                    offset = index * 2
+                    self.assertEqual(code._co_position_at(offset), expected)
+                    self.assertEqual(
+                        inspect._get_code_position(code, offset), expected)
+                    self.assertEqual(
+                        traceback._get_code_position(code, offset), expected)
+                self.assertEqual(
+                    inspect._get_code_position(code, -1),
+                    (None, None, None, None))
+                with self.assertRaises(ValueError):
+                    code._co_position_at(-1)
+                with self.assertRaises(ValueError):
+                    code._co_position_at(len(code.co_code))
+                with self.assertRaises(TypeError):
+                    code._co_position_at(None)
+
     def test_code_equality(self):
         def f():
             try:
