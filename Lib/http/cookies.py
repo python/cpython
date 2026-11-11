@@ -310,7 +310,7 @@ class Morsel(dict):
         key = key.lower()
         val_str = str(val)
         if key not in self._reserved:
-            raise CookieError("Invalid attribute %r" % (key,))
+            raise CookieError(f"Invalid attribute {key!r}")
         if _has_control_character(key, val_str):
             raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
         # Comment is quoted like a cookie value so semicolons can be escaped.

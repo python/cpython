@@ -632,17 +632,14 @@ class MorselTests(unittest.TestCase):
         for attrkey, attrname in cookies.Morsel._reserved.items():
             if attrname == "Comment":
                 continue
-            morsel = cookies.Morsel()
-            with self.subTest(method="__setitem__", attrname=attrname):
+            with self.subTest(attrkey=attrkey, attrname=attrname):
+                morsel = cookies.Morsel()
                 with self.assertRaises(cookies.CookieError):
                     morsel[attrkey] = "foo; SameSite=none"
-            with self.subTest(method="setdefault", attrname=attrname):
                 with self.assertRaises(cookies.CookieError):
                     morsel.setdefault(attrkey, "foo; SameSite=none")
-            with self.subTest(method="update", attrname=attrname):
                 with self.assertRaises(cookies.CookieError):
                     morsel.update({attrkey: "foo; SameSite=none"})
-            with self.subTest(method="__ior__", attrname=attrname):
                 with self.assertRaises(cookies.CookieError):
                     morsel |= {attrkey: "foo; SameSite=none"}
 
@@ -652,7 +649,7 @@ class MorselTests(unittest.TestCase):
         morsel["comment"] = "foo;SameSite=none;Domain=example.com"
         self.assertEqual(
             morsel.OutputString(),
-            f"key=coded; Comment=\"{morsel['comment'].replace(';', r'\073')}\"",
+            r'key=coded; Comment="foo\073SameSite=none\073Domain=example.com"',
         )
 
     def test_control_characters_output(self):
