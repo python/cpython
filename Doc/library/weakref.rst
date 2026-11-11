@@ -149,7 +149,7 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.16
       Raise :exc:`!TypeError` if *callback* is not callable or ``None``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Weak references can now be pickled.
 
 
@@ -224,7 +224,7 @@ See :ref:`__slots__ documentation <slots>` for details.
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`!WeakKeyDictionary` can now be pickled.
 
 :class:`WeakKeyDictionary` objects have an additional method that
@@ -252,7 +252,7 @@ than needed.
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`!WeakValueDictionary` can now be pickled.
 
 :class:`WeakValueDictionary` objects have the following additional methods.
@@ -279,7 +279,7 @@ These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
    A copy or a deep copy shares the elements with the original;
    user-defined attributes are copied or deep-copied.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`!WeakSet` can now be pickled and copied.
 
 
@@ -318,7 +318,7 @@ These have the same issues as the :meth:`WeakKeyDictionary.keyrefs` method.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`!WeakMethod` can now be pickled and copied.
 
 .. class:: finalize(obj, func, /, *args, **kwargs)
