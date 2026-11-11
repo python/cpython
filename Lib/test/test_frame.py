@@ -711,7 +711,7 @@ class TestFrameCApi(unittest.TestCase):
         PyEval_GetFrameLocals = ctypes.pythonapi.PyEval_GetFrameLocals
         PyEval_GetFrameLocals.restype = ctypes.py_object
         frame_locals = PyEval_GetFrameLocals()
-        self.assertTrue(type(frame_locals), dict)
+        self.assertIs(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
@@ -719,7 +719,7 @@ class TestFrameCApi(unittest.TestCase):
         PyEval_GetFrameGlobals = ctypes.pythonapi.PyEval_GetFrameGlobals
         PyEval_GetFrameGlobals.restype = ctypes.py_object
         frame_globals = PyEval_GetFrameGlobals()
-        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
         PyEval_GetFrameBuiltins = ctypes.pythonapi.PyEval_GetFrameBuiltins
@@ -732,7 +732,7 @@ class TestFrameCApi(unittest.TestCase):
         PyFrame_GetLocals.restype = ctypes.py_object
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
-        self.assertTrue(f_locals['x'], 1)
+        self.assertEqual(f_locals['x'], 1)
         f_locals['x'] = 2
         self.assertEqual(x, 2)
 
