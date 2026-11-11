@@ -1,5 +1,3 @@
-import itertools
-import pathlib
 from contextlib import suppress
 from io import TextIOWrapper
 
@@ -39,18 +37,6 @@ def _io_wrapper(file, mode='r', *args, **kwargs):
     raise ValueError(f"Invalid mode value '{mode}', only 'r' and 'rb' are supported")
 
 
-def _names(descendants):
-    """
-    Split descendants into single path names, as each one
-    may contain multiple levels separated by ``posixpath.sep``.
-    """
-    return tuple(
-        itertools.chain.from_iterable(
-            path.parts for path in map(pathlib.PurePosixPath, descendants)
-        )
-    )
-
-
 class CompatibilityFiles:
     """
     Adapter for an existing or non-existent resource reader
@@ -81,12 +67,11 @@ class CompatibilityFiles:
         is_dir = is_file
 
         def joinpath(self, *descendants):
-            names = _names(descendants)
-            if not names:
+            if not descendants:
                 return self
             if not self._reader:
-                return CompatibilityFiles.OrphanPath(*names)
-            first, *rest = names
+                return CompatibilityFiles.OrphanPath(*descendants)
+            first, *rest = descendants
             child = CompatibilityFiles.ChildPath(self._reader, first)
             return child.joinpath(*rest)
 
@@ -117,10 +102,9 @@ class CompatibilityFiles:
             return not self.is_file()
 
         def joinpath(self, *descendants):
-            names = _names(descendants)
-            if not names:
+            if not descendants:
                 return self
-            return CompatibilityFiles.OrphanPath(self.name, *names)
+            return CompatibilityFiles.OrphanPath(self.name, *descendants)
 
         @property
         def name(self):
@@ -151,10 +135,9 @@ class CompatibilityFiles:
         is_dir = is_file
 
         def joinpath(self, *descendants):
-            names = _names(descendants)
-            if not names:
+            if not descendants:
                 return self
-            return CompatibilityFiles.OrphanPath(*self._path, *names)
+            return CompatibilityFiles.OrphanPath(*self._path, *descendants)
 
         @property
         def name(self):
