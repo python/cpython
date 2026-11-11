@@ -169,7 +169,7 @@ class InternalFunctionsTest(unittest.TestCase):
 
 
     def test_format_elemcreate(self):
-        self.assertTrue(ttk._format_elemcreate(None), (None, ()))
+        self.assertEqual(ttk._format_elemcreate(None), ((),))
 
         ## Testing type = image
         # image type expects at least an image name, so this should raise

@@ -222,6 +222,33 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_trace(self):
+        f, _, _ = self.make_frames()
+        def tracer(*args):
+            pass
+        for value in tracer, 42, None:
+            f.f_trace = value
+            self.assertEqual(f.f_trace, value)
+        f.f_trace = tracer
+        del f.f_trace
+        self.assertIsNone(f.f_trace)
+
+    def test_f_trace_lines_and_opcodes(self):
+        f, _, _ = self.make_frames()
+        for name in 'f_trace_lines', 'f_trace_opcodes':
+            with self.subTest(name=name):
+                for value in False, True:
+                    setattr(f, name, value)
+                    self.assertEqual(getattr(f, name), value)
+                with self.assertRaisesRegex(TypeError,
+                                            'attribute value type must be bool'):
+                    setattr(f, name, 1)
+        with self.assertRaisesRegex(TypeError,
+                                    "can't delete numeric/char attribute"):
+            del f.f_trace_lines
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del f.f_trace_opcodes
+
     def test_f_generator(self):
         # Test f_generator in different contexts.
 
@@ -840,13 +867,13 @@ class TestFrameCApi(unittest.TestCase):
             pass
 
         frame_locals = PyEval_GetFrameLocals()
-        self.assertTrue(type(frame_locals), dict)
+        self.assertIs(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
 
         frame_globals = PyEval_GetFrameGlobals()
-        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
         frame_builtins = PyEval_GetFrameBuiltins()
@@ -854,7 +881,7 @@ class TestFrameCApi(unittest.TestCase):
 
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
-        self.assertTrue(f_locals['x'], 1)
+        self.assertEqual(f_locals['x'], 1)
         f_locals['x'] = 2
         self.assertEqual(x, 2)
 

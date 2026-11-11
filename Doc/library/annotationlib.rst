@@ -235,8 +235,8 @@ Functions
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
 
-   For example, this is used to implement the :attr:`~Format.STRING` for
-   :class:`typing.TypedDict` classes created through the functional syntax:
+   For example, this is used to implement the :attr:`~Format.STRING` format
+   for :class:`typing.TypedDict` classes created through the functional syntax:
 
    .. doctest::
 
@@ -581,7 +581,7 @@ Or used as the annotate function for an object:
    >>> class C:
    ...   pass
    >>> C.__annotate__ = Annotate()
-   >>> get_annotations(Annotate(), format=Format.STRING)
+   >>> get_annotations(C, format=Format.STRING)
    {'x': 'MyType'}
 
 

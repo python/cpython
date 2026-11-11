@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 from collections import deque
-lazy from _colorize import ANSIColors
+lazy from _colorize import get_colors
 
 from .binary_collector import BinaryCollector
 
@@ -272,6 +272,8 @@ class SampleProfiler:
         )  # Max time = Min Hz
 
         # Build cache stats string if stats collection is enabled
+        ANSIColors = get_colors()
+
         cache_stats_str = ""
         if self.collect_stats:
             try:
@@ -304,6 +306,8 @@ class SampleProfiler:
             stats = self.unwinder.get_stats()
         except RuntimeError:
             return  # Stats not enabled
+
+        ANSIColors = get_colors()
 
         print(f"\n{ANSIColors.BOLD_BLUE}{'='*50}{ANSIColors.RESET}")
         print(f"{ANSIColors.BOLD_BLUE}Unwinder Statistics:{ANSIColors.RESET}")
@@ -398,6 +402,8 @@ class SampleProfiler:
             stats = collector.get_stats()
         except (ValueError, RuntimeError):
             return  # Collector closed or stats unavailable
+
+        ANSIColors = get_colors()
 
         print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
 
