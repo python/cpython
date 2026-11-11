@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from libclinic.converters import self_converter
     from libclinic.return_converters import CReturnConverter
     from libclinic.app import Clinic
+    from libclinic.slots import SlotSpec
 
 from libclinic import VersionTuple, unspecified
 
@@ -18,6 +19,7 @@ from libclinic import VersionTuple, unspecified
 ClassDict = dict[str, "Class"]
 ModuleDict = dict[str, "Module"]
 ParamDict = dict[str, "Parameter"]
+PropertyDict = dict[str, "Property"]
 
 
 @dc.dataclass(repr=False)
@@ -47,9 +49,41 @@ class Class:
         self.parent = self.cls or self.module
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        self.properties: PropertyDict = {}
 
     def __repr__(self) -> str:
         return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
+
+
+@dc.dataclass(repr=False)
+class Property:
+    """An attribute implemented by accessors, rendered into a PyGetSetDef entry.
+
+    A slot can contain several implementations if they are guarded by
+    preprocessor conditions.
+    """
+    name: str
+    full_name: str
+    cls: Class
+
+    def __post_init__(self) -> None:
+        self.getter: list[Function] = []
+        self.setter: list[Function] = []
+        self.rendered = False
+
+    def __repr__(self) -> str:
+        return "<clinic.Property " + repr(self.name) + " at " + str(id(self)) + ">"
+
+    @property
+    def is_plain(self) -> bool:
+        """Can the entry be composed without the help of the preprocessor?"""
+        return all(len(funcs) <= 1 and not (funcs and funcs[0].condition)
+                   for funcs in (self.getter, self.setter))
+
+    @property
+    def getset_name(self) -> str:
+        """The prefix of the names of the macros of the entry."""
+        return self.full_name.replace('.', '_').upper()
 
 
 class FunctionKind(enum.Enum):
@@ -61,6 +95,8 @@ class FunctionKind(enum.Enum):
     GETTER          = enum.auto()
     SETTER          = enum.auto()
     SETTER_AND_DELETER  = enum.auto()
+    # A type slot ("tp slot"), see libclinic.slots.
+    SLOT            = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -78,6 +114,7 @@ METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
 SETTER_AND_DELETER: Final = FunctionKind.SETTER_AND_DELETER
+SLOT: Final = FunctionKind.SLOT
 
 # The kinds which implement the setter of an entry of PyGetSetDef.
 SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
@@ -123,11 +160,25 @@ class Function:
     # Line on which the docstring starts (`None` if there is no docstring).
     docstring_line_number: int | None = None
     vectorcall: bool = False
+    # The type slot which the function implements (kind is SLOT).
+    slot: SlotSpec | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
         self.self_converter: self_converter | None = None
+        # The attribute implemented by an accessor, and the preprocessor
+        # condition under which it is compiled.
+        self.property: Property | None = None
+        self.condition: str = ''
         self.__render_parameters__: list[Parameter] | None = None
+
+    @functools.cached_property
+    def accessor_basename(self) -> str:
+        """The name of the C function which implements this accessor."""
+        assert self.kind in ACCESSORS
+        if self.kind is GETTER:
+            return self.c_basename + "_get"
+        return self.c_basename + "_set"
 
     @functools.cached_property
     def displayname(self) -> str:
@@ -179,7 +230,8 @@ class Function:
 
     @property
     def methoddef_flags(self) -> str | None:
-        if self.kind.new_or_init:
+        if self.kind.new_or_init or self.kind is SLOT:
+            # Slot functions are not stored in a PyMethodDef.
             return None
         flags = []
         match self.kind:
@@ -240,6 +292,8 @@ class Parameter:
     # (`None` signifies that there is no deprecation)
     deprecated_positional: VersionTuple | None = None
     deprecated_keyword: VersionTuple | None = None
+    # The release in which the parameter will be removed.
+    deprecated_until: VersionTuple | None = None
     # Line of the file on which the parameter is declared.
     line_number: int | None = None
     right_bracket_count: int = dc.field(init=False, default=0)

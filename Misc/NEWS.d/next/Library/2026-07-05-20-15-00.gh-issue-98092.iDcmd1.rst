@@ -1,2 +1,0 @@
-Add :meth:`imaplib.IMAP4.id`, a wrapper for the IMAP ``ID`` command
-(:rfc:`2971`).

@@ -1,2 +1,0 @@
-Fix the position of syntax errors which cover a range if the line contains
-non-ASCII characters before the error.
