@@ -4582,6 +4582,42 @@ class _TestSharedMemory(BaseTestCase):
                 with self.assertRaises(FileNotFoundError):
                     pickle.loads(pickled_sms)
 
+    def test_shared_memory_del_with_live_buffer(self):
+        # gh-155003: Garbage collecting a SharedMemory must not release a
+        # buffer that is still in use, and must still close the file
+        # descriptor.
+        cases = {
+            'buf': lambda sms: sms.buf,
+            'cast': lambda sms: sms.buf.cast('i'),
+        }
+        if c_int is not None:
+            # Holds a buffer on the memoryview object itself (as a NumPy
+            # array would), so releasing the memoryview fails, not just
+            # closing the mmap.
+            cases['ctypes'] = lambda sms: (c_int * 4).from_buffer(sms.buf)
+        for case, make_view in cases.items():
+            with self.subTest(case=case):
+                sms = shared_memory.SharedMemory(create=True, size=16)
+                name = sms.name
+                fd = sms._fd
+                sms.buf[0] = 42
+                kept = make_view(sms)
+                with support.catch_unraisable_exception() as cm:
+                    del sms
+                    support.gc_collect()
+                    self.assertIsNone(cm.unraisable)
+                with memoryview(kept) as mv, mv.cast('B') as view:
+                    self.assertEqual(view[0], 42)
+                    view[1] = 43
+                if shared_memory._USE_POSIX:
+                    with self.assertRaises(OSError):
+                        os.fstat(fd)
+                    other = shared_memory.SharedMemory(name)
+                    self.assertEqual(bytes(other.buf[:2]), b'\x2a\x2b')
+                    other.unlink()
+                    other.close()
+                del kept
+
     def test_shared_memory_across_processes(self):
         # bpo-40135: don't define shared memory block's name in case of
         # the failure when we run multiprocessing tests in parallel.
