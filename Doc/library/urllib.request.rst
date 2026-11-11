@@ -378,6 +378,11 @@ The following classes are provided:
       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
       see the documentation on :func:`~urllib.request.getproxies`.
 
+   Because *proxies* holds at most one proxy for each protocol, it cannot
+   use a proxy auto-config (PAC) file, which selects a proxy for each
+   URL.  See :ref:`this example <urllib-request-pac>` for one way to use a
+   PAC file.
+
 
 .. class:: HTTPPasswordMgr()
 
@@ -1381,6 +1386,51 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
    # This time, rather than install the OpenerDirector, we use it directly:
    with opener.open('http://www.example.com/login.html') as f:
       print(f.read().decode('utf-8'))
+
+.. _urllib-request-pac:
+
+Proxy auto-config (PAC) files select a proxy for each URL, so they cannot be
+described by the *proxies* mapping that :class:`ProxyHandler` expects.  The
+:pypi:`pypac` package finds and evaluates PAC files; its ``ProxyResolver``
+can be used to write a handler that consults the PAC file once per request::
+
+   import urllib.error
+   import urllib.request
+   from pypac import get_pac
+   from pypac.resolver import ProxyResolver
+
+   class PACProxyHandler(urllib.request.ProxyHandler):
+
+       def __init__(self, resolver):
+           self.resolver = resolver
+           # An empty mapping suppresses the <protocol>_open methods that
+           # ProxyHandler would make from a static proxies mapping.
+           super().__init__({})
+
+       def _pac_open(self, req, protocol):
+           proxy = self.resolver.get_proxy(req.full_url)
+           if proxy is None:
+               raise urllib.error.URLError('no proxy available')
+           if proxy == 'DIRECT':
+               return None  # continue with the remaining handlers
+           if proxy.startswith('socks'):
+               raise urllib.error.URLError('SOCKS proxies are not supported')
+           return self.proxy_open(req, proxy, protocol)
+
+       def http_open(self, req):
+           return self._pac_open(req, 'http')
+
+       def https_open(self, req):
+           return self._pac_open(req, 'https')
+
+   opener = urllib.request.build_opener(PACProxyHandler(ProxyResolver(get_pac())))
+   with opener.open('http://www.example.com/') as f:
+       print(f.read().decode('utf-8'))
+
+Note that a PAC file may also select a SOCKS proxy, which :mod:`urllib.request`
+cannot use, and that the :envvar:`no_proxy` environment variable and the
+operating system's proxy bypass list still apply to requests the PAC file
+assigned to a proxy.
 
 Adding HTTP headers:
 
