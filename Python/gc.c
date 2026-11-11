@@ -1015,9 +1015,9 @@ debug_cycle(const char *msg, PyObject *op)
     return line;
 }
 
-/* Format a line for each object in `list`, then print them.
- * sys.stderr.write(). Stores into buffers so can iterate
- * to avoid calling into Python whilst we iterate the objects
+/* Format a line for each object in `list` before printing any of them,
+ * since sys.stderr.write() can run Python code that frees objects in the
+ * list.
  */
 static Py_ssize_t
 debug_cycles(const char *msg, PyGC_Head *list)
