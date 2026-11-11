@@ -5,5 +5,7 @@ whose loader provides only a legacy
 :class:`~importlib.resources.abc.ResourceReader`.  The internal
 ``CompatibilityFiles`` traversables wrapping such a reader now accept the
 zero-or-more argument ``joinpath()`` signature specified by
-:meth:`importlib.resources.abc.Traversable.joinpath`.
+:meth:`importlib.resources.abc.Traversable.joinpath`.  They also split a
+descendant containing ``/`` into its levels, so ``joinpath('a/b')`` and
+``joinpath('a', 'b')`` give the same result.
 Patch by pikammmmm.

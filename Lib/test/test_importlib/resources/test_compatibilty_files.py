@@ -105,6 +105,20 @@ class CompatibilityFilesTests(unittest.TestCase):
             assert isinstance(path, CompatibilityFiles.OrphanPath)
             assert path._path == expected._path
 
+    def test_joinpath_multiple_levels(self):
+        # A descendant may contain several levels separated by '/', which
+        # gives the same result as passing the levels separately.
+        files = self.files
+        for path, expected in (
+            (files.joinpath('a/b'), files / 'a' / 'b'),
+            (files / 'a/b', files / 'a' / 'b'),
+            (files.joinpath('a/b', 'c'), files / 'a' / 'b' / 'c'),
+            ((files / 'a').joinpath('b/c'), files / 'a' / 'b' / 'c'),
+            ((files / 'a' / 'b').joinpath('c/d'), files / 'a' / 'b' / 'c' / 'd'),
+        ):
+            assert isinstance(path, CompatibilityFiles.OrphanPath)
+            assert path._path == expected._path
+
     def test_functional_api_without_path_names(self):
         # gh-127337: these call joinpath() with no descendants at all.
         package = self.package
@@ -137,5 +151,10 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
 
     def test_spec_path_joinpath_multiple_descendants(self):
         path = self.files.joinpath('a', 'b')
+        assert isinstance(path, CompatibilityFiles.OrphanPath)
+        assert path._path == (self.files / 'a' / 'b')._path
+
+    def test_spec_path_joinpath_multiple_levels(self):
+        path = self.files.joinpath('a/b')
         assert isinstance(path, CompatibilityFiles.OrphanPath)
         assert path._path == (self.files / 'a' / 'b')._path
