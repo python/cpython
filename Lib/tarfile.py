@@ -1152,6 +1152,10 @@ class TarInfo(object):
         info["magic"] = POSIX_MAGIC
         pax_headers = self.pax_headers.copy()
 
+        # The hdrcharset field describes the header it was read from.
+        # _create_pax_generic_header() adds it again if it is needed.
+        pax_headers.pop("hdrcharset", None)
+
         # A field that was read from an archive loses its priority if the
         # attribute it was applied to has been changed since, e.g. by
         # replace(). Otherwise the change would be undone by the field.

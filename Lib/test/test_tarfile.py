@@ -2857,20 +2857,26 @@ class PaxWriteTest(GNUWriteTest):
         self.assertEqual(t.name, "baz")
         self.assertEqual(t.uid, 124)
 
-    def test_pax_extended_header_gnu_longname(self):
-        # A GNU longname header that precedes the pax header overrides
-        # its path field.
+    def test_pax_extended_header_gnu_long_headers(self):
+        # GNU longname and longlink headers that precede the pax header
+        # override its path and linkpath fields.
         t = tarfile.TarInfo("ustar")
-        t.pax_headers = {"path": "foo"}
+        t.type = tarfile.SYMTYPE
+        t.pax_headers = {"path": "foo", "linkpath": "spam"}
         with open(tmpname, "wb") as fobj:
             fobj.write(t._create_gnu_long_header(
                 "bar", tarfile.GNUTYPE_LONGNAME, "utf-8", "strict"))
+            fobj.write(t._create_gnu_long_header(
+                "eggs", tarfile.GNUTYPE_LONGLINK, "utf-8", "strict"))
             fobj.write(t.tobuf(tarfile.PAX_FORMAT))
             fobj.write(bytes(tarfile.RECORDSIZE))
         with tarfile.open(tmpname) as tar:
             t = tar.getmembers()[0]
         self.assertEqual(t.name, "bar")
-        self.assertEqual(self._roundtrip_pax_member(t).name, "bar")
+        self.assertEqual(t.linkname, "eggs")
+        t = self._roundtrip_pax_member(t)
+        self.assertEqual(t.name, "bar")
+        self.assertEqual(t.linkname, "eggs")
 
     def test_create_pax_header(self):
         # The ustar header should contain values that can be
@@ -3124,6 +3130,24 @@ class PAXUnicodeTest(UnicodeTest, unittest.TestCase):
                     t = tar.getmember(name)
                 except KeyError:
                     self.fail("unable to read POSIX.1-2008 binary header")
+
+    def test_binary_header_copy(self):
+        # The hdrcharset=BINARY field of a member that was read must not
+        # be written in front of fields that are encoded in UTF-8.
+        for encoding, name in (
+                ("utf-8", "pax/hdrcharset-\udce4\udcf6\udcfc"),
+                ("iso8859-1", "pax/hdrcharset-\xe4\xf6\xfc"),):
+            for newname in name, "pax/\xe4\xf6\xfc":
+                with self.subTest(encoding=encoding, newname=newname):
+                    with tarfile.open(tarname, encoding=encoding) as src, \
+                         tarfile.open(tmpname, "w", format=self.format,
+                                      encoding=encoding) as tar:
+                        t = src.getmember(name)
+                        self.assertEqual(t.pax_headers["hdrcharset"], "BINARY")
+                        t.name = newname
+                        tar.addfile(t, src.extractfile(t))
+                    with tarfile.open(tmpname, encoding=encoding) as tar:
+                        self.assertEqual(tar.getnames(), [newname])
 
 
 class AppendTestBase:
