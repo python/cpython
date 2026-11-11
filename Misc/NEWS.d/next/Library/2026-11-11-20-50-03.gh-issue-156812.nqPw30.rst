@@ -1,0 +1,10 @@
+Serializing a document type declaration, a comment or a processing
+instruction in :mod:`xml.dom.minidom` now checks the structural rules of XML.
+A system literal is now quoted with the quote which it does not contain,
+and :exc:`ValueError` is raised for an invalid public identifier,
+for a literal containing both quotes,
+for a public identifier without a system identifier,
+for a comment ending with ``-``,
+and for a processing instruction containing ``?>`` in the data
+or using the reserved target ``xml``.
+The characters are still not checked.

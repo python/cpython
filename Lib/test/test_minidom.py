@@ -2228,10 +2228,71 @@ class MinidomTest(unittest.TestCase):
         doc2 = copy.deepcopy(doc)
         self.assert_recursive_equal(doc, doc2)
 
-    def testSerializeCommentNodeWithDoubleHyphen(self):
-        doc = create_doc_without_doctype()
-        doc.appendChild(doc.createComment("foo--bar"))
-        self.assertRaises(ValueError, doc.toxml)
+    def testWriteXMLDoctypeIdentifiers(self):
+        impl = getDOMImplementation()
+        def serialize(publicId, systemId):
+            doctype = impl.createDocumentType("r", publicId, systemId)
+            return impl.createDocument(None, "r", doctype).toxml()[22:]
+        self.assertEqual(serialize(None, None), '<!DOCTYPE r><r/>')
+        self.assertEqual(serialize(None, "s"), "<!DOCTYPE r  SYSTEM 's'><r/>")
+        self.assertEqual(serialize("p", "s"),
+                         "<!DOCTYPE r  PUBLIC 'p'  's'><r/>")
+        # the quote which is not in the literal is used
+        self.assertEqual(serialize("it's", "sys'tem"),
+                         '<!DOCTYPE r  PUBLIC "it\'s"  "sys\'tem"><r/>')
+        # a system literal cannot contain both quotes
+        with self.assertRaisesRegex(ValueError, "both quotes"):
+            serialize(None, 'a"b\'c')
+        # a public identifier can only contain PubidChars
+        for publicId in ['pub"lic', 'p>', 'p<', 'p&', 'p[', '\xe9']:
+            with self.subTest(publicId=publicId):
+                with self.assertRaisesRegex(ValueError,
+                                            "invalid public identifier"):
+                    serialize(publicId, "s")
+        # a public identifier is meaningless without a system identifier
+        with self.assertRaisesRegex(ValueError, "requires a system"):
+            serialize("p", None)
+
+    def testSerializeComment(self):
+        impl = getDOMImplementation()
+        def serialize(data):
+            doc = impl.createDocument(None, "r", None)
+            doc.documentElement.appendChild(doc.createComment(data))
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("foo"), "<r><!--foo--></r>")
+        self.assertEqual(serialize(""), "<r><!----></r>")
+        self.assertEqual(serialize("-foo"), "<r><!---foo--></r>")
+        with self.assertRaisesRegex(ValueError, "'--' is not allowed"):
+            serialize("foo--bar")
+        # a trailing hyphen would be fused with the closing "-->"
+        with self.assertRaisesRegex(ValueError, "cannot end with"):
+            serialize("foo-")
+
+    def testSerializeProcessingInstruction(self):
+        impl = getDOMImplementation()
+        def serialize(target, data):
+            doc = impl.createDocument(None, "r", None)
+            pi = doc.createProcessingInstruction(target, data)
+            doc.documentElement.appendChild(pi)
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("p", "a"), "<r><?p a?></r>")
+        self.assertEqual(serialize("p", ""), "<r><?p ?></r>")
+        self.assertEqual(serialize("xml-stylesheet", 'href="a"'),
+                         '<r><?xml-stylesheet href="a"?></r>')
+        # "?>" would close the processing instruction
+        with self.assertRaisesRegex(ValueError, "'\\?>' is not allowed"):
+            serialize("p", "a?>b")
+        # the target "xml" is reserved
+        for target in ["xml", "XML", "XmL"]:
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(ValueError, "reserved"):
+                    serialize(target, "a")
+        # the target is a name
+        doc = impl.createDocument(None, "r", None)
+        pi = doc.createProcessingInstruction("p", "a")
+        doc.documentElement.appendChild(pi)
+        pi.target = "a b"
+        self.assertRaises(xml.dom.InvalidCharacterErr, doc.toxml)
 
 
     def testEmptyXMLNSValue(self):
