@@ -981,7 +981,7 @@ For an example of the usage of queues for interprocess communication see
 
       Can raise the :exc:`queue.ShutDown` when queue shuts down.
 
-      .. versionadded:: 3.16
+      .. versionadded:: next
 
    .. method:: put_nowait(obj)
 
