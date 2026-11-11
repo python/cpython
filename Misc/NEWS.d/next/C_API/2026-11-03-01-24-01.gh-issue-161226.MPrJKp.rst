@@ -1,2 +1,0 @@
-:c:func:`_PyTuple_Resize` now fails with :exc:`SystemError` if the hash value
-was already computed. Patch by Victor Stinner.

@@ -1,2 +1,0 @@
-Allow the garbage collector to break reference cycles involving property
-accessors or names.

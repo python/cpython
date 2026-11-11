@@ -1,2 +1,0 @@
-Fix :meth:`asyncio.Task.print_stack` displaying an incorrect exception line
-after a ``finally`` block. Patch by Timofei Ivankov.

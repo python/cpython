@@ -160,7 +160,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
     wchar_t *ptr = wcschr(SHORT_OPTS, option);
     if (ptr == NULL) {
         if (error) {
-            fprintf(stderr, "Invalid option '-%lc'\n", option);
+            fprintf(stderr, "Invalid option '-%lc'\n", (wint_t)option);
         }
         return '_';
     }
@@ -174,7 +174,7 @@ _PyOS_GetOpt(struct _PyOS_GetOpt *getopt)
             if (getopt->index >= argc) {
                 if (error) {
                     fprintf(stderr,
-                        "Argument expected for the -%lc option\n", option);
+                        "Argument expected for the -%lc option\n", (wint_t)option);
                 }
                 return '_';
             }

@@ -1,3 +1,0 @@
-Speed up class creation by resolving the special method slots of a new class
-with one pass over each class dict along the MRO instead of one lookup per
-slot name and per class.
