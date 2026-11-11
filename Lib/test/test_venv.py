@@ -663,6 +663,24 @@ class BasicTest(BaseTest):
             self.assertRaises((ValueError, OSError), venv.create, self.env_dir)
             self.clear_directory(self.env_dir)
 
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_symlinked_directory_error(self):
+        """
+        Test that venv creation fails when a directory inside the target
+        directory is a symlink.
+        """
+        outside = tempfile.mkdtemp()
+        self.addCleanup(rmtree, outside)
+        for n in range(1, len(self.lib) + 1):
+            subdirs = self.lib[:n]
+            with self.subTest(subdirs=subdirs):
+                rmtree(self.env_dir)
+                os.makedirs(os.path.join(self.env_dir, *subdirs[:-1]))
+                os.symlink(outside, os.path.join(self.env_dir, *subdirs),
+                           target_is_directory=True)
+                self.assertRaises(ValueError, venv.create, self.env_dir)
+                self.assertEqual(os.listdir(outside), [])
+
     def test_upgrade(self):
         """
         Test upgrading an existing environment directory.
@@ -845,6 +863,18 @@ class BasicTest(BaseTest):
         text = out.decode()
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
+
+    def test_fish_quoting(self):
+        """
+        Test that the template strings are quoted properly (fish)
+        """
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        context.script_path = 'activate.fish'
+        context.prompt = r"x\'$(echo PWNED)'\'"
+        self.assertEqual(
+            builder.replace_variables('__VENV_PROMPT__', context),
+            r"'x\\\'$(echo PWNED)\'\\\''")
 
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')

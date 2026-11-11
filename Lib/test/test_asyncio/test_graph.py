@@ -430,6 +430,77 @@ class CallStackTestBase:
             ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
         ])
 
+    async def test_stack_async_gen_asend(self):
+        # gh-160837: an async_generator_asend must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            await deep()
+            yield 1
+
+        async def consumer():
+            async for _ in gen():
+                pass
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
+    async def test_stack_async_gen_aclose(self):
+        # gh-160837: an async_generator_athrow must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            try:
+                yield 1
+            finally:
+                await deep()
+
+        async def consumer():
+            agen = gen()
+            await anext(agen)
+            await agen.aclose()
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
@@ -713,6 +784,11 @@ class CallStackTestBase:
         )
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
+
+    async def test_call_graph_depth_beyond_task(self):
+        # gh-161124
+        graph = asyncio.capture_call_graph(depth=2)
+        self.assertEqual(graph.call_stack, ())
 
     async def test_capture_call_graph_positive_limit(self):
         captured = None
