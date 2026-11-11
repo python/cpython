@@ -1,2 +1,0 @@
-Fix a buffer overflow when initializing a :class:`bytearray` from an
-iterator.

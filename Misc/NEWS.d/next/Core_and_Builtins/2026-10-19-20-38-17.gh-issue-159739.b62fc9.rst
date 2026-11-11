@@ -1,2 +1,0 @@
-Propagate errors during generic class construction and avoid a crash after
-failed generic alias substitution.
