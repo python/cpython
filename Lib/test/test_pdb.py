@@ -3263,6 +3263,35 @@ def test_pdb_issue_gh_136057():
     """
 
 
+def test_pdb_until_skip_comprehension():
+    """See GH-152373
+    "until" should get over a list comprehension with a breakpoint set on it
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'continue',
+    ...     'until',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>:3
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) until
+    > <doctest test.test_pdb.test_pdb_until_skip_comprehension[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3608,6 +3637,23 @@ def quux():
             'bœr',
             ('bœr', 5),
         )
+
+    def test_find_function_too_complex(self):
+        # gh-69919: compile() can raise more than SyntaxError.
+        self._assert_find_function(
+            b"def foo():\n    return " + b"-" * 100_000 + b"1\n"
+            b"def bar():\n    pass\n",
+            'bar',
+            ('bar', 4),
+        )
+
+    def test_compile_error_message(self):
+        p = pdb.Pdb()
+        self.assertEqual(p._compile_error_message('1 + 1'), '')
+        self.assertIn('SyntaxError', p._compile_error_message('1 +'))
+        # gh-69919: compile() can raise more than SyntaxError.
+        self.assertRegex(p._compile_error_message('-' * 100_000 + '1'),
+                         r'^(MemoryError|RecursionError|SyntaxError):')
 
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
@@ -4829,6 +4875,18 @@ class PdbTestInline(unittest.TestCase):
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
 
+    def test_nested_set_trace(self):
+        # Calling breakpoint() in pdb prompt should just be ignored.
+        script = "breakpoint()"
+        commands = """
+            breakpoint()
+            p 40 + 2
+            c
+        """
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn('42', stdout)
+        self.assertEqual(stderr, '')
+
     def test_readline_not_imported(self):
         """GH-138860
         Directly or indirectly importing readline might deadlock a subprocess
@@ -5013,8 +5071,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'I love Python', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_auto_indent(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
@@ -5053,8 +5112,9 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
-    @unittest.skipIf(sys.platform.startswith('freebsd'),
-                     '\\x08 is not interpreted as backspace on FreeBSD')
+    @unittest.skipIf(sys.platform.startswith(('freebsd', 'dragonfly', 'sunos')),
+                     '\\x08 does not remove the auto-indentation with '
+                     'GNU readline on this platform')
     def test_multiline_indent_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()

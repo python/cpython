@@ -1,7 +1,8 @@
 r"""HTTP/1.1 client library
 
-<intro stuff goes here>
-<other stuff, too>
+This module implements the client side of the HTTP and HTTPS protocols.
+HTTPConnection and HTTPSConnection manage a single connection to a server;
+HTTPResponse wraps the reply.
 
 HTTPConnection goes through a number of "states", which define when a client
 may legally make another request or fetch the response for a particular
@@ -1001,7 +1002,7 @@ class HTTPConnection:
         headers = [connect]
         for header, value in self._tunnel_headers.items():
             header_bytes = header.encode("latin-1")
-            value_bytes = value.encode("latin-1")
+            value_bytes = str(value).encode("latin-1")
             if not _is_legal_header_name(header_bytes):
                 raise ValueError('Invalid header name %r' % (header_bytes,))
             if _is_illegal_header_value(value_bytes):

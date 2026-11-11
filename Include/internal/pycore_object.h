@@ -742,6 +742,8 @@ _PyObject_ResurrectEnd(PyObject *op)
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 # ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 # endif
@@ -766,6 +768,17 @@ _Py_TryIncref(PyObject *op)
     return 0;
 #endif
 }
+
+// Like Py_XSETREF, but publish the new value atomically and delay the decref
+// using QSBR in the free-threaded build. The caller must synchronize writers.
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
 
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);

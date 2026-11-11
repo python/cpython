@@ -96,7 +96,7 @@ Here are the methods of the :class:`Message` class:
          text = fp.getvalue()
 
       If the message object contains binary data that is not encoded according
-      to RFC standards, the non-compliant data will be replaced by unicode
+      to RFC standards, the non-compliant data will be replaced by Unicode
       "unknown character" code points.  (See also :meth:`.as_bytes` and
       :class:`~email.generator.BytesGenerator`.)
 

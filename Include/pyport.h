@@ -565,9 +565,21 @@ extern "C" {
 //
 // Example: _Py_TYPEOF(x) x_copy = (x);
 //
-// The macro is only defined if GCC or clang compiler is used.
-#if defined(__GNUC__) || defined(__clang__)
+// On C23, use typeof(). Otherwise, use __typeof__()
+// if on GCC, clang or MSVC 17.9 and newer.
+//
+// gh-157649: Do not use decltype() on C++, since it produces invalid code in
+// Py_CLEAR()/Py_SETREF().
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#  define _Py_TYPEOF(expr) typeof(expr)
+#elif (defined(__GNUC__) || defined(__clang__) \
+       || (defined(_MSC_VER) && _MSC_VER >= 1939 && !defined(__cplusplus)))
 #  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
+#ifdef _Py_TESTCEXT_NO_TYPEOF
+   // Exercise fallback implementations in test_cext.
+#  undef _Py_TYPEOF
 #endif
 
 
@@ -577,6 +589,8 @@ extern "C" {
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
 #      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#      define _Py_MSAN_UNPOISON(PTR, SIZE)  (__msan_unpoison(PTR, SIZE))
+#      define _Py_MSAN_UNPOISON_STRING(STR)  (__msan_unpoison_string(STR))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
@@ -590,6 +604,9 @@ extern "C" {
 #      define _Py_THREAD_SANITIZER
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
+#  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
@@ -614,6 +631,15 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_NO_SANITIZE_FUNCTION
+#  define _Py_NO_SANITIZE_FUNCTION
+#endif
+#ifndef _Py_MSAN_UNPOISON
+#  define _Py_MSAN_UNPOISON(PTR, SIZE)
+#endif
+#ifndef _Py_MSAN_UNPOISON_STRING
+#  define _Py_MSAN_UNPOISON_STRING(STR)
 #endif
 
 /* AIX has __bool__ redefined in it's system header file. */

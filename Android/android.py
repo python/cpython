@@ -155,7 +155,7 @@ def android_env(host):
         f"PREFIX={prefix}; "
         f". {ENV_SCRIPT}; "
         f"export",
-        check=True, shell=True, capture_output=True, encoding='utf-8',
+        check=True, shell=True, stdout=subprocess.PIPE, encoding='utf-8',
     ).stdout
 
     env = {}
@@ -221,8 +221,8 @@ def unpack_deps(host, prefix_dir, cache_dir):
     for name_ver in [
         "bzip2-1.0.8-3",
         "libffi-3.4.4-3",
-        "openssl-3.5.7-0",
-        "sqlite-3.50.4-0",
+        "openssl-3.5.9-0",
+        "sqlite-3.53.4-0",
         "xz-5.4.6-1",
         "zstd-1.5.7-2"
     ]:
@@ -390,10 +390,10 @@ def setup_testbed():
     if all((TESTBED_DIR / path).exists() for path in paths):
         return
 
-    # The wrapper version isn't important, as any version of the wrapper can
-    # download any version of Gradle. The Gradle version actually used for the
-    # build is specified in testbed/gradle/wrapper/gradle-wrapper.properties.
-    version = "8.9.0"
+    # Any version of the wrapper can run any reasonably close version of Gradle, so this
+    # doesn't need to match the Gradle version used for the build, which is specified in
+    # testbed/gradle/wrapper/gradle-wrapper.properties.
+    version = "9.5.0"
 
     for path in paths:
         out_path = TESTBED_DIR / path
@@ -622,7 +622,8 @@ async def read_logcat(stream):
     except ValueError:
         priority = LogPriority.UNKNOWN
 
-    payload_fields = (await read_bytes(payload_len - 1)).split(b"\0")
+    payload = await read_bytes(payload_len - 1)
+    payload_fields = payload.split(b"\0")
     if len(payload_fields) < 2:
         raise ValueError(
             f"payload {payload!r} does not contain at least 2 "
@@ -658,7 +659,8 @@ async def gradle_task(context):
             # Randomization is disabled because order-dependent failures are
             # much less likely to pass on a rerun in single-process mode.
             "-m", "test",
-            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize",
+            "--pythoninfo",
         ]
 
     if not any(arg in context.args for arg in ["-c", "-m"]):

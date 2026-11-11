@@ -3226,6 +3226,21 @@ while 1:
         self._check_error(source, "too many statically nested blocks")
 
     @support.cpython_only
+    def test_nested_inlined_comprehensions_block_limit(self):
+        # Each inlined comprehension with locals emits SETUP_FINALLY, which
+        # must count toward CO_MAXBLOCKS (gh-156091).
+        def src(depth):
+            e = "i for i in r"
+            for _ in range(depth - 1):
+                e = "[" + e + "] for i in r"
+            return "x = [" + e + "]"
+
+        CO_MAXBLOCKS = 21
+        compile(src(CO_MAXBLOCKS), "<testcase>", "exec")
+        self._check_error(src(CO_MAXBLOCKS + 1),
+                          "too many statically nested blocks")
+
+    @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
@@ -3313,6 +3328,30 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_diamond_operator(self):
+        self._check_error(
+            "1<>2",
+            r"Maybe you meant '!=' instead of '<>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=2,
+            end_offset=4,
+        )
+
+    def test_diamond_operator_barry_as_flufl(self):
+        compile(
+            "from __future__ import barry_as_FLUFL\n1<>2",
+            "<test>", "exec",
+        )
+        self._check_error(
+            "from __future__ import barry_as_FLUFL\na != b",
+            "with Barry as BDFL, use '<>' instead of '!='",
+            lineno=2,
+            end_lineno=2,
+            offset=3,
+            end_offset=5,
+        )
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

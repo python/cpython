@@ -1067,7 +1067,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         Py_ssize_t cur_trans_idx = PyLong_AsSsize_t(num);
-        if (cur_trans_idx == -1) {
+        if (cur_trans_idx == -1 && PyErr_Occurred()) {
             goto error;
         }
 
@@ -1178,7 +1178,12 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         self->ttinfo_before = &(self->_ttinfos[0]);
     }
 
-    if (tz_str != Py_None && PyObject_IsTrue(tz_str)) {
+    int has_tz_str = PyObject_IsTrue(tz_str);
+    if (has_tz_str < 0) {
+        goto error;
+    }
+
+    if (has_tz_str) {
         if (parse_tz_str(state, tz_str, &(self->tzrule_after))) {
             goto error;
         }
@@ -1428,7 +1433,7 @@ dayrule_year_to_timestamp(TransitionRuleType *base_self, int year)
     // you would use a Julian day, e.g. J91 always refers to April 1st and J365
     // always refers to December 31st.
     uint16_t day = self->day;
-    if (self->julian && day >= 59 && is_leap_year(year)) {
+    if (self->julian && day >= 60 && is_leap_year(year)) {
         day += 1;
     }
 
@@ -2308,7 +2313,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         hour = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (hour == -1) {
+        if (hour == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2318,7 +2323,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         minute = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (minute == -1) {
+        if (minute == -1 && PyErr_Occurred()) {
             return -1;
         }
 
@@ -2328,7 +2333,7 @@ get_local_timestamp(PyObject *dt, int64_t *local_ts)
         }
         second = PyLong_AsLong(num);
         Py_DECREF(num);
-        if (second == -1) {
+        if (second == -1 && PyErr_Occurred()) {
             return -1;
         }
     }
@@ -2430,11 +2435,9 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
-        if (rv < 0) {
-            return NULL;
-        }
-        if (rv) {
+        if (key == node->key ||
+            (PyUnicode_Check(key) && PyUnicode_Check(node->key) &&
+             PyUnicode_Equal(key, node->key))) {
             return (StrongCacheNode *)node;
         }
 

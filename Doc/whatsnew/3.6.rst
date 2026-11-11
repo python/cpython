@@ -2111,11 +2111,11 @@ API and Feature Removals
   name for a given path.
   (Contributed by Yury Selivanov in :issue:`13248`.)
 
-* ``traceback.Ignore`` class and ``traceback.usage``, ``traceback.modname``,
-  ``traceback.fullmodname``, ``traceback.find_lines_from_code``,
-  ``traceback.find_lines``, ``traceback.find_strings``,
-  ``traceback.find_executable_lines`` methods were removed from the
-  :mod:`traceback` module. They were undocumented methods deprecated since
+* ``trace.Ignore`` class and ``trace.usage``, ``trace.modname``,
+  ``trace.fullmodname``, ``trace.find_lines_from_code``,
+  ``trace.find_lines``, ``trace.find_strings``,
+  ``trace.find_executable_linenos`` methods were removed from the
+  :mod:`trace` module. They were undocumented methods deprecated since
   Python 3.2 and equivalent functionality is available from private methods.
 
 * The ``tk_menuBar()`` and ``tk_bindForTraversal()`` dummy methods in

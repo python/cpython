@@ -952,6 +952,7 @@ paramspecattr_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
 
     Py_XDECREF(psa->__origin__);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1334,20 +1335,12 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
 }
@@ -1866,14 +1859,23 @@ typealias_dealloc(PyObject *self)
 static PyObject *
 typealias_get_value(typealiasobject *ta)
 {
-    if (ta->value != NULL) {
-        return Py_NewRef(ta->value);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    result = Py_XNewRef(ta->value);
+    Py_END_CRITICAL_SECTION();
+    if (result != NULL) {
+        return result;
     }
-    PyObject *result = PyObject_CallNoArgs(ta->compute_value);
+    result = PyObject_CallNoArgs(ta->compute_value);
     if (result == NULL) {
         return NULL;
     }
+    PyObject *old_value;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    old_value = ta->value;
     ta->value = Py_NewRef(result);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_value);
     return result;
 }
 
@@ -2092,7 +2094,7 @@ typealias.__new__ as typealias_new
     name: object(subclass_of="&PyUnicode_Type")
     value: object
     *
-    type_params: object = NULL
+    type_params: object(c_default="NULL") = ()
 
 Create a TypeAliasType.
 [clinic start generated code]*/
@@ -2100,7 +2102,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params)
-/*[clinic end generated code: output=8920ce6bdff86f00 input=df163c34e17e1a35]*/
+/*[clinic end generated code: output=8920ce6bdff86f00 input=8838986b41cae743]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2279,6 +2281,9 @@ PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
     params = unpack_typevartuples(params);
+    if (params == NULL) {
+        return NULL;
+    }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {

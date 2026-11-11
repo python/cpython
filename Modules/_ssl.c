@@ -62,6 +62,7 @@
 /* Include OpenSSL header files */
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
+#include "openssl/evp.h"
 #include "openssl/x509.h"
 #include "openssl/x509v3.h"
 #include "openssl/pem.h"
@@ -941,7 +942,9 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
             int mode = SSL_get_verify_mode(self->ssl);
             if (mode & SSL_VERIFY_PEER) {
                 mode |= SSL_VERIFY_POST_HANDSHAKE;
-                SSL_set_verify(self->ssl, mode, NULL);
+                /* Keep ctx verify callback (distrusted SPKI check) */
+                SSL_set_verify(self->ssl, mode,
+                               SSL_get_verify_callback(self->ssl));
             }
         } else {
             /* client socket */
@@ -1512,6 +1515,7 @@ _get_peer_alt_names (_sslmodulestate *state, X509 *certificate) {
 
 
   fail:
+    sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
     if (biobuf != NULL)
         BIO_free(biobuf);
 
@@ -1953,31 +1957,37 @@ _ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
 /*[clinic end generated code: output=5acdae414e13f913 input=079f8ff5c205cb3b]*/
 {
     PyObject *retval;
+    X509 *peer = NULL;
     /* borrowed reference */
-    /* TODO: include SSL_get_peer_certificate() for server-side sockets */
     STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
-    if (chain == NULL) {
+    /* OpenSSL does not include the peer cert in the chain for server side
+     * connections, so the chain alone does not tell whether the client sent
+     * a certificate: the chain is empty when it did not, and NULL when the
+     * session was resumed from a ticket (which stores the peer cert only). */
+    if (self->socket_type == PY_SSL_SERVER) {
+        peer = SSL_get_peer_certificate(self->ssl);
+        if (peer == NULL) {
+            Py_RETURN_NONE;
+        }
+    }
+    else if (chain == NULL) {
         Py_RETURN_NONE;
     }
-    retval = _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+    retval = chain == NULL
+        ? PyList_New(0)
+        : _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
     if (retval == NULL) {
+        X509_free(peer);
         return NULL;
     }
-    /* OpenSSL does not include peer cert for server side connections */
-    if (self->socket_type == PY_SSL_SERVER) {
-        PyObject *peerobj = NULL;
-        X509 *peer = SSL_get_peer_certificate(self->ssl);
-
-        if (peer == NULL) {
-            peerobj = Py_NewRef(Py_None);
-        } else {
-            /* consume X509 reference on success */
-            peerobj = _PySSL_CertificateFromX509(self->ctx->state, peer, 0);
-            if (peerobj == NULL) {
-                X509_free(peer);
-                Py_DECREF(retval);
-                return NULL;
-            }
+    if (peer != NULL) {
+        /* consume X509 reference on success */
+        PyObject *peerobj = _PySSL_CertificateFromX509(self->ctx->state,
+                                                       peer, 0);
+        if (peerobj == NULL) {
+            X509_free(peer);
+            Py_DECREF(retval);
+            return NULL;
         }
         int res = PyList_Insert(retval, 0, peerobj);
         Py_DECREF(peerobj);
@@ -3070,6 +3080,66 @@ static PyType_Spec PySSLSocket_spec = {
  * _SSLContext objects
  */
 
+#include "_ssl/distrusted_spki.h"
+
+/* Returns 1 if the SHA-256 of the cert's SPKI is on the distrusted list,
+   0 if not (okay), -1 on an internal error. */
+static int
+_cert_has_distrusted_spki(X509 *cert)
+{
+    unsigned char *spki = NULL;
+    int spki_len = i2d_X509_PUBKEY(X509_get_X509_PUBKEY(cert), &spki);
+    if (spki_len <= 0 || spki == NULL) {
+        return -1;
+    }
+
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
+    int ok = EVP_Digest(spki, (size_t)spki_len, digest, &digest_len,
+                        EVP_sha256(), NULL);
+    OPENSSL_free(spki);
+    assert(sizeof(_distrusted_spki[0]) == SHA256_DIGEST_LENGTH);
+    if (!ok
+        || digest_len != SHA256_DIGEST_LENGTH
+        || sizeof(_distrusted_spki[0]) != SHA256_DIGEST_LENGTH) {
+        return -1;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(_distrusted_spki); i++) {
+        if (memcmp(digest, _distrusted_spki[i], SHA256_DIGEST_LENGTH) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Verify callback, called once per cert. Reject distrusted SPKIs. */
+static int
+_ssl_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
+{
+    /* Don't override an error OpenSSL already reported for this certificate. */
+    if (!preverify_ok) {
+        return preverify_ok;
+    }
+    X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+    if (cert == NULL) {
+        return preverify_ok;
+    }
+    switch (_cert_has_distrusted_spki(cert)) {
+    case 0:
+        /* okay: not on the distrusted list */
+        return preverify_ok;
+    case 1:
+        /* rejected: public key is on the distrusted list */
+        X509_STORE_CTX_set_error(x509_ctx, X509_V_ERR_CERT_REJECTED);
+        return 0;
+    default:
+        /* internal error */
+        X509_STORE_CTX_set_error(x509_ctx, X509_V_ERR_UNSPECIFIED);
+        return 0;
+    }
+}
+
 static int
 _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
 {
@@ -3094,7 +3164,7 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
      * server sockets and SSL_set_post_handshake_auth() for client. */
 
-    SSL_CTX_set_verify(self->ctx, mode, NULL);
+    SSL_CTX_set_verify(self->ctx, mode, _ssl_verify_callback);
     return 0;
 }
 
@@ -3351,6 +3421,9 @@ context_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     (void)context_clear(op);
+    /* The SSL_CTX may outlive this object as the session_ctx of sockets that
+       were switched to another context; leave no Python callback behind. */
+    SSL_CTX_set_tlsext_servername_callback(self->ctx, NULL);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
     tp->tp_free(self);
@@ -4664,10 +4737,10 @@ _ssl__SSLContext_set_ecdh_curve_impl(PySSLContext *self, PyObject *name)
 }
 
 static int
-_servername_callback(SSL *s, int *al, void *args)
+_servername_callback(SSL *s, int *al, void *Py_UNUSED(args))
 {
     int ret;
-    PySSLContext *sslctx = (PySSLContext *) args;
+    PySSLContext *sslctx;
     PySSLSocket *ssl;
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
@@ -4676,17 +4749,29 @@ _servername_callback(SSL *s, int *al, void *args)
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
     PyGILState_STATE gstate = PyGILState_Ensure();
 
+    /* Do not use the SSL_CTX's servername arg to find the context: it is a
+       borrowed pointer to whichever _SSLContext installed the callback, and
+       that object may already be gone while OpenSSL still reaches this
+       callback through the connection's session_ctx (e.g. on the second
+       ClientHello after a HelloRetryRequest, once sni_callback has switched
+       the socket to another context).  The socket's current context is
+       always alive. */
+    ssl = SSL_get_app_data(s);
+    assert(ssl != NULL);
+    Py_BEGIN_CRITICAL_SECTION(ssl);
+    sslctx = (PySSLContext *)Py_NewRef(ssl->ctx);
+    Py_END_CRITICAL_SECTION();
+    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
+
     Py_BEGIN_CRITICAL_SECTION(sslctx);
     sni_cb = Py_XNewRef(sslctx->set_sni_cb);
     Py_END_CRITICAL_SECTION();
 
     if (sni_cb == NULL) {
+        Py_DECREF(sslctx);
         PyGILState_Release(gstate);
         return SSL_TLSEXT_ERR_OK;
     }
-
-    ssl = SSL_get_app_data(s);
-    assert(Py_IS_TYPE(ssl, get_state_ctx(sslctx)->PySSLSocket_Type));
 
     /* The servername callback expects an argument that represents the current
      * SSL connection and that has a .context attribute that can be changed to
@@ -4770,12 +4855,14 @@ _servername_callback(SSL *s, int *al, void *args)
     }
 
     Py_DECREF(sni_cb);
+    Py_DECREF(sslctx);
     PyGILState_Release(gstate);
     return ret;
 
 error:
     Py_XDECREF(ssl_socket);
     Py_XDECREF(sni_cb);
+    Py_DECREF(sslctx);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     PyGILState_Release(gstate);
@@ -4832,7 +4919,6 @@ _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
     }
     else {
         Py_XSETREF(self->set_sni_cb, Py_NewRef(value));
-        SSL_CTX_set_tlsext_servername_arg(self->ctx, self);
         SSL_CTX_set_tlsext_servername_callback(self->ctx, _servername_callback);
     }
     return 0;

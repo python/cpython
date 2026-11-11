@@ -433,7 +433,10 @@ if sys.platform.startswith("win"):
                           file=sys.__stderr__)
                     mode = 0
                 if stat.S_ISDIR(mode):
-                    _waitfor(_rmtree_inner, fullname, waitall=True)
+                    # Do not follow junctions, which os.lstat() reports
+                    # as directories.
+                    if not os.path.isjunction(fullname):
+                        _waitfor(_rmtree_inner, fullname, waitall=True)
                     _force_run(fullname, os.rmdir, fullname)
                 else:
                     _force_run(fullname, os.unlink, fullname)
@@ -467,12 +470,23 @@ else:
 
         def _rmtree_inner(path):
             from test.support import _force_run
+            # Clear file flags (e.g. UF_IMMUTABLE, UF_NOUNLINK on BSD).
+            if hasattr(os, 'chflags'):
+                try:
+                    os.chflags(path, 0)
+                except OSError:
+                    pass
             for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
                     mode = os.lstat(fullname).st_mode
                 except OSError:
                     mode = 0
+                if hasattr(os, 'lchflags'):
+                    try:
+                        os.lchflags(fullname, 0)
+                    except OSError:
+                        pass
                 if stat.S_ISDIR(mode):
                     _rmtree_inner(fullname)
                     _force_run(path, os.rmdir, fullname)
@@ -671,6 +685,24 @@ def fd_count():
         except FileNotFoundError:
             pass
 
+    if sys.platform == "freebsd" and fd_count._dev_fd_mounted:
+        # Check if /dev/fd/ fdescfs file system is mounted. By default, it's
+        # not mounted and /dev/fd/ always contains 3 files (0, 1, 2).
+        try:
+            dirfd = os.open("/dev/fd", os.O_RDONLY)
+            try:
+                if os.path.exists(f"/dev/fd/{dirfd}"):
+                    names = list(os.scandir(dirfd))
+                    # Don't count dirfd
+                    return len(names) - 1
+                else:
+                    # fdescfs is not mounted
+                    fd_count._dev_fd_mounted = False
+            finally:
+                os.close(dirfd)
+        except FileNotFoundError:
+            pass
+
     MAXFD = 256
     if hasattr(os, 'sysconf'):
         try:
@@ -717,6 +749,9 @@ def fd_count():
                 msvcrt.CrtSetReportMode(report_type, old_modes[report_type])
 
     return count
+
+# On FreeBSD, flag set to False if /dev/fd/ is not mounted as fdescfs
+fd_count._dev_fd_mounted = True
 
 
 if hasattr(os, "umask"):

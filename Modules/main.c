@@ -181,6 +181,10 @@ pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
         return -1;
     }
 
+    if (PyDict_SetItemString(sysdict, "_path0", path0) < 0) {
+        return -1;
+    }
+
     if (PyList_Insert(sys_path, 0, path0)) {
         return -1;
     }
@@ -252,6 +256,7 @@ pymain_run_command(wchar_t *command)
     }
 
     if (PySys_Audit("cpython.run_command", "O", unicode) < 0) {
+        Py_DECREF(unicode);
         return pymain_exit_err_print();
     }
 

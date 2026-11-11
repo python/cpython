@@ -71,7 +71,6 @@ import sysconfig
 import textwrap
 import time
 import tokenize
-import urllib.parse
 import warnings
 from annotationlib import Format
 from collections import deque
@@ -851,7 +850,8 @@ class HTMLDoc(Doc):
         head = '<strong class="title">%s</strong>' % linkedname
         try:
             path = inspect.getabsfile(object)
-            url = urllib.parse.quote(path)
+            import urllib.request
+            url = urllib.request.pathname2url(path)
             filelink = self.filelink(url, path)
         except TypeError:
             filelink = '(built-in)'
@@ -1811,7 +1811,8 @@ def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
     object, name = resolve(thing, forceload)
     page = html.page(describe(object), html.document(object, name))
-    with open(name + '.html', 'w', encoding='utf-8') as file:
+    with open(name + '.html', 'w', encoding='utf-8',
+              errors='backslashreplace') as file:
         file.write(page)
     print('wrote', name + '.html')
 
@@ -1931,7 +1932,6 @@ class Helper:
         ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
-        '`': 'BACKQUOTES',
         '(': 'TUPLES FUNCTIONS CALLS',
         ')': 'TUPLES FUNCTIONS CALLS',
         '[': 'LISTS SUBSCRIPTS SLICINGS',
@@ -1947,12 +1947,12 @@ class Helper:
 
     topics = {
         'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '
-                  'FUNCTIONS CLASSES MODULES FILES inspect'),
+                  'FUNCTIONS CLASSES MODULES inspect'),
         'STRINGS': ('strings', 'str UNICODE SEQUENCES STRINGMETHODS '
                     'FORMATTING TYPES'),
         'STRINGMETHODS': ('string-methods', 'STRINGS FORMATTING'),
         'FORMATTING': ('formatstrings', 'OPERATORS'),
-        'UNICODE': ('strings', 'encodings unicode SEQUENCES STRINGMETHODS '
+        'UNICODE': ('strings', 'encodings SEQUENCES STRINGMETHODS '
                     'FORMATTING TYPES'),
         'NUMBERS': ('numbers', 'INTEGER FLOAT COMPLEX TYPES'),
         'INTEGER': ('integers', 'int range'),
@@ -2409,7 +2409,7 @@ def _start_server(urlhandler, hostname, port):
             self.send_header('Content-Type', '%s; charset=UTF-8' % content_type)
             self.end_headers()
             self.wfile.write(self.urlhandler(
-                self.path, content_type).encode('utf-8'))
+                self.path, content_type).encode('utf-8', 'backslashreplace'))
 
         def log_message(self, *args):
             # Don't log messages.

@@ -7,9 +7,9 @@ exit_with_usage ()
     local usage
     usage="Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
     if [ "$1" -eq 0 ]; then
-        echo "$usage"
+        printf '%s\n' "$usage"
     else
-        echo "$usage" >&2
+        printf '%s\n' "$usage" >&2
     fi
     exit $1
 }
@@ -19,29 +19,46 @@ if [ "$1" = "" ] ; then
 fi
 
 # Returns the actual prefix where this script was installed to.
+# Fails if the directory containing this script cannot be resolved.
 installed_prefix ()
 {
-    RESULT=$(dirname $(cd $(dirname "$1") && pwd -P))
+    RESULT=$(cd "$(dirname "$1")" && pwd -P) || return 1
+    RESULT=$(dirname "$RESULT")
     if which readlink >/dev/null 2>&1 ; then
         if readlink -f "$RESULT" >/dev/null 2>&1; then
           RESULT=$(readlink -f "$RESULT")
         fi
     fi
-    echo $RESULT
+    printf '%s\n' "$RESULT"
 }
 
-prefix_real=$(installed_prefix "$0")
+prefix_real=$(installed_prefix "$0") || {
+    printf '%s\n' "$0: cannot determine the installation prefix" >&2
+    exit 1
+}
 
-# Use sed to fix paths from their built-to locations to their installed-to
-# locations. Keep prefix & exec_prefix using their original values in case
+# Fix paths from their built-to locations to their installed-to locations
+# by replacing the first occurrence of the configured prefix with the actual
+# one. Keep prefix & exec_prefix using their original values in case
 # they are referenced in other configure variables, to prevent double
 # substitution, issue #22140.
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 exec_prefix_real=${prefix_real}
-includedir=$(echo "@includedir@" | sed "s#$prefix#$prefix_real#")
-libdir=$(echo "@libdir@" | sed "s#$prefix#$prefix_real#")
-CFLAGS=$(echo "@CFLAGS@" | sed "s#$prefix#$prefix_real#")
+relocate ()
+{
+    case "$1" in
+        *"$prefix"*)
+            printf '%s\n' "${1%%"$prefix"*}${prefix_real}${1#*"$prefix"}"
+        ;;
+        *)
+            printf '%s\n' "$1"
+        ;;
+    esac
+}
+includedir=$(relocate "@includedir@")
+libdir=$(relocate "@libdir@")
+CFLAGS=$(relocate "@CFLAGS@")
 VERSION="@VERSION@"
 LIBM="@LIBM@"
 LIBC="@LIBC@"
@@ -55,7 +72,7 @@ OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
 LIBDEST=${prefix_real}/lib/python${VERSION}
-LIBPL=$(echo "@LIBPL@" | sed "s#$prefix#$prefix_real#")
+LIBPL=$(relocate "@LIBPL@")
 SO="@EXT_SUFFIX@"
 PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
 INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
@@ -63,9 +80,9 @@ PLATINCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
 PY_EMBED=0
 
 # Scan for --help or unknown argument.
-for ARG in $*
+for ARG in "$@"
 do
-    case $ARG in
+    case "$ARG" in
         --help)
             exit_with_usage 0
         ;;
@@ -88,35 +105,35 @@ for ARG in "$@"
 do
     case "$ARG" in
         --prefix)
-            echo "$prefix_real"
+            printf '%s\n' "$prefix_real"
         ;;
         --exec-prefix)
-            echo "$exec_prefix_real"
+            printf '%s\n' "$exec_prefix_real"
         ;;
         --includes)
-            echo "$INCDIR $PLATINCDIR"
+            printf '%s\n' "$INCDIR $PLATINCDIR"
         ;;
         --cflags)
-            echo "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
+            printf '%s\n' "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
         ;;
         --libs)
-            echo "$LIBS"
+            printf '%s\n' "$LIBS"
         ;;
         --ldflags)
             LIBPLUSED=
             if [ "$PY_ENABLE_SHARED" = "0" ] ; then
                 LIBPLUSED="-L$LIBPL"
             fi
-            echo "$LIBPLUSED -L$libdir $LIBS"
+            printf '%s\n' "$LIBPLUSED -L$libdir $LIBS"
         ;;
         --extension-suffix)
-            echo "$SO"
+            printf '%s\n' "$SO"
         ;;
         --abiflags)
-            echo "$ABIFLAGS"
+            printf '%s\n' "$ABIFLAGS"
         ;;
         --configdir)
-            echo "$LIBPL"
+            printf '%s\n' "$LIBPL"
         ;;
 esac
 done

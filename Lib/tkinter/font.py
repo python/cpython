@@ -92,7 +92,8 @@ class Font:
         if exists:
             self.delete_font = False
             # confirm font exists
-            if self.name not in tk.splitlist(tk.call("font", "names")):
+            name = getattr(name, 'string', name)  # can be a Tcl object
+            if name not in tk.splitlist(tk.call("font", "names")):
                 raise tkinter._tkinter.TclError(
                     "named font %s does not already exist" % (self.name,))
             # if font config info supplied, apply it
@@ -107,7 +108,7 @@ class Font:
         self._call  = tk.call
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def __repr__(self):
         return f"<{self.__class__.__module__}.{self.__class__.__qualname__}" \
@@ -116,7 +117,13 @@ class Font:
     def __eq__(self, other):
         if not isinstance(other, Font):
             return NotImplemented
-        return self.name == other.name and self._tk == other._tk
+        name = self.name
+        other_name = other.name
+        if type(name) is not type(other_name):
+            # A Tcl object does not compare equal to a string.
+            name = getattr(name, 'string', name)
+            other_name = getattr(other_name, 'string', other_name)
+        return name == other_name and self._tk == other._tk
 
     def __getitem__(self, key):
         return self.cget(key)

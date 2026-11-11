@@ -39,6 +39,27 @@ class TestSpecifics(unittest.TestCase):
     def test_empty(self):
         compile("", "<test>", "exec")
 
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_push_cold_blocks_to_end_allocation_failure(self):
+        code = textwrap.dedent("""
+            from test import support
+
+            source = "async def f():\\n    await x\\n"
+            for n in range(1, 1000):
+                with support.inject_memory_error_cm(n, n + 1):
+                    try:
+                        compile(source, "<test>", "exec")
+                    except MemoryError:
+                        continue
+                break
+            else:
+                raise AssertionError("compile() never succeeded")
+            if n == 1:
+                raise AssertionError("no MemoryError raised")
+        """)
+        script_helper.assert_python_ok('-c', code)
+
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
         compile("\r", "<test>", "exec")
@@ -724,12 +745,12 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.run_with_limited_c_stack(500_000)
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        # Android test devices have less memory.
-        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
+        crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1035,8 +1056,7 @@ class TestSpecifics(unittest.TestCase):
     # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # Android test devices have less memory.
-        size = 100_000 if sys.platform == "android" else 200_000
+        size = 200_000
         compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate

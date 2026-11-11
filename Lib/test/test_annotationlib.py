@@ -654,6 +654,13 @@ class TestGetAnnotations(unittest.TestCase):
         result = get_annotations(f, eval_str=True)
         self.assertEqual(result, {'x': int, 'return': str})
 
+    def test_eval_str_wrapped_partial_cycle_self(self):
+        def f(x: 'int') -> 'str': ...
+        f.__wrapped__ = functools.partial(f, 0)
+        # Cycle is detected and broken; globals from f itself are used.
+        result = get_annotations(f, eval_str=True)
+        self.assertEqual(result, {'x': int, 'return': str})
+
     def test_eval_str_wrapped_cycle_mutual(self):
         # gh-146556: mutual __wrapped__ cycle (a -> b -> a) must not hang.
         def a(x: 'int'): ...
@@ -1850,6 +1857,18 @@ class TestTypeRepr(unittest.TestCase):
             type_repr(nested), f"{__name__}.TestTypeRepr.test_type_repr.<locals>.nested"
         )
         self.assertEqual(type_repr(len), "len")
+        # gh-152692: built-in methods have __module__ set to None
+        self.assertEqual(type_repr([].append), "list.append")
+        self.assertEqual(type_repr((1).bit_length), "int.bit_length")
+        self.assertEqual(type_repr(dict.fromkeys), "dict.fromkeys")
+        # Methods of extension types also have __module__ set to None, but
+        # are not in the builtins module.
+        import datetime
+        self.assertEqual(
+            type_repr(datetime.datetime(2000, 1, 1).isoformat),
+            "datetime.datetime.isoformat",
+        )
+        self.assertEqual(type_repr(datetime.date.today), "datetime.date.today")
         self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
         self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
         self.assertEqual(type_repr(...), "...")
@@ -1862,7 +1881,7 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr(t'''{ 0
             & 1
             | 2
-        }'''), 't"""{ 0\n            & 1\n            | 2}"""')
+        }'''), 't"""{ 0\n            & 1\n            | 2\n        }"""')
         self.assertEqual(
             type_repr(Template("hi", Interpolation(42, "42"))), "t'hi{42}'"
         )
@@ -1873,6 +1892,10 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(
             type_repr(Template("hi", Interpolation(42, "   "))),
             "Template('hi', Interpolation(42, '   ', None, ''))",
+        )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "4!2"))),
+            "Template('hi', Interpolation(42, '4!2', None, ''))",
         )
         # gh138558: perhaps in the future, we can improve this behavior:
         self.assertEqual(type_repr(Template(Interpolation(42, "99"))), "t'{99}'")
@@ -2133,7 +2156,12 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertIsNone(fr.__resolved_str_cache__)
 
         self.assertEqual(fr.evaluate(format=Format.STRING), "unknown | str | int | list[str] | tuple[int, ...]")
+
+        # Test that the cache is now set correctly
         self.assertEqual(fr.__resolved_str_cache__, "unknown | str | int | list[str] | tuple[int, ...]")
+
+        # Test that future evaluations return the same cache
+        self.assertIs(fr.evaluate(format=Format.STRING), fr.__resolved_str_cache__)
 
     def test_evaluate_forwardref_format(self):
         fr = ForwardRef("undef")

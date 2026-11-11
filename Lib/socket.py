@@ -552,7 +552,11 @@ def fromfd(fd, family, type, proto=0):
     descriptor.  The remaining arguments are the same as for socket().
     """
     nfd = dup(fd)
-    return socket(family, type, proto, nfd)
+    try:
+        return socket(family, type, proto, nfd)
+    except:
+        close(nfd)
+        raise
 
 if hasattr(_socket.socket, "sendmsg"):
     def send_fds(sock, buffers, fds, flags=0, address=None):
@@ -891,7 +895,9 @@ def has_dualstack_ipv6():
     try:
         with socket(AF_INET6, SOCK_STREAM) as sock:
             sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
-            return True
+            # On some platforms (e.g. DragonFly BSD) setting IPV6_V6ONLY to 0
+            # silently has no effect, so check that it was actually cleared.
+            return sock.getsockopt(IPPROTO_IPV6, IPV6_V6ONLY) == 0
     except error:
         return False
 

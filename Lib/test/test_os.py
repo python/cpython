@@ -25,6 +25,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
 import time
 import types
 import unittest
@@ -35,6 +36,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
+from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -168,7 +170,8 @@ class MiscTests(unittest.TestCase):
                         # ("The filename or extension is too long")
                         break
                     except OSError as exc:
-                        if exc.errno == errno.ENAMETOOLONG:
+                        # DragonFly BSD raises EFAULT for a too long path.
+                        if exc.errno in (errno.ENAMETOOLONG, errno.EFAULT):
                             break
                         else:
                             raise
@@ -899,11 +902,18 @@ class UtimeTests(unittest.TestCase):
                 or (st.st_mtime != st[8])
                 or (st.st_ctime != st[9]))
 
+    def support_atime(self, filename):
+        # Heuristic to check if the filesystem stores the access time.
+        # Use whole seconds, to not depend on the timestamp resolution.
+        os.utime(filename, (1, 2))
+        return os.stat(filename).st_atime == 1
+
     def _test_utime(self, set_time, filename=None):
         if not filename:
             filename = self.fname
 
         support_subsecond = self.support_subsecond(filename)
+        support_atime = self.support_atime(filename)
         if support_subsecond:
             # Timestamp with a resolution of 1 microsecond (10^-6).
             #
@@ -930,18 +940,22 @@ class UtimeTests(unittest.TestCase):
             # digits worth of sub-second precision.
             # Some day it would be good to fix this upstream.
             delta=1e-5
-            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+            if support_atime:
+                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+                self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
             self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-5)
-            self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
             self.assertAlmostEqual(st.st_mtime_ns, mtime_ns, delta=1e9 * 1e-5)
         else:
             if support_subsecond:
-                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
+                if support_atime:
+                    self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
                 self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
             else:
-                self.assertEqual(st.st_atime, atime_ns * 1e-9)
+                if support_atime:
+                    self.assertEqual(st.st_atime, atime_ns * 1e-9)
                 self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
-            self.assertEqual(st.st_atime_ns, atime_ns)
+            if support_atime:
+                self.assertEqual(st.st_atime_ns, atime_ns)
             self.assertEqual(st.st_mtime_ns, mtime_ns)
 
     def test_utime(self):
@@ -3563,6 +3577,84 @@ class DeviceEncodingTests(unittest.TestCase):
         self.assertTrue(codecs.lookup(encoding))
 
 
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32DeviceEncodingTests(unittest.TestCase):
+    # gh-87587: any console file descriptor is supported, not only 0, 1 and 2,
+    # and other character devices are not consoles.
+
+    @staticmethod
+    def expected_encoding(cp):
+        return 'utf-8' if cp == 65001 else 'cp%d' % cp
+
+    def test_console(self):
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        try:
+            fin = open('CONIN$')
+        except OSError:
+            self.skipTest('no console')
+        with fin:
+            self.assertEqual(os.device_encoding(fin.fileno()),
+                             self.expected_encoding(kernel32.GetConsoleCP()))
+        with open('CONOUT$', 'w') as fout:
+            self.assertEqual(
+                os.device_encoding(fout.fileno()),
+                self.expected_encoding(kernel32.GetConsoleOutputCP()))
+
+    def test_not_a_console(self):
+        with open('NUL', 'w') as f:
+            self.assertTrue(os.isatty(f.fileno()))
+            self.assertIsNone(os.device_encoding(f.fileno()))
+            # Not a console even if it is a standard file descriptor.
+            saved = os.dup(1)
+            try:
+                os.dup2(f.fileno(), 1)
+                encoding = os.device_encoding(1)
+            finally:
+                os.dup2(saved, 1)
+                os.close(saved)
+            self.assertIsNone(encoding)
+
+
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32StatExecutableTests(unittest.TestCase):
+    # gh-84419: Windows strips trailing dots and spaces from the last
+    # component of the path, so they should be ignored when guessing
+    # the execute permissions from the file extension.
+
+    SUFFIXES = ['', ' ', '   ', '.', '..', ' . .']
+
+    def check(self, ext, mask):
+        filename = os_helper.TESTFN + ext
+        create_file(filename)
+        try:
+            for suffix in self.SUFFIXES:
+                with self.subTest(suffix=suffix):
+                    mode = os.stat(filename + suffix).st_mode
+                    self.assertEqual(mode & 0o111, mask)
+        finally:
+            os_helper.unlink(filename)
+
+    def test_executable_extension(self):
+        for ext in '.exe', '.bat', '.cmd', '.com', '.EXE', '.Bat':
+            with self.subTest(ext=ext):
+                self.check(ext, 0o111)
+
+    def test_not_executable_extension(self):
+        for ext in '.txt', '.py', '.exe.txt', '':
+            with self.subTest(ext=ext):
+                self.check(ext, 0)
+
+    def test_extended_path(self):
+        # The \\?\ prefix disables normalization: trailing spaces and dots
+        # are part of the file name.
+        filename = os.path.abspath(os_helper.TESTFN + '.exe')
+        create_file(filename)
+        self.addCleanup(os_helper.unlink, filename)
+        self.assertEqual(os.stat('\\\\?\\' + filename).st_mode & 0o111, 0o111)
+        self.assertRaises(OSError, os.stat, '\\\\?\\' + filename + ' ')
+
+
 @support.requires_subprocess()
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
@@ -3770,6 +3862,12 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [], {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, ('',), {})
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
+
+    @requires_native_spawnv
+    def test_spawnve_empty_first_arg_message(self):
+        with self.assertRaisesRegex(ValueError,
+                                    r'^spawnve\(\) arg 2 first element'):
+            os.spawnve(os.P_NOWAIT, sys.executable, [''], {})
 
     @requires_native_spawnv
     def test_spawnv_arg_conversion_errors(self):
@@ -4954,6 +5052,28 @@ class PseudoterminalTests(unittest.TestCase):
         son_path = os.ptsname(mother_fd)
         son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
         self.addCleanup(os.close, son_fd)
+        if sys.platform.startswith('sunos'):
+            import fcntl
+            I_PUSH = 0x5302
+            TIOCNOTTY = 0x7471
+            # Pushing "ptem" makes the slave a terminal, which a session
+            # leader without a controlling terminal then acquires as one
+            # despite O_NOCTTY.  Note whether we already had one.
+            try:
+                os.close(os.open('/dev/tty', os.O_RDONLY|os.O_NOCTTY))
+                had_ctty = True
+            except OSError:
+                had_ctty = False
+            fcntl.ioctl(son_fd, I_PUSH, b'ptem\0')
+            fcntl.ioctl(son_fd, I_PUSH, b'ldterm\0')
+            if not had_ctty and os.getsid(0) == os.getpid():
+                # Disown it, otherwise closing the file descriptors sends
+                # SIGHUP to the session.  TIOCNOTTY sends it too.
+                old_handler = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+                try:
+                    fcntl.ioctl(son_fd, TIOCNOTTY)
+                finally:
+                    signal.signal(signal.SIGHUP, old_handler)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
@@ -5500,6 +5620,84 @@ class TestScandir(unittest.TestCase):
         list(iterator)
         with self.check_no_resource_warning():
             del iterator
+
+    def test_no_resource_warning_when_open_fails(self):
+        # gh-152754: a scandir() call that never opened a directory owns
+        # nothing, and must not report an unclosed iterator.
+        self.create_file("file.txt")
+        missing = os.path.join(self.path, "missing")
+        not_a_dir = os.path.join(self.path, "file.txt")
+        for path in (missing, not_a_dir):
+            with self.subTest(path=path):
+                with self.check_no_resource_warning():
+                    with self.assertRaises(OSError):
+                        os.scandir(path)
+
+
+@threading_helper.requires_working_threading()
+class ScandirThreadingTest(unittest.TestCase):
+    # gh-152754: an os.scandir() iterator shared between threads must not crash.
+
+    if support.check_sanitizer(thread=True):
+        SCANDIR_NUMITEMS = 200
+        SCANDIR_N_NEXT = 2
+        SCANDIR_N_CLOSE = 2
+        SCANDIR_REPEAT = 10
+    else:
+        SCANDIR_NUMITEMS = 1000
+        SCANDIR_N_NEXT = 6
+        SCANDIR_N_CLOSE = 3
+        SCANDIR_REPEAT = 20
+
+    def setUp(self):
+        self.dir = os.path.realpath(os_helper.TESTFN)
+        self.addCleanup(os_helper.rmtree, self.dir)
+        os.mkdir(self.dir)
+        self.names = set()
+        for i in range(self.SCANDIR_NUMITEMS):
+            name = f"f{i}"
+            create_file(os.path.join(self.dir, name))
+            self.names.add(name)
+
+    def test_close_racing_next(self):
+        # One thread's next() racing another's close() must not crash.
+        def nexter():
+            for _ in self.it:
+                pass
+
+        def closer():
+            self.it.close()
+
+        funcs = [nexter] * self.SCANDIR_N_NEXT + [closer] * self.SCANDIR_N_CLOSE
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            try:
+                threading_helper.run_concurrently(funcs)
+            finally:
+                self.it.close()
+
+    def test_shared_next(self):
+        # Threads sharing one iterator must not crash or lose entries: every
+        # entry must be handed to exactly one thread.
+        expected = sorted(self.names)
+        nthreads = self.SCANDIR_N_NEXT + self.SCANDIR_N_CLOSE
+
+        for _ in range(self.SCANDIR_REPEAT):
+            self.it = os.scandir(self.dir)
+            results = []
+            results_lock = threading.Lock()
+
+            def worker():
+                local = [entry.name for entry in self.it]
+                with results_lock:
+                    results.extend(local)
+
+            try:
+                threading_helper.run_concurrently([worker] * nthreads)
+            finally:
+                self.it.close()
+
+            self.assertEqual(sorted(results), expected)
 
 
 class TestPEP519(unittest.TestCase):

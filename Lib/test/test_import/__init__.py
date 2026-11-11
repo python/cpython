@@ -43,7 +43,11 @@ from test.support import (
     Py_GIL_DISABLED,
     no_rerun,
     force_not_colorized_test_class,
-    catch_unraisable_exception
+    catch_unraisable_exception,
+    infinite_recursion,
+    run_with_limited_c_stack,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow
 )
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -487,6 +491,7 @@ class ImportTests(unittest.TestCase):
                 forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
+                rmtree('__pycache__')
 
         sys.path.insert(0, os.curdir)
         try:
@@ -666,6 +671,7 @@ class ImportTests(unittest.TestCase):
                   import importlib
             sys.argv.insert(0, C())
             """))
+        self.addCleanup(unlink, testfn)
         script_helper.assert_python_ok(testfn)
 
     @skip_if_dont_write_bytecode
@@ -778,6 +784,24 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
+    @cpython_only
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
+    @run_with_limited_c_stack(depth=100_000)
+    def test_acquire_lock_near_c_stack_limit(self):
+        # _imp.acquire_lock() must refuse to take the import lock when there
+        # is not enough C stack left to release it again.
+        def recurse(_):
+            _imp.acquire_lock()
+            _imp.release_lock()
+            list(map(recurse, [None]))
+
+        with infinite_recursion(100_000):
+            with self.assertRaisesRegex(RecursionError,
+                                        'acquiring the import lock'):
+                recurse(None)
+        self.assertFalse(_imp.lock_held())
+
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
     def test_dll_dependency_import(self):
         from _winapi import GetModuleFileName
@@ -785,7 +809,7 @@ class ImportTests(unittest.TestCase):
         pydname = importlib.util.find_spec("_sqlite3").origin
         depname = os.path.join(
             os.path.dirname(pydname),
-            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+            "sqlite3{}.dll".format("_d" if "_d" in os.path.basename(pydname) else ""))
 
         with os_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
@@ -2063,6 +2087,7 @@ class ImportTracebackTests(unittest.TestCase):
         # encode filenames, especially on Windows
         pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
         self.addCleanup(unlink, pyname)
+        self.addCleanup(rmtree, '__pycache__')
         name = pyname[:-3]
         script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name,
                                        __isolated=False)
@@ -2556,6 +2581,7 @@ class SubinterpImportTests(unittest.TestCase):
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
 
+    @cpython_only
     @requires_subinterpreters
     def test_pyinit_function_raises_exception(self):
         # gh-144601: PyInit functions that raised exceptions would cause a

@@ -541,7 +541,7 @@ Set all traps to False.\n\
 
 PyDoc_STRVAR(doc_ctx_copy,
 "copy($self, /)\n--\n\n\
-Return a duplicate of the context with all flags cleared.\n\
+Return a duplicate of the context.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_copy_decimal,

@@ -1,6 +1,11 @@
 #include "asm_trampoline_aarch64.h"
 
+/* CPython copies this template into executable memory. */
+#if defined(__ELF__)
+    .section .rodata
+#else
     .text
+#endif
     .globl	_Py_trampoline_func_start
 # The following assembly is equivalent to:
 # PyObject *

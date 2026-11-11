@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import contextlib
 import operator
 import os
 import re
@@ -46,6 +47,13 @@ class Indexable:
         self.value = value
     def __index__(self):
         return self.value
+
+
+@contextlib.contextmanager
+def inject_memory_error(testcase, start=0):
+    with testcase.assertRaises(MemoryError):
+        with support.inject_memory_error_cm(start):
+            yield
 
 
 class BaseBytesTest:
@@ -508,6 +516,15 @@ class BaseBytesTest:
                 self.type2test.fromhex(data)
             self.assertIn('at position %s' % pos, str(cm.exception))
 
+        # gh-158583: Check for out of bounds reads (uninitialized bytes).
+        # Create an array from a list to not overallocate.
+        a = array.array('B', list(b'1234  '))  # Py_ISSPACE() loop
+        self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
+
+        a = array.array('B', list(b'12345'))  # Missing second digit
+        with self.assertRaises(ValueError):
+            self.type2test.fromhex(a)
+
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
         self.assertRaises(TypeError, self.type2test.hex, 1)
@@ -845,6 +862,19 @@ class BaseBytesTest:
         with self.assertRaises(MemoryError):
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
+
+    def test_mod_bytes_lookup_error(self):
+        # An error raised while looking up __bytes__ propagates.
+        class BadBytes:
+            @property
+            def __bytes__(self):
+                raise ZeroDivisionError
+            def __buffer__(self, flags):
+                return memoryview(b'abc')
+
+        b = self.type2test(b'%b')
+        with self.assertRaises(ZeroDivisionError):
+            b % BadBytes()
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
@@ -1507,6 +1537,35 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    @support.nomemtest
+    def test_resize_error(self):
+        # gh-157242: If bytearray.resize() fails (MemoryError),
+        # the bytearray must be left unchanged.
+
+        offset = 3
+        for logical_offset in (False, True):
+            with self.subTest(logical_offset=logical_offset):
+                # grow bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1024)
+                self.assertEqual(ba, expected)
+
+                # shrink bytearray
+                ba = bytearray(b'0123456789')
+                if logical_offset:
+                    expected = ba[offset:]
+                    del ba[:offset]
+                else:
+                    expected = ba.copy()
+                with inject_memory_error(self):
+                    ba.resize(1)
+                self.assertEqual(ba, expected)
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
@@ -1670,6 +1729,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b[8:] = b
         self.assertEqual(b, bytearray(list(range(8)) + list(range(256))))
 
+    def test_setslice_reentrant_resize(self):
+        # gh-153578: a buffer argument whose __buffer__ resizes the bytearray
+        # while the buffer is being acquired must not leave the slice bounds
+        # with lo > hi, which drove a negative-size memmove (an out-of-bounds
+        # write) in the setslice path reached through extend().
+        class Evil:
+            def __init__(self, resize):
+                self.resize = resize
+            def __buffer__(self, flags):
+                self.resize()
+                return memoryview(b'ABCDEFGH')
+        # clear() during __buffer__: extend appends to the emptied bytearray.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(b.clear))
+        self.assertEqual(b, b'ABCDEFGH')
+        # partial shrink during __buffer__.
+        b = bytearray(b'x' * 100)
+        b.extend(Evil(lambda: b.__delitem__(slice(30, None))))
+        self.assertEqual(b, b'x' * 30 + b'ABCDEFGH')
+        # grow during __buffer__: the data lands at the original end.
+        b = bytearray(b'x' * 10)
+        b.extend(Evil(lambda: b.extend(b'y' * 100)))
+        self.assertEqual(b, b'x' * 10 + b'ABCDEFGH' + b'y' * 100)
+
     def test_iconcat(self):
         b = bytearray(b"abc")
         b1 = b
@@ -1730,6 +1813,22 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(b), 99)
         alloc = b.__alloc__()
         self.assertGreater(alloc, len(b))
+
+    def test_init_from_iterator_with_offset(self):
+        # gh-158928: Inserting from an iterator in __init__ needs to take into
+        # account if there is a start offset.
+        b = bytearray()
+        def iterator_which_resets():
+            # __init__ reset ob_start. Make it an offset inside by allocating
+            # then doing fast prefix delete.
+            nonlocal b
+            b.resize(200)
+            del b[:100]
+            # Fill remaining already allocated space
+            yield from b'A' * 100
+        # Fill to end. Used to land out of bounds and crash.
+        b.__init__(iterator_which_resets())
+        self.assertEqual(b, bytes(100) + b'A' * 100)
 
     def test_extend(self):
         orig = b'hello'
@@ -2067,6 +2166,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 return 1
 
         self.assertRaises(BufferError, ba.hex, S(b':'))
+
+    def test_reinit_error(self):
+        # A failed __init__() must not leave uninitialized bytes in the
+        # object: it must be empty afterwards.
+        for source in ([256] * 100, (-1,) * 100, [0] * 50 + [1000],
+                       (1, 2, 1 << 100)):
+            with self.subTest(source=source):
+                a = bytearray(b"abc")
+                self.assertRaises(ValueError, a.__init__, source)
+                self.assertEqual(a, b"")
 
 
 class AssortedBytesTest(unittest.TestCase):
@@ -2816,6 +2925,19 @@ class FreeThreadingTest(unittest.TestCase):
         threads = [threading.Thread(target=resize_stress, args=(ba,)) for _ in range(4)]
         with threading_helper.start_threads(threads):
             pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray_resize_other_thread(self):
+        # Shrinking a bytearray whose buffer another thread owns must not
+        # adopt the immortal single-byte bytes object a the buffer.
+        ba = bytearray(b'abc')
+        thread = threading.Thread(target=ba.resize, args=(1,))
+        with threading_helper.start_threads([thread]):
+            pass
+        ba[0] = ord('X')
+        self.assertEqual(ba, bytearray(b'X'))
+        self.assertEqual(ord(b'a'), ord('a'))
 
 if __name__ == "__main__":
     unittest.main()

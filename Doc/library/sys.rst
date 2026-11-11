@@ -251,7 +251,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    you might bind it to a function that expects additional arguments
    (positional and/or keyword).  The built-in ``breakpoint()`` function passes
    its ``*args`` and ``**kws`` straight through.  Whatever
-   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+   ``breakpointhook()`` returns is returned from ``breakpoint()``.
 
    The default implementation first consults the environment variable
    :envvar:`PYTHONBREAKPOINT`.  If that is set to ``"0"`` then this function
@@ -521,8 +521,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    particular, ``sys.exit("some error message")`` is a quick way to exit a
    program when an error occurs.
 
-   Since :func:`exit` ultimately "only" raises an exception, it will only exit
-   the process when called from the main thread, and the exception is not
+   Since :func:`~sys.exit` ultimately "only" raises an exception, it will only
+   exit the process when called from the main thread, and the exception is not
    intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
    are honored, and it is possible to intercept the exit attempt at an outer level.
 
@@ -1516,6 +1516,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * Module :mod:`site` This describes how to use .pth files to
         extend :data:`sys.path`.
 
+.. data:: _path0
+
+   Path prepended to :data:`sys.path` at Python startup:
+
+   * Current directory if running a module
+     with ``python -m module`` command line.
+   * Script's directory if running a script
+     with ``python script.py``.
+   * Otherwise an empty string, which means the current working directory,
+     for ``python -c code`` or ``python`` (REPL) command line.
+
+   If :option:`-P` or :option:`-I` command line options are used or if
+   :envvar:`PYTHONSAFEPATH` environment variable is used, :data:`sys._path0` is
+   ``None`` and :data:`sys.path` is left unchanged.
+
+   .. versionadded:: next
+
+
 .. data:: path_hooks
 
     A list of callables that take a path argument to try to create a
@@ -1798,7 +1816,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The interpreter is about to execute a new line of code or re-execute the
       condition of a loop.  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.  See
-      :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
+      :source:`InternalDocs/code_objects.md` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
       :attr:`~frame.f_trace_lines` to :const:`False` on that
@@ -1871,7 +1889,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
       *finalizer* method see the implementation of
-      ``asyncio.Loop.shutdown_asyncgens`` in
+      ``asyncio.BaseEventLoop._asyncgen_finalizer_hook`` in
       :source:`Lib/asyncio/base_events.py`
 
    .. note::
@@ -1954,7 +1972,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    See :ref:`remote-debugging` for more information about the remote debugging
    mechanism.
 
-   .. audit-event:: sys.remote_exec pid script_path
+   .. audit-event:: sys.remote_exec pid,script_path
 
       When the code is executed in the remote process, an
       :ref:`auditing event <auditing>` ``sys.remote_exec`` is raised with
@@ -2017,7 +2035,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The encoding and error handling are is initialized from
+   * The encoding and error handling are initialized from
      :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character

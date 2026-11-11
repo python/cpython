@@ -735,6 +735,16 @@ set_error(void)
 }
 
 
+#if defined(HAVE_HSTRERROR) || defined(HAVE_GAI_STRERROR)
+/* Decode a locale-encoded error message from the C library.
+   It can be localized and use a non-UTF-8 encoding. */
+static PyObject *
+decode_error_message(const char *str)
+{
+    return PyUnicode_DecodeLocale(str, "surrogateescape");
+}
+#endif
+
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
 set_herror(socket_state *state, int h_error)
@@ -742,7 +752,9 @@ set_herror(socket_state *state, int h_error)
     PyObject *v;
 
 #ifdef HAVE_HSTRERROR
-    v = Py_BuildValue("(is)", h_error, hstrerror(h_error));
+    const char *errmsg = hstrerror(h_error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", h_error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
@@ -769,7 +781,9 @@ set_gaierror(socket_state *state, int error)
 #endif
 
 #ifdef HAVE_GAI_STRERROR
-    v = Py_BuildValue("(is)", error, gai_strerror(error));
+    const char *errmsg = gai_strerror(error);
+    _Py_MSAN_UNPOISON_STRING(errmsg);
+    v = Py_BuildValue("(iN)", error, decode_error_message(errmsg));
 #else
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
@@ -6011,7 +6025,7 @@ sock_decode_hostname(const char *name)
 
 static PyObject *
 gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
-               size_t alen, int af)
+               size_t alen, int af, int h_error)
 {
     char **pch;
     PyObject *rtn_tuple = (PyObject *)NULL;
@@ -6022,7 +6036,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 
     if (h == NULL) {
         /* Let's get real error message to return */
-        set_herror(state, h_errno);
+        set_herror(state, h_error);
         return NULL;
     }
 
@@ -6158,6 +6172,7 @@ static PyObject *
 socket_gethostbyname_ex(PyObject *self, PyObject *args)
 {
     char *name;
+    int h_error;
     struct hostent *h;
     sock_addr_t addr;
     struct sockaddr *sa;
@@ -6169,7 +6184,6 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #else
     char buf[16384];
     int buf_len = (sizeof buf) - 1;
-    int errnop;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
@@ -6188,14 +6202,14 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    gethostbyname_r(name, &hp_allocated, buf, buf_len,
-                             &h, &errnop);
+    gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &h_error);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-    h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+    h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h_error);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
     memset((void *) &data, '\0', sizeof(data));
     result = gethostbyname_r(name, &hp_allocated, &data);
     h = (result != 0) ? NULL : &hp_allocated;
+    h_error = h_errno;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
@@ -6205,6 +6219,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     h = gethostbyname(name);
     _Py_COMP_DIAG_POP
+    h_error = h_errno;
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
     /* Some C libraries would require addr.__ss_family instead of
@@ -6213,7 +6228,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
        access sa_family. */
     sa = SAS2SA(&addr);
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
-                         sa->sa_family);
+                         sa->sa_family, h_error);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
@@ -6252,7 +6267,6 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
        to maintain this alignment. */
     char buf[16384] Py_ALIGNED(8);
     int buf_len = (sizeof buf) - 1;
-    int errnop;
 #endif
 #ifdef HAVE_GETHOSTBYNAME_R_3_ARG
     int result;
@@ -6261,6 +6275,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     const char *ap;
     int al;
     int af;
+    int h_error;
 
     if (!PyArg_ParseTuple(args, "et:gethostbyaddr", "idna", &ip_num))
         return NULL;
@@ -6293,16 +6308,14 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-    gethostbyaddr_r(ap, al, af,
-        &hp_allocated, buf, buf_len,
-        &h, &errnop);
+    gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &h, &h_error);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-    h = gethostbyaddr_r(ap, al, af,
-                        &hp_allocated, buf, buf_len, &errnop);
+    h = gethostbyaddr_r(ap, al, af, &hp_allocated, buf, buf_len, &h_error);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
     memset((void *) &data, '\0', sizeof(data));
     result = gethostbyaddr_r(ap, al, af, &hp_allocated, &data);
     h = (result != 0) ? NULL : &hp_allocated;
+    h_error = h_errno;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
@@ -6312,9 +6325,10 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     h = gethostbyaddr(ap, al, af);
     _Py_COMP_DIAG_POP
+    h_error = h_errno;
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
-    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
+    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af, h_error);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
@@ -6398,6 +6412,7 @@ socket_getservbyport(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_OSError, "port/proto not found");
         return NULL;
     }
+    _Py_MSAN_UNPOISON_STRING(sp->s_name);
     return PyUnicode_FromString(sp->s_name);
 }
 
@@ -6907,6 +6922,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *pobj = (PyObject *)NULL;
     PyObject *pstr = NULL;
     const char *hptr, *pptr;
+    Py_ssize_t hlen = 0, plen = 0;
     int family, socktype, protocol, flags;
     int error;
     PyObject *all = (PyObject *)NULL;
@@ -6927,12 +6943,19 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
             return NULL;
         assert(PyBytes_Check(idna));
         hptr = PyBytes_AS_STRING(idna);
+        hlen = PyBytes_GET_SIZE(idna);
     } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
+        hptr = PyBytes_AS_STRING(hobj);
+        hlen = PyBytes_GET_SIZE(hobj);
     } else {
         PyErr_SetString(PyExc_TypeError,
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
+    }
+    if (hptr != NULL && strlen(hptr) != (size_t)hlen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() host must not contain null characters");
+        goto err;
     }
     if (PyIndex_Check(pobj)) {
         pstr = PyNumber_Index(pobj);
@@ -6943,19 +6966,25 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
-        pptr = PyUnicode_AsUTF8(pstr);
+        pptr = PyUnicode_AsUTF8AndSize(pstr, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = PyUnicode_AsUTF8(pobj);
+        pptr = PyUnicode_AsUTF8AndSize(pobj, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
+        plen = PyBytes_GET_SIZE(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");
+        goto err;
+    }
+    if (pptr != NULL && strlen(pptr) != (size_t)plen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() port must not contain null characters");
         goto err;
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)

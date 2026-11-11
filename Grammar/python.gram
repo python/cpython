@@ -774,6 +774,7 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | eq_bitwise_or
     | noteq_bitwise_or
     | lte_bitwise_or
+    | invalid_noteq
     | lt_bitwise_or
     | gte_bitwise_or
     | gt_bitwise_or
@@ -1567,3 +1568,10 @@ invalid_type_params:
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token,
             "Type parameter list cannot be empty")}
+
+invalid_noteq:
+    | a='<' b='>' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
+        : NULL
+    }

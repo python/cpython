@@ -119,6 +119,21 @@ Printing and clearing
    .. versionadded:: 3.12
 
 
+.. c:function:: void PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
+
+   Legacy variant of :c:func:`PyErr_DisplayException`.
+
+   Print the exception *value* with its traceback to :data:`sys.stderr`.
+   If *value* has no traceback set, *tb* is used as its traceback.
+   The first argument is ignored.
+
+   If :data:`sys.stderr` is ``None``, nothing is printed.
+   If :data:`sys.stderr` is not set, the exception is dumped to the
+   C ``stderr`` stream instead.
+
+   .. deprecated:: 3.12
+      Use :c:func:`PyErr_DisplayException` instead.
+
 Raising exceptions
 ==================
 
@@ -392,6 +407,11 @@ an error value).
    documentation.  There is no C API for warning control.
 
 
+.. c:function:: int PyErr_Warn(PyObject *category, const char *message)
+
+   Equivalent to :c:expr:`PyErr_WarnEx(category, message, 1)`.
+
+
 .. c:function:: int PyErr_WarnExplicitObject(PyObject *category, PyObject *message, PyObject *filename, int lineno, PyObject *module, PyObject *registry)
 
    Issue a warning message with explicit control over all warning attributes.  This
@@ -499,12 +519,12 @@ Querying the error indicator
 .. c:function:: void PyErr_SetRaisedException(PyObject *exc)
 
    Set *exc* as the exception currently being raised,
-   clearing the existing exception if one is set.
+   clearing the existing exception if one is set.  If *exc* is ``NULL``,
+   just clear the existing exception.
 
-   .. warning::
+   *exc* must be a valid exception or ``NULL``.
 
-      This call ":term:`steals <steal>`" a reference to *exc*,
-      which must be a valid exception.
+   This call ":term:`steals <steal>`" a reference to *exc*.
 
    .. versionadded:: 3.12
 
@@ -1001,6 +1021,10 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
+   The check is based on the remaining C stack space of the current thread,
+   not on a count of calls, so it is unaffected by
+   :c:func:`Py_SetRecursionLimit` and :func:`sys.setrecursionlimit`.
+
    *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
@@ -1010,6 +1034,10 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.
+
+   .. versionchanged:: 3.14
+      The check is based on the remaining C stack space.  Previously, a
+      separate counter of C-level calls was used.
 
 .. c:function:: void Py_LeaveRecursiveCall(void)
 
@@ -1023,7 +1051,7 @@ Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requ
 special recursion handling.  In addition to protecting the stack,
 :c:member:`~PyTypeObject.tp_repr` also needs to track objects to prevent cycles.  The
 following two functions facilitate this functionality.  Effectively,
-these are the C equivalent to :func:`reprlib.recursive_repr`.
+these are the C equivalent to :deco:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_ReprEnter(PyObject *object)
 

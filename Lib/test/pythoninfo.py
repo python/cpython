@@ -247,21 +247,23 @@ def collect_urandom(info_add):
 def collect_os(info_add):
     import os
 
-    def format_attr(attr, value):
-        if attr in ('supports_follow_symlinks', 'supports_fd',
-                    'supports_effective_ids'):
-            return str(sorted(func.__name__ for func in value))
-        else:
-            return value
-
-    attributes = (
+    plain_attributes = (
         'name',
         'supports_bytes_environ',
+    )
+    copy_attributes(info_add, os, 'os.%s', plain_attributes)
+
+    def format_set_of_functions(attr, value):
+        return str(sorted(func.__name__ for func in value))
+
+    supports_attributes = (
+        'supports_dir_fd',
         'supports_effective_ids',
         'supports_fd',
         'supports_follow_symlinks',
     )
-    copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
+    copy_attributes(info_add, os, 'os.%s', supports_attributes,
+                    formatter=format_set_of_functions)
 
     for func in (
         'cpu_count',
@@ -607,14 +609,6 @@ def collect_sysconfig(info_add):
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
 
-    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
-    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
-    if NDEBUG:
-        text = 'ignore assertions (macro defined)'
-    else:
-        text= 'build assertions (macro not defined)'
-    info_add('build.NDEBUG',text)
-
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
@@ -830,6 +824,8 @@ def collect_support(info_add):
              support.check_sanitizer(memory=True))
     info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+    info_add('support.built_with_c_assertions',
+             support.built_with_c_assertions())
 
 
 def collect_support_os_helper(info_add):
@@ -879,18 +875,17 @@ def collect_support_threading_helper(info_add):
     copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
-def collect_cc(info_add):
+def get_compiler_version(sysconfig_var):
     import sysconfig
-
-    CC = sysconfig.get_config_var('CC')
-    if not CC:
+    program = sysconfig.get_config_var(sysconfig_var)
+    if not program:
         return
 
     try:
         import shlex
-        args = shlex.split(CC)
+        args = shlex.split(program)
     except ImportError:
-        args = CC.split()
+        args = program.split()
     args.append('--version')
 
     stdout = run_command(args)
@@ -904,7 +899,21 @@ def collect_cc(info_add):
 
     text = first_line(stdout)
     text = normalize_text(text)
-    info_add('CC.version', text)
+    if text:
+        text = f'[{program}] {text}'
+    return text
+
+
+def collect_cc(info_add):
+    # C compiler
+    version = get_compiler_version('CC')
+    if version:
+        info_add('CC.version', version)
+
+    # C++ compiler
+    version = get_compiler_version('CXX')
+    if version:
+        info_add('CXX.version', version)
 
 
 def collect_gdbm(info_add):
@@ -1360,9 +1369,9 @@ def collect_info(info):
 
 
 def dump_info(info, file=None):
-    title = "Python debug information"
+    title = "Python build information"
     print(title)
-    print("=" * len(title))
+    print("#" * len(title))
     print()
 
     infos = info.get_infos()

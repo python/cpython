@@ -54,7 +54,11 @@ class TclTest(unittest.TestCase):
 
     def test_eval_surrogates_in_result(self):
         tcl = self.interp
-        self.assertEqual(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
+        result = tcl.eval(r'set a "<\ud83d\udcbb>"')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalException(self):
         tcl = self.interp
@@ -289,7 +293,11 @@ class TclTest(unittest.TestCase):
             set b "<\\ud83d\\udcbb>"
             """)
         tcl.evalfile(filename)
-        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
+        result = tcl.eval('set b')
+        if sys.platform == 'win32' and tcl_version >= (9, 0):
+            self.assertEqual('<\ud83d\udcbb>', result)
+        else:
+            self.assertEqual('<\U0001f4bb>', result)
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -557,6 +565,29 @@ class TclTest(unittest.TestCase):
         self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
         self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
+    def test_setvar_evil(self):
+        # gh-161388
+        class StrRaises:
+            def __str__(self):
+                raise RuntimeError("setvar evil")
+
+        value = StrRaises()
+        tk = self.interp.tk
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name1", value)
+        self.assertRaises(TclError, tk.getvar, "local_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name2", "local_name3", value)
+        self.assertRaises(TclError, tk.getvar, "local_name2", "local_name3")
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name1", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name2", "global_name3", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name2", "global_name3")
+
     def test_user_command(self):
         result = None
         def testfunc(arg):
@@ -781,7 +812,7 @@ class BigmemTclTest(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=3, dry_run=False)
     def test_huge_string_builtins(self, size):
         tk = self.interp.tk
         value = '1' + ' ' * size

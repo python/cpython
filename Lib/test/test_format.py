@@ -287,6 +287,8 @@ class FormatTest(unittest.TestCase):
                         "%i format: a real number is required, not str")
         test_exc_common('%i', b'1', TypeError,
                         "%i format: a real number is required, not bytes")
+        test_exc_common('%*r', (-maxsize - 1, 1), OverflowError,
+                        "width too big")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
@@ -493,6 +495,28 @@ class FormatTest(unittest.TestCase):
         c = complex(f)
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
+
+    @support.cpython_only
+    def test_precision_near_int_max(self):
+        # gh-158446: Precisions just below INT_MAX are rejected before any
+        # output buffer size is computed from them.
+        _testcapi = import_module("_testcapi")
+        INT_MAX = _testcapi.INT_MAX
+
+        f = 1e300
+        c = complex(f)
+        for prec in (INT_MAX, INT_MAX - 1023):
+            for code in "feg":
+                spec = ".%d%s" % (prec, code)
+                with self.subTest(spec=spec):
+                    with self.assertRaises(ValueError):
+                        format(f, spec)
+                    with self.assertRaises(ValueError):
+                        format(c, spec)
+                    with self.assertRaises(ValueError):
+                        ("%" + spec) % f
+                    with self.assertRaises(ValueError):
+                        ("%" + spec).encode() % f
 
     def test_g_format_has_no_trailing_zeros(self):
         # regression test for bugs.python.org/issue40780

@@ -13,7 +13,7 @@ import traceback
 from io import BytesIO
 from test import support
 from test.support import import_helper, os_helper
-
+from unittest import mock
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
@@ -275,6 +275,89 @@ class ParseTest(unittest.TestCase):
             parser.ParseFile(file)
         self.assertEqual(expat.ErrorString(cm.exception.code),
                           expat.errors.XML_ERROR_FINISHED)
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_reentrancy_with_encoding(self, encoding):
+        # See https://github.com/python/cpython/issues/146169.
+        parser = expat.ParserCreate(encoding=encoding)
+
+        def CharacterDataHandler(data):
+            return parser.Parse(data, False)
+        CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
+        parser.CharacterDataHandler = CharacterDataHandler
+
+        payload = "<a>x".encode(encoding)
+        msg = re.escape("cannot call Parse() from within a handler")
+        with self.assertRaisesRegex(RuntimeError, msg):
+            for i in range(len(payload)):
+                parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        CharacterDataHandler.assert_called_once_with("x")
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_file_reentrancy_with_encoding(self, encoding):
+        # See https://github.com/python/cpython/issues/146169.
+        parser = expat.ParserCreate(encoding=encoding)
+
+        def CharacterDataHandler(data):
+            return parser.ParseFile(BytesIO(data.encode(encoding)))
+        CharacterDataHandler = mock.Mock(wraps=CharacterDataHandler)
+        parser.CharacterDataHandler = CharacterDataHandler
+
+        payload = "<a>x".encode(encoding)
+        payload_buffer = BytesIO(payload)
+        msg = re.escape("cannot call ParseFile() from within a handler")
+        with self.assertRaisesRegex(RuntimeError, msg):
+            parser.ParseFile(payload_buffer)
+        CharacterDataHandler.assert_called_once_with("x")
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_reentrancy_allowed_for_external_parser(self, encoding):
+        parser = expat.ParserCreate(encoding=encoding)
+        subparser = parser.ExternalEntityParserCreate(None, encoding)
+        payload_extstr = '<!ENTITY ext SYSTEM "entity.file">'
+
+        def ExternalEntityRefHandler(*args):
+            subparser.Parse(payload_extstr, True)
+            # return a nonzero integer to indicate that parsing continues
+            return 1
+        ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
+        parser.ExternalEntityRefHandler = ExternalEntityRefHandler
+
+        payload = textwrap.dedent(f"""\
+            <?xml version="1.0" standalone="no"?>
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
+            <root>&ext;</root>
+        """).encode(encoding)
+
+        # Check that external parsers be called from parent's handlers.
+        for i in range(len(payload)):
+            parser.Parse(payload[i:i+1], i == len(payload) - 1)
+        external_ref_args = ('ext', None, 'entity.file', None)
+        ExternalEntityRefHandler.assert_called_once_with(*external_ref_args)
+
+    @support.subTests("encoding", ("utf-8", "utf-16"))
+    def test_parse_file_reentrancy_allowed_for_external_parser(self, encoding):
+        parser = expat.ParserCreate(encoding=encoding)
+        subparser = parser.ExternalEntityParserCreate(None, encoding)
+        payload_extstr = '<!ENTITY ext SYSTEM "entity.file">'
+
+        def ExternalEntityRefHandler(*args):
+            subparser.ParseFile(BytesIO(payload_extstr.encode(encoding)))
+            # return a nonzero integer to indicate that parsing continues
+            return 1
+        ExternalEntityRefHandler = mock.Mock(wraps=ExternalEntityRefHandler)
+        parser.ExternalEntityRefHandler = ExternalEntityRefHandler
+
+        payload = textwrap.dedent(f"""\
+            <?xml version="1.0" standalone="no"?>
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [{payload_extstr}]>
+            <root>&ext;</root>
+        """).encode(encoding)
+
+        # Check that external parsers be called from parent's handlers.
+        parser.ParseFile(BytesIO(payload))
+        external_ref_args = ('ext', None, 'entity.file', None)
+        ExternalEntityRefHandler.assert_called_once_with(*external_ref_args)
 
     @support.subTests('encoding', [
         'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
@@ -738,6 +821,34 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml3, True)
         self.assertEqual(self.n, 12)
 
+    def test_disable_buffer_in_character_handler(self):
+        parser = expat.ParserCreate()
+        parser.buffer_size = 2
+        parser.buffer_text = True
+        seen = []
+
+        def consume(text):
+            seen.append(text)
+            if len(seen) == 1:
+                parser.buffer_text = False
+
+        parser.CharacterDataHandler = consume
+        parser.Parse(b'<r>a&#65;bc</r>', True)
+        self.assertEqual(''.join(seen), 'aAbc')
+
+    def test_clear_element_handler_during_flush(self):
+        parser = expat.ParserCreate()
+        parser.buffer_text = True
+        elements = []
+
+        def consume(text):
+            parser.StartElementHandler = None
+
+        parser.CharacterDataHandler = consume
+        parser.StartElementHandler = lambda name, attrs: elements.append(name)
+        parser.Parse(b'<r>abc<s/></r>', True)
+        self.assertEqual(elements, ['r'])
+
     def counting_handler(self, text):
         self.n += 1
 
@@ -815,7 +926,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser.ElementDeclHandler = lambda _1, _2: None
         self.assertRaises(TypeError, parser.Parse, data, True)
 
-    @support.skip_if_unlimited_stack_size
+    @support.run_with_limited_c_stack(800_000)
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_deeply_nested_content_model(self):
@@ -956,6 +1067,16 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
+    # gh-155485: GetReparseDeferralEnabled always returns False with Expat <2.6.0.
+    @unittest.skipIf(not expat.ParserCreate().GetReparseDeferralEnabled(),
+                     "requires Python compiled with Expat >= 2.6.0")
+    def test_subparser_inherits_reparse_deferral(self):
+        for enabled in (True, False):
+            parser = expat.ParserCreate()
+            parser.SetReparseDeferralEnabled(enabled)
+            subparser = parser.ExternalEntityParserCreate(None)
+            self.assertEqual(subparser.GetReparseDeferralEnabled(), enabled)
+
 
 class ExternalEntityParserCreateErrorTest(unittest.TestCase):
     """ExternalEntityParserCreate error paths should not crash or leak
@@ -978,18 +1099,9 @@ class ExternalEntityParserCreateErrorTest(unittest.TestCase):
         parser.buffer_text = True
         rc_before = sys.getrefcount(parser)
 
-        # We avoid self.assertRaises(MemoryError) here because the
-        # context manager itself needs memory allocations that fail
-        # while the nomemory hook is active.
-        self.testcapi.set_nomemory(1, 10)
-        raised = False
-        try:
-            parser.ExternalEntityParserCreate(None)
-        except MemoryError:
-            raised = True
-        finally:
-            self.testcapi.remove_mem_hooks()
-        self.assertTrue(raised, "MemoryError not raised")
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm(1, 10):
+                parser.ExternalEntityParserCreate(None)
 
         rc_after = sys.getrefcount(parser)
         self.assertEqual(rc_after, rc_before)

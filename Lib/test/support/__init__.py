@@ -11,6 +11,7 @@ import logging
 import _opcode
 import os
 import re
+import shlex
 import stat
 import sys
 import sysconfig
@@ -44,7 +45,8 @@ __all__ = [
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization", "thread_unsafe",
-    "skip_if_unlimited_stack_size",
+    "skip_if_unlimited_stack_size", "skip_if_huge_c_stack",
+    "run_with_limited_c_stack",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -70,7 +72,8 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code", "on_github_actions"
+    "reset_code", "on_github_actions",
+    "requires_root_user", "requires_non_root_user", "built_with_c_assertions",
     ]
 
 
@@ -434,29 +437,42 @@ def skip_if_buildbot(reason=None):
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
-                    function=True):
+                    function=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub or thread):
-        raise ValueError('At least one of address, memory, ub or thread must be True')
+    if not (address or memory or ub or thread or function):
+        raise ValueError('At least one of address, memory, ub, '
+                         'thread or function must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+    config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+
+    def configured_with_sanitizer(name):
+        with_option = f'--with-{name}-sanitizer'
+        without_option = f'--without-{name}-sanitizer'
+        enabled = False
+        for arg in config_args:
+            if arg == without_option or arg == f'{with_option}=no':
+                enabled = False
+            elif arg == with_option or arg.startswith(f'{with_option}='):
+                enabled = True
+        return enabled
+
     memory_sanitizer = (
         '-fsanitize=memory' in cflags or
-        '--with-memory-sanitizer' in config_args
+        configured_with_sanitizer('memory')
     )
     address_sanitizer = (
         '-fsanitize=address' in cflags or
-        '--with-address-sanitizer' in config_args
+        configured_with_sanitizer('address')
     )
     ub_sanitizer = (
         '-fsanitize=undefined' in cflags or
-        '--with-undefined-behavior-sanitizer' in config_args
+        configured_with_sanitizer('undefined-behavior')
     )
     thread_sanitizer = (
         '-fsanitize=thread' in cflags or
-        '--with-thread-sanitizer' in config_args
+        configured_with_sanitizer('thread')
     )
     function_sanitizer = (
         '-fsanitize=function' in cflags
@@ -470,11 +486,13 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False,
+                      thread=False, function=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub,
+                           thread=thread, function=function)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -987,16 +1005,29 @@ def subTests(arg_names, arg_values, /, *, _do_cleanups=False):
     def decorator(func):
         if isinstance(func, type):
             raise TypeError('subTests() can only decorate methods, not classes')
-        @functools.wraps(func)
-        def wrapper(self, /, *args, **kwargs):
+
+        def iter_subtest_kwargs():
             for values in arg_values:
-                if single_param:
-                    values = (values,)
-                subtest_kwargs = dict(zip(arg_names, values))
-                with self.subTest(**subtest_kwargs):
-                    func(self, *args, **kwargs, **subtest_kwargs)
-                if _do_cleanups:
-                    self.doCleanups()
+                yield dict(zip(arg_names, (values,) if single_param else values))
+
+        # A synchronous wrapper would discard the coroutine without awaiting
+        # it, so an asynchronous test would not run at all.
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(self, /, *args, **kwargs):
+                for subtest_kwargs in iter_subtest_kwargs():
+                    with self.subTest(**subtest_kwargs):
+                        await func(self, *args, **kwargs, **subtest_kwargs)
+                    if _do_cleanups:
+                        self.doCleanups()
+        else:
+            @functools.wraps(func)
+            def wrapper(self, /, *args, **kwargs):
+                for subtest_kwargs in iter_subtest_kwargs():
+                    with self.subTest(**subtest_kwargs):
+                        func(self, *args, **kwargs, **subtest_kwargs)
+                    if _do_cleanups:
+                        self.doCleanups()
         return wrapper
     return decorator
 
@@ -1146,38 +1177,6 @@ def set_memlimit(limit: str) -> None:
     max_memuse = memlimit
 
 
-class _MemoryWatchdog:
-    """An object which periodically watches the process' memory consumption
-    and prints it out.
-    """
-
-    def __init__(self):
-        self.procfile = '/proc/{pid}/statm'.format(pid=os.getpid())
-        self.started = False
-
-    def start(self):
-        import warnings
-        try:
-            f = open(self.procfile, 'r')
-        except OSError as e:
-            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
-            sys.stderr.flush()
-            return
-
-        import subprocess
-        with f:
-            watchdog_script = findfile("memory_watchdog.py")
-            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                                 stdin=f,
-                                                 stderr=subprocess.DEVNULL)
-        self.started = True
-
-    def stop(self):
-        if self.started:
-            self.mem_watchdog.terminate()
-            self.mem_watchdog.wait()
-
-
 def bigmemtest(size, memuse, dry_run=True):
     """Decorator for bigmem tests.
 
@@ -1190,8 +1189,15 @@ def bigmemtest(size, memuse, dry_run=True):
     extra argument. If 'dry_run' is true, the value passed to the test method
     may be less than the requested value. If 'dry_run' is false, it means the
     test doesn't support dummy runs when -M is not specified.
+
+    A test that actually allocates the requested memory (that is, one run with
+    -M) runs in a subprocess, so that the memory it uses and the address space
+    it fragments are released when it ends.  A dummy run stays in the process.
     """
     def decorator(f):
+        from test.support import isolation
+
+        @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
@@ -1206,44 +1212,41 @@ def bigmemtest(size, memuse, dry_run=True):
                     "not enough memory: %.1fG minimum needed"
                     % (size * memuse / (1024 ** 3)))
 
-            if real_max_memuse and verbose:
+            if (real_max_memuse and verbose
+                    and not isolation.runningInSubprocess):
                 print()
-                print(" ... expected peak memory use: {peak:.1f}G"
-                      .format(peak=size * memuse / (1024 ** 3)))
-                watchdog = _MemoryWatchdog()
-                watchdog.start()
-            else:
-                watchdog = None
+                peak = (size * memuse) / (1024 ** 3)
+                print(f" ... expected peak memory use: {peak:.1f} GiB")
 
-            try:
-                return f(self, maxsize)
-            finally:
-                if watchdog:
-                    watchdog.stop()
+            if (real_max_memuse and has_subprocess_support
+                    and not isolation.runningInSubprocess):
+                cls = type(self)
+                qualname = f'{cls.__qualname__}.{f.__name__}'
+                proc = isolation._start_test(cls.__module__, qualname)
+                isolation._replay_test(self, *proc.wait())
+                return
+
+            return f(self, maxsize)
 
         wrapper.size = size
         wrapper.memuse = memuse
         return wrapper
     return decorator
 
-def nomemtest(f):
+def nomemtest(test):
     """Check that we can use this test with `_testcapi.set_nomemory`."""
     from .import_helper import import_module
 
-    @functools.wraps(f)
+    @functools.wraps(test)
     def internal(*args, **kwargs):
         import_module('_testcapi')
-        return f(*args, **kwargs)
+        return test(*args, **kwargs)
 
-    return unittest.skipIf(
-        # Python built with Py_TRACE_REFS fail with a fatal error in
-        # _PyRefchain_Trace() on memory allocation error.
-        Py_TRACE_REFS,
-        'cannot test Py_TRACE_REFS build',
-    )(cpython_only(internal))
+    return cpython_only(internal)
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
+    @functools.wraps(f)
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1349,6 +1352,7 @@ def no_rerun(reason):
     def deco(func):
         assert not isinstance(func, type), func
         _has_run = False
+        @functools.wraps(func)
         def wrapper(self):
             nonlocal _has_run
             if _has_run:
@@ -1451,14 +1455,25 @@ print_warning.orig_stderr = sys.stderr
 # to cleanup threads.
 environment_altered = False
 
-def reap_children():
-    """Use this function at the end of test_main() whenever sub-processes
-    are started.  This will help ensure that no extra children (zombies)
-    stick around to hog resources and create problems when looking
-    for refleaks.
-    """
-    global environment_altered
+# Short descriptions of what was altered, e.g. "unraisable exception".
+# They are reported by regrtest together with the name of the test.
+environment_altered_reasons = []
 
+
+def set_environment_altered(reason):
+    """Set the environment_altered flag and record why it was set."""
+    global environment_altered
+    environment_altered = True
+    if reason not in environment_altered_reasons:
+        environment_altered_reasons.append(reason)
+
+
+def reap_children():
+    """Call this from setUp(), tearDown(), or tearDownModule() in tests
+    that start subprocesses.  This will help ensure that no extra children
+    (zombies) stick around to hog resources and create problems when
+    looking for refleaks.
+    """
     # Need os.waitpid(-1, os.WNOHANG): Windows is not supported
     if not (hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG')):
         return
@@ -1478,7 +1493,7 @@ def reap_children():
             break
 
         print_warning(f"reap_children() reaped child process {pid}")
-        environment_altered = True
+        set_environment_altered("reaped child process")
 
 
 @contextlib.contextmanager
@@ -2743,6 +2758,96 @@ def exceeds_recursion_limit():
     return 150_000
 
 
+def _has_huge_c_stack(depth):
+    """Check that *depth* recursive calls cannot exhaust the C stack."""
+    try:
+        from _testinternalcapi import get_c_recursion_remaining
+    except ImportError:
+        # Fall back to checking for an unlimited stack size.
+        if is_emscripten or is_wasi or os.name == "nt":
+            return False
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+        return soft == hard and soft in (-1, 0xFFFF_FFFF_FFFF_FFFF)
+    else:
+        remaining = get_c_recursion_remaining()
+        # A negative value means integer overflow in the estimate
+        # (e.g. with an unlimited RLIMIT_STACK).  The estimate is based on
+        # the size of the interpreter loop frame, so it is only a lower
+        # bound for recursion with smaller C frames.
+        return remaining >= depth or remaining < 0
+
+
+def skip_if_huge_c_stack(depth=150_000):
+    """Skip decorator for tests which cannot overflow the C stack.
+
+    Tests exhausting the C stack with *depth* recursive calls cannot
+    trigger the recursion protection if the C stack is too large (e.g.
+    with a large or unlimited RLIMIT_STACK), and either fail, or run
+    for a very long time, or crash, or consume all memory.
+
+    Prefer run_with_limited_c_stack() for tests recursing to a fixed depth.
+    """
+    return unittest.skipIf(
+        _has_huge_c_stack(depth),
+        f"the C stack is large enough for {depth} recursive calls")
+
+
+# Small enough to be exhausted by tens of thousands of recursive calls,
+# but not smaller than Py_C_STACK_SIZE (4 MiB) which the interpreter
+# assumes if it cannot query the thread stack size.
+C_STACK_SIZE = 8 * 1024 * 1024
+
+
+def run_with_limited_c_stack(depth=150_000, size=C_STACK_SIZE):
+    """Decorator for tests exhausting the C stack with *depth* recursive calls.
+
+    Run the test in a separate thread with the C stack of *size* bytes, so
+    that the outcome does not depend on the C stack size of the main thread
+    (which can be large or unlimited, see RLIMIT_STACK).
+
+    If a thread with the limited C stack cannot be created, run the test in
+    the current thread, but skip it if the C stack is too large.
+    """
+    reason = f"the C stack is large enough for {depth} recursive calls"
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(*args, **kwargs):
+            def run_test():
+                # The C stack can still be too large if limiting it failed.
+                if _has_huge_c_stack(depth):
+                    raise unittest.SkipTest(reason)
+                test(*args, **kwargs)
+
+            try:
+                import threading
+                old_size = threading.stack_size(size)
+            except (ImportError, ValueError, RuntimeError):
+                # Setting the thread stack size is not supported.
+                return run_test()
+
+            exceptions = []
+            def run():
+                try:
+                    run_test()
+                except BaseException as exc:
+                    exceptions.append(exc)
+
+            thread = threading.Thread(target=run)
+            try:
+                thread.start()
+            except RuntimeError:
+                # Threads are not supported.
+                return run_test()
+            finally:
+                threading.stack_size(old_size)
+            thread.join()
+            if exceptions:
+                raise exceptions[0]
+        return wrapper
+    return decorator
+
+
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
 skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
@@ -3258,3 +3363,59 @@ def skip_on_low_desktop_heap_memory_subprocess(returncode):
     if returncode == STATUS_DLL_INIT_FAILED:
         raise unittest.SkipTest('gh-150436: DLL init failed, likely because '
                                 'of low desktop heap memory')
+
+_ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
+requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
+requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+def built_with_c_assertions():
+    """Check if Python was built with C assertions (assert())."""
+    try:
+        import _testlimitedcapi
+    except ImportError:
+        return Py_DEBUG
+    else:
+        return bool(_testlimitedcapi._py_getbuiltwithassert())
+
+
+def inject_memory_error(start=0, stop=0):
+    """
+    Memory allocation fails after 'start' allocation requests, and until 'stop'
+    allocation requests except when 'stop' is negative or equal to 0 (default)
+    in which case allocation failures never stop.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    _testcapi.set_nomemory(start, stop)
+
+
+@contextlib.contextmanager
+def inject_memory_error_cm(start=0, stop=0):
+    """
+    Similar to inject_memory_error() but can be used as a context manager.
+
+    Raise SkipTest if the _testcapi extension module is missing
+    """
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("_testcapi required")
+
+    try:
+        _testcapi.set_nomemory(start, stop)
+        yield
+    finally:
+        _testcapi.remove_mem_hooks()
+
+
+def supports_perf_trampoline_profiling():
+    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
+    if not perf_trampoline:
+        return False
+    return int(perf_trampoline) == 1

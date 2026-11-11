@@ -480,6 +480,7 @@ definition found there:
 .. XXX Drop this?
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 PyObject Slots
@@ -1928,9 +1929,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       PyObject *tp_iternext(PyObject *self);
 
-   When the iterator is exhausted, it must return ``NULL``; a :exc:`StopIteration`
-   exception may or may not be set.  When another error occurs, it must return
-   ``NULL`` too.  Its presence signals that the instances of this type are
+   When the iterator is :term:`exhausted`, the ``tp_iternext`` function must
+   return ``NULL``; a :exc:`StopIteration` exception may or may not be set.
+   When another error occurs, it must return ``NULL`` too.
+   The presence of ``tp_iternext`` signals that the instances of this type are
    iterators.
 
    Iterator types should also define the :c:member:`~PyTypeObject.tp_iter` function, and that
@@ -2589,7 +2591,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Specifically, if *type* uses the default metaclass,
       ``type->tp_vectorcall`` must behave the same as
-      :c:expr:`PyType_Type->tp_call`, which:
+      ``Py_TYPE(type)->tp_call``, which:
 
       - calls ``type->tp_new``,
 
@@ -3128,7 +3130,7 @@ Buffer Object Structures
 
    * Resource cleanup when the counter reaches zero must be done atomically,
      as the final release may race with concurrent releases from other
-     threads and dellocation must only happen once.
+     threads and deallocation must only happen once.
 
    The exporter MUST use the :c:member:`~Py_buffer.internal` field to keep
    track of buffer-specific resources. This field is guaranteed to remain
@@ -3420,7 +3422,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        .tp_new = myobj_new,
        .tp_traverse = (traverseproc)myobj_traverse,
        .tp_clear = (inquiry)myobj_clear,
-       .tp_alloc = PyType_GenericNew,
+       .tp_alloc = PyType_GenericAlloc,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
        .tp_hash = (hashfunc)myobj_hash,

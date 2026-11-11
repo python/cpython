@@ -624,6 +624,22 @@ class IOTest(unittest.TestCase):
         with self.open(os_helper.TESTFN, "r", encoding="utf-8") as f:
             self.assertRaises(TypeError, f.readline, 5.3)
 
+    def test_readline_limit_with_short_read(self):
+        class Reader(self.IOBase):
+            data = b"abcdef"
+
+            def peek(self, size):
+                return self.data
+
+            def read(self, size):
+                data = self.data[:min(size, 2)]
+                self.data = self.data[len(data):]
+                return data
+
+        reader = Reader()
+        self.assertEqual(reader.readline(3), b"abc")
+        self.assertEqual(reader.data, b"def")
+
     def test_readline_nonsizeable(self):
         # Issue #30061
         # Crash when readline() returns an object without __len__
@@ -2894,6 +2910,7 @@ class TextIOWrapperTest(unittest.TestCase):
         r = self.BytesIO()
         b = self.BufferedWriter(r)
         t = self.TextIOWrapper(b, encoding="ascii")
+        self.assertIs(t.buffer, b)
         self.assertIs(t.detach(), b)
 
         t = self.TextIOWrapper(b, encoding="ascii")
@@ -2909,6 +2926,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
         self.assertFalse(t.write_through)
+        self.assertIsNone(t.buffer)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -3354,6 +3372,23 @@ class TextIOWrapperTest(unittest.TestCase):
             f.seek(pos)
             remaining = f.read()
             self.assertEqual(remaining, "")
+
+    def test_tell_after_seek_past_cr(self):
+        # tell() must tolerate a stale bytes-per-char ratio after seek().
+        for data in (b'one\rtwo\rthree\r',
+                     ('ab\r' + '\u20ac' * 15).encode()):
+            expected = data.decode().replace('\r', '\n')
+            for i in range(len(expected)):
+                with self.subTest(data=data, i=i):
+                    f = self.TextIOWrapper(self.BytesIO(data),
+                                           encoding='utf-8')
+                    f.read(i)
+                    pos = f.tell()
+                    f.read(1)
+                    f.seek(pos)
+                    self.assertEqual(f.read(1), expected[i])
+                    f.seek(f.tell())
+                    self.assertEqual(f.read(), expected[i + 1:])
 
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
@@ -4099,6 +4134,107 @@ class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_write_newline_replace_returns_non_string(self):
+        class Text(str):
+            def replace(self, *args):
+                return None
+
+        with self.TextIOWrapper(self.BytesIO(), newline='\r\n') as stream:
+            with self.assertRaisesRegex(TypeError, 'replace.*str'):
+                stream.write(Text('a\n'))
+
+    def test_write_newline_replace_changes_stream(self):
+        def fail_init(stream, buffer):
+            with self.assertRaises(LookupError):
+                stream.__init__(buffer, encoding='nonexistent-encoding')
+
+        actions = (
+            (lambda stream, buffer: stream.close(), ValueError, 'closed'),
+            (lambda stream, buffer: stream.detach(), ValueError, 'detached'),
+            (lambda stream, buffer: stream.__init__(buffer),
+             self.UnsupportedOperation, 'not writable'),
+            (fail_init, ValueError, 'uninitialized'),
+        )
+        for action, error, message in actions:
+            with self.subTest(message=message):
+                with (self.BytesIO() as raw,
+                      self.BufferedReader(self.BytesIO()) as readonly):
+                    stream = self.TextIOWrapper(raw, newline='\r\n')
+
+                    class Text(str):
+                        def replace(self, *args):
+                            action(stream, readonly)
+                            return 'a\r\n'
+
+                    with self.assertRaisesRegex(error, message):
+                        stream.write(Text('a\n'))
+
+    def test_reentrant_seek_during_tell(self):
+        # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
+        # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
+        # reentrant seek() there must not free the snapshot tell() still uses.
+        # C-only: _pyio binds next_input as a strong local and cannot crash.
+        wrapper = None
+        armed = False
+
+        class ReentrantDecoder(codecs.IncrementalDecoder):
+            def decode(self, input, final=False):
+                return bytes(input).decode("latin-1")
+            def getstate(self):
+                nonlocal armed
+                if wrapper is not None and armed:
+                    armed = False
+                    wrapper.seek(0)
+                return (b"", 0)
+            def setstate(self, state):
+                pass
+
+        def search(name):
+            if name != "reentrant_tell_test":
+                return None
+            return codecs.CodecInfo(
+                name=name,
+                encode=lambda s, e='strict': (s.encode("latin-1"), len(s)),
+                decode=lambda b, e='strict': (bytes(b).decode("latin-1"), len(b)),
+                incrementaldecoder=ReentrantDecoder)
+
+        codecs.register(search)
+        self.addCleanup(codecs.unregister, search)
+        raw = self.BytesIO(b"abcdefghijklmnop" * 8)
+        wrapper = self.TextIOWrapper(self.BufferedReader(raw),
+                                     encoding="reentrant_tell_test", newline="")
+        wrapper._CHUNK_SIZE = 8
+        wrapper.read(5)
+        armed = True
+        self.assertIsInstance(wrapper.tell(), int)
+        # tell() at the snapshot boundary takes the early return that owns and
+        # must release next_input; exercise it too (leak-checked under -R).
+        wrapper.seek(0)
+        self.assertIsInstance(wrapper.tell(), int)
+
+    def test_chunk_size(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
+        self.assertGreater(t._CHUNK_SIZE, 0)
+        t._CHUNK_SIZE = 1024
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+        with self.assertRaisesRegex(ValueError,
+                                    'a strictly positive integer is required'):
+            t._CHUNK_SIZE = 0
+        with self.assertRaises(TypeError):
+            t._CHUNK_SIZE = 'x'
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = sys.maxsize + 1
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -sys.maxsize - 2
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = 2**1000
+        with self.assertRaises(ValueError):
+            t._CHUNK_SIZE = -2**1000
+        with self.assertRaisesRegex(AttributeError, 'cannot be deleted'):
+            del t._CHUNK_SIZE
+        # a failed assignment does not change the value
+        self.assertEqual(t._CHUNK_SIZE, 1024)
+
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
@@ -4210,10 +4346,99 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         wrapper = self.TextIOWrapper(raw)
         wrapper.close()  # should not crash
 
+    def test_reentrant_detach_during_flush(self):
+        # gh-143008: Reentrant detach() during flush should not crash.
+
+        class DetachOnce(self.BufferedRandom):
+            wrapper = None
+
+            def detach_once(self):
+                original = self.wrapper
+                self.wrapper = None
+                if original is not None:
+                    original.detach()
+                    original.flush()
+
+        class DetachOnFlush(DetachOnce):
+            def flush(self):
+                self.detach_once()
+
+        class DetachOnWrite(DetachOnce):
+            def write(self, b):
+                self.detach_once()
+                return len(b)
+
+        # Separate reference for after detach_once.
+        wrapper = None
+
+        def make_text(buffer):
+            nonlocal wrapper
+            buffer.wrapper = self.TextIOWrapper(buffer, encoding='utf-8')
+            wrapper = buffer.wrapper
+
+        # Many calls could result in the same null self->buffer crash.
+        tests = [
+            ('truncate', lambda: wrapper.truncate(0)),
+            ('close', lambda: wrapper.close()),
+            ('detach', lambda: wrapper.detach()),
+            ('seek', lambda: wrapper.seek(0)),
+            ('tell', lambda: wrapper.tell()),
+            ('reconfigure', lambda: wrapper.reconfigure(line_buffering=True)),
+        ]
+        for name, method in tests:
+            with self.subTest(name):
+                make_text(DetachOnFlush(self.MockRawIO()))
+                self.assertRaisesRegex(ValueError, "detached", method)
+
+        # Should not crash.
+        with self.subTest('read via writeflush'):
+            make_text(DetachOnWrite(self.MockRawIO()))
+            wrapper.write('x')
+            self.assertRaisesRegex(ValueError, "detached", wrapper.read)
+
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+                self.assertIsNone(wrapper.buffer)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_tell_with_invalid_b2cratio(self):
+        for ratio in (float('nan'), float('inf'), -float('inf'), 1e100):
+            with self.subTest(ratio=ratio):
+                with self.TextIOWrapper(self.BytesIO(b'abc'),
+                                        encoding='utf-8') as f:
+                    self.assertEqual(f.read(1), 'a')
+                    f._b2cratio = ratio
+                    position = f.tell()
+                    f.seek(position)
+                    self.assertEqual(f.read(), 'bc')
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):

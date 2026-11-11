@@ -714,9 +714,6 @@ de_instrument_line(PyCodeObject *code, _Py_CODEUNIT *bytecode, _PyCoMonitoringDa
     }
     _PyCoLineInstrumentationData *lines = monitoring->lines;
     int original_opcode = get_original_opcode(lines, i);
-    if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-        set_original_opcode(lines, i, monitoring->per_instruction_opcodes[i]);
-    }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
     FT_ATOMIC_STORE_UINT8(instr->op.code, original_opcode);
@@ -881,7 +878,15 @@ remove_line_tools(PyCodeObject * code, int offset, int tools)
         should_de_instrument = ((single_tool & tools) == single_tool);
     }
     if (should_de_instrument) {
+        /* Restore all thread-local bytecodes before updating the shared
+         * original opcode. */
         MODIFY_BYTECODE(code, de_instrument_line, monitoring, offset);
+        if (get_original_opcode(monitoring->lines, offset) ==
+            INSTRUMENTED_INSTRUCTION)
+        {
+            set_original_opcode(monitoring->lines, offset,
+                                monitoring->per_instruction_opcodes[offset]);
+        }
     }
 }
 
@@ -988,8 +993,12 @@ call_one_instrument(
     if (res == NULL) {
         return -1;
     }
+    if (res == &_PyInstrumentation_DISABLE) {
+        assert(_Py_IsImmortal(res));
+        return 1;
+    }
     Py_DECREF(res);
-    return (res == &_PyInstrumentation_DISABLE);
+    return 0;
 }
 
 static const int8_t MOST_SIGNIFICANT_BITS[16] = {
@@ -1391,6 +1400,11 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     uint8_t original_opcode;
 done:
     original_opcode = get_original_opcode(line_data, i);
+    if (instr->op.code == INSTRUMENTED_INSTRUCTION) {
+        /* A LINE callback may have disabled the last LINE tool while
+         * leaving INSTRUCTION monitoring enabled. */
+        original_opcode = INSTRUMENTED_INSTRUCTION;
+    }
     assert(original_opcode != 0);
     assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
@@ -1657,6 +1671,7 @@ allocate_instrumentation_data(PyCodeObject *code)
         }
         monitoring->local_monitors = (_Py_LocalMonitors){ 0 };
         monitoring->active_monitors = (_Py_LocalMonitors){ 0 };
+        memset(monitoring->tool_versions, 0, sizeof(monitoring->tool_versions));
         monitoring->tools = NULL;
         monitoring->lines = NULL;
         monitoring->line_tools = NULL;

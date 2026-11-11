@@ -442,7 +442,7 @@ Certificate handling
 
    The function returns a list of (cert_bytes, encoding_type, trust) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data. Trust specifies the purpose of the certificate as a set
    of OIDS or exactly ``True`` if the certificate is trustworthy for all
    purposes.
@@ -463,9 +463,9 @@ Certificate handling
    one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
    stores, too.
 
-   The function returns a list of (cert_bytes, encoding_type, trust) tuples.
+   The function returns a list of (cert_bytes, encoding_type) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data.
 
    .. availability:: Windows.
@@ -1256,12 +1256,20 @@ SSL sockets also have the following additional methods and attributes:
    If certificate verification was disabled method acts the same as
    :meth:`~SSLSocket.get_unverified_chain`.
 
+   The verified chain is not stored with a session, so the list is empty
+   when the session is resumed (see :attr:`~SSLSocket.session_reused`).
+
    .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
    Returns raw certificate chain provided by the other
    end of the SSL channel as a list of DER-encoded bytes.
+
+   No certificates are exchanged when a session is resumed (see
+   :attr:`~SSLSocket.session_reused`); the list then holds what was stored
+   with the session, which for a session resumed from a ticket on the
+   server side is the peer's own certificate only.
 
    .. versionadded:: 3.13
 
@@ -1721,6 +1729,12 @@ to speed up repeated connections from the same clients.
    :class:`SSLContext` representing a certificate chain that matches the server
    name.
 
+   If the callback assigns a new context to :attr:`SSLSocket.context`, any
+   further ClientHello message on the same connection (for example after a
+   TLS 1.3 HelloRetryRequest) is dispatched to the new context's
+   *sni_callback*, if it has one; the original callback is not called again
+   for that connection.
+
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
@@ -1744,6 +1758,11 @@ to speed up repeated connections from the same clients.
    had OPENSSL_NO_TLSEXT defined when it was built.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.14.8
+      After the callback assigns a new :attr:`SSLSocket.context`, later
+      ClientHello messages on the connection are dispatched to the new
+      context's *sni_callback*.
 
 .. method:: SSLContext.set_servername_callback(server_name_callback)
 
@@ -1866,7 +1885,11 @@ to speed up repeated connections from the same clients.
    outgoing BIO.
 
    The *server_side*, *server_hostname* and *session* parameters have the
-   same meaning as in :meth:`SSLContext.wrap_socket`.
+   same meaning as in :meth:`SSLContext.wrap_socket`, and are validated in
+   the same way: in particular a :exc:`ValueError` is raised when
+   :attr:`~SSLContext.check_hostname` is enabled but no *server_hostname* is
+   given, since there would be no name to match the peer's certificate
+   against.
 
    .. versionchanged:: 3.6
       *session* argument was added.
@@ -1874,6 +1897,13 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.7
       The method returns an instance of :attr:`SSLContext.sslobject_class`
       instead of hard-coded :class:`SSLObject`.
+
+   .. versionchanged:: 3.14.8
+      The *server_side*, *server_hostname* and *session* parameters are now
+      validated as :meth:`SSLContext.wrap_socket` validates them. Previously
+      a context with :attr:`~SSLContext.check_hostname` enabled and no
+      *server_hostname* was accepted, and verified the certificate chain but
+      never the peer's identity.
 
 .. attribute:: SSLContext.sslobject_class
 
@@ -2073,8 +2103,8 @@ to speed up repeated connections from the same clients.
    Client-identity is an optional string which may be used by the server to
    select a corresponding PSK for the client. The string must be less than or
    equal to ``256`` octets when UTF-8 encoded. PSK is a
-   :term:`bytes-like object` representing the pre-shared key. Return a zero
-   length PSK to reject the connection.
+   :term:`bytes-like object` representing the pre-shared key. With TLS 1.2
+   and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2083,12 +2113,23 @@ to speed up repeated connections from the same clients.
 
       - the ``hint`` parameter is always :const:`None`.
       - client-identity must be a non-empty string.
+      - the PSK is only offered to the server, which may decline it and
+        authenticate with a certificate instead.  That certificate is checked
+        according to :attr:`~SSLContext.verify_mode`, so a client relying on
+        the PSK to authenticate the server should not set it to
+        :const:`CERT_NONE`, or should check :attr:`SSLSocket.session_reused`,
+        which is true if the PSK was used.  A PSK handshake does not need any
+        CA certificates to be loaded when using :const:`CERT_REQUIRED`.
+      - a zero length PSK does not reject the connection, it only means that
+        no PSK is offered.  An exception raised by the callback has the same
+        effect.
+      - the PSK is used with the SHA-256 handshake digest, so a server can
+        only accept it with a cipher suite that uses SHA-256.
 
    Example usage::
 
       context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.check_hostname = False
-      context.verify_mode = ssl.CERT_NONE
       context.maximum_version = ssl.TLSVersion.TLSv1_2
       context.set_ciphers('PSK')
 
@@ -2120,7 +2161,7 @@ to speed up repeated connections from the same clients.
    The ``identity`` parameter is an optional identity sent by the client which can
    be used to select a corresponding PSK.
    The return value is a :term:`bytes-like object` representing the pre-shared key.
-   Return a zero length PSK to reject the connection.
+   With TLS 1.2 and earlier, return a zero length PSK to reject the connection.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
@@ -2129,7 +2170,19 @@ to speed up repeated connections from the same clients.
    UTF-8 encoded.
 
    .. note::
-      When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
+      When using TLS 1.3:
+
+      - the ``identity_hint`` parameter is not sent to the client.
+      - a zero length PSK, or an exception raised by the callback, only
+        declines the client's PSK.  If a certificate was loaded with
+        :meth:`~SSLContext.load_cert_chain`, the handshake continues with
+        certificate authentication instead of failing, so a server relying on
+        the PSK to authenticate clients should not load one, or should check
+        :attr:`SSLSocket.session_reused`, which is true if the PSK was used.
+      - the PSK can only be accepted with a cipher suite that uses SHA-256.
+        When a certificate is loaded, OpenSSL's default TLS 1.3 cipher suite
+        order selects a SHA-384 suite instead, so the PSK is declined even if
+        it matches.
 
    Example usage::
 
@@ -2389,7 +2442,7 @@ Visual inspection shows that the certificate does identify the desired service
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
-   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
+   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: www.python.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
    [b'HTTP/1.1 200 OK',
     b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
@@ -2598,7 +2651,7 @@ provided.
    When compared to :class:`SSLSocket`, this object lacks the following
    features:
 
-   - Any form of network IO; ``recv()`` and ``send()`` read and write only to
+   - Any form of network IO; ``read()`` and ``write()`` read and write only to
      the underlying :class:`MemoryBIO` buffers.
 
    - There is no *do_handshake_on_connect* machinery. You must always manually

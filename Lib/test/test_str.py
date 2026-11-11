@@ -606,14 +606,9 @@ class StrTest(string_tests.StringLikeTest,
         s1 = "轘" * 4
         s2 = "&"
         s3 = "&amp;"
-        assertion = self.assertRaises(MemoryError)
-        _testcapi.set_nomemory(0, 0)
-        try:
-            # No allocations made in the test itself:
-            with assertion:
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
                 s1.replace(s2, s3)  # this line used to crash before
-        finally:
-            _testcapi.remove_mem_hooks()
 
     def test_repeat_id_preserving(self):
         a = '123abc1@'
@@ -2580,7 +2575,7 @@ class StrTest(string_tests.StringLikeTest,
                 self.assertFalse(copy1 != copy2)
 
                 self.assertTrue(copy1 <= copy2)
-                self.assertTrue(copy2 >= copy2)
+                self.assertTrue(copy1 >= copy2)
 
         self.assertTrue(ascii < ascii2)
         self.assertTrue(ascii < latin)

@@ -255,6 +255,14 @@ class BaseFutureTests:
         f.cancel('my message')
         f._cancel_message = 'my new message'
         self.assertEqual(f._cancel_message, 'my new message')
+        f._cancel_message = None
+        self.assertIsNone(f._cancel_message)
+        f._cancel_message = 'my new message'
+        if not isinstance(f, futures._PyFuture):
+            # The C implementation does not support deletion.
+            with self.assertRaises(AttributeError):
+                del f._cancel_message
+        self.assertEqual(f._cancel_message, 'my new message')
 
         # Also check that the value is used for cancel().
         with self.assertRaises(asyncio.CancelledError):
@@ -699,6 +707,24 @@ class BaseFutureTests:
             exc = e
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    def test_futureiter_send_after_throw_no_crash(self):
+        fut = self._new_future(loop=self.loop)
+        it = fut.__await__()
+        next(it)
+        with self.assertRaises(RuntimeError):
+            it.throw(RuntimeError)
+        with self.assertRaises(StopIteration):
+            it.send(None)
+
+    def test_futureiter_send_after_close_no_crash(self):
+        fut = self._new_future(loop=self.loop)
+        it = fut.__await__()
+        next(it)
+        it.close()
+        with self.assertRaises(StopIteration):
+            it.send(None)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),

@@ -930,8 +930,7 @@ If an asynchronous generator happens to exit early by :keyword:`break`, the call
 task being cancelled, or other exceptions, the generator's async cleanup code
 will run and possibly raise exceptions or access context variables in an
 unexpected context--perhaps after the lifetime of tasks it depends, or
-during the event loop shutdown when the async-generator garbage collection hook
-is called.
+during the event loop shutdown.
 To prevent this, the caller must explicitly close the async generator by calling
 :meth:`~agen.aclose` method to finalize the generator and ultimately detach it
 from the event loop.
@@ -944,17 +943,17 @@ construct could result in a failure to execute pending :keyword:`finally`
 clauses.  In this case, it is the responsibility of the event loop or
 scheduler running the asynchronous generator to call the asynchronous
 generator-iterator's :meth:`~agen.aclose` method and run the resulting
-coroutine object, thus allowing any pending :keyword:`!finally` clauses
-to execute.
+awaitable, thus allowing any pending :keyword:`!finally` clauses to execute.
 
-To take care of finalization upon event loop termination, an event loop should
-define a *finalizer* function which takes an asynchronous generator-iterator and
-presumably calls :meth:`~agen.aclose` and executes the coroutine.
-This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
-When first iterated over, an asynchronous generator-iterator will store the
-registered *finalizer* to be called upon finalization. For a reference example
-of a *finalizer* method see the implementation of
-``asyncio.Loop.shutdown_asyncgens`` in :source:`Lib/asyncio/base_events.py`.
+To handle finalization when an asynchronous generator is about to be garbage
+collected, an event loop should define a *finalizer* function which takes an
+asynchronous generator-iterator and schedules the awaitable returned by
+:meth:`~agen.aclose`. This *finalizer* may be registered by calling
+:func:`sys.set_asyncgen_hooks`. When first iterated over, an asynchronous
+generator-iterator will store the registered *finalizer* to be called upon
+finalization. For a reference example of a *finalizer* method see the
+implementation of ``asyncio.BaseEventLoop._asyncgen_finalizer_hook`` in
+:source:`Lib/asyncio/base_events.py`.
 
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
@@ -1035,8 +1034,8 @@ which are used to control the execution of a generator function.
    If the asynchronous generator function then exits gracefully, is already
    closed, or raises :exc:`GeneratorExit` (by not catching the exception),
    then the returned awaitable will raise a :exc:`StopIteration` exception.
-   Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.  If the
+   Awaitables returned by subsequent calls to :meth:`~agen.__anext__`
+   or :meth:`~agen.asend` will raise a :exc:`StopAsyncIteration` exception.  If the
    asynchronous generator yields a value, a :exc:`RuntimeError` is raised
    by the awaitable.  If the asynchronous generator raises any other exception,
    it is propagated to the caller of the awaitable.  If the asynchronous
@@ -1999,7 +1998,7 @@ some consistency rules, if possible:
 
   The last two expressions apply to totally ordered collections (e.g. to
   sequences, but not to sets or mappings). See also the
-  :func:`~functools.total_ordering` decorator.
+  :deco:`~functools.total_ordering` decorator.
 
 * The :func:`hash` result should be consistent with equality.
   Objects that are equal should either have the same hash value,

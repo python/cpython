@@ -17,6 +17,7 @@ import unittest
 from test import support
 from test.support import cpython_only, import_helper, os_helper
 from test.support.import_helper import ensure_lazy_imports
+from test.support.script_helper import assert_python_ok
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -383,6 +384,57 @@ if has_c_implementation:
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
 
+        def test_c_pickler_attributes(self):
+            pickler = _pickle.Pickler(io.BytesIO())
+            for name in 'bin', 'fast':
+                with self.subTest(name=name):
+                    for value in 0, 1, True:
+                        setattr(pickler, name, value)
+                        self.assertEqual(getattr(pickler, name), int(value))
+                    with self.assertRaises(TypeError):
+                        setattr(pickler, name, 'x')
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, sys.maxsize + 1)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, -sys.maxsize - 2)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, 2**1000)
+                    with self.assertRaises(OverflowError):
+                        setattr(pickler, name, -2**1000)
+                    with self.assertRaisesRegex(
+                            TypeError, "can't delete numeric/char attribute"):
+                        delattr(pickler, name)
+                    # a failed assignment does not change the value
+                    self.assertEqual(getattr(pickler, name), 1)
+
+            self.assertRaises(AttributeError, getattr, pickler,
+                              'dispatch_table')
+            table = {}
+            pickler.dispatch_table = table
+            self.assertIs(pickler.dispatch_table, table)
+            del pickler.dispatch_table
+            self.assertRaises(AttributeError, getattr, pickler,
+                              'dispatch_table')
+
+            pickler.memo = {}
+            self.assertEqual(pickler.memo.copy(), {})
+            with self.assertRaisesRegex(TypeError, 'must be a PicklerMemoProxy'):
+                pickler.memo = None
+            with self.assertRaisesRegex(TypeError,
+                                        'attribute deletion is not supported'):
+                del pickler.memo
+
+        def test_c_unpickler_attributes(self):
+            unpickler = _pickle.Unpickler(io.BytesIO(b'.'))
+            unpickler.memo = {}
+            self.assertEqual(unpickler.memo.copy(), {})
+            with self.assertRaisesRegex(TypeError,
+                                        'must be an UnpicklerMemoProxy'):
+                unpickler.memo = None
+            with self.assertRaisesRegex(TypeError,
+                                        'attribute deletion is not supported'):
+                del unpickler.memo
+
     class CPersPicklerTests(PyPersPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
@@ -403,6 +455,70 @@ if has_c_implementation:
     class CPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests, unittest.TestCase):
         pickler_class = _pickle.Pickler
         unpickler_class = _pickle.Unpickler
+
+        @support.requires_subprocess()
+        def test_clear_unpickler_memo_memory_error(self):
+            import_helper.import_module('_testcapi')
+            code = dedent('''
+                import _testcapi
+                import io
+                import pickle
+                from test.support import SuppressCrashReport
+
+                value = [b'repeated'] * 2
+                data = pickle.dumps(value, protocol=4)
+                unpickler = pickle.Unpickler(io.BytesIO(data * 2))
+                assert unpickler.load() == value
+                memo = unpickler.memo.copy()
+                clear = unpickler.memo.clear
+                reset = _testcapi.remove_mem_hooks
+                failed = False
+                with SuppressCrashReport():
+                    # Fail the replacement memo allocation, with all callable
+                    # lookups performed before enabling the allocator hook.
+                    _testcapi.set_nomemory(0, 1)
+                    try:
+                        clear()
+                    except MemoryError:
+                        failed = True
+                    finally:
+                        reset()
+                    assert failed
+                    assert unpickler.memo.copy() == memo
+                    clear()
+                    assert unpickler.memo.copy() == {}
+                    assert unpickler.load() == value
+            ''')
+            assert_python_ok('-c', code)
+
+        @support.requires_subprocess()
+        def test_clear_unpickler_memo_reentrant(self):
+            code = dedent(r'''
+                import io
+                import pickle
+                from test.support import gc_collect, SuppressCrashReport
+
+                snapshots = []
+                class Entry:
+                    def __del__(self):
+                        snapshots.append(unpickler.memo.copy())
+
+                value = [b'repeated'] * 2
+                # Create the entry through the C unpickler so clearing its
+                # sole reference runs the finalizer even without the GIL.
+                data = b'\x80\x02c__main__\nEntry\n)\x81q\x00.'
+                unpickler = pickle.Unpickler(
+                    io.BytesIO(data + pickle.dumps(value, protocol=4)))
+                unpickler.load()
+                gc_collect()
+                with SuppressCrashReport():
+                    unpickler.memo.clear()
+                    gc_collect()
+                    assert snapshots == [{}]
+                    assert unpickler.memo.copy() == {}
+                    assert unpickler.load() == value
+            ''')
+            assert_python_ok('-c', code)
 
         def test_issue18339(self):
             unpickler = self.unpickler_class(io.BytesIO())
@@ -518,7 +634,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n3i')
+            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P5n8P2n3i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.

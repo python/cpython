@@ -161,7 +161,7 @@ loops that truncate the stream.
    Loops over the input iterable and accumulates data into tuples up to
    size *n*.  The input is consumed lazily, just enough to fill a batch.
    The result is yielded as soon as the batch is full or when the input
-   iterable is exhausted:
+   iterable is :term:`exhausted`:
 
    .. doctest::
 
@@ -191,7 +191,7 @@ loops that truncate the stream.
 .. function:: chain(*iterables)
 
    Make an iterator that returns elements from the first iterable until
-   it is exhausted, then proceeds to the next iterable, until all of the
+   it is :term:`exhausted`, then proceeds to the next iterable, until all of the
    iterables are exhausted.  This combines multiple data sources into a
    single iterator.  Roughly equivalent to::
 
@@ -300,7 +300,7 @@ loops that truncate the stream.
 
    Make an iterator that returns elements from *data* where the
    corresponding element in *selectors* is true.  Stops when either the
-   *data* or *selectors* iterables have been exhausted.  Roughly
+   *data* or *selectors* iterables have been :term:`exhausted`.  Roughly
    equivalent to::
 
        def compress(data, selectors):
@@ -336,7 +336,7 @@ loops that truncate the stream.
 .. function:: cycle(iterable)
 
    Make an iterator returning elements from the *iterable* and saving a
-   copy of each.  When the iterable is exhausted, return elements from
+   copy of each.  When the iterable is :term:`exhausted`, return elements from
    the saved copy.  Repeats indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
@@ -467,7 +467,7 @@ loops that truncate the stream.
    elements from the iterable are skipped until *start* is reached.
 
    If *stop* is ``None``, iteration continues until the input is
-   exhausted, if at all.  Otherwise, it stops at the specified position.
+   :term:`exhausted`, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
    consecutively unless *step* is set higher than one which results in
@@ -672,9 +672,9 @@ loops that truncate the stream.
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
-   input iterator after *takewhile* has been run to exhaustion.  To work
-   around this problem, consider using `more-itertools before_and_after()
-   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
+   input iterator after *takewhile* has been run to :term:`exhaustion <exhausted>`.
+   To work around this problem, consider using `more-itertools before_and_after()
+   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`__
    instead.
 
 
@@ -761,7 +761,7 @@ loops that truncate the stream.
    If the iterables are of uneven length, missing values are filled-in
    with *fillvalue*.  If not specified, *fillvalue* defaults to ``None``.
 
-   Iteration continues until the longest iterable is exhausted.
+   Iteration continues until the longest iterable is :term:`exhausted`.
 
    Roughly equivalent to::
 

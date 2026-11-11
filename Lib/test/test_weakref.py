@@ -1,4 +1,5 @@
 import gc
+import io
 import sys
 import doctest
 import unittest
@@ -161,6 +162,17 @@ class ReferencesTestCase(TestBase):
 
         self.assertIn('MyConfig', repr(obj_weakref))
         self.assertIn('MyConfig', str(obj_weakref))
+
+    def test_repr_name_lookup_error(self):
+        # An error raised while looking up __name__ propagates.
+        class BadName:
+            @property
+            def __name__(self):
+                raise ZeroDivisionError
+
+        obj = BadName()
+        with self.assertRaises(ZeroDivisionError):
+            repr(weakref.ref(obj))
 
     def test_basic_callback(self):
         self.check_basic_callback(C)
@@ -594,6 +606,20 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(p + 1.0, 3.0)
         self.assertEqual(1.0 + p, 3.0)  # this used to SEGV
 
+    def test_dead_proxy_operand_does_not_leak(self):
+        dead = weakref.proxy(Object(2))
+        gc_collect()
+        for operation in (operator.add, operator.eq, lambda a, b: pow(a, 2, b)):
+            with self.subTest(operation=operation):
+                live = Object(1)
+                ref = weakref.ref(live)
+                proxy = weakref.proxy(live)
+                with self.assertRaises(ReferenceError):
+                    operation(proxy, dead)
+                del live
+                gc_collect()
+                self.assertIsNone(ref())
+
     def test_callbacks_protected(self):
         # Callbacks protected from already-set exceptions?
         # Regression test for SF bug #478534.
@@ -987,6 +1013,29 @@ class ReferencesTestCase(TestBase):
         del root
         gc.collect()
 
+    def test_ref_to_object_dying_after_finalizer(self):
+        cleared = []
+        class Attr:
+            def __del__(self):
+                cleared.append(self.wr() is None)
+
+        class SetWithDel(set):
+            __slots__ = ('a',)
+            def __del__(self):
+                pass
+
+        class Raw(io.RawIOBase):
+            __slots__ = ('a',)
+
+        for cls in (SetWithDel, Raw):
+            with self.subTest(cls=cls.__name__):
+                cleared.clear()
+                o = cls()
+                o.a = Attr()
+                o.a.wr = weakref.ref(o)
+                del o
+                self.assertEqual(cleared, [True])
+
     def test_callback_attribute(self):
         x = Object(1)
         callback = lambda ref: None
@@ -1024,8 +1073,8 @@ class ReferencesTestCase(TestBase):
         # gh-118331: Make sure we do not raise an exception from the destructor
         # when clearing weakrefs if allocating the intermediate tuple fails.
         code = textwrap.dedent("""
-        import _testcapi
         import weakref
+        from test import support
 
         class TestObj:
             pass
@@ -1037,7 +1086,7 @@ class ReferencesTestCase(TestBase):
         # The choice of 50 is arbitrary, but must be large enough to ensure
         # the allocation won't be serviced by the free list.
         wrs = [weakref.ref(obj, callback) for _ in range(50)]
-        _testcapi.set_nomemory(0)
+        support.inject_memory_error()
         del obj
         """).strip()
         res, _ = script_helper.run_python_until_end("-c", code)

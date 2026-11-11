@@ -373,6 +373,20 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     return ip == host_ip
 
 
+def _check_sslobject_params(server_side, context=None, server_hostname=None, session=None):
+    """Raises a ValueError if SSLObject._create() parameters aren't valid.
+    """
+    if server_side:
+        if server_hostname:
+            raise ValueError("server_hostname can only be specified "
+                             "in client mode")
+        if session is not None:
+            raise ValueError("session can only be specified in "
+                             "client mode")
+    if context.check_hostname and not server_hostname:
+        raise ValueError("check_hostname requires server_hostname")
+
+
 DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",
     "cafile capath openssl_cafile_env openssl_cafile openssl_capath_env "
     "openssl_capath")
@@ -755,6 +769,8 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
         raise ValueError(purpose)
 
     context = SSLContext(protocol)
+    # Setting verify_mode to CERT_NONE fails while check_hostname is
+    # enabled, so assign check_hostname first (gh-114905).
     context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
@@ -813,6 +829,8 @@ class SSLObject:
     @classmethod
     def _create(cls, incoming, outgoing, server_side=False,
                  server_hostname=None, session=None, context=None):
+        _check_sslobject_params(server_side=server_side, context=context,
+                                server_hostname=server_hostname, session=session)
         self = cls.__new__(cls)
         sslobj = context._wrap_bio(
             incoming, outgoing, server_side=server_side,
@@ -993,15 +1011,8 @@ class SSLSocket(socket):
                 context=None, session=None):
         if sock.getsockopt(SOL_SOCKET, SO_TYPE) != SOCK_STREAM:
             raise NotImplementedError("only stream sockets are supported")
-        if server_side:
-            if server_hostname:
-                raise ValueError("server_hostname can only be specified "
-                                 "in client mode")
-            if session is not None:
-                raise ValueError("session can only be specified in "
-                                 "client mode")
-        if context.check_hostname and not server_hostname:
-            raise ValueError("check_hostname requires server_hostname")
+        _check_sslobject_params(server_side=server_side, context=context,
+                                server_hostname=server_hostname, session=session)
 
         sock_timeout = sock.gettimeout()
         kwargs = dict(

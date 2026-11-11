@@ -1132,7 +1132,7 @@ exit:
 #endif /* defined(PY_SQLITE_ENABLE_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
-"execute($self, sql, parameters=<unrepresentable>, /)\n"
+"execute($self, sql, parameters=(), /)\n"
 "--\n"
 "\n"
 "Executes an SQL statement.");
@@ -1924,4 +1924,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=072e199b0fc4a271 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4a36c348ca2112e input=a9049054013a1b77]*/

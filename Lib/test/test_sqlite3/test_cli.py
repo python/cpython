@@ -1,5 +1,6 @@
 """sqlite3 CLI tests."""
 import sqlite3
+import sys
 import unittest
 
 from sqlite3.__main__ import main as cli
@@ -73,6 +74,7 @@ class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "sqlite> "
     PS2 = "... "
+    EOF_KEY = "CTRL-Z" if sys.platform == "win32" else "CTRL-D"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -95,7 +97,7 @@ class InteractiveSession(unittest.TestCase):
     def test_interact(self):
         out, err = self.run_cli()
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(f'type ".quit" or {self.EOF_KEY} to quit', err)
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 1)
         self.assertEqual(out.count(self.PS2), 0)

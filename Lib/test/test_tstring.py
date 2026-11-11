@@ -1,5 +1,9 @@
+import subprocess
 import unittest
 
+from test import support
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_ok, spawn_python
 from test.test_string._support import TStringBaseCase, fstring
 
 
@@ -79,6 +83,44 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         )
         self.assertEqual(fstring(t), "Name: Bob, Age: 30")
 
+    @support.requires_subprocess()
+    def test_expression_in_interactive_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        source = (
+            f"result = t'''{{{expression}}}'''\n"
+            "print(repr(result.interpolations[0].expression))\n"
+        )
+        with spawn_python('-i', '-q', stderr=subprocess.PIPE) as process:
+            stdout, stderr = process.communicate(
+                source.encode(), timeout=support.SHORT_TIMEOUT)
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(stdout.decode().strip(), repr(expression))
+
+    def test_interpolation_expression_in_file_after_buffer_resize(self):
+        expression = "(\n" + (" " * 64 + "\n") * 256 + "1\n)"
+        with temp_cwd():
+            script = 'script.py'
+            source = (
+                f"template = t'''{{{expression}}}'''\n"
+                "interpolation = template.interpolations[0]\n"
+                f"assert interpolation.expression == {expression!r}\n"
+            )
+            with open(script, 'w') as f:
+                f.write(source)
+            assert_python_ok(script)
+
+    @support.requires_resource('cpu')
+    def test_many_tstrings_in_module(self):
+        fields = ''.join(f'{{x{i}}}' for i in range(100))
+        source = ''.join(
+            f"value_{i} = t'{fields}'\n" for i in range(1_000)
+        )
+        namespace = {f'x{i}': str(i) for i in range(100)}
+        expected = ''.join(str(i) for i in range(100))
+        exec(source, namespace)
+        self.assertEqual(fstring(namespace['value_0']), expected)
+        self.assertEqual(fstring(namespace['value_999']), expected)
+
     def test_format_specifiers(self):
         # Test basic format specifiers
         value = 3.14159
@@ -87,6 +129,14 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             t, ("Pi: ", ""), [(value, "value", None, ".2f")]
         )
         self.assertEqual(fstring(t), "Pi: 3.14")
+
+        a = 3
+        b = 4
+        t = t"{a!=b:>10}"
+        self.assertTStringEqual(
+            t, ("", ""), [(a != b, "a!=b", None, ">10")]
+        )
+        self.assertEqual(fstring(t), "         1")
 
     def test_conversions(self):
         # Test !s conversion (str)
@@ -136,9 +186,81 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         # Test white space in debug specifier
         t = t"Value: {value = }"
         self.assertTStringEqual(
-            t, ("Value: value = ", ""), [(value, "value", "r")]
+            t, ("Value: value = ", ""), [(value, "value ", "r")]
         )
         self.assertEqual(fstring(t), "Value: value = 42")
+
+        # Explicit line continuations after the debug marker are part of
+        # the debug text, not the interpolation expression.
+        for template, strings, interpolation, rendered in (
+            (
+                t"""Value: {value =\
+}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+!r}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n42",
+            ),
+            (
+                t"""Value: {value =\
+:04}""",
+                ("Value: value =\\\n", ""),
+                (value, "value ", None, "04"),
+                "Value: value =\\\n0042",
+            ),
+            (
+                t"""Value: {value =\
+\
+}""",
+                ("Value: value =\\\n\\\n", ""),
+                (value, "value ", "r"),
+                "Value: value =\\\n\\\n42",
+            ),
+        ):
+            with self.subTest(template=template):
+                self.assertTStringEqual(template, strings, [interpolation])
+                self.assertEqual(fstring(template), rendered)
+
+    def test_interpolation_expression_whitespace(self):
+        x = 42
+        for template, expected in (
+            (t"{x}", "x"),
+            (t"{x }", "x "),
+            (t"{ x}", " x"),
+            (t"{ x }", " x "),
+            (t"{  x  }", "  x  "),
+            (t"""{
+  x
+}""", "\n  x\n"),
+            (t"{ x !r}", " x "),
+            (t"{ x :.2f}", " x "),
+            (t"{ x = }", " x "),
+            (t"{ x = !r}", " x "),
+            (t"{ x = :.2f}", " x "),
+            (t"{x == 42 = }", "x == 42 "),
+        ):
+            with self.subTest(template=template):
+                self.assertEqual(
+                    template.interpolations[0].expression,
+                    expected,
+                )
+
+    def test_interpolation_expression_with_reconstructed_metadata(self):
+        regular = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")}'''
+        debug = t'''{(
+            1,  # Force lexer metadata reconstruction.
+            "\"#")=}'''
+        expected = '(\n            1,  \n            "\\"#")'
+        self.assertEqual(regular.interpolations[0].expression, expected)
+        self.assertEqual(debug.interpolations[0].expression, expected)
 
     def test_raw_tstrings(self):
         path = r"C:\Users"

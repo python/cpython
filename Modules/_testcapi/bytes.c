@@ -4,14 +4,19 @@
 
 /* Test _PyBytes_Resize() */
 static PyObject *
-bytes_resize(PyObject *Py_UNUSED(module), PyObject *args)
+bytes_resize(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"obj", "newsize", "new", "compute_hash", NULL};
     PyObject *obj;
     Py_ssize_t newsize;
     int new;
+    int compute_hash = 0;
 
-    if (!PyArg_ParseTuple(args, "Onp", &obj, &newsize, &new))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "Onp|p", kwlist,
+                                     &obj, &newsize, &new, &compute_hash)) {
         return NULL;
+    }
 
     NULLABLE(obj);
     if (new) {
@@ -27,13 +32,25 @@ bytes_resize(PyObject *Py_UNUSED(module), PyObject *args)
     else {
         Py_XINCREF(obj);
     }
+
+    if (compute_hash) {
+        if (PyObject_Hash(obj) == -1) {
+            Py_DECREF(obj);
+            return NULL;
+        }
+    }
+
+    PyObject *old_obj = obj;
     if (_PyBytes_Resize(&obj, newsize) < 0) {
         assert(obj == NULL);
+        return NULL;
     }
     else {
         assert(obj != NULL);
     }
-    return obj;
+
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+    return Py_BuildValue("Nnp", obj, refcnt, obj != old_obj);
 }
 
 
@@ -52,7 +69,7 @@ bytes_join(PyObject *Py_UNUSED(module), PyObject *args)
 
 
 static PyMethodDef test_methods[] = {
-    {"bytes_resize", bytes_resize, METH_VARARGS},
+    {"bytes_resize", _PyCFunction_CAST(bytes_resize), METH_VARARGS | METH_KEYWORDS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {NULL},
 };

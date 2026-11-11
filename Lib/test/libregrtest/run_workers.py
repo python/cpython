@@ -147,9 +147,15 @@ class WorkerThread(threading.Thread):
 
         use_killpg = USE_PROCESS_GROUP
         if use_killpg:
-            parent_sid = os.getsid(0)
-            sid = os.getsid(popen.pid)
-            use_killpg = (sid != parent_sid)
+            try:
+                use_killpg = (os.getsid(popen.pid) != os.getsid(0))
+            except PermissionError:
+                # On OpenBSD getsid() is only allowed for a process in the
+                # same session, so the failure means that it is not.
+                use_killpg = True
+            except ProcessLookupError:
+                # The process completed in the meanwhile
+                return
 
         if use_killpg:
             what = f"{self} process group"
@@ -383,7 +389,8 @@ class WorkerThread(threading.Thread):
                    f'Warning -- {test_name} leaked temporary files '
                    f'({len(tmp_files)}): {", ".join(sorted(tmp_files))}')
             stdout += msg
-            result.set_env_changed()
+            result.set_env_changed(
+                f"leaked temporary files: {', '.join(sorted(tmp_files))}")
 
         return MultiprocessResult(result, stdout)
 

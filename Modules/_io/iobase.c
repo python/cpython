@@ -609,8 +609,9 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
                 Py_ssize_t n = 0;
                 const char *buf = PyBytes_AS_STRING(readahead);
                 if (limit >= 0) {
+                    Py_ssize_t remaining = limit - PyByteArray_GET_SIZE(buffer);
                     do {
-                        if (n >= PyBytes_GET_SIZE(readahead) || n >= limit)
+                        if (n >= PyBytes_GET_SIZE(readahead) || n >= remaining)
                             break;
                         if (buf[n++] == '\n')
                             break;

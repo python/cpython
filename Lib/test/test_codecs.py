@@ -1586,6 +1586,8 @@ class IDNACodecTest(unittest.TestCase):
         (b"xn--pythn-&mua.org", UnicodeDecodeError("idna", b"xn--pythn-&mua.org", 10, 11, "")),
         (b"xn--pythn-m&ua.org", UnicodeDecodeError("idna", b"xn--pythn-m&ua.org", 11, 12, "")),
         (b"xn--pythn-mua&.org", UnicodeDecodeError("idna", b"xn--pythn-mua&.org", 13, 14, "")),
+        (b"bugs.xn--pythn-&mua.org", UnicodeDecodeError("idna", b"bugs.xn--pythn-&mua.org", 15, 16, "")),
+        (b".xn--pythn-&mua.org", UnicodeDecodeError("idna", b".xn--pythn-&mua.org", 11, 12, "")),
     ]
     invalid_encode_testcases = [
         (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"foo.{'\xff'*60}", 4, 64, "")),
@@ -1621,6 +1623,15 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("python.org.".encode("idna"), b"python.org.")
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
+
+    @support.subTests(['unicode', 'encoded'], [
+        ('\N{CHEROKEE LETTER A}\N{CHEROKEE LETTER A}', b"xn--58da"),
+        ('\N{GEORGIAN CAPITAL LETTER AN}.', b"xn--7md."),
+        ('\N{CYRILLIC LETTER PALOCHKA}.example', b"xn--d5a.example"),
+        ('\N{ROMAN NUMERAL REVERSED ONE HUNDRED}.example.', b"xn--q5g.example."),
+    ])
+    def test_new_unicode_case_folding(self, unicode, encoded):
+        self.assertEqual(unicode.encode("idna"), encoded)
 
     def test_builtin_encode_invalid(self):
         for case, expected in self.invalid_encode_testcases:
@@ -1673,6 +1684,22 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"ple-9ta.o", ), "\xe4xample.")
         self.assertEqual(decoder.decode(b"rg."), "org.")
         self.assertEqual(decoder.decode(b"", True), "")
+
+    def test_incremental_decode_leading_empty_labels(self):
+        # The dot after an empty label at the start of the input has to be
+        # counted as consumed, or it is decoded again by the next call.
+        for data in b".python.org", b"..python.org.", b"..", b"." * 100:
+            with self.subTest(data=data):
+                decoder = codecs.getincrementaldecoder("idna")()
+                result = decoder.decode(data)
+                self.assertNotIn(b".", decoder.getstate()[0])
+                result += decoder.decode(b"", True)
+                self.assertEqual(result, data.decode("idna"))
+                self.assertEqual(decoder.getstate(), (b"", 0))
+                self.assertEqual(decoder.decode(b"", True), "")
+
+        with io.TextIOWrapper(io.BytesIO(b"." * 100), encoding="idna") as f:
+            self.assertEqual(f.readline(), "." * 100)
 
     def test_incremental_decode_invalid(self):
         iterdecode_testcases = [

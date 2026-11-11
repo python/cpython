@@ -668,8 +668,11 @@ bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
         bytes = vbytes.buf;
     }
 
+    // gh-153578: __buffer__() may have resized self; re-clamp both bounds.
     if (lo < 0)
         lo = 0;
+    else if (lo > Py_SIZE(self))
+        lo = Py_SIZE(self);
     if (hi < lo)
         hi = lo;
     if (hi > Py_SIZE(self))
@@ -997,7 +1000,11 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         if (PyByteArray_Resize((PyObject *)self, size) < 0) goto fail;
         if (PyBuffer_ToContiguous(PyByteArray_AS_STRING(self),
             &view, size, 'C') < 0)
+        {
+            /* Don't expose the uninitialized bytes: reset to empty */
+            (void)PyByteArray_Resize((PyObject *)self, 0);
             goto fail;
+        }
         PyBuffer_Release(&view);
         return 0;
     fail:
@@ -1025,6 +1032,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             }
             int rc = _getbytevalue(items[i], &value);
             if (!rc) {
+                /* Don't expose the uninitialized bytes: reset to empty */
+                (void)PyByteArray_Resize((PyObject *)self, 0);
                 return -1;
             }
             s[i] = value;
@@ -1063,17 +1072,26 @@ slowpath:
         /* Interpret it as an int (__index__) */
         rc = _getbytevalue(item, &value);
         Py_DECREF(item);
-        if (!rc)
+        if (!rc) {
             goto error;
+        }
 
-        /* Append the byte */
-        if (Py_SIZE(self) + 1 < self->ob_alloc) {
+        /* Append the byte.
+
+           gh-158928: Iterators are arbitrary code which could modify the
+           bytearray so this must re-calculate if there is enough space(). */
+        Py_ssize_t needed =
+            self->ob_start - self->ob_bytes + Py_SIZE(self) + 1;
+        if (needed < self->ob_alloc) {
             Py_SET_SIZE(self, Py_SIZE(self) + 1);
             PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
         }
-        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
+        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0) {
             goto error;
+        }
         PyByteArray_AS_STRING(self)[Py_SIZE(self)-1] = value;
+        assert(self->ob_start - self->ob_bytes + Py_SIZE(self) <=
+               self->ob_alloc);
     }
 
     /* Clean up and return success */

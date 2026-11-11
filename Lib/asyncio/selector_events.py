@@ -223,6 +223,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         transport = None
         try:
             protocol = protocol_factory()
+            if server is not None and not server.is_serving():
+                # The server was closed after the connection was accepted.
+                conn.close()
+                return
             waiter = self.create_future()
             if sslcontext:
                 transport = self._make_ssl_transport(
@@ -582,14 +586,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pos[0] = start
 
     async def sock_sendto(self, sock, data, address):
-        """Send data to the socket.
+        """Send a datagram from sock to address.
 
-        The socket must be connected to a remote socket.  This method
-        continues to send data from data until either all data has been
-        sent or an error occurs.  None is returned on success.  On error,
-        an exception is raised, and there is no way to determine how much
-        data, if any, was successfully processed by the receiving end of
-        the connection.
+        The socket does not have to be connected. This method sends the
+        whole datagram in a single call. Return the number of bytes sent.
         """
         base_events._check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
@@ -714,6 +714,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         return await fut
 
     def _sock_accept(self, fut, sock):
+        # gh-153761: _sock_accept must not scheduled with already cancelled future
+        if fut.done():
+            return
         fd = sock.fileno()
         try:
             conn, address = sock.accept()
@@ -1116,7 +1119,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._loop._remove_writer(self._sock_fd)
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
-                if self._closing:
+                # gh-156512: don't let _call_connection_lost be called twice
+                if self._closing and not self._conn_lost:
+                    self._conn_lost += 1
                     self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -1158,7 +1163,9 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._loop._remove_writer(self._sock_fd)
                 if self._empty_waiter is not None:
                     self._empty_waiter.set_result(None)
-                if self._closing:
+                # gh-156512: don't let _call_connection_lost be called twice
+                if self._closing and not self._conn_lost:
+                    self._conn_lost += 1
                     self._call_connection_lost(None)
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
@@ -1184,7 +1191,11 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._conn_lost += 1
             return
 
-        self._buffer.extend([memoryview(data) for data in list_of_data])
+        # gh-155888: an empty chunk can never be drained, so never buffer it
+        self._buffer.extend(
+            [memoryview(data) for data in list_of_data if data])
+        if not self._buffer:
+            return
         self._write_ready()
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
@@ -1199,6 +1210,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             super()._call_connection_lost(exc)
         finally:
             self._write_ready = None
+            self._read_ready_cb = None
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(
                     ConnectionError("Connection is closed by peer"))

@@ -1380,6 +1380,15 @@ encodings.
 |                    |         | :mod:`encodings.idna`.    |
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
+|                    |         |                           |
+|                    |         | .. warning::              |
+|                    |         |                           |
+|                    |         |    This codec builds on   |
+|                    |         |    ``punycode``, whose    |
+|                    |         |    algorithms scale       |
+|                    |         |    poorly, so limit the   |
+|                    |         |    length of untrusted    |
+|                    |         |    input.                 |
 +--------------------+---------+---------------------------+
 | mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
@@ -1620,9 +1629,14 @@ This module implements the following exception:
 .. moduleauthor:: Martin v. Löwis
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
-Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
+Applications) and :rfc:`3491` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
+
+.. warning::
+
+   This module builds on ``punycode``, whose algorithms scale poorly, so limit
+   the length of untrusted input.
 
 If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
 third-party :pypi:`idna` module.

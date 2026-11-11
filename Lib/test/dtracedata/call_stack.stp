@@ -10,7 +10,7 @@ function basename:string(path:string)
     return last_token;
 }
 
-probe process.mark("function__entry")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry")
 {
     funcname = user_string($arg2);
 
@@ -19,7 +19,8 @@ probe process.mark("function__entry")
     }
 }
 
-probe process.mark("function__entry"), process.mark("function__return")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__entry"),
+      @PYTHON_SYSTEMTAP_PROBE@("function__return")
 {
     filename = user_string($arg1);
     funcname = user_string($arg2);
@@ -31,7 +32,7 @@ probe process.mark("function__entry"), process.mark("function__return")
     }
 }
 
-probe process.mark("function__return")
+probe @PYTHON_SYSTEMTAP_PROBE@("function__return")
 {
     funcname = user_string($arg2);
 

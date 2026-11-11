@@ -30,9 +30,23 @@ Linux and the BSD variants of Unix.
 
    Whenever the documentation mentions a *character* it can be specified
    as an integer, a one-character Unicode string or a one-byte byte string.
+   An integer is the code of a single encoded byte, optionally combined with
+   attributes and a color pair, as returned by :meth:`window.inch`.
 
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
+
+.. note::
+
+   Whether curses may be used from several threads
+   depends on the underlying library and how it was built.
+   In many implementations, including the default build of ncurses,
+   the screen state is shared and not thread-safe;
+   since the blocking and refresh methods
+   (such as :meth:`~window.getch` and :meth:`~window.refresh`)
+   release the :term:`GIL`,
+   unsynchronized use from several threads can then crash the interpreter.
+   Serialize the calls.
 
 .. seealso::
 
@@ -291,9 +305,11 @@ The module :mod:`!curses` defines the following functions:
 
    Used for half-delay mode, which is similar to cbreak mode in that characters
    typed by the user are immediately available to the program. However, after
-   blocking for *tenths* tenths of seconds, raise an exception if nothing has
-   been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
-   :func:`nocbreak` to leave half-delay mode.
+   blocking for *tenths* tenths of seconds, if nothing has been typed,
+   :meth:`~window.getch` returns ``-1``, while :meth:`~window.getkey` and
+   :meth:`~window.get_wch` raise :exc:`curses.error`.
+   The value of *tenths* must be a number between ``1`` and ``255``.
+   Use :func:`nocbreak` to leave half-delay mode.
 
 
 .. function:: init_color(color_number, r, g, b)
@@ -493,8 +509,8 @@ The module :mod:`!curses` defines the following functions:
 .. function:: putp(str)
 
    Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
-   terminfo capability for the current terminal.  Note that the output of :func:`putp`
-   always goes to standard output.
+   terminfo capability, a bytes object, for the current terminal.
+   Note that the output of :func:`putp` always goes to standard output.
 
    :func:`setupterm` (or :func:`initscr`) must be called first.
 
@@ -628,8 +644,10 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: termname()
 
-   Return the value of the environment variable :envvar:`TERM`, as a bytes object,
-   truncated to 14 characters.
+   Return the name of the terminal in use, as a bytes object.
+   This is the name passed to :func:`setupterm`,
+   or the value of the :envvar:`TERM` environment variable if none was given.
+   Some curses libraries truncate it to 14 characters.
 
 
 .. function:: tigetflag(capname)
@@ -665,7 +683,7 @@ The module :mod:`!curses` defines the following functions:
 .. function:: tparm(str[, ...])
 
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
-   be a parameterized string obtained from the terminfo database.  For example,
+   be a parameterized byte string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.  Up to nine integer parameters may be supplied.
 
@@ -686,7 +704,8 @@ The module :mod:`!curses` defines the following functions:
 
 .. function:: unctrl(ch)
 
-   Return a bytes object which is a printable representation of the character *ch*.
+   Return a bytes object which is a printable representation of the character *ch*;
+   any attributes and color pair are ignored.
    Control characters are represented as a caret followed by the character, for
    example as ``b'^C'``. Printing characters are left as they are.
 
@@ -694,6 +713,9 @@ The module :mod:`!curses` defines the following functions:
 .. function:: ungetch(ch)
 
    Push *ch* so the next :meth:`~window.getch` will return it.
+
+   *ch* may be an integer (a key code or the code of an encoded byte), a byte,
+   or a string of length 1 which encodes to a single byte.
 
    .. note::
 
@@ -711,6 +733,9 @@ The module :mod:`!curses` defines the following functions:
 .. function:: unget_wch(ch)
 
    Push *ch* so the next :meth:`~window.get_wch` will return it.
+
+   *ch* may be an integer (a character code, not a key code) or a string of
+   length 1.
 
    .. note::
 
@@ -966,7 +991,8 @@ Window objects
 
 .. attribute:: window.encoding
 
-   Encoding used to encode method arguments (Unicode strings and characters).
+   Encoding used to encode the string arguments of the methods and to decode
+   their results on a build without wide-character support.
    The encoding attribute is inherited from the parent window when a subwindow
    is created, for example with :meth:`window.subwin`.
    By default, current locale encoding is used (see :func:`locale.getencoding`).
@@ -992,27 +1018,58 @@ Window objects
 
 .. method:: window.getch([y, x])
 
-   Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so on are represented by numbers higher
-   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
-   wait until a key is pressed.
+   Read a key press, after moving the cursor to *y*, *x* if specified,
+   and return it as an integer.
+   The window is refreshed first if it is not a pad and was modified since
+   the last refresh.
+   Wait until a key is pressed, or return ``-1`` if the read is non-blocking
+   or times out (see :meth:`nodelay` and :meth:`timeout`).
+
+   An ordinary key is returned as the code of a single byte of its encoding
+   in the current locale,
+   so a character encoded with several bytes takes several calls.
+   For example, in a UTF-8 locale ``'é'`` is read as ``195``, then ``169``.
+   Use :meth:`get_wch` to read it as a single character.
+
+   In keypad mode (see :meth:`keypad`) function keys and other special keys
+   are returned as one of the :ref:`KEY_* constants <curses-key-constants>`,
+   which cannot be mistaken for an ordinary key.
+   Otherwise, or if their escape sequence does not arrive in time
+   (see :meth:`notimeout` and :func:`set_escdelay`),
+   their bytes are returned one at a time.
+
+   In echo mode (see :func:`echo`) the key is added to the window as by
+   :meth:`addch`; special keys are not echoed.
 
 
 .. method:: window.get_wch([y, x])
 
-   Get a wide character. Return a character for most keys, or an integer for
-   function keys, keypad keys, and other special keys.
-   In no-delay mode, raise an exception if there is no input.
+   Read a key press, after moving the cursor to *y*, *x* if specified,
+   and return it as a one-character :class:`str`.
+   The window is refreshed first if it is not a pad and was modified since
+   the last refresh.
+   Wait until a key is pressed, or raise :exc:`error` if the read is
+   non-blocking or times out (see :meth:`nodelay` and :meth:`timeout`).
+
+   In keypad mode (see :meth:`keypad`) function keys and other special keys
+   are returned as one of the :ref:`KEY_* constants <curses-key-constants>`,
+   an integer.
+   Otherwise, or if their escape sequence does not arrive in time
+   (see :meth:`notimeout` and :func:`set_escdelay`),
+   their characters are returned one at a time.
+
+   In echo mode (see :func:`echo`) the key is added to the window as by
+   :meth:`addch`; special keys are not echoed.
 
    .. versionadded:: 3.3
 
 
 .. method:: window.getkey([y, x])
 
-   Get a character, returning a string instead of an integer, as :meth:`getch`
-   does. Function keys, keypad keys and other special keys return a multibyte
-   string containing the key name.  In no-delay mode, raise an exception if
-   there is no input.
+   Read a key press as :meth:`getch` does, but return it as a :class:`str`:
+   an ordinary key as a one-character string, the byte decoded as Latin-1,
+   and a special key as its name, such as ``'KEY_UP'`` (see :func:`keyname`).
+   Raise :exc:`error` instead of returning ``-1`` if there is no input.
 
 
 .. method:: window.getmaxyx()
@@ -1032,8 +1089,11 @@ Window objects
             window.getstr(y, x)
             window.getstr(y, x, n)
 
-   Read a bytes object from the user, with primitive line editing capacity.
-   At most *n* characters are read;
+   Read a line of input from the user, with primitive line editing capacity,
+   after moving the cursor to *y*, *x* if specified.
+   Return it as a bytes object, in the encoding of the current locale
+   and without the terminating newline.
+   At most *n* bytes are read;
    *n* defaults to and cannot exceed 2047.
 
    .. versionchanged:: 3.14
@@ -1082,6 +1142,11 @@ Window objects
    The bottom 8 bits are the character proper and the upper bits are the attributes;
    extract them with the :data:`A_CHARTEXT` and :data:`A_ATTRIBUTES` bit-masks,
    and the color pair with :func:`pair_number`.
+   The character byte is the locale-encoded byte of the cell's character,
+   consistent with :meth:`instr`.
+   On a wide-character build, a character that does not fit in a single byte
+   in the current locale has a character byte of ``0``;
+   use :meth:`instr` to read such characters.
 
 
 .. method:: window.insch(ch[, attr])
@@ -1090,7 +1155,8 @@ Window objects
    Insert character *ch* with attributes *attr* before the character under the
    cursor, or at ``(y, x)`` if specified.  All characters to the right of the
    cursor are shifted one position right, with the rightmost character on the
-   line being lost.  The cursor position does not change.
+   line being lost.
+   The cursor position does not change (after moving to *y*, *x*, if specified).
 
 
 .. method:: window.insdelln(nlines)
@@ -1112,8 +1178,8 @@ Window objects
             window.insnstr(y, x, str, n[, attr])
 
    Insert a character string (as many characters as will fit on the line) before
-   the character under the cursor, up to *n* characters.   If *n* is zero or
-   negative, the entire string is inserted. All characters to the right of the
+   the character under the cursor, up to *n* characters.   If *n* is negative,
+   the entire string is inserted. All characters to the right of the
    cursor are shifted right, with the rightmost characters on the line being lost.
    The cursor position does not change (after moving to *y*, *x*, if specified).
 
@@ -1130,12 +1196,11 @@ Window objects
 .. method:: window.instr([n])
             window.instr(y, x[, n])
 
-   Return a bytes object of characters, extracted from the window starting at the
-   current cursor position, or at *y*, *x* if specified, and stopping at the end
-   of the line. Attributes and color information are stripped
-   from the characters.  If *n* is specified, :meth:`instr` returns a string
-   at most *n* characters long (exclusive of the trailing NUL).
-   The maximum value for *n* is 2047.
+   Read the text of the window from the current cursor position,
+   or from *y*, *x* if specified, to the end of the line,
+   and return it as a bytes object, in the encoding of the current locale.
+   Attributes and color pairs are stripped.
+   At most *n* bytes are read; *n* defaults to and cannot exceed 2047.
 
    .. versionchanged:: 3.14
       The maximum value for *n* was increased from 1023 to 2047.
@@ -1159,6 +1224,8 @@ Window objects
    If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
    will be interpreted by :mod:`!curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
+   Keypad mode is disabled by default, but :func:`wrapper` enables it for the
+   main window.
 
 
 .. method:: window.leaveok(flag)
@@ -1286,8 +1353,9 @@ Window objects
 .. method:: window.scroll([lines=1])
 
    Scroll the screen or scrolling region.  Scroll upward by *lines* lines if
-   *lines* is positive, or downward if it is negative.  Scrolling has no effect
-   unless it has been enabled for the window with :meth:`scrollok`.
+   *lines* is positive, or downward if it is negative.
+   Raise :exc:`curses.error` unless scrolling has been enabled for the window
+   with :meth:`scrollok`.
 
 
 .. method:: window.scrollok(flag)
@@ -1510,6 +1578,8 @@ by some methods.
 |  .. data:: A_COLOR      | Bit-mask to extract           |
 |                         | color-pair field information  |
 +-------------------------+-------------------------------+
+
+.. _curses-key-constants:
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
