@@ -345,7 +345,7 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
 
     assert(!_PyFrame_IsIncomplete(frame));
-    PyFrameObject *res = FT_ATOMIC_LOAD_PTR_ACQUIRE(frame->frame_obj);
+    PyFrameObject *res = (PyFrameObject*)FT_ATOMIC_LOAD_PTR_ACQUIRE(frame->frame_obj);
     if (res != NULL) {
         return res;
     }

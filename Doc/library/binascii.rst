@@ -283,11 +283,16 @@ The :mod:`!binascii` module defines the following functions:
 
    .. versionadded:: 3.15
 
-.. function:: a2b_qp(data, header=False)
+.. function:: a2b_qp(data, header=False, *, strip_ws=False)
 
    Convert a block of quoted-printable data back to binary and return the binary
    data. More than one line may be passed at a time. If the optional argument
    *header* is present and true, underscores will be decoded as spaces.
+   If the optional argument *strip_ws* is true,
+   trailing whitespace is stripped from each line, as required by :rfc:`2045`.
+
+   .. versionchanged:: 3.16
+      Added the *strip_ws* parameter.
 
 
 .. function:: b2a_qp(data, quotetabs=False, istext=True, header=False)
@@ -296,11 +301,11 @@ The :mod:`!binascii` module defines the following functions:
    encoding.  The return value is the converted line(s). If the optional argument
    *quotetabs* is present and true, all tabs and spaces will be encoded.   If the
    optional argument *istext* is present and true, newlines are not encoded but
-   trailing whitespace will be encoded. If the optional argument *header* is
-   present and true, spaces will be encoded as underscores per :rfc:`1522`. If the
-   optional argument *header* is present and false, newline characters will be
-   encoded as well; otherwise linefeed conversion might corrupt the binary data
-   stream.
+   trailing whitespace will be encoded. If the optional argument *istext* is
+   present and false, newline characters will be encoded as well; otherwise
+   linefeed conversion might corrupt the binary data stream. If the optional
+   argument *header* is present and true, spaces will be encoded as underscores
+   per :rfc:`1522`.
 
 
 .. function:: crc_hqx(data, value)

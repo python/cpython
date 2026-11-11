@@ -5,17 +5,20 @@
 # This script simplifies the process of configuring, compiling and packaging an
 # XCframework for an Apple platform.
 #
-# At present, it only supports iOS, but it has been constructed so that it
-# could be used on any Apple platform.
+# At present, it supports iOS, tvOS, visionOS and watchOS, but it has been
+# constructed so that it could be used on any Apple platform.
 #
 # The simplest entry point is:
 #
 #   $ python Platforms/Apple ci iOS
 #
+# (replace iOS with tvOS, visionOS or watchOS as required.)
+#
 # which will:
 # * Clean any pre-existing build artefacts
 # * Configure and make a Python that can be used for the build
-# * Configure and make a Python for each supported iOS architecture and ABI
+# * Configure and make a Python for each supported iOS/tvOS/watchOS/visionOS
+#   architecture and ABI
 # * Combine the outputs of the builds from the previous step into a single
 #   XCframework, merging binaries into a "fat" binary if necessary
 # * Clone a copy of the testbed, configured to use the XCframework
@@ -75,7 +78,77 @@ HOSTS: dict[str, dict[str, dict[str, str]]] = {
             "x86_64-apple-ios-simulator": "x86_64-iphonesimulator",
         },
     },
+    "tvOS": {
+        "tvos-arm64": {
+            "arm64-apple-tvos": "arm64-appletvos",
+        },
+        "tvos-arm64_x86_64-simulator": {
+            "arm64-apple-tvos-simulator": "arm64-appletvsimulator",
+            "x86_64-apple-tvos-simulator": "x86_64-appletvsimulator",
+        },
+    },
+    "visionOS": {
+        "xros-arm64": {
+            "arm64-apple-xros": "arm64-xros",
+        },
+        "xros-arm64-simulator": {
+            "arm64-apple-xros-simulator": "arm64-xrsimulator",
+        },
+    },
+    "watchOS": {
+        "watchos-arm64_32": {
+            "arm64_32-apple-watchos": "arm64_32-watchos",
+        },
+        "watchos-arm64_x86_64-simulator": {
+            "arm64-apple-watchos-simulator": "arm64-watchsimulator",
+            "x86_64-apple-watchos-simulator": "x86_64-watchsimulator",
+        },
+    },
 }
+
+# The configure arguments needed to produce each ABI flag. Flags are listed in
+# the order that configure adds them to ABIFLAGS; any `--abiflags` value must
+# use the same order.
+ABIFLAG_CONFIGURE_ARGS: dict[str, list[str]] = {
+    "t": ["--disable-gil"],
+    "d": ["--with-pydebug"],
+}
+
+
+def platform_name(value):
+    """Return the canonical spelling for a platform name."""
+    return {p.lower(): p for p in HOSTS.keys()}.get(value.lower(), value)
+
+
+def validate_abiflags(value: str) -> str:
+    """Validate an `--abiflags` value (for use as an argparse type)."""
+    known = "".join(ABIFLAG_CONFIGURE_ARGS)
+    for flag in value:
+        if flag not in ABIFLAG_CONFIGURE_ARGS:
+            raise argparse.ArgumentTypeError(
+                f"unknown ABI flag {flag!r} (known flags: {known!r})"
+            )
+    positions = [known.index(flag) for flag in value]
+    if positions != sorted(set(positions)):
+        raise argparse.ArgumentTypeError(
+            f"ABI flags must be unique, and in the order {known!r}"
+        )
+    return value
+
+
+def framework_name(abiflags: str) -> str:
+    """The name of the Python framework for the given ABI flags."""
+    return f"Python{abiflags.upper()}"
+
+
+def abiflag_configure_args(abiflags: str) -> list[str]:
+    """The configure arguments needed to produce the given ABI flags."""
+    return [arg for flag in abiflags for arg in ABIFLAG_CONFIGURE_ARGS[flag]]
+
+
+def cross_build_dir(base: Path, abiflags: str) -> Path:
+    """The cross-build directory for the given base and ABI flags."""
+    return base.with_name(f"{base.name}-{abiflags}") if abiflags else base
 
 
 def subdir(name: str, create: bool = False) -> Path:
@@ -136,11 +209,24 @@ def print_env(env: EnvironmentT) -> None:
         print(f"export {key}={shlex.quote(value)}")
 
 
+def platform_for_host(host):
+    """Determine the platform for a given host triple."""
+    for plat, slices in HOSTS.items():
+        for _, candidates in slices.items():
+            for candidate in candidates:
+                if candidate == host:
+                    return plat
+    raise KeyError(host)
+
+
 def apple_env(host: str) -> EnvironmentT:
     """Construct an Apple development environment for the given host."""
     env = {
         "PATH": ":".join([
-            str(PYTHON_DIR / "Platforms/Apple/iOS/Resources/bin"),
+            str(
+                PYTHON_DIR
+                / f"Platforms/Apple/{platform_for_host(host)}/Resources/bin"
+            ),
             str(subdir(host) / "prefix"),
             "/usr/bin",
             "/bin",
@@ -258,6 +344,7 @@ def configure_build_python(context: argparse.Namespace) -> None:
         cwd(subdir("build", create=True)),
     ):
         command = [relpath(PYTHON_DIR / "configure")]
+        command.extend(abiflag_configure_args(context.abiflags))
         if context.args:
             command.extend(context.args)
         run(command)
@@ -314,8 +401,8 @@ def unpack_deps(
     Downloads binaries if they aren't already present. Downloads will be stored
     in provided cache directory.
 
-    On iOS, as a safety mechanism, any dynamic libraries will be purged from
-    the unpacked dependencies.
+    On non-macOS platforms, as a safety mechanism, any dynamic libraries will
+    be purged from the unpacked dependencies.
     """
     # To create new builds of these dependencies, usually all that's necessary
     # is to push a tag to the cpython-apple-source-deps repository, and GitHub
@@ -328,7 +415,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.5.8-1",
+        "OpenSSL-3.5.9-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -340,9 +427,9 @@ def unpack_deps(
         )
         shutil.unpack_archive(archive_path, prefix_dir)
 
-    # Dynamic libraries will be preferentially linked over static;
-    # On iOS, ensure that no dylibs are available in the prefix folder.
-    if platform == "iOS":
+    # Dynamic libraries will be preferentially linked over static; On non-macOS
+    # platforms, ensure that no dylibs are available in the prefix folder.
+    if platform != "macOS":
         for dylib in prefix_dir.glob("**/*.dylib"):
             dylib.unlink()
 
@@ -408,7 +495,7 @@ def configure_host_python(
             f"--host={host}",
             f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
             f"--with-build-python={build_python_path()}",
-            "--with-system-libmpdec",
+            "--enable-ipv6",
             "--enable-framework",
             # Dependent libraries.
             f"--with-openssl={prefix_dir}",
@@ -421,6 +508,11 @@ def configure_host_python(
             f"LIBZSTD_CFLAGS=-I{prefix_dir}/include",
             f"LIBZSTD_LIBS=-L{prefix_dir}/lib -lzstd",
         ]
+        command.extend(abiflag_configure_args(context.abiflags))
+        if context.abiflags:
+            command.append(
+                f"--with-framework-name={framework_name(context.abiflags)}"
+            )
 
         if context.args:
             command.extend(context.args)
@@ -451,7 +543,8 @@ def framework_path(host_triple: str, multiarch: str) -> Path:
     """
     return (
         CROSS_BUILD_DIR
-        / f"{host_triple}/Platforms/Apple/iOS/Frameworks/{multiarch}"
+        / f"{host_triple}/Platforms/Apple/{platform_for_host(host_triple)}"
+        / f"Frameworks/{multiarch}"
     )
 
 
@@ -522,11 +615,16 @@ def lib_non_platform_files(dirname, names):
         return set()
 
 
-def create_xcframework(platform: str) -> str:
+def create_xcframework(platform: str, abiflags: str) -> str:
     """Build an XCframework from the component parts for the platform.
 
+    :param platform: The platform being packaged (e.g., iOS).
+    :param abiflags: The ABI flags of the build (e.g., "t").
     :return: The version number of the Python version that was packaged.
     """
+    fw_name = framework_name(abiflags)
+    # The stdlib directory only carries the threading ABI flag.
+    abi_thread = "t" if "t" in abiflags else ""
     package_path = CROSS_BUILD_DIR / platform
     try:
         package_path.mkdir()
@@ -548,7 +646,7 @@ def create_xcframework(platform: str) -> str:
         first_host_triple, first_multiarch = next(iter(slice_parts.items()))
         first_framework = (
             framework_path(first_host_triple, first_multiarch)
-            / "Python.framework"
+            / f"{fw_name}.framework"
         )
 
         if len(slice_parts) == 1:
@@ -558,7 +656,7 @@ def create_xcframework(platform: str) -> str:
         else:
             print(f"Merging framework for {slice_name}...")
             slice_path = CROSS_BUILD_DIR / slice_name
-            slice_framework = slice_path / "Python.framework"
+            slice_framework = slice_path / f"{fw_name}.framework"
             slice_framework.mkdir(exist_ok=True, parents=True)
 
             # Copy the Info.plist
@@ -575,11 +673,11 @@ def create_xcframework(platform: str) -> str:
 
             # Create the "fat" library binary for the slice
             run(
-                ["lipo", "-create", "-output", slice_framework / "Python"]
+                ["lipo", "-create", "-output", slice_framework / fw_name]
                 + [
                     (
                         framework_path(host_triple, multiarch)
-                        / "Python.framework/Python"
+                        / f"{fw_name}.framework/{fw_name}"
                     )
                     for host_triple, multiarch in slice_parts.items()
                 ]
@@ -594,7 +692,7 @@ def create_xcframework(platform: str) -> str:
         "xcodebuild",
         "-create-xcframework",
         "-output",
-        package_path / "Python.xcframework",
+        package_path / f"{fw_name}.xcframework",
     ]
     for framework in frameworks:
         cmd.extend(["-framework", framework])
@@ -602,7 +700,7 @@ def create_xcframework(platform: str) -> str:
     run(cmd)
 
     # Extract the package version from the merged framework
-    version = package_version(package_path / "Python.xcframework")
+    version = package_version(package_path / f"{fw_name}.xcframework")
     version_tag = ".".join(version.split(".")[:2])
 
     # On non-macOS platforms, each framework in XCframework only contains the
@@ -617,10 +715,10 @@ def create_xcframework(platform: str) -> str:
         # host frameworks as the source for the merged version.
         first_host_triple, first_multiarch = next(iter(slice_parts.items()))
         first_path = framework_path(first_host_triple, first_multiarch)
-        first_framework = first_path / "Python.framework"
+        first_framework = first_path / f"{fw_name}.framework"
 
-        slice_path = package_path / f"Python.xcframework/{slice_name}"
-        slice_framework = slice_path / "Python.framework"
+        slice_path = package_path / f"{fw_name}.xcframework/{slice_name}"
+        slice_framework = slice_path / f"{fw_name}.framework"
 
         # Copy the binary helpers
         print(f" - {slice_name} binaries")
@@ -642,9 +740,9 @@ def create_xcframework(platform: str) -> str:
 
         print(f" - {slice_name} shared library")
         # Create a simlink for the fat library
-        shared_lib = slice_path / f"lib/libpython{version_tag}.dylib"
+        shared_lib = slice_path / f"lib/libpython{version_tag}{abiflags}.dylib"
         shared_lib.parent.mkdir()
-        shared_lib.symlink_to("../Python.framework/Python")
+        shared_lib.symlink_to(f"../{fw_name}.framework/{fw_name}")
 
         print(f" - {slice_name} architecture-specific files")
         for host_triple, multiarch in slice_parts.items():
@@ -655,7 +753,7 @@ def create_xcframework(platform: str) -> str:
                 print("     - using this architecture as the common stdlib")
                 shutil.copytree(
                     framework_path(host_triple, multiarch) / "lib",
-                    package_path / "Python.xcframework/lib",
+                    package_path / f"{fw_name}.xcframework/lib",
                     ignore=lib_platform_files,
                     symlinks=True,
                 )
@@ -673,10 +771,10 @@ def create_xcframework(platform: str) -> str:
             host_path = (
                 CROSS_BUILD_DIR
                 / host_triple
-                / "Platforms/Apple/iOS/Frameworks"
+                / f"Platforms/Apple/{platform}/Frameworks"
                 / multiarch
             )
-            host_framework = host_path / "Python.framework"
+            host_framework = host_path / f"{fw_name}.framework"
             shutil.copy(
                 host_framework / "Headers/pyconfig.h",
                 slice_framework / f"Headers/pyconfig-{arch}.h",
@@ -697,14 +795,17 @@ def create_xcframework(platform: str) -> str:
                 shutil.copy(
                     xcprivacy_file[lib],
                     slice_path
-                    / f"lib-{arch}/python{version_tag}"
+                    / f"lib-{arch}/python{version_tag}{abi_thread}"
                     / f"lib-dynload/{module}.xcprivacy",
                 )
 
     print(" - build tools")
     shutil.copytree(
-        PYTHON_DIR / "Platforms/Apple/testbed/Python.xcframework/build",
-        package_path / "Python.xcframework/build",
+        PYTHON_DIR
+        / "Platforms/Apple/testbed"
+        / "Python.xcframework"
+        / "build",
+        package_path / f"{fw_name}.xcframework/build",
     )
 
     return version
@@ -717,7 +818,8 @@ def package(context: argparse.Namespace) -> None:
 
     with group("Building package"):
         # Create an XCframework
-        version = create_xcframework(context.platform)
+        version = create_xcframework(context.platform, context.abiflags)
+        fw_name = framework_name(context.abiflags)
 
         # Clone testbed
         print()
@@ -728,7 +830,7 @@ def package(context: argparse.Namespace) -> None:
             "--platform",
             context.platform,
             "--framework",
-            CROSS_BUILD_DIR / context.platform / "Python.xcframework",
+            CROSS_BUILD_DIR / context.platform / f"{fw_name}.xcframework",
             CROSS_BUILD_DIR / context.platform / "testbed",
         ])
 
@@ -736,7 +838,10 @@ def package(context: argparse.Namespace) -> None:
         archive_name = (
             CROSS_BUILD_DIR
             / "dist"
-            / f"python-{version}-{context.platform}-XCframework"
+            / (
+                f"python-{version}{context.abiflags}"
+                f"-{context.platform}-XCframework"
+            )
         )
 
         print()
@@ -800,7 +905,9 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa:
         )
         if host in {"all", "hosts"}:
             framework_path = (
-                CROSS_BUILD_DIR / context.platform / "Python.xcframework"
+                CROSS_BUILD_DIR
+                / context.platform
+                / f"{framework_name(context.abiflags)}.xcframework"
             )
         else:
             build_arch = platform.machine()
@@ -952,6 +1059,7 @@ def parse_args() -> argparse.Namespace:
         cmd.add_argument(
             "platform",
             choices=HOSTS.keys(),
+            type=platform_name,
             help="The target platform to build",
         )
 
@@ -975,7 +1083,7 @@ def parse_args() -> argparse.Namespace:
             ),
         )
 
-    # --cross-build-dir argument
+    # --cross-build-dir and --abiflags arguments
     for cmd in [
         clean,
         configure_build,
@@ -995,9 +1103,20 @@ def parse_args() -> argparse.Namespace:
             dest="cross_build_dir",
             type=Path,
             help=(
-                "Path to the cross-build directory "
+                "Base path of the cross-build directory "
                 f"(default: {CROSS_BUILD_DIR}). Can also be set "
-                "with the CROSS_BUILD_DIR environment variable."
+                "with the CROSS_BUILD_DIR environment variable. If "
+                "--abiflags is specified, '-<abiflags>' is appended."
+            ),
+        )
+        cmd.add_argument(
+            "--abiflags",
+            default="",
+            type=validate_abiflags,
+            help=(
+                "The ABI flags of the build: 't' (free-threaded; "
+                "--disable-gil), 'd' (debug; --with-pydebug), or 'td' (both). "
+                "Defaults to '' (a standard build)."
             ),
         )
 
@@ -1083,10 +1202,12 @@ def main() -> None:
     # Process command line arguments
     context = parse_args()
 
-    # Set the CROSS_BUILD_DIR if an argument was provided
+    # Set the CROSS_BUILD_DIR, using any provided base directory, plus any ABI
+    # flags as a suffix.
+    global CROSS_BUILD_DIR
     if context.cross_build_dir:
-        global CROSS_BUILD_DIR
         CROSS_BUILD_DIR = context.cross_build_dir.resolve()
+    CROSS_BUILD_DIR = cross_build_dir(CROSS_BUILD_DIR, context.abiflags)
 
     dispatch: dict[str, Callable] = {
         "clean": clean,

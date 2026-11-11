@@ -26,14 +26,16 @@ from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only, gc_collect
+    cpython_only, gc_collect, catch_unraisable_exception
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
     with_source_date_epoch, without_source_date_epoch,
 )
 from test.support.import_helper import ensure_lazy_imports
-from test.support.warnings_helper import check_no_resource_warning
+from test.support.warnings_helper import (
+    check_no_resource_warning, ignore_warnings,
+)
 
 
 TESTFN2 = TESTFN + "2"
@@ -54,6 +56,15 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+
+@contextlib.contextmanager
+def save_restore_sys_path():
+    old_path = sys.path.copy()
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
 
 
 class LazyImportTest(unittest.TestCase):
@@ -4093,6 +4104,21 @@ class OtherTests(unittest.TestCase):
             zf.close()
             del zf
 
+        # ResourceWarning escalated to an error is reported as unraisable,
+        # and the archive is still closed.
+        buf = io.BytesIO()
+        zf = zipfile.ZipFile(buf, "w")
+        zf.writestr("f.txt", b"data")
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
+            del zf
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            self.assertEqual(zf.namelist(), ["f.txt"])
+            self.assertEqual(zf.read("f.txt"), b"data")
+
     def test_unsupported_version(self):
         # File has an extract_version of 120
         data = (b'PK\x03\x04x\x00\x00\x00\x00\x00!p\xa1@\x00\x00\x00\x00\x00\x00'
@@ -4282,6 +4308,20 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(fp.tell(), mid)
         self.assertTrue(zipfile.is_zipfile(fp))
         self.assertEqual(fp.tell(), mid)
+
+    def test_is_zip_bad_central_directory_offset(self):
+        """Check that is_zipfile() rejects a central directory before the file."""
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w") as zipf:
+            zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
+        data = bytearray(fp.getvalue())
+        endrec = len(data) - zipfile.sizeEndCentDir
+        struct.pack_into("<L", data, endrec + 12, len(data))
+        fp = io.BytesIO(data)
+        pos = fp.seek(5)
+        self.assertFalse(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), pos)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, io.BytesIO(data))
 
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
@@ -4599,6 +4639,8 @@ class OtherTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
                 with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
+                with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
             with zipf.open('baz', mode='w') as w2:
@@ -4914,6 +4956,75 @@ class LzmaBoundedDecompressTests(AbstractBoundedDecompressTests,
 class ZstdBoundedDecompressTests(AbstractBoundedDecompressTests,
                                  unittest.TestCase):
     compression = zipfile.ZIP_ZSTANDARD
+
+
+class MonkeypatchedDecompressorTests(unittest.TestCase):
+    # Some third-party projects monkey-patch _get_decompressor() to add
+    # additional compression schemes. This can break at any time as the
+    # internal compressor objects change.
+    # To protect users, we try to keep this case working.
+    # See also: GH-156002 and GH-113767.
+    COMPRESSION = 99
+
+    class Compressor:
+        """Compressor with only the original BZ2Compressor API"""
+        def compress(self, data):
+            return data.swapcase()
+
+        def flush(self):
+            return b''
+
+    class Decompressor:
+        """Decompressor with only the 3.3+ BZ2Decompressor API"""
+        eof = False
+
+        def decompress(self, data):
+            return data.swapcase()
+
+    def setUp(self):
+        orig_check_compression = zipfile._check_compression
+        orig_get_compressor = zipfile._get_compressor
+        orig_get_decompressor = zipfile._get_decompressor
+
+        def check_compression(compression):
+            if compression != self.COMPRESSION:
+                orig_check_compression(compression)
+
+        def get_compressor(compress_type, compresslevel=None):
+            if compress_type == self.COMPRESSION:
+                return self.Compressor()
+            return orig_get_compressor(compress_type, compresslevel)
+
+        def get_decompressor(compress_type):
+            if compress_type == self.COMPRESSION:
+                return self.Decompressor()
+            return orig_get_decompressor(compress_type)
+
+        self.enterContext(mock.patch.object(
+            zipfile, '_check_compression', check_compression))
+        self.enterContext(mock.patch.object(
+            zipfile, '_get_compressor', get_compressor))
+        self.enterContext(mock.patch.object(
+            zipfile, '_get_decompressor', get_decompressor))
+
+    def test_roundtrip_monkeypatched_decompressor(self):
+        data = bytes(range(256)) * 8
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", compression=self.COMPRESSION) as zf:
+            zf.writestr("member", data)
+        self.assertIn(data.swapcase(), buf.getvalue())
+        with (ignore_warnings(category=DeprecationWarning,
+                              message='.*two arguments.*'),
+              zipfile.ZipFile(io.BytesIO(buf.getvalue())) as zf):
+            self.assertEqual(zf.read("member"), data)
+            with zf.open("member") as f:
+                self.assertEqual(f.read(100), data[:100])
+                self.assertEqual(f.read1(100), data[100:200])
+                f.seek(-100, os.SEEK_END)
+                self.assertEqual(f.read(), data[-100:])
+                # Rewinding past the read buffer re-creates the decompressor.
+                f.seek(0)
+                self.assertEqual(f.read(), data)
 
 
 class AbstractBadCrcTests:
@@ -5496,14 +5607,14 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
             self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
@@ -5559,6 +5670,9 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
@@ -5882,17 +5996,18 @@ class EncodedMetadataTests(unittest.TestCase):
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
-        with captured_stdout() as stdout:
-            with captured_stderr() as stderr:
+        with (captured_stdout() as stdout,
+              captured_stderr() as stderr,
+              save_restore_sys_path()):
                 self.assertRaises(SystemExit, zipfile.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
@@ -5911,7 +6026,9 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!a}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        with save_restore_sys_path():
+            zipfile.main(["--metadata-encoding=shift_jis", "-e",
+                          TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)
