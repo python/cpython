@@ -70,8 +70,6 @@ class EagerTaskFactoryLoopTests:
         self.assertEqual(self.run_coro(run()), 'my message')
 
     def test_awaited_by_during_eager_step(self):
-        # gh-157299
-
         async def run():
             parent = asyncio.current_task()
 
