@@ -1350,19 +1350,19 @@ to :c:data:`PyExc_OSError`.
 
 .. c:var:: PyObject *PyExc_EnvironmentError
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use :c:data:`PyExc_OSError` instead.
 
 .. c:var:: PyObject *PyExc_IOError
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use :c:data:`PyExc_OSError` instead.
 
 .. c:var:: PyObject *PyExc_WindowsError
 
    .. availability:: Windows
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.16
       Use :c:data:`PyExc_OSError` instead.
 
 

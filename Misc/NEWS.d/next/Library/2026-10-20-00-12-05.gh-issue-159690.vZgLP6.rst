@@ -1,3 +1,0 @@
-Fix :class:`logging.handlers.TimedRotatingFileHandler` permanently stopping
-rollover after a rollover failed or its backup file already existed, for
-example at a DST change.

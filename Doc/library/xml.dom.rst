@@ -759,7 +759,7 @@ inherits properties from :class:`Node`.
    If several elements have the same ID, the first one
    in document order is returned.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Previously, which of the elements with the same ID was returned
       was unspecified and could change between calls.
 

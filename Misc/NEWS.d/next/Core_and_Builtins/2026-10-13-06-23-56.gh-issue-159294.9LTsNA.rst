@@ -1,3 +1,0 @@
-Fix a crash in a debug build when creating an :exc:`ExceptionGroup` or
-:exc:`BaseExceptionGroup` fails with :exc:`MemoryError`. Patch by Christian
-Aurich Zanettini Martins.
