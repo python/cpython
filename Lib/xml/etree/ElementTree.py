@@ -1709,7 +1709,7 @@ class XMLParser:
                 raise ValueError("unknown event %r" % event_name)
 
     def _raiseerror(self, value):
-        err = ParseError(value)
+        err = ParseError(str(value))
         err.code = value.code
         err.position = value.lineno, value.offset
         raise err
