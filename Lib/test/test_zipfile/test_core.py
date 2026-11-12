@@ -26,7 +26,7 @@ from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     requires_zstd, captured_stdout, captured_stderr, requires_subprocess,
-    cpython_only, gc_collect
+    cpython_only, gc_collect, catch_unraisable_exception
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath,
@@ -56,6 +56,15 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+
+@contextlib.contextmanager
+def save_restore_sys_path():
+    old_path = sys.path.copy()
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
 
 
 class LazyImportTest(unittest.TestCase):
@@ -4095,6 +4104,21 @@ class OtherTests(unittest.TestCase):
             zf.close()
             del zf
 
+        # ResourceWarning escalated to an error is reported as unraisable,
+        # and the archive is still closed.
+        buf = io.BytesIO()
+        zf = zipfile.ZipFile(buf, "w")
+        zf.writestr("f.txt", b"data")
+        with (warnings.catch_warnings(action="error", category=ResourceWarning),
+              catch_unraisable_exception() as cm):
+            del zf
+            gc_collect()
+            self.assertIs(cm.unraisable.exc_type, ResourceWarning)
+
+        with zipfile.ZipFile(buf, "r") as zf:
+            self.assertEqual(zf.namelist(), ["f.txt"])
+            self.assertEqual(zf.read("f.txt"), b"data")
+
     def test_unsupported_version(self):
         # File has an extract_version of 120
         data = (b'PK\x03\x04x\x00\x00\x00\x00\x00!p\xa1@\x00\x00\x00\x00\x00\x00'
@@ -4284,6 +4308,20 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(fp.tell(), mid)
         self.assertTrue(zipfile.is_zipfile(fp))
         self.assertEqual(fp.tell(), mid)
+
+    def test_is_zip_bad_central_directory_offset(self):
+        """Check that is_zipfile() rejects a central directory before the file."""
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w") as zipf:
+            zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
+        data = bytearray(fp.getvalue())
+        endrec = len(data) - zipfile.sizeEndCentDir
+        struct.pack_into("<L", data, endrec + 12, len(data))
+        fp = io.BytesIO(data)
+        pos = fp.seek(5)
+        self.assertFalse(zipfile.is_zipfile(fp))
+        self.assertEqual(fp.tell(), pos)
+        self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, io.BytesIO(data))
 
     def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
@@ -4600,6 +4638,8 @@ class OtherTests(unittest.TestCase):
                     zipf.writestr('str', 'abcde')
                 with self.assertRaises(ValueError):
                     zipf.write(__file__, 'file')
+                with self.assertRaises(ValueError):
+                    zipf.mkdir('directory')
                 with self.assertRaises(ValueError):
                     zipf.close()
                 w1.write(msg2)
@@ -5567,14 +5607,14 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
             self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
@@ -5630,6 +5670,9 @@ class TestWithDirectory(unittest.TestCase):
             os.mkdir(target)
             zf.extractall(target)
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2", "directory3", "directory4"})
+
+        with self.assertRaises(ValueError):
+            zf.mkdir("closed")
 
     def test_create_directory_with_write(self):
         with zipfile.ZipFile(TESTFN, "w") as zf:
@@ -5953,17 +5996,18 @@ class EncodedMetadataTests(unittest.TestCase):
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
-        with captured_stdout() as stdout:
-            with captured_stderr() as stderr:
+        with (captured_stdout() as stdout,
+              captured_stderr() as stderr,
+              save_restore_sys_path()):
                 self.assertRaises(SystemExit, zipfile.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
@@ -5982,7 +6026,9 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!a}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        with save_restore_sys_path():
+            zipfile.main(["--metadata-encoding=shift_jis", "-e",
+                          TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)

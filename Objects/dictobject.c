@@ -2276,7 +2276,6 @@ dictresize(PyDictObject *mp,
         UNLOCK_KEYS(oldkeys);
         set_keys(mp, newkeys);
         dictkeys_decref(oldkeys, IS_DICT_SHARED(mp));
-        set_values(mp, NULL);
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
@@ -2285,6 +2284,7 @@ dictresize(PyDictObject *mp,
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
         }
+        set_values(mp, NULL);
     }
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
@@ -2629,6 +2629,81 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
     }
 
     return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
+}
+
+static inline int
+compare_generic_exact_unicode(PyDictObject *mp, PyDictKeysObject *dk,
+                              void *ep0, Py_ssize_t ix, PyObject *key,
+                              Py_hash_t hash)
+{
+    PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
+    assert(ep->me_key != NULL);
+    if (ep->me_key == key) {
+        return 1;
+    }
+    return (ep->me_hash == hash && PyUnicode_CheckExact(ep->me_key) &&
+            unicode_eq(ep->me_key, key));
+}
+
+// Look up an exact str key, without comparing it to keys that are not exact
+// str: those are skipped, so no user code can run.  Returns a borrowed
+// reference, or NULL (without an exception) if the key is not found.  The
+// caller must hold the dict lock or have the world stopped.
+PyObject *
+_PyDict_GetItem_ExactUnicode(PyDictObject *mp, PyObject *key)
+{
+    assert(PyUnicode_CheckExact(key));
+    Py_hash_t hash = hash_unicode_key(key);
+    PyDictKeysObject *dk = mp->ma_keys;
+    Py_ssize_t ix;
+    if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        ix = do_lookup(mp, dk, key, hash, compare_generic_exact_unicode);
+    }
+    else {
+        ix = unicodekeys_lookup_unicode(dk, key, hash);
+    }
+    if (ix < 0) {
+        return NULL;
+    }
+    if (dk->dk_kind == DICT_KEYS_SPLIT) {
+        return mp->ma_values->values[ix];
+    }
+    if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        return DK_ENTRIES(dk)[ix].me_value;
+    }
+    return DK_UNICODE_ENTRIES(dk)[ix].me_value;
+}
+
+// Like _PyDict_GetItem_ExactUnicode() but safe to call without holding the
+// dict lock.  Stores a new reference (or NULL) in *value_addr.  Returns 1 if
+// the key was found and 0 if not.
+int
+_PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp, PyObject *key,
+                                     _PyStackRef *value_addr)
+{
+    assert(PyUnicode_CheckExact(key));
+    PyObject *value;
+#ifdef Py_GIL_DISABLED
+    ensure_shared_on_read(mp);
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
+    if (dk->dk_kind == DICT_KEYS_UNICODE) {
+        // All keys are exact str, so the lock-free lookup cannot run user
+        // code.
+        Py_hash_t hash = hash_unicode_key(key);
+        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
+        if (ix != DKIX_KEY_CHANGED) {
+            return !PyStackRef_IsNull(*value_addr);
+        }
+    }
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    value = _PyDict_GetItem_ExactUnicode(mp, key);
+    *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
+    Py_END_CRITICAL_SECTION();
+#else
+    value = _PyDict_GetItem_ExactUnicode(mp, key);
+    *value_addr = value ? PyStackRef_FromPyObjectNew(value) : PyStackRef_NULL;
+#endif
+    return value != NULL;
 }
 
 int
@@ -3128,6 +3203,17 @@ clear_embedded_values(PyDictValues *values, Py_ssize_t nentries)
     }
 }
 
+// This function is used in both `PyDict_Clear`
+// and `PyDict_AsFrozenDictAndClear`, place all the common parts here.
+static void
+clear_common(PyDictObject *mp)
+{
+    _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
+    // We don't inc ref empty keys because they're immortal
+    ensure_shared_on_resize(mp);
+    STORE_USED(mp, 0);
+}
+
 static void
 clear_lock_held(PyObject *op)
 {
@@ -3147,10 +3233,7 @@ clear_lock_held(PyObject *op)
         return;
     }
     /* Empty the dict... */
-    _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
-    // We don't inc ref empty keys because they're immortal
-    ensure_shared_on_resize(mp);
-    STORE_USED(mp, 0);
+    clear_common(mp);
     if (oldvalues == NULL) {
         set_keys(mp, Py_EMPTY_KEYS);
         assert(oldkeys->dk_refcnt == 1);
@@ -4113,7 +4196,7 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         return -1;
 
     for (i = 0; ; ++i) {
-        PyObject *key, *value;
+        PyObject *key = NULL, *value = NULL;
         Py_ssize_t n;
 
         fast = NULL;
@@ -4135,7 +4218,13 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
             }
             goto Fail;
         }
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(item);
         n = PySequence_Fast_GET_SIZE(fast);
+        if (n == 2) {
+            key = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 0));
+            value = Py_NewRef(PySequence_Fast_GET_ITEM(fast, 1));
+        }
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         if (n != 2) {
             PyErr_Format(PyExc_ValueError,
                          "dictionary update sequence element #%zd "
@@ -4145,10 +4234,6 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         }
 
         /* Update/merge with this (key, value) pair. */
-        key = PySequence_Fast_GET_ITEM(fast, 0);
-        value = PySequence_Fast_GET_ITEM(fast, 1);
-        Py_INCREF(key);
-        Py_INCREF(value);
         if (override) {
             if (setitem_lock_held((PyDictObject *)d, key, value) < 0) {
                 Py_DECREF(key);
@@ -4215,7 +4300,9 @@ static int
 dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **dupkey)
 {
     assert(can_modify_dict(mp));
-    ASSERT_DICT_LOCKED(other);
+    if (!PyFrozenDict_Check(other)) {
+        ASSERT_DICT_LOCKED(other);
+    }
 
     if (other == mp || other->ma_used == 0)
         /* a.update(a) or a.update({}); nothing to do */
@@ -4581,7 +4668,14 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
     }
     if (copy == NULL)
         return NULL;
-    if (dict_merge(copy, o, 1, NULL) < 0) {
+    int res;
+    if (Py_TYPE(mp)->tp_iter == dict_iter) {
+        res = dict_dict_merge((PyDictObject *)copy, mp, 1, NULL);
+    }
+    else {
+        res = dict_merge(copy, o, 1, NULL);
+    }
+    if (res < 0) {
         Py_DECREF(copy);
         return NULL;
     }
@@ -4885,7 +4979,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || value == NULL) {
         value = default_value;
 
         // See comment to this function in insertdict.
@@ -5413,7 +5507,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *self = dict_new(_PyType_CAST(type), NULL, NULL);
+    assert(type == (PyObject *)&PyDict_Type);
+    PyObject *self = PyDict_New();
     if (self == NULL) {
         return NULL;
     }
@@ -7302,6 +7397,11 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
                 PyObject *key = PyTuple_GET_ITEM(attrs, i);
                 Py_hash_t hash;
                 if (PyUnicode_CheckExact(key) && (hash = unicode_get_hash(key)) != -1) {
+                    /* An attribute stored in a slot never uses the dict. */
+                    PyObject *descr = _PyType_Lookup((PyTypeObject *)cls, key);
+                    if (descr != NULL && Py_IS_TYPE(descr, &PyMemberDescr_Type)) {
+                        continue;
+                    }
                     if (insert_split_key(keys, key, hash) == DKIX_EMPTY) {
                         break;
                     }
@@ -7572,17 +7672,25 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
     if (!FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        PyDictObject *dict = _PyObject_GetManagedDict(obj);
+        PyDictObject *dict;
+        int res;
+#ifdef Py_GIL_DISABLED
+        Py_BEGIN_CRITICAL_SECTION(obj);
+#endif
+        dict = _PyObject_GetManagedDict(obj);
+        Py_XINCREF(dict);
+#ifdef Py_GIL_DISABLED
+        Py_END_CRITICAL_SECTION();
+#endif
         if (dict == NULL) {
             dict = (PyDictObject *)PyObject_GenericGetDict(obj, NULL);
             if (dict == NULL) {
                 return -1;
             }
-            int res = store_instance_attr_dict(obj, dict, name, value);
-            Py_DECREF(dict);
-            return res;
         }
-        return store_instance_attr_dict(obj, dict, name, value);
+        res = store_instance_attr_dict(obj, dict, name, value);
+        Py_DECREF(dict);
+        return res;
     }
 
 #ifdef Py_GIL_DISABLED
@@ -7794,7 +7902,11 @@ clear_inline_values(PyDictValues *values)
     if (values->valid) {
         FT_ATOMIC_STORE_UINT8(values->valid, 0);
         for (Py_ssize_t i = 0; i < values->capacity; i++) {
-            Py_CLEAR(values->values[i]);
+            PyObject *value = values->values[i];
+            // The attribute read fast-path may read these without holding the
+            // per-object lock.
+            FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
+            Py_XDECREF(value);
         }
     }
 }
@@ -8016,7 +8128,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             clear_inline_values(_PyObject_InlineValues(obj));
             return;
         }
-        else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+        if (FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_values) ==
                     _PyObject_InlineValues(obj)) {
             // We have a materialized object which points at the inline
             // values. We need to materialize the keys. Nothing can modify
@@ -8548,6 +8660,57 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     _PyObject_GC_TRACK(d);
     return d;
+}
+
+static void
+transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
+{
+    PyDictObject *new = (PyDictObject *)res;
+    PyDictObject *old = (PyDictObject *)dict;
+    assert(can_modify_dict(old));
+
+    // Fast path: do nothing on an empty dict:
+    if (old->ma_keys == Py_EMPTY_KEYS) {
+        return;
+    }
+
+    Py_ssize_t used = old->ma_used;
+    PyDictKeysObject *keys = old->ma_keys;
+    PyDictValues *values = old->ma_values;
+
+    // Clear the old dict keys and values, but do not decref them:
+    clear_common(old);
+    set_keys(old, Py_EMPTY_KEYS);
+    set_values(old, NULL);
+    ASSERT_CONSISTENT(old);
+
+    // Transfer keys and values from dict to frozendict:
+    new->ma_used = used;
+    new->ma_keys = keys;
+    new->ma_values = values;
+    ASSERT_CONSISTENT(new);
+}
+
+PyObject *
+PyDict_AsFrozenDictAndClear(PyObject *dict)
+{
+    if (dict == NULL || !PyDict_Check(dict)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyObject *res = frozendict_new_untracked(&PyFrozenDict_Type);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    transfer_keys_and_values_lock_held(res, dict);
+    Py_END_CRITICAL_SECTION();
+
+    _PyObject_GC_TRACK(res);
+    assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);
+    return res;
 }
 
 

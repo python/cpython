@@ -8,6 +8,7 @@
 #include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyException_AddNote()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
 #include "pycore_tuple.h"         // _PyTupleIterObject
 
@@ -392,6 +393,23 @@ tuple_hash(PyObject *op)
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                /* Preserve the original error while providing context for
+                   the element that could not be hashed. */
+                PyObject *exc = PyErr_GetRaisedException();
+                PyObject *note = PyUnicode_FromFormat(
+                    "when hashing tuple item %zd", i);
+                if (note != NULL) {
+                    if (_PyException_AddNote(exc, note) < 0) {
+                        PyErr_Clear();
+                    }
+                    Py_DECREF(note);
+                }
+                else {
+                    PyErr_Clear();
+                }
+                PyErr_SetRaisedException(exc);
+            }
             _Py_LeaveRecursiveCall();
             return -1;
         }
@@ -1031,8 +1049,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0 ||
-        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0
+        || (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))
+        // gh-161226: Disallow resizing a tuple if the hash value is cached
+        || (Py_SIZE(v) != 0 && v->ob_hash != -1))
+    {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();

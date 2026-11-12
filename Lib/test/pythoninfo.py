@@ -9,7 +9,7 @@ import warnings
 
 
 MS_WINDOWS = (sys.platform == "win32")
-APPLE = (sys.platform in ("darwin", "ios", "tvos", "watchos"))
+APPLE = (sys.platform in ("darwin", "ios", "tvos", "watchos", "visionos"))
 
 COMMAND_TIMEOUT = 60.0
 

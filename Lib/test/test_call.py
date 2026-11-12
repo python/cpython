@@ -208,7 +208,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                itertools.product, 0, repeat=1, foo=2)
 
     def test_varargs15_kw(self):
-        msg = r"^ImportError\(\) takes at most 3 keyword arguments \(4 given\)$"
+        msg = r"^ImportError\(\) got an unexpected keyword argument 'foo'$"
         self.assertRaisesRegex(TypeError, msg,
                                ImportError, 0, name=1, path=2, name_from=3, foo=3)
 

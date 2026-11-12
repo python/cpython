@@ -194,13 +194,17 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 
     int first_invalid_escape_char;
     const char *first_invalid_escape_ptr;
-    v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL, NULL,
+    // Allow a trailing unfinished escape in a partial token.
+    int incomplete = t != NULL && t->is_incomplete;
+    Py_ssize_t consumed;
+    v = _PyUnicode_DecodeUnicodeEscapeInternal2(buf, (Py_ssize_t)len, NULL,
+                                                incomplete ? &consumed : NULL,
                                                 &first_invalid_escape_char,
                                                 &first_invalid_escape_ptr);
 
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
-    if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL) {
+    if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL && !incomplete) {
         if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, t) < 0) {
             /* We have not deallocated the buffer before because
              * first_invalid_escape_ptr points inside buf. */

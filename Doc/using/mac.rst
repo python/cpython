@@ -380,7 +380,7 @@ interpreter option:
 
 .. parsed-literal::
 
-    RELEASE="python-\ |version|\ 0b2-macos11.pkg"
+    RELEASE="python-\ |version|\ .0b2-macos11.pkg"
 
     # download installer pkg
     curl -O \https://www.python.org/ftp/python/\ |version|\ .0/${RELEASE}
