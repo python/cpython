@@ -541,10 +541,10 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
-/* A collation callback cannot report an error to SQLite. If it raises, the
- * exception stays set until sqlite3_step() returns, and SQLite continues
- * the step with the wrong result of the comparison. Thus, after a step, check
- * PyErr_Occurred() first, and propagate that exception. */
+/* A callback can leave an exception set until sqlite3_step() returns. For
+ * example, a collation callback cannot report an error to SQLite, so SQLite
+ * continues the step with a wrong result of the comparison. Thus, after a
+ * step, check PyErr_Occurred() first, and propagate that exception. */
 static inline int
 stmt_step(sqlite3_stmt *statement)
 {
@@ -915,7 +915,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
         rc = stmt_step(self->statement->st);
         if (PyErr_Occurred()) {
-            /* A collation callback raised. */
+            /* A callback left an exception set. */
             goto error;
         }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
@@ -1126,7 +1126,7 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
         Py_END_ALLOW_THREADS
 
         if (PyErr_Occurred()) {
-            /* A collation callback raised. */
+            /* A callback left an exception set. */
             return NULL;
         }
         if (rc != SQLITE_OK) {
@@ -1171,7 +1171,7 @@ pysqlite_cursor_iternext(PyObject *op)
     }
     int rc = stmt_step(stmt);
     if (PyErr_Occurred()) {
-        /* A collation callback raised. */
+        /* A callback left an exception set. */
         (void)stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         Py_DECREF(row);

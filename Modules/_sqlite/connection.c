@@ -960,11 +960,12 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
     print_or_clear_traceback(ctx);
 }
 
-/* If a collation callback raises, the exception stays set until
- * sqlite3_step() returns (see collation_callback()). Other callbacks in the
- * same step must not call Python code while the exception is set. Return 1
- * if an exception is set. If context is not NULL, also make the SQL function
- * fail, so that SQLite stops the step. */
+/* A callback can leave an exception set until sqlite3_step() returns. For
+ * example, a collation callback cannot report an error to SQLite (see
+ * collation_callback()). Other callbacks in the same step must not call
+ * Python code while the exception is set. Return 1 if an exception is set.
+ * If context is not NULL, also make the SQL function fail, so that SQLite
+ * stops the step. */
 static int
 exception_is_pending(sqlite3_context *context)
 {
@@ -1110,7 +1111,6 @@ final_callback(sqlite3_context *context)
     }
     if (!ok) {
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
-        _PyErr_ChainExceptions1(exc);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
          * does _not_, as of SQLite 3.38.0, propagate errors to sqlite3_step()
@@ -1120,9 +1120,8 @@ final_callback(sqlite3_context *context)
                 ? "user-defined aggregate's 'finalize' method not defined"
                 : "user-defined aggregate's 'finalize' method raised error");
     }
-    else {
-        PyErr_SetRaisedException(exc);
-    }
+    // Set the exception of the earlier callback again, so that it propagates.
+    PyErr_SetRaisedException(exc);
 
 error:
     PyGILState_Release(threadstate);
@@ -1283,6 +1282,10 @@ static void
 inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
+    if (exception_is_pending(context)) {
+        PyGILState_Release(gilstate);
+        return;
+    }
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     incref_callback_context(ctx);
@@ -1484,6 +1487,10 @@ authorizer_callback(void *ctx_vp, int action, const char *arg1,
                     const char *access_attempt_source)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
+    if (exception_is_pending(NULL)) {
+        PyGILState_Release(gilstate);
+        return SQLITE_DENY;
+    }
 
     PyObject *ret;
     int rc = SQLITE_DENY;
