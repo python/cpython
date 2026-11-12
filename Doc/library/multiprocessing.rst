@@ -2750,7 +2750,7 @@ multiple connections at the same time.
    assumed to be the fastest available.  See
    :ref:`multiprocessing-address-formats`.  Note that if *family* is
    ``'AF_UNIX'`` and address is ``None`` then the socket will be created in a
-   private temporary directory created using :func:`tempfile.mkstemp`.
+   private temporary directory created using :func:`tempfile.mkdtemp`.
 
    If the listener object uses a socket then *backlog* (1 by default) is passed
    to the :meth:`~socket.socket.listen` method of the socket once it has been

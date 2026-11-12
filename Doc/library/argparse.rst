@@ -746,11 +746,11 @@ the upper-cased name. For example::
    >>> parser.parse_args(['--foo-bar', 'FOO-BAR'])
    Namespace(foo_bar='FOO-BAR')
    >>> parser.print_help()
-   usage:  [-h] [--foo-bar FOO-BAR]
+   usage:  [-h] [--foo-bar FOO_BAR]
 
    optional arguments:
     -h, --help  show this help message and exit
-    --foo-bar FOO-BAR
+    --foo-bar FOO_BAR
 
 
 .. _action:
@@ -1375,7 +1375,7 @@ behavior::
    >>> parser.parse_args('-f 1 -q 2 -x 3'.split())
    Namespace(foo_bar='1', quz='2', x='3')
    >>> parser.parse_args('--foo 1 -quz 2 -y 3'.split())
-   Namespace(foo_bar='1', quz='2', x='2')
+   Namespace(foo_bar='1', quz='2', x='3')
 
 ``dest`` allows a custom attribute name to be provided::
 
@@ -2088,7 +2088,7 @@ Argument groups
    to create instances.  Only the methods documented here are part of the
    public API; other attributes and methods are implementation details.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
       The private ``_ArgumentGroup`` name remains as an alias.
 
 
@@ -2165,7 +2165,7 @@ Mutual exclusion
    Only the ``add_argument`` method documented here is part of the public API;
    other attributes and methods are implementation details.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
       The private ``_MutuallyExclusiveGroup`` name remains as an alias.
 
 

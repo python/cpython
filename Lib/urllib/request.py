@@ -102,7 +102,8 @@ from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
-    _splitattr, _splitvalue, _splittag,
+    _splitattr, _splitvalue, _splittag, _splitnetloc,
+    _WHATWG_C0_CONTROL_OR_SPACE, _UNSAFE_URL_BYTES_TO_REMOVE,
     unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
@@ -357,8 +358,10 @@ class Request:
         return self.full_url
 
     def set_proxy(self, host, type):
-        if self.type == 'https' and not self._tunnel_host:
-            self._tunnel_host = self.host
+        if self.type == 'https':
+            # A retried request keeps the tunnel host set on the first pass.
+            if not self._tunnel_host:
+                self._tunnel_host = self.host
         else:
             self.type= type
             self.selector = self.full_url
@@ -1086,25 +1089,87 @@ class AbstractDigestAuthHandler:
     def reset_retry_count(self):
         self.retried = 0
 
+    def _parse_challenges(self, header):
+        # Yield (scheme, challenge) for each challenge in a WWW-Authenticate
+        # header value.  Commas separate both challenges and the auth-params
+        # of a challenge, so an element which starts with a token that is not
+        # followed by "=" starts a new challenge (RFC 9110, section 11.6.1).
+        #
+        # For example, the header value
+        #
+        #     Basic realm="a", Digest realm="b", nonce="n"
+        #
+        # is split on commas into the elements 'Basic realm="a"',
+        # 'Digest realm="b"' and 'nonce="n"'.  "Basic" and "Digest" are not
+        # followed by "=", so they start challenges; 'nonce="n"' continues
+        # the Digest one.  This yields:
+        #
+        #     ('Basic', 'Basic realm="a"')
+        #     ('Digest', 'Digest realm="b", nonce="n"')
+        elements = []
+        start = 0
+        quote = escape = False
+        for i, c in enumerate(header):
+            if escape:
+                escape = False
+            elif quote:
+                if c == '\\':
+                    escape = True
+                elif c == '"':
+                    quote = False
+            elif c == '"':
+                quote = True
+            elif c == ',':
+                elements.append((start, i))
+                start = i + 1
+        elements.append((start, len(header)))
+
+        scheme = begin = end = None
+        for elt_start, elt_end in elements:
+            words = header[elt_start:elt_end].split(None, 1)
+            if not words:
+                continue
+            rest = words[1] if len(words) > 1 else ''
+            if '=' not in words[0] and not rest.startswith('='):
+                if scheme is not None:
+                    yield scheme, header[begin:end].strip()
+                scheme = words[0]
+                begin = elt_start
+            end = elt_end
+        if scheme is not None:
+            yield scheme, header[begin:end].strip()
+
     def http_error_auth_reqed(self, auth_header, host, req, headers):
-        authreq = headers.get(auth_header, None)
+        authreqs = headers.get_all(auth_header)
         if self.retried > 5:
             # Don't fail endlessly - if we failed once, we'll probably
             # fail a second time. Hm. Unless the Password Manager is
             # prompting for the information. Crap. This isn't great
             # but it's better than the current 'repeat until recursion
             # depth exceeded' approach <wink>
-            raise HTTPError(req.full_url, 401, "digest auth failed",
+            if auth_header.lower() == 'proxy-authenticate':
+                code = 407
+            else:
+                code = 401
+            raise HTTPError(req.full_url, code, "digest auth failed",
                             headers, None)
         else:
             self.retried += 1
-        if authreq:
-            scheme = authreq.split()[0]
-            if scheme.lower() == 'digest':
-                return self.retry_http_digest_auth(req, authreq)
-            elif scheme.lower() != 'basic':
-                raise ValueError("AbstractDigestAuthHandler does not support"
-                                 " the following scheme: '%s'" % scheme)
+        if not authreqs:
+            return None
+        unsupported = None
+        basic_found = False
+        for authreq in authreqs:
+            for scheme, challenge in self._parse_challenges(authreq):
+                if scheme.lower() == 'digest':
+                    return self.retry_http_digest_auth(req, challenge)
+                if scheme.lower() == 'basic':
+                    basic_found = True
+                elif unsupported is None:
+                    unsupported = scheme
+        if unsupported is not None and not basic_found:
+            raise ValueError("AbstractDigestAuthHandler does not support"
+                             " the following scheme: '%s'" % unsupported)
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
@@ -1161,10 +1226,24 @@ class AbstractDigestAuthHandler:
         else:
             entdig = None
 
+        # The digest-uri is the request-target as sent on the request line:
+        # the path, or the absolute URL when the request goes through an
+        # HTTP proxy.  RFC 7616, Section 3.4 allows both.  An empty path is
+        # sent as '/' by http.client, so use the same here.
+
+        if self.auth_header == 'Proxy-Authorization' and req._tunnel_host:
+            # For an https URL the proxy authenticates the CONNECT request,
+            # whose request-target is host:port, as sent by http.client.
+            method = 'CONNECT'
+            host, port = _splitport(req._tunnel_host)
+            uri = '%s:%s' % (host.encode('idna').decode('ascii'),
+                             port or http.client.HTTPS_PORT)
+        else:
+            method = req.get_method()
+            uri = req.selector or '/'
+
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.get_method(),
-                        # XXX selector: what about proxies and full urls
-                        req.selector)
+        A2 = "%s:%s" % (method, uri)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
         if qop is None:
@@ -1186,8 +1265,7 @@ class AbstractDigestAuthHandler:
         # XXX should the partial digests be encoded too?
 
         base = 'username="%s", realm="%s", nonce="%s", uri="%s", ' \
-               'response="%s"' % (user, realm, nonce, req.selector,
-                                  respdig)
+               'response="%s"' % (user, realm, nonce, uri, respdig)
         if opaque:
             base += ', opaque="%s"' % opaque
         if entdig:
@@ -1247,6 +1325,26 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
                                            host, req, headers)
         self.reset_retry_count()
         return retry
+
+class _ProxyTunnelResponse(io.BytesIO):
+    """The proxy's error response to CONNECT, as an empty-bodied response."""
+
+    def __init__(self, err, url):
+        super().__init__()
+        self.url = url
+        self.code = self.status = err.code
+        self.msg = self.reason = err.reason
+        self.headers = err.headers
+
+    def info(self):
+        return self.headers
+
+    def geturl(self):
+        return self.url
+
+    def getcode(self):
+        return self.code
+
 
 class AbstractHTTPHandler(BaseHandler):
 
@@ -1341,6 +1439,12 @@ class AbstractHTTPHandler(BaseHandler):
             try:
                 h.request(req.get_method(), req.selector, req.data, headers,
                           encode_chunked=req.has_header('Transfer-encoding'))
+            except http.client.ProxyTunnelError as err:
+                if err.code != 407:
+                    raise URLError(err)
+                # Pass the proxy's challenge to CONNECT on to the
+                # http_error_407 handlers, like any other error response.
+                return _ProxyTunnelResponse(err, req.full_url)
             except OSError as err: # timeout error
                 raise URLError(err)
             r = h.getresponse()
@@ -1727,7 +1831,22 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     """
     if not require_scheme:
         url = 'file:' + url
-    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    # Match urlsplit()'s own control-character handling up front, so the
+    # except branch below can reuse this same cleaned-up string.
+    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, '')
+    try:
+        scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    except ValueError:
+        # The authority here is not a real host[:port] pair -- it may
+        # hold a Windows drive letter (e.g. 'C:\\') -- so urlsplit()'s
+        # eager port check doesn't apply; split without it instead.
+        scheme, _, url = url.partition(':')
+        scheme = scheme.lower()
+        authority = ''
+        if url[:2] == '//':
+            authority, url = _splitnetloc(url, 2)
     if scheme != 'file':
         raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':

@@ -584,10 +584,11 @@ subclass which installs setuptools and pip into a created virtual environment::
                          arguments: a string indicating some progress, and a
                          context indicating where the string is coming from.
                          The context argument can have one of three values:
-                         'main', indicating that it is called from virtualize()
-                         itself, and 'stdout' and 'stderr', which are obtained
-                         by reading lines from the output streams of a subprocess
-                         which is used to install the app.
+                         'main', indicating that it is called from
+                         install_script() itself, and 'stdout' and 'stderr',
+                         which are obtained by reading lines from the output
+                         streams of a subprocess which is used to install
+                         the app.
 
                          If a callable is not specified, default progress
                          information is output to sys.stderr.

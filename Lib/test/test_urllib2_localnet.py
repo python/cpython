@@ -368,12 +368,14 @@ class ProxyAuthTests(unittest.TestCase):
         self.digest_auth_handler.set_qop("auth")
         with self.assertRaises(urllib.error.HTTPError) as cm:
             self.opener.open(self.URL)
+        self.assertEqual(cm.exception.code, 407)
         cm.exception.close()
 
     def test_proxy_with_no_password_raises_httperror(self):
         self.digest_auth_handler.set_qop("auth")
         with self.assertRaises(urllib.error.HTTPError) as cm:
             self.opener.open(self.URL)
+        self.assertEqual(cm.exception.code, 407)
         cm.exception.close()
 
     def test_proxy_qop_auth_works(self):
