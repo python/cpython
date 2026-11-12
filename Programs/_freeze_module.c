@@ -122,11 +122,12 @@ read_text(const char *inpath)
 static PyObject *
 compile_and_marshal(const char *name, const char *text)
 {
-    char *filename = (char *) malloc(strlen(name) + 10);
+    int text_size = strlen(name) + 10;
+    char *filename = (char *) malloc(text_size);
     if (filename == NULL) {
         return PyErr_NoMemory();
     }
-    sprintf(filename, "<frozen %s>", name);
+    PyOS_snprintf(filename, text_size, "<frozen %s>", name);
     PyObject *code = Py_CompileStringExFlags(text, filename,
                                              Py_file_input, NULL, 0);
     free(filename);
