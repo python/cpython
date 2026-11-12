@@ -4,10 +4,11 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(pyexpat_xmlparser_SetReparseDeferralEnabled__doc__,
 "SetReparseDeferralEnabled($self, enabled, /)\n"
@@ -77,37 +78,24 @@ static PyObject *
 pyexpat_xmlparser_Parse(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "Parse",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *data;
     int isfinal = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("Parse", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("Parse", nargs, 1, 2)) {
         goto exit;
     }
     data = args[0];
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     isfinal = PyObject_IsTrue(args[1]);
     if (isfinal < 0) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = pyexpat_xmlparser_Parse_impl((xmlparseobject *)self, cls, data, isfinal);
 
 exit:
@@ -133,25 +121,12 @@ static PyObject *
 pyexpat_xmlparser_ParseFile(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "ParseFile",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *file;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("ParseFile", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("ParseFile", nargs, 1, 1)) {
         goto exit;
     }
     file = args[0];
@@ -183,13 +158,8 @@ pyexpat_xmlparser_SetBase(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("SetBase", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t base_length;
-    base = PyUnicode_AsUTF8AndSize(arg, &base_length);
+    base = _PyUnicode_AsUTF8NoNUL(arg);
     if (base == NULL) {
-        goto exit;
-    }
-    if (strlen(base) != (size_t)base_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pyexpat_xmlparser_SetBase_impl((xmlparseobject *)self, base);
@@ -285,39 +255,21 @@ static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "ExternalEntityParserCreate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     const char *context;
     const char *encoding = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("ExternalEntityParserCreate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("ExternalEntityParserCreate", nargs, 1, 2)) {
         goto exit;
     }
     if (args[0] == Py_None) {
         context = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t context_length;
-        context = PyUnicode_AsUTF8AndSize(args[0], &context_length);
+        context = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (context == NULL) {
-            goto exit;
-        }
-        if (strlen(context) != (size_t)context_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -326,22 +278,17 @@ pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, 
         goto exit;
     }
     if (nargs < 2) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("ExternalEntityParserCreate", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
+    encoding = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (encoding == NULL) {
         goto exit;
     }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-skip_optional_posonly:
+skip_optional:
     return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl((xmlparseobject *)self, cls, context, encoding);
 
 exit:
@@ -405,35 +352,22 @@ static PyObject *
 pyexpat_xmlparser_UseForeignDTD(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "UseForeignDTD",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     int flag = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("UseForeignDTD", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("UseForeignDTD", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     flag = PyObject_IsTrue(args[0]);
     if (flag < 0) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = pyexpat_xmlparser_UseForeignDTD_impl((xmlparseobject *)self, cls, flag);
 
 exit:
@@ -472,25 +406,12 @@ static PyObject *
 pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "SetBillionLaughsAttackProtectionActivationThreshold",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     unsigned long long threshold;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("SetBillionLaughsAttackProtectionActivationThreshold", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("SetBillionLaughsAttackProtectionActivationThreshold", nargs, 1, 1)) {
         goto exit;
     }
     if (!_PyLong_UnsignedLongLong_Converter(args[0], &threshold)) {
@@ -541,25 +462,12 @@ static PyObject *
 pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "SetBillionLaughsAttackProtectionMaximumAmplification",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     float max_factor;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("SetBillionLaughsAttackProtectionMaximumAmplification", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("SetBillionLaughsAttackProtectionMaximumAmplification", nargs, 1, 1)) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -604,25 +512,12 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "SetAllocTrackerActivationThreshold",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     unsigned long long threshold;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("SetAllocTrackerActivationThreshold", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("SetAllocTrackerActivationThreshold", nargs, 1, 1)) {
         goto exit;
     }
     if (!_PyLong_UnsignedLongLong_Converter(args[0], &threshold)) {
@@ -671,25 +566,12 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "SetAllocTrackerMaximumAmplification",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     float max_factor;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("SetAllocTrackerMaximumAmplification", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("SetAllocTrackerMaximumAmplification", nargs, 1, 1)) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -774,13 +656,8 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             encoding = NULL;
         }
         else if (PyUnicode_Check(args[0])) {
-            Py_ssize_t encoding_length;
-            encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+            encoding = _PyUnicode_AsUTF8NoNUL(args[0]);
             if (encoding == NULL) {
-                goto exit;
-            }
-            if (strlen(encoding) != (size_t)encoding_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -797,13 +674,8 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             namespace_separator = NULL;
         }
         else if (PyUnicode_Check(args[1])) {
-            Py_ssize_t namespace_separator_length;
-            namespace_separator = PyUnicode_AsUTF8AndSize(args[1], &namespace_separator_length);
+            namespace_separator = _PyUnicode_AsUTF8NoNUL(args[1]);
             if (namespace_separator == NULL) {
-                goto exit;
-            }
-            if (strlen(namespace_separator) != (size_t)namespace_separator_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -870,4 +742,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=c68606a1fbc3a501 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1652fd212bce55f input=a9049054013a1b77]*/

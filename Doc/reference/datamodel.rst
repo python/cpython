@@ -863,7 +863,8 @@ determined by the C function. Special read-only attributes:
 * :attr:`!__doc__` is the function's documentation string, or ``None`` if
   unavailable. See :attr:`function.__doc__`.
 * :attr:`!__name__` is the function's name. See :attr:`function.__name__`.
-* :attr:`!__self__` is set to ``None`` (but see the next item).
+* :attr:`!__self__` is the module object the function was defined in or
+  ``None`` if unavailable.
 * :attr:`!__module__` is the name of
   the module the function was defined in or ``None`` if unavailable.
   See :attr:`function.__module__`.
@@ -2990,6 +2991,8 @@ explored include enum, logging, interface checking, automatic delegation,
 automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
+
+.. _customize-instance-subclass-checks:
 
 Customizing instance and subclass checks
 ----------------------------------------

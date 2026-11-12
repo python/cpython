@@ -82,6 +82,8 @@ static PyObject *
 test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
     PyObject *obj, *dict;
+    PyObject *slots[1];
+    int small_array[] = {2, 5, 7};
 
     // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
     Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
@@ -97,17 +99,30 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_CLEAR(obj);
     assert(obj == _Py_NULL);
 
-#ifndef Py_LIMITED_API
+    // gh-157649: Test Py_CLEAR() on an array
+    slots[0] = Py_None;
+    Py_CLEAR(slots[0]);
+    assert(slots[0] == _Py_NULL);
+
     // Test Py_SETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_SETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
 
+    // gh-157649: Test Py_SETREF() on an array
+    slots[0] = Py_None;
+    Py_SETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
+
     // Test Py_XSETREF(): use typeof()/__typeof__() if available, or memcpy()
     obj = Py_None;
     Py_XSETREF(obj, _Py_NULL);
     assert(obj == _Py_NULL);
-#endif
+
+    // gh-157649: Test Py_XSETREF() on an array
+    slots[0] = Py_None;
+    Py_XSETREF(slots[0], _Py_NULL);
+    assert(slots[0] == _Py_NULL);
 
     // Test that Py_BEGIN_CRITICAL_SECTION is available
     dict = PyDict_New();
@@ -117,6 +132,90 @@ test_macros(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION(dict);
     Py_END_CRITICAL_SECTION();
     Py_DECREF(dict);
+
+    // Test Py_ARRAY_LENGTH()
+    assert(Py_ARRAY_LENGTH(small_array) == 3);
+
+    Py_RETURN_NONE;
+}
+
+
+Py_NO_INLINE static void
+pyclear_strict_aliasing(PyTypeObject **a, PyTypeObject **b)
+{
+    Py_CLEAR(*a);
+    *b = NULL;
+}
+
+
+Py_NO_INLINE static void
+setref_strict_aliasing(PyTypeObject **a, PyTypeObject **b,
+                       PyTypeObject *first, PyTypeObject *second)
+{
+    *a = first;
+    Py_SETREF(*b, second);
+}
+
+
+Py_NO_INLINE static void
+xsetref_strict_aliasing(PyTypeObject **a, PyTypeObject **b,
+                        PyTypeObject *first, PyTypeObject *second)
+{
+    *a = first;
+    Py_XSETREF(*b, second);
+}
+
+
+// gh-161185: Test that Py_SETREF(), Py_XSETREF() and Py_CLEAR() macros
+// have no strict aliasing issue
+static PyObject *
+test_setref_strict_aliasing(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PySlot slots[] = {
+        PySlot_PTR_STATIC(Py_tp_name, STR(MODULE_NAME) ".setref_type"),
+        PySlot_PTR_STATIC(Py_tp_flags, Py_TPFLAGS_DEFAULT),
+        PySlot_END
+    };
+    PyObject *first, *second;
+    Py_ssize_t first_refcnt, second_refcnt;
+    PyTypeObject *slot = NULL;
+
+    first = PyType_FromSlots(slots);
+    if (first == NULL) {
+        return NULL;
+    }
+    second = PyType_FromSlots(slots);
+    if (second == NULL) {
+        Py_DECREF(first);
+        return NULL;
+    }
+    first_refcnt = Py_REFCNT(first);
+    second_refcnt = Py_REFCNT(second);
+
+    // Both pointer arguments alias. The assignment makes first the old value
+    // that Py_SETREF() must release before storing second.
+    setref_strict_aliasing(&slot, &slot,
+                           (PyTypeObject*)Py_NewRef(first),
+                           (PyTypeObject*)Py_NewRef(second));
+    assert((PyObject*)slot == second);
+    assert(Py_REFCNT(first) == first_refcnt);
+    assert(Py_REFCNT(second) == (second_refcnt + 1));
+
+    pyclear_strict_aliasing(&slot, &slot);
+    assert(slot == NULL);
+    assert(Py_REFCNT(first) == first_refcnt);
+    assert(Py_REFCNT(second) == second_refcnt);
+
+    xsetref_strict_aliasing(&slot, &slot,
+                            (PyTypeObject*)Py_NewRef(first),
+                            (PyTypeObject*)Py_NewRef(second));
+    assert((PyObject*)slot == second);
+    assert(Py_REFCNT(first) == first_refcnt);
+    assert(Py_REFCNT(second) == (second_refcnt + 1));
+
+    Py_DECREF(first);
+    Py_DECREF(second);
+    Py_DECREF((PyObject*)slot);
 
     Py_RETURN_NONE;
 }
@@ -348,6 +447,7 @@ test_virtual_object(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 static PyMethodDef module_methods[] = {
     {"add", test_add, METH_VARARGS, test_add_doc},
     {"test_macros", test_macros, METH_NOARGS, _Py_NULL},
+    {"test_setref_strict_aliasing", test_setref_strict_aliasing, METH_NOARGS, _Py_NULL},
     {"test_datetime", test_datetime, METH_NOARGS, _Py_NULL},
     {"test_unicode", test_unicode, METH_NOARGS, _Py_NULL},
 #ifdef __cplusplus
@@ -365,6 +465,11 @@ module_exec(PyObject *module)
 {
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
+        return -1;
+    }
+#endif
+#ifdef __STRICT_ANSI__
+    if (PyModule_AddIntConstant(module, "__STRICT_ANSI__", 1) < 0) {
         return -1;
     }
 #endif

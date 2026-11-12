@@ -1,3 +1,0 @@
-Raise :exc:`ValueError`'s for overflows, while trying to change
-:class:`memoryview` elements with ``'f'`` and ``'Zf'`` format codes.  Patch
-by Sergey B Kirpichev.

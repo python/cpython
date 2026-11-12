@@ -4,7 +4,10 @@
 #include "pycore_instruction_sequence.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
 #include "pycore_symtable.h"        // _Py_SourceLocation
+#include "pycore_tuple.h"           // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
 
 #include <stdbool.h>
 
@@ -81,8 +84,11 @@ assemble_init(struct assembler *a, int firstlineno)
     return SUCCESS;
 error:
     PyBytesWriter_Discard(a->a_bytecode_writer);
+    a->a_bytecode_writer = NULL;
     PyBytesWriter_Discard(a->a_linetable_writer);
+    a->a_linetable_writer = NULL;
     PyBytesWriter_Discard(a->a_except_table_writer);
+    a->a_except_table_writer = NULL;
     return ERROR;
 }
 
@@ -99,7 +105,7 @@ assemble_free(struct assembler *a)
 
 static inline void
 write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytesWriter_GetData(a->a_except_table_writer);
+    unsigned char *p = PyBytesWriter_GetData(a->a_except_table_writer);
     p[a->a_except_table_off++] = byte;
 }
 
@@ -500,6 +506,27 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
+/* Intern the names in *tuple*, as _PyCode_New() does, before the tuple is
+ * merged with the constant cache.
+ *
+ * The merge can replace the tuple by an equal tuple constant of another
+ * code object, whose items _PyCode_New() then interns in place.  A string
+ * of that constant would become the interned string or be replaced by it,
+ * depending on whether an equal string was already interned in the process,
+ * and so would the output of marshal for the same source.  Names which the
+ * parser did not create, such as mangled private names or the identifiers
+ * of an AST passed to compile(), may not be interned yet.
+ */
+static void
+intern_names(PyObject *tuple)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(tuple); i++) {
+        assert(PyUnicode_CheckExact(PyTuple_GET_ITEM(tuple, i)));
+        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
+    }
+}
+
 static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
                         int flags, PyObject *names, PyObject *kinds)
@@ -607,6 +634,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (!names) {
         goto error;
     }
+    intern_names(names);
     if (_PyCompile_ConstCacheMergeOne(const_cache, &names) < 0) {
         goto error;
     }
@@ -671,6 +699,7 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
         goto error;
     }
 
+    intern_names(localsplusnames);
     if (_PyCompile_ConstCacheMergeOne(const_cache, &localsplusnames) < 0) {
         goto error;
     }

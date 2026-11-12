@@ -546,9 +546,11 @@ class InterruptTest(unittest.TestCase):
         # gh-74112: interrupt the main thread blocked in time.sleep().
         timer = threading.Timer(0.1, self.ex.interrupt_the_server)
         self.addCleanup(timer.join)
-        timer.start()
         start = time.monotonic()
         with self.assertRaises(KeyboardInterrupt):
+            # On a loaded machine the signal can arrive before the main
+            # thread reaches time.sleep(), so start the timer in the block.
+            timer.start()
             time.sleep(support.SHORT_TIMEOUT)
         self.assertLess(time.monotonic() - start, support.SHORT_TIMEOUT / 2)
 

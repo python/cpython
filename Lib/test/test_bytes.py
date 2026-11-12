@@ -5,18 +5,20 @@ the latter should be modernized).
 """
 
 import array
+import codecs
 import contextlib
-import operator
-import os
-import re
-import sys
 import copy
 import functools
+import operator
+import os
 import pickle
+import re
+import sys
 import tempfile
 import textwrap
 import threading
 import unittest
+from _codecs import _unregister_error as _codecs_unregister_error
 
 import test.support
 from test import support
@@ -408,6 +410,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
+        self.assertEqual(self.type2test() + memoryview(b''), b'')
+
     def test_repeat(self):
         for b in b"abc", self.type2test(b"abc"):
             self.assertEqual(b * 3, b"abcabcabc")
@@ -515,6 +519,15 @@ class BaseBytesTest:
             with self.assertRaises(ValueError) as cm:
                 self.type2test.fromhex(data)
             self.assertIn('at position %s' % pos, str(cm.exception))
+
+        # gh-158583: Check for out of bounds reads (uninitialized bytes).
+        # Create an array from a list to not overallocate.
+        a = array.array('B', list(b'1234  '))  # Py_ISSPACE() loop
+        self.assertEqual(self.type2test.fromhex(a), b'\x12\x34')
+
+        a = array.array('B', list(b'12345'))  # Missing second digit
+        with self.assertRaises(ValueError):
+            self.type2test.fromhex(a)
 
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
@@ -881,9 +894,22 @@ class BaseBytesTest:
     def test_memory_leak_gh_140939(self):
         # gh-140939: MemoryError is raised without leaking
         _testcapi = import_helper.import_module('_testcapi')
-        with self.assertRaises(MemoryError):
+        with self.assertRaises((MemoryError, OverflowError)):
             b = self.type2test(b'%*b')
             b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
+
+    def test_mod_bytes_lookup_error(self):
+        # An error raised while looking up __bytes__ propagates.
+        class BadBytes:
+            @property
+            def __bytes__(self):
+                raise ZeroDivisionError
+            def __buffer__(self, flags):
+                return memoryview(b'abc')
+
+        b = self.type2test(b'%b')
+        with self.assertRaises(ZeroDivisionError):
+            b % BadBytes()
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
@@ -1145,6 +1171,34 @@ class BaseBytesTest:
         self.assertEqual(c, b'hee')
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
+
+        # short inputs starting with NUL bytes
+        table = bytes.maketrans(b'\x00', b'Z')
+        for data in b'\x00', b'\x00' * 8, b'\x00' * 8 + b'a' * 247:
+            c = self.type2test(data).translate(table)
+            self.assertEqual(c, data.replace(b'\x00', b'Z'))
+
+    @support.cpython_only
+    def test_translate_unchanged(self):
+        if self.type2test != bytes:
+            self.skipTest("test specific bytes.translate()")
+
+        # bytes.translate() returns the input string unchanged
+        # if no byte is modified
+        size = 1024
+        b = b'hell' + b'o' * size
+        rosetta = bytearray(range(256))
+        rosetta[ord('#')] = ord('?')
+        self.assertIs(b.translate(rosetta), b)
+
+        # bytes.translate() always create a new object
+        # if the input string is a bytes subclass
+        class bytes_subclass(bytes):
+            pass
+        b = bytes_subclass(b)
+        result = b.translate(rosetta)
+        self.assertIsNot(result, b)
+        self.assertEqual(result, b)
 
     def test_sq_item(self):
         _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
@@ -1408,6 +1462,45 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertNotEqual(id(s), id(1 * s))
         self.assertNotEqual(id(s), id(s * 2))
 
+    @support.cpython_only
+    def test_concat_cpython(self):
+        # Test optimizations
+        empty = b''
+        abc = b"abc"
+        self.assertIs(abc + empty, abc)
+        self.assertIs(empty + abc, abc)
+        self.assertIs(empty + bytearray(b''), empty)
+        self.assertIs(empty + memoryview(b''), empty)
+
+        class Subclass(bytes):
+            pass
+
+        empty_subclass = Subclass(b"")
+        self.assertIs(empty + empty_subclass, empty)
+        self.assertIs(empty_subclass + empty, empty)
+        self.assertIs(abc + empty_subclass, abc)
+        self.assertIs(empty_subclass + abc, abc)
+
+        def assert_copy(result, expected):
+            self.assertIsNot(result, expected)
+            self.assertEqual(type(result), bytes)
+            self.assertEqual(result, expected)
+
+        # Copy the string if it's a subclass
+        def_subclass = Subclass(b"def")
+        assert_copy(def_subclass + empty, b'def')
+        assert_copy(empty + def_subclass, b'def')
+        assert_copy(abc + def_subclass, b'abcdef')
+        assert_copy(def_subclass + abc, b'defabc')
+
+    @support.cpython_only
+    def test_repeat_cpython(self):
+        # Test optimizations
+        for b in b'', b'x', b"abc":
+            self.assertIs(b * 1, b)
+            self.assertIs(b * 0, b'')
+            self.assertIs(b * -23, b'')
+
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
@@ -1568,6 +1661,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
+        #
+        # gh-160303: If a slice is deleted or replaced by shorter data and
+        # shrinking the memory block fails (MemoryError), the bytearray
+        # must be modified anyway.
 
         offset = 3
         for logical_offset in (False, True):
@@ -1593,6 +1690,33 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 with inject_memory_error(self):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
+
+                # shrink bytearray with a slice at the front, in the middle
+                # and at the end
+                data = b'0123456789'
+                if logical_offset:
+                    data = data[offset:]
+                for start, stop in ((0, -2), (1, -1), (2, len(data))):
+                    for replacement in (b'', b'.'):
+                        with self.subTest(start=start, stop=stop,
+                                          replacement=replacement):
+                            ba = bytearray(b'0123456789')
+                            if logical_offset:
+                                del ba[:offset]
+                            index = slice(start, stop)
+                            value = bytearray(replacement)
+                            expected = data[:start] + replacement + data[stop:]
+                            with inject_memory_error(self):
+                                if replacement:
+                                    ba[index] = value
+                                else:
+                                    del ba[index]
+                            self.assertEqual(ba, expected)
+                            # float() relies on the null byte after the data.
+                            self.assertEqual(float(ba), float(expected))
+                            ba.append(ord('5'))
+                            del ba[:1]
+                            self.assertEqual(ba, expected[1:] + b'5')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
@@ -1705,6 +1829,29 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 499)
         bytes_header_size = sys.getsizeof(b'')
         self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
+    def test_take_bytes_hash(self):
+        # gh-158219: bytearray constructor must not use a bytes object
+        # if its hash value is already cached.
+
+        def encode(string, errors='strict'):
+            encoded = string.encode('utf-8')
+            hash(encoded)   # a codec may hash its own output
+            return encoded, len(string)
+
+        def hashing_codec(name):
+            if name != 'test_take_bytes_hash':
+                return None
+            return codecs.CodecInfo(encode, None, name=name)
+
+        codecs.register(hashing_codec)
+        self.addCleanup(codecs.unregister, hashing_codec)
+
+        ba = bytearray('hello', 'test_take_bytes_hash')
+        ba[0] = ord('H')
+        taken = ba.take_bytes()
+        self.assertEqual(taken, b'Hello')
+        self.assertEqual(hash(taken), hash(b'Hello'))
 
     def test_take_bytes_reentrant_resize(self):
         # gh-153570: n.__index__() can resize the bytearray, so take_bytes()
@@ -1982,6 +2129,22 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         alloc = b.__alloc__()
         self.assertGreater(alloc, len(b))
 
+    def test_init_from_iterator_with_offset(self):
+        # gh-158928: Inserting from an iterator in __init__ needs to take into
+        # account if there is a start offset.
+        b = bytearray()
+        def iterator_which_resets():
+            # __init__ reset ob_start. Make it an offset inside by allocating
+            # then doing fast prefix delete.
+            nonlocal b
+            b.resize(200)
+            del b[:100]
+            # Fill remaining already allocated space
+            yield from b'A' * 100
+        # Fill to end. Used to land out of bounds and crash.
+        b.__init__(iterator_which_resets())
+        self.assertEqual(b, bytes(100) + b'A' * 100)
+
     def test_extend(self):
         orig = b'hello'
         a = bytearray(orig)
@@ -2142,6 +2305,30 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[1:-1:2] = b""
         self.assertRaises(BufferError, delslice)
         self.assertEqual(b, orig)
+
+    def test_decode_resize_forbidden(self):
+        # The storage is pinned while it is decoded, so an error handler
+        # cannot resize the bytearray.
+        b = bytearray(b'ab\xffcd')
+        errors = 'test.bytearray_decode_resize'
+        def handler(exc):
+            self.assertRaises(BufferError, b.clear)
+            self.assertRaises(BufferError, b.append, 0)
+            return ('?', exc.end)
+        self.addCleanup(_codecs_unregister_error, errors)
+        codecs.register_error(errors, handler)
+        for encoding in 'utf-8', 'utf-8-sig':
+            with self.subTest(encoding=encoding):
+                self.assertEqual(b.decode(encoding, errors), 'ab?cd')
+        self.assertEqual(b, b'ab\xffcd')
+
+    def test_decode_subclass_buffer(self):
+        # decode() decodes the buffer that the object exports.
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b'other')
+        self.assertEqual(B(b'mine').decode(), 'other')
+        self.assertEqual(B(b'mine').decode('latin-1'), 'other')
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):
@@ -2358,6 +2545,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with memoryview(a):
             self.assertRaises(BufferError, a.__init__, "x", "ascii")
         self.assertEqual(a, b"")
+
+    def test_reinit_error(self):
+        # A failed __init__() must not leave uninitialized bytes in the
+        # object: it must be empty afterwards.
+        for source in ([256] * 100, (-1,) * 100, [0] * 50 + [1000],
+                       (1, 2, 1 << 100)):
+            with self.subTest(source=source):
+                a = bytearray(b"abc")
+                self.assertRaises(ValueError, a.__init__, source)
+                self.assertEqual(a, b"")
 
 
 class AssortedBytesTest(unittest.TestCase):
