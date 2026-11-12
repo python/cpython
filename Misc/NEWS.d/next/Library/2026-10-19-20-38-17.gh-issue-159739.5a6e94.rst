@@ -1,2 +1,0 @@
-Avoid a crash when memory allocation fails while creating a
-:class:`collections.OrderedDict` items iterator.

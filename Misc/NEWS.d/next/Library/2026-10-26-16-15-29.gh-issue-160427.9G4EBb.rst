@@ -1,2 +1,0 @@
-Fix :attr:`~io.TextIOBase.buffer` of a detached :class:`io.TextIOWrapper`
-raising :exc:`ValueError` instead of returning ``None``.

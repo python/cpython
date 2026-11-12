@@ -1,5 +1,0 @@
-Fix :mod:`asyncio` leaving a half-created transport registered with the
-event loop and the server when setting ``TCP_NODELAY`` on a socket fails.
-Such a failure could make :meth:`asyncio.Server.wait_closed` hang and
-prevent new connections from being served.  Errors from
-``setsockopt(TCP_NODELAY)`` are now ignored.
