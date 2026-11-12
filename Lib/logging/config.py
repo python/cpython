@@ -21,7 +21,7 @@ by Apache's log4j system.
 
 Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 
-To use, simply 'import logging' and log away!
+To use, simply 'import logging.config' and log away!
 """
 
 import errno
@@ -32,6 +32,7 @@ import logging.handlers
 import os
 import queue
 import re
+import socket
 import struct
 import threading
 import traceback
@@ -933,8 +934,9 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     Start up a socket server on the specified port, and listen for new
     configurations.
 
-    These will be sent as a file suitable for processing by fileConfig().
-    Returns a Thread object on which you can call start() to start the server,
+    These will be sent as a file suitable for processing by dictConfig() or
+    fileConfig(). Returns a Thread object on which you can call start() to
+    start the server,
     and which you can join() when appropriate. To stop the server, call
     stopListening().
 
@@ -952,8 +954,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
         Handler for a logging configuration request.
 
-        It expects a completely new logging configuration and uses fileConfig
-        to install it.
+        It expects a completely new logging configuration and uses dictConfig
+        or fileConfig to install it.
         """
         def handle(self):
             """
@@ -961,7 +963,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
             Each request is expected to be a 4-byte length, packed using
             struct.pack(">L", n), followed by the config file.
-            Uses fileConfig() to do the grunt work.
+            Uses dictConfig() or fileConfig() to do the grunt work.
             """
             try:
                 conn = self.connection
@@ -1004,6 +1006,15 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
+            # The host can have no IPv4 address, for example if "localhost"
+            # is only aliased to ::1.  Leave resolution errors to the server.
+            try:
+                infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            except OSError:
+                pass
+            else:
+                if not any(info[0] == socket.AF_INET for info in infos):
+                    self.address_family = infos[0][0]
             ThreadingTCPServer.__init__(self, (host, port), handler)
             with logging._lock:
                 self.abort = 0
@@ -1035,9 +1046,14 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
             self.ready = threading.Event()
 
         def run(self):
-            server = self.rcvr(port=self.port, handler=self.hdlr,
-                               ready=self.ready,
-                               verify=self.verify)
+            try:
+                server = self.rcvr(port=self.port, handler=self.hdlr,
+                                   ready=self.ready,
+                                   verify=self.verify)
+            except BaseException:
+                # Do not leave the caller waiting for ready forever.
+                self.ready.set()
+                raise
             if self.port == 0:
                 self.port = server.server_address[1]
             self.ready.set()

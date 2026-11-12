@@ -155,10 +155,10 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
 class Event(mixins._LoopBoundMixin):
     """Asynchronous equivalent to threading.Event.
 
-    Class implementing event objects. An event manages a flag that can be set
-    to true with the set() method and reset to false with the clear() method.
-    The wait() method blocks until the flag is true. The flag is initially
-    false.
+    Class implementing event objects.  An event manages a flag that can be
+    set to true with the set() method and reset to false with the clear()
+    method.  The wait() method blocks until the flag is true.  The flag is
+    initially false.
     """
 
     def __init__(self):
@@ -350,9 +350,9 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each
-    acquire() call and incremented by each release() call. The counter
-    can never go below zero; when acquire() finds that it is zero, it blocks,
-    waiting until some other thread calls release().
+    acquire() call and incremented by each release() call.  The counter
+    can never go below zero; when acquire() finds that it is zero, it
+    blocks, waiting until some other thread calls release().
 
     Semaphores also support the context management protocol.
 
@@ -489,6 +489,8 @@ class Barrier(mixins._LoopBoundMixin):
         self._parties = parties
         self._state = _BarrierState.FILLING
         self._count = 0       # count tasks in Barrier
+        # index number returned when barrier drains
+        self._index = self._parties - 1
 
     def __repr__(self):
         res = super().__repr__()
@@ -508,20 +510,21 @@ class Barrier(mixins._LoopBoundMixin):
     async def wait(self):
         """Wait for the barrier.
 
-        When the specified number of tasks have started waiting, they are all
-        simultaneously awoken.
+        When the specified number of tasks have started waiting, they are
+        all simultaneously awoken.
         Returns an unique and individual index number from 0 to 'parties-1'.
         """
         async with self._cond:
             await self._block() # Block while the barrier drains or resets.
             try:
-                index = self._count
                 self._count += 1
-                if index + 1 == self._parties:
+                if self._count == self._parties:
                     # We release the barrier
                     await self._release()
                 else:
                     await self._wait()
+                index = self._index
+                self._index = (self._index + 1) % self._parties
                 return index
             finally:
                 self._count -= 1
@@ -569,6 +572,7 @@ class Barrier(mixins._LoopBoundMixin):
         if self._count == 0:
             if self._state in (_BarrierState.RESETTING, _BarrierState.DRAINING):
                 self._state = _BarrierState.FILLING
+                self._index = self._parties - 1
             self._cond.notify_all()
 
     async def reset(self):
@@ -584,6 +588,7 @@ class Barrier(mixins._LoopBoundMixin):
                     self._state = _BarrierState.RESETTING
             else:
                 self._state = _BarrierState.FILLING
+                self._index = self._parties - 1
             self._cond.notify_all()
 
     async def abort(self):

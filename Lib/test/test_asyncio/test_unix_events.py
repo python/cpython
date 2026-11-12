@@ -30,7 +30,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 MOCK_ANY = mock.ANY
@@ -409,6 +409,57 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         coro = self.loop.create_unix_server(lambda: None, path="/test")
         with self.assertRaises(MemoryError):
             self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_create_unix_server_mode(self):
+        # Two distinct modes: whatever the umask, at most one of them
+        # can coincide with the default permissions, so a no-op chmod
+        # cannot pass both subtests.
+        for mode in (0o600, 0o644):
+            with self.subTest(mode=mode):
+                with test_utils.unix_socket_path() as path:
+                    srv = self.loop.run_until_complete(
+                        self.loop.create_unix_server(
+                            lambda: None, path, mode=mode))
+                    try:
+                        self.assertEqual(
+                            stat.S_IMODE(os.stat(path).st_mode), mode)
+                    finally:
+                        srv.close()
+                        self.loop.run_until_complete(srv.wait_closed())
+
+    def test_create_unix_server_mode_sock(self):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        with sock:
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock, mode=0o600)
+            with self.assertRaisesRegex(ValueError,
+                                        'mode is only meaningful with path'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_mode_abstract(self):
+        # The check is a pure string test, so it runs on all platforms.
+        for path in ('\x00spam', b'\x00spam'):
+            with self.subTest(path=path):
+                coro = self.loop.create_unix_server(lambda: None, path,
+                                                    mode=0o600)
+                with self.assertRaisesRegex(
+                        ValueError, 'mode is not supported for abstract'):
+                    self.loop.run_until_complete(coro)
+
+    @mock.patch('asyncio.unix_events.socket')
+    def test_create_unix_server_chmod_error(self, m_socket):
+        # Ensure that the socket is closed when os.chmod() fails
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        with mock.patch('asyncio.unix_events.os.chmod',
+                        side_effect=PermissionError):
+            coro = self.loop.create_unix_server(lambda: None, path='/test',
+                                                mode=0o600)
+            with self.assertRaises(PermissionError):
+                self.loop.run_until_complete(coro)
         self.assertTrue(sock.close.called)
 
     def test_create_unix_connection_path_sock(self):
@@ -1332,6 +1383,46 @@ class TestFork(unittest.TestCase):
         process.join()
 
         self.assertEqual(result.value, 0)
+
+
+@unittest.skipUnless(
+    unix_events.can_use_pidfd(),
+    "operating system does not support pidfd",
+)
+class PidfdChildWatcherTests(test_utils.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.set_event_loop(self.loop)
+
+    def test_pidfd_closed_when_waitpid_raises(self):
+        # _do_wait() must close the pidfd even when waitpid()
+        # fails with something other than ChildProcessError, otherwise the
+        # pidfd is leaked
+        self.loop.set_exception_handler(lambda loop, context: None)
+
+        async def coro():
+            before = os_helper.fd_count()
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'import sys; sys.stdin.read()',
+                stdin=asyncio.subprocess.PIPE
+            )
+
+            with mock.patch.object(os, 'waitpid',
+                                   side_effect=OSError('unexpected')) as m:
+                proc.stdin.close()
+                while not m.called:
+                    await asyncio.sleep(0)
+
+            os.waitpid(proc.pid, 0)
+            proc._transport._process_exited(0)
+            await proc.wait()
+
+            self.assertEqual(os_helper.fd_count(), before)
+
+        self.loop.run_until_complete(coro())
+
 
 if __name__ == '__main__':
     unittest.main()

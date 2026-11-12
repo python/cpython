@@ -1,6 +1,7 @@
 import _thread
 import contextlib
 import functools
+import inspect
 import sys
 import threading
 import time
@@ -59,6 +60,11 @@ def reap_threads(func):
     """Use this function when threads are being used.  This will
     ensure that the threads are cleaned up even when the test fails.
     """
+
+    if inspect.isclass(func):
+        # It should be used on each test method, not on the whole class
+        raise ValueError("@reap_threads is not compatible with classes")
+
     @functools.wraps(func)
     def decorator(*args):
         key = threading_setup()

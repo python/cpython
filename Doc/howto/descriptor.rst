@@ -4,9 +4,6 @@
 Descriptor Guide
 ================
 
-:Author: Raymond Hettinger
-:Contact: <python at rcn dot com>
-
 .. Contents::
 
 
@@ -28,7 +25,7 @@ This guide has four major sections:
 4) The last section has pure Python equivalents for built-in descriptors that
    are written in C.  Read this if you're curious about how functions turn
    into bound methods or about the implementation of common tools like
-   :func:`classmethod`, :func:`staticmethod`, :func:`property`, and
+   :deco:`classmethod`, :deco:`staticmethod`, :deco:`property`, and
    :term:`__slots__`.
 
 
@@ -317,8 +314,8 @@ Descriptors invert that relationship and allow the data being looked-up to
 have a say in the matter.
 
 Descriptors are used throughout the language.  It is how functions turn into
-bound methods.  Common tools like :func:`classmethod`, :func:`staticmethod`,
-:func:`property`, and :func:`functools.cached_property` are all implemented as
+bound methods.  Common tools like :deco:`classmethod`, :deco:`staticmethod`,
+:deco:`property`, and :deco:`functools.cached_property` are all implemented as
 descriptors.
 
 
@@ -1326,7 +1323,7 @@ example calls are unexciting:
     30
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`staticmethod` would look like this:
+:deco:`staticmethod` would look like this:
 
 .. testcode::
 
@@ -1466,7 +1463,7 @@ Now a new dictionary of unique keys can be constructed like this:
     {'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
 
 Using the non-data descriptor protocol, a pure Python version of
-:func:`classmethod` would look like this:
+:deco:`classmethod` would look like this:
 
 .. testcode::
 
@@ -1604,7 +1601,7 @@ matters when a large number of instances are going to be created.
 4. Improves speed.  Reading instance variables is 35% faster with
 ``__slots__`` (as measured with Python 3.10 on an Apple M1 processor).
 
-5. Blocks tools like :func:`functools.cached_property` which require an
+5. Blocks tools like :deco:`functools.cached_property` which require an
 instance dictionary to function correctly:
 
 .. testcode::
@@ -1681,7 +1678,7 @@ variables:
 
         def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
-            # type_new() calls PyTypeReady() which calls add_methods()
+            # type_new() calls PyType_Ready() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
@@ -1757,7 +1754,7 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> isinstance(vars(H)['y'], Member)
     True
 
-When instances are created, they have a ``slot_values`` list where the
+When instances are created, they have a ``_slotvalues`` list where the
 attributes are stored:
 
 .. doctest::

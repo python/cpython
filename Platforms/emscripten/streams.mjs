@@ -112,7 +112,7 @@ const prepareBuffer = (buffer, offset, length) =>
 
 const TTY_OPS = {
   ioctl_tiocgwinsz(tty) {
-    return tty.devops.ioctl_tiocgwinsz?.();
+    return tty.devops.ioctl_tiocgwinsz?.() ?? [24, 80];
   },
 };
 
@@ -187,6 +187,10 @@ class NodeReader {
 
   fsync() {
     nodeFsync(this.nodeStream.fd);
+  }
+
+  ioctl_tiocgwinsz() {
+    return [this.nodeStream.rows ?? 24, this.nodeStream.columns ?? 80];
   }
 }
 

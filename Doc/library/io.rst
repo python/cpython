@@ -38,6 +38,7 @@ will raise a :exc:`TypeError`.  So will giving a :class:`bytes` object to the
    Operations that used to raise :exc:`IOError` now raise :exc:`OSError`, since
    :exc:`IOError` is now an alias of :exc:`OSError`.
 
+.. _text-io:
 
 Text I/O
 ^^^^^^^^
@@ -65,6 +66,7 @@ In-memory text streams are also available as :class:`StringIO` objects::
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
 
+.. _binary-io:
 
 Binary I/O
 ^^^^^^^^^^
@@ -103,37 +105,31 @@ stream by opening a file in binary mode with buffering disabled::
 
 The raw stream API is described in detail in the docs of :class:`RawIOBase`.
 
+.. warning::
+   Raw I/O is a low-level interface and methods generally must have their return
+   values checked and be explicitly retried to ensure an operation completes.
+   For instance :meth:`~RawIOBase.write` returns the number of bytes written
+   which may be less than the number of bytes provided (a partial write).
+   High-level I/O objects like :ref:`binary-io` and :ref:`text-io` implement
+   retry behavior.
 
 .. _io-text-encoding:
 
-Text Encoding
+Text encoding
 -------------
 
-The default encoding of :class:`TextIOWrapper` and :func:`open` is
-locale-specific (:func:`locale.getencoding`).
-
-However, many developers forget to specify the encoding when opening text files
-encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
-platforms use UTF-8 locale by default. This causes bugs because the locale
-encoding is not UTF-8 for most Windows users. For example::
-
-   # May not work on Windows when non-ASCII characters in the file.
-   with open("README.md") as f:
-       long_description = f.read()
-
-Accordingly, it is highly recommended that you specify the encoding
-explicitly when opening text files. If you want to use UTF-8, pass
-``encoding="utf-8"``. To use the current locale encoding,
-``encoding="locale"`` is supported since Python 3.10.
+The default encoding of :class:`TextIOWrapper` and :func:`open` is UTF-8.
+If :ref:`Python UTF-8 Mode <utf8-mode>` is disabled, the default encoding
+is locale-specific (:func:`locale.getencoding`).
 
 .. seealso::
 
    :ref:`utf8-mode`
-      Python UTF-8 Mode can be used to change the default encoding to
-      UTF-8 from locale-specific encoding.
+      Python UTF-8 Mode ignores the locale encoding and forces the use
+      of UTF-8.
 
    :pep:`686`
-      Python 3.15 will make :ref:`utf8-mode` default.
+      Python 3.15 made :ref:`utf8-mode` the default.
 
 .. _io-encoding-warning:
 
@@ -143,7 +139,7 @@ Opt-in EncodingWarning
 .. versionadded:: 3.10
    See :pep:`597` for more details.
 
-To find where the default locale encoding is used, you can enable
+To find where the default encoding is used, you can enable
 the :option:`-X warn_default_encoding <-X>` command line option or set the
 :envvar:`PYTHONWARNDEFAULTENCODING` environment variable, which will
 emit an :exc:`EncodingWarning` when the default encoding is used.
@@ -156,7 +152,7 @@ please consider using UTF-8 by default (i.e. ``encoding="utf-8"``) for
 new APIs.
 
 
-High-level Module Interface
+High-level module interface
 ---------------------------
 
 .. data:: DEFAULT_BUFFER_SIZE
@@ -209,7 +205,7 @@ High-level Module Interface
 
       def read_text(path, encoding=None):
           encoding = io.text_encoding(encoding)  # stacklevel=2
-          with open(path, encoding) as f:
+          with open(path, encoding=encoding) as f:
               return f.read()
 
    In this example, an :class:`EncodingWarning` is emitted for the caller of
@@ -306,7 +302,7 @@ ABC                        Inherits            Stub Methods              Mixin M
 =========================  ==================  ========================  ==================================================
 
 
-I/O Base Classes
+I/O base classes
 ^^^^^^^^^^^^^^^^
 
 .. class:: IOBase
@@ -478,8 +474,11 @@ I/O Base Classes
 
       Read up to *size* bytes from the object and return them.  As a convenience,
       if *size* is unspecified or -1, all bytes until EOF are returned.
-      Otherwise, only one system call is ever made.  Fewer than *size* bytes may
-      be returned if the operating system call returns fewer than *size* bytes.
+
+      Attempts to make only one system call but will retry if interrupted and
+      the signal handler does not raise an exception (see :pep:`475` for the
+      rationale). This means fewer than *size* bytes may be returned if the
+      operating system call returns fewer than *size* bytes.
 
       If 0 bytes are returned, and *size* was not 0, this indicates end of file.
       If the object is in non-blocking mode and no bytes are available,
@@ -493,13 +492,19 @@ I/O Base Classes
       Read and return all the bytes from the stream until EOF, using multiple
       calls to the stream if necessary.
 
+      If ``0`` bytes are returned this indicates end of file. If the object is in
+      non-blocking mode and the underlying :meth:`read` returns ``None``
+      indicating no bytes are available, ``None`` is returned.
+
    .. method:: readinto(b, /)
 
       Read bytes into a pre-allocated, writable
       :term:`bytes-like object` *b*, and return the
       number of bytes read.  For example, *b* might be a :class:`bytearray`.
-      If the object is in non-blocking mode and no bytes
-      are available, ``None`` is returned.
+
+      If ``0`` is returned and ``len(b)`` is not ``0``, this indicates end of file. If
+      the object is in non-blocking mode and no bytes are available, ``None`` is
+      returned.
 
    .. method:: write(b, /)
 
@@ -513,14 +518,26 @@ I/O Base Classes
       this method returns, so the implementation should only access *b*
       during the method call.
 
+      .. warning::
 
-Raw File I/O
+         This function does not ensure all bytes are written or an exception is
+         thrown. Callers may implement that behavior by checking the return
+         value and, if it is less than the length of *b*, looping with additional
+         write calls until all unwritten bytes are written. High-level I/O
+         objects like :ref:`binary-io` and :ref:`text-io` implement retry behavior.
+
+
+Raw file I/O
 ^^^^^^^^^^^^
 
 .. class:: FileIO(name, mode='r', closefd=True, opener=None)
 
    A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits from :class:`RawIOBase`.
+   inherits from :class:`RawIOBase` and implements its low-level access design.
+   This means :meth:`~RawIOBase.write` does not guarantee all bytes are written
+   and :meth:`~RawIOBase.read` may read less bytes than requested even when more
+   bytes may be present in the underlying file. To get "write all" and
+   "read at least" behavior, use :ref:`binary-io`.
 
    The *name* can be one of two things:
 
@@ -540,10 +557,6 @@ Raw File I/O
    implies writing, so this mode behaves in a similar way to ``'w'``. Add a
    ``'+'`` to the mode to allow simultaneous reading and writing.
 
-   The :meth:`~RawIOBase.read` (when called with a positive argument),
-   :meth:`~RawIOBase.readinto` and :meth:`~RawIOBase.write` methods on this
-   class will only make one system call.
-
    A custom opener can be used by passing a callable as *opener*. The underlying
    file descriptor for the file object is then obtained by calling *opener* with
    (*name*, *flags*). *opener* must return an open file descriptor (passing
@@ -554,6 +567,13 @@ Raw File I/O
 
    See the :func:`open` built-in function for examples on using the *opener*
    parameter.
+
+   .. warning::
+      :class:`FileIO` is a low-level I/O object and members, such as
+      :meth:`~RawIOBase.read` and :meth:`~RawIOBase.write`, need to have their
+      return values checked explicitly in a retry loop to implement "write all"
+      and "read at least" behavior. High-level I/O objects :ref:`binary-io` and
+      :ref:`text-io` implement retry behavior.
 
    .. versionchanged:: 3.3
       The *opener* parameter was added.
@@ -575,7 +595,7 @@ Raw File I/O
       given in the constructor.
 
 
-Buffered Streams
+Buffered streams
 ^^^^^^^^^^^^^^^^
 
 Buffered I/O streams provide a higher-level interface to an I/O device
@@ -731,14 +751,28 @@ than raw I/O does.
 
       .. note::
          As long as the view exists, the :class:`BytesIO` object cannot be
-         resized or closed.
+         resized.  Closing it does not invalidate the view.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.16
+         The :class:`BytesIO` object can now be closed while the view exists.
 
    .. method:: getvalue()
 
       Return :class:`bytes` containing the entire contents of the buffer.
 
+   .. method:: peek(size=0, /)
+
+      Return a copy of the buffer from the current position onwards without
+      advancing the position.
+
+      If *size* is less than one or omitted, at most
+      :data:`DEFAULT_BUFFER_SIZE` bytes are returned.
+      Otherwise, at most *size* bytes are returned.
+      Return an empty :class:`bytes` object at EOF.
+
+      .. versionadded:: 3.16
 
    .. method:: read1(size=-1, /)
 
@@ -958,8 +992,8 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  In :ref:`UTF-8 Mode <utf8-mode>`, this defaults to UTF-8.
-   Otherwise, it defaults to :func:`locale.getencoding`.
+   encoded with.  This defaults to UTF-8; if :ref:`UTF-8 Mode <utf8-mode>` is
+   disabled, it defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1141,7 +1175,7 @@ Text I/O
    It inherits from :class:`codecs.IncrementalDecoder`.
 
 
-Static Typing
+Static typing
 -------------
 
 The following protocols can be used for annotating function and method

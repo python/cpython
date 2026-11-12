@@ -806,7 +806,11 @@ def _get_type_from_annotation(annotation, cls):
     path = match[1].split(".")
     root = sys.modules.get(cls.__module__)
     for path_item in path:
-        root = getattr(root, path_item.strip(), None)
+        try:
+            root = getattr(root, path_item.strip(), None)
+        except Exception:
+            # Like annotationlib, ignore lazy imports that cannot be resolved.
+            return None
         if root is None:
             return None
 
@@ -1250,6 +1254,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # classes with slots.  These could be slightly more performant if we generated
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
+
 def _dataclass_getstate(self):
     return [getattr(self, f.name) for f in fields(self)]
 
