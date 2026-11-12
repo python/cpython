@@ -1,0 +1,4 @@
+Fix :meth:`xml.etree.ElementTree.Element.itertext` and
+:func:`xml.etree.ElementTree.tostring` with ``method="text"``, which lost the
+text of elements whose tag is a :class:`~xml.etree.ElementTree.QName`.  Only
+comments and processing instructions are now skipped.

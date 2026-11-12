@@ -407,7 +407,7 @@ class Element:
 
         """
         tag = self.tag
-        if not isinstance(tag, str) and tag is not None:
+        if tag is Comment or tag is ProcessingInstruction:
             return
         t = self.text
         if t:

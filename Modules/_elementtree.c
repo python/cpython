@@ -2380,7 +2380,10 @@ elementiter_next(PyObject *op)
             return NULL;
         }
         if (it->gettext) {
-            if (elem->tag != Py_None && !PyUnicode_Check(elem->tag)) {
+            elementtreestate *state = get_elementtree_state_by_type(Py_TYPE(it));
+            if (elem->tag == state->comment_factory
+                || elem->tag == state->pi_factory)
+            {
                 Py_DECREF(elem);
                 continue;
             }

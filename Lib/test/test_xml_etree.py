@@ -4135,6 +4135,30 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(''.join(pi.itertext()), '')
         self.assertEqual(list(pi.iter()), [pi])
 
+    def test_itertext_qname_tag(self):
+        # gh-161809: elements with a QName tag are not comments or
+        # processing instructions, so their text must not be skipped.
+        ns = 'http://example.com/ns'
+        root = ET.Element(ET.QName(ns, 'doc'))
+        root.text = 'hello '
+        b = ET.SubElement(root, 'b')
+        b.text = 'world'
+        b.tail = '!'
+        i = ET.SubElement(root, ET.QName(ns, 'i'))
+        i.text = 'QTEXT'
+        i.tail = '?'
+        self.assertEqual(list(root.itertext()),
+                         ['hello ', 'world', '!', 'QTEXT', '?'])
+        self.assertEqual(list(i.itertext()), ['QTEXT'])
+        self.assertEqual(ET.tostring(root, encoding='unicode', method='text'),
+                         'hello world!QTEXT?')
+
+        # Comments and processing instructions are still skipped.
+        root.append(ET.Comment('comment'))
+        root.append(ET.PI('target', 'data'))
+        self.assertEqual(list(root.itertext()),
+                         ['hello ', 'world', '!', 'QTEXT', '?'])
+
     def test_corners(self):
         # single root, no subelements
         a = ET.Element('a')
