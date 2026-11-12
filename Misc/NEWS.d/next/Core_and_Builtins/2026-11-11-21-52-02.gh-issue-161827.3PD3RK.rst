@@ -1,0 +1,4 @@
+Keep ``_PyEval_EvalFrameDefault`` as a separate frame in the C call stack
+when Python is built with the tail-calling interpreter
+(:option:`--with-tail-call-interp`), so that stack unwinders, profilers and
+other tools that walk the stack can find the interpreter loop.

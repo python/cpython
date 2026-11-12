@@ -508,6 +508,27 @@ gzip
   (Contributed by Marin Misur in :gh:`91372`.)
 
 
+http.client
+-----------
+
+* :class:`~http.client.HTTPConnection` now honors an ``Expect: 100-Continue``
+  request header: the request body is sent only after the server responds
+  with ``100 Continue``, or once the new *continue_timeout* of
+  :meth:`~http.client.HTTPConnection.request` and
+  :meth:`~http.client.HTTPConnection.putrequest` expires.  If the server
+  responds with a final status instead, the body is not sent.
+  :meth:`~http.client.HTTPConnection.getresponse` gains a *support_continue*
+  parameter to return ``100 Continue`` responses to the caller.
+  (Contributed by Ashwin Menon, Tim Bartlett and Senthil Kumaran in
+  :gh:`42550`.)
+
+* Add the :exc:`~http.client.ProxyTunnelError` exception, a subclass of
+  :exc:`OSError` raised when a proxy rejects the CONNECT request sent for
+  :meth:`~http.client.HTTPConnection.set_tunnel`.  It exposes the status
+  code, reason and headers of the proxy's response.
+  (Contributed by Senthil Kumaran in :gh:`51540`.)
+
+
 imaplib
 -------
 
@@ -954,6 +975,18 @@ unicodedata
 -----------
 
 * The Unicode database has been updated to Unicode 18.0.0.
+
+
+urllib.request
+--------------
+
+* :class:`~urllib.request.ProxyBasicAuthHandler` and
+  :class:`~urllib.request.ProxyDigestAuthHandler` now authenticate with a
+  proxy that answers the CONNECT request for an ``https`` URL with
+  ``407 Proxy Authentication Required``.  When no credentials are available,
+  :exc:`~urllib.error.HTTPError` with code 407 is raised instead of
+  :exc:`~urllib.error.URLError`.
+  (Contributed by Senthil Kumaran in :gh:`51540`.)
 
 
 uuid
