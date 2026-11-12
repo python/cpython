@@ -1641,12 +1641,14 @@ dummy_func(
             iter = PyStackRef_FromPyObjectSteal(iter_o);
         }
 
-        inst(GET_ANEXT, (aiter -- aiter, awaitable)) {
+        inst(GET_ANEXT, (aiter -- aiter, awaitable, null, none)) {
             PyObject *awaitable_o = _PyEval_GetANext(PyStackRef_AsPyObjectBorrow(aiter));
             if (awaitable_o == NULL) {
                 ERROR_NO_POP();
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
         }
 
         inst(GET_AWAITABLE, (iterable -- iter)) {

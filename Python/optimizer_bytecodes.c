@@ -2763,13 +2763,15 @@ dummy_func(void) {
         }
     }
 
-    op(_GET_ANEXT, (aiter -- aiter, awaitable)) {
+    op(_GET_ANEXT, (aiter -- aiter, awaitable, null, none)) {
         if (sym_matches_type(aiter, &PyAsyncGen_Type)) {
             awaitable = sym_new_type(ctx, &_PyAsyncGenASend_Type);
         }
         else {
             awaitable = sym_new_not_null(ctx);
         }
+        null = PyJitRef_Borrow(sym_new_null(ctx));
+        none = PyJitRef_Borrow(sym_new_const(ctx, Py_None));
     }
 
 // END BYTECODES //

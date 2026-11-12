@@ -832,10 +832,15 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_ANEXT
 
-   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack.
+   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack,
+   then push ``NULL`` and ``None``, ready for :opcode:`SEND`.
    See ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: next
+      Also pushes ``NULL`` and ``None``, which were previously pushed by
+      separate instructions.
 
 
 .. opcode:: END_ASYNC_FOR

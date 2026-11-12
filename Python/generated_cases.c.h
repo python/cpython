@@ -6799,6 +6799,8 @@
             INSTRUCTION_STATS(GET_ANEXT);
             _PyStackRef aiter;
             _PyStackRef awaitable;
+            _PyStackRef null;
+            _PyStackRef none;
             aiter = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
@@ -6808,8 +6810,12 @@
                 JUMP_TO_LABEL(error);
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
             stack_pointer[0] = awaitable;
-            stack_pointer += 1;
+            stack_pointer[1] = null;
+            stack_pointer[2] = none;
+            stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
