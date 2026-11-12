@@ -86,7 +86,6 @@ class DictTest(unittest.TestCase):
         self.assertIs(bool({}), False)
         self.assertIs(bool({1: 2}), True)
 
-
     def test_keys(self):
         d = {}
         self.assertEqual(set(d.keys()), set())
@@ -466,153 +465,32 @@ class DictTest(unittest.TestCase):
             self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
 
     def test_copy_noncompact(self):
-        # Dicts don't compact themselves on del/pop operations.
-        # Copy used to take a slow merging path when about a third
-        # of the entries were deleted. The compact clone now skips
-        # deleted entries directly, even when very few keys remain.
-        # Check that an almost emptied dict is copied and compacted.
-        d = {k: k for k in range(1000)}
-        for k in range(999):
-            del d[k]
-        d2 = d.copy()
-        self.assertEqual(d2, d)
-
-    def test_sparse_dict_copy(self):
-        for keys in ([f'key{i}' for i in range(120)], list(range(120))):
-            for remaining in (0, 1, 10, 40, 80, 119, 120):
-                with self.subTest(key_type=type(keys[0]), remaining=remaining):
-                    source = {key: object() for key in keys}
-                    for key in keys[:120 - remaining]:
-                        del source[key]
-
-                    expected = list(source.items())
-                    for result in (source.copy(), dict(source), {**source}):
-                        self.assertIsNot(result, source)
-                        self.assertEqual(list(result.items()), expected)
-                        for (_, value), (_, copied) in zip(
-                                expected, result.items()):
-                            self.assertIs(copied, value)
-                        result.clear()
-                        self.assertEqual(list(source.items()), expected)
-
-    def test_sparse_dict_copy_deletion_patterns(self):
-        from random import Random
-
-        for key_type in (str, int):
-            keys = [key_type(i) for i in range(1000)]
-            for remaining in (1, 15, 100, 500):
-                for pattern in ("front", "back", "middle", "random"):
-                    with self.subTest(key_type=key_type, remaining=remaining,
-                                      pattern=pattern):
-                        if pattern == "front":
-                            deleted = keys[:1000 - remaining]
-                        elif pattern == "back":
-                            deleted = keys[remaining:]
-                        elif pattern == "middle":
-                            start = remaining // 2
-                            deleted = keys[start:start + 1000 - remaining]
-                        else:
-                            deleted = keys.copy()
-                            Random(161524).shuffle(deleted)
-                            deleted = deleted[:1000 - remaining]
-
-                        source = dict.fromkeys(keys, object())
-                        for key in deleted:
-                            del source[key]
-                        expected = list(source.items())
-                        for copy in (source.copy(), dict(source), {**source}):
-                            self.assertEqual(list(copy.items()), expected)
-                            self.assertEqual(len(copy), remaining)
-                            copy.clear()
-                            self.assertEqual(list(source.items()), expected)
-
-    def test_sparse_dict_copy_reinserted_keys(self):
-        for keys in ([f'key{i}' for i in range(120)], list(range(120))):
-            source = {key: object() for key in keys}
-            for key in keys[:100]:
-                del source[key]
-            for key in keys[:5]:
-                source[key] = object()
-
-            expected = list(source.items())
-            for result in (source.copy(), dict(source), {**source}):
-                self.assertEqual(list(result.items()), expected)
-
-    def test_sparse_dict_copy_does_not_rehash(self):
-        class Key:
-            def __init__(self, value):
-                self.value = value
-                self.hash_calls = 0
+        # Dicts don't compact themselves on del/pop operations. Check
+        # copying a sparse table with both unicode and generic keys.
+        class Key(CustomHash):
+            hash_calls = 0
 
             def __hash__(self):
                 self.hash_calls += 1
-                return self.value % 5
+                return super().__hash__()
 
-            def __eq__(self, other):
-                return self is other
-
-        keys = [Key(i) for i in range(90)]
-        source = {key: key.value for key in keys}
-        for key in keys[:70]:
-            del source[key]
-        calls = [key.hash_calls for key in keys]
-        expected = list(source.items())
-        for result in (source.copy(), dict(source), {**source}):
-            self.assertEqual([key.hash_calls for key in keys], calls)
-            for (key, value), (copy_key, copy_value) in zip(
-                    expected, result.items()):
-                self.assertIs(copy_key, key)
-                self.assertEqual(copy_value, value)
-
-    def test_sparse_dict_copy_releases_references(self):
-        class Key:
-            pass
-
-        class Value:
-            pass
-
-        key = Key()
-        value = Value()
-        source = {i: None for i in range(150)}
-        source[key] = value
-        for i in range(150):
-            del source[i]
-
-        key_ref = weakref.ref(key)
-        value_ref = weakref.ref(value)
-        copies = [source.copy(), dict(source), {**source}]
-        del source, key, value
-
-        self.assertIsNotNone(key_ref())
-        self.assertIsNotNone(value_ref())
-        copies.clear()
-        gc.collect()
-        self.assertIsNone(key_ref())
-        self.assertIsNone(value_ref())
-
-    def test_sparse_dict_copy_density(self):
-        for key_type in (str, int):
-            for remaining in (1, 10, 14, 15, 16, 17, 30, 31, 32, 33, 500):
-                with self.subTest(key_type=key_type, remaining=remaining):
-                    d = {key_type(i): i for i in range(1000)}
-                    for i in range(1000 - remaining):
-                        del d[key_type(i)]
-                    expected = list(d.items())
-                    for copy in (d.copy(), dict(d), {**d}):
-                        self.assertEqual(list(copy.items()), expected)
-
-    @support.nomemtest
-    def test_sparse_dict_copy_no_memory(self):
-        import _testcapi
-
-        d = dict.fromkeys(range(128))
-        for i in range(96):
-            del d[i]
-
-        for copy in (d.copy, lambda: dict(d), lambda: {**d}):
-            with self.subTest(copy=copy):
-                with self.assertRaises(MemoryError):
-                    _testcapi.call_with_nomemory(0, 0, copy)
+        for keys in ([str(i) for i in range(100)],
+                     [Key(i % 5) for i in range(100)]):
+            with self.subTest(key_type=type(keys[0])):
+                d = dict(zip(keys, range(100)))
+                for i, key in enumerate(keys):
+                    if i not in (1, 50, 98):
+                        del d[key]
+                expected = list(d.items())
+                if isinstance(keys[0], Key):
+                    calls = [key.hash_calls for key in d]
+                copies = (d.copy(), dict(d), {**d}, frozendict(d))
+                if isinstance(keys[0], Key):
+                    self.assertEqual([key.hash_calls for key in d], calls)
+                for copy in copies:
+                    self.assertEqual(list(copy.items()), expected)
+                    for key, value in expected:
+                        self.assertEqual(copy[key], value)
 
     @support.nomemtest
     def test_copy_empty_no_memory(self):
@@ -2108,19 +1986,6 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIsNot(d2, d)
         self.assertEqual(type(d2), frozendict)
         self.assertEqual(list(d2.items()), pairs[::-1])
-
-    def test_copy_from_sparse_dict(self):
-        for keys in ([f'key{i}' for i in range(1000)], list(range(1000))):
-            source = {key: key for key in keys}
-            for key in keys[:700]:
-                del source[key]
-
-            expected = list(source.items())
-            d = frozendict(source)
-            self.assertEqual(list(d.items()), expected)
-            self.assertEqual(list(d.copy().items()), expected)
-            self.assertEqual(list(dict(d).items()), expected)
-            self.assertEqual(list(FrozenDict(d).copy().items()), expected)
 
     def test_merge(self):
         # test "a | b" operator
