@@ -84,7 +84,7 @@ PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 // recognised by deque_iter/deque_len; a forward deque iterator by
 // dequeiter_next.  extend() is called without any lock held and returns 0 on
 // success, -1 with an exception set, or 1 to request the generic path.
-typedef struct {
+typedef struct _PyList_DequeHooks {
     getiterfunc deque_iter;
     lenfunc deque_len;
     iternextfunc dequeiter_next;

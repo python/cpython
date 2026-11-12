@@ -825,6 +825,8 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+struct _PyList_DequeHooks;
+
 #define _PyInterpreterGuard_GUARDS_NOT_ALLOWED UINTPTR_MAX
 
 /* PyInterpreterState holds the global state for one of the runtime's
@@ -996,6 +998,8 @@ struct _is {
     struct _py_code_state code_state;
 
     struct _Py_dict_state dict_state;
+    // Installed by _collections in this interpreter; NULL until then.
+    const struct _PyList_DequeHooks *list_deque_hooks;
     struct _Py_exc_state exc_state;
     struct _Py_mem_interp_free_queue mem_free_queue;
 

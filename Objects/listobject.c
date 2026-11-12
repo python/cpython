@@ -6,7 +6,7 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
-#include "pycore_interp.h"        // PyInterpreterState.list
+#include "pycore_interp.h"        // PyInterpreterState.list_deque_hooks
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
@@ -1534,19 +1534,19 @@ _PyList_ReserveForExtendLockHeld(PyListObject *self, Py_ssize_t n)
     return self->ob_item + m;
 }
 
-/* Installed once by the _collections module; NULL until then. */
-static const _PyList_DequeHooks *list_deque_hooks = NULL;
-
 void
 _PyList_SetDequeHooks(const _PyList_DequeHooks *hooks)
 {
-    _Py_atomic_store_ptr_release(&list_deque_hooks, (void *)hooks);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_atomic_store_ptr_release(&interp->list_deque_hooks, (void *)hooks);
 }
 
 static inline const _PyList_DequeHooks *
 list_get_deque_hooks(PyObject *iterable)
 {
-    const _PyList_DequeHooks *hooks = _Py_atomic_load_ptr_acquire(&list_deque_hooks);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const _PyList_DequeHooks *hooks =
+        _Py_atomic_load_ptr_acquire(&interp->list_deque_hooks);
     if (hooks == NULL) {
         return NULL;
     }
