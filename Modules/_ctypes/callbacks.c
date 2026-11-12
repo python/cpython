@@ -415,17 +415,16 @@ static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)
 
 static _PyOnceFlag closure_alloc_init_once = {0};
 
-// See https://github.com/python/cpython/issues/128485
-// This allocates some memory and then frees it to ensure that libffi's
-// dlmalloc allocator initializes itself exactly once, avoiding data races
-// between threads that don't share a GIL.
-//
 // This is done lazily with a once flag rather than in the module exec function,
 // because allocating a closure can have some side effects that affect the whole
 // process (gh-135893).
 static int
 closure_alloc_init(void *Py_UNUSED(arg))
 {
+    // See https://github.com/python/cpython/issues/128485
+    // This allocates some memory and then frees it to ensure that libffi's
+    // dlmalloc allocator initializes itself exactly once, avoiding data races
+    // between threads that don't share a GIL.
     void *codeloc = NULL;
     void *ptr = Py_ffi_closure_alloc(sizeof(void *), &codeloc);
     if (ptr == NULL) {
