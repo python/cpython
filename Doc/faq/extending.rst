@@ -5,6 +5,7 @@ Extending/Embedding FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 .. highlight:: c
 
@@ -208,25 +209,20 @@ minor that it doesn't seem worth the effort.)
 How do I debug an extension?
 ----------------------------
 
-When using GDB with dynamically loaded extensions, you can't set a breakpoint in
-your extension until your extension is loaded.
-
-In your ``.gdbinit`` file (or interactively), add the command:
-
-.. code-block:: none
-
-   br _PyImport_LoadDynamicModule
-
-Then, when you run GDB:
+When using GDB with dynamically loaded extensions, enable pending breakpoints
+to set a breakpoint before the extension is loaded.  For example, to stop in
+a function named ``myfunction``:
 
 .. code-block:: shell-session
 
    $ gdb /local/bin/python
-   gdb) run myscript.py
-   gdb) continue # repeat until your extension is loaded
-   gdb) finish   # so that your extension is loaded
-   gdb) br myfunction.c:50
-   gdb) continue
+   (gdb) set breakpoint pending on
+   (gdb) break myfunction
+   (gdb) run myscript.py
+
+GDB resolves the breakpoint when the extension is loaded and stops when the
+function is called.  You can also set a pending breakpoint directly in your
+extension's source code, for example with ``break myfunction.c:50``.
 
 I want to compile a Python module on my Linux system, but some files are missing. Why?
 --------------------------------------------------------------------------------------

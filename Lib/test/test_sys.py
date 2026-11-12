@@ -1493,6 +1493,15 @@ class SysModuleTest(unittest.TestCase):
         self.assertFalse(is_immortal(b'abc'.decode()))
         self.assertFalse(is_immortal('abc'.encode()))
 
+    def test_path(self):
+        self.assertIsInstance(sys.path, list)
+        for path in sys.path:
+            self.assertIsInstance(path, str)
+
+    def test_path0(self):
+        self.assertTrue(sys._path0 is None or isinstance(sys._path0, str),
+                        sys._path0)
+
 
 @test.support.cpython_only
 @test.support.force_not_colorized_test_class

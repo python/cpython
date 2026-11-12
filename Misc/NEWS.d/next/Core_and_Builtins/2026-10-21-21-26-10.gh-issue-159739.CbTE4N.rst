@@ -1,1 +1,0 @@
-Fix a possible crash when assigning metadata to :class:`classmethod` or :class:`staticmethod` objects.

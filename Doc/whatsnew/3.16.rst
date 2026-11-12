@@ -62,11 +62,48 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.16.
    Brevity is key.
 
+* :ref:`Set operations and Unicode properties in regular expressions
+  <whatsnew316-re-set-operations-and-unicode-properties>`.
+* :ref:`Encrypted Client Hello support in ssl <whatsnew316-ssl-ech>`.
+* :ref:`Faster interpreter startup <whatsnew316-interpreter-startup>`.
+* :ref:`Faster UUID generation <whatsnew316-uuid-optimizations>`, with
+  UUIDv4 and UUIDv7 about 15 and 30 times faster in microbenchmarks.
+* :ref:`Build support for tvOS, watchOS, and visionOS
+  <whatsnew316-apple-platforms>`.
+* :ref:`Improved error messages <whatsnew316-improved-error-messages>`.
 
 
 New features
 ============
 
+.. _whatsnew316-improved-error-messages:
+
+Improved error messages
+-----------------------
+
+* :exc:`SyntaxError` messages now suggest Python alternatives to some
+  keywords from other programming languages. For example, ``switch x:``
+  suggests ``match``, ``delete x`` suggests ``del``, and ``function f():``
+  suggests ``def``.
+  (Contributed by Zang Langyan in :gh:`151128`.)
+
+* Improve :exc:`SyntaxError` message for ``&&`` and ``||`` operators,
+  suggesting ``and``/``&`` and ``or``/``|`` respectively.
+  (Contributed by Aniket, Sergey B Kirpichev, and Nikita Sobolev in
+  :gh:`146495`.)
+
+* Suggest the closest valid feature name in the :exc:`SyntaxError` message
+  when an unknown name is imported from :mod:`__future__`.
+  (Contributed by Nikita Sobolev and Pablo Galindo Salgado in :gh:`145868`.)
+
+* :exc:`TypeError` messages for some instance methods called with too many
+  positional arguments now suggest checking whether the method definition is
+  missing the ``self`` parameter. (Contributed by Suren Nihalani in
+  :gh:`152315`.)
+
+* Add context notes to :exc:`TypeError` raised while hashing a
+  :class:`tuple`, identifying the index of the item whose hash failed.
+  (Contributed by Ivan Zorin in :gh:`161433`.)
 
 
 Other language changes
@@ -94,11 +131,6 @@ Other language changes
   for example in debuggers, without keeping the frames (and everything
   they reference) alive indefinitely.
   (Contributed by Łukasz Langa in :gh:`102960`.)
-
-* :exc:`TypeError` messages for some instance methods called with too many
-  positional arguments now suggest checking whether the method definition is
-  missing the ``self`` parameter. (Contributed by Suren Nihalani in
-  :gh:`152315`.)
 
 * :func:`anext` and :func:`aiter` are now implemented in Python instead
   of C.  The awaitable returned by ``anext(it, default)`` and the
@@ -143,6 +175,10 @@ asyncio
   :func:`asyncio.start_unix_server` to set the permissions of the Unix
   socket file created for *path*.
   (Contributed by Sam Bull in :gh:`94984`.)
+
+* Add *eager_tasks* parameter to :func:`asyncio.run` function and
+  :class:`asyncio.Runner` class constructor.
+  (Contributed by Andrew Svetlov in :gh:`128289`.)
 
 
 bdb
@@ -199,6 +235,19 @@ concurrent.interpreters
   :term:`context manager` protocol. Exiting the :keyword:`with` block calls
   :meth:`~concurrent.interpreters.Interpreter.close`.
   (Contributed by Peter Bierma in :gh:`158370`.)
+
+
+copy
+----
+
+* :func:`copy.replace` now supports :class:`argparse.Namespace`,
+  :class:`optparse.Values`, :class:`decimal.Context`,
+  :class:`tarfile.TarInfo`, and CSV dialects (instances of
+  :class:`csv.Dialect` subclasses and objects returned by
+  :func:`csv.get_dialect`).
+  (Contributed by Serhiy Storchaka and Stan Ulbrych in :gh:`155043`,
+  :gh:`155044`, :gh:`155041`, :gh:`155040`, and :gh:`155033`.)
+
 
 csv
 ---
@@ -459,6 +508,27 @@ gzip
   (Contributed by Marin Misur in :gh:`91372`.)
 
 
+http.client
+-----------
+
+* :class:`~http.client.HTTPConnection` now honors an ``Expect: 100-Continue``
+  request header: the request body is sent only after the server responds
+  with ``100 Continue``, or once the new *continue_timeout* of
+  :meth:`~http.client.HTTPConnection.request` and
+  :meth:`~http.client.HTTPConnection.putrequest` expires.  If the server
+  responds with a final status instead, the body is not sent.
+  :meth:`~http.client.HTTPConnection.getresponse` gains a *support_continue*
+  parameter to return ``100 Continue`` responses to the caller.
+  (Contributed by Ashwin Menon, Tim Bartlett and Senthil Kumaran in
+  :gh:`42550`.)
+
+* Add the :exc:`~http.client.ProxyTunnelError` exception, a subclass of
+  :exc:`OSError` raised when a proxy rejects the CONNECT request sent for
+  :meth:`~http.client.HTTPConnection.set_tunnel`.  It exposes the status
+  code, reason and headers of the proxy's response.
+  (Contributed by Senthil Kumaran in :gh:`51540`.)
+
+
 imaplib
 -------
 
@@ -610,6 +680,9 @@ pydoc
   inherited from other classes are collapsed by default.
   (Contributed by Serhiy Storchaka in :gh:`153906`.)
 
+* Add help for more special names to the built-in :func:`help` function.
+  (Contributed by Adam Hartz in :gh:`137966`.)
+
 
 pickle
 ------
@@ -634,6 +707,8 @@ quopri
 
 re
 --
+
+.. _whatsnew316-re-set-operations-and-unicode-properties:
 
 * :mod:`re` now supports set operations and nested sets in character classes,
   as described in `Unicode Technical Standard #18
@@ -677,6 +752,9 @@ shutil
   :func:`shutil.copystat`, e.g. when copying a read-only tree.
   (Contributed by Łukasz Langa in :gh:`89721`.)
 
+* :func:`shutil.unpack_archive` can now unpack wheel files using the ``whl`` format.
+  (Contributed by Emma Harper Smith and Stan Ulbrych in :gh:`84027`.)
+
 
 socket
 ------
@@ -704,6 +782,8 @@ sqlite3
 
 ssl
 ---
+
+.. _whatsnew316-ssl-ech:
 
 * Added support for :ref:`Encrypted Client Hello <ssl-encrypted-client-hello>`
   (ECH) with OpenSSL 4.0 or later. Clients can supply an ECHConfigList
@@ -897,6 +977,18 @@ unicodedata
 * The Unicode database has been updated to Unicode 18.0.0.
 
 
+urllib.request
+--------------
+
+* :class:`~urllib.request.ProxyBasicAuthHandler` and
+  :class:`~urllib.request.ProxyDigestAuthHandler` now authenticate with a
+  proxy that answers the CONNECT request for an ``https`` URL with
+  ``407 Proxy Authentication Required``.  When no credentials are available,
+  :exc:`~urllib.error.HTTPError` with code 407 is raised instead of
+  :exc:`~urllib.error.URLError`.
+  (Contributed by Senthil Kumaran in :gh:`51540`.)
+
+
 uuid
 ----
 
@@ -1004,6 +1096,35 @@ zlib
 
 Optimizations
 =============
+
+.. _whatsnew316-interpreter-startup:
+
+* Interpreter startup is faster, and several common operations have been
+  optimized. Improvements include less work during garbage collection and
+  faster construction of :class:`list`, :class:`dict`, :class:`bytes`, and
+  :class:`bytearray` objects.
+  Startup performance is tracked on the `Python Speed Center
+  <https://speed.python.org/timeline/?exe=12&base=&ben=python_startup.legacy&env=1%2C7&revs=50&equid=off&quarts=on&extr=on>`__.
+  (Contributed by Pablo Galindo Salgado, Cody Maloney, and Pieter Eendebak in
+  :gh:`159137`, :gh:`160858`, :gh:`160913`, and :gh:`87613`.)
+
+* Speed up iteration over asynchronous generators: values yielded to
+  ``async for`` no longer create and discard a :exc:`StopIteration` exception
+  at every nesting level. The ``async_generators`` pyperformance benchmark is
+  about 30% faster.
+  (Contributed by Shamil Abdulaev in :gh:`158304`.)
+
+
+ast
+---
+
+* AST nodes now store attributes inline with shared keys instead of
+  allocating a separate dictionary for each node. Benchmarks of this
+  change measured about 16% faster :func:`ast.parse` calls and 52% less
+  memory used by the resulting ASTs.
+  (Contributed by Lysandros Nikolaou and Pablo Galindo Salgado
+  in :gh:`153568`.)
+
 
 datetime and time
 -----------------
@@ -1185,6 +1306,29 @@ New deprecations
     3.9, now issues a deprecation warning on use. This property is slated for
     removal in 3.21. Use ``ast.Tuple.elts`` instead.
 
+* ``__author__``, ``__credits__``, ``__copyright__`` and ``__date__``:
+
+  * The ``__author__``, ``__credits__``, ``__copyright__`` and ``__date__``
+    attributes have been deprecated in these standard library modules and will
+    be removed in Python 3.20. Attribution is preserved in the source code
+    and the version control history.
+
+    - :mod:`bz2`
+    - :mod:`concurrent.futures`
+    - :mod:`inspect`
+    - :mod:`io`
+    - :mod:`json`
+    - :mod:`logging`
+    - :mod:`optparse`
+    - :mod:`platform`
+    - :mod:`pydoc`
+    - :mod:`tarfile`
+    - :mod:`tkinter.ttk`
+    - :mod:`tokenize`
+    - :mod:`uuid`
+
+    (Contributed by Stan Ulbrych in :gh:`159240`.)
+
 * :mod:`functools`:
 
   * Using a return annotation to infer the dispatch type for
@@ -1217,6 +1361,23 @@ New deprecations
     over the names returned by :func:`~tkinter.filedialog.askopenfilenames` and
     open them one by one instead.
     (Contributed by Serhiy Storchaka in :gh:`152638`.)
+
+* :mod:`typing`:
+
+  * :data:`typing.AnyStr` now raises :exc:`DeprecationWarning`
+    when used and is scheduled to be removed in Python 3.21.
+    Use :pep:`695` syntax instead.
+    (Contributed by Nikita Sobolev in :gh:`150190`.)
+
+* :mod:`urllib.parse`:
+
+  * Accepting objects with false values (like ``0`` and ``[]``) except empty
+    strings, byte-like objects and ``None`` is now deprecated in the URL
+    parsing functions, and is scheduled to raise :exc:`TypeError` in Python
+    3.18.  This extends the same deprecation made in Python 3.14 for
+    :func:`~urllib.parse.parse_qsl`, :func:`~urllib.parse.parse_qs`, and
+    :func:`~urllib.parse.urlencode`.
+    (Contributed by Jacob Walls in :gh:`63293`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -1340,6 +1501,25 @@ Build changes
 
   (Contributed by Stan Ulbrych, Florian Mayer and AnnaAr321 in :gh:`156049`.)
 
+* iOS builds can now be configured as free-threaded or debug builds.
+
+  (Contributed by Russell Keith-Magee in :gh:`159385`.)
+
+
+.. _whatsnew316-apple-platforms:
+
+Build support for tvOS, watchOS, and visionOS
+---------------------------------------------
+
+Added build support for Apple's tvOS, watchOS, and visionOS.
+These platforms are not currently included in the supported
+platform tiers defined by :pep:`11`.
+See the :source:`tvOS <Platforms/Apple/tvOS/README.md>`,
+:source:`watchOS <Platforms/Apple/watchOS/README.md>`, and
+:source:`visionOS <Platforms/Apple/visionOS/README.md>` build instructions.
+
+(Contributed by Russell Keith-Magee in :gh:`131999`.)
+
 
 C API changes
 =============
@@ -1347,12 +1527,25 @@ C API changes
 New features
 ------------
 
+* Add a new way to efficiently create a :class:`frozendict` instance by building
+  a :class:`dict` and "freezing" it: :c:func:`PyDict_AsFrozenDictAndClear`.
+  (Contributed by Nikita Sobolev in :gh:`153413`.)
+
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
 * Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
+
+* Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
+  (Contributed by Victor Stinner in :gh:`161172`.)
+
+* Add :c:func:`PyUnstable_InterpreterFrame_GetLocal` to read a local variable
+  of an internal interpreter frame by its localsplus index, and
+  :c:func:`PyUnstable_Code_GetLocalPlusNames` to get the matching variable
+  names.
+  (Contributed by Guilherme Leobas in :gh:`156133`.)
 
 Porting to Python 3.16
 ----------------------
@@ -1401,7 +1594,7 @@ Deprecated C APIs
   :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,
   :c:func:`PyUnicode_Fill`, :c:func:`PyUnicode_Resize`,
   :c:func:`PyUnicode_WRITE` and :c:func:`PyUnicode_WriteChar`.
-  Use the safer :c:type:`PyUnicodeWriter` API instead.
+  Use the safer :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
   (Contributed by Victor Stinner in :gh:`157710`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
