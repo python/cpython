@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: 18ba2d02dcafd1cc608bd83eff6c17fb0108ca71  # frozen: v0.9.1
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -20,7 +20,7 @@ repos:
         files: ^Doc/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -33,13 +33,13 @@ repos:
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
 
-  - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.1.1
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: 06a39750ec31860bb44f2acf67182c40016cd1e7  # frozen: v1.32.0
     hooks:
       - id: zizmor
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v1.0.0
+    rev: ff671d6a030a3141634793e6d1e8909ab6091830  # frozen: v1.0.0
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
