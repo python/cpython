@@ -10,17 +10,19 @@ permissions:
 
 jobs:
   notify-new-bugs-announce:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       issues: read
     timeout-minutes: 10
     steps:
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 20
-      - run: npm install mailgun.js form-data
+      # TODO: Replace with a committed lockfile and `npm ci`, or drop npm
+      # and call the Mailgun REST API from the standard library.
+      - run: npm install mailgun.js form-data # zizmor: ignore[adhoc-packages]
       - name: Send notification
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@v9.0.0
         env:
           MAILGUN_API_KEY: ${{ secrets.MAILGUN_PYTHON_ORG_MAILGUN_KEY }}
         with:

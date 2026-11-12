@@ -7,6 +7,7 @@ Programming FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 General questions
 =================
@@ -1136,7 +1137,7 @@ What is the most efficient way to concatenate many strings together?
 :class:`str` and :class:`bytes` objects are immutable, therefore concatenating
 many strings together is inefficient as each concatenation creates a new
 object.  In the general case, the total runtime cost is quadratic in the
-total string length.
+total string length.  See :ref:`time-complexity` for more information.
 
 To accumulate many :class:`str` objects, the recommended idiom is to place
 them into a list and call :meth:`str.join` at the end::
@@ -1197,8 +1198,7 @@ Use the :func:`reversed` built-in function::
    for x in reversed(sequence):
        ...  # do something with x ...
 
-This won't touch your original sequence, but build a new copy with reversed
-order to iterate over.
+This returns a reverse iterator without modifying your original sequence.
 
 
 How do you remove duplicates from a list?
@@ -1641,8 +1641,8 @@ Use the built-in :func:`super` function::
 
 In the example, :func:`super` will automatically determine the instance from
 which it was called (the ``self`` value), look up the :term:`method resolution
-order` (MRO) with ``type(self).__mro__``, and return the next in line after
-``Derived`` in the MRO: ``Base``.
+order` (MRO) with ``type(self).__mro__``, and return a proxy that searches for
+methods starting with the next class after ``Derived`` in the MRO: ``Base``.
 
 
 How can I organize my code to make it easier to change the base class?
@@ -1685,7 +1685,7 @@ C)`` holds, unless overridden by ``c`` itself or by some class on the base-class
 search path from ``c.__class__`` back to ``C``.
 
 Caution: within a method of C, an assignment like ``self.count = 42`` creates a
-new and unrelated instance named "count" in ``self``'s own dict.  Rebinding of a
+new and unrelated attribute named "count" in ``self``'s own dict.  Rebinding of a
 class-static data name must always specify the class whether inside a method or
 not::
 
@@ -2053,30 +2053,6 @@ The above example assumes that the *station_id* never changes.  If the
 relevant instance attributes are mutable, the ``cached_property`` approach
 can't be made to work because it cannot detect changes to the
 attributes.
-
-To make the ``lru_cache`` approach work when the *station_id* is mutable,
-the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
-methods so that the cache can detect relevant attribute updates::
-
-    class Weather:
-        "Example with a mutable station identifier"
-
-        def __init__(self, station_id):
-            self.station_id = station_id
-
-        def change_station(self, station_id):
-            self.station_id = station_id
-
-        def __eq__(self, other):
-            return self.station_id == other.station_id
-
-        def __hash__(self):
-            return hash(self.station_id)
-
-        @lru_cache(maxsize=20)
-        def historic_rainfall(self, date, units='cm'):
-            'Rainfall on a given date'
-            # Depends on the station_id, date, and units.
 
 
 Modules

@@ -23,6 +23,11 @@ PyAPI_FUNC(int) _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                                   int (*predicate)(PyObject *value, void *arg),
                                   void *arg);
 
+// Atomically replace an existing value if it is expected (by identity).
+// Return 1 if replaced, 0 if absent or different, or -1 on error.
+extern int _PyDict_ReplaceItemIf(PyObject *dict, PyObject *key,
+                               PyObject *expected, PyObject *replacement);
+
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
@@ -91,7 +96,6 @@ typedef struct {
 
 extern PyDictKeysObject *_PyDict_NewKeysForClass(PyHeapTypeObject *);
 extern void _PyDict_RemoveKeysForClass(PyHeapTypeObject *);
-extern void _PyDict_SplitKeysInvalidated(PyDictKeysObject* keys);
 extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Implementations of the `|` and `|=` operators for dict, used by the
@@ -148,8 +152,8 @@ PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyOb
  */
 PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupAndVersion(PyDictKeysObject* dictkeys, PyObject *key, uint32_t *version);
 PyAPI_FUNC(Py_ssize_t) _PyDictKeys_StringLookupSplit(PyDictKeysObject* dictkeys, PyObject *key);
-PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
-PyAPI_FUNC(void) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
+// Return the borrowed source dictionary, or NULL if absent or on error.
+PyAPI_FUNC(PyObject *) _PyDict_LoadGlobalStackRef(PyDictObject *, PyDictObject *, PyObject *, _PyStackRef *);
 
 // Loads the __builtins__ object from the globals dict. Returns a new reference.
 extern PyObject *_PyDict_LoadBuiltinsFromGlobals(PyObject *globals);
@@ -166,6 +170,10 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *k
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern PyObject *_PyDict_GetItem_ExactUnicode(PyDictObject *mp, PyObject *key);
+extern int _PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp,
+                                                PyObject *key,
+                                                _PyStackRef *value_addr);
 PyAPI_FUNC(int) _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
@@ -350,8 +358,8 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     uint8_t *array = get_insertion_order_array(values);
     assert(size < values->capacity);
     assert(((uint8_t)ix) == ix);
-    array[size] = (uint8_t)ix;
-    values->size = size+1;
+    FT_ATOMIC_STORE_UINT8_RELAXED(array[size], (uint8_t)ix);
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, size+1);
 }
 
 // Exported for external JIT support

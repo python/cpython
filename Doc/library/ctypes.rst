@@ -178,23 +178,13 @@ handle (passing ``None`` as single argument to call it with a ``NULL`` pointer):
    0x1d000000
    >>>
 
-:exc:`ValueError` is raised when you call an ``stdcall`` function with the
-``cdecl`` calling convention, or vice versa::
-
-   >>> cdll.kernel32.GetModuleHandleA(None)  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with not enough arguments (4 bytes missing)
-   >>>
-
-   >>> windll.msvcrt.printf(b"spam")  # doctest: +WINDOWS
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ValueError: Procedure probably called with too many arguments (4 bytes in excess)
-   >>>
-
-To find out the correct calling convention you have to look into the C header
-file or the documentation for the function you want to call.
+:mod:`!ctypes` cannot determine a function's calling convention or signature.
+Consult the function's C header file or documentation to choose the correct calling
+convention and set the :attr:`~_CFuncPtr.argtypes` attribute, as described in
+:ref:`ctypes-specifying-required-argument-types`. Without
+:attr:`~_CFuncPtr.argtypes`, the number of arguments is not checked. Calling a
+function with an incorrect calling convention or with incorrect arguments can
+corrupt memory or crash Python.
 
 On Windows, :mod:`!ctypes` uses win32 structured exception handling to prevent
 crashes from general protection faults when functions are called with invalid
@@ -434,7 +424,7 @@ string objects are immutable)::
    >>> print(c_s)
    c_wchar_p(139966785747344)
    >>> print(c_s.value)
-   Hello World
+   Hello, World
    >>> c_s.value = "Hi, there"
    >>> print(c_s)              # the memory location has changed
    c_wchar_p(139966783348904)
@@ -586,6 +576,20 @@ prototype for a C function), and tries to convert the arguments to valid types::
    13
    >>>
 
+Setting :attr:`~_CFuncPtr.argtypes` also causes :mod:`!ctypes` to raise
+:exc:`TypeError` if too few arguments are passed::
+
+   >>> printf(b"%s %d %f\n", b"X", 2)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: this function takes at least 4 arguments (3 given)
+
+Functions using the ``stdcall`` calling convention require exactly as many
+arguments as there are items in :attr:`~_CFuncPtr.argtypes`. Functions using
+the ``cdecl`` calling convention accept additional arguments, to support
+variadic functions. The declaration must match the function's actual signature;
+ctypes cannot verify this.
+
 If you have defined your own classes which you pass to function calls, you have
 to implement a :meth:`~_CData.from_param` class method for them to be able to use them
 in the :attr:`~_CFuncPtr.argtypes` sequence. The :meth:`~_CData.from_param` class method receives
@@ -692,6 +696,48 @@ get the string representation of an error code, and *returns* an exception.
 Please note that a much more powerful error checking mechanism is available
 through the :attr:`~_CFuncPtr.errcheck` attribute;
 see the reference manual for details.
+
+
+Specifying function pointers using type annotations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. decorator:: wrap_dll_function(dll)
+   :module: ctypes.util
+
+   A :term:`decorator` that generates :attr:`~ctypes._CFuncPtr.argtypes` and
+   :attr:`~ctypes._CFuncPtr.restype` from a function signature, using the
+   :attr:`~function.__name__` of the function and its :term:`type annotations <annotation>`.
+
+   The decorated function should look like this::
+
+      @wrap_dll_function(dll_to_wrap)
+      def function_ptr_name(arg_name: ctypes_type, ...) -> ctypes_type:
+          """Optional docstring. There should be no function body."""
+
+   The body of the decorated function is ignored, and any parameters that are
+   missing type annotations are skipped. The names of the parameters are ignored
+   and do not have to match the underlying C implementation.
+
+   If the decorated function does not have a return type annotation, a
+   :exc:`ValueError` is raised. A :exc:`ValueError` is also raised if it has a
+   keyword-only, ``*args``, or ``**kwargs`` parameter, since
+   :attr:`~ctypes._CFuncPtr.argtypes` describes positional arguments only. If
+   the name of the function does not exist in *dll*, an :exc:`AttributeError`
+   is raised.
+
+   For example::
+
+      import ctypes
+      from ctypes.util import wrap_dll_function
+
+      @wrap_dll_function(ctypes.pythonapi)
+      def PyObject_GetAttrString(op: ctypes.py_object, attr: ctypes.c_char_p) -> ctypes.py_object:
+          pass
+
+      PyObject_GetAttrString(42, b"real")
+
+
+   .. versionadded:: 3.16
 
 
 .. _ctypes-passing-pointers:
@@ -805,9 +851,8 @@ compiler does it.  It is possible to override this behavior entirely by specifyi
 :attr:`~Structure._layout_` class attribute in the subclass definition; see
 the attribute documentation for details.
 
-It is possible to specify the maximum alignment for the fields and/or for the
-structure itself by setting the class attributes :attr:`~Structure._pack_`
-and/or :attr:`~Structure._align_`, respectively.
+The :attr:`~Structure._align_` class attribute specifies the minimum alignment
+for the structure itself.
 See the attribute documentation for details.
 
 :mod:`!ctypes` uses the native byte order for Structures and Unions.  To build
@@ -955,6 +1000,15 @@ Generally you only use this feature if you receive a pointer from a C function,
 and you *know* that the pointer actually points to an array instead of a single
 item.
 
+.. warning::
+
+   Because pointer objects support subscription, they implicitly support
+   :term:`iteration <iterator>`. Unless doing this in a controlled manner,
+   such as by manually calling :func:`next` on a :func:`pointer` iterator, this
+   will typically lead to infinite loops or crashes, because ctypes has no way
+   of knowing when to stop iteration. In other words, a ``pointer`` iterator
+   will infinitely yield arbitrary memory.
+
 Behind the scenes, the :func:`pointer` function does more than simply create
 pointer instances, it has to create pointer *types* first. This is done with the
 :func:`POINTER` function, which accepts any :mod:`!ctypes` type, and returns a
@@ -1019,10 +1073,10 @@ to synchronize access to memory:
       >>> lock = threading.Lock()
       >>> # Thread 1
       >>> with lock:
-      ...    pointer_a.contents = 24
+      ...    pointer_a[0] = 24
       >>> # Thread 2
       >>> with lock:
-      ...    pointer_b.contents = 42
+      ...    pointer_b[0] = 42
 
 
 .. _ctypes-type-conversions:
@@ -1055,6 +1109,17 @@ In addition, if a function argument is explicitly declared to be a pointer type
 (such as ``POINTER(c_int)``) in :attr:`~_CFuncPtr.argtypes`, an object of the pointed
 type (``c_int`` in this case) can be passed to the function.  ctypes will apply
 the required :func:`byref` conversion in this case automatically.
+
+These conversions are also applied to the :attr:`!_as_parameter_` attribute of
+an object passed for a pointer argument (see
+:ref:`ctypes-calling-functions-with-own-custom-data-types`). So, for a
+``POINTER(c_int)`` argument, an object whose :attr:`!_as_parameter_` is a
+``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
+is a ``c_int`` array is accepted as well.
+
+.. versionchanged:: 3.16
+   Objects with an :attr:`!_as_parameter_` attribute now receive the same
+   implicit conversions for pointer arguments as the object they wrap.
 
 To set a POINTER type field to ``NULL``, you can assign ``None``::
 
@@ -1153,7 +1218,7 @@ other, and finally follow the pointer chain a few times::
    ...     print(p.name, end=" ")
    ...     p = p.next[0]
    ...
-   foo bar foo bar foo bar foo bar
+   b'foo' b'bar' b'foo' b'bar' b'foo' b'bar' b'foo' b'bar'
    >>>
 
 
@@ -1271,6 +1336,31 @@ write::
    :class:`threading.local` will *not* survive across different callbacks, even when
    those calls are made from the same C thread.
 
+Callback functions can return structures and unions by value, in addition to
+the simple types:
+
+.. code-block:: python
+
+   class Point(Structure):
+       _fields_ = [("x", c_int), ("y", c_int)]
+
+   @CFUNCTYPE(Point)
+   def get_origin():
+       return Point(0, 0)
+
+.. note::
+
+   A structure or union returned from a callback is copied *by value*, and
+   :mod:`!ctypes` does not keep the returned object alive after the callback
+   returns. If the structure contains a pointer field (such as
+   :class:`c_char_p` or a :func:`POINTER` type), you must ensure that the
+   memory it refers to stays valid for as long as the C code uses it -- the
+   same requirement C itself imposes. Returning a pointer to memory owned by
+   a temporary Python object will leave the C caller with a dangling pointer.
+
+.. versionchanged:: 3.16
+   Callback functions can now return structures and unions.
+
 .. _ctypes-accessing-values-exported-from-dlls:
 
 Accessing values exported from dlls
@@ -1289,17 +1379,13 @@ api::
    0x30c00a0
 
 An extended example which also demonstrates the use of pointers accesses the
-:c:data:`PyImport_FrozenModules` pointer exported by Python.
+``_PyImport_FrozenBootstrap`` pointer exported by Python. It points to an array
+of :c:struct:`_frozen` records describing frozen modules used during startup,
+terminated by one whose members are all ``NULL`` or zero. This is similar to
+the :c:data:`PyImport_FrozenModules` table, which third-party code can use to
+provide additional frozen modules.
 
-Quoting the docs for that value:
-
-   This pointer is initialized to point to an array of :c:struct:`_frozen`
-   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
-   module is imported, it is searched in this table.  Third-party code could play
-   tricks with this to provide a dynamically created collection of frozen modules.
-
-So manipulating this pointer could even prove useful. To restrict the example
-size, we show only how this table can be read with :mod:`!ctypes`::
+We can read this table with :mod:`!ctypes`::
 
    >>> from ctypes import *
    >>>
@@ -1307,7 +1393,7 @@ size, we show only how this table can be read with :mod:`!ctypes`::
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
    ...                 ("size", c_int),
-   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
+   ...                 ("is_package", c_int),
    ...                ]
    ...
    >>>
@@ -1335,9 +1421,9 @@ hit the ``NULL`` entry::
    zipimport 12345
    >>>
 
-The fact that standard Python has a frozen module and a frozen package
-(indicated by the negative ``size`` member) is not well known, it is only used
-for testing. Try it out with ``import __hello__`` for example.
+Frozen packages are indicated by a nonzero ``is_package`` member. Python also
+includes frozen modules and packages used for testing, such as ``__hello__``
+and ``__phello__``, in a separate table, ``_PyImport_FrozenTest``.
 
 
 .. _ctypes-surprises:
@@ -1501,7 +1587,7 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
    as a "library".
-   (Some systems do the same is *name* is empty; ``None``/``NULL`` is more
+   (Some systems do the same if *name* is empty; ``None``/``NULL`` is more
    portable.)
 
    .. admonition:: CPython implementation detail
@@ -1528,7 +1614,10 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    :mod:`!ctypes` maintains a thread-local copy of the system's :data:`errno`
    variable; if you call foreign functions created with ``use_errno=True`` then the
    :data:`errno` value before the function call is swapped with the ctypes private
-   copy, the same happens immediately after the function call.
+   copy, the same happens immediately after the function call. This mechanism only
+   works for libraries that use the same C runtime library as the interpreter itself.
+   A library linked against a different C runtime (for example, a different CRT on
+   Windows) has its own :data:`errno`, which :mod:`!ctypes` cannot observe.
 
    The function :func:`ctypes.get_errno` returns the value of the ctypes private
    copy, and the function :func:`ctypes.set_errno` changes the ctypes private copy
@@ -1704,6 +1793,10 @@ These prefabricated library loaders are available:
       :c:expr:`int`, which is of course not always the truth, so you have to assign
       the correct :attr:`!restype` attribute to use these functions.
 
+      .. note::
+
+         If the Python interpreter is statically linked, this may be ``None``.
+
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
    Loading a library through any of these objects raises an
@@ -1827,6 +1920,10 @@ like ``find_library("c")`` will fail and return ``None``.
 
    .. availability:: Windows
 
+   .. soft-deprecated:: 3.16
+      This function now always returns ``None``, as there are no more
+      VC runtime DLLs that are a single file and supported by Microsoft.
+
 
 .. _ctypes-listing-loaded-shared-libraries:
 
@@ -1897,17 +1994,18 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
    .. attribute:: argtypes
 
       Assign a tuple of ctypes types to specify the argument types that the
-      function accepts.  Functions using the ``stdcall`` calling convention can
-      only be called with the same number of arguments as the length of this
-      tuple; functions using the C calling convention accept additional,
-      unspecified arguments as well.
+      function accepts. :exc:`TypeError` is raised if the function is called
+      with fewer arguments than the length of this tuple. Functions using the
+      ``stdcall`` calling convention also raise :exc:`TypeError` if called with
+      more arguments; functions using the ``cdecl`` calling convention accept
+      additional, unspecified arguments as well.
 
       When a foreign function is called, each actual argument is passed to the
       :meth:`~_CData.from_param` class method of the items in the :attr:`argtypes`
       tuple, this method allows adapting the actual argument to an object that
       the foreign function accepts.  For example, a :class:`c_char_p` item in
-      the :attr:`argtypes` tuple will convert a string passed as argument into
-      a bytes object using ctypes conversion rules.
+      the :attr:`argtypes` tuple will adapt a bytes object passed as an argument
+      to a C pointer to its contents. It does not accept a :class:`str` object.
 
       New: It is now possible to put items in argtypes which are not ctypes
       types, but each item must have a :meth:`~_CData.from_param` method which returns a
@@ -1930,13 +2028,33 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
          same callable object to check or post process the results of several
          functions.
 
-         *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows specializing the behavior on the
+         *arguments* is a tuple containing the parameters passed to the
+         function call, including any output parameters that :mod:`!ctypes`
+         created for the call; this allows specializing the behavior on the
          arguments used.
 
-      The object that this function returns will be returned from the
-      foreign function call, but it can also check the result value
-      and raise an exception if the foreign function call failed.
+      If the callable returns the *arguments* tuple it received, unchanged,
+      :mod:`!ctypes` continues its normal processing of the result, which
+      includes returning output parameters (see
+      :ref:`ctypes-function-prototypes`). Any other object returned by the
+      callable is returned from the foreign function call instead. The
+      callable can also check the result value and raise an exception if the
+      foreign function call failed.
+
+      For example, this callable raises an exception when the foreign function
+      signals failure with a negative return value, and otherwise leaves the
+      result to :mod:`!ctypes`::
+
+         def errcheck(result, func, arguments):
+             if result < 0:
+                 raise RuntimeError(f"call failed with error {result}")
+             return arguments
+
+      This one instead replaces the result, converting a C ``int`` used as a
+      boolean into a :class:`bool`::
+
+         def errcheck(result, func, arguments):
+             return result != 0
 
 
 .. audit-event:: ctypes.set_exception code foreign-functions
@@ -1990,7 +2108,11 @@ See :ref:`ctypes-callback-functions` for examples.
 .. function:: PYFUNCTYPE(restype, *argtypes)
 
    The returned function prototype creates functions that use the Python calling
-   convention.  The function will *not* release the GIL during the call.
+   convention.  Unlike :func:`CFUNCTYPE` and :func:`WINFUNCTYPE`, ctypes does
+   *not* release the GIL before calling the foreign function, so the function
+   may safely use the Python C API. Note that this does not prevent the GIL
+   from being released *during* the call.
+
 
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
@@ -2588,7 +2710,7 @@ Fundamental data types
       and :c:expr:`time_t` C types are the same, then :class:`c_long`,
       :class:`c_longlong` and :class:`c_time_t` all refer to a single class,
       :class:`c_long`, whose :attr:`_type_` code is ``'l'``.
-      The ``'L'`` code will be unused.
+      The ``'q'`` code will be unused.
 
       .. seealso::
 
@@ -2600,10 +2722,8 @@ Fundamental data types
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
 converted to native Python types.  In other words, if a foreign function has a
-:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
-object, *not* a :class:`c_char_p` instance.
-
-.. XXX above is false, it actually returns a Unicode string
+:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will receive a Python bytes
+object or ``None`` for a ``NULL`` pointer, *not* a :class:`c_char_p` instance.
 
 Subclasses of fundamental data types do *not* inherit this behavior. So, if a
 foreign functions :attr:`!restype` is a subclass of :class:`c_void_p`, you will
@@ -2800,7 +2920,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
    On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
-   to :class:`c_long`.
+   to :class:`c_ulong`.
 
 
 .. class:: c_ushort
@@ -2854,10 +2974,418 @@ These are the fundamental ctypes data types:
 
 .. _ctypes-wintypes:
 
-The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
-data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`,
-:c:type:`!VARIANT_BOOL` or :c:type:`!DWORD`.
-Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
+Windows data types
+^^^^^^^^^^^^^^^^^^
+
+.. module:: ctypes.wintypes
+   :synopsis: Windows data types for ctypes.
+
+**Source code:** :source:`Lib/ctypes/wintypes.py`
+
+The :mod:`!ctypes.wintypes` module provides types for use with Windows APIs.
+Most are aliases for types defined in :mod:`ctypes`.
+See Microsoft's `Windows data types
+<https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types>`_
+documentation for the corresponding C definitions.
+On non-Windows platforms, the sizes and layouts of these types may differ
+from their Windows counterparts.
+
+.. versionchanged:: 3.14
+   Added :class:`HCONV`, :class:`HCONVLIST`, :class:`HCURSOR`,
+   :class:`HDDEDATA`, :class:`HDROP`, :class:`HFILE`, :class:`HRESULT`,
+   and :class:`HSZ`.
+
+For example::
+
+   >>> from ctypes import POINTER
+   >>> from ctypes.wintypes import LPRECT, RECT, SHORT
+   >>> SHORT(-1).value
+   -1
+   >>> rect = RECT(0, 0, 100, 50)
+   >>> rect.right, rect.bottom
+   (100, 50)
+   >>> LPRECT is POINTER(RECT)
+   True
+
+
+Simple types
+~~~~~~~~~~~~
+
+The following names are aliases for fundamental :mod:`ctypes` types:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Windows types
+     - :mod:`ctypes` type
+
+   * - .. class:: BYTE
+                  BOOLEAN
+     - :class:`~ctypes.c_ubyte`
+
+   * - .. class:: CHAR
+     - :class:`~ctypes.c_char`
+
+   * - .. class:: WCHAR
+     - :class:`~ctypes.c_wchar`
+
+   * - .. class:: WORD
+                  USHORT
+                  ATOM
+                  LANGID
+     - :class:`~ctypes.c_ushort`
+
+   * - .. class:: DWORD
+                  ULONG
+                  COLORREF
+                  LCID
+                  LCTYPE
+                  LGRPID
+     - :class:`~ctypes.c_ulong`
+
+   * - .. class:: BOOL
+                  LONG
+                  HRESULT
+     - :class:`~ctypes.c_long`
+
+   * - .. class:: INT
+                  HFILE
+     - :class:`~ctypes.c_int`
+
+   * - .. class:: UINT
+     - :class:`~ctypes.c_uint`
+
+   * - .. class:: SHORT
+     - :class:`~ctypes.c_short`
+
+   * - .. class:: DOUBLE
+     - :class:`~ctypes.c_double`
+
+   * - .. class:: FLOAT
+     - :class:`~ctypes.c_float`
+
+   * - .. class:: LARGE_INTEGER
+     - :class:`~ctypes.c_longlong`
+
+   * - .. class:: ULARGE_INTEGER
+     - :class:`~ctypes.c_ulonglong`
+
+   * - .. class:: LPCSTR
+                  LPSTR
+     - :class:`~ctypes.c_char_p`
+
+   * - .. class:: LPCOLESTR
+                  LPOLESTR
+                  OLESTR
+                  LPCWSTR
+                  LPWSTR
+     - :class:`~ctypes.c_wchar_p`
+
+   * - .. class:: LPCVOID
+                  LPVOID
+     - :class:`~ctypes.c_void_p`
+
+:class:`LARGE_INTEGER` and :class:`ULARGE_INTEGER` expose an integer
+:attr:`!value` attribute, with no ``LowPart``, ``HighPart``, or ``QuadPart``
+fields.
+
+.. class:: WPARAM
+
+   An unsigned integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: LPARAM
+
+   A signed integer type with the same size as :class:`~ctypes.c_void_p`.
+
+.. class:: VARIANT_BOOL
+
+   A 16-bit Boolean type whose :attr:`!value` attribute is a Python
+   :class:`bool`.  Assigning to :attr:`!value` stores ``-1`` for a true value
+   and ``0`` for a false value.
+
+
+Handle types
+~~~~~~~~~~~~
+
+.. class:: HANDLE
+
+   An alias for :class:`~ctypes.c_void_p`, used to represent Windows handles.
+
+.. class:: HACCEL
+           HBITMAP
+           HBRUSH
+           HCOLORSPACE
+           HCONV
+           HCONVLIST
+           HCURSOR
+           HDC
+           HDDEDATA
+           HDESK
+           HDROP
+           HDWP
+           HENHMETAFILE
+           HFONT
+           HGDIOBJ
+           HGLOBAL
+           HHOOK
+           HICON
+           HINSTANCE
+           HKEY
+           HKL
+           HLOCAL
+           HMENU
+           HMETAFILE
+           HMODULE
+           HMONITOR
+           HPALETTE
+           HPEN
+           HRGN
+           HRSRC
+           HSTR
+           HSZ
+           HTASK
+           HWINSTA
+           HWND
+           SC_HANDLE
+           SERVICE_STATUS_HANDLE
+
+   Aliases for :class:`HANDLE` for use with specific Windows APIs.
+   :class:`HFILE` is an alias for :class:`INT` and is listed among the
+   simple types above.
+
+
+Structures
+~~~~~~~~~~
+
+The following types are subclasses of :class:`ctypes.Structure`.
+
+.. class:: RECT
+           RECTL
+           tagRECT
+
+   A rectangle with ``left``, ``top``, ``right``, and ``bottom`` fields,
+   all of type :class:`LONG`.
+
+.. class:: SMALL_RECT
+
+   A rectangle with ``Left``, ``Top``, ``Right``, and ``Bottom`` fields,
+   all of type :class:`SHORT`.
+
+.. class:: POINT
+           POINTL
+           tagPOINT
+
+   A point with ``x`` and ``y`` fields, both of type :class:`LONG`.
+
+.. class:: SIZE
+           SIZEL
+           tagSIZE
+
+   Dimensions with ``cx`` and ``cy`` fields, both of type :class:`LONG`.
+
+.. class:: FILETIME
+
+   A file time with ``dwLowDateTime`` and ``dwHighDateTime`` fields,
+   both of type :class:`DWORD`.
+
+.. class:: MSG
+           tagMSG
+
+   A Windows message with the following fields:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Field
+        - Type
+      * - ``hWnd``
+        - :class:`HWND`
+      * - ``message``
+        - :class:`UINT`
+      * - ``wParam``
+        - :class:`WPARAM`
+      * - ``lParam``
+        - :class:`LPARAM`
+      * - ``time``
+        - :class:`DWORD`
+      * - ``pt``
+        - :class:`POINT`
+
+.. class:: WIN32_FIND_DATAA
+           WIN32_FIND_DATAW
+
+   Structures used by Windows file-search functions, with the following
+   fields.  :class:`WIN32_FIND_DATAA` uses :class:`CHAR` for its file names,
+   and :class:`WIN32_FIND_DATAW` uses :class:`WCHAR`.
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Fields
+        - Type
+      * - ``dwFileAttributes``
+        - :class:`DWORD`
+      * - ``ftCreationTime``, ``ftLastAccessTime``, ``ftLastWriteTime``
+        - :class:`FILETIME`
+      * - ``nFileSizeHigh``, ``nFileSizeLow``
+        - :class:`DWORD`
+      * - ``dwReserved0``, ``dwReserved1``
+        - :class:`DWORD`
+      * - ``cFileName``
+        - An array of :data:`MAX_PATH` characters
+      * - ``cAlternateFileName``
+        - An array of 14 characters
+
+
+Pointer types
+~~~~~~~~~~~~~
+
+The following names are aliases for ``ctypes.POINTER(T)``, where *T* is the
+type in the second column:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Pointer types
+     - Referenced type
+
+   * - .. class:: LPBOOL
+                  PBOOL
+     - :class:`BOOL`
+
+   * - .. class:: PBOOLEAN
+     - :class:`BOOLEAN`
+
+   * - .. class:: LPBYTE
+                  PBYTE
+     - :class:`BYTE`
+
+   * - .. class:: PCHAR
+     - :class:`CHAR`
+
+   * - .. class:: LPCOLORREF
+     - :class:`COLORREF`
+
+   * - .. class:: LPDWORD
+                  PDWORD
+     - :class:`DWORD`
+
+   * - .. class:: LPFILETIME
+                  PFILETIME
+     - :class:`FILETIME`
+
+   * - .. class:: PFLOAT
+     - :class:`FLOAT`
+
+   * - .. class:: LPHANDLE
+                  PHANDLE
+     - :class:`HANDLE`
+
+   * - .. class:: PHKEY
+     - :class:`HKEY`
+
+   * - .. class:: LPHKL
+     - :class:`HKL`
+
+   * - .. class:: LPINT
+                  PINT
+     - :class:`INT`
+
+   * - .. class:: PLARGE_INTEGER
+     - :class:`LARGE_INTEGER`
+
+   * - .. class:: PLCID
+     - :class:`LCID`
+
+   * - .. class:: LPLONG
+                  PLONG
+     - :class:`LONG`
+
+   * - .. class:: LPMSG
+                  PMSG
+     - :class:`MSG`
+
+   * - .. class:: LPPOINT
+                  PPOINT
+     - :class:`POINT`
+
+   * - .. class:: PPOINTL
+     - :class:`POINTL`
+
+   * - .. class:: LPRECT
+                  PRECT
+     - :class:`RECT`
+
+   * - .. class:: LPRECTL
+                  PRECTL
+     - :class:`RECTL`
+
+   * - .. class:: LPSC_HANDLE
+     - :class:`SC_HANDLE`
+
+   * - .. class:: PSHORT
+     - :class:`SHORT`
+
+   * - .. class:: LPSIZE
+                  PSIZE
+     - :class:`SIZE`
+
+   * - .. class:: LPSIZEL
+                  PSIZEL
+     - :class:`SIZEL`
+
+   * - .. class:: PSMALL_RECT
+     - :class:`SMALL_RECT`
+
+   * - .. class:: LPUINT
+                  PUINT
+     - :class:`UINT`
+
+   * - .. class:: PULARGE_INTEGER
+     - :class:`ULARGE_INTEGER`
+
+   * - .. class:: PULONG
+     - :class:`ULONG`
+
+   * - .. class:: PUSHORT
+     - :class:`USHORT`
+
+   * - .. class:: PWCHAR
+     - :class:`WCHAR`
+
+   * - .. class:: LPWIN32_FIND_DATAA
+                  PWIN32_FIND_DATAA
+     - :class:`WIN32_FIND_DATAA`
+
+   * - .. class:: LPWIN32_FIND_DATAW
+                  PWIN32_FIND_DATAW
+     - :class:`WIN32_FIND_DATAW`
+
+   * - .. class:: LPWORD
+                  PWORD
+     - :class:`WORD`
+
+
+Constants and functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. data:: MAX_PATH
+
+   The value ``260``, used as the size of the file-name arrays in
+   :class:`WIN32_FIND_DATAA` and :class:`WIN32_FIND_DATAW`.
+
+.. function:: RGB(red, green, blue)
+
+   Return a :class:`COLORREF` value as a Python integer.  The *red*, *green*,
+   and *blue* arguments are integers from ``0`` to ``255``, specifying the
+   intensity of each color component::
+
+      >>> from ctypes.wintypes import RGB
+      >>> hex(RGB(255, 128, 0))
+      '0x80ff'
+
+
+.. currentmodule:: ctypes
 
 
 .. _ctypes-structured-data-types:
@@ -2905,7 +3433,7 @@ fields, or any other data types containing pointer type fields.
    Concrete structure and union types must be created by subclassing one of these
    types, and at least define a :attr:`_fields_` class variable. :mod:`!ctypes` will
    create :term:`descriptor`\s which allow reading and writing the fields by direct
-   attribute accesses.  These are the
+   attribute accesses.
 
 
    .. attribute:: _fields_
@@ -2935,8 +3463,8 @@ fields, or any other data types containing pointer type fields.
       Later assignments will raise an :exc:`AttributeError`.
 
       Additionally, the :attr:`!_fields_` class variable must be defined before
-      the structure or union type is first used: an instance or subclass is
-      created, :func:`sizeof` is called on it, and so on.
+      the structure or union type is first used, for example when an instance
+      or subclass is created.
       Later assignments to :attr:`!_fields_` will raise an :exc:`AttributeError`.
       If :attr:`!_fields_` has not been set before such use,
       the structure or union will have no own fields, as if :attr:`!_fields_`
@@ -3033,15 +3561,17 @@ fields, or any other data types containing pointer type fields.
 
       Here is an example type (Windows)::
 
+         class TYPEDESC(Structure):
+             pass
+
          class _U(Union):
              _fields_ = [("lptdesc", POINTER(TYPEDESC)),
                          ("lpadesc", POINTER(ARRAYDESC)),
                          ("hreftype", HREFTYPE)]
 
-         class TYPEDESC(Structure):
-             _anonymous_ = ("u",)
-             _fields_ = [("u", _U),
-                         ("vt", VARTYPE)]
+         TYPEDESC._anonymous_ = ("u",)
+         TYPEDESC._fields_ = [("u", _U),
+                             ("vt", VARTYPE)]
 
 
       The ``TYPEDESC`` structure describes a COM data type, the ``vt`` field
@@ -3051,10 +3581,11 @@ fields, or any other data types containing pointer type fields.
       are equivalent, but the former is faster since it does not need to create
       a temporary union instance::
 
+         some_type = TYPEDESC()
          td = TYPEDESC()
          td.vt = VT_PTR
-         td.lptdesc = POINTER(some_type)
-         td.u.lptdesc = POINTER(some_type)
+         td.lptdesc = pointer(some_type)
+         td.u.lptdesc = pointer(some_type)
 
    It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
@@ -3149,7 +3680,7 @@ fields, or any other data types containing pointer type fields.
       :attr:`~CField.byte_offset`.
 
       To get the field's value, read the storage unit as an integer,
-      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      :ref:`shift right <shifting>` by :attr:`!bit_offset` and
       take the :attr:`!bit_size` least significant bits.
 
       For non-bitfields, :attr:`!bit_offset` is zero
@@ -3159,6 +3690,82 @@ fields, or any other data types containing pointer type fields.
 
       True if this field is anonymous, that is, it contains nested sub-fields
       that should be merged into a containing structure or union.
+
+
+.. decorator:: struct(*, align=None, layout=None, endian='native', pack=None)
+   :module: ctypes.util
+
+   A :term:`decorator` that allows generating structure types using an
+   annotation-based syntax, similar to the :mod:`dataclasses` module.
+
+   For example:
+
+   .. code-block:: python
+
+      from ctypes.util import struct
+      from ctypes import c_int
+
+      @struct
+      class Point:
+          x: c_int
+          y: c_int
+
+      point = Point(1, 2)
+
+   .. note::
+
+      Calling :func:`super` without arguments in methods of the decorated
+      class raises a :exc:`TypeError`. Use the two-argument form instead, for example
+      ``super(Point, self).__init__(x, y)``.
+
+   *align*, *layout*, and *pack* supply the value for the :attr:`~ctypes.Structure._align_`,
+   :attr:`~ctypes.Structure._layout_`, and :attr:`~ctypes.Structure._pack_`
+   attributes, respectively.
+
+   *endian* controls which structure class will be used as the base.
+
+   - If *endian* is ``'native'``, :class:`~ctypes.Structure` will be used.
+   - If *endian* is ``'big'``, :class:`~ctypes.BigEndianStructure` will be used.
+   - If *endian* is ``'little'``, :class:`~ctypes.LittleEndianStructure` will be used.
+
+   Any other value will raise a :class:`ValueError`.
+
+   For controlling field-specific data, wrap the annotation in :class:`typing.Annotated`
+   with :class:`CFieldInfo` as the second argument, like so:
+
+   .. code-block:: python
+
+      from typing import Annotated
+      from ctypes import c_ssize_t, c_void_p
+      from ctypes.util import struct, CFieldInfo
+
+      @struct
+      class PyObject:
+          ob_refcnt: c_ssize_t
+          ob_type: c_void_p
+
+      @struct
+      class PyHovercraftObject:
+          ob_base: Annotated[PyObject, CFieldInfo(anonymous=True)]
+
+   .. versionadded:: 3.16
+
+
+.. class:: CFieldInfo(anonymous=False, bit_width=None)
+   :module: ctypes.util
+
+   Information regarding a structure field defined by the
+   :func:`~ctypes.util.struct` decorator. This should be used in the second
+   argument of a :class:`typing.Annotated` wrapping a ctypes type.
+
+   *anonymous* specifies whether the field will be present in the
+   :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.
+
+   If *bit_width* is non-``None``, the annotated field will be *bit_width*
+   number of bits in the generated structure. This is equivalent to passing
+   a third item in :attr:`~ctypes.Structure._fields_`.
+
+   .. versionadded:: 3.16
 
 
 .. _ctypes-arrays-pointers:
@@ -3267,3 +3874,47 @@ Exceptions
    .. availability:: Windows
 
    .. versionadded:: 3.14
+
+
+Library version
+^^^^^^^^^^^^^^^
+
+The following constants are only available if :mod:`!ctypes` was built with
+libffi 3.5 or later, which is the first version providing this information.
+
+.. data:: LIBFFI_VERSION
+
+   The version string of the libffi library that was used for building
+   the module, like ``'3.5.2'``.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version
+
+   The version string of the libffi library actually loaded by the interpreter.
+
+   .. versionadded:: 3.16
+
+.. data:: LIBFFI_VERSION_INFO
+
+   A named tuple containing the three components of the libffi library
+   version that was used for building the module:
+   *major*, *minor*, and *patch*.
+   All values are integers.
+   The components can also be accessed by name,
+   so ``ctypes.LIBFFI_VERSION_INFO[0]`` is equivalent to
+   ``ctypes.LIBFFI_VERSION_INFO.major`` and so on.
+   This may be different from the libffi library actually used at runtime,
+   which is available as :const:`libffi_version_info`.
+
+   .. versionadded:: 3.16
+
+.. data:: libffi_version_info
+
+   A named tuple containing the version of the libffi library
+   actually loaded by the interpreter,
+   with the same fields as :const:`LIBFFI_VERSION_INFO`.
+
+   .. versionadded:: 3.16

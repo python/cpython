@@ -958,6 +958,7 @@ paramspecattr_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
 
     Py_XDECREF(psa->__origin__);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1340,20 +1341,12 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
 }
@@ -1634,23 +1627,12 @@ typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
-    if (Py_IsNone(bound)) {
-        bound = NULL;
-    }
-    if (bound != NULL) {
-        bound = type_check(bound, "Bound must be a type.");
-        if (bound == NULL) {
-            return NULL;
-        }
-    }
     PyObject *module = caller();
     if (module == NULL) {
-        Py_XDECREF(bound);
         return NULL;
     }
     PyObject *result = (PyObject *)typevartuple_alloc(
         name, bound, default_value, covariant, contravariant, infer_variance, module);
-    Py_XDECREF(bound);
     Py_DECREF(module);
     return result;
 }
@@ -1917,14 +1899,23 @@ typealias_dealloc(PyObject *self)
 static PyObject *
 typealias_get_value(typealiasobject *ta)
 {
-    if (ta->value != NULL) {
-        return Py_NewRef(ta->value);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    result = Py_XNewRef(ta->value);
+    Py_END_CRITICAL_SECTION();
+    if (result != NULL) {
+        return result;
     }
-    PyObject *result = PyObject_CallNoArgs(ta->compute_value);
+    result = PyObject_CallNoArgs(ta->compute_value);
     if (result == NULL) {
         return NULL;
     }
+    PyObject *old_value;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    old_value = ta->value;
     ta->value = Py_NewRef(result);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_value);
     return result;
 }
 
@@ -2164,7 +2155,7 @@ typealias.__new__ as typealias_new
     name: object(subclass_of="&PyUnicode_Type")
     value: object
     *
-    type_params: object = NULL
+    type_params: object(c_default="NULL") = ()
     qualname: object(c_default="NULL") = None
 
 Create a TypeAliasType.
@@ -2173,7 +2164,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=cbec290f8c4886ef]*/
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=6516623275f87b5e]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2377,6 +2368,9 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
         return NULL;
     }
     params = unpack_typevartuples(params);
+    if (params == NULL) {
+        return NULL;
+    }
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
     PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);

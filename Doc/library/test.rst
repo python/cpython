@@ -165,11 +165,13 @@ test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`!test.regrtest`; the call :program:`python -m
 test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
-:mod:`!test` package. It does this by finding all modules in the package whose
-name starts with ``test_``, importing them, and executing the function
-:func:`test_main` if present or loading the tests via
-unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
-names of tests to execute may also be passed to the script. Specifying a single
+:mod:`!test` package. It does this by finding modules and packages whose names
+start with ``test_``, importing each one, and loading its tests with
+:meth:`unittest.TestLoader.loadTestsFromModule`. See the
+:ref:`load_tests protocol <load_tests-protocol>` for how a module or package
+can customize what is loaded. Defining a module-level ``test_main()`` function
+is not supported and causes the test to fail. The names of tests to
+execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
 only print whether the test passed or failed.
 
@@ -232,9 +234,10 @@ The :mod:`!test.support` module defines the following constants:
 
 .. data:: verbose
 
-   ``True`` when verbose output is enabled. Should be checked when more
-   detailed information is desired about a running test. *verbose* is set by
-   :mod:`test.regrtest`.
+   How verbose the output is: the number of :option:`!-v` options which
+   :mod:`test.regrtest` was run with, and therefore ``0`` when verbose output
+   is not enabled.  Should be checked when more detailed information is
+   desired about a running test.
 
 
 .. data:: is_jython
@@ -285,7 +288,7 @@ The :mod:`!test.support` module defines the following constants:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
    :class:`socket.socket`.
 
-   Its default value is 5 seconds.
+   Its default value is 10 seconds.
 
    See also :data:`INTERNET_TIMEOUT`.
 
@@ -503,7 +506,8 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :const:`_testcapi.WITH_PYMALLOC`.
+   Return ``True`` if Python was built with :ref:`pymalloc <pymalloc>` enabled
+   and is not a :term:`free-threaded build`.
 
 
 .. function:: requires(resource, msg=None)
@@ -881,9 +885,11 @@ The :mod:`!test.support` module defines the following functions:
 
 .. function:: reap_children()
 
-   Use this at the end of ``test_main`` whenever sub-processes are started.
-   This will help ensure that no extra children (zombies) stick around to
-   hog resources and create problems when looking for refleaks.
+   Call this from :meth:`~unittest.TestCase.setUp`,
+   :meth:`~unittest.TestCase.tearDown`, or ``tearDownModule()`` in tests
+   that start subprocesses. This will help ensure that no extra children
+   (zombies) stick around to hog resources and create problems when looking
+   for refleaks.
 
 
 .. function:: get_attribute(obj, name)
@@ -961,6 +967,72 @@ The :mod:`!test.support` module defines the following functions:
    :mod:`tracemalloc` is enabled.
 
 
+.. currentmodule:: test.support.isolation
+
+.. decorator:: runInSubprocess(*, options=(), env=None, timeout=None)
+
+   Decorator that runs the decorated test in a fresh interpreter subprocess, in
+   isolation, so that it does not share global or interpreter state with the
+   rest of the test run.  It can decorate a test method or a whole
+   :class:`~unittest.TestCase` subclass.  Decorated methods must take no extra
+   arguments.  A failure, error or skip in the subprocess is reported for the
+   corresponding test, and individual :meth:`subtests
+   <unittest.TestCase.subTest>` that fail or are skipped are reported
+   individually.  A reported failure or error shows the original subprocess
+   traceback as the cause of the exception.
+
+   When a **method** is decorated, only that method runs in a subprocess; all
+   fixtures (:meth:`~unittest.TestCase.setUp` / :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass` / :meth:`~unittest.TestCase.tearDownClass`
+   and ``setUpModule()`` / ``tearDownModule()``) run both in the parent process
+   (as usual) and in the subprocess around the method.
+
+   When a **class** is decorated, the whole class runs in a single subprocess,
+   and :meth:`~unittest.TestCase.setUpClass`,
+   :meth:`~unittest.TestCase.tearDownClass`, :meth:`~unittest.TestCase.setUp`
+   and :meth:`~unittest.TestCase.tearDown` run once each in the subprocess and
+   are skipped in the parent process.  A failure or skip of
+   :meth:`~unittest.TestCase.setUpClass` in the subprocess is reported for the
+   whole class.  ``setUpModule()`` cannot be controlled by a class decorator,
+   so it still runs in the parent process too; test it with
+   :data:`runningInSubprocess` if needed.
+
+   The subprocess inherits the enabled resources (``-u``), memory limit
+   (``-M``) and verbosity (``-v``) of the parent test run, so that
+   :func:`~test.support.requires_resource`, :func:`~test.support.requires`,
+   :func:`~test.support.bigmemtest` and the like behave consistently in both
+   processes.
+
+   *options* is a sequence of interpreter command line options
+   to run the subprocess with,
+   and *env* is a mapping of environment variables to set in it,
+   on top of the inherited environment.
+   A value of ``None`` in *env* unsets the variable.
+   Note that :option:`-E` and :option:`-I` make the subprocess ignore
+   the ``PYTHON*`` environment variables, including :envvar:`PYTHONPATH`.
+
+   *timeout* is the number of seconds to wait for the subprocess;
+   the test is reported as an error if it does not complete in time.
+   By default there is no timeout,
+   and a hung test is left to the timeout of the test runner.
+
+   The test is skipped on platforms without subprocess support.
+
+
+.. data:: runningInSubprocess
+
+   ``True`` while the code runs in the isolated subprocess spawned by
+   :func:`runInSubprocess`, and ``False`` otherwise (including in the parent
+   process and in a normal, non-isolated test run).  Fixtures such as
+   :meth:`~unittest.TestCase.setUp`, :meth:`~unittest.TestCase.tearDown`,
+   :meth:`~unittest.TestCase.setUpClass`, :meth:`~unittest.TestCase.tearDownClass`,
+   ``setUpModule()`` and ``tearDownModule()`` can test it to choose which code
+   to run in the subprocess.
+
+
+.. currentmodule:: test.support
+
+
 .. function:: check_free_after_iterating(test, iter, cls, args=())
 
    Assert instances of *cls* are deallocated after iterating.
@@ -1015,9 +1087,17 @@ The :mod:`!test.support` module defines the following functions:
 
    .. versionadded:: 3.6
 
+
+.. function:: check_deprecated_module_attributes(test_case, module, *names, remove)
+
+   Assert that accessing each attribute in *names* on *module* emits a
+   :exc:`DeprecationWarning` naming the attribute and the Python version
+   *remove*, given as a ``(major, minor)`` tuple, in which it will be removed.
+
+
 .. function:: skip_if_broken_multiprocessing_synchronize()
 
-   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   Skip tests if the :mod:`!multiprocessing.synchronize` module is missing, if
    there is no available semaphore implementation, or if creating a lock raises
    an :exc:`OSError`.
 
@@ -1189,7 +1269,7 @@ script execution tests.
    doesn't have an obvious home with Python's current home finding logic.
 
    Setting :envvar:`PYTHONHOME` is one way to get most of the testsuite to run
-   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONUSERSITE` are
+   in that situation.  :envvar:`PYTHONPATH` or :envvar:`PYTHONNOUSERSITE` are
    other common environment variables that might impact whether or not the
    interpreter can start.
 
@@ -1590,6 +1670,32 @@ The :mod:`!test.support.os_helper` module provides support for os tests.
    wrapped with a wait loop that checks for the existence of the file.
 
 
+.. decorator:: with_source_date_epoch(*, epoch=123456789)
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable set to *epoch*.
+
+
+.. decorator:: without_source_date_epoch
+
+   A decorator for running tests with the :envvar:`SOURCE_DATE_EPOCH`
+   environment variable unset.
+
+
+.. class:: SourceDateEpochTestMeta
+
+   Metaclass wrapping all test methods of the class with
+   :func:`with_source_date_epoch` if the *source_date_epoch* keyword class
+   argument is true, or with :func:`without_source_date_epoch` otherwise.
+   For example::
+
+      class TestsWithSourceEpoch(Tests,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+          pass
+
+
+
 :mod:`!test.support.import_helper` --- Utilities for import tests
 =================================================================
 
@@ -1600,22 +1706,111 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
 .. versionadded:: 3.10
 
+Creating module objects
+-----------------------
 
-.. function:: forget(module_name)
+.. function:: create_module(name, loader=None, *, ispkg=False)
 
-   Remove the module named *module_name* from ``sys.modules`` and delete any
+   Create a new, empty :term:`module` or :term:`package` and return it.
+
+   *name*, *loader* and *ispkg* (as ``is_package``) are passed to
+   :class:`importlib.machinery.ModuleSpec`.
+
+
+.. function:: add_module(spec, *, parents=True)
+
+   Create a :term:`module` from a name or spec and add it to :data:`sys.modules`.
+
+   If *parents* is ``True``, create any missing parent modules.
+
+   Return the new module.
+
+
+.. function:: add_package(spec, *, parents=True)
+
+   Create a :term:`package` from a name or spec and add it to :data:`sys.modules`.
+
+   If *parents* is ``True``, create any missing parent modules.
+
+   Return the new package.
+
+
+Manipulating sys.modules
+------------------------
+
+
+.. function:: unload(name)
+
+   Remove the module named *name* from :data:`sys.modules`.
+
+
+.. function:: forget(modname)
+
+   Remove the module named *modname* from :data:`sys.modules` and delete any
    byte-compiled files of the module.
 
 
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+.. function:: modules_setup()
+
+   Return a tuple containing a copy of :data:`sys.modules`.
+
+
+.. function:: modules_cleanup(oldmodules)
+
+   Remove modules except for *oldmodules* and ``encodings`` from :data:`sys.modules`
+   in order to preserve the internal cache.
+
+
+.. function:: isolated_modules()
+
+   A context manager that makes a copy of :data:`sys.modules` on entry and restores
+   it on exit.
+
+
+.. class:: CleanImport(*module_names, usefrozen=False)
+
+   A context manager to force imports to return new module references.  This
+   is useful for testing module-level behaviors, such as the emission of a
+   :exc:`DeprecationWarning` on import.
+
+   When created, this makes a copy of :data:`sys.modules` and removes names from
+   *module_names* from the original. On exit, the original module references are
+   restored.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like ``importlib._bootstrap``).
+
+   Example usage::
+
+      with CleanImport('foo'):
+            importlib.import_module('foo')  # New reference.
+
+
+Importing modules
+-----------------
+
+.. function:: import_module(name, deprecated=False, *, required_on=())
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.  If a module is required on a platform but
+   optional for others, set *required_on* to an iterable of platform prefixes
+   which will be compared against :data:`sys.platform`.
+
+   .. versionadded:: 3.1
+
+.. function:: import_fresh_module(name, fresh=(), blocked=(), *, deprecated=False, usefrozen=False)
 
    This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
+   by removing the named module from :data:`sys.modules` before doing the import.
+   Note that unlike :func:`reload <importlib.reload>`, the original module is not
+   affected by this operation.
 
    *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
+   from the :data:`sys.modules` cache before doing the import.
 
    *blocked* is an iterable of module names that are replaced with ``None``
    in the module cache during the import to ensure that attempts to import
@@ -1623,10 +1818,13 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
 
    The named module and any modules named in the *fresh* and *blocked*
    parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
+   :data:`sys.modules` when the fresh import is complete.
 
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is ``True``.
+
+   If *usefrozen* is False (the default) then the frozen importer is
+   disabled (except for essential modules like ``importlib._bootstrap``).
 
    This function will raise :exc:`ImportError` if the named module cannot be
    imported.
@@ -1643,53 +1841,20 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    .. versionadded:: 3.1
 
 
-.. function:: import_module(name, deprecated=False, *, required_on=())
+.. function:: ensure_module_imported(name, *, clearnone=True)
 
-   This function imports and returns the named module. Unlike a normal
-   import, this function raises :exc:`unittest.SkipTest` if the module
-   cannot be imported.
+   Import and return the named module.
 
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.  If a module is required on a platform but
-   optional for others, set *required_on* to an iterable of platform prefixes
-   which will be compared against :data:`sys.platform`.
+   If the module is already imported, this is returned. Otherwise, import
+   the module and return it. If the module is not found a new, empty module
+   will be created.
 
-   .. versionadded:: 3.1
+   If *clearnone* is ``True``, this will first remove any ``None`` values that
+   would block the import.
 
 
-.. function:: modules_setup()
-
-   Return a copy of :data:`sys.modules`.
-
-
-.. function:: modules_cleanup(oldmodules)
-
-   Remove modules except for *oldmodules* and ``encodings`` in order to
-   preserve internal cache.
-
-
-.. function:: unload(name)
-
-   Delete *name* from ``sys.modules``.
-
-
-.. function:: make_legacy_pyc(source)
-
-   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
-
-
-.. class:: CleanImport(*module_names)
-
-   A context manager to force import to return a new module reference.  This
-   is useful for testing module-level behaviors, such as the emission of a
-   :exc:`DeprecationWarning` on import.  Example usage::
-
-      with CleanImport('foo'):
-          importlib.import_module('foo')  # New reference.
-
+Manipulating sys.path
+---------------------
 
 .. class:: DirsOnSysPath(*paths)
 
@@ -1702,6 +1867,65 @@ The :mod:`!test.support.import_helper` module provides support for import tests.
    Note that *all* :data:`sys.path` modifications in the body of the
    context manager, including replacement of the object,
    will be reverted at the end of the block.
+
+
+.. function:: ready_to_import(name=None, source="")
+
+   A context manager that will create a new Python module *name* with *source*
+   source code in a temporary directory and inserts this directory at the start
+   of :data:`sys.path`. The context manager yields a tuple with the name and the path
+   to the script in the temporary directory.
+
+   If the name matches an existing module, this will be cleared from :data:`sys.modules`
+   on entry and restored on exit.
+
+   If no name is given, the module will be named "spam".
+
+
+
+Manipulating internals
+----------------------
+
+.. function:: make_legacy_pyc(source, allow_compile=False)
+
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
+   system path to the legacy pyc file.  The *source* value is the file system
+   path to the source file.  It does not need to exist, however the PEP
+   3147/488 pyc file must exist or *allow_compile* must be set.
+
+   If *allow_compile* is ``True`` this will create a .pyc file if it does not exist.
+
+
+.. function:: frozen_modules(enabled=True)
+
+   A context manager that forces frozen modules to be used or excluded.
+
+   If *enabled* is ``True`` frozen modules are used, otherwise they are excluded.
+
+   This only applies to modules that have not yet been imported. Some essential
+   modules will always be imported frozen.
+
+
+.. function:: multi_interp_extensions_check(enabled=True)
+
+   A context manager that forces (if *enabled* is ``True``) or prevents legacy (single-phase init)
+   modules from being allowed in subinterpreters.
+
+   This only applies to modules that haven't been imported yet.
+   It overrides the :c:member:`PyInterpreterConfig.check_multi_interp_extensions`
+   setting.
+
+
+Lazy imports
+------------
+
+.. function:: ensure_lazy_imports(imported_module, modules_to_block, *, additional_code=None)
+
+   Test that when *imported_module* is imported, none of the modules named in *modules_to_block*
+   are imported as a side effect.
+
+   *additional_code* if given should be additional Python source code to execute before
+   checking that the blocked modules still haven't been imported.
 
 
 :mod:`!test.support.warnings_helper` --- Utilities for warnings tests
@@ -1774,17 +1998,10 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
    In this case all warnings are caught and no errors are raised.
 
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
+   On entry to the context manager, a :class:`WarningsRecorder` instance is
+   returned. The recorded warnings are available via its
+   :attr:`~WarningsRecorder.warnings` attribute, and its
+   :meth:`~WarningsRecorder.reset` method discards previously recorded warnings.
 
    The context manager is designed to be used like this::
 
@@ -1801,11 +2018,11 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
 
       with check_warnings(quiet=True) as w:
           warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
+          assert str(w.message) == "foo"
           warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
+          assert str(w.message) == "bar"
+          assert str(w.warnings[0].message) == "foo"
+          assert str(w.warnings[1].message) == "bar"
           w.reset()
           assert len(w.warnings) == 0
 
@@ -1817,7 +2034,22 @@ The :mod:`!test.support.warnings_helper` module provides support for warnings te
       New optional arguments *filters* and *quiet*.
 
 
-.. class:: WarningsRecorder()
+.. class:: WarningsRecorder(warnings_list)
 
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
+   Class used to record warnings for unit tests. Wraps the warnings list
+   returned by :func:`warnings.catch_warnings` when recording is enabled.
+   :func:`check_warnings` returns an instance of this class.
+
+   As a convenience, the attributes of the object representing the most recent
+   warning can also be accessed directly through the recorder object.
+   If no warning has been raised since the recorder was created or last reset,
+   these attributes return ``None``.
+
+   .. attribute:: warnings
+
+      A list of warnings recorded since the recorder was created or last reset.
+
+   .. method:: reset()
+
+      Discard previously recorded warnings from the recorder's view.
+      The underlying warnings list is not modified.

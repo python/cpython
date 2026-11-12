@@ -89,8 +89,9 @@ class-based API instead.
 .. function:: dnpgettext(domain, context, singular, plural, n, /)
 
    Similar to the corresponding functions without the ``p`` in the prefix (that
-   is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
-   but the translation is restricted to the given message *context*.
+   is, :func:`~gettext.gettext`, :func:`dgettext`, :func:`ngettext`,
+   :func:`dngettext`), but the translation is restricted to the given message
+   *context*.
 
    .. versionadded:: 3.8
 
@@ -426,7 +427,8 @@ take the following steps:
 
 In order to prepare your code for I18N, you need to look at all the strings in
 your files.  Any string that needs to be translated should be marked by wrapping
-it in ``_('...')`` --- that is, a call to the function :func:`_ <gettext>`.  For example::
+it in ``_('...')`` --- that is, a call to the function
+:func:`_ <gettext.gettext>`.  For example::
 
    filename = 'mylog.txt'
    message = _('writing a log message')

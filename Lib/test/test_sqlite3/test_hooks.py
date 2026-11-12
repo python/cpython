@@ -450,7 +450,7 @@ class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def test_set_trace_callback_keyword_args(self):
         with self.assertRaisesRegex(TypeError,
-                'takes exactly 1 positional argument'):
+                'takes no keyword arguments'):
             self.con.set_trace_callback(trace_callback=lambda: None)
 
     # When a handler has an invalid signature, the exception raised is

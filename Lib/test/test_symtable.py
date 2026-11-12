@@ -2,6 +2,7 @@
 Test the API of the symtable module.
 """
 
+import ast
 import symtable
 import warnings
 import unittest
@@ -425,12 +426,12 @@ class SymtableTest(unittest.TestCase):
                          "<symbol 'T': LOCAL, DEF_LOCAL|DEF_TYPE_PARAM>")
 
         st1 = symtable.symtable("[x for x in [1]]", "?", "exec")
-        self.assertEqual(repr(st1.lookup("x")),
+        self.assertEqual(repr(st1.get_children()[0].lookup("x")),
                          "<symbol 'x': LOCAL, USE|DEF_LOCAL|DEF_COMP_ITER>")
 
         st2 = symtable.symtable("[(lambda: x) for x in [1]]", "?", "exec")
-        self.assertEqual(repr(st2.lookup("x")),
-                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER|DEF_COMP_CELL>")
+        self.assertEqual(repr(st2.get_children()[0].lookup("x")),
+                         "<symbol 'x': CELL, DEF_LOCAL|DEF_COMP_ITER>")
 
         st3 = symtable.symtable("def f():\n"
                                 "   x = 1\n"
@@ -501,6 +502,255 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
         self.assertEqual(st.get_children(), [])
 
+    def test_inlined_comprehension_in_genexpr(self):
+        st = symtable.symtable("([y for y in x] for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        children = st.get_children()
+        self.assertEqual(len(children), 1)
+        self.check_inlined_listcomp(children[0], ["y"], nested=True)
+
+    def check_inlined_listcomp(self, st, identifiers, *, nested, nchildren=0):
+        self.assertIs(st.get_type(), symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertEqual(st.get_name(), "<listcomp>")
+        self.assertEqual(st.is_nested(), nested)
+        self.assertEqual(sorted(st.get_identifiers()), identifiers)
+        children = st.get_children()
+        self.assertEqual(len(children), nchildren)
+        return children
+
+    def check_nested_inlined_listcomp(self, outer, outer_ids, inner_ids, *, nested):
+        inner, = self.check_inlined_listcomp(
+            outer, outer_ids, nested=nested, nchildren=1)
+        self.check_inlined_listcomp(inner, inner_ids, nested=True)
+        return inner
+
+    def test_inlined_comprehension(self):
+        st = symtable.symtable("[x for x in [1]]", "?", "exec")
+        self.assertEqual(sorted(st.get_identifiers()), [])
+        children = st.get_children()
+        self.assertEqual(len(children), 1)
+        self.check_inlined_listcomp(children[0], ["x"], nested=False)
+
+    def test_inlined_nested_comprehension(self):
+        st = symtable.symtable("[[y for y in x] for x in [1]]", "?", "exec")
+        self.assertEqual(sorted(st.get_identifiers()), [])
+        children = st.get_children()
+        self.assertEqual(len(children), 1)
+        self.check_nested_inlined_listcomp(
+            children[0], ["x"], ["y"], nested=False)
+
+    def test_inlined_comprehension_use_of_enclosing_free_in_function(self):
+        # x is used only in the inlined listcomp; inner still reports USE.
+        st = symtable.symtable(
+            "def outer(x):\n"
+            "    def inner():\n"
+            "        return [x for y in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertTrue(comp.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_use_of_nonlocal_in_function(self):
+        st = symtable.symtable(
+            "def outer():\n"
+            "    x = 1\n"
+            "    def inner():\n"
+            "        nonlocal x\n"
+            "        return [x for _ in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_nonlocal())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertTrue(comp.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_use_of_explicit_global_in_function(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    global g\n"
+            "    return [g for _ in ()]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("g").is_global())
+        self.assertTrue(f.lookup("g").is_declared_global())
+        self.assertFalse(f.lookup("g").is_referenced())
+        comp, = f.get_children()
+        self.assertTrue(comp.lookup("g").is_global())
+        self.assertTrue(comp.lookup("g").is_referenced())
+
+    def test_inlined_comprehension_nested_function_use_not_on_enclosing(self):
+        # The load of x is in the lambda's code object, not inner's.
+        st = symtable.symtable(
+            "def outer(x):\n"
+            "    def inner():\n"
+            "        return [(lambda: x) for y in ()]",
+            "?", "exec")
+        inner = find_block(find_block(st, "outer"), "inner")
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertFalse(inner.lookup("x").is_referenced())
+        comp, = inner.get_children()
+        self.assertTrue(comp.lookup("x").is_free())
+        self.assertFalse(comp.lookup("x").is_referenced())
+        lam, = comp.get_children()
+        self.assertTrue(lam.lookup("x").is_free())
+        self.assertTrue(lam.lookup("x").is_referenced())
+
+    def test_inlined_comprehension_comp_cell_not_on_enclosing(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    x = 1\n"
+            "    return [(lambda: x) for x in [1]]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("x").is_cell())
+        self.assertFalse(f.lookup("x").is_comp_cell())
+        comp, = (c for c in f.get_children()
+                 if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertTrue(comp.lookup("x").is_cell())
+        self.assertTrue(comp.lookup("x").is_comp_cell())
+
+    def test_inlined_comprehension_use_of_enclosing_free_in_class(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    y = 1\n"
+            "    class C:\n"
+            "        y = 2\n"
+            "        vals = [(x, y) for x in range(2)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertTrue(f.lookup("y").is_cell())
+        C = find_block(f, "C")
+        self.assertTrue(C.lookup("y").is_local())
+        self.assertFalse(C.lookup("y").is_free())
+        self.assertTrue(C.lookup("y").is_free_class())
+        comp, = C.get_children()
+        self.assertTrue(comp.lookup("y").is_free())
+        self.assertTrue(comp.lookup("y").is_referenced())
+        self.assertTrue(comp.lookup("x").is_local())
+
+    def test_inlined_comprehension_class_closure_names_are_free(self):
+        st = symtable.symtable(
+            "class C:\n"
+            "    [__class__ for x in [1]]",
+            "?", "exec")
+        C = find_block(st, "C")
+        comp, = C.get_children()
+        self.assertTrue(comp.lookup("__class__").is_free())
+        self.assertTrue(comp.lookup("__class__").is_referenced())
+        with self.assertRaises(KeyError):
+            C.lookup("__class__")
+
+    def test_inlined_nested_comprehension_class_iter_var(self):
+        st = symtable.symtable(
+            "class C:\n"
+            "    x = 99\n"
+            "    [[x for _ in (0,)] for x in (42,)]",
+            "?", "exec")
+        C = find_block(st, "C")
+        children = C.get_children()
+        self.assertEqual(len(children), 1)
+        inner = self.check_nested_inlined_listcomp(
+            children[0], ["x"], ["_", "x"], nested=False)
+        self.assertFalse(C.lookup("x").is_free())
+        self.assertTrue(C.lookup("x").is_local())
+        self.assertFalse(C.lookup("x").is_comp_cell())
+        self.assertFalse(children[0].lookup("x").is_free())
+        self.assertTrue(children[0].lookup("x").is_local())
+        self.assertFalse(children[0].lookup("x").is_cell())
+        self.assertFalse(children[0].lookup("x").is_comp_cell())
+        self.assertTrue(children[0].lookup("x").is_referenced())
+        self.assertFalse(inner.lookup("_").is_free())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_comprehension_iter_var_is_fast_local(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [[x for _ in (0,)] for x in (42,)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = f.get_children()
+        inner = self.check_nested_inlined_listcomp(
+            outer, ["x"], ["_", "x"], nested=True)
+        self.assertTrue(outer.lookup("x").is_local())
+        self.assertFalse(outer.lookup("x").is_cell())
+        self.assertFalse(outer.lookup("x").is_comp_cell())
+        self.assertTrue(outer.lookup("x").is_referenced())
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_mixed_comprehension_iter_var_is_referenced(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [{x for _ in (0,)} for x in (42,)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = f.get_children()
+        self.assertTrue(outer.lookup("x").is_local())
+        self.assertTrue(outer.lookup("x").is_referenced())
+        inner, = outer.get_children()
+        self.assertTrue(inner.lookup("x").is_free())
+        self.assertTrue(inner.lookup("x").is_referenced())
+
+    def test_inlined_nested_comprehension_captured_iter_is_cell(self):
+        st = symtable.symtable(
+            "def f():\n"
+            "    return [[(lambda: x) for _ in (0,)] for x in (1, 2)]",
+            "?", "exec")
+        f = find_block(st, "f")
+        with self.assertRaises(KeyError):
+            f.lookup("x")
+        outer, = (c for c in f.get_children()
+                  if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        inner, = (c for c in outer.get_children()
+                  if c.get_type() is symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertTrue(outer.lookup("x").is_cell())
+        self.assertTrue(outer.lookup("x").is_comp_cell())
+        self.assertTrue(inner.lookup("x").is_free())
+        lam, = inner.get_children()
+        self.assertTrue(lam.lookup("x").is_free())
+
+    def test_inlined_sibling_nested_comprehensions(self):
+        st = symtable.symtable(
+            "def f(): [[y for y in x] for x in [1]]; [[w for w in z] for z in [2]]",
+            "?", "exec")
+        f = find_block(st, "f")
+        self.assertIs(f.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(sorted(f.get_identifiers()), [])
+        children = f.get_children()
+        self.assertEqual(len(children), 2)
+        self.check_nested_inlined_listcomp(
+            children[0], ["x"], ["y"], nested=True)
+        self.check_nested_inlined_listcomp(
+            children[1], ["z"], ["w"], nested=True)
+
+    def test_deeply_nested_inlined_comprehensions(self):
+        depth = 24
+        source = "[" * depth + "0" + " for x in ()]" * depth
+        st = symtable.symtable(source, "?", "exec")
+        cur = st
+        for _ in range(depth):
+            children = cur.get_children()
+            self.assertEqual(len(children), 1)
+            cur = children[0]
+            self.assertIs(cur.get_type(),
+                          symtable.SymbolTableType.INLINED_COMPREHENSION)
+        self.assertEqual(cur.get_children(), [])
+
     def test__symtable_refleak(self):
         # Regression test for reference leak in PyUnicode_FSDecoder.
         # See https://github.com/python/cpython/issues/139748.
@@ -552,6 +802,77 @@ class ComprehensionTests(unittest.TestCase):
                 ids = []
                 self.get_identifiers_recursive(st, ids)
                 self.assertEqual(len([x for x in ids if x == 'x']), 1)
+
+
+class ASTInputTests(unittest.TestCase):
+    maxDiff = None
+
+    def dump(self, table):
+        return (table.get_name(), table.get_type(), table.get_lineno(),
+                [repr(symbol) for symbol in table.get_symbols()],
+                [self.dump(child) for child in table.get_children()])
+
+    def test_exec(self):
+        top = symtable.symtable(ast.parse(TEST_CODE), "?", "exec")
+        self.assertIsNotNone(find_block(top, "Mine"))
+
+    def test_eval(self):
+        table = symtable.symtable(ast.parse("a + b", mode="eval"), "?", "eval")
+        self.assertEqual(sorted(table.get_identifiers()), ["a", "b"])
+
+    def test_single(self):
+        table = symtable.symtable(ast.parse("x = 1", mode="single"),
+                                  "?", "single")
+        self.assertIn("x", table.get_identifiers())
+
+    def test_same_result_as_string(self):
+        cases = [
+            (TEST_CODE, "exec"),
+            ("from __future__ import annotations\n"
+             "def f(x: int) -> int: return x\n", "exec"),
+            ("[x*y for x in a]", "eval"),
+            ("def f(): pass\n", "single"),
+        ]
+        for source, mode in cases:
+            with self.subTest(source=source, mode=mode):
+                from_str = symtable.symtable(source, "?", mode)
+                from_ast = symtable.symtable(ast.parse(source, mode=mode),
+                                             "?", mode)
+                self.assertEqual(self.dump(from_ast), self.dump(from_str))
+
+    def test_synthesized_ast(self):
+        # An AST created programmatically, without any source.
+        node = ast.Module(body=[
+            ast.FunctionDef(
+                name="f",
+                args=ast.arguments(args=[ast.arg(arg="x")]),
+                body=[ast.Return(ast.Name("x", ast.Load()))])])
+        ast.fix_missing_locations(node)
+        top = symtable.symtable(node, "?", "exec")
+        f = find_block(top, "f")
+        self.assertTrue(f.lookup("x").is_parameter())
+
+    def test_mode_mismatch(self):
+        tree = ast.parse("x = 1")
+        for mode in ("eval", "single"):
+            with self.subTest(mode=mode):
+                with self.assertRaises(TypeError):
+                    symtable.symtable(tree, "?", mode)
+        with self.assertRaises(TypeError):
+            symtable.symtable(ast.parse("x", mode="eval"), "?", "exec")
+
+    def test_invalid_ast(self):
+        node = ast.Expression(ast.Name("x", ast.Store()))
+        ast.fix_missing_locations(node)
+        with self.assertRaises(ValueError):
+            symtable.symtable(node, "?", "eval")
+
+    def test_misplaced_future_import(self):
+        # The parser does not enforce the placement of future imports in
+        # an existing AST; the symbol table construction does.
+        tree = ast.parse("x = 1\nfrom __future__ import annotations\n")
+        with self.assertRaises(SyntaxError):
+            symtable.symtable(tree, "?", "exec")
 
 
 class CommandLineTest(unittest.TestCase):

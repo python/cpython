@@ -24,6 +24,7 @@
 #ifndef PYSQLITE_UTIL_H
 #define PYSQLITE_UTIL_H
 #include "Python.h"
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELEASE()
 #include "pythread.h"
 #include "sqlite3.h"
 #include "connection.h"
@@ -35,5 +36,29 @@ int set_error_from_db(pysqlite_state *state, sqlite3 *db);
 void set_error_from_code(pysqlite_state *state, int code);
 
 sqlite_int64 _pysqlite_long_as_int64(PyObject * value);
+
+/* Take a strong reference while the owning object's lock is held. */
+static inline PyObject *
+pysqlite_get_ref(PyObject *owner, PyObject *const *field, PyObject *fallback)
+{
+    PyObject *value;
+    Py_BEGIN_CRITICAL_SECTION(owner);
+    value = Py_NewRef(*field != NULL ? *field : fallback);
+    Py_END_CRITICAL_SECTION();
+    return value;
+}
+
+/* Steal value. Use the same store as PyMember_SetOne() since a readonly
+ * member descriptor may load the field without taking the object's lock. */
+static inline void
+pysqlite_set_ref(PyObject *owner, PyObject **field, PyObject *value)
+{
+    PyObject *old;
+    Py_BEGIN_CRITICAL_SECTION(owner);
+    old = *field;
+    FT_ATOMIC_STORE_PTR_RELEASE(*field, value);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old);
+}
 
 #endif

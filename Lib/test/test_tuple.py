@@ -38,6 +38,10 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(tuple(x for x in range(10) if x % 2),
                          (1, 3, 5, 7, 9))
 
+    def test_too_many_args(self):
+        with self.assertRaises(TypeError):
+            tuple([1, 2], 3)
+
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             tuple(sequence=())
@@ -118,6 +122,18 @@ class TupleTest(seq_tests.CommonTest):
         check_one_exact((0.5,), 2077348973, -408149959306781352)
         check_one_exact((0.5, (), (-2, 3, (4, 6))), 714642271,
                         -1845940830829704396)
+
+    @support.skip_if_huge_c_stack(500_000)
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    def test_hash_deeply_nested(self):
+        # This should raise a RecursionError and not crash.
+        # See https://github.com/python/cpython/issues/154318.
+        t = ()
+        for _ in range(500_000):
+            t = (t,)
+        with self.assertRaisesRegex(RecursionError, "while hashing a tuple"):
+            hash(t)
 
     # Various tests for hashing of tuples to check that we get few collisions.
     # Does something only if RUN_ALL_HASH_TESTS is true.
@@ -433,6 +449,45 @@ class TupleTest(seq_tests.CommonTest):
         c = self.type2test([1, 3])
         self.assertLess(a, b)
         self.assertLess(b, c)
+
+    def test_hash_unhashable_note(self):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash(("alice", []))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1"])
+
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash((("alice", []), 42))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1",
+                          "when hashing tuple item 0"])
+
+        class BrokenHash:
+            def __hash__(self):
+                raise TypeError("custom failure")
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHash(),))
+        self.assertEqual(cm.exception.__notes__, ["when hashing tuple item 0"])
+
+        class BrokenHashNote:
+            def __hash__(self):
+                exc = TypeError("custom failure")
+                exc.add_note("from custom hash")
+                raise exc
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHashNote(),))
+        self.assertEqual(cm.exception.__notes__,
+                         ["from custom hash", "when hashing tuple item 0"])
+
+        class BrokenHashValueError:
+            def __hash__(self):
+                raise ValueError("custom failure")
+
+        with self.assertRaisesRegex(ValueError, "custom failure") as cm:
+            hash((BrokenHashValueError(),))
+        self.assertFalse(hasattr(cm.exception, "__notes__"))
 
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
