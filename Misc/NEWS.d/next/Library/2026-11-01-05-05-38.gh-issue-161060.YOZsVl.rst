@@ -1,0 +1,5 @@
+Fix a crash in :mod:`xml.parsers.expat` when a handler raises an exception,
+or the :meth:`~xml.parsers.expat.xmlparser.DefaultHandler` or
+:meth:`~xml.parsers.expat.xmlparser.DefaultHandlerExpand` handler is unset,
+while a token longer than 1024 bytes, such as a comment, is being reported to
+the default handler from a document that is not encoded in UTF-8.
