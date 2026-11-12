@@ -1,2 +1,0 @@
-Fix incorrect backup names around daylight saving time changes in
-:class:`logging.handlers.TimedRotatingFileHandler`, including delayed rollovers.

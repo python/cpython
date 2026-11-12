@@ -1328,6 +1328,18 @@ class BaseTaskTests:
 
         self.loop.run_until_complete(self.new_task(self.loop, coro()))
 
+    def test_gather_invalid_arg_does_not_add_awaited_by(self):
+        async def coro():
+            task = self.new_task(self.loop, asyncio.sleep(0))
+            try:
+                with self.assertRaises(TypeError):
+                    asyncio.gather(task, None)
+                self.assertFalse(task._asyncio_awaited_by)
+            finally:
+                await task
+
+        self.loop.run_until_complete(self.new_task(self.loop, coro()))
+
     def test_gather_discards_awaited_by_for_pending(self):
         # gh-157213: a child outliving gather() must lose the awaited-by edge
         async def fail():
