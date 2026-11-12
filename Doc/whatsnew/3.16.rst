@@ -511,6 +511,17 @@ gzip
 http.client
 -----------
 
+* :class:`~http.client.HTTPConnection` now honors an ``Expect: 100-Continue``
+  request header: the request body is sent only after the server responds
+  with ``100 Continue``, or once the new *continue_timeout* of
+  :meth:`~http.client.HTTPConnection.request` and
+  :meth:`~http.client.HTTPConnection.putrequest` expires.  If the server
+  responds with a final status instead, the body is not sent.
+  :meth:`~http.client.HTTPConnection.getresponse` gains a *support_continue*
+  parameter to return ``100 Continue`` responses to the caller.
+  (Contributed by Ashwin Menon, Tim Bartlett and Senthil Kumaran in
+  :gh:`42550`.)
+
 * Add the :exc:`~http.client.ProxyTunnelError` exception, a subclass of
   :exc:`OSError` raised when a proxy rejects the CONNECT request sent for
   :meth:`~http.client.HTTPConnection.set_tunnel`.  It exposes the status
