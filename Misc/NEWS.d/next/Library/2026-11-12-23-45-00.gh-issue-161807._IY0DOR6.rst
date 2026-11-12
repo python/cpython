@@ -1,0 +1,6 @@
+Fix :func:`xml.etree.ElementTree.Element.find`,
+:func:`~xml.etree.ElementTree.Element.findall`,
+:func:`~xml.etree.ElementTree.Element.findtext`, and
+:func:`~xml.etree.ElementTree.Element.iterfind` raising :exc:`TypeError`
+when called with an empty path string. They now return ``None``, ``[]``,
+the default value, and an empty iterator, respectively.

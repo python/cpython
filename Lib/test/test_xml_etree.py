@@ -4064,6 +4064,28 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(root.findall(".//{}b")),
                          summarize_list(root.findall(".//b")))
 
+    def test_find_empty_path(self):
+        # gh-161807: empty path should not raise TypeError
+        e = ET.XML(SAMPLE_XML)
+        self.assertIsNone(e.find(""))
+        self.assertEqual(e.findall(""), [])
+        self.assertIsNone(e.findtext(""))
+        self.assertEqual(e.findtext("", "default"), "default")
+        self.assertEqual(list(e.iterfind("")), [])
+
+        # Same with namespaces
+        ns = {"ns": "http://example.com"}
+        self.assertIsNone(e.find("", ns))
+        self.assertEqual(e.findall("", ns), [])
+        self.assertIsNone(e.findtext("", namespaces=ns))
+        self.assertEqual(list(e.iterfind("", ns)), [])
+
+        # Also test through ElementTree
+        tree = ET.ElementTree(e)
+        self.assertIsNone(tree.find(""))
+        self.assertEqual(tree.findall(""), [])
+        self.assertIsNone(tree.findtext(""))
+
     def test_bad_find(self):
         e = ET.XML(SAMPLE_XML)
         with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
