@@ -1236,6 +1236,7 @@ class KDFTests(unittest.TestCase):
         (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt',
          4096, -1),
         (b'pass\0word', b'sa\0lt', 4096, 16),
+        # FIPS (NIST SP 800-132) needs salt of at least 128 bits (16 bytes)
         (b'password', b'salt'*4, 1, None),
         (b'password', b'salt'*4, 2, None),
         (b'password', b'salt'*4, 4096, None),
