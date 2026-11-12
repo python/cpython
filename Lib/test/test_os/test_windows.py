@@ -478,9 +478,13 @@ class Win32ChmodTests(unittest.TestCase):
         # Make FILE_ATTRIBUTE_READONLY the only attribute of the file
         # (in particular, clear FILE_ATTRIBUTE_ARCHIVE).
         ctypes = import_helper.import_module('ctypes')
+        wintypes = import_helper.import_module('ctypes.wintypes')
         kernel32 = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
-        if not kernel32.SetFileAttributesW(self.fname,
-                                           stat.FILE_ATTRIBUTE_READONLY):
+        SetFileAttributesW = kernel32.SetFileAttributesW
+        SetFileAttributesW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD)
+        SetFileAttributesW.restype = wintypes.BOOL
+
+        if not SetFileAttributesW(self.fname, stat.FILE_ATTRIBUTE_READONLY):
             raise ctypes.WinError(ctypes.get_last_error())
         attributes = os.stat(self.fname).st_file_attributes
         if attributes != stat.FILE_ATTRIBUTE_READONLY:
@@ -502,8 +506,18 @@ class Win32ChmodTests(unittest.TestCase):
         try:
             self._set_readonly_only_attribute()
             os.fchmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
+
+            self._set_readonly_only_attribute()
+            os.chmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
         finally:
             os.close(fd)
+
+    def test_pathlib_chmod_clears_readonly_without_other_attributes(self):
+        import pathlib
+        self._set_readonly_only_attribute()
+        pathlib.Path(self.fname).chmod(stat.S_IWRITE | stat.S_IREAD)
         self._assert_writable()
 
 
