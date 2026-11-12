@@ -2727,7 +2727,8 @@ differences between platforms in handling of unsupported format specifiers.
    :meth:`~.datetime.strptime`.
 
 .. versionadded:: 3.16
-   ``%Nf`` and ``%C`` were added for :meth:`~.datetime.strptime`.
+   ``%Nf`` was added.
+   ``%C`` was added for :meth:`~.datetime.strptime`.
 
 
 Technical detail
