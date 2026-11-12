@@ -2067,7 +2067,7 @@ static PyObject *
 gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (basicsize > PY_SSIZE_T_MAX - presize) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return _PyErr_NoMemory(tstate);
     }
     size_t size = presize + basicsize;

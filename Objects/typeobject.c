@@ -2546,13 +2546,22 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
      * tuple. See GH-100659 and GH-81381. */
     size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
-    const size_t presize = _PyType_PreHeaderSize(type);
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         assert(type->tp_itemsize == 0);
-        size += _PyInlineValuesSize(type);
+        size_t inline_values_size = _PyInlineValuesSize(type);
+        if (size > (size_t)PY_SSIZE_T_MAX - inline_values_size) {
+            return PyErr_NoMemory();
+        }
+        size += inline_values_size;
     }
+
+    const size_t presize = _PyType_PreHeaderSize(type);
+    if (size > (size_t)PY_SSIZE_T_MAX - presize) {
+        return PyErr_NoMemory();
+    }
+
     char *alloc = _PyObject_MallocWithType(type, size + presize);
-    if (alloc  == NULL) {
+    if (alloc == NULL) {
         return PyErr_NoMemory();
     }
     obj = (PyObject *)(alloc + presize);
