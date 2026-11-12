@@ -103,6 +103,21 @@ The :mod:`!functools` module defines the following functions:
    *maxsize* and *typed* are supported as keyword arguments to the decorator,
    and are passed to the underlying :func:`lru_cache`.
 
+   Composition with :deco:`property` is supported, and has slightly different
+   mechanics from :func:`cached_property`. As a result, the two decorators can
+   be combined in cases where the instances do not have a ``__dict__`` -- for
+   example, on slotted classes.
+
+   .. note::
+
+      :func:`cached_method` does not support composition with
+      :deco:`classmethod` or :deco:`staticmethod`. Users who wish to have
+      caching on :func:`classmethod`\s and :func:`staticmethod`\s should use
+      :func:`cache` or :func:`lru_cache` instead.
+
+      Because an inner decorator sees a normal function, these combinations
+      cannot be reliably detected when the method is declared.
+
    .. versionadded:: next
 
 
