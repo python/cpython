@@ -2587,6 +2587,20 @@ class ExpectContinueTests(TestCase):
         self.assertIn(b'Body content', conn.sock.data)
         self.assertEqual(conn.getresponse().code, 200)
 
+    def test_failed_putrequest_preserves_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.putrequest('PUT', '/', continue_timeout=0.25)
+        with self.assertRaises(client.CannotSendRequest):
+            conn.putrequest('GET', '/', continue_timeout=10)
+        conn.putheader('Expect', '100-continue')
+        conn.putheader('Content-Length', '12')
+        conn.endheaders(b'Body content')
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+
     def test_invalid_continue_timeout(self):
         conn = FakeSocketHTTPConnection(b'')
         for timeout in (0, -1):
