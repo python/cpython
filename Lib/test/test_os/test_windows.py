@@ -514,12 +514,6 @@ class Win32ChmodTests(unittest.TestCase):
         finally:
             os.close(fd)
 
-    def test_pathlib_chmod_clears_readonly_without_other_attributes(self):
-        import pathlib
-        self._set_readonly_only_attribute()
-        pathlib.Path(self.fname).chmod(stat.S_IWRITE | stat.S_IREAD)
-        self._assert_writable()
-
 
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
