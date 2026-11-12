@@ -560,8 +560,6 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
         self.assertEqual(_testfunc_callback_int_to_longlong(cb), -1)
 
-
-class ImportSideEffectsTestCase(unittest.TestCase):
     def test_import_does_not_open_fds(self):
         # gh-135893: Importing ctypes must not allocate a libffi closure,
         # which can leave a file descriptor open for the rest of the
