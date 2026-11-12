@@ -243,10 +243,22 @@ If you use a class with a custom metaclass and access ``__annotations__``
 on the class, you may observe unexpected behavior; see
 :pep:`749 <749#pep749-metaclasses>` for some examples. You can avoid these
 quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or
-:func:`inspect.get_annotations` on Python 3.10+. On earlier versions of
-Python, you can avoid these bugs by accessing the annotations from the
-class's :attr:`~type.__dict__`
-(for example, ``cls.__dict__.get('__annotations__', None)``).
+:func:`inspect.get_annotations` on Python 3.10+.
+
+.. note::
+
+   On Python 3.14 and later, annotations are evaluated lazily (see
+   :pep:`649` and :pep:`749`), and how the annotations dict is stored in
+   the class's :attr:`~type.__dict__` is a private implementation detail.
+   Reading ``cls.__dict__.get('__annotations__', None)`` may therefore
+   return ``None`` even when the class has annotations. On these versions,
+   always use :func:`annotationlib.get_annotations` (or
+   :func:`inspect.get_annotations`) rather than accessing
+   :attr:`~type.__dict__` directly.
+
+Only on Python 3.9 and earlier, where neither function is available, can you
+avoid these bugs by reading the annotations from the class's
+:attr:`~type.__dict__` (for example, ``cls.__dict__.get('__annotations__', None)``).
 
 In some versions of Python, instances of classes may have an ``__annotations__``
 attribute. However, this is not supported functionality. If you need the

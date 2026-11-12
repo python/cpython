@@ -322,10 +322,12 @@ Miscellaneous options
    Run Python in isolated mode. This also implies :option:`-E`, :option:`-P`
    and :option:`-s` options.
 
-   In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All ``PYTHON*`` environment
-   variables are ignored, too. Further restrictions may be imposed to prevent
-   the user from injecting malicious code.
+   In isolated mode, Python does not prepend the potentially unsafe path
+   :data:`sys._path0` to :data:`sys.path`, and ignores all ``PYTHON*``
+   environment variables, e.g.  :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`,
+   that might be set.
+   Further restrictions may be imposed to prevent the user from injecting
+   malicious code.
 
    .. versionadded:: 3.4
 
@@ -353,14 +355,8 @@ Miscellaneous options
 
 .. option:: -P
 
-   Don't prepend a potentially unsafe path to :data:`sys.path`:
-
-   * ``python -m module`` command line: Don't prepend the current working
-     directory.
-   * ``python script.py`` command line: Don't prepend the script's directory.
-     If it's a symbolic link, resolve symbolic links.
-   * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
-     empty string, which means the current working directory.
+   Don't prepend the potentially unsafe path :data:`sys._path0` to
+   :data:`sys.path`.
 
    See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
    and :option:`-I` (isolated) options.
@@ -519,7 +515,25 @@ Miscellaneous options
 .. option:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
-   ``#!cmd``.  This is intended for a DOS specific hack only.
+   ``#!cmd``.
+
+   This can be used to turn a Python script into a Windows batch file.
+   Similarly to adding a shebang line and setting the executable bit on Unix,
+   the extension of the Python script can be changed to ``.bat`` and the
+   following line can be added at the start of the script:
+
+   .. code-block:: batch
+
+      @py -x "%~f0" %* & exit /b
+
+   Or, to specify the path to the Python interpreter explicitly:
+
+   .. code-block:: batch
+
+      @"C:\Path\to\python.exe" -x "%~f0" %* & exit /b
+
+   Unlike a shebang line which is a Python comment, this line is not valid
+   Python syntax, and the :option:`-x` option is needed to skip it.
 
 
 .. option:: -X
@@ -634,7 +648,7 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * ``-X disable_remote_debug`` disables the remote debugging support as described
+   * ``-X disable-remote-debug`` disables the remote debugging support as described
      in :pep:`768`.  This includes both the functionality to schedule code for
      execution in another process and the functionality to receive code for
      execution in the current process.
@@ -802,7 +816,9 @@ conflict.
 .. envvar:: PYTHONSAFEPATH
 
    If this is set to a non-empty string, don't prepend a potentially unsafe
-   path to :data:`sys.path`: see the :option:`-P` option for details.
+   path :data:`sys._path0` to :data:`sys.path`.
+
+   See also the :option:`-P` option.
 
    .. versionadded:: 3.11
 
@@ -1295,7 +1311,7 @@ conflict.
    to schedule code for execution in another process and the functionality to
    receive code for execution in the current process.
 
-   See also the :option:`-X disable_remote_debug` command-line option.
+   See also the :option:`-X disable-remote-debug` command-line option.
 
    .. versionadded:: 3.14
 

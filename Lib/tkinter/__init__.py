@@ -170,6 +170,9 @@ def _parse_version(version):
         releaselevel = {'a': 'alpha', 'b': 'beta'}[releaselevel]
     return _VersionInfoType(major, minor, micro, releaselevel, serial)
 
+TCL_VERSION_INFO = _parse_version(_tkinter.TCL_PATCH_LEVEL)
+TK_VERSION_INFO = _parse_version(_tkinter.TK_PATCH_LEVEL)
+
 
 @enum._simple_enum(enum.StrEnum)
 class EventType:
@@ -2352,7 +2355,7 @@ class Wm:
             # TODO: deprecate
             return self.tk.call('wm', 'attributes', self._w, *args)
         elif args:
-            raise TypeError('wm_attribute() options have been specified as '
+            raise TypeError('wm_attributes() options have been specified as '
                             'positional and keyword arguments')
         else:
             self.tk.call('wm', 'attributes', self._w, *self._options(kwargs))

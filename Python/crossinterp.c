@@ -388,6 +388,8 @@ _PyXIData_InitWithSize(_PyXIData_t *xidata,
     _PyXIData_Init(xidata, interp, NULL, obj, new_object);
     xidata->data = PyMem_RawCalloc(1, size);
     if (xidata->data == NULL) {
+        Py_CLEAR(xidata->obj);
+        PyErr_NoMemory();
         return -1;
     }
     xidata->free = PyMem_RawFree;
@@ -664,6 +666,11 @@ check_missing___main___attr(PyObject *exc)
         }
     }
     const char *err = PyUnicode_AsUTF8(msgobj);
+    if (err == NULL) {
+        PyErr_Clear();
+        Py_DECREF(msgobj);
+        return 0;
+    }
 
     // Check if it's a missing __main__ attr.
     int cmp = strncmp(err, "module '__main__' has no attribute '", 36);
