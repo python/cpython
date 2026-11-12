@@ -445,6 +445,10 @@ The following classes are provided:
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
 
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
+
 
 .. class:: AbstractDigestAuthHandler(password_mgr=None)
 
@@ -481,6 +485,10 @@ The following classes are provided:
    something that is compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
 
 
 .. class:: HTTPHandler()
@@ -1102,6 +1110,14 @@ ProxyBasicAuthHandler Objects
 
    Retry the request with authentication information, if available.
 
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
+
 
 .. _abstract-digest-auth-handler:
 
@@ -1140,6 +1156,14 @@ ProxyDigestAuthHandler Objects
 .. method:: ProxyDigestAuthHandler.http_error_407(req, fp, code,  msg, hdrs)
 
    Retry the request with authentication information, if available.
+
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
 
 
 .. _http-handler-objects:
