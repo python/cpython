@@ -1268,7 +1268,6 @@ class HTTPConnection:
         """
         if continue_timeout <= 0.0:
             raise ValueError("continue_timeout must be greater than 0")
-        self._continue_timeout = continue_timeout
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
@@ -1294,6 +1293,7 @@ class HTTPConnection:
         #
         if self.__state == _CS_IDLE:
             self.__state = _CS_REQ_STARTED
+            self._continue_timeout = continue_timeout
         else:
             raise CannotSendRequest(self.__state)
 
