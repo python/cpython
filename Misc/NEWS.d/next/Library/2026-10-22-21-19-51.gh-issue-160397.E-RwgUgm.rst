@@ -1,0 +1,5 @@
+The C implementation of :mod:`warnings` no longer takes the warnings lock
+when emitting a warning, so user code such as a custom
+:func:`~warnings.showwarning` no longer runs with the lock held.  On the
+:term:`free-threaded build`, the filter search and the registry updates use
+per-object critical sections instead.
