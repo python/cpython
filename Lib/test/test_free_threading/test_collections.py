@@ -126,9 +126,8 @@ class TestOrderedDict(unittest.TestCase):
         threading_helper.run_concurrently([mutate, iterate, iterate])
 
     def test_bulk_materialize_race(self):
-        # list(d) copies the deque under its critical section and must see
-        # a consistent snapshot; list(iter(d)) and str.join() first create
-        # an iterator, so a mutation in between is reported as by next().
+        # list(d), list(iter(d)) and str.join(d) copy the deque in chunks
+        # under its critical section while another thread mutates it.
         d = deque(str(i) for i in range(200))
 
         def mutate():
@@ -139,15 +138,18 @@ class TestOrderedDict(unittest.TestCase):
                     d.rotate(7)
 
         def materialize():
+            # The copy holds the deque's lock for at most one chunk at a
+            # time, so, as with next(), a mutation between chunks raises
+            # RuntimeError; a completed copy is consistent.
             for _ in range(2000):
-                self.assertIn(len(list(d)), (200, 201))
                 for func in (list, ''.join):
-                    try:
-                        res = func(iter(d))
-                    except RuntimeError:
-                        continue
-                    if func is list:
-                        self.assertIn(len(res), (200, 201))
+                    for arg in (d, iter(d)):
+                        try:
+                            res = func(arg)
+                        except RuntimeError:
+                            continue
+                        if func is list:
+                            self.assertIn(len(res), (200, 201))
 
         threading_helper.run_concurrently([mutate, materialize, materialize])
 
