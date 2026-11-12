@@ -1,5 +1,7 @@
-Fix a :exc:`SystemError` in :mod:`sqlite3`. The error occurs when a
-collation callback raises an exception and the same step then fails during a
-fetch. In debug builds, an assertion fails. Now the module raises
-:exc:`~sqlite3.OperationalError` for the step failure, as
-:meth:`~sqlite3.Cursor.execute` does.
+Fix a :exc:`SystemError` in :mod:`sqlite3` when a collation callback raises
+an exception. This error occurs when you fetch rows from a cursor and when you
+call :meth:`~sqlite3.Cursor.executescript`. Now the exception from the
+collation propagates. If the step also fails, the module raises
+:exc:`~sqlite3.OperationalError`, as :meth:`~sqlite3.Cursor.execute` does.
+When callback tracebacks are enabled, the module now reports the collation
+exception with :func:`sys.unraisablehook`, as the documentation says.
