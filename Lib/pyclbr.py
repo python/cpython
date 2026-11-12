@@ -42,8 +42,8 @@ shouldn't happen often.
 """
 
 import ast
+import importlib._bootstrap
 import sys
-import importlib.util
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
@@ -162,7 +162,9 @@ def _readmodule(module, path, inpackage=None):
         search_path = path
     else:
         search_path = path + sys.path
-    spec = importlib.util._find_spec_from_path(fullmodule, search_path)
+    # gh-87465: Bypass sys.modules since pyclbr maintains its own _modules
+    # cache and entries like __main__ may have __spec__ set to None.
+    spec = importlib._bootstrap._find_spec(fullmodule, search_path)
     if spec is None:
         raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree

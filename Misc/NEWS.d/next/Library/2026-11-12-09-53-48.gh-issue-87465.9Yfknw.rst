@@ -1,0 +1,5 @@
+Fix :exc:`ValueError` in :func:`pyclbr.readmodule` and
+:func:`pyclbr.readmodule_ex` when browsing a module that imports
+:mod:`__main__` or another module in :data:`sys.modules` without a
+``__spec__``, and look up module specs from the search path instead of
+:data:`sys.modules`.
