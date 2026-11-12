@@ -541,6 +541,10 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
+/* A collation callback cannot report an error to SQLite. If it raises, the
+ * exception stays set until sqlite3_step() returns, and SQLite continues
+ * the step with the wrong result of the comparison. Thus, after a step, check
+ * PyErr_Occurred() first, and propagate that exception. */
 static inline int
 stmt_step(sqlite3_stmt *statement)
 {
@@ -551,23 +555,6 @@ stmt_step(sqlite3_stmt *statement)
     Py_END_ALLOW_THREADS
 
     return rc;
-}
-
-/* A collation callback cannot report an error to SQLite, so it keeps the
- * Python exception set while SQLite continues the step. If the step then
- * fails, call this function to report and clear that exception. The caller
- * can then raise the DB-API exception for the failure. */
-static void
-report_pending_callback_error(pysqlite_state *state)
-{
-    if (PyErr_Occurred()) {
-        if (state->enable_callback_tracebacks) {
-            PyErr_FormatUnraisable("Exception ignored on sqlite3 callback");
-        }
-        else {
-            PyErr_Clear();
-        }
-    }
 }
 
 static int
@@ -927,8 +914,11 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         rc = stmt_step(self->statement->st);
+        if (PyErr_Occurred()) {
+            /* A collation callback raised. */
+            goto error;
+        }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            report_pending_callback_error(state);
             set_error_from_db(state, self->connection->db);
             goto error;
         }
@@ -1135,12 +1125,12 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
         }
         Py_END_ALLOW_THREADS
 
+        if (PyErr_Occurred()) {
+            /* A collation callback raised. */
+            return NULL;
+        }
         if (rc != SQLITE_OK) {
             goto error;
-        }
-        if (PyErr_Occurred()) {
-            /* A collation callback raised, but the step did not fail. */
-            return NULL;
         }
 
         if (*tail == (char)0) {
@@ -1153,7 +1143,6 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
     return Py_NewRef((PyObject *)self);
 
 error:
-    report_pending_callback_error(self->connection->state);
     set_error_from_db(self->connection->state, db);
     return NULL;
 }
@@ -1181,8 +1170,8 @@ pysqlite_cursor_iternext(PyObject *op)
         return NULL;
     }
     int rc = stmt_step(stmt);
-    if ((rc == SQLITE_ROW || rc == SQLITE_DONE) && PyErr_Occurred()) {
-        /* A collation callback raised, but the step did not fail. */
+    if (PyErr_Occurred()) {
+        /* A collation callback raised. */
         (void)stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         Py_DECREF(row);
@@ -1199,7 +1188,6 @@ pysqlite_cursor_iternext(PyObject *op)
         }
     }
     else if (rc != SQLITE_ROW) {
-        report_pending_callback_error(self->connection->state);
         rc = set_error_from_db(self->connection->state, self->connection->db);
         int reset_rc = stmt_reset(self->statement);
         Py_CLEAR(self->statement);

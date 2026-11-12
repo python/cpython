@@ -150,22 +150,24 @@ class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
 
 class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
     # gh-161837: A collation callback cannot report an error to SQLite, so
-    # the exception stays set while SQLite continues the step.
+    # the exception stays set while SQLite continues the step. The module
+    # must propagate that exception, and it must not call other Python code
+    # while the exception is set.
 
-    # When the collation raises, the comparison is true, so abs() of the
-    # smallest 64-bit integer causes "integer overflow".
+    # When the collation raises, it returns 0 ("equal"). Thus the comparison
+    # is true, and abs() of the smallest 64-bit integer makes the step fail.
     step_fails = """
         select case when y = 'q' collate mycoll then abs(x) else 0 end
         from t order by rowid
         """
     step_succeeds = "select x, y = 'q' collate mycoll from t order by rowid"
-    # The cursor reads one row ahead, so the first fetch steps to the
-    # second row, where the collation raises.
 
     def setUp(self):
         super().setUp()
+        self.events = []
         def mycoll(x, y):
             if x == "boom":
+                self.events.append("collation raised")
                 raise KeyError("collation raised")
             return (x > y) - (x < y)
         self.con.create_collation("mycoll", mycoll)
@@ -173,56 +175,124 @@ class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
         self.con.executemany("insert into t values (?, ?)",
                              [(1, "a"), (-2**63, "boom")])
 
-    @with_tracebacks(KeyError, regex="collation raised",
-                     msg_regex="sqlite3 callback")
-    def test_step_failure_in_execute(self):
-        with self.assertRaisesRegex(sqlite.OperationalError,
-                                    "integer overflow"):
-            self.con.execute(self.step_fails + " desc")
+    def assertCollationRaises(self):
+        return self.assertRaisesRegex(KeyError, "collation raised")
 
-    @with_tracebacks(KeyError, regex="collation raised",
-                     msg_regex="sqlite3 callback")
-    def test_step_failure_in_fetchone(self):
-        cur = self.con.execute(self.step_fails)
-        with self.assertRaisesRegex(sqlite.OperationalError,
-                                    "integer overflow"):
-            cur.fetchone()
-        self.assertIsNone(cur.fetchone())
+    def test_execute(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql), self.assertCollationRaises():
+                self.con.execute(sql + " desc")
 
-    @with_tracebacks(KeyError, regex="collation raised",
-                     msg_regex="sqlite3 callback")
-    def test_step_failure_in_iteration(self):
-        with self.assertRaisesRegex(sqlite.OperationalError,
-                                    "integer overflow"):
-            list(self.con.execute(self.step_fails))
+    def test_fetchone(self):
+        # The cursor reads one row ahead, so the first fetch steps to the
+        # row that makes the collation raise.
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                cur = self.con.execute(sql)
+                with self.assertCollationRaises():
+                    cur.fetchone()
+                self.assertIsNone(cur.fetchone())
+                self.assertEqual(cur.execute("select 1").fetchone(), (1,))
 
-    @with_tracebacks(KeyError, regex="collation raised",
-                     msg_regex="sqlite3 callback")
-    def test_step_failure_in_executescript(self):
-        with self.assertRaisesRegex(sqlite.OperationalError,
-                                    "integer overflow"):
-            self.con.executescript(self.step_fails)
+    def test_iteration(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                rows = []
+                with self.assertCollationRaises():
+                    for row in self.con.execute(sql):
+                        rows.append(row)
+                self.assertEqual(rows, [])
 
-    def test_error_in_fetchone(self):
-        cur = self.con.execute(self.step_succeeds)
-        with self.assertRaisesRegex(KeyError, "collation raised"):
-            cur.fetchone()
-        self.assertIsNone(cur.fetchone())
-        self.assertEqual(cur.execute("select 1").fetchone(), (1,))
+    def test_executemany(self):
+        def params():
+            yield ("boom",)
+            self.fail("executemany() continued after the exception")
+        with self.assertCollationRaises():
+            self.con.executemany(
+                "insert into t(y) values (? = 'q' collate mycoll)", params())
 
-    def test_error_in_iteration(self):
-        rows = []
-        with self.assertRaisesRegex(KeyError, "collation raised"):
-            for row in self.con.execute(self.step_succeeds):
-                rows.append(row)
-        self.assertEqual(rows, [])
+    def test_executescript(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                with self.assertCollationRaises():
+                    self.con.executescript(sql + "; create table u(x)")
+                # The script stops after the statement with the exception.
+                with self.assertRaisesRegex(sqlite.OperationalError,
+                                            "no such table"):
+                    self.con.execute("select * from u")
 
-    def test_error_in_executescript(self):
-        with self.assertRaisesRegex(KeyError, "collation raised"):
-            self.con.executescript(self.step_succeeds + "; create table u(x)")
-        # The script stops after the statement that caused the error.
-        with self.assertRaisesRegex(sqlite.OperationalError, "no such table"):
-            self.con.execute("select * from u")
+    def test_converter_not_used(self):
+        with memory_database(detect_types=sqlite.PARSE_COLNAMES) as con:
+            con.create_collation("mycoll", lambda x, y: 1 / 0)
+            with self.assertRaises(ZeroDivisionError):
+                con.execute("select 'a' = 'b' collate mycoll as \"x [conv]\"")
+
+    def test_function_not_called(self):
+        calls = []
+        self.con.create_function("f", 1, calls.append)
+        with self.assertCollationRaises():
+            self.con.execute("select f(y = 'q' collate mycoll) from t "
+                             "order by rowid desc")
+        self.assertEqual(calls, [])
+
+    def test_aggregate_not_called(self):
+        calls = []
+        class Agg:
+            def step(self, value):
+                calls.append(value)
+            def finalize(self):
+                return len(calls)
+        self.con.create_aggregate("agg", 1, Agg)
+        with self.assertCollationRaises():
+            self.con.execute("select agg(y = 'q' collate mycoll) from t "
+                             "where rowid = 2")
+        self.assertEqual(calls, [])
+
+    def test_window_function_not_called(self):
+        calls = []
+        class Window:
+            def step(self, value):
+                calls.append("step")
+            def inverse(self, value):
+                calls.append("inverse")
+            def value(self):
+                calls.append("value")
+                return 0
+            def finalize(self):
+                return 0
+        self.con.create_window_function("win", 1, Window)
+        # SQLite evaluates the filter for all rows before it calls the
+        # window function. The filter is false for the first row, so the
+        # first call after the exception is value().
+        with self.assertCollationRaises():
+            self.con.execute("""
+                select win(x) filter (where y = 'q' collate mycoll)
+                over (order by rowid) from t
+                """).fetchall()
+        self.assertEqual(calls, [])
+
+    def test_progress_handler_not_called(self):
+        def progress():
+            self.events.append("progress")
+            return 0
+        self.con.set_progress_handler(progress, 1)
+        with self.assertCollationRaises():
+            self.con.execute(self.step_succeeds + " desc")
+        self.con.set_progress_handler(None, 1)
+        self.assertEqual(self.events[-1], "collation raised")
+        self.assertIn("progress", self.events)
+
+    def test_trace_callback_not_called(self):
+        self.con.execute("create table u(x)")
+        self.con.execute("create trigger tr after insert on u "
+                         "begin select 1; end")
+        traced = []
+        self.con.set_trace_callback(traced.append)
+        with self.assertCollationRaises():
+            self.con.execute("insert into u select y = 'q' collate mycoll "
+                             "from t order by rowid desc")
+        self.con.set_trace_callback(None)
+        self.assertNotIn("-- TRIGGER tr", traced)
 
 
 class AuthorizerTests(MemoryDatabaseMixin, unittest.TestCase):
