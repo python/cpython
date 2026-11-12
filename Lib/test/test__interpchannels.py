@@ -5,6 +5,7 @@ from textwrap import dedent
 import threading
 import time
 import unittest
+import types
 
 from test.support import import_helper
 
@@ -351,6 +352,17 @@ class ChannelIDTests(TestBase):
         self.assertFalse(cid1 != cid1)
         self.assertFalse(cid1 != cid2)
         self.assertTrue(cid1 != cid3)
+
+    def test_richcompare_empty_module_state(self):
+        # gh-161841
+        with import_helper.CleanImport("_interpchannels"):
+            import _interpchannels as ch
+            sys.modules["_interpchannels"] = types.ModuleType("_interpchannels")
+
+            cid = ch.create()
+            self.assertTrue(cid == cid)
+            self.assertTrue(cid == int(cid))
+            self.assertFalse(cid == int(cid) + 1)
 
     def test_shareable(self):
         chan = _channels.create(REPLACE)
