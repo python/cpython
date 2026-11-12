@@ -1,0 +1,2 @@
+Improve performance of iterating over a :class:`collections.deque` in the
+:term:`free-threaded build` by locking only the deque, not the iterator.
