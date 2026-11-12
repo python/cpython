@@ -1,0 +1,3 @@
+Prevent :mod:`multiprocessing` ``spawn`` and ``forkserver`` workers from leaking
+internal file descriptors to programs launched by those workers. This avoids
+waiting for unrelated descendants when joining a worker.

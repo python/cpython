@@ -448,6 +448,11 @@ def _serve_one(child_r, fds, unused_fds, handlers):
     for fd in unused_fds:
         os.close(fd)
 
+    # SCM_RIGHTS and the forkserver's own fds must not leak through
+    # subsequent execs by the worker process.
+    for inherited_fd in (child_r, *fds):
+        os.set_inheritable(inherited_fd, False)
+
     (_forkserver._forkserver_alive_fd,
      resource_tracker._resource_tracker._fd,
      *_forkserver._inherited_fds) = fds

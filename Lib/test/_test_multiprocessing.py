@@ -6296,6 +6296,65 @@ class TestCloseFds(unittest.TestCase):
             self.assertTrue(e.errno == errno.EBADF or
                             e.winerror == WSAENOTSOCK, e)
 
+    @staticmethod
+    def _test_passed_fds_are_not_inheritable(conn):
+        from multiprocessing import resource_tracker
+        fds = [conn.fileno(), resource_tracker._resource_tracker._fd]
+        if multiprocessing.get_start_method() == 'forkserver':
+            from multiprocessing import forkserver
+            fds.append(forkserver._forkserver._forkserver_alive_fd)
+        conn.send([os.get_inheritable(fd) for fd in fds])
+
+    @unittest.skipIf(WIN32, "POSIX file descriptors only")
+    def test_passed_fds_are_not_inheritable(self):
+        if multiprocessing.get_start_method() not in ('spawn', 'forkserver'):
+            self.skipTest("only applies to spawn and forkserver")
+        reader, writer = multiprocessing.Pipe(duplex=False)
+        try:
+            p = multiprocessing.Process(
+                target=self._test_passed_fds_are_not_inheritable,
+                args=(writer,))
+            p.start()
+            writer.close()
+            self.assertEqual(reader.recv(), [False] *
+                             (3 if multiprocessing.get_start_method() == 'forkserver'
+                              else 2))
+            join_process(p)
+        finally:
+            writer.close()
+            reader.close()
+
+    @staticmethod
+    def _test_exec_grandchild(conn):
+        grandchild = subprocess.Popen(
+            [sys.executable, '-c', 'import time; time.sleep(30)'],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, close_fds=False)
+        conn.send(grandchild.pid)
+
+    @unittest.skipIf(WIN32, "POSIX file descriptors only")
+    @only_run_in_spawn_testsuite("spawn sentinel file descriptor")
+    def test_spawn_sentinel_does_not_leak_to_exec(self):
+        reader, writer = multiprocessing.Pipe(duplex=False)
+        grandchild_pid = None
+        p = multiprocessing.Process(target=self._test_exec_grandchild,
+                                    args=(writer,))
+        try:
+            p.start()
+            writer.close()
+            grandchild_pid = reader.recv()
+            p.join(timeout=2)
+            self.assertEqual(p.exitcode, 0)
+        finally:
+            if grandchild_pid is not None:
+                try:
+                    os.kill(grandchild_pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+            p.join(timeout=support.SHORT_TIMEOUT)
+            writer.close()
+            reader.close()
+
 #
 # Issue #17097: EINTR should be ignored by recv(), send(), accept() etc
 #

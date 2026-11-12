@@ -17,6 +17,7 @@ class _DupFd(object):
     def __init__(self, fd):
         self.fd = fd
     def detach(self):
+        os.set_inheritable(self.fd, False)
         return self.fd
 
 #
@@ -53,7 +54,8 @@ class Popen(popen_fork.Popen):
             parent_r, child_w = os.pipe()
             child_r, parent_w = os.pipe()
             cmd = spawn.get_command_line(tracker_fd=tracker_fd,
-                                         pipe_handle=child_r)
+                                         pipe_handle=child_r,
+                                         sentinel_fd=child_w)
             self._fds.extend([child_r, child_w])
             self.pid = util.spawnv_passfds(spawn.get_executable(),
                                            cmd, self._fds)
