@@ -78,7 +78,17 @@ class FormatTestsBase:
             self.key('base_interpreter')
 
     def test_platform(self):
-        self.assertEqual(self.key('platform'), sysconfig.get_platform())
+        build_platform = self.key('platform')
+        run_platform = sysconfig.get_platform()
+        if (build_platform != run_platform
+                and sys.platform == 'linux' and sys.maxsize < 2**32):
+            # The platform entry describes the machine the build was made
+            # on.  A 32-bit process on a 64-bit kernel sees the kernel's
+            # machine name instead ('x86_64' for an i686 build, 'armv8l' or
+            # 'aarch64' for an armv7l build), so the two can legitimately
+            # differ (gh-161870).
+            self.skipTest('the build machine may differ for 32-bit builds')
+        self.assertEqual(build_platform, run_platform)
 
     def test_language_version(self):
         allowed_characters = string.digits + string.ascii_letters + '.'
