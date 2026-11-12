@@ -1123,6 +1123,44 @@ CDataType_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         _Py_LeaveRecursiveCall();
         return value;
     }
+    /*
+       CFUNCTYPE and WINFUNCTYPE prototypes are distinct classes that
+       share one type name (CFunctionType or WinFunctionType).  Include
+       both signatures so a mismatch can be told apart.  Other mismatches
+       keep the generic message.  (gh-125788)
+    */
+    if (PyCFuncPtrTypeObject_Check(st, type) &&
+        PyCFuncPtrObject_Check(st, value)) {
+        StgInfo *expected_info;
+        StgInfo *actual_info;
+
+        if (PyStgInfo_FromType(st, type, &expected_info) < 0) {
+            return NULL;
+        }
+        if (PyStgInfo_FromType(st, (PyObject *)Py_TYPE(value),
+                               &actual_info) < 0) {
+            return NULL;
+        }
+        if (expected_info != NULL && actual_info != NULL &&
+            expected_info->argtypes != NULL &&
+            actual_info->argtypes != NULL) {
+            PyObject *expected_restype = expected_info->restype ?
+                                         expected_info->restype : Py_None;
+            PyObject *actual_restype = actual_info->restype ?
+                                       actual_info->restype : Py_None;
+            PyErr_Format(PyExc_TypeError,
+                         "expected %s instance with signature "
+                         "(restype=%R, argtypes=%R) instead of %s instance "
+                         "with signature (restype=%R, argtypes=%R)",
+                         ((PyTypeObject *)type)->tp_name,
+                         expected_restype,
+                         expected_info->argtypes,
+                         Py_TYPE(value)->tp_name,
+                         actual_restype,
+                         actual_info->argtypes);
+            return NULL;
+        }
+    }
     PyErr_Format(PyExc_TypeError,
                  "expected %s instance instead of %s",
                  ((PyTypeObject *)type)->tp_name,

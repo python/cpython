@@ -1,0 +1,3 @@
+:mod:`ctypes` now includes the expected and actual callback signatures in
+the :exc:`TypeError` raised when a :func:`~ctypes.CFUNCTYPE` or
+:func:`~ctypes.WINFUNCTYPE` argument does not match the prototype.
