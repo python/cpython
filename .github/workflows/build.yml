@@ -41,13 +41,13 @@ jobs:
     #        || 'falsy-branch'
     #   }}
     #
-    uses: ./.github/workflows/reusable-context.yml
+    uses: $/.github/workflows/reusable-context.yml
 
   check-docs:
     name: Docs
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-docs)
-    uses: ./.github/workflows/reusable-docs.yml
+    uses: $/.github/workflows/reusable-docs.yml
 
   check-abi:
     name: 'Check if the ABI has changed'
@@ -56,10 +56,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.x'
       - name: Install dependencies
@@ -90,7 +90,7 @@ jobs:
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         run: |
           make regen-abidump
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@v7.0.1
         name: Publish updated ABI files
         if: ${{ failure() && steps.check.conclusion == 'failure' }}
         with:
@@ -112,7 +112,7 @@ jobs:
         run: |
           apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -149,10 +149,10 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.x'
       - name: Runner image version
@@ -195,7 +195,7 @@ jobs:
     if: >-
       needs.build-context.outputs.run-tests == 'true'
       || needs.build-context.outputs.run-docs == 'true'
-    uses: ./.github/workflows/reusable-check-c-api-docs.yml
+    uses: $/.github/workflows/reusable-check-c-api-docs.yml
 
   build-windows:
     name: >-
@@ -216,7 +216,7 @@ jobs:
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
-    uses: ./.github/workflows/reusable-windows.yml
+    uses: $/.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
@@ -233,7 +233,7 @@ jobs:
         - x86
         - x64
         - arm64
-    uses: ./.github/workflows/reusable-windows-msi.yml
+    uses: $/.github/workflows/reusable-windows-msi.yml
     with:
       arch: ${{ matrix.arch }}
 
@@ -257,7 +257,7 @@ jobs:
         exclude:
         - os: macos-26-intel
           free-threading: true
-    uses: ./.github/workflows/reusable-macos.yml
+    uses: $/.github/workflows/reusable-macos.yml
     with:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
@@ -290,7 +290,7 @@ jobs:
         # BOLT currently crashes during instrumentation on aarch64
         - os: ubuntu-24.04-arm
           bolt: true
-    uses: ./.github/workflows/reusable-ubuntu.yml
+    uses: $/.github/workflows/reusable-ubuntu.yml
     with:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
@@ -300,7 +300,7 @@ jobs:
     name: 'Ubuntu (installed)'
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
-    uses: ./.github/workflows/reusable-install.yml
+    uses: $/.github/workflows/reusable-install.yml
 
   build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests'
@@ -328,7 +328,7 @@ jobs:
       SSLLIB_DIR: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}/lib
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
@@ -339,7 +339,7 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore SSL library build'
       id: cache-ssl-lib
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: ./multissl/${{ matrix.ssllib.name }}/${{ matrix.ssllib.version }}
         key: ${{ matrix.os }}-multissl-${{ matrix.ssllib.name }}-${{ matrix.ssllib.version }}
@@ -387,7 +387,7 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Build and test
@@ -400,7 +400,7 @@ jobs:
     timeout-minutes: 60
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
@@ -411,13 +411,13 @@ jobs:
     name: 'Emscripten'
     needs: build-context
     if: needs.build-context.outputs.run-emscripten == 'true'
-    uses: ./.github/workflows/reusable-emscripten.yml
+    uses: $/.github/workflows/reusable-emscripten.yml
 
   build-wasi:
     name: 'WASI'
     needs: build-context
     if: needs.build-context.outputs.run-wasi == 'true'
-    uses: ./.github/workflows/reusable-wasi.yml
+    uses: $/.github/workflows/reusable-wasi.yml
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
@@ -429,7 +429,7 @@ jobs:
       OPENSSL_VER: 3.5.9
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Register gcc problem matcher
@@ -443,7 +443,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -490,7 +490,7 @@ jobs:
         ./python -m venv "$VENV_LOC" && "$VENV_PYTHON" -m pip install -r "${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt"
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/
         key: hypothesis-database-${{ github.head_ref || github.run_id }}
@@ -517,7 +517,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@v7.0.1
       if: always()
       with:
         name: hypothesis-example-db
@@ -538,7 +538,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
@@ -554,7 +554,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -592,7 +592,7 @@ jobs:
         - check-name: Memory
           sanitizer: MSan
           free-threading: false
-    uses: ./.github/workflows/reusable-san.yml
+    uses: $/.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
       free-threading: ${{ matrix.free-threading }}
@@ -604,7 +604,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Runner image version
@@ -674,7 +674,7 @@ jobs:
                 && 'no-exclude'
                 || 'python3-libraries'
               }}
-    uses: ./.github/workflows/reusable-cifuzz.yml
+    uses: $/.github/workflows/reusable-cifuzz.yml
     with:
       oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
       sanitizer: ${{ matrix.sanitizer }}
@@ -707,7 +707,7 @@ jobs:
 
     steps:
     - name: Check whether the needed jobs succeeded or failed
-      uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35
+      uses: re-actors/alls-green@v1.3.0
       with:
         allowed-failures: >-
           build-android,
