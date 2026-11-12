@@ -1286,55 +1286,42 @@ class MinidomTest(unittest.TestCase):
         root.setAttribute("xmlns", "http://xml.python.org/default")
         root.setAttribute("xmlns:xsi", "http://xml.python.org/xsi")
         root.setAttribute("xsi:type", "t")
+        root.setAttributeNS("http://xml.python.org/ns", "p:a", "v")
         root.appendChild(doc.createElement("svg:rect"))
+        root.appendChild(
+            doc.createElementNS("http://xml.python.org/ns", "p:b"))
         return doc, root
 
-    def check_dom1_names(self, node, nodeName, prefix, localName):
-        self.assertEqual(node.nodeName, nodeName)
-        self.assertEqual(node.prefix, prefix)
-        self.assertEqual(node.localName, localName)
-        self.assertIsNone(node.namespaceURI)
+    def check_clone_names(self, clone, node):
+        for name in ("nodeName", "prefix", "localName", "namespaceURI"):
+            self.assertEqual(getattr(clone, name), getattr(node, name), name)
 
-    def check_dom1_element(self, elem, doc):
-        self.assertIs(elem.ownerDocument, doc)
-        self.check_dom1_names(elem, "root", None, "root")
-        self.assertEqual(len(elem.attributes), 3)
-        for name, prefix, localName, value in [
-            ("xmlns", None, "xmlns", "http://xml.python.org/default"),
-            ("xmlns:xsi", "xmlns", "xsi", "http://xml.python.org/xsi"),
-            ("xsi:type", "xsi", "type", "t"),
-        ]:
-            with self.subTest(name=name):
-                attr = elem.getAttributeNode(name)
-                self.check_dom1_names(attr, name, prefix, localName)
-                self.assertEqual(attr.value, value)
-                self.assertIs(attr.ownerElement, elem)
-                self.assertIs(attr.ownerDocument, doc)
-        self.assertEqual(len(elem.childNodes), 1)
-        self.check_dom1_names(elem.firstChild, "svg:rect", "svg", "rect")
-        self.assertIs(elem.firstChild.ownerDocument, doc)
+    def check_clone_element(self, clone, elem, doc):
+        self.assertIs(clone.ownerDocument, doc)
+        self.assertIsNone(clone.parentNode)
+        self.check_clone_names(clone, elem)
+        self.assertEqual(len(clone.attributes), len(elem.attributes))
+        for attr in elem.attributes.values():
+            with self.subTest(attr=attr.name):
+                a = clone.getAttributeNode(attr.name)
+                self.check_clone_names(a, attr)
+                self.assertEqual(a.value, attr.value)
+                self.assertIs(a.ownerElement, clone)
+        self.assertEqual(len(clone.childNodes), len(elem.childNodes))
+        for c, child in zip(clone.childNodes, elem.childNodes):
+            self.check_clone_names(c, child)
 
     def testCloneElementDOM1Names(self):
         doc, root = self.create_dom1_element()
-        clone = root.cloneNode(True)
-        self.assertIsNot(clone, root)
-        self.assertIsNone(clone.parentNode)
-        self.check_dom1_element(clone, doc)
+        self.check_clone_element(root.cloneNode(True), root, doc)
         doc.unlink()
 
     def testCloneElementNoNamespaces(self):
         doc = xml.dom.expatbuilder.parseString(
             "<a:b xmlns:a='http://xml.python.org/a' a:x='1'><a:c/></a:b>",
             namespaces=False)
-        clone = doc.documentElement.cloneNode(True)
-        self.check_dom1_names(clone, "a:b", "a", "b")
-        self.assertEqual(clone.getAttribute("xmlns:a"),
-                         "http://xml.python.org/a")
-        self.check_dom1_names(clone.getAttributeNode("xmlns:a"),
-                              "xmlns:a", "xmlns", "a")
-        self.assertEqual(clone.getAttribute("a:x"), "1")
-        self.check_dom1_names(clone.getAttributeNode("a:x"), "a:x", "a", "x")
-        self.check_dom1_names(clone.firstChild, "a:c", "a", "c")
+        root = doc.documentElement
+        self.check_clone_element(root.cloneNode(True), root, doc)
         doc.unlink()
 
     def testCloneDocumentShallow(self):
@@ -1458,9 +1445,7 @@ class MinidomTest(unittest.TestCase):
     def testImportElementDOM1Names(self):
         doc1, root = self.create_dom1_element()
         doc2 = Document()
-        imported = doc2.importNode(root, True)
-        self.assertIsNone(imported.parentNode)
-        self.check_dom1_element(imported, doc2)
+        self.check_clone_element(doc2.importNode(root, True), root, doc2)
         doc1.unlink()
         doc2.unlink()
 
@@ -1496,7 +1481,7 @@ class MinidomTest(unittest.TestCase):
             ("importNode", doc2.importNode(attr, True), doc2),
         ]:
             with self.subTest(method=method):
-                self.check_dom1_names(clone, "a:b", "a", "b")
+                self.check_clone_names(clone, attr)
                 self.assertEqual(clone.value, "v")
                 self.assertTrue(clone.specified)
                 self.assertIsNone(clone.ownerElement)
