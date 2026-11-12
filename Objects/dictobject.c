@@ -8687,7 +8687,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
         }
         dictkeys_incref(keys);
         clear_common(old);
-        for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
+        for (Py_ssize_t i = 0; i < v->capacity; i++) {
             FT_ATOMIC_STORE_PTR_RELEASE(v->values[i], NULL);
         }
         FT_ATOMIC_STORE_UINT8_RELEASE(v->size, 0);
