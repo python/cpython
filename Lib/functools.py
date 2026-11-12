@@ -1132,6 +1132,31 @@ class _singledispatchmethod_get:
 ################################################################################
 
 
+class _bound_cached_method:
+    """
+    A wrapper over a cached method which acts like a bound method.
+
+    It holds a reference to the instance and the caching variant of the
+    function, and it calls the function when called. This is constructed
+    dynamically whenever a cached method is accessed on an instance.
+    """
+    def __init__(self, func, inst):
+        self.func = func
+        self.inst = inst
+
+        update_wrapper(self, self.func)
+
+        self.cache_clear = func.cache_clear
+        self.cache_info = func.cache_info
+        self.cache_parameters = func.cache_parameters
+
+    def __repr__(self):
+        return f"<bound cached method {self.func.__qualname__} of {self.inst!r}>"
+
+    def __call__(self, /, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
 def _cached_method_weakref_callback(cache_dict, id_key):
     def callback(ref):
         cache_dict.pop(id_key, None)
@@ -1157,13 +1182,22 @@ class _cached_method:
         update_wrapper(self, func)
 
     def __call__(self, instance, /, *args, **kwargs):
+        # a direct call skips construction of a bound cached method, since it
+        # isn't needed in order to guarantee that `instance` is not released
+        # before `cached_func` runs
         cached_func = self._get_or_create_cached_func(instance)
         return cached_func(*args, **kwargs)
+
+    def __repr__(self):
+        return f"<unbound cached method {self.func.__qualname__}>"
 
     def __get__(self, instance, owner=None):
         if instance is None:
             return self
-        return self._get_or_create_cached_func(instance)
+        # construct a bound method, to guarantee that the instance cannot be
+        # released until after the returned function is called
+        unbound_func = self._get_or_create_cached_func(instance)
+        return _bound_cached_method(unbound_func, instance)
 
     def _get_or_create_cached_func(self, instance):
         instance_id = id(instance)
@@ -1180,6 +1214,7 @@ class _cached_method:
                     "`cached_method` requires the instances of "
                     f"{type(instance).__name__!r} to be weakly referencable"
                 ) from exc
+
             cached_func = _wrap_unbound_cached_method(
                 ref, self.func, self._maxsize, self._typed
             )
