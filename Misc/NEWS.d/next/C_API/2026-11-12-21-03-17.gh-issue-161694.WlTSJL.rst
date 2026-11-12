@@ -1,0 +1,2 @@
+:c:func:`PyObject_GC_NewVar` and :c:func:`PyObject_GC_Resize` now check for
+integer overflow when computing the object size. Patch by Victor Stinner.
