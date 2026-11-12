@@ -31,12 +31,13 @@ _PyObject_VAR_SIZE(PyTypeObject *type, Py_ssize_t nitems_signed)
     size_t basicsize = _Py_STATIC_CAST(size_t, type->tp_basicsize);
     size_t nitems = _Py_STATIC_CAST(size_t, nitems_signed);
     size_t itemsize = _Py_STATIC_CAST(size_t, type->tp_itemsize);
+    size_t size;
     if (itemsize != 0) {
         if (nitems > ((size_t)PY_SSIZE_T_MAX - basicsize) / itemsize) {
             return SIZE_MAX;
         }
     }
-    size_t size = basicsize + nitems * itemsize;
+    size = basicsize + nitems * itemsize;
 
     size = _Py_SIZE_ROUND_UP(size, SIZEOF_VOID_P);
     if (size > (size_t)PY_SSIZE_T_MAX) {
