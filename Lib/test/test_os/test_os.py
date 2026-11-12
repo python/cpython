@@ -92,7 +92,7 @@ def _get_file_attribute_mask():
     return mask
 
 
-_FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
+FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
 
 
 def requires_os_func(name):
@@ -5048,8 +5048,8 @@ class TestScandir(unittest.TestCase):
                 if attr == "st_file_attributes":
                     # Filesystems may report attribute bits that aren't
                     # exposed by the stat module.
-                    value1 &= _FILE_ATTRIBUTE_MASK
-                    value2 &= _FILE_ATTRIBUTE_MASK
+                    value1 &= FILE_ATTRIBUTE_MASK
+                    value2 &= FILE_ATTRIBUTE_MASK
                 self.assertEqual(value1,
                                  value2,
                                  (stat1, stat2, attr))
@@ -5143,8 +5143,9 @@ class TestScandir(unittest.TestCase):
     def test_attributes_unknown_bits(self):
         base = os.stat(self.path)
         file_attributes = base.st_file_attributes
-        unknown_attribute = 0x10000000
-        self.assertFalse(unknown_attribute & _FILE_ATTRIBUTE_MASK)
+        # Directory flag of DOS file attribute in NTFS
+        unknown_attribute = 0x1_000_0000
+        self.assertFalse(unknown_attribute & FILE_ATTRIBUTE_MASK)
 
         stat1 = os.stat_result(
             tuple(base), {"st_file_attributes": file_attributes})
