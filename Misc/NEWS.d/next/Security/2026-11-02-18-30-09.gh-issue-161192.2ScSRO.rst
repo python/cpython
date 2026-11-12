@@ -1,3 +1,0 @@
-Update bundled `libexpat <https://libexpat.github.io/>`_ to version 2.10.0
-for the fixes to :cve:`2026-113351`, :cve:`2026-115506`, :cve:`2026-117610`
-and :cve:`2026-118370`.

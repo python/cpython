@@ -1,2 +1,0 @@
-Restore the recursion limit after the free-threading recursion-limit race test
-to avoid failures in subsequent tests run in the same process.

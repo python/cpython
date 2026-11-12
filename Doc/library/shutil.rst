@@ -786,7 +786,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.12
       Added the *filter* argument.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the "whl" format.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
@@ -837,7 +837,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *whl* format.
 
 

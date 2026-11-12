@@ -1,3 +1,0 @@
-:c:func:`PyImport_CreateModuleFromInitfunc` now accepts non-ASCII module
-names for multi-phase init modules, instead of raising
-:exc:`UnicodeEncodeError`.

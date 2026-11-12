@@ -1,2 +1,0 @@
-Add support for additional special names to the built-in :func:`help` function.
-Patch by Adam Hartz.
