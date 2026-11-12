@@ -5035,6 +5035,27 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(sorted(entries.keys()), names)
         return entries
 
+    def assert_stat_equal(self, stat1, stat2, skip_fields):
+        if skip_fields:
+            for attr in dir(stat1):
+                if not attr.startswith("st_"):
+                    continue
+                if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
+                            "st_ctime_ns"):
+                    continue
+                value1 = getattr(stat1, attr)
+                value2 = getattr(stat2, attr)
+                if attr == "st_file_attributes":
+                    # Filesystems may report attribute bits that aren't
+                    # exposed by the stat module.
+                    value1 &= FILE_ATTRIBUTE_MASK
+                    value2 &= FILE_ATTRIBUTE_MASK
+                self.assertEqual(value1,
+                                 value2,
+                                 (stat1, stat2, attr))
+        else:
+            self.assertEqual(stat1, stat2)
+
     def test_uninstantiable(self):
         scandir_iter = os.scandir(self.path)
         self.assertRaises(TypeError, type(scandir_iter))
