@@ -77,6 +77,31 @@ union _PyStackRef;
 PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef *src, Py_ssize_t n);
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
+// Bulk extension fast path for collections.deque, which lives in the
+// _collections module and is therefore unknown to listobject.c.
+//
+// A deque (or a subclass that keeps deque's tp_iter and sq_length) is
+// recognised by deque_iter/deque_len; a forward deque iterator by
+// dequeiter_next.  extend() is called without any lock held and returns 0 on
+// success, -1 with an exception set, or 1 to request the generic path.
+typedef struct {
+    getiterfunc deque_iter;
+    lenfunc deque_len;
+    iternextfunc dequeiter_next;
+    int (*extend)(PyListObject *self, PyObject *iterable);
+} _PyList_DequeHooks;
+
+PyAPI_FUNC(void) _PyList_SetDequeHooks(const _PyList_DequeHooks *hooks);
+
+// Make room for 'n' (> 0) more items at the end of 'self' without changing
+// its size; return a pointer to the first free slot, or NULL with an
+// exception set.  The caller must hold self's critical section, store new
+// references with FT_ATOMIC_STORE_PTR_RELEASE() and then publish them with
+// Py_SET_SIZE().  Matches the allocation behaviour of the generic
+// list.extend(iterable) path when the length hint is exact.
+PyAPI_FUNC(PyObject **) _PyList_ReserveForExtendLockHeld(PyListObject *self,
+                                                         Py_ssize_t n);
+
 #ifdef __cplusplus
 }
 #endif

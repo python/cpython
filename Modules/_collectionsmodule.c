@@ -2,6 +2,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_critical_section.h" // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_dict.h"          // _PyDict_GetItemRef_KnownHash_LockHeld()
+#include "pycore_list.h"          // _PyList_SetDequeHooks()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -2097,6 +2098,125 @@ static PyType_Spec dequeiter_spec = {
     .slots = dequeiter_slots,
 };
 
+/******************** Bulk materialization into a list ********************/
+
+/* list(d), [*d], lst.extend(d) and PySequence_Fast(d) -- and therefore
+ * str.join(d), which hands the deque's *iterator* to list.extend() -- used to
+ * fetch one element per tp_iternext call, each taking a critical section.
+ * The functions below copy all remaining elements while holding the list's
+ * and the deque's critical sections once.  The result is identical to
+ * running the iterator to exhaustion: no user code can run during either
+ * form of iteration, and holding the deque's lock gives an atomic snapshot.
+ */
+
+/* Store new references to 'n' items, starting at (b, index), into dest.
+ * Leaves (*pb, *pindex) at the position dequeiter_next_lock_held() would
+ * have reached after returning the same 'n' items. */
+static void
+deque_copy_forward_lock_held(block *b, Py_ssize_t index, Py_ssize_t n,
+                             PyObject **dest, block **pb, Py_ssize_t *pindex)
+{
+    while (n > 0) {
+        Py_ssize_t chunk = Py_MIN(n, BLOCKLEN - index);
+        PyObject **src = &b->data[index];
+        for (Py_ssize_t i = 0; i < chunk; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(dest[i], Py_NewRef(src[i]));
+        }
+        dest += chunk;
+        index += chunk;
+        n -= chunk;
+        if (index == BLOCKLEN && n > 0) {
+            CHECK_NOT_END(b->rightlink);
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+    *pb = b;
+    *pindex = index;
+}
+
+static int
+deque_extend_list_lock_held(dequeobject *deque, PyListObject *list)
+{
+    Py_ssize_t n = Py_SIZE(deque);
+    if (n == 0) {
+        return 0;
+    }
+    Py_ssize_t m = Py_SIZE(list);
+    PyObject **dest = _PyList_ReserveForExtendLockHeld(list, n);
+    if (dest == NULL) {
+        return -1;
+    }
+    block *b;
+    Py_ssize_t index;
+    deque_copy_forward_lock_held(deque->leftblock, deque->leftindex, n,
+                                 dest, &b, &index);
+    Py_SET_SIZE(list, m + n);
+    return 0;
+}
+
+static int
+dequeiter_extend_list_lock_held(dequeiterobject *it, dequeobject *deque,
+                                PyListObject *list)
+{
+    // Same checks, in the same order, as dequeiter_next_lock_held().
+    if (deque->state != it->state) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, 0);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "deque mutated during iteration");
+        return -1;
+    }
+    Py_ssize_t n = it->counter;
+    if (n == 0) {
+        return 0;
+    }
+    Py_ssize_t m = Py_SIZE(list);
+    PyObject **dest = _PyList_ReserveForExtendLockHeld(list, n);
+    if (dest == NULL) {
+        return -1;
+    }
+    deque_copy_forward_lock_held(it->b, it->index, n, dest,
+                                 &it->b, &it->index);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, 0);
+    Py_SET_SIZE(list, m + n);
+    return 0;
+}
+
+/* Installed in listobject.c through _PyList_SetDequeHooks().  'iterable' is
+ * either a deque (or a subclass that keeps deque's __iter__ and __len__) or
+ * a forward deque iterator.  Returns 0 on success, -1 with an exception set,
+ * or 1 if the generic iteration path should be used instead. */
+static int
+deque_list_extend_hook(PyListObject *list, PyObject *iterable)
+{
+    int res;
+    if (Py_TYPE(iterable)->tp_iternext == dequeiter_next) {
+        dequeiterobject *it = dequeiterobject_CAST(iterable);
+        // it->deque is only assigned during construction (see dequeiter_next).
+        dequeobject *deque = it->deque;
+        if (deque == NULL) {
+            return 1;
+        }
+        Py_BEGIN_CRITICAL_SECTION2(list, deque);
+        res = dequeiter_extend_list_lock_held(it, deque, list);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        dequeobject *deque = dequeobject_CAST(iterable);
+        Py_BEGIN_CRITICAL_SECTION2(list, deque);
+        res = deque_extend_list_lock_held(deque, list);
+        Py_END_CRITICAL_SECTION2();
+    }
+    return res;
+}
+
+static const _PyList_DequeHooks deque_list_hooks = {
+    .deque_iter = deque_iter,
+    .deque_len = deque_len,
+    .dequeiter_next = dequeiter_next,
+    .extend = deque_list_extend_hook,
+};
+
 /*********************** Deque Reverse Iterator **************************/
 
 static PyObject *
@@ -2901,6 +3021,10 @@ collections_exec(PyObject *module) {
     if (PyModule_AddType(module, &PyODict_Type) < 0) {
         return -1;
     }
+
+    // Every module instance installs the same statically linked functions,
+    // so repeated or concurrent registration is harmless.
+    _PyList_SetDequeHooks(&deque_list_hooks);
 
     return 0;
 }
