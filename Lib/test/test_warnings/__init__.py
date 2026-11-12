@@ -1109,7 +1109,6 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.module._showwarnmsg = show
         self.assertIn(text, result)
 
-    @support.cpython_only
     def test_showwarnmsg_missing_source_line(self):
         # gh-143201: the C fallback must strip the source line like Python.
         lineno = sys._getframe().f_lineno

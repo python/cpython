@@ -698,23 +698,10 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
 
     /* Print "  source_line\n" */
     if (sourceline) {
-        int kind;
-        const void *data;
-        Py_ssize_t i, len;
-        Py_UCS4 ch;
-
-        kind = PyUnicode_KIND(sourceline);
-        data = PyUnicode_DATA(sourceline);
-        len = PyUnicode_GET_LENGTH(sourceline);
-        for (i=0; i<len; i++) {
-            ch = PyUnicode_READ(kind, data, i);
-            if (ch != ' ' && ch != '\t' && ch != '\014')
-                break;
-        }
-
-        truncated = PyUnicode_Substring(sourceline, i, len);
-        if (truncated == NULL)
+        truncated = PyObject_CallMethod(sourceline, "strip", NULL);
+        if (truncated == NULL) {
             goto error;
+        }
 
         if (PyFile_WriteString("  ", f_stderr) < 0) {
             goto error;

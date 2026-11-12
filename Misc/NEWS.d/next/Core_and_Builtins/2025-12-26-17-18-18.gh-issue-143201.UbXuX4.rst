@@ -1,2 +1,0 @@
-Fix the C implementation of :mod:`warnings` to strip the indentation of the
-source line like the Python implementation.
