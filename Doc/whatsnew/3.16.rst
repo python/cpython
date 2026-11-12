@@ -521,7 +521,7 @@ http.client
   parameter to return ``100 Continue`` responses to the caller.
   (Contributed by Ashwin Menon, Tim Bartlett and Senthil Kumaran in
   :gh:`42550`.)
-  
+
 * Add the :exc:`~http.client.ProxyTunnelError` exception, a subclass of
   :exc:`OSError` raised when a proxy rejects the CONNECT request sent for
   :meth:`~http.client.HTTPConnection.set_tunnel`.  It exposes the status
