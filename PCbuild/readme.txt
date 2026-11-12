@@ -234,7 +234,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.53.2, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.53.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 
@@ -274,10 +274,6 @@ zlib-ng
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
-_zstd
-    Python wrapper for version 1.5.7 of the Zstandard compression library
-    Homepage:
-        https://facebook.github.io/zstd/
 
 
 Getting External Sources
