@@ -92,6 +92,8 @@ def _get_file_attribute_mask():
     return mask
 
 
+# gh-126253: Ignore unknown attributes, such as 0x1_000_0000
+# (Directory flag of DOS file attribute in NTFS)
 FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
 
 
