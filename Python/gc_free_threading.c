@@ -2847,6 +2847,13 @@ PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));

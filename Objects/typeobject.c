@@ -2537,13 +2537,22 @@ _PyType_NewManagedObject(PyTypeObject *type)
 PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
-    PyObject *obj;
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     /* The +1 on nitems is needed for most types but not all. We could save a
      * bit of space by allocating one less item in certain cases, depending on
      * the type. However, given the extra complexity (e.g. an additional type
      * flag to indicate when that is safe) it does not seem worth the memory
      * savings. An example type that doesn't need the +1 is a subclass of
      * tuple. See GH-100659 and GH-81381. */
+    if (nitems > PY_SSIZE_T_MAX - 1) {
+        return PyErr_NoMemory();
+    }
     size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
@@ -2564,7 +2573,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     if (alloc == NULL) {
         return PyErr_NoMemory();
     }
-    obj = (PyObject *)(alloc + presize);
+    PyObject *obj = (PyObject *)(alloc + presize);
     if (presize) {
         ((PyObject **)alloc)[0] = NULL;
         ((PyObject **)alloc)[1] = NULL;
