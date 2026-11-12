@@ -8534,12 +8534,6 @@ frozendict_repr(PyObject *self)
     return res;
 }
 
-static Py_uhash_t
-_shuffle_bits(Py_uhash_t h)
-{
-    return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
-}
-
 // Compute hash((key, value)).
 // Code copied from tuple_hash().
 static Py_hash_t
@@ -8603,7 +8597,7 @@ frozendict_hash(PyObject *op)
             _Py_LeaveRecursiveCall();
             return -1;
         }
-        hash ^= _shuffle_bits(pair_hash);
+        hash ^= _PySet_ShuffleHashBits(pair_hash);
     }
     _Py_LeaveRecursiveCall();
 

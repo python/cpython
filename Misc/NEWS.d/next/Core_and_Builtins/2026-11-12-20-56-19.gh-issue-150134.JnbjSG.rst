@@ -1,0 +1,6 @@
+Improve the hash of :class:`frozenset` (and :class:`frozendict`, which
+shares the algorithm) for elements whose hashes differ only in their
+high-order bits, such as ``i / 256``.  Previously, many distinct frozensets
+of such elements collapsed onto very few hash values.  The hash of each
+element is now mixed with the SplitMix64 finalizer (MurmurHash3 ``fmix32``
+on 32-bit builds), so that every input bit can affect every output bit.
