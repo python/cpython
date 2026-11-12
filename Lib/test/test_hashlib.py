@@ -1240,6 +1240,7 @@ class KDFTests(unittest.TestCase):
         (b'password', b'salt'*4, 1, None),
         (b'password', b'salt'*4, 2, None),
         (b'password', b'salt'*4, 4096, None),
+        (b'pass\0word', b'sa\0lt'*4, 4096, 16),
     ]
 
     pbkdf2_results = {
@@ -1256,6 +1257,8 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('7f0d22e4398436acf7bcd2cfbb9903755def9522'), None),
             (bytes.fromhex('f6d0ee787450939262e452e8f1b7ceca4ccc4cba'), None),
             (bytes.fromhex('b7845a91aea7946bc875fcd9d19fd515381ddf94'), None),
+            (bytes.fromhex('bcc0d390b6671f99995e4c64223fa7c1fe12122460'
+                           '94abe408'), 25),
         ],
         "sha256": [
             (bytes.fromhex('120fb6cffcf8b32c43e7225256c4f837'
@@ -1275,6 +1278,8 @@ class KDFTests(unittest.TestCase):
                            'd79727d2899a6a519d26f13b52d8e6f4'), None),
             (bytes.fromhex('16e35b12b41f465ca64d069578d75005'
                            '9775ccad5df3ad53d6b204acb122d1ee'), None),
+            (bytes.fromhex('b6d737069a6b4aeed21574c73e38b342fa0f'
+                           '4449112470e1e80f075611d8d0ef6a82669d662e15e2'), 40),
         ],
         "sha512": [
             (bytes.fromhex('867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5'
@@ -1299,6 +1304,9 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('7dc69993c22ab444a13574b9d71b2cafc54e68914d9ddfd0'
                            '0ed5c23545b854d5e0e68b7f5614eef5df9087573bab8360'
                            'b20267791ed7a77669005fd94b5731e2'), None),
+            (bytes.fromhex('a7555be88503f21c2314259add27d302db6bb03b6ea52b36'
+                           '777f1af2e91f802c72b2b02b76745d7e0c3239e84cc8451c'
+                           '5188d526a56c740f5f0f7c85c44717e7'), 64),
         ],
     }
 
