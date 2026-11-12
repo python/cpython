@@ -68,7 +68,7 @@ make_sized_heaptypes(PyObject *module, PyObject *args)
     }
 
     result = Py_BuildValue("OOOKnn", base, sub, instance,
-                           (unsigned long long)data_ptr,
+                           (unsigned long long)(uintptr_t)data_ptr,
                            (Py_ssize_t)(data_ptr - (char*)instance),
                            data_size);
   finally:

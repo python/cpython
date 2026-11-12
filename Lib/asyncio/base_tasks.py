@@ -70,10 +70,16 @@ def _task_get_stack(task, limit):
 
 
 def _task_print_stack(task, limit, file):
+    exc = task._exception
+    tb = exc.__traceback__ if exc is not None else None
     extracted_list = []
     checked = set()
     for f in task.get_stack(limit=limit):
-        lineno = f.f_lineno
+        if tb is not None:
+            lineno = tb.tb_lineno
+            tb = tb.tb_next
+        else:
+            lineno = f.f_lineno
         co = f.f_code
         filename = co.co_filename
         name = co.co_name
@@ -83,7 +89,6 @@ def _task_print_stack(task, limit, file):
         line = linecache.getline(filename, lineno, f.f_globals)
         extracted_list.append((filename, lineno, name, line))
 
-    exc = task._exception
     if not extracted_list:
         print(f'No stack for {task!r}', file=file)
     elif exc is not None:

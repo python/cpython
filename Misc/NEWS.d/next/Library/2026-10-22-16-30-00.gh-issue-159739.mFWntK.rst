@@ -1,3 +1,0 @@
-Fix crashes in :mod:`profiling.tracing` when a custom timer reinitializes the
-profiler or its result clears or disables the profiler during conversion or
-cleanup.

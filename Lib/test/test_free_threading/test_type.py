@@ -375,6 +375,7 @@ class TestType(TestCase):
         # dict mutex and waited for the type lock.
         # This is fairly difficult to trigger the race but this N seems to do
         # it at least sometimes.
+        type_freeze = import_helper.import_module("_testlimitedcapi").type_freeze
         N = 200
         done = False
 
@@ -401,6 +402,15 @@ class TestType(TestCase):
             while not done:
                 Base.__subclasses__()
 
+        def freezer():
+            # gh-158194: Exercise type freezing concurrently with slot
+            # updates and competing stop-the-world requests.
+            barrier.wait()
+            for _ in range(10):
+                class Frozen:
+                    pass
+                type_freeze(Frozen)
+
         def basesetter():
             nonlocal done
             barrier.wait()
@@ -418,7 +428,7 @@ class TestType(TestCase):
         # to keep the type lock and the stop-the-world mutex contended, which
         # is what gets the setters into the window where it happens.
         targets = (setter, setter, subclasser, subclasser,
-                   lister, lister, basesetter)
+                   lister, lister, basesetter, freezer)
         barrier = threading.Barrier(len(targets))
         threads = [Thread(target=target) for target in targets]
         with threading_helper.start_threads(threads):
