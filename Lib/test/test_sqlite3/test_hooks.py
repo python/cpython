@@ -165,15 +165,18 @@ class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.events = []
+        self.setUp_collation()
+        self.con.execute("create table t(x, y)")
+        self.con.executemany("insert into t values (?, ?)",
+                             [(1, "a"), (-2**63, "boom")])
+
+    def setUp_collation(self):
         def mycoll(x, y):
             if "boom" in (x, y):
                 self.events.append("collation raised")
                 raise KeyError("collation raised")
             return (x > y) - (x < y)
         self.con.create_collation("mycoll", mycoll)
-        self.con.execute("create table t(x, y)")
-        self.con.executemany("insert into t values (?, ?)",
-                             [(1, "a"), (-2**63, "boom")])
 
     def assertCollationRaises(self):
         return self.assertRaisesRegex(KeyError, "collation raised")
@@ -284,7 +287,7 @@ class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
         self.con.create_window_function("win", 1, Window)
         # For this query, SQLite evaluates the filter for all rows before it
         # calls the window function. The filter is false for the first row,
-        # so the first call after the exception is value().
+        # so the first call after the exception is value(), before step().
         with self.assertCollationRaises():
             self.con.execute("""
                 select win(x) filter (where y = 'q' collate mycoll)
@@ -322,20 +325,47 @@ class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(self.events_after_exception(), [])
 
     def test_authorizer_not_called(self):
-        def authorizer(*args):
-            self.events.append("authorizer")
+        def authorizer(action, *args):
+            self.events.append(action)
             return sqlite.SQLITE_OK
-        # SQLite prepares a statement for pragma_table_info() during the
-        # step, and it calls the authorizer for that statement.
+        sql = """
+            select t.x, p.name from t join pragma_table_info('t') p
+            where t.y = 'q' collate mycoll
+            """
         self.con.executemany("insert into t values (?, ?)", [(3, "c")])
         self.con.set_authorizer(authorizer)
+        # Control: if the comparison is true, SQLite prepares a statement for
+        # pragma_table_info() during the step, and it calls the authorizer.
+        self.con.create_collation("mycoll", lambda x, y: 0)
+        self.con.execute(sql).fetchall()
+        self.assertIn(sqlite.SQLITE_PRAGMA, self.events)
+        self.events.clear()
+        self.setUp_collation()
         with self.assertCollationRaises():
-            self.con.execute("""
-                select t.x, p.name from t join pragma_table_info('t') p
-                where t.y = 'q' collate mycoll
-                """)
+            self.con.execute(sql)
         self.con.set_authorizer(None)
         self.assertEqual(self.events_after_exception(), [])
+
+    def test_prepare(self):
+        # With STAT4, the query planner calls the collation when SQLite
+        # prepares the statement.
+        options = [o for (o,) in self.con.execute("pragma compile_options")]
+        if "ENABLE_STAT4" not in options:
+            self.skipTest("requires SQLite with SQLITE_ENABLE_STAT4")
+        fail = False
+        def statcoll(x, y):
+            if fail:
+                raise KeyError("collation raised")
+            return (x > y) - (x < y)
+        self.con.create_collation("statcoll", statcoll)
+        self.con.execute("create table s(v text collate statcoll)")
+        self.con.execute("create index s_v on s(v)")
+        self.con.executemany("insert into s values (?)",
+                             [(str(i % 7),) for i in range(200)])
+        self.con.execute("analyze")
+        fail = True
+        with self.assertCollationRaises():
+            self.con.execute("select * from s where v = '3'")
 
     def test_progress_handler_not_called(self):
         def progress():
