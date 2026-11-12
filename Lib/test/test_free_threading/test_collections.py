@@ -87,5 +87,43 @@ class TestOrderedDict(unittest.TestCase):
         )
 
 
+    def test_shared_iterator(self):
+        # Deque iterators are advanced under the deque's lock, so threads
+        # sharing one iterator must together see every item exactly once.
+        n = 20000
+        for make_iter in (iter, reversed):
+            with self.subTest(make_iter=make_iter.__name__):
+                d = deque(range(n))
+                it = make_iter(d)
+                results = []
+
+                def consume():
+                    results.append(list(x for x in it))
+
+                threading_helper.run_concurrently([consume] * 4)
+                self.assertEqual(sorted(x for r in results for x in r),
+                                 list(range(n)))
+
+    def test_iterate_while_mutating(self):
+        d = deque(range(100))
+
+        def mutate():
+            for i in range(5000):
+                d.append(i)
+                d.popleft()
+
+        def iterate():
+            for _ in range(500):
+                it = iter(d)
+                try:
+                    for _ in it:
+                        pass
+                except RuntimeError:
+                    pass
+                it.__length_hint__()
+                it.__reduce__()
+
+        threading_helper.run_concurrently([mutate, iterate, iterate])
+
 if __name__ == "__main__":
     unittest.main()
