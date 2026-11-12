@@ -24,7 +24,7 @@ import contextlib
 import sqlite3 as sqlite
 import unittest
 
-from test.support import import_helper
+from test.support import captured_stderr, import_helper
 from test.support.os_helper import TESTFN, unlink
 
 from .util import memory_database, cx_limit, with_tracebacks
@@ -105,6 +105,49 @@ class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
         result = self.con.execute(sql).fetchall()
         self.assertEqual(result, [('c',), ('b',), ('a',)],
                          msg="the expected order was not returned")
+
+    def test_collation_error_then_step_failure_while_fetching(self):
+        # gh-161837: A collation can set an exception. Then a later error can
+        # make the same sqlite3_step() fail. The fetch must raise
+        # OperationalError for that failure, not SystemError.
+        def mycoll(x, y):
+            if x == "boom":
+                raise KeyError("collation raised")
+            return (x > y) - (x < y)
+        self.con.create_collation("mycoll", mycoll)
+        self.con.execute("create table t(x, y)")
+        # abs() of the smallest 64-bit integer causes "integer overflow".
+        self.con.executemany("insert into t values (?, ?)",
+                             [(1, "a"), (-2**63, "boom")])
+        sql = """
+            select case when y = 'q' collate mycoll then abs(x) else 0 end
+            from t order by rowid
+            """
+
+        def fetch_with_fetchone():
+            cur = self.con.execute(sql)
+            self.assertEqual(cur.fetchone(), (0,))
+            cur.fetchone()
+
+        def fetch_by_iteration():
+            list(self.con.execute(sql))
+
+        for fetch in fetch_with_fetchone, fetch_by_iteration:
+            for tracebacks in False, True:
+                with self.subTest(fetch=fetch.__name__, tracebacks=tracebacks):
+                    sqlite.enable_callback_tracebacks(tracebacks)
+                    try:
+                        with captured_stderr() as err:
+                            with self.assertRaisesRegex(sqlite.OperationalError,
+                                                        "integer overflow"):
+                                fetch()
+                    finally:
+                        sqlite.enable_callback_tracebacks(False)
+                    if tracebacks:
+                        self.assertIn("KeyError: 'collation raised'",
+                                      err.getvalue())
+                    else:
+                        self.assertEqual(err.getvalue(), "")
 
     def test_collation_register_twice(self):
         """

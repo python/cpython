@@ -553,6 +553,22 @@ stmt_step(sqlite3_stmt *statement)
     return rc;
 }
 
+/* A user-defined callback (for example, a collation) can set an exception
+ * during a failed sqlite3_step(). Report that exception, then clear it.
+ * The caller can then raise the DB-API exception for the failure. */
+static void
+clear_callback_error(pysqlite_state *state)
+{
+    if (PyErr_Occurred()) {
+        if (state->enable_callback_tracebacks) {
+            PyErr_Print();
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+}
+
 static int
 bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
            PyObject *parameter)
@@ -911,14 +927,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
         rc = stmt_step(self->statement->st);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            if (PyErr_Occurred()) {
-                /* there was an error that occurred in a user-defined callback */
-                if (state->enable_callback_tracebacks) {
-                    PyErr_Print();
-                } else {
-                    PyErr_Clear();
-                }
-            }
+            clear_callback_error(state);
             set_error_from_db(state, self->connection->db);
             goto error;
         }
@@ -1177,6 +1186,7 @@ pysqlite_cursor_iternext(PyObject *op)
         }
     }
     else if (rc != SQLITE_ROW) {
+        clear_callback_error(self->connection->state);
         rc = set_error_from_db(self->connection->state, self->connection->db);
         int reset_rc = stmt_reset(self->statement);
         Py_CLEAR(self->statement);
