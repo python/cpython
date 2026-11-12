@@ -24,7 +24,7 @@ import contextlib
 import sqlite3 as sqlite
 import unittest
 
-from test.support import captured_stderr, import_helper
+from test.support import captured_stderr, force_not_colorized, import_helper
 from test.support.os_helper import TESTFN, unlink
 
 from .util import memory_database, cx_limit, with_tracebacks
@@ -106,6 +106,7 @@ class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(result, [('c',), ('b',), ('a',)],
                          msg="the expected order was not returned")
 
+    @force_not_colorized
     def test_collation_error_then_step_failure_while_fetching(self):
         # gh-161837: A collation can set an exception. Then a later error can
         # make the same sqlite3_step() fail. The fetch must raise
