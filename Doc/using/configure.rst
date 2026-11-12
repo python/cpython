@@ -744,7 +744,7 @@ also be used to improve performance.
    than macOS, configure tries ``-fuse-ld=lld`` if the configured linker cannot
    link a Clang LTO program.
 
-   .. versionchanged:: 3.16
+   .. versionchanged:: next
       Fall back to ``lld`` when the configured linker cannot link Clang LTO
       programs.
 

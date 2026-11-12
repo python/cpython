@@ -2223,16 +2223,19 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="$LTOFLAGS"
           # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
           # cannot link LTO objects, try lld, which does not need that plugin.
-          save_LDFLAGS="$LDFLAGS"
-          LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
-          AC_MSG_CHECKING([whether Clang LTO works with the configured linker])
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
-          AC_MSG_RESULT([$clang_lto_link])
-          if test "$clang_lto_link" = no; then
-            LDFLAGS="$LDFLAGS -fuse-ld=lld"
-            AC_MSG_CHECKING([whether Clang LTO works with lld])
+          WITH_SAVE_ENV([
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            AC_MSG_CHECKING([whether Clang LTO works with the configured linker])
             AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
             AC_MSG_RESULT([$clang_lto_link])
+          ])
+          if test "$clang_lto_link" = no; then
+            WITH_SAVE_ENV([
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              AC_MSG_CHECKING([whether Clang LTO works with lld])
+              AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+              AC_MSG_RESULT([$clang_lto_link])
+            ])
             if test "$clang_lto_link" = no; then
               AC_MSG_ERROR([m4_normalize([
                 Clang LTO requires a working LTO-aware linker.
@@ -2243,7 +2246,6 @@ if test "$Py_LTO" = 'true' ; then
             LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
             LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
           fi
-          LDFLAGS="$save_LDFLAGS"
           ;;
       esac
       ;;
