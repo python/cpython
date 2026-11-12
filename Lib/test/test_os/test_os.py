@@ -194,6 +194,7 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(fqdn(os.stat_result), ("os", "stat_result"))
         self.assertEqual(fqdn(os.times_result), ("os", "times_result"))
         self.assertEqual(fqdn(os.DirEntry), ("os", "DirEntry"))
+        self.assertEqual(fqdn(os.stat), ("os", "stat"))
         if hasattr(os, "statvfs_result"):
             self.assertEqual(fqdn(os.statvfs_result), ("os", "statvfs_result"))
         self.assertEqual(fqdn(os.uname_result), ("os", "uname_result"))
@@ -201,6 +202,30 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(fqdn(os.sched_param), ("os", "sched_param"))
         if hasattr(os, "waitid_result"):
             self.assertEqual(fqdn(os.waitid_result), ("os", "waitid_result"))
+
+    def test_platform_module(self):
+        # posix and nt stay builtins, importable only on their own platform,
+        # and are the _os module under its historical name.
+        import _os
+        other = 'posix' if os.name == 'nt' else 'nt'
+        mod = __import__(os.name)
+        self.assertIs(mod, _os)
+        self.assertIs(mod.stat, os.stat)
+        self.assertEqual(mod.__name__, 'os')
+        self.assertIn('_os', sys.builtin_module_names)
+        self.assertIn(os.name, sys.builtin_module_names)
+        self.assertNotIn(other, sys.builtin_module_names)
+        with self.assertRaises(ImportError):
+            __import__(other)
+
+    def test_function_pickle(self):
+        # Functions pickle as os.<name> on every platform.
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(f'protocol {proto}'):
+                p = pickle.dumps(os.stat, proto)
+                if proto < 4:
+                    self.assertIn(b'cos\nstat\n', p)
+                self.assertIs(pickle.loads(p), os.stat)
 
     def test_pickle_global_names(self):
         # Existing pickles name these via os or the platform module (posix

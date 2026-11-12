@@ -23,6 +23,10 @@ available through the :mod:`os` interface.  Once :mod:`os` is imported, there is
 :mod:`os` provides some additional functionality, such as automatically calling
 :func:`~os.putenv` when an entry in ``os.environ`` is changed.
 
+.. versionchanged:: next
+   Functions in this module report :mod:`os` as their ``__module__`` and
+   are :ref:`pickled <pickle-picklable>` as ``os.<name>``.
+
 Errors are reported as exceptions; the usual exceptions are given for type
 errors, while errors reported by the system calls raise :exc:`OSError`.
 

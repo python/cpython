@@ -55,6 +55,10 @@ struct _inittab _PyImport_Inittab[] = {
     /* This lives in Objects/unicodeobject.c */
     {"_string", PyInit__string},
 
+    /* The historical name of _os (Modules/posixmodule.c); PC/config.c lists
+       nt the same way */
+    {"posix", PyInit__os},
+
     /* Sentinel */
     {0, 0}
 };

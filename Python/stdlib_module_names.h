@@ -58,6 +58,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_opcode",
 "_opcode_metadata",
 "_operator",
+"_os",
 "_osx_support",
 "_overlapped",
 "_pickle",

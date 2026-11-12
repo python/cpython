@@ -2,6 +2,7 @@ from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
 
+import os
 import sys
 import types
 import unittest
@@ -40,6 +41,30 @@ class InspectLoaderTests:
 (Frozen_InspectLoaderTests,
  Source_InspectLoaderTests
  ) = util.test_both(InspectLoaderTests, machinery=machinery)
+
+
+class OsModuleTests:
+
+    """Test loading _os and its historical name by hand."""
+
+    def test_load_by_hand(self):
+        # As LazyLoader does: a working module, sys.modules left alone.
+        loader = self.machinery.BuiltinImporter
+        for name in ('_os', os.name):
+            with self.subTest(name):
+                spec = loader.find_spec(name)
+                mod = loader.create_module(spec)
+                loader.exec_module(mod)
+                self.assertEqual(mod.__name__, 'os')
+                self.assertEqual(mod.getpid(), os.getpid())
+                self.assertIsNot(mod, sys.modules[name])
+                self.assertIs(sys.modules[os.name], sys.modules['_os'])
+                self.assertIs(sys.modules[os.name].stat, os.stat)
+
+
+(Frozen_OsModuleTests,
+ Source_OsModuleTests
+ ) = util.test_both(OsModuleTests, machinery=machinery)
 
 
 if __name__ == '__main__':

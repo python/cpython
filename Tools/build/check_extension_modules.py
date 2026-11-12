@@ -56,6 +56,7 @@ CORE_MODULES = {
     "builtins",
     "gc",
     "marshal",
+    "posix",
     "sys",
 }
 

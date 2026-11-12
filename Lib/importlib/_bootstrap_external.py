@@ -25,6 +25,7 @@ _bootstrap = None
 # Import builtin modules
 import _imp
 import _io
+import _os
 import sys
 import _warnings
 import marshal
@@ -32,13 +33,10 @@ import marshal
 
 _MS_WINDOWS = (sys.platform == 'win32')
 if _MS_WINDOWS:
-    import nt as _os
     try:
         import winreg
     except ImportError:
         winreg = None
-else:
-    import posix as _os
 
 
 if _MS_WINDOWS:
