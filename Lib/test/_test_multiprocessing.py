@@ -508,7 +508,7 @@ class _TestProcess(BaseTestCase):
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_process(self):
         q = self.Queue(1)
-        #e = self.Event()
+        e = self.Event()
         args = (q, 1, 2)
         kwargs = {'hello':23, 'bye':2.54}
         name = 'SomeProcess'
@@ -1538,450 +1538,345 @@ class _TestQueue(BaseTestCase):
                 q.get()
 
     #
-    # Issue gh-96471: multiprocessing queue shutdown.
+    # shutdown()
+    #
+    # Except where they look at the internals, these tests also run on
+    # queue.Queue, through the 'threads' and 'manager' types: the
+    # behaviour must be the same.
     #
 
     @classmethod
-    def _wait(cls):
-        # See _wait function.
-        _wait()
+    def _shutdown_getter(cls, q, results, ready):
+        ready.set()
+        items = []
+        try:
+            while True:
+                items.append(q.get())
+        except pyqueue.ShutDown:
+            pass
+        results.put(items)
 
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_twice(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue()
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-
-        with self.assertRaises(RuntimeError):
-            q.shutdown(immediate=False)
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_empty(self):
-        if self.TYPE != 'processes':
-            self.skipTest('test not appropriate for {}'.format(self.TYPE))
-
-        q = self.Queue()
-        self.assertTrue(q.empty())
-
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put("data")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.get()
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_notempty(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue()
-        q.put("Y")
-        q.put("D")
-        self._wait()
-
-        self.assertFalse(q.empty())
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-
-        self.assertEqual(q.get(), "Y")
-        self.assertEqual(q.get(), "D")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.get()
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_full(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue(maxsize=2)
-        q.put("YY")
-        q.put("DD")
-        self._wait()
-
-        self.assertTrue(q.full())
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-
-        self.assertEqual(q.get(), "YY")
-        self.assertEqual(q.get(), "DD")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put("data")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.get()
-        self.assertFalse(q.full())
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_immediate_notempty(self):
-        # when queue shuts down immediatly, all datas inserted
-        # into the pipe or into the buffer are erased.
-        # The queue must be empty.
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue(maxsize=3)
-        q.put("data")
-        self._wait()
-
-        self.assertFalse(q.full())
-        q.shutdown(immediate=True)
-        self.assertTrue(q.empty())
-        self.assertTrue(q._is_shutdown())
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.get()
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_immediate_full(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue(maxsize=2)
-        q.put("YD")
-        q.put("LO")
-        self._wait()
-
-        self.assertTrue(q.full())
-        q.shutdown(immediate=True)
-        self.assertTrue(q.empty())
-        self.assertTrue(q._is_shutdown())
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.get()
-
-        close_queue(q)
-
-    def _joinablequeue_shutdown_all_methods(self, immediate):
-        size = 2
-        q = self.JoinableQueue(maxsize=size)
-        q.put("L")
-        q.put_nowait("O")
-        self._wait()
-
-        q.shutdown(immediate)
-        if immediate:
-            self.assertTrue(q.empty())
-        self.assertTrue(q._is_shutdown())
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put("E")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put_nowait("W")
-        if immediate:
-            # All items into the queue are removed.
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get(True, 0.125)
+    @classmethod
+    def _shutdown_putter(cls, q, results, ready):
+        ready.set()
+        try:
+            q.put('extra')
+        except pyqueue.ShutDown:
+            results.put('ShutDown')
         else:
-            self.assertEqual(q.get(), "L")
-            q.task_done()
-            self.assertEqual(q.get_nowait(), "O")
-            q.task_done()
+            results.put('put')
 
-            # when `shutdown` queue is empty,
-            # should raise ShutDown Exception
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get() # p.get(True)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait() # p.get(False)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get(True, 0.125)
-        q.join()
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_all_methods(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        self._joinablequeue_shutdown_all_methods(immediate=False)
-        self._joinablequeue_shutdown_all_methods(immediate=True)
-
-    def _start_processes_pending(self, n, target, args):
-        self.ps = []
-        for i in range(n):
-            self.ps.append(self.Process(target=target,
-                                        args=args))
-        for p in self.ps:
+    def _start_shutdown_workers(self, n, target, q):
+        results = self.Queue()
+        self.addCleanup(close_queue, results)
+        readies = [self.Event() for _ in range(n)]
+        procs = [self.Process(target=target, args=(q, results, ready))
+                 for ready in readies]
+        for p in procs:
+            p.daemon = True
             p.start()
-
-    @classmethod
-    def _pending_put(cls, q, barrier, results):
-        val = os.getpid()
-        try:
-            barrier.wait()
-            q.put(val)
-            results.append(val)
-        except pyqueue.ShutDown:
-            results.append(pyqueue.ShutDown)
-
-    @unittest.skipIf(sys.platform == 'darwin',
-                     "'get_value' is not implemented on MacOSX")
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_count_pending_put(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        # Queue must have a size
-        size = 2
-        q = self.Queue(maxsize=size)
-        results = multiprocessing.Manager().list()
-        n = 30
-        b = self.Barrier(n+1)
-
-        self._start_processes_pending(n, target=self._pending_put,
-                                      args=(q, b, results))
-        # Wait for all procesess start.
-        b.wait()
-
-        # to be sure that queue is full, and all 'n-size' others processes
-        # are pending.
-        self._wait()
-
-        self.assertLessEqual(q._sem_pending_putters.get_value(), n-size)
-        self.assertGreater(q._sem_pending_putters.get_value(), 0)
-        self.assertEqual(q._sem_pending_getters.get_value(), 0)
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-        for p in self.ps:
-            p.join()
-
-        self.assertEqual(q._sem_pending_putters.get_value(), 0)
-        self.assertEqual(q._sem_pending_getters.get_value(), 0)
-        self.assertEqual(len(results), n)
-
-        close_queue(q)
+            self.addCleanup(join_process, p)
+        for ready in readies:
+            self.assertTrue(ready.wait(support.SHORT_TIMEOUT))
+        # Let the workers block in get() or put().  This is only to make
+        # the interesting case the likely one: the tests are valid
+        # whatever the workers are doing when shutdown() is called.
+        time.sleep(0.1)
+        return [functools.partial(results.get, timeout=support.SHORT_TIMEOUT)
+                for p in procs]
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_immediate_pending_put(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        # Regardless of the value of the immediate variable,
-        # the tests are identical.
-        size = 5
-        q = self.Queue(maxsize=size)
-        results = multiprocessing.Manager().list()
-        n = 30
-        b = self.Barrier(n+1)
-        self._start_processes_pending(n, target=self._pending_put,
-                                      args=(q, b, results))
-        # Wait for all procesess start.
-        b.wait()
-
-        # We need to call _wait to be sure that queue is full,
-        # and all others processes are pending.
-        self._wait()
-
-        q.shutdown(immediate=True)
-        self.assertTrue(q.empty())
-        self.assertTrue(q._is_shutdown())
-        for p in self.ps:
-            p.join()
-
-        self.assertEqual(len(results), n)
-        self.assertEqual(results.count(pyqueue.ShutDown), n-size)
-
-        self.assertTrue(q.empty())
-        close_queue(q)
-
-    @classmethod
-    def _pending_get(cls, q, barrier, results):
-        try:
-            barrier.wait()
-            results.append(q.get())
-        except pyqueue.ShutDown:
-            results.append(pyqueue.ShutDown)
+    def test_shutdown_empty(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue()
+                q.shutdown(immediate=immediate)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put(1)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put_nowait(1)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put(1, timeout=0.01)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get()
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get_nowait()
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get(timeout=0.01)
+                self.assertTrue(queue_empty(q))
+                close_queue(q)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    @unittest.skipIf(sys.platform == 'darwin',
-                     "'get_value' is not implemented on MacOSX")
-    def test_queue_shutdown_count_pending_get(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
+    def test_shutdown_drain(self):
         q = self.Queue()
-        results = multiprocessing.Manager().list()
-        n = 25
-        b = self.Barrier(n+1)
-        self._start_processes_pending(n, target=self._pending_get,
-                                      args=(q, b, results))
-        # Wait for all procesess start.
-        b.wait()
-
-        # wait for all pending get processes to be blocked.
-        self._wait()
-
-        self.assertLessEqual(q._sem_pending_getters.get_value(), n)
-        self.assertGreater(q._sem_pending_getters.get_value(), 0)
-        self.assertEqual(q._sem_pending_putters.get_value(), 0)
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-        for p in self.ps:
-            p.join()
-
-        self.assertEqual(q._sem_pending_putters.get_value(), 0)
-        self.assertEqual(q._sem_pending_putters.get_value(), 0)
-        self.assertEqual(len(results), n)
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_immediate_pending_get(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue()
-        results = multiprocessing.Manager().list()
-        n = 25
-        b = self.Barrier(n+1)
-        self._start_processes_pending(n, target=self._pending_get,
-                                      args=(q, b, results))
-        # Wait for all procesess start.
-        b.wait()
-
-        # wait for all pending get processes to be blocked.
-        self._wait()
-
-        q.shutdown(immediate=True)
-        self._wait() # adding data as 'sentinel shutdown'.
-        self.assertTrue(q._is_shutdown())
-        for p in self.ps:
-            p.join()
-
-        self.assertEqual(len(results), n)
-        self.assertEqual(results.count(pyqueue.ShutDown), n)
-
-        self.assertTrue(q.empty())
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_pending_get(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        q = self.Queue()
-        q.put("AZ67")
-        self._wait()
-
-        results = multiprocessing.Manager().list()
-        n = 25
-        b = self.Barrier(n+1)
-        self._start_processes_pending(n, target=self._pending_get,
-                                      args=(q, b, results))
-        # Wait for all procesess start.
-        b.wait()
-
-        # wait for all pending get processes to be blocked.
-        self._wait()
-
-        q.shutdown(immediate=False)
-        self.assertTrue(q._is_shutdown())
-        for p in self.ps:
-            p.join()
-
-        self.assertEqual(len(results), n)
-        self.assertEqual(results.count("AZ67"), 1)
-
-        close_queue(q)
-
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def queue_shutdown_immediate_check_purge_buffer(self):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        logger = multiprocessing.get_logger()
-        original_level = logger.level
-        logger.setLevel(logging.DEBUG)
-        stream = io.StringIO()
-        handler = logging.StreamHandler(stream)
-        logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
-        handler.setFormatter(logging.Formatter(logging_format))
-        logger.addHandler(handler)
-
-        try:
-            q = self.JoinableQueue()
-            for i in range(1500):
-                q.put("tictoc")
-            q.shutdown(immediate=True)
-            self.assertTrue(q.empty())
-            q.join()
-
-            log_record = stream.getvalue()
-            self.assertIn("don't feed regular data to pipe", log_record)
-
-            close_queue(q)
-        finally:
-            logger.setLevel(original_level)
-            logger.removeHandler(handler)
-            handler.close()
-
-    @classmethod
-    def _shutdown(cls, q, immediate, results, retcode):
-        q.shutdown(immediate)
-        cls._wait()
-        if not immediate:
-            while not q.empty():
-                results.append(q.get())
-                q.task_done()
-        results.insert(0, retcode)
-
-    def _join_joinablequeue(self, immediate):
-        if self.TYPE != 'processes':
-            self.skipTest(f'test not appropriate for {self.TYPE}')
-
-        results = multiprocessing.Manager().list()
-        n = 10
-        q = self.JoinableQueue()
-        for i in range(n):
+        for i in range(3):
             q.put(i)
-        self._wait()
-
-        return_process = 1000
-        p = self.Process(target=self._shutdown,
-                         args=(q, immediate, results,
-                              return_process+immediate
-                              )
-                        )
-        p.start()
-        q.join()
-        p.join()
-
-        if immediate:
-            self.assertEqual(len(results), 1)
-            self.assertTrue(q.empty())
-        else:
-            self.assertEqual(len(results), n+1)
-            self.assertListEqual(results[1:], list(range(n)))
-        self.assertEqual(results[0], return_process+immediate)
-
+        # Do not wait: the items put just before shutdown() must not be
+        # lost, even those the feeder thread has not written yet.
+        q.shutdown()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put(3)
+        self.assertEqual(q.get(), 0)
+        self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 1)
+        self.assertEqual(q.get(), 2)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get_nowait()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get(timeout=0.01)
+        self.assertTrue(queue_empty(q))
         close_queue(q)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_immediate_join_joinablequeue(self):
-        return self._join_joinablequeue(True)
+    def test_shutdown_immediate(self):
+        q = self.Queue(maxsize=3)
+        for i in range(3):
+            q.put(i)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get_nowait()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put(3)
+        self.assertTrue(queue_empty(q))
+        self.assertFalse(queue_full(q, 3))
+        self.assertReturnsIfImplemented(0, q.qsize)
+        close_queue(q)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_queue_shutdown_join_joinablequeue(self):
-        return self._join_joinablequeue(False)
+    def test_shutdown_repeated(self):
+        q = self.Queue()
+        q.put(1)
+        q.put(2)
+        q.shutdown()
+        q.shutdown()
+        self.assertEqual(q.get(), 1)
+        # An immediate shutdown can follow a graceful one.
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        q.shutdown()
+        self.assertTrue(queue_empty(q))
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_closed(self):
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+        q = self.Queue()
+        q.close()
+        with self.assertRaisesRegex(ValueError, 'is closed'):
+            q.shutdown()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_getters(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue()
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_getter, q)
+                q.shutdown(immediate=immediate)
+                self.assertEqual([get() for get in results], [[]] * 4)
+                close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_getter_gets_items(self):
+        # The items put before shutdown() go to a getter which was already
+        # waiting.
+        q = self.Queue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        for i in range(10):
+            q.put(i)
+        q.shutdown()
+        self.assertEqual(result(), list(range(10)))
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_many_getters(self):
+        # No getter may be left waiting for an item that another one took.
+        for nitems in 1, 100:
+            with self.subTest(nitems=nitems):
+                q = self.Queue()
+                for i in range(nitems):
+                    q.put(i)
+                q.shutdown()
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_getter, q)
+                items = [item for get in results for item in get()]
+                self.assertEqual(sorted(items), list(range(nitems)))
+                close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_putters(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue(maxsize=2)
+                q.put(1)
+                q.put(2)
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_putter, q)
+                q.shutdown(immediate=immediate)
+                self.assertEqual([get() for get in results],
+                                 ['ShutDown'] * 4)
+                if not immediate:
+                    self.assertEqual(q.get(), 1)
+                    self.assertEqual(q.get(), 2)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get()
+                self.assertTrue(queue_empty(q))
+                close_queue(q)
+
+    @classmethod
+    def _shutdown_producer(cls, q, nitems, done, exit):
+        for i in range(nitems):
+            q.put((i, bytes(1000)))
+        done.set()
+        # Exiting would wait for the feeder thread to write everything to
+        # the pipe.  Stay alive instead, so that items remain in its buffer.
+        exit.wait(support.LONG_TIMEOUT)
+
+    def _start_shutdown_producer(self, q, nitems):
+        done = self.Event()
+        exit = self.Event()
+        self.addCleanup(exit.set)
+        p = self.Process(target=self._shutdown_producer,
+                         args=(q, nitems, done, exit))
+        p.daemon = True
+        p.start()
+        self.assertTrue(done.wait(support.SHORT_TIMEOUT))
+        return p, exit
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_other_process_items(self):
+        # Most of the items are too big for the pipe: they are still in the
+        # buffer of the process which put them when the queue is shut down.
+        q = self.Queue()
+        nitems = 1000
+        p, exit = self._start_shutdown_producer(q, nitems)
+        q.shutdown()
+        for i in range(nitems):
+            self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT)[0], i)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        self.assertTrue(queue_empty(q))
+        exit.set()
+        join_process(p)
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_other_process_items(self):
+        if self.TYPE == 'processes' and sys.platform == 'win32':
+            self.skipTest('an item being written may be left on Windows')
+        q = self.Queue()
+        p, exit = self._start_shutdown_producer(q, 1000)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        self.assertTrue(queue_empty(q))
+        self.assertReturnsIfImplemented(0, q.qsize)
+        exit.set()
+        join_process(p)
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_feeder_error(self):
+        # A getter waiting for an item which the feeder thread fails to
+        # send is woken up.
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        class NotSerializable(object):
+            def __reduce__(self):
+                raise AttributeError
+        q = self.Queue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        with test.support.captured_stderr():
+            q.put(NotSerializable())
+            q.shutdown()
+            self.assertEqual(result(), [])
+            close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_subclass_put(self):
+        # A subclass may override put() without calling _acquire_slot(), so
+        # that its items are not counted.  They must not be lost.
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        class MyQueue(multiprocessing.queues.Queue):
+            def put(self, obj, block=True, timeout=None):
+                if not self._sem.acquire(block, timeout):
+                    raise pyqueue.Full
+                with self._notempty:
+                    if self._thread is None:
+                        self._start_thread()
+                    self._buffer.append(obj)
+                    self._notempty.notify()
+
+        q = MyQueue(ctx=multiprocessing.get_context())
+        q.put(1)
+        q.put(2)
+        self.assertEqual(q.get(), 1)
+        q.shutdown()
+        self.assertEqual(q.get(), 2)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_joinable(self):
+        q = self.JoinableQueue()
+        q.put(1)
+        q.put(2)
+        q.shutdown()
+        self.assertEqual(q.get(), 1)
+        q.task_done()
+        self.assertEqual(q.get(), 2)
+        q.task_done()
+        q.join()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        close_queue(q)
+
+    @classmethod
+    def _shutdown_joiner(cls, q, joined):
+        q.join()
+        joined.set()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_joinable(self):
+        q = self.JoinableQueue()
+        for i in range(3):
+            q.put(i)
+        self.assertEqual(q.get(), 0)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+
+        # The discarded items are done, the one which was taken is not.
+        joined = self.Event()
+        p = self.Process(target=self._shutdown_joiner, args=(q, joined))
+        p.daemon = True
+        p.start()
+        self.assertFalse(joined.wait(0.1))
+        q.task_done()
+        self.assertTrue(joined.wait(support.SHORT_TIMEOUT))
+        join_process(p)
+        with self.assertRaises(ValueError):
+            q.task_done()
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_joinable_blocked_getter(self):
+        # join() returns although no task_done() is ever called.
+        q = self.JoinableQueue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        q.shutdown(immediate=True)
+        self.assertEqual(result(), [])
+        q.join()
+        close_queue(q)
 
 #
 #
