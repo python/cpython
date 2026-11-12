@@ -1,0 +1,2 @@
+Fix a regression in where importing :mod:`ctypes` could leave an extra file
+descriptor open on some Linux systems.
