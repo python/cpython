@@ -50,11 +50,6 @@ tuple_alloc(Py_ssize_t size)
             return op;
         }
     }
-    /* Check for overflow */
-    if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                sizeof(PyObject *))) / sizeof(PyObject *)) {
-        return (PyTupleObject *)PyErr_NoMemory();
-    }
     PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
     if (result != NULL) {
         _PyTuple_RESET_HASH_CACHE(result);
@@ -1078,14 +1073,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
-    }
-    /* Check for overflow */
-    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                sizeof(PyObject *))) / sizeof(PyObject *)) {
-        *pv = NULL;
-        Py_DECREF(v);
-        PyErr_NoMemory();
-        return -1;
     }
 
     if (_PyObject_GC_IS_TRACKED(v)) {

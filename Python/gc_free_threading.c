@@ -2811,18 +2811,46 @@ _PyObject_GC_New(PyTypeObject *tp)
     return op;
 }
 
+// Similar to _PyObject_VAR_SIZE(), but check for integer overflow.
+// Set *result and return 0 on success, return -1 on integer overflow.
+//
+// The result can be greater than PY_SSIZE_T_MAX. The caller is responsible
+// for checking result maximum.
+static inline int
+_PyObject_GC_VAR_SIZE(PyTypeObject *type, Py_ssize_t nitems_signed,
+                      size_t *result)
+{
+    assert(type->tp_itemsize >= 1);
+    assert(nitems_signed >= 0);
+
+    const size_t basicsize = _Py_STATIC_CAST(size_t, type->tp_basicsize);
+    const size_t nitems = _Py_STATIC_CAST(size_t, nitems_signed);
+    const size_t itemsize = _Py_STATIC_CAST(size_t, type->tp_itemsize);
+    if (nitems > ((size_t)PY_SSIZE_T_MAX - basicsize) / itemsize) {
+        return -1;
+    }
+
+    size_t size = basicsize + nitems * itemsize;
+    size = _Py_SIZE_ROUND_UP(size, SIZEOF_VOID_P);
+    *result = size;
+    return 0;
+}
+
 PyVarObject *
 _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 {
-    PyVarObject *op;
-
     if (nitems < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
+
+    size_t size;
+    if (_PyObject_GC_VAR_SIZE(tp, nitems, &size) < 0) {
+        return (PyVarObject *)PyErr_NoMemory();
+    }
+
     size_t presize = _PyType_PreHeaderSize(tp);
-    size_t size = _PyObject_VAR_SIZE(tp, nitems);
-    op = (PyVarObject *)gc_alloc(tp, size, presize);
+    PyVarObject *op = (PyVarObject *)gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
@@ -2847,14 +2875,23 @@ PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
-    const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
-    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
-    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
+    assert(nitems >= 0);
+
+    PyTypeObject *type = Py_TYPE(op);
+    size_t size;
+    if (_PyObject_GC_VAR_SIZE(type, nitems, &size) < 0) {
         return (PyVarObject *)PyErr_NoMemory();
     }
+
+    const size_t presize = _PyType_PreHeaderSize(type);
+    if (size > (size_t)PY_SSIZE_T_MAX - presize) {
+        return (PyVarObject *)PyErr_NoMemory();
+    }
+    size += presize;
+
     char *mem = (char *)op - presize;
-    mem = (char *)_PyObject_ReallocWithType(Py_TYPE(op), mem,  presize + basicsize);
+    mem = (char *)_PyObject_ReallocWithType(type, mem, size);
     if (mem == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
     }
