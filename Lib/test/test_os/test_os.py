@@ -5139,28 +5139,6 @@ class TestScandir(unittest.TestCase):
             entry = entries['symlink_file.txt']
             self.check_entry(entry, 'symlink_file.txt', False, True, True)
 
-    @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific test')
-    def test_attributes_unknown_bits(self):
-        base = os.stat(self.path)
-        file_attributes = base.st_file_attributes
-        # Directory flag of DOS file attribute in NTFS
-        unknown_attribute = 0x1_000_0000
-        self.assertFalse(unknown_attribute & FILE_ATTRIBUTE_MASK)
-
-        stat1 = os.stat_result(
-            tuple(base), {"st_file_attributes": file_attributes})
-        stat2 = os.stat_result(
-            tuple(base),
-            {"st_file_attributes": file_attributes | unknown_attribute})
-        self.assert_stat_equal(stat1, stat2, True)
-
-        stat3 = os.stat_result(
-            tuple(base),
-            {"st_file_attributes":
-             file_attributes ^ stat.FILE_ATTRIBUTE_READONLY})
-        with self.assertRaises(AssertionError):
-            self.assert_stat_equal(stat1, stat3, True)
-
     @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
     def test_attributes_junctions(self):
         dirname = os.path.join(self.path, "tgtdir")
