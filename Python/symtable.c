@@ -753,7 +753,9 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
     // namespace and the globals (not the namespace providing the bound).
     // Similarly, if the name is explicitly global in the class namespace (through the
     // global statement), we want to also treat it as a global in this scope.
-    if (class_entry != NULL) {
+    // __classdict__ is the exception: these scopes load it from the cell that
+    // the class creates for them, whatever the class body does with that name.
+    if (class_entry != NULL && !_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
         long class_flags = _PyST_GetSymbol(class_entry, name);
         if (class_flags < 0) {
             return 0;
