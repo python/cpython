@@ -7,40 +7,40 @@ Built-in functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-+---------------------------------------------------------------------------------------------------+
-|                                        Built-in Functions                                         |
-+=========================+=======================+=======================+=========================+
-| |  **A**                | |  **E**              | |  **L**              | |  **R**                |
-| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
-| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
-| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`     |
-| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`        |
-| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`       |
-| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod` |
-| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_          |
-| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`          |
-| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`        |
-| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                       |
-| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                |
-| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_        |
-| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`         |
-| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                       |
-| |                       | |                     | |  :func:`pow`        | |  **V**                |
-| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`         |
-| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                       |
-| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                |
-| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                       |
-| |                       | |  :func:`issubclass` | |                     | |  **_**                |
-| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
-| |                       | |                     | |                     | |  |func-lazy-import|_  |
-+-------------------------+-----------------------+-----------------------+-------------------------+
++------------------------------------------------------------------------------------------------------+
+|                                          Built-in Functions                                          |
++=========================+=======================+=======================+============================+
+| |  **A**                | |  **E**              | |  **L**              | |  **R**                   |
+| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_           |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`            |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`        |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`           |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                          |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                   |
+| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_             |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`         |
+| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`        |
+| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`           |
+| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`          |
+| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod`    |
+| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_             |
+| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`             |
+| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`           |
+| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                          |
+| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                   |
+| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_           |
+| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`            |
+| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                          |
+| |                       | |                     | |  :func:`pow`        | |  **V**                   |
+| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`            |
+| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                          |
+| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                   |
+| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`             |
+| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                          |
+| |                       | |  :func:`issubclass` | |                     | |  **_**                   |
+| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`      |
+| |                       | |                     | |                     | |  :func:`__lazy_import__` |
++-------------------------+-----------------------+-----------------------+----------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -56,12 +56,6 @@ are always available.  They are listed here in alphabetical order.
 .. |func-range| replace:: ``range()``
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
-
-.. Use a substitution because :func:`__lazy_import__` is too wide for the table.
-   The trailing underscore in |func-lazy-import|_ links to the target above the
-   function definition.
-
-.. |func-lazy-import| replace:: ``__lazy_import__()``
 
 .. function:: abs(number, /)
 
@@ -2510,6 +2504,6 @@ are always available.  They are listed here in alphabetical order.
 
    The filter installed by :func:`sys.set_lazy_imports_filter` can force an
    eager import. If the filter returns false, the function returns the import
-   result (normally a :class:`types.ModuleType` instance) instead of a lazy proxy.
+   result as :func:`__import__` would do.
 
    .. versionadded:: 3.15
