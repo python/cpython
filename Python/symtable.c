@@ -1339,6 +1339,36 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree)) {
         goto error;
     }
+    /* Class scopes skip analyze_cells(); ensure the deferred-annotation
+     * name is a CELL (it may appear only via drop_class_free()). Modules
+     * keep it as an implicit global in the module dict. */
+    if (ste->ste_has_conditional_annotations && ste->ste_type == ClassBlock) {
+        PyObject *name = &_Py_ID(__conditional_annotations__);
+        int contains = PyDict_Contains(ste->ste_symbols, name);
+        if (contains < 0) {
+            goto error;
+        }
+        if (!contains) {
+            PyObject *flags = PyLong_FromLong(DEF_LOCAL);
+            if (flags == NULL) {
+                goto error;
+            }
+            int rc = PyDict_SetItem(ste->ste_symbols, name, flags);
+            Py_DECREF(flags);
+            if (rc < 0) {
+                goto error;
+            }
+        }
+        PyObject *v_cell = PyLong_FromLong(CELL);
+        if (v_cell == NULL) {
+            goto error;
+        }
+        int rc = PyDict_SetItem(scopes, name, v_cell);
+        Py_DECREF(v_cell);
+        if (rc < 0) {
+            goto error;
+        }
+    }
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
                         (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
@@ -2879,7 +2909,12 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;
-        if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__), USE, LOCATION(annotation))) {
+        /* Class: local binding, promoted to CELL in analyze_block.
+         * Module: USE only (implicit global); the set lives in the
+         * module dict so user rebinding is visible to the intrinsic. */
+        int flag = (st->st_cur->ste_type == ClassBlock) ? DEF_LOCAL : USE;
+        if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__),
+                              flag, LOCATION(annotation))) {
             return 0;
         }
     }

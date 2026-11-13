@@ -1641,10 +1641,9 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         ADDOP_IN_SCOPE(c, loc, LOAD_LOCALS);
 
-        // We can't use codegen_nameop here because we need to generate a
-        // STORE_DEREF in a class namespace, and codegen_nameop() won't do
-        // that by default.
-        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdict__), cellvars);
+        // Private cellvar __classdictcell__; codegen_nameop would not
+        // emit STORE_DEREF for a class-namespace nameop.
+        ADDOP_N_IN_SCOPE(c, loc, STORE_DEREF, &_Py_ID(__classdictcell__), cellvars);
     }
     if (SYMTABLE_ENTRY(c)->ste_has_conditional_annotations) {
         ADDOP_I_IN_SCOPE(c, loc, BUILD_SET, 0);
@@ -1659,7 +1658,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
     /* Set __classdictcell__ if necessary */
     if (SYMTABLE_ENTRY(c)->ste_needs_classdict) {
         /* Store __classdictcell__ into class namespace */
-        int i = _PyCompile_LookupCellvar(c, &_Py_ID(__classdict__));
+        int i = _PyCompile_LookupCellvar(c, &_Py_ID(__classdictcell__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I_IN_SCOPE(c, NO_LOCATION, LOAD_CLOSURE, i);
         RETURN_IF_ERROR_IN_SCOPE(
@@ -1668,7 +1667,7 @@ codegen_class_body(compiler *c, stmt_ty s, int firstlineno)
     /* Return __classcell__ if it is referenced, otherwise return None */
     if (SYMTABLE_ENTRY(c)->ste_needs_class_closure) {
         /* Store __classcell__ into class namespace & return it */
-        int i = _PyCompile_LookupCellvar(c, &_Py_ID(__class__));
+        int i = _PyCompile_LookupCellvar(c, &_Py_ID(__classcell__));
         RETURN_IF_ERROR_IN_SCOPE(c, i);
         ADDOP_I_IN_SCOPE(c, NO_LOCATION, LOAD_CLOSURE, i);
         ADDOP_I_IN_SCOPE(c, NO_LOCATION, COPY, 1);
