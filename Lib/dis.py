@@ -1151,6 +1151,16 @@ class Bytecode:
                                formatter=formatter)
             return output.getvalue()
 
+    def __eq__(self, other):
+        if isinstance(other, Bytecode):
+            return (self.codeobj, self.first_line, self.current_offset) == (
+                other.codeobj,
+                other.first_line,
+                other.current_offset,
+            )
+        else:
+            return NotImplemented
+
 
 def main(args=None):
     import argparse
