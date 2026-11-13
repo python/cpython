@@ -7,6 +7,7 @@ on:
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
+      - 'Python/ceval_tailcall.c'
   push:
     paths: *paths
   workflow_dispatch:

@@ -99,7 +99,7 @@
 #   define DISPATCH_TABLE_VAR instruction_funcptr_table
 #   define DISPATCH_TABLE instruction_funcptr_handler_table
 #   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
-#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _Py_TAIL_CALL_##op(TAIL_CALL_PARAMS)
 
 #   define DISPATCH_GOTO() \
         do { \
@@ -111,17 +111,17 @@
         } while (0)
 #   define JUMP_TO_LABEL(name) \
         do { \
-            Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+            Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
         } while (0)
 #   ifdef Py_STATS
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
+                Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
             } while (0)
 #   else
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
+                Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
             } while (0)
 #   endif
 #    define LABEL(name) TARGET(name)

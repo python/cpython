@@ -615,7 +615,11 @@ LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 # On some systems, object files that reference DTrace probes need to be modified
 # in-place by dtrace(1).
 DTRACE_DEPS = \
-	Python/ceval.o Python/gc.o Python/import.o Python/sysmodule.o
+	Python/ceval.o \
+	Python/gc.o \
+	Python/import.o \
+	Python/sysmodule.o \
+	Python/ceval_tailcall.o
 
 ##########################################################################
 # pyexpat's expat library
@@ -2155,7 +2159,7 @@ regen-test-cases:
 
 .PHONY: regen-test-opcode-targets
 regen-test-opcode-targets:
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py --static \
 	    -o $(srcdir)/Modules/_testinternalcapi/test_targets.h.new $(srcdir)/Python/bytecodes.c \
 		$(srcdir)/Modules/_testinternalcapi/testbytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Modules/_testinternalcapi/test_targets.h $(srcdir)/Modules/_testinternalcapi/test_targets.h.new
