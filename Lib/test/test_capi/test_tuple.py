@@ -1,6 +1,7 @@
 import gc
 import sys
 import unittest
+from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -363,6 +364,21 @@ class CAPITest(unittest.TestCase):
         a = tuple(object() for _ in range(3))
         with self.assertRaises(SystemError):
             resize(a, 3, True, compute_hash=True)
+
+        # Test _PyTuple_Resize() failure: inject MemoryError on
+        # PyObject_GC_Resize(). Check that the test doesn't leak references
+        # if the test is run with -R 3:3.
+        a = tuple(object() for _ in range(10))
+        got_memory_error = False
+        # Test different start values since _testcapi _tuple_resize() also
+        # allocates memory (to copy the tuple).
+        for start in range(5):
+            try:
+                with support.inject_memory_error_cm(start=start):
+                    resize(a, 30)
+            except MemoryError:
+                got_memory_error = True
+        self.assertTrue(got_memory_error)
 
         a = ()
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
