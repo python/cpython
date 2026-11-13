@@ -1030,27 +1030,49 @@ or ``rc`` suffix is also treated as text.
 
 Broadly, numbers are compared as numerical versions, so ``3.10`` is greater than
 ``3.1``, ``3.15`` is greater than ``3.15a1``, and ``3`` is equal to both ``3.0``
-and ``3.0.0``. Text is compared case-insensitively, and must match, so
-``2024b`` is not equivalent to ``2024.0`` because ``'b' != ''``.
+and ``3.0.0``. Text is compared case-insensitively, and must match, so ``2024b``
+is not equivalent to ``2024.0`` because ``'b' != ''``.
+
+.. note::
+
+   Do not interpret the depth of detail of the following few paragraphs as
+   representing its importance as a feature. Constraints are a necessary evil,
+   and we would prefer nobody rely on them instead of specific tags, which are
+   much simpler to reason about for publishers and end users. Unfortunately, we
+   are obliged to explain how our implementation handles constraints, and this
+   is the place for that explanation.
 
 Constraints can select multiple tags. A matching tag will start with the same
 segments as the constraining tag, where text segments are equal and numeric
-segments follow the constraint. That is, as long as text and numeric segments
-are equal to the constraint, checks continue, and the first non-equal segment
-determines the result - non-equal text results in failure, while a non-equal
-version either succeeds or fails based on the constraint. Remaining segments
-in the matching tag are ignored.
-For example:
+segments are above, below, or equal, according to the constraint. The first
+non-equal segment determines the result: non-equal text results in failure,
+while a non-equal version either succeeds or fails based on the constraint.
+Remaining segments in the matching tag are ignored.
 
-* ``>=3.13`` matches ``3.13.4`` and ``3.14``.
-* ``>3.13`` matches ``3.14``, but not ``3.13.4``.
-* ``>=3.13t`` matches ``3.14t``, while ``>=3.13`` does not.
+When applying a constraint check to a version segment that was shorter than the
+constraint (e.g. ``3`` has one field and so is shorter than ``==3.15``), it is
+interpreted as representing any possible version. This will result in many
+failed constraint checks that will usually be overridden by a more specific one.
+For example ``3`` could represent ``3.99`` and so it is not equal to ``3.15``,
+but if the same install also offers ``3.15`` then that one will cause the
+constraint to match.
+
+Here are some example cases showing the different applications of constraints:
+
+* ``>=3.13`` matches ``3.13.4`` and ``3.14``
+* ``>3.13`` matches ``3.14``, but not ``3.13.4``
+* ``>=3.13t`` matches ``3.14t``, while ``>=3.13`` does not
 * ``>=3.13`` matches ``3.14-abc`` but not ``3.14abc``
 * ``>3.13-abc-123`` matches ``3.14`` (number is higher) and ``3.13-abc-124``
   (number ``124`` is higher) but not ``3.13-def-123`` (text mismatch),
   ``3.14def`` (text ``def`` is not in the constraint),
   ``3.13-abc-123`` (number is not higher) or
   ``3.13-abc`` (not enough segments)
+* ``>=3.0`` matches ``3``, but ``>3.0`` does not
+* ``<4`` matches ``3``, but ``<3.12`` and ``<=3.12`` do not
+* ``==3.0`` does not match ``3``, while ``==3.10`` still matches ``3.10.1``
+* ``!=3.13` rejects ``3`` (because it could be ``3.13``), but ``!=3.13t``
+  accepts ``3`` (different suffix)
 
 The difference between hyphen-separated segments and adjacent text and numbers
 is subtle, but should not be relevant to most users. Publishers will choose and
@@ -1065,9 +1087,7 @@ choices.
 
 Note that constraints are not complementary, that is, the ``>=`` constraint does
 not necessarily include every tag rejected by the ``<`` constraint.
-For example, ``3.14t`` satisfies neither ``>=3.14`` nor ``<3.14``. However, the
-``!=`` constraint is a simple inversion of normal matching, which makes it
-appear very inclusive.
+For example, ``3.14t`` satisfies neither ``>=3.14`` nor ``<3.14``.
 
 Publishers should provide tags for each way they want users to select a
 runtime, commonly from most specific to least specific. For example, a
