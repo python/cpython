@@ -1,0 +1,7 @@
+Added :mod:`tkinter` support for the Tk 9.1 accessibility API: the
+:attr:`~tkinter.Misc.accessible` property of widgets returns an
+:class:`~tkinter.Accessible` object whose attributes are exposed to
+assistive technologies such as screen readers and whose methods register
+custom widgets with the platform accessibility API, and the
+:meth:`~tkinter.Misc.tk_check_screenreader` method reports whether a
+screen reader is running.
