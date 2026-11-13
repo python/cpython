@@ -1945,6 +1945,18 @@ class MinidomTest(unittest.TestCase):
         self.checkRenameNodeSharedConstraints(doc, elem)
         doc.unlink()
 
+    def testRenameElementToPrefixedName(self):
+        doc = parseString("<doc/>")
+        elem = doc.documentElement
+        elem = doc.renameNode(elem, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(elem.tagName, "p:c")
+        self.assertEqual(elem.nodeName, "p:c")
+        self.assertEqual(elem.prefix, "p")
+        self.assertEqual(elem.localName, "c")
+        self.assertEqual(elem.namespaceURI, "http://xml.python.org/ns")
+        self.assertIs(doc.documentElement, elem)
+        doc.unlink()
+
     def testRenameOther(self):
         # We have to create a comment node explicitly since not all DOM
         # builders used with minidom add comments to the DOM.
