@@ -1,0 +1,3 @@
+Add :meth:`multiprocessing.Queue.shutdown` to terminate a
+:class:`multiprocessing.Queue` or a :class:`multiprocessing.JoinableQueue`
+in every process which uses it, like :meth:`queue.Queue.shutdown`.

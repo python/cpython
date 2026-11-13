@@ -1536,6 +1536,348 @@ class _TestQueue(BaseTestCase):
                 q.put('foo')
             with self.assertRaisesRegex(ValueError, 'is closed'):
                 q.get()
+
+    #
+    # shutdown()
+    #
+    # Except where they look at the internals, these tests also run on
+    # queue.Queue, through the 'threads' and 'manager' types: the
+    # behaviour must be the same.
+    #
+
+    @classmethod
+    def _shutdown_getter(cls, q, results, ready):
+        ready.set()
+        items = []
+        try:
+            while True:
+                items.append(q.get())
+        except pyqueue.ShutDown:
+            pass
+        results.put(items)
+
+    @classmethod
+    def _shutdown_putter(cls, q, results, ready):
+        ready.set()
+        try:
+            q.put('extra')
+        except pyqueue.ShutDown:
+            results.put('ShutDown')
+        else:
+            results.put('put')
+
+    def _start_shutdown_workers(self, n, target, q):
+        results = self.Queue()
+        self.addCleanup(close_queue, results)
+        readies = [self.Event() for _ in range(n)]
+        procs = [self.Process(target=target, args=(q, results, ready))
+                 for ready in readies]
+        for p in procs:
+            p.daemon = True
+            p.start()
+            self.addCleanup(join_process, p)
+        for ready in readies:
+            self.assertTrue(ready.wait(support.SHORT_TIMEOUT))
+        # Let the workers block in get() or put().  This is only to make
+        # the interesting case the likely one: the tests are valid
+        # whatever the workers are doing when shutdown() is called.
+        time.sleep(0.1)
+        return [functools.partial(results.get, timeout=support.SHORT_TIMEOUT)
+                for p in procs]
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_empty(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue()
+                q.shutdown(immediate=immediate)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put(1)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put_nowait(1)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.put(1, timeout=0.01)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get()
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get_nowait()
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get(timeout=0.01)
+                self.assertTrue(queue_empty(q))
+                close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_drain(self):
+        q = self.Queue()
+        for i in range(3):
+            q.put(i)
+        # Do not wait: the items put just before shutdown() must not be
+        # lost, even those the feeder thread has not written yet.
+        q.shutdown()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put(3)
+        self.assertEqual(q.get(), 0)
+        self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 1)
+        self.assertEqual(q.get(), 2)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get_nowait()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get(timeout=0.01)
+        self.assertTrue(queue_empty(q))
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate(self):
+        q = self.Queue(maxsize=3)
+        for i in range(3):
+            q.put(i)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get_nowait()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.put(3)
+        self.assertTrue(queue_empty(q))
+        self.assertFalse(queue_full(q, 3))
+        self.assertReturnsIfImplemented(0, q.qsize)
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_repeated(self):
+        q = self.Queue()
+        q.put(1)
+        q.put(2)
+        q.shutdown()
+        q.shutdown()
+        self.assertEqual(q.get(), 1)
+        # An immediate shutdown can follow a graceful one.
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        q.shutdown()
+        self.assertTrue(queue_empty(q))
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_closed(self):
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+        q = self.Queue()
+        q.close()
+        with self.assertRaisesRegex(ValueError, 'is closed'):
+            q.shutdown()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_getters(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue()
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_getter, q)
+                q.shutdown(immediate=immediate)
+                self.assertEqual([get() for get in results], [[]] * 4)
+                close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_getter_gets_items(self):
+        # The items put before shutdown() go to a getter which was already
+        # waiting.
+        q = self.Queue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        for i in range(10):
+            q.put(i)
+        q.shutdown()
+        self.assertEqual(result(), list(range(10)))
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_many_getters(self):
+        # No getter may be left waiting for an item that another one took.
+        for nitems in 1, 100:
+            with self.subTest(nitems=nitems):
+                q = self.Queue()
+                for i in range(nitems):
+                    q.put(i)
+                q.shutdown()
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_getter, q)
+                items = [item for get in results for item in get()]
+                self.assertEqual(sorted(items), list(range(nitems)))
+                close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_blocked_putters(self):
+        for immediate in False, True:
+            with self.subTest(immediate=immediate):
+                q = self.Queue(maxsize=2)
+                q.put(1)
+                q.put(2)
+                results = self._start_shutdown_workers(
+                    4, self._shutdown_putter, q)
+                q.shutdown(immediate=immediate)
+                self.assertEqual([get() for get in results],
+                                 ['ShutDown'] * 4)
+                if not immediate:
+                    self.assertEqual(q.get(), 1)
+                    self.assertEqual(q.get(), 2)
+                with self.assertRaises(pyqueue.ShutDown):
+                    q.get()
+                self.assertTrue(queue_empty(q))
+                close_queue(q)
+
+    @classmethod
+    def _shutdown_producer(cls, q, nitems, done, exit):
+        for i in range(nitems):
+            q.put((i, bytes(1000)))
+        done.set()
+        # Exiting would wait for the feeder thread to write everything to
+        # the pipe.  Stay alive instead, so that items remain in its buffer.
+        exit.wait(support.LONG_TIMEOUT)
+
+    def _start_shutdown_producer(self, q, nitems):
+        done = self.Event()
+        exit = self.Event()
+        self.addCleanup(exit.set)
+        p = self.Process(target=self._shutdown_producer,
+                         args=(q, nitems, done, exit))
+        p.daemon = True
+        p.start()
+        self.assertTrue(done.wait(support.SHORT_TIMEOUT))
+        return p, exit
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_other_process_items(self):
+        # Most of the items are too big for the pipe: they are still in the
+        # buffer of the process which put them when the queue is shut down.
+        q = self.Queue()
+        nitems = 1000
+        p, exit = self._start_shutdown_producer(q, nitems)
+        q.shutdown()
+        for i in range(nitems):
+            self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT)[0], i)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        self.assertTrue(queue_empty(q))
+        exit.set()
+        join_process(p)
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_other_process_items(self):
+        if self.TYPE == 'processes' and sys.platform == 'win32':
+            self.skipTest('an item being written may be left on Windows')
+        q = self.Queue()
+        p, exit = self._start_shutdown_producer(q, 1000)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        self.assertTrue(queue_empty(q))
+        self.assertReturnsIfImplemented(0, q.qsize)
+        exit.set()
+        join_process(p)
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_feeder_error(self):
+        # A getter waiting for an item which the feeder thread fails to
+        # send is woken up.
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        class NotSerializable(object):
+            def __reduce__(self):
+                raise AttributeError
+        q = self.Queue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        with test.support.captured_stderr():
+            q.put(NotSerializable())
+            q.shutdown()
+            self.assertEqual(result(), [])
+            close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_subclass_put(self):
+        # A subclass may override put() without calling _acquire_slot(), so
+        # that its items are not counted.  They must not be lost.
+        if self.TYPE != 'processes':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+
+        class MyQueue(multiprocessing.queues.Queue):
+            def put(self, obj, block=True, timeout=None):
+                if not self._sem.acquire(block, timeout):
+                    raise pyqueue.Full
+                with self._notempty:
+                    if self._thread is None:
+                        self._start_thread()
+                    self._buffer.append(obj)
+                    self._notempty.notify()
+
+        q = MyQueue(ctx=multiprocessing.get_context())
+        q.put(1)
+        q.put(2)
+        self.assertEqual(q.get(), 1)
+        q.shutdown()
+        self.assertEqual(q.get(), 2)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_joinable(self):
+        q = self.JoinableQueue()
+        q.put(1)
+        q.put(2)
+        q.shutdown()
+        self.assertEqual(q.get(), 1)
+        q.task_done()
+        self.assertEqual(q.get(), 2)
+        q.task_done()
+        q.join()
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+        close_queue(q)
+
+    @classmethod
+    def _shutdown_joiner(cls, q, joined):
+        q.join()
+        joined.set()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_joinable(self):
+        q = self.JoinableQueue()
+        for i in range(3):
+            q.put(i)
+        self.assertEqual(q.get(), 0)
+        q.shutdown(immediate=True)
+        with self.assertRaises(pyqueue.ShutDown):
+            q.get()
+
+        # The discarded items are done, the one which was taken is not.
+        joined = self.Event()
+        p = self.Process(target=self._shutdown_joiner, args=(q, joined))
+        p.daemon = True
+        p.start()
+        self.assertFalse(joined.wait(0.1))
+        q.task_done()
+        self.assertTrue(joined.wait(support.SHORT_TIMEOUT))
+        join_process(p)
+        with self.assertRaises(ValueError):
+            q.task_done()
+        close_queue(q)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_shutdown_immediate_joinable_blocked_getter(self):
+        # join() returns although no task_done() is ever called.
+        q = self.JoinableQueue()
+        result, = self._start_shutdown_workers(1, self._shutdown_getter, q)
+        q.shutdown(immediate=True)
+        self.assertEqual(result(), [])
+        q.join()
+        close_queue(q)
+
 #
 #
 #
