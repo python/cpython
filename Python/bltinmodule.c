@@ -2317,6 +2317,14 @@ write:
         PyErr_SetHandledException(exception);
     }
 
+    int written = _PyTextIOWrapper_WriteList(file, parts);
+    if (written < 0) {
+        goto done;
+    }
+    if (written) {
+        goto flush;
+    }
+
     line = PyUnicode_Join(&_Py_STR(empty), parts);
     if (line != NULL) {
         PyObject *result = PyObject_CallMethodOneArg(file, &_Py_ID(write), line);
@@ -2341,6 +2349,7 @@ write:
         }
     }
 
+flush:
     if (flush && _PyFile_Flush(file) < 0) {
         goto done;
     }
