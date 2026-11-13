@@ -1,2 +1,0 @@
-Fix a reference leak in :func:`gc.get_objects` and :func:`gc.get_referrers`
-when an internal allocation fails in the free-threaded build.

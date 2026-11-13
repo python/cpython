@@ -1,0 +1,2 @@
+Fix a crash in :meth:`xml.etree.ElementTree.Element.iter` when a tag's
+equality comparison replaces that tag.
