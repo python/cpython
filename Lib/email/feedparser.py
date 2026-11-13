@@ -27,6 +27,7 @@ from email import errors
 from email._policybase import compat32
 from collections import deque
 from io import StringIO
+from itertools import repeat, chain
 
 NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
@@ -215,9 +216,10 @@ class FeedParser:
             self._cur = None
         return retval
 
-    def _parsegen(self):
+    def _parsegen(self, is_signed_data: bool = False):
         # Create a new message and start by parsing headers.
         self._new_message()
+        self._cur.set_is_signed_data(is_signed_data)
         headers = []
         # Collect the headers, searching for a line that doesn't match the RFC
         # 2822 header or continuation pattern (including an empty line).
@@ -261,7 +263,7 @@ class FeedParser:
             # nested messages.  A blank line separates the subparts.
             while True:
                 self._input.push_eof_matcher(NLCRE.match)
-                for retval in self._parsegen():
+                for retval in self._parsegen(is_signed_data):
                     if retval is NeedMoreData:
                         yield NeedMoreData
                         continue
@@ -295,7 +297,7 @@ class FeedParser:
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
             # another RFC 5322 message.
-            for retval in self._parsegen():
+            for retval in self._parsegen(is_signed_data):
                 if retval is NeedMoreData:
                     yield NeedMoreData
                     continue
@@ -303,6 +305,7 @@ class FeedParser:
             self._pop_message()
             return
         if self._cur.get_content_maintype() == 'multipart':
+            is_subpart_signed_generator = chain([True], repeat(is_signed_data))  if self._cur.get_content_subtype() == "signed" else repeat(is_signed_data)
             boundary = self._cur.get_boundary()
             if boundary is None:
                 # The message /claims/ to be a multipart but it has not
@@ -383,7 +386,8 @@ class FeedParser:
                     # Recurse to parse this subpart; the input stream points
                     # at the subpart's first line.
                     self._input.push_eof_matcher(boundarymatch)
-                    for retval in self._parsegen():
+                    # Subpart is signed data if it is descendant of 'multipart/signed' message.
+                    for retval in self._parsegen(next(is_subpart_signed_generator)):
                         if retval is NeedMoreData:
                             yield NeedMoreData
                             continue
