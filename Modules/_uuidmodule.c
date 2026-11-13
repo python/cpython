@@ -738,17 +738,19 @@ from_hex(uuidobject *self, PyObject *hex)
         }
 
         if (j > UUID_SIZE || (j == UUID_SIZE && acc_set)) {
-            PyErr_Format(PyExc_ValueError,
-                "invalid UUID '%s': decodes to more than 16 bytes",
-                hex);
+            PyErr_SetString(
+                PyExc_ValueError,
+                "badly formed hexadecimal UUID string"
+            );
             return -1;
         }
     }
 
     if (j != UUID_SIZE) {
-        PyErr_Format(PyExc_ValueError,
-            "invalid UUID '%s': decodes to less than 16 bytes",
-            hex);
+        PyErr_SetString(
+            PyExc_ValueError,
+            "badly formed hexadecimal UUID string"
+        );
         return -1;
     }
 
