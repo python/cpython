@@ -1,0 +1,3 @@
+Fix :meth:`threading.Thread.join` with a timeout blocking forever when the
+deadline passed between the two reads of the clock used to compute the time
+left.
