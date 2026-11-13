@@ -2274,6 +2274,13 @@ class ZipFile:
                     'File name in directory %r and header %r differ.'
                     % (zinfo.orig_filename, fname))
 
+            local_method = fheader[_FH_COMPRESSION_METHOD]
+            if local_method != zinfo.compress_type:
+                raise BadZipFile(
+                    f"Compression method for {zinfo.orig_filename!r} differs "
+                    f"between the central directory ({zinfo.compress_type}) "
+                    f"and the local file header ({local_method}).")
+
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
                 if zinfo._end_offset == zinfo.header_offset:
