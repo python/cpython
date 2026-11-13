@@ -1,0 +1,2 @@
+Premptively fail in :func:`contextdir.chdir` if we can't change back to the
+original directory.
