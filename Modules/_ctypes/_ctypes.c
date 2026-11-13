@@ -186,7 +186,23 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
 {
     DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     if (self->key && self->dict) {
-        if (-1 == PyDict_DelItem(self->dict, self->key)) {
+        /* Only remove the entry if it is still the proxy that died: the
+           key may have been reused for a new object in the meantime. */
+        PyObject *proxy = PyTuple_GET_SIZE(args) == 1
+            ? PyTuple_GET_ITEM(args, 0) : NULL;
+        PyObject *current;
+        int rc;
+        Py_BEGIN_CRITICAL_SECTION(self->dict);
+        rc = PyDict_GetItemRef(self->dict, self->key, &current);
+        if (rc == 1) {
+            rc = 0;
+            if (current == proxy) {
+                rc = PyDict_DelItem(self->dict, self->key);
+            }
+            Py_DECREF(current);
+        }
+        Py_END_CRITICAL_SECTION();
+        if (rc < 0) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "calling _ctypes.DictRemover");
         }
@@ -5478,8 +5494,12 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
         return NULL;
     }
     PyObject *cached;
-    if (_PyDict_SetDefaultItemProxy(st, st->array_cache, key, result,
-                                    &cached) < 0) {
+    int rc;
+    Py_BEGIN_CRITICAL_SECTION(st->array_cache);
+    rc = _PyDict_SetDefaultItemProxy(st, st->array_cache, key, result,
+                                     &cached);
+    Py_END_CRITICAL_SECTION();
+    if (rc < 0) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
