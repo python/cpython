@@ -4159,6 +4159,31 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(list(root.itertext()),
                          ['hello ', 'world', '!', 'QTEXT', '?'])
 
+    def test_itertext_custom_factories(self):
+        # Elements made by custom comment/PI factories use a callable tag
+        # and must be skipped like regular comments and PIs.
+        def my_comment(text):
+            e = ET.Element(my_comment)
+            e.text = text
+            return e
+
+        def my_pi(target, text=None):
+            e = ET.Element(my_pi)
+            e.text = target
+            return e
+
+        tb = ET.TreeBuilder(insert_comments=True, insert_pis=True,
+                            comment_factory=my_comment, pi_factory=my_pi)
+        tb.start('a', {})
+        tb.data('x')
+        tb.comment('c')
+        tb.data('y')
+        tb.pi('target', 'data')
+        tb.data('z')
+        tb.end('a')
+        root = tb.close()
+        self.assertEqual(list(root.itertext()), ['x', 'y', 'z'])
+
     def test_corners(self):
         # single root, no subelements
         a = ET.Element('a')

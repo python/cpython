@@ -2380,10 +2380,9 @@ elementiter_next(PyObject *op)
             return NULL;
         }
         if (it->gettext) {
-            elementtreestate *state = get_elementtree_state_by_type(Py_TYPE(it));
-            if (elem->tag == state->comment_factory
-                || elem->tag == state->pi_factory)
-            {
+            /* Comments, processing instructions and elements created by
+             * custom factories use a callable as their tag. */
+            if (PyCallable_Check(elem->tag)) {
                 Py_DECREF(elem);
                 continue;
             }
