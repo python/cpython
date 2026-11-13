@@ -1443,29 +1443,23 @@ class TestModule(unittest.TestCase):
 class CommandLineTest(unittest.TestCase):
     @support.force_not_colorized
     def test_parse_args(self):
-        args, help_text = random._parse_args(shlex.split("--choice a b c"))
+        args, parser = random._parse_args(shlex.split("--choice a b c"))
         self.assertEqual(args.choice, ["a", "b", "c"])
-        self.assertStartsWith(help_text, "usage: ")
 
-        args, help_text = random._parse_args(shlex.split("--integer 5"))
+        args, parser = random._parse_args(shlex.split("--integer 5"))
         self.assertEqual(args.integer, 5)
-        self.assertStartsWith(help_text, "usage: ")
 
-        args, help_text = random._parse_args(shlex.split("--float 2.5"))
+        args, parser = random._parse_args(shlex.split("--float 2.5"))
         self.assertEqual(args.float, 2.5)
-        self.assertStartsWith(help_text, "usage: ")
 
-        args, help_text = random._parse_args(shlex.split("a b c"))
+        args, parser = random._parse_args(shlex.split("a b c"))
         self.assertEqual(args.input, ["a", "b", "c"])
-        self.assertStartsWith(help_text, "usage: ")
 
-        args, help_text = random._parse_args(shlex.split("5"))
+        args, parser = random._parse_args(shlex.split("5"))
         self.assertEqual(args.input, ["5"])
-        self.assertStartsWith(help_text, "usage: ")
 
-        args, help_text = random._parse_args(shlex.split("2.5"))
+        args, parser = random._parse_args(shlex.split("2.5"))
         self.assertEqual(args.input, ["2.5"])
-        self.assertStartsWith(help_text, "usage: ")
 
     def test_main(self):
         for command, expected in [
@@ -1481,6 +1475,20 @@ class CommandLineTest(unittest.TestCase):
         ]:
             random.seed(0)
             self.assertEqual(random.main(shlex.split(command)), expected)
+
+    @support.force_not_colorized
+    def test_empty_integer_range_error(self):
+        # An integer input is the same as --integer, even when it is
+        # not positive.
+        for value in ["0", "-5"]:
+            err_msg = f"error: integer must be 1 or greater, got {value}\n"
+            for args in [[value], ["--integer", value]]:
+                with self.subTest(args=args):
+                    with (support.captured_stderr() as stderr,
+                          self.assertRaises(SystemExit) as cm):
+                        random.main(args)
+                    self.assertEqual(cm.exception.code, 2)
+                    self.assertEndsWith(stderr.getvalue(), err_msg)
 
 
 if __name__ == "__main__":
