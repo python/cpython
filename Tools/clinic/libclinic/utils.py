@@ -1,5 +1,6 @@
 import collections
 import dataclasses as dc
+import errno
 import enum
 import hashlib
 import os
@@ -64,7 +65,8 @@ class FileWriter:
         elif os.path.exists(dirname):
             # Create nothing, but fail as os.makedirs() does, so that
             # the caller can report an existing non-directory.
-            raise FileExistsError(dirname)
+            raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST),
+                                  dirname)
 
     def write(self, filename: str, new_contents: str) -> None:
         if not self.dry_run:
