@@ -1372,7 +1372,7 @@ class KDFTests(unittest.TestCase):
     #  - rounds of least 1000
     def fips_incompatible(self, password, salt, rounds):
         return (get_fips_mode()
-                and (len(password) < 1 or len(salt) < 16 or rounds < 1000))
+                and (len(password) < 8 or len(salt) < 16 or rounds < 1000))
 
     @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
