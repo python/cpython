@@ -1,0 +1,2 @@
+Fix a deadlock in :mod:`multiprocessing.managers` when cyclic garbage
+collection finalizes a proxy on its own manager server's accepting thread.

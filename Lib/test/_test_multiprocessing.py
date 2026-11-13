@@ -3751,6 +3751,69 @@ class _TestMyManager(BaseTestCase):
 
     ALLOWED_TYPES = ('manager',)
 
+    def test_proxy_finalizer_does_not_block_local_server(self):
+        # gh-159986: the cyclic GC may run a proxy finalizer on the
+        # manager's own accepter thread, which must stay free to accept RPCs.
+        code = r'''
+import gc
+import os
+import threading
+import time
+from multiprocessing.managers import BaseManager
+
+class Manager(BaseManager):
+    pass
+
+class Value:
+    def get(self):
+        return 123
+
+Manager.register('Value', Value)
+server = Manager(address=('127.0.0.1', 0), authkey=b'secret').get_server()
+threading.Thread(target=server.serve_forever, daemon=True).start()
+manager = Manager(address=server.address, authkey=b'secret')
+manager.connect()
+
+# Ensure only the accepter's explicit collection can run the finalizer.
+gc.disable()
+proxy = manager.Value()
+cycle = [proxy]
+cycle.append(cycle)
+del proxy, cycle
+
+triggered = threading.Event()
+original_init = threading.Thread.__init__
+
+def collect_during_accept(self, *args, **kwargs):
+    target = kwargs.get('target')
+    if (getattr(target, '__self__', None) is server and
+            getattr(target, '__name__', '') == 'handle_request' and
+            not triggered.is_set()):
+        triggered.set()
+        gc.collect()
+    return original_init(self, *args, **kwargs)
+
+threading.Thread.__init__ = collect_during_accept
+result = []
+
+def request():
+    result.append(manager.Value().get())
+
+worker = threading.Thread(target=request, daemon=True)
+worker.start()
+worker.join(timeout=10)
+if worker.is_alive():
+    os._exit(2)
+assert triggered.is_set() and result == [123], result
+
+# The local decrement is asynchronous, but it must actually be processed.
+deadline = time.monotonic() + 5
+while server.id_to_refcount and time.monotonic() < deadline:
+    time.sleep(0.01)
+assert not server.id_to_refcount, server.id_to_refcount
+'''
+        test.support.script_helper.assert_python_ok('-c', code)
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager(self):

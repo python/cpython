@@ -164,6 +164,10 @@ class Server(object):
         self.id_to_refcount = {}
         self.id_to_local_proxy_obj = {}
         self.mutex = threading.Lock()
+        # Decrements from in-process proxy finalizers cannot block a thread
+        # that this server needs to accept incoming requests.
+        self._local_decrefs = queue.SimpleQueue()
+        self._server_pid = os.getpid()
 
     def serve_forever(self):
         '''
@@ -177,7 +181,14 @@ class Server(object):
             accepter.start()
             try:
                 while not self.stop_event.is_set():
-                    self.stop_event.wait(1)
+                    try:
+                        ident = self._local_decrefs.get(timeout=1)
+                    except queue.Empty:
+                        continue
+                    try:
+                        self.decref(None, ident)
+                    except Exception as e:
+                        util.debug('... local decref failed %s', e)
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
@@ -884,8 +895,16 @@ class BaseProxy(object):
             # tell manager this process no longer cares about referent
             try:
                 util.debug('DECREF %r', token.id)
-                conn = _Client(token.address, authkey=authkey)
-                dispatch(conn, None, 'decref', (token.id,))
+                server = getattr(process.current_process(),
+                                 '_manager_server', None)
+                if (server is not None and server.address == token.address
+                        and server._server_pid == os.getpid()):
+                    # A finalizer may run on this server's accepter thread.
+                    # Do not wait for that same thread to serve an RPC.
+                    server._local_decrefs.put(token.id)
+                else:
+                    conn = _Client(token.address, authkey=authkey)
+                    dispatch(conn, None, 'decref', (token.id,))
             except Exception as e:
                 util.debug('... decref failed %s', e)
 
