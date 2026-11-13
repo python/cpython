@@ -34,6 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -137,6 +138,42 @@ get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
 }
+
+static PyObject *
+stop_the_world(PyObject *self, PyObject *args)
+{
+    PyObject *duration_obj = NULL;
+    PyTime_t duration = 0;
+    if (!PyArg_ParseTuple(args, "|O:stop_the_world", &duration_obj)) {
+        return NULL;
+    }
+    if (duration_obj != NULL &&
+        _PyTime_FromSecondsObject(&duration, duration_obj,
+                                 _PyTime_ROUND_TIMEOUT) < 0) {
+        return NULL;
+    }
+    if (duration < 0) {
+        PyErr_SetString(PyExc_ValueError, "duration must be non-negative");
+        return NULL;
+    }
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    if (duration != 0) {
+        PyEvent event = {0};
+        PyEvent_WaitTimed(&event, duration, /*detach=*/0);
+    }
+    _PyEval_StartTheWorld(interp);
+#endif
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(stop_the_world_doc,
+"stop_the_world($module, duration=0, /)\n"
+"--\n"
+"\n"
+"Stop the world, wait for duration seconds, then restart it.\n"
+"Does nothing in GIL-enabled builds.");
 
 static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
@@ -2496,6 +2533,7 @@ static PyMethodDef module_functions[] = {
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
+    {"stop_the_world", stop_the_world, METH_VARARGS, stop_the_world_doc},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
