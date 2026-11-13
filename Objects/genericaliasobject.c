@@ -643,8 +643,12 @@ ga_hash(PyObject *self)
 }
 
 static inline PyObject *
-set_orig_class(PyObject *obj, PyObject *self)
+set_orig_class(PyObject *obj, PyObject *self, PyObject *origin)
 {
+    if (PyFunction_Check(origin) || PyMethod_Check(origin) ||
+        PyCFunction_Check(origin)) {
+        return obj;
+    }
     if (obj != NULL) {
         if (PyObject_SetAttr(obj, &_Py_ID(__orig_class__), self) < 0) {
             if (!PyErr_ExceptionMatches(PyExc_AttributeError) &&
@@ -664,7 +668,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     gaobject *alias = (gaobject *)self;
     PyObject *obj = PyObject_Call(alias->origin, args, kwds);
-    return set_orig_class(obj, self);
+    return set_orig_class(obj, self, alias->origin);
 }
 
 static PyObject *
@@ -673,7 +677,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 {
     gaobject *alias = (gaobject *) self;
     PyObject *obj = PyObject_Vectorcall(alias->origin, args, nargsf, kwnames);
-    return set_orig_class(obj, self);
+    return set_orig_class(obj, self, alias->origin);
 }
 
 static const char* const attr_exceptions[] = {
