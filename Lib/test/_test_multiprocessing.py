@@ -4671,6 +4671,31 @@ class _TestHeap(BaseTestCase):
         self.assertEqual(len(heap._allocated_blocks), 0, heap._allocated_blocks)
         self.assertEqual(len(heap._len_to_seq), 0)
 
+    def test_memoryview_keeps_allocation_alive(self):
+        heap = multiprocessing.heap.BufferWrapper._heap
+        wrapper = multiprocessing.heap.BufferWrapper(8)
+        view = wrapper.create_memoryview()
+        view[:] = b"abcdefgh"
+        wrapper_ref = weakref.ref(wrapper)
+
+        # A derived view must keep the allocation alive even after the
+        # original view and wrapper have both gone away.
+        subview = view[2:6]
+        del view, wrapper
+        gc.collect()
+        self.assertIsNotNone(wrapper_ref())
+
+        # A second allocation must not overwrite the live view's data.
+        other = multiprocessing.heap.BufferWrapper(8)
+        other_view = other.create_memoryview()
+        other_view[:] = b"12345678"
+        self.assertEqual(bytes(subview), b"cdef")
+
+        del subview, other_view, other
+        gc.collect()
+        self.assertIsNone(wrapper_ref())
+        self.assertEqual(heap._n_frees, heap._n_mallocs)
+
     def test_free_from_gc(self):
         # Check that freeing of blocks by the garbage collector doesn't deadlock
         # (issue #12352).

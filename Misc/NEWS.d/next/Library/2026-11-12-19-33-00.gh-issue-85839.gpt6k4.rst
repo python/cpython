@@ -1,0 +1,2 @@
+Memoryviews returned by ``multiprocessing.heap.BufferWrapper.create_memoryview()``
+now keep their shared-memory heap allocation alive until the view is released.

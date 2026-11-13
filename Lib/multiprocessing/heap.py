@@ -8,6 +8,7 @@
 #
 
 import bisect
+import ctypes
 from collections import defaultdict
 import mmap
 import os
@@ -330,4 +331,9 @@ class BufferWrapper(object):
 
     def create_memoryview(self):
         (arena, start, stop), size = self._state
-        return memoryview(arena.buffer)[start:start+size]
+        # A view of arena.buffer alone cannot keep this allocation alive:
+        # the heap may recycle the block while the view is still in use.
+        # Keep the wrapper reachable through the buffer exporter.
+        exporter = (ctypes.c_ubyte * size).from_buffer(arena.buffer, start)
+        exporter._wrapper = self
+        return memoryview(exporter).cast('B')
