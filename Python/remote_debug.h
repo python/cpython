@@ -29,6 +29,7 @@ extern "C" {
 
 #include "pyconfig.h"
 #include "internal/pycore_ceval.h"
+#include <stddef.h>
 
 #ifdef __linux__
 #    include <elf.h>
@@ -375,7 +376,7 @@ read_dyld_pointer(const void *source, size_t pointer_size)
 static int
 read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
 {
-    task_dyld_info_data_t info;
+    task_dyld_info_data_t info = {0};
     mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
     kern_return_t status = task_info(handle->task, TASK_DYLD_INFO,
                                      (task_info_t)&info, &count);
@@ -385,6 +386,23 @@ read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
                      "Cannot read dyld information for PID %d (Mach error %d)",
                      handle->pid, status);
         return -1;
+    }
+    if (count < TASK_DYLD_INFO_COUNT) {
+        /* Older kernels return the address and size without the format. */
+        size_t legacy_size = offsetof(task_dyld_info_data_t, all_image_info_format);
+        if (count * sizeof(natural_t) < legacy_size) {
+            PyErr_SetString(PyExc_RuntimeError, "Truncated task dyld information");
+            return -1;
+        }
+        struct proc_bsdinfo process;
+        int size = proc_pidinfo(handle->pid, PROC_PIDTBSDINFO, 0,
+                               &process, sizeof(process));
+        if (size != sizeof(process)) {
+            PyErr_SetString(PyExc_RuntimeError, "Cannot determine the remote process pointer size");
+            return -1;
+        }
+        info.all_image_info_format = process.pbi_flags & PROC_FLAG_LP64
+            ? TASK_DYLD_ALL_IMAGE_INFO_64 : TASK_DYLD_ALL_IMAGE_INFO_32;
     }
     if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
         list->pointer_size = 8;
