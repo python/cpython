@@ -1,0 +1,4 @@
+When building with ``--with-lto`` and Clang, :program:`configure` now checks
+that the linker can link LTO objects and falls back to ``lld``
+(``-fuse-ld=lld``) if it cannot.  This fixes LTO builds on systems where the
+default GNU linker lacks the ``LLVMgold.so`` plugin, such as Debian 13.

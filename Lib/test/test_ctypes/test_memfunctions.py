@@ -60,7 +60,7 @@ class MemFunctionsTest(unittest.TestCase):
     @support.refcount_test
     def test_string_at(self):
         s = string_at(b"foo bar")
-        self.assertTrue(s, "foo bar")
+        self.assertEqual(s, b"foo bar")
 
         self.assertEqual(string_at(b"foo bar", 7), b"foo bar")
         self.assertEqual(string_at(b"foo bar", 3), b"foo")

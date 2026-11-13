@@ -2838,7 +2838,7 @@ features:
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Accepts file descriptors pointing to symbolic links as *path* on
       Linux, Android, macOS and iOS.
 
@@ -3374,7 +3374,7 @@ features:
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
-         for the file creation time. In the future, ``st_ctime`` will contain
+         for the file creation time. In the future, ``st_ctime_ns`` will contain
          the time of the most recent metadata change, as for other platforms.
 
    .. attribute:: st_birthtime
@@ -5456,7 +5456,7 @@ written in Python, such as a mail server's external command delivery program.
    parent's signal mask. This argument corresponds to the C library
    :c:macro:`!POSIX_SPAWN_SETSIGMASK` flag.
 
-   The *sigdef* argument will reset the disposition of all signals in the set
+   The *setsigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
    :c:macro:`!POSIX_SPAWN_SETSIGDEF` flag.
 

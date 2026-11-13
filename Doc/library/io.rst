@@ -205,7 +205,7 @@ High-level module interface
 
       def read_text(path, encoding=None):
           encoding = io.text_encoding(encoding)  # stacklevel=2
-          with open(path, encoding) as f:
+          with open(path, encoding=encoding) as f:
               return f.read()
 
    In this example, an :class:`EncodingWarning` is emitted for the caller of
@@ -526,6 +526,81 @@ I/O base classes
          write calls until all unwritten bytes are written. High-level I/O
          objects like :ref:`binary-io` and :ref:`text-io` implement retry behavior.
 
+
+Raw file I/O
+^^^^^^^^^^^^
+
+.. class:: FileIO(name, mode='r', closefd=True, opener=None)
+
+   A raw binary stream representing an OS-level file containing bytes data.  It
+   inherits from :class:`RawIOBase` and implements its low-level access design.
+   This means :meth:`~RawIOBase.write` does not guarantee all bytes are written
+   and :meth:`~RawIOBase.read` may read less bytes than requested even when more
+   bytes may be present in the underlying file. To get "write all" and
+   "read at least" behavior, use :ref:`binary-io`.
+
+   The *name* can be one of two things:
+
+   * a character string or :class:`bytes` object representing the path to the
+     file which will be opened. In this case closefd must be ``True`` (the default)
+     otherwise an error will be raised.
+   * an integer representing the number of an existing OS-level file descriptor
+     to which the resulting :class:`FileIO` object will give access. When the
+     FileIO object is closed this fd will be closed as well, unless *closefd*
+     is set to ``False``.
+
+   The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
+   (default), writing, exclusive creation or appending. The file will be
+   created if it doesn't exist when opened for writing or appending; it will be
+   truncated when opened for writing. :exc:`FileExistsError` will be raised if
+   it already exists when opened for creating. Opening a file for creating
+   implies writing, so this mode behaves in a similar way to ``'w'``. Add a
+   ``'+'`` to the mode to allow simultaneous reading and writing.
+
+   A custom opener can be used by passing a callable as *opener*. The underlying
+   file descriptor for the file object is then obtained by calling *opener* with
+   (*name*, *flags*). *opener* must return an open file descriptor (passing
+   :mod:`os.open` as *opener* results in functionality similar to passing
+   ``None``).
+
+   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
+
+   See the :func:`open` built-in function for examples on using the *opener*
+   parameter.
+
+   .. warning::
+      :class:`FileIO` is a low-level I/O object and members, such as
+      :meth:`~RawIOBase.read` and :meth:`~RawIOBase.write`, need to have their
+      return values checked explicitly in a retry loop to implement "write all"
+      and "read at least" behavior. High-level I/O objects :ref:`binary-io` and
+      :ref:`text-io` implement retry behavior.
+
+   .. versionchanged:: 3.3
+      The *opener* parameter was added.
+      The ``'x'`` mode was added.
+
+   .. versionchanged:: 3.4
+      The file is now non-inheritable.
+
+   :class:`FileIO` provides these data attributes in addition to those from
+   :class:`RawIOBase` and :class:`IOBase`:
+
+   .. attribute:: mode
+
+      The mode as given in the constructor.
+
+   .. attribute:: name
+
+      The file name.  This is the file descriptor of the file when no name is
+      given in the constructor.
+
+
+Buffered streams
+^^^^^^^^^^^^^^^^
+
+Buffered I/O streams provide a higher-level interface to an I/O device
+than raw I/O does.
+
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
@@ -646,80 +721,6 @@ I/O base classes
       The caller may release or mutate *b* after this method returns,
       so the implementation should only access *b* during the method call.
 
-
-Raw file I/O
-^^^^^^^^^^^^
-
-.. class:: FileIO(name, mode='r', closefd=True, opener=None)
-
-   A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits from :class:`RawIOBase` and implements its low-level access design.
-   This means :meth:`~RawIOBase.write` does not guarantee all bytes are written
-   and :meth:`~RawIOBase.read` may read less bytes than requested even when more
-   bytes may be present in the underlying file. To get "write all" and
-   "read at least" behavior, use :ref:`binary-io`.
-
-   The *name* can be one of two things:
-
-   * a character string or :class:`bytes` object representing the path to the
-     file which will be opened. In this case closefd must be ``True`` (the default)
-     otherwise an error will be raised.
-   * an integer representing the number of an existing OS-level file descriptor
-     to which the resulting :class:`FileIO` object will give access. When the
-     FileIO object is closed this fd will be closed as well, unless *closefd*
-     is set to ``False``.
-
-   The *mode* can be ``'r'``, ``'w'``, ``'x'`` or ``'a'`` for reading
-   (default), writing, exclusive creation or appending. The file will be
-   created if it doesn't exist when opened for writing or appending; it will be
-   truncated when opened for writing. :exc:`FileExistsError` will be raised if
-   it already exists when opened for creating. Opening a file for creating
-   implies writing, so this mode behaves in a similar way to ``'w'``. Add a
-   ``'+'`` to the mode to allow simultaneous reading and writing.
-
-   A custom opener can be used by passing a callable as *opener*. The underlying
-   file descriptor for the file object is then obtained by calling *opener* with
-   (*name*, *flags*). *opener* must return an open file descriptor (passing
-   :mod:`os.open` as *opener* results in functionality similar to passing
-   ``None``).
-
-   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
-
-   See the :func:`open` built-in function for examples on using the *opener*
-   parameter.
-
-   .. warning::
-      :class:`FileIO` is a low-level I/O object and members, such as
-      :meth:`~RawIOBase.read` and :meth:`~RawIOBase.write`, need to have their
-      return values checked explicitly in a retry loop to implement "write all"
-      and "read at least" behavior. High-level I/O objects :ref:`binary-io` and
-      :ref:`text-io` implement retry behavior.
-
-   .. versionchanged:: 3.3
-      The *opener* parameter was added.
-      The ``'x'`` mode was added.
-
-   .. versionchanged:: 3.4
-      The file is now non-inheritable.
-
-   :class:`FileIO` provides these data attributes in addition to those from
-   :class:`RawIOBase` and :class:`IOBase`:
-
-   .. attribute:: mode
-
-      The mode as given in the constructor.
-
-   .. attribute:: name
-
-      The file name.  This is the file descriptor of the file when no name is
-      given in the constructor.
-
-
-Buffered streams
-^^^^^^^^^^^^^^^^
-
-Buffered I/O streams provide a higher-level interface to an I/O device
-than raw I/O does.
 
 .. class:: BytesIO(initial_bytes=b'')
 

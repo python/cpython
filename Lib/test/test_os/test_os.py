@@ -84,6 +84,19 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
+def _get_file_attribute_mask():
+    mask = 0
+    for name in dir(stat):
+        if name.startswith("FILE_ATTRIBUTE_"):
+            mask |= getattr(stat, name)
+    return mask
+
+
+# gh-126253: Ignore unknown attributes, such as 0x1_000_0000
+# (Directory flag of DOS file attribute in NTFS)
+FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
+
+
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -178,15 +191,28 @@ class MiscTests(unittest.TestCase):
         def fqdn(obj):
             return (obj.__module__, obj.__qualname__)
 
-        native = os.name
         self.assertEqual(fqdn(os.stat_result), ("os", "stat_result"))
-        self.assertEqual(fqdn(os.times_result), (native, "times_result"))
+        self.assertEqual(fqdn(os.times_result), ("os", "times_result"))
+        self.assertEqual(fqdn(os.DirEntry), ("os", "DirEntry"))
         if hasattr(os, "statvfs_result"):
             self.assertEqual(fqdn(os.statvfs_result), ("os", "statvfs_result"))
+        self.assertEqual(fqdn(os.uname_result), ("os", "uname_result"))
         if hasattr(os, "sched_param"):
-            self.assertEqual(fqdn(os.sched_param), (native, "sched_param"))
+            self.assertEqual(fqdn(os.sched_param), ("os", "sched_param"))
         if hasattr(os, "waitid_result"):
-            self.assertEqual(fqdn(os.waitid_result), (native, "waitid_result"))
+            self.assertEqual(fqdn(os.waitid_result), ("os", "waitid_result"))
+
+    def test_pickle_global_names(self):
+        # Existing pickles name these via os or the platform module (posix
+        # or nt); both must keep loading, as must new pickles.
+        for name in ('stat', 'stat_result', 'statvfs_result', 'times_result',
+                     'uname_result'):
+            with self.subTest(name):
+                obj = getattr(os, name)
+                for module in ('os', os.name):
+                    p = f'c{module}\n{name}\n.'.encode()
+                    self.assertIs(pickle.loads(p), obj)
+                self.assertIs(pickle.loads(pickle.dumps(obj)), obj)
 
 
 # Tests creating TESTFN
@@ -5032,8 +5058,15 @@ class TestScandir(unittest.TestCase):
                 if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
                             "st_ctime_ns"):
                     continue
-                self.assertEqual(getattr(stat1, attr),
-                                 getattr(stat2, attr),
+                value1 = getattr(stat1, attr)
+                value2 = getattr(stat2, attr)
+                if attr == "st_file_attributes":
+                    # Filesystems may report attribute bits that aren't
+                    # exposed by the stat module.
+                    value1 &= FILE_ATTRIBUTE_MASK
+                    value2 &= FILE_ATTRIBUTE_MASK
+                self.assertEqual(value1,
+                                 value2,
                                  (stat1, stat2, attr))
         else:
             self.assertEqual(stat1, stat2)

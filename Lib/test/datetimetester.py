@@ -1590,6 +1590,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(OverflowError, self.theclass.fromtimestamp,
                               insane)
 
+    def test_fromtimestamp_large_year(self):
+        timestamp = 67_767_976_249_084_800  # Year 2147483648.
+        try:
+            year = _time.localtime(timestamp).tm_year
+        except (OverflowError, OSError):
+            self.skipTest('timestamp out of range on this platform')
+        with self.assertRaisesRegex(ValueError, rf'\b{year}\b'):
+            self.theclass.fromtimestamp(timestamp)
+
     def test_fromtimestamp_with_none_arg(self):
         # See gh-120268 for more details
         with self.assertRaises(TypeError):
@@ -2243,6 +2252,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             '2020-W 5',         # space in the week number
             '2020061',          # 7 chars: day slice reads a 1-character tail
             '2020-W2',          # 1-digit week number
+            # gh-158500: trailing characters must not be ignored
+            '2020010112',       # YYYYMMDD followed by two characters
+            '2020W011xx',       # YYYYWwwD followed by two characters
+            '20200101\u00e9',   # 9 characters, but 10 bytes in UTF-8
             '٢025-03-09',       # Unicode characters
             '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
@@ -3984,6 +3997,11 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.-05:00',   # Empty fraction before offset
             '2009-04-19T12:30:45.Z',        # Empty fraction before Z
             '2009-04-19T12:30:45,+05:00',   # Empty fraction (comma) before offset
+            # gh-158500: a separator must be followed by a time
+            '2009-04-19T',                  # Separator without a time
+            '20090419T',                    # Separator without a time
+            '2009-W16-7T',                  # Separator without a time
+            '2009W167T',                    # Separator without a time
         ]
 
         for bad_str in bad_strs:
