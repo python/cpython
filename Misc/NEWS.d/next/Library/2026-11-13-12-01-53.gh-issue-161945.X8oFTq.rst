@@ -1,0 +1,3 @@
+:meth:`zipfile.ZipFile.open` now raises :exc:`~zipfile.BadZipFile` when a
+member's compression method differs between the central directory and the
+local file header.
