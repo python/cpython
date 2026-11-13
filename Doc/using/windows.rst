@@ -1035,12 +1035,12 @@ is not equivalent to ``2024.0`` because ``'b' != ''``.
 
 .. note::
 
-   Do not interpret the depth of detail of the following few paragraphs as
-   representing its importance as a feature. Constraints are a necessary evil,
-   and we would prefer nobody rely on them instead of specific tags, which are
-   much simpler to reason about for publishers and end users. Unfortunately, we
-   are obliged to explain how our implementation handles constraints, and this
-   is the place for that explanation.
+   Do not interpret the depth of detail of the following few paragraphs about
+   constraints as representing their importance. Constraints are a necessary
+   evil, and we would prefer nobody rely on them instead of specific tags, which
+   are much simpler to reason about for publishers and end users. Unfortunately,
+   we are obliged to explain how our implementation handles constraints, and
+   this is the place for that explanation.
 
 Constraints can select multiple tags. A matching tag will start with the same
 segments as the constraining tag, where text segments are equal and numeric
@@ -1071,7 +1071,7 @@ Here are some example cases showing the different applications of constraints:
 * ``>=3.0`` matches ``3``, but ``>3.0`` does not
 * ``<4`` matches ``3``, but ``<3.12`` and ``<=3.12`` do not
 * ``==3.0`` does not match ``3``, while ``==3.10`` still matches ``3.10.1``
-* ``!=3.13` rejects ``3`` (because it could be ``3.13``), but ``!=3.13t``
+* ``!=3.13`` rejects ``3`` (because it could be ``3.13``), but ``!=3.13t``
   accepts ``3`` (different suffix)
 
 The difference between hyphen-separated segments and adjacent text and numbers
