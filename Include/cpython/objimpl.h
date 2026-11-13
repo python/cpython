@@ -26,10 +26,12 @@ static inline size_t _PyObject_SIZE(PyTypeObject *type) {
 static inline size_t
 _PyObject_VAR_SIZE(PyTypeObject *type, Py_ssize_t nitems_signed)
 {
-    assert(type->tp_itemsize >= 0);
-
-    size_t basicsize = _Py_STATIC_CAST(size_t, type->tp_basicsize);
+    size_t basicsize;
     size_t size;
+
+    assert(type->tp_itemsize >= 0);
+    basicsize = _Py_STATIC_CAST(size_t, type->tp_basicsize);
+
     if (type->tp_itemsize != 0) {
         size_t nitems = _Py_STATIC_CAST(size_t, nitems_signed);
         size_t itemsize = _Py_STATIC_CAST(size_t, type->tp_itemsize);
