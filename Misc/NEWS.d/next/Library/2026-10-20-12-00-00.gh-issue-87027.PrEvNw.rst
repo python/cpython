@@ -1,0 +1,2 @@
+Add :meth:`~ipaddress.IPv4Network.prev_network` and
+:meth:`~ipaddress.IPv6Network.prev_network`. Patch by Faisal Mahmood.
