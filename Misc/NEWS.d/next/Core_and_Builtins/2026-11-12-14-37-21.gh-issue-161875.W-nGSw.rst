@@ -1,0 +1,3 @@
+The :opcode:`GET_AWAITABLE` instruction now also pushes the ``NULL`` and
+``None`` that start the :opcode:`SEND` loop, so ``await`` no longer needs
+separate :opcode:`PUSH_NULL` and ``LOAD_CONST None`` instructions.
