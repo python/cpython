@@ -8877,11 +8877,13 @@
             break;
         }
 
-        case _GET_ANEXT_r12: {
+        case _GET_ANEXT_r13: {
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef aiter;
             _PyStackRef awaitable;
+            _PyStackRef null;
+            _PyStackRef none;
             _PyStackRef _stack_item_0 = _tos_cache0;
             aiter = _stack_item_0;
             stack_pointer[0] = aiter;
@@ -8896,12 +8898,12 @@
                 JUMP_TO_ERROR();
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
-            _tos_cache1 = awaitable;
-            _tos_cache0 = aiter;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(2);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
+            _tos_cache2 = none;
+            _tos_cache1 = null;
+            _tos_cache0 = awaitable;
+            SET_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }

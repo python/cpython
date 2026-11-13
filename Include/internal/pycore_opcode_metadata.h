@@ -714,7 +714,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case GET_AITER:
             return 1;
         case GET_ANEXT:
-            return 2;
+            return 4;
         case GET_AWAITABLE:
             return 1;
         case GET_ITER:
