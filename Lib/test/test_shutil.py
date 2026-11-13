@@ -854,6 +854,22 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         if hasattr(os, 'lchflags'):
             self.assertEqual(dst_stat.st_flags, src_stat.st_flags)
 
+    @os_helper.skip_unless_symlink
+    def test_copytree_symlink_replaces_existing(self):
+        src = self.mkdtemp()
+        os.symlink('new', os.path.join(src, 'link'))
+        for existing in ('file', 'symlink'):
+            with self.subTest(existing=existing):
+                dst = self.mkdtemp()
+                dst_link = os.path.join(dst, 'link')
+                if existing == 'file':
+                    create_file(dst_link, 'original')
+                else:
+                    os.symlink('old', dst_link)
+                shutil.copytree(src, dst, symlinks=True, dirs_exist_ok=True)
+                self.assertTrue(os.path.islink(dst_link))
+                self.assertEqual(os.readlink(dst_link), 'new')
+
     def test_copytree_with_exclude(self):
         # creating data
         join = os.path.join
