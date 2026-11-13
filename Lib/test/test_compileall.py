@@ -161,7 +161,7 @@ class CompileallTestsBase:
         # we should also test the output
         with support.captured_stdout() as stdout:
             self.assertTrue(compileall.compile_file(FakePath(self.source_path)))
-        self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
+        self.assertEqual(stdout.getvalue(), f'Compiling {self.source_path!r}...\n')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
@@ -234,7 +234,7 @@ class CompileallTestsBase:
         with support.captured_stdout() as stdout:
             compileall.compile_dir(FakePath(self.directory))
         line = stdout.getvalue().splitlines()[0]
-        self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
+        self.assertEqual(line, f'Listing {self.directory!r}...')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_stripdir(self):
