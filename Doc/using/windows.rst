@@ -1029,7 +1029,7 @@ text is considered a separate suffix. Without a serial number, an ``a``, ``b``
 or ``rc`` suffix is also treated as text.
 
 Broadly, numbers are compared as numerical versions, so ``3.10`` is greater than
-``3.1``, ``3.15`` is greater than ``3.15a1``, and ``3`` is equal to both ``3.0``
+``3.1``, ``3.14`` is greater than ``3.14a1``, and ``3`` is equal to both ``3.0``
 and ``3.0.0``. Text is compared case-insensitively, and must match, so ``2024b``
 is not equivalent to ``2024.0`` because ``'b' != ''``.
 
@@ -1050,11 +1050,11 @@ while a non-equal version either succeeds or fails based on the constraint.
 Remaining segments in the matching tag are ignored.
 
 When applying a constraint check to a version segment that was shorter than the
-constraint (e.g. ``3`` has one field and so is shorter than ``==3.15``), it is
+constraint (e.g. ``3`` has one field and so is shorter than ``==3.14``), it is
 interpreted as representing any possible version. This will result in many
 failed constraint checks that will usually be overridden by a more specific one.
-For example ``3`` could represent ``3.99`` and so it is not equal to ``3.15``,
-but if the install is offering tags ``['3', '3.15']`` then the later tag will
+For example ``3`` could represent ``3.99`` and so it is not equal to ``3.14``,
+but if the install is offering tags ``['3', '3.14']`` then the later tag will
 result in the constraint matching.
 
 Here are some example cases showing the different applications of constraints:
