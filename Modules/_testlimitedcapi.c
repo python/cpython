@@ -13,6 +13,9 @@ module_exec(PyObject *mod)
     if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
         return -1;
     }
+    if (_PyTestLimitedCAPI_Init_Buffer(mod) < 0) {
+        return -1;
+    }
     if (_PyTestLimitedCAPI_Init_ByteArray(mod) < 0) {
         return -1;
     }
