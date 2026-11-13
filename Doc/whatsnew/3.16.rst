@@ -109,6 +109,14 @@ Improved error messages
 Other language changes
 ======================
 
+* :func:`print` now collects its output and writes it with a single ``write()``
+  call whenever possible. This reduces interleaving between concurrent calls
+  and the overhead of streams with expensive ``write()`` methods, such as
+  IDLE's output stream.
+  If converting an argument to a string fails, the output collected so far is
+  written without appending *end*, and the exception is propagated.
+  (Contributed by Inada Naoki in :gh:`161934`.)
+
 * The :func:`iter` function now accepts the *stop_exception* parameter.
   The created iterator stops when the callable raises the specified exception.
   The second parameter is now named *stop_value* and can be passed by keyword.
