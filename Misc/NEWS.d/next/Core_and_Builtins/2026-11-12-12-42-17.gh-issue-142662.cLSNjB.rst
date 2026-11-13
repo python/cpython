@@ -1,2 +1,0 @@
-Fixed a possible crash on interpreter startup when codecs are not
-initialized.
