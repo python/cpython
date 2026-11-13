@@ -1,3 +1,0 @@
-The version string reported by ``sys.version`` no longer carries a spurious
-``-dirty`` suffix when CPython is built out-of-tree from a clean git checkout:
-the build stamp now checks the source tree instead of the build directory.

@@ -101,6 +101,7 @@ Client socket example with custom context and IPv4::
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+            ssock.connect((hostname, 443))
             print(ssock.version())
 
 
@@ -341,7 +342,7 @@ Exceptions
       The server's ECH retry configuration as an ECHConfigList,
       or ``b""`` if the server did not provide one.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. exception:: CertificateError
 
@@ -432,7 +433,8 @@ Certificate handling
    same format as used for the *cafile* parameter in
    :meth:`SSLContext.load_verify_locations`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
-   if the validation attempt fails.  A timeout can be specified with the
+   if the validation attempt fails or the certificate hostname does not match
+   the server hostname.  A timeout can be specified with the
    ``timeout`` parameter.
 
    .. versionchanged:: 3.3
@@ -444,6 +446,11 @@ Certificate handling
 
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
+
+   .. versionchanged:: 3.16
+      The function now raises :exc:`SSLCertVerificationError` if *ca_certs* is
+      specified but the certificate hostname does not match the server
+      hostname.
 
 .. function:: DER_cert_to_PEM_cert(der_cert_bytes)
 
@@ -479,7 +486,7 @@ Certificate handling
 
    The function returns a list of (cert_bytes, encoding_type, trust) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data. Trust specifies the purpose of the certificate as a set
    of OIDS or exactly ``True`` if the certificate is trustworthy for all
    purposes.
@@ -500,9 +507,9 @@ Certificate handling
    one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
    stores, too.
 
-   The function returns a list of (cert_bytes, encoding_type, trust) tuples.
+   The function returns a list of (cert_bytes, encoding_type) tuples.
    The encoding_type specifies the encoding of cert_bytes. It is either
-   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   ``'x509_asn'`` for X.509 ASN.1 data or ``'pkcs_7_asn'`` for
    PKCS#7 ASN.1 data.
 
    .. availability:: Windows.
@@ -900,7 +907,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_TRIALDECRYPT
 
@@ -909,7 +916,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_IGNORE_CID
 
@@ -917,7 +924,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: OP_ECH_GREASE_RETRY_CONFIG
 
@@ -925,7 +932,7 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: HAS_ALPN
 
@@ -1027,7 +1034,7 @@ Constants
    Whether the OpenSSL library has built-in support for Encrypted Client
    Hello (ECH). This requires OpenSSL 4.0 or later with ECH enabled.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: CHANNEL_BINDING_TYPES
 
@@ -1104,33 +1111,33 @@ Constants
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_SUCCESS
 
    ECH was accepted without a certificate verification error.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED
 
    An internal or protocol error occurred, or ECH was rejected without a retry
    configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH
 
    ECH was rejected and the server supplied an authenticated retry
    configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BAD_NAME
 
    ECH was accepted, but verification of the peer's certificate failed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_FAILED_ECH_BAD_NAME
 
@@ -1138,45 +1145,45 @@ Constants
    verification for the outer server name failed. The retry configuration
    must not be used.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_NOT_TRIED
 
    ECH is configured but has not been attempted (such as before the
    handshake starts).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_NOT_CONFIGURED
 
    No ECH configuration is set for this connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_GREASE
 
    ECH GREASE is enabled or was used, but no retry configuration was received.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_GREASE_ECH
 
    The client sent a GREASE ECH extension and received a retry configuration.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BACKEND
 
    The server received a ClientHello marked as an inner ClientHello, as used
    by a backend server in an ECH split deployment.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: ECHStatus.ECH_STATUS_BAD_CALL
 
    Invalid arguments were supplied to OpenSSL's ECH status API.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. data:: Purpose.SERVER_AUTH
 
@@ -1532,7 +1539,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.get_ech_status()
 
@@ -1544,7 +1551,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.set_ech_config(ech_config)
 
@@ -1559,7 +1566,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLSocket.selected_alpn_protocol()
 
@@ -1641,7 +1648,7 @@ SSL sockets also have the following additional methods and attributes:
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: SSLSocket.server_side
 
@@ -1843,7 +1850,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLContext.load_verify_locations(cafile=None, capath=None, cadata=None)
 
@@ -2072,7 +2079,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. method:: SSLContext.set_npn_protocols(npn_protocols)
 
@@ -2110,7 +2117,7 @@ to speed up repeated connections from the same clients.
 
    Only available when :data:`HAS_ECH` is ``True``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. attribute:: SSLContext.sni_callback
 
@@ -2230,13 +2237,12 @@ to speed up repeated connections from the same clients.
    The parameter ``server_side`` is a boolean which identifies whether
    server-side or client-side behavior is desired from this socket.
 
-   For client-side sockets, the context construction is lazy; if the
-   underlying socket isn't connected yet, the context construction will be
-   performed after :meth:`connect` is called on the socket.  For
-   server-side sockets, if the socket has no remote peer, it is assumed
+   For client-side sockets, if *sock* is not yet connected, the underlying
+   SSL object is created when :meth:`~socket.socket.connect` is called.
+   For server-side sockets, if the socket has no remote peer, it is assumed
    to be a listening socket, and the server-side SSL wrapping is
    automatically performed on client connections accepted via the
-   :meth:`accept` method. The method may raise :exc:`SSLError`.
+   :meth:`~socket.socket.accept` method. The method may raise :exc:`SSLError`.
 
    On client connections, the optional parameter *server_hostname* specifies
    the hostname of the service which we are connecting to.  This allows a
@@ -2278,7 +2284,7 @@ to speed up repeated connections from the same clients.
       The method returns an instance of :attr:`SSLContext.sslsocket_class`
       instead of hard-coded :class:`SSLSocket`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *ech_config* argument was added.
 
 .. attribute:: SSLContext.sslsocket_class
@@ -2320,7 +2326,7 @@ to speed up repeated connections from the same clients.
       *server_hostname* was accepted, and verified the certificate chain but
       never the peer's identity.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *ech_config* argument was added.
 
 .. attribute:: SSLContext.sslobject_class
@@ -2860,7 +2866,7 @@ Visual inspection shows that the certificate does identify the desired service
 Now the SSL channel is established and the certificate verified, you can
 proceed to talk with the server::
 
-   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: linuxfr.org\r\n\r\n")
+   >>> conn.sendall(b"HEAD / HTTP/1.0\r\nHost: www.python.org\r\n\r\n")
    >>> pprint.pprint(conn.recv(1024).split(b"\r\n"))
    [b'HTTP/1.1 200 OK',
     b'Date: Sat, 18 Oct 2014 18:27:20 GMT',
@@ -3072,7 +3078,7 @@ provided.
    When compared to :class:`SSLSocket`, this object lacks the following
    features:
 
-   - Any form of network IO; ``recv()`` and ``send()`` read and write only to
+   - Any form of network IO; ``read()`` and ``write()`` read and write only to
      the underlying :class:`MemoryBIO` buffers.
 
    - There is no *do_handshake_on_connect* machinery. You must always manually
@@ -3296,7 +3302,7 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 Encrypted Client Hello
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 Encrypted Client Hello (ECH) encrypts values in the ClientHello record sent when
 establishing a TLS connection. It requires an ECHConfigList containing algorithm

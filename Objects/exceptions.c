@@ -24,8 +24,11 @@
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
 class BaseExceptionGroup "PyBaseExceptionGroupObject *" "&PyExc_BaseExceptionGroup"
+class ImportError "PyImportErrorObject *" "&PyExc_ImportError"
+class NameError "PyNameErrorObject *" "&PyExc_NameError"
+class AttributeError "PyAttributeErrorObject *" "&PyExc_AttributeError"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7c45e78cff8edc3]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fce4682940ab8948]*/
 
 
 static struct _Py_exc_state*
@@ -1778,29 +1781,27 @@ PyImportErrorObject_CAST(PyObject *self)
     return (PyImportErrorObject *)self;
 }
 
+/*[clinic input]
+@vectorcall
+ImportError.__init__ as ImportError_init
+
+    *args: tuple
+    name: object = NULL
+    path: object = NULL
+    name_from: object = NULL
+
+[clinic start generated code]*/
+
 static int
-ImportError_init(PyObject *op, PyObject *args, PyObject *kwds)
+ImportError_init_impl(PyImportErrorObject *self, PyObject *args,
+                      PyObject *name, PyObject *path, PyObject *name_from)
+/*[clinic end generated code: output=4917add0f9473bd2 input=4e94a3b530f9be97]*/
 {
-    static char *kwlist[] = {"name", "path", "name_from", 0};
-    PyObject *empty_tuple;
     PyObject *msg = NULL;
-    PyObject *name = NULL;
-    PyObject *path = NULL;
-    PyObject *name_from = NULL;
 
-    if (BaseException_init(op, args, NULL) == -1)
-        return -1;
-
-    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
-    empty_tuple = PyTuple_New(0);
-    if (!empty_tuple)
-        return -1;
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OOO:ImportError", kwlist,
-                                     &name, &path, &name_from)) {
-        Py_DECREF(empty_tuple);
+    if (BaseException_init((PyObject *)self, args, NULL) == -1) {
         return -1;
     }
-    Py_DECREF(empty_tuple);
 
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->path, Py_XNewRef(path));
@@ -1813,6 +1814,7 @@ ImportError_init(PyObject *op, PyObject *args, PyObject *kwds)
 
     return 0;
 }
+
 
 static int
 ImportError_clear(PyObject *op)
@@ -2325,46 +2327,70 @@ static PyObject *
 OSError_str(PyObject *op)
 {
     PyOSErrorObject *self = PyOSErrorObject_CAST(op);
+    PyObject *res;
+    /* Hold strong references: formatting may run arbitrary code
+       which modifies the attributes. */
+    PyObject *myerrno = Py_XNewRef(self->myerrno);
+    PyObject *strerror = Py_XNewRef(self->strerror);
+    PyObject *filename = Py_XNewRef(self->filename);
+    PyObject *filename2 = Py_XNewRef(self->filename2);
+#ifdef MS_WINDOWS
+    PyObject *winerror = Py_XNewRef(self->winerror);
+#endif
 #define OR_NONE(x) ((x)?(x):Py_None)
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
-    if (self->winerror && self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R -> %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
+    if (winerror && filename) {
+        if (filename2) {
+            res = PyUnicode_FromFormat("[WinError %S] %S: %R -> %R",
+                                       OR_NONE(winerror),
+                                       OR_NONE(strerror),
+                                       filename,
+                                       filename2);
         } else {
-            return PyUnicode_FromFormat("[WinError %S] %S: %R",
-                                        OR_NONE(self->winerror),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+            res = PyUnicode_FromFormat("[WinError %S] %S: %R",
+                                       OR_NONE(winerror),
+                                       OR_NONE(strerror),
+                                       filename);
         }
+        goto done;
     }
-    if (self->winerror && self->strerror)
-        return PyUnicode_FromFormat("[WinError %S] %S",
-                                    self->winerror ? self->winerror: Py_None,
-                                    self->strerror ? self->strerror: Py_None);
+    if (winerror && strerror) {
+        res = PyUnicode_FromFormat("[WinError %S] %S",
+                                   winerror, strerror);
+        goto done;
+    }
 #endif
-    if (self->filename) {
-        if (self->filename2) {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename,
-                                        self->filename2);
+    if (filename) {
+        if (filename2) {
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R -> %R",
+                                       OR_NONE(myerrno),
+                                       OR_NONE(strerror),
+                                       filename,
+                                       filename2);
         } else {
-            return PyUnicode_FromFormat("[Errno %S] %S: %R",
-                                        OR_NONE(self->myerrno),
-                                        OR_NONE(self->strerror),
-                                        self->filename);
+            res = PyUnicode_FromFormat("[Errno %S] %S: %R",
+                                       OR_NONE(myerrno),
+                                       OR_NONE(strerror),
+                                       filename);
         }
+        goto done;
     }
-    if (self->myerrno && self->strerror)
-        return PyUnicode_FromFormat("[Errno %S] %S",
-                                    self->myerrno, self->strerror);
-    return BaseException_str(op);
+    if (myerrno && strerror) {
+        res = PyUnicode_FromFormat("[Errno %S] %S",
+                                   myerrno, strerror);
+        goto done;
+    }
+    res = BaseException_str(op);
+done:
+    Py_XDECREF(myerrno);
+    Py_XDECREF(strerror);
+    Py_XDECREF(filename);
+    Py_XDECREF(filename2);
+#ifdef MS_WINDOWS
+    Py_XDECREF(winerror);
+#endif
+    return res;
 }
 
 static PyObject *
@@ -2555,32 +2581,28 @@ PyNameErrorObject_CAST(PyObject *self)
     return (PyNameErrorObject *)self;
 }
 
+/*[clinic input]
+@vectorcall
+NameError.__init__ as NameError_init
+
+    *args: tuple
+    name: object = NULL
+
+[clinic start generated code]*/
+
 static int
-NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
+NameError_init_impl(PyNameErrorObject *self, PyObject *args, PyObject *name)
+/*[clinic end generated code: output=f15305075d9aa272 input=2e2b7e781ae146b1]*/
 {
-    static char *kwlist[] = {"name", NULL};
-    PyObject *name = NULL;
-
-    if (BaseException_init(op, args, NULL) == -1) {
+    if (BaseException_init((PyObject *)self, args, NULL) == -1) {
         return -1;
     }
 
-    PyObject *empty_tuple = PyTuple_New(0);
-    if (!empty_tuple) {
-        return -1;
-    }
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
-                                     &name)) {
-        Py_DECREF(empty_tuple);
-        return -1;
-    }
-    Py_DECREF(empty_tuple);
-
-    PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
 
     return 0;
 }
+
 
 static int
 NameError_clear(PyObject *op)
@@ -2638,34 +2660,31 @@ PyAttributeErrorObject_CAST(PyObject *self)
     return (PyAttributeErrorObject *)self;
 }
 
+/*[clinic input]
+@vectorcall
+AttributeError.__init__ as AttributeError_init
+
+    *args: tuple
+    name: object = NULL
+    obj: object = NULL
+
+[clinic start generated code]*/
+
 static int
-AttributeError_init(PyObject *op, PyObject *args, PyObject *kwds)
+AttributeError_init_impl(PyAttributeErrorObject *self, PyObject *args,
+                         PyObject *name, PyObject *obj)
+/*[clinic end generated code: output=3d346f9a389f60fa input=bed43aafea47f1a0]*/
 {
-    static char *kwlist[] = {"name", "obj", NULL};
-    PyObject *name = NULL;
-    PyObject *obj = NULL;
-
-    if (BaseException_init(op, args, NULL) == -1) {
+    if (BaseException_init((PyObject *)self, args, NULL) == -1) {
         return -1;
     }
 
-    PyObject *empty_tuple = PyTuple_New(0);
-    if (!empty_tuple) {
-        return -1;
-    }
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:AttributeError", kwlist,
-                                     &name, &obj)) {
-        Py_DECREF(empty_tuple);
-        return -1;
-    }
-    Py_DECREF(empty_tuple);
-
-    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->obj, Py_XNewRef(obj));
 
     return 0;
 }
+
 
 static int
 AttributeError_clear(PyObject *op)
@@ -4540,6 +4559,15 @@ _PyExc_InitTypes(PyInterpreterState *interp)
             && exc->tp_init == BaseException_init)
         {
             exc->tp_vectorcall = BaseException_vectorcall;
+        }
+        else if (exc->tp_init == ImportError_init) {
+            exc->tp_vectorcall = ImportError_vectorcall;
+        }
+        else if (exc->tp_init == NameError_init) {
+            exc->tp_vectorcall = NameError_vectorcall;
+        }
+        else if (exc->tp_init == AttributeError_init) {
+            exc->tp_vectorcall = AttributeError_vectorcall;
         }
     }
     return 0;
