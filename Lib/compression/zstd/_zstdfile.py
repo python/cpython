@@ -69,9 +69,6 @@ class ZstdFile(_streams.BaseStream):
             if level is not None and not isinstance(level, int):
                 raise TypeError('level must be int or None')
             self._mode = _MODE_WRITE
-            # Do not add an empty frame when closing an existing archive in
-            # append mode without writing anything.
-            self._write_started = mode == 'a'
             self._compressor = ZstdCompressor(level=level, options=options,
                                               zstd_dict=zstd_dict)
             self._pos = 0
@@ -87,6 +84,18 @@ class ZstdFile(_streams.BaseStream):
         else:
             raise TypeError('file must be a file-like object '
                             'or a str, bytes, or PathLike object')
+
+        if mode == 'a':
+            # Preserve no-op appends unless the target is known to be empty.
+            # Only files opened here are known to be positioned at EOF;
+            # do not probe or reposition caller-supplied file-like objects.
+            self._write_started = True
+            if self._close_fp:
+                try:
+                    self._write_started = self._fp.tell() != 0
+                except OSError:
+                    # The position may be unavailable, e.g. for a FIFO.
+                    pass
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(
