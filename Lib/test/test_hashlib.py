@@ -1236,9 +1236,9 @@ class KDFTests(unittest.TestCase):
         (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt',
          4096, -1),
         (b'pass\0word', b'sa\0lt', 4096, 16),
-        # FIPS (NIST SP 800-132) needs salt of at least 128 bits (16 bytes)
-        (b'password', b'salt'*4, 1, None),
-        (b'password', b'salt'*4, 2, None),
+        # more vectors that don't trip on self.fips_incompatible(...)
+        (b'password', b'salt'*4, 1024, None),
+        (b'password', b'salt'*4, 2048, None),
         (b'password', b'salt'*4, 4096, None),
         (b'pass\0word', b'sa\0lt'*4, 4096, 16),
     ]
@@ -1253,9 +1253,9 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('3d2eec4fe41c849b80c8d83662c0e44a8b291a964c'
                            'f2f07038'), 25),
             (bytes.fromhex('56fa6aa75548099dcc37d7f03425e0c3'), None),
-            # more test vectors with FIPS compatible salt
-            (bytes.fromhex('7f0d22e4398436acf7bcd2cfbb9903755def9522'), None),
-            (bytes.fromhex('f6d0ee787450939262e452e8f1b7ceca4ccc4cba'), None),
+            # more test vectors (not from RFC 6070)
+            (bytes.fromhex('1a39e29b04aa0488865b1e80fb125a8063e30b92'), None),
+            (bytes.fromhex('f19c46e6f912bc53a7b315ad4d3b717abe708c07'), None),
             (bytes.fromhex('b7845a91aea7946bc875fcd9d19fd515381ddf94'), None),
             (bytes.fromhex('bcc0d390b6671f99995e4c64223fa7c1fe12122460'
                            '94abe408'), 25),
@@ -1272,10 +1272,10 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('348c89dbcbd32b2f32d814b8116e84cf2b17'
                            '347ebc1800181c4e2a1fb8dd53e1c635518c7dac47e9'), 40),
             (bytes.fromhex('89b69d0516f829893c696226650a8687'), None),
-            (bytes.fromhex('b13d6697e99cd6d1745da097ee03e4be'
-                           '501341e76fe9161a788de3d4cd0be219'), None),
-            (bytes.fromhex('b3a65a254dd590fab9aacfabd5695a0b'
-                           'd79727d2899a6a519d26f13b52d8e6f4'), None),
+            (bytes.fromhex('72b62d16d04f2d4ce237e499167fa395'
+                           '07191d6f4579bac8952aa7c74d24ff49'), None),
+            (bytes.fromhex('bd9d964fc9a92bb860829d795063ea08'
+                           'a5deccc6f4bdf295c86f8ad834ce5479'), None),
             (bytes.fromhex('16e35b12b41f465ca64d069578d75005'
                            '9775ccad5df3ad53d6b204acb122d1ee'), None),
             (bytes.fromhex('b6d737069a6b4aeed21574c73e38b342fa0f'
@@ -1295,12 +1295,12 @@ class KDFTests(unittest.TestCase):
                            '68c005174dc4ee71115b59f9e60cd9532fa33e0f75aefe30'
                            '225c583a186cd82bd4daea9724a3d3b8'), 64),
             (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),
-            (bytes.fromhex('ccc6bd2cbf575bd344c9cf542877fc6e9372cbf1f1e1df39'
-                           '2c6cf5f6038bb5743834aeea6f0226c4a257bbbabe7c185d'
-                           '17999a8d2b62d89bb83d24273b8a3229'), None),
-            (bytes.fromhex('4dfa5258b4acd6db7d276988daf21d61ea07d44d370d81a9'
-                           'bc1770962829689030a8c7ffc1078593f9e27a90e79165b2'
-                           'd81a2f471ff6c10c82420a4fa76d7a06'), None),
+            (bytes.fromhex('38284e5354120cfe567a1f6d2fbed512a613b3db36ba695e'
+                           'cf876a9d178ef55462986f2df5eb71f1b90ae9fbc4211b29'
+                           '6405f882b910062d854d28953f90bde6'), None),
+            (bytes.fromhex('e41733921704084e8d31f823846c6d98ad3597a5035ce141'
+                           'f51963c08630a33cc2a1e263ed7a33b1e63e83adaf3ad912'
+                           '6c0f5b5496cfb2d29e7cd35ef9aa39c5'), None),
             (bytes.fromhex('7dc69993c22ab444a13574b9d71b2cafc54e68914d9ddfd0'
                            '0ed5c23545b854d5e0e68b7f5614eef5df9087573bab8360'
                            'b20267791ed7a77669005fd94b5731e2'), None),
@@ -1316,23 +1316,23 @@ class KDFTests(unittest.TestCase):
                 continue
             for i, vector in enumerate(self.pbkdf2_test_vectors):
                 password, salt, rounds, dklen = vector
-                if self.fips_incompatible_salt(salt):
+                if self.fips_incompatible(password, salt, rounds):
                     continue
                 expected, overwrite_dklen = results[i]
                 if overwrite_dklen:
                     dklen = overwrite_dklen
                 out = pbkdf2(digest_name, password, salt, rounds, dklen)
-                self.assertEqual(out, expected,
+                self.assertEqual(out.hex(), expected.hex(),
                                  (digest_name, password, salt, rounds, dklen))
                 out = pbkdf2(digest_name, memoryview(password),
                              memoryview(salt), rounds, dklen)
-                self.assertEqual(out, expected)
+                self.assertEqual(out.hex(), expected.hex())
                 out = pbkdf2(digest_name, bytearray(password),
                              bytearray(salt), rounds, dklen)
-                self.assertEqual(out, expected)
+                self.assertEqual(out.hex(), expected.hex())
                 if dklen is None:
                     out = pbkdf2(digest_name, password, salt, rounds)
-                    self.assertEqual(out, expected,
+                    self.assertEqual(out.hex(), expected.hex(),
                                      (digest_name, password, salt, rounds))
 
         with self.assertRaisesRegex(ValueError, '.*unsupported.*'):
@@ -1357,13 +1357,22 @@ class KDFTests(unittest.TestCase):
             self.assertRaises(
                 ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1
             )
-            out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
-                iterations=1, dklen=None)
-            self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
+            # Pick a single FIPS compatible vector
+            index = 5
+            password, salt, rounds, dklen = self.pbkdf2_test_vectors[index]
+            self.assertFalse(self.fips_incompatible(password, salt, rounds))
+            out = pbkdf2(hash_name='sha1', password=password, salt=salt,
+                iterations=rounds, dklen=dklen)
+            expected = self.pbkdf2_results['sha1'][index][0]
+            self.assertEqual(out.hex(), expected.hex())
 
-    # gh-161739: FIPS requires a salt of at least 128-bit (16 bytes)
-    def fips_incompatible_salt(self, salt):
-        return get_fips_mode() and len(salt) < 16
+    # FIPS (NIST SP 800-132) needs:
+    #  - password of at least 64 bits (8 bytes)
+    #  - salt of at least 128 bits (16 bytes)
+    #  - rounds of least 1000
+    def fips_incompatible(self, password, salt, rounds):
+        return (get_fips_mode()
+                and (len(password) < 1 or len(salt) < 16 or rounds < 1000))
 
     @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
