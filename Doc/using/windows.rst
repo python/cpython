@@ -1054,8 +1054,8 @@ constraint (e.g. ``3`` has one field and so is shorter than ``==3.15``), it is
 interpreted as representing any possible version. This will result in many
 failed constraint checks that will usually be overridden by a more specific one.
 For example ``3`` could represent ``3.99`` and so it is not equal to ``3.15``,
-but if the same install also offers ``3.15`` then that one will cause the
-constraint to match.
+but if the install is offering tags ``['3', '3.15']`` then the later tag will
+result in the constraint matching.
 
 Here are some example cases showing the different applications of constraints:
 
