@@ -2867,6 +2867,16 @@ Asserts:
     Traceback (most recent call last):
     SyntaxError: cannot use named expression without parentheses here
 
+    >>> lambda x: foo := 2
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> lambda: x := 1
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> f = lambda x: (foo := 2)
+
     >>> assert 1 = 2 = 3
     Traceback (most recent call last):
     SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?

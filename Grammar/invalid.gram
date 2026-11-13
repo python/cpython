@@ -85,6 +85,8 @@ invalid_if_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use dict unpacking on only part of a conditional expression") }
 
 invalid_named_expression(memo):
+    | 'lambda' [lambda_params] ':' a=NAME ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use named expression without parentheses here") }
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }

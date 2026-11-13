@@ -89,7 +89,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         code = """(lambda: x := 1)"""
 
         with self.assertRaisesRegex(SyntaxError,
-            "cannot use assignment expressions with lambda"):
+            "cannot use named expression without parentheses here"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_16(self):
