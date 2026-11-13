@@ -1262,7 +1262,7 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module, const wchar_t *string)
     rc = ExpandEnvironmentStringsW(string, retValue, retValueSize);
     if (rc == 0) {
         PyMem_Free(retValue);
-        return PyErr_SetFromWindowsErrWithFunction(retValueSize,
+        return PyErr_SetFromWindowsErrWithFunction(0,
                                         "ExpandEnvironmentStrings");
     }
     o = PyUnicode_FromWideChar(retValue, -1);
