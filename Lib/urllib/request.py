@@ -1322,6 +1322,9 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_407(self, req, fp, code, msg, headers):
+        # gh-158907: a 407 from a direct origin is not a proxy challenge
+        if not req.has_proxy() and not req._tunnel_host:
+            return None
         host = req.host
         retry = self.http_error_auth_reqed('proxy-authenticate',
                                            host, req, headers)
