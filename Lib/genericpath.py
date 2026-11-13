@@ -82,9 +82,27 @@ def isdevdrive(path):
     return False
 
 
-def getsize(filename, /):
-    """Return the size of a file, reported by os.stat()."""
-    return os.stat(filename).st_size
+def getsize(filename, /, apparent=True):
+    """Return the size of a file, reported by os.stat().
+
+    If 'apparent' is True (default), the apparent size (number of bytes) of the
+    file is returned. If False, the actual size (disk space occupied) is
+    returned. The actual size reflects the block size, meaning it will
+    typically be larger than the apparent size. However, the inverse may also
+    be true due to holes in ("sparse") files, internal fragmentation, indirect
+    blocks, etc.
+
+    Not all platforms support apparent=False; a NotImplementedError is raised
+    on platforms where os.DEV_BSIZE is not available.
+    """
+    if apparent:
+        return os.stat(filename).st_size
+    _dev_bsize = getattr(os, 'DEV_BSIZE', None)
+    if _dev_bsize is None:
+        raise NotImplementedError(
+            "os.path.getsize() with apparent=False is not supported on this platform"
+        )
+    return os.stat(filename).st_blocks * _dev_bsize
 
 
 def getmtime(filename, /):
