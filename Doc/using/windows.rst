@@ -1568,5 +1568,3 @@ Visual Studio, which is the compiler used to build the official Python
 releases. These files are in the :file:`PCbuild` directory.
 
 Check :file:`PCbuild/readme.txt` for general information on the build process.
-
-For extension modules, consult :ref:`building-on-windows`.
