@@ -28,7 +28,8 @@ from os import getpid
 from traceback import format_exc
 
 from . import connection
-from .context import reduction, get_spawning_popen, ProcessError
+from . import context
+from .context import get_spawning_popen, ProcessError
 from . import pool
 from . import process
 from . import util
@@ -47,13 +48,13 @@ else:
 
 def reduce_array(a):
     return array.array, (a.typecode, a.tobytes())
-reduction.register(array.array, reduce_array)
+context.reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
 def rebuild_as_list(obj):
     return list, (list(obj),)
 for view_type in view_types:
-    reduction.register(view_type, rebuild_as_list)
+    context.reduction.register(view_type, rebuild_as_list)
 del view_type, view_types
 
 #

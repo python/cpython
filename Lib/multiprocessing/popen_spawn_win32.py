@@ -5,7 +5,9 @@ import sys
 import _winapi
 from subprocess import STARTUPINFO, STARTF_FORCEOFFFEEDBACK
 
-from .context import reduction, get_spawning_popen, set_spawning_popen
+import multiprocessing
+from . import context
+from .context import get_spawning_popen, set_spawning_popen
 from . import spawn
 from . import util
 
@@ -93,14 +95,14 @@ class Popen(object):
             # send information to child
             set_spawning_popen(self)
             try:
-                reduction.dump(prep_data, to_child)
-                reduction.dump(process_obj, to_child)
+                process_obj.reducer.dump(prep_data, to_child)
+                process_obj.reducer.dump(process_obj, to_child)
             finally:
                 set_spawning_popen(None)
 
     def duplicate_for_child(self, handle):
         assert self is get_spawning_popen()
-        return reduction.duplicate(handle, self.sentinel)
+        return context.reduction.duplicate(handle, self.sentinel)
 
     def wait(self, timeout=None):
         if self.returncode is not None:
