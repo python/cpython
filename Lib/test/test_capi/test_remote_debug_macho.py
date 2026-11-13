@@ -94,6 +94,12 @@ class MachOSectionTests(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform == 'darwin', 'requires dyld')
 class DyldImageTests(unittest.TestCase):
+    def test_memory_region_fallback(self):
+        try:
+            _testinternalcapi.check_macho_runtime_address()
+        except PermissionError as exc:
+            self.skipTest(f"self-inspection is unavailable: {exc}")
+
     def test_loaded_executable(self):
         ctypes = import_module('ctypes')
         get_header = ctypes.CDLL(None)._dyld_get_image_header

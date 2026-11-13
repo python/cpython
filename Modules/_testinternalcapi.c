@@ -3508,6 +3508,28 @@ get_macho_section_address(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+check_macho_runtime_address(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    proc_handle_t *handle = PyMem_Calloc(1, sizeof(*handle));
+    if (handle == NULL) {
+        return PyErr_NoMemory();
+    }
+    if (_Py_RemoteDebug_InitProcHandle(handle, getpid()) == 0) {
+        uintptr_t address = search_memory_regions_for_section(
+            handle, "PyRuntime", _Py_RemoteDebug_ValidatePyRuntimeCookie);
+        if (!PyErr_Occurred() && address != (uintptr_t)&_PyRuntime) {
+            PyErr_SetString(PyExc_AssertionError, "Memory-region lookup returned the wrong runtime");
+        }
+    }
+    _Py_RemoteDebug_CleanupProcHandle(handle);
+    PyMem_Free(handle);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 get_dyld_image_addresses(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     proc_handle_t *handle = PyMem_Calloc(1, sizeof(*handle));
@@ -3555,6 +3577,7 @@ static PyMethodDef module_functions[] = {
 #if defined(__APPLE__) && TARGET_OS_OSX
     {"get_macho_section_address", get_macho_section_address, METH_VARARGS},
     {"get_dyld_image_addresses", get_dyld_image_addresses, METH_NOARGS},
+    {"check_macho_runtime_address", check_macho_runtime_address, METH_NOARGS},
 #endif
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},

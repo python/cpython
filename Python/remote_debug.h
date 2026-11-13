@@ -199,7 +199,7 @@ _Py_RemoteDebug_ValidatePyRuntimeCookie(proc_handle_t *handle, uintptr_t address
     }
     char buf[sizeof(_Py_Debug_Cookie) - 1];
     if (_Py_RemoteDebug_ReadRemoteMemory(handle, address, sizeof(buf), buf) != 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyErr_Clear();
         }
         return 0;
@@ -503,13 +503,66 @@ copy_dyld_images(proc_handle_t *handle, DyldImageList *list)
 }
 
 static uintptr_t
+search_memory_regions_for_section(proc_handle_t *handle, const char *section,
+                                  section_validator_t validator)
+{
+    mach_vm_address_t address = 0;
+    while (address <= UINTPTR_MAX) {
+        mach_vm_size_t size = 0;
+        vm_region_basic_info_data_64_t region;
+        mach_msg_type_number_t count = VM_REGION_BASIC_INFO_COUNT_64;
+        mach_port_t object = MACH_PORT_NULL;
+        kern_return_t status = mach_vm_region(
+            handle->task, &address, &size, VM_REGION_BASIC_INFO_64,
+            (vm_region_info_t)&region, &count, &object);
+        if (object != MACH_PORT_NULL) {
+            mach_port_deallocate(mach_task_self(), object);
+        }
+        if (status == KERN_INVALID_ADDRESS) {
+            return 0;
+        }
+        if (status != KERN_SUCCESS) {
+            PyErr_Format(status == KERN_PROTECTION_FAILURE
+                         ? PyExc_PermissionError : PyExc_RuntimeError,
+                         "Cannot read memory regions for PID %d (Mach error %d)",
+                         handle->pid, status);
+            return 0;
+        }
+        if (address > UINTPTR_MAX) {
+            return 0;
+        }
+        vm_prot_t required = VM_PROT_READ | VM_PROT_EXECUTE;
+        if ((region.protection & required) == required) {
+            uintptr_t candidate = search_section_in_memory(handle, address, section);
+            if (candidate != 0 && (validator == NULL || validator(handle, candidate))) {
+                return candidate;
+            }
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                return 0;
+            }
+            PyErr_Clear();
+        }
+        if (size == 0 || size > UINT64_MAX - address) {
+            return 0;
+        }
+        address += size;
+    }
+    return 0;
+}
+
+static uintptr_t
 search_loaded_images_for_section(proc_handle_t *handle, const char *section,
                                  section_validator_t validator)
 {
     DyldImageList list;
     unsigned char *images = copy_dyld_images(handle, &list);
     if (images == NULL) {
-        return 0;
+        if (_Py_RemoteDebug_IsFatalReadError()) {
+            return 0;
+        }
+        /* A loader update can outlast the snapshot retry window. */
+        PyErr_Clear();
+        return search_memory_regions_for_section(handle, section, validator);
     }
     uintptr_t result = 0;
     for (uint32_t index = 0; index < list.count; index++) {
