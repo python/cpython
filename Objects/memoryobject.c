@@ -3554,7 +3554,9 @@ memory_richcompare_pinned(PyObject *v, PyObject *w, int op)
         ww = &wbuf;
         /* w.__buffer__() may have released v. */
         if (BASE_INACCESSIBLE(v)) {
-            equal = 0;
+            PyErr_SetString(PyExc_ValueError,
+                "operation forbidden on released memoryview object");
+            equal = MV_COMPARE_EX;
             goto result;
         }
     }
