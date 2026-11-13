@@ -635,50 +635,6 @@ jobs:
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
 
-  cifuzz:
-    # ${{ '' } is a hack to nest jobs under the same sidebar category.
-    name: CIFuzz${{ '' }}  # zizmor: ignore[obfuscation]
-    needs: build-context
-    if: >-
-      needs.build-context.outputs.run-ci-fuzz == 'true'
-      || needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-    permissions:
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        sanitizer:
-          - address
-        oss-fuzz-project-name:
-          - cpython3
-          - python3-libraries
-        include:
-          - sanitizer: undefined
-            oss-fuzz-project-name: cpython3
-          - sanitizer: memory
-            oss-fuzz-project-name: cpython3
-        exclude:
-          # Note that the 'no-exclude' sentinel below is to prevent
-          # an empty string value from excluding all jobs and causing
-          # GHA to create a 'default' matrix entry with all empty values.
-          - oss-fuzz-project-name: >-
-              ${{
-                needs.build-context.outputs.run-ci-fuzz == 'true'
-                && 'no-exclude'
-                || 'cpython3'
-              }}
-          - oss-fuzz-project-name: >-
-              ${{
-                needs.build-context.outputs.run-ci-fuzz-stdlib == 'true'
-                && 'no-exclude'
-                || 'python3-libraries'
-              }}
-    uses: $/.github/workflows/reusable-cifuzz.yml
-    with:
-      oss-fuzz-project-name: ${{ matrix.oss-fuzz-project-name }}
-      sanitizer: ${{ matrix.sanitizer }}
-
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
     runs-on: ubuntu-latest
@@ -702,7 +658,6 @@ jobs:
     - build-asan
     - build-san
     - cross-build-linux
-    - cifuzz
     if: always()
 
     steps:
@@ -715,7 +670,6 @@ jobs:
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
-          cifuzz,
         allowed-skips: >-
           ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
@@ -733,12 +687,6 @@ jobs:
             || ''
           }}
           ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-            && !fromJSON(needs.build-context.outputs.run-ci-fuzz-stdlib)
-            && 'cifuzz,' ||
-            ''
-          }}
           ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ubuntu)

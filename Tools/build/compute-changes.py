@@ -44,7 +44,6 @@ UNIX_BUILD_SYSTEM_FILE_NAMES = frozenset({
     Path("Tools/build/regen-configure.sh"),
 })
 
-SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
 SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
 ANDROID_DIRS = frozenset({"Android"})
@@ -53,62 +52,9 @@ IOS_DIRS = frozenset({"Apple", "iOS"})
 MACOS_DIRS = frozenset({"Mac"})
 WASI_DIRS = frozenset({Path("Tools", "wasm")})
 
-LIBRARY_FUZZER_PATHS = frozenset({
-    # All C/CPP fuzzers.
-    Path("configure"),
-    Path(".github/workflows/reusable-cifuzz.yml"),
-    # ast
-    Path("Lib/ast.py"),
-    Path("Python/ast.c"),
-    # configparser
-    Path("Lib/configparser.py"),
-    # csv
-    Path("Lib/csv.py"),
-    Path("Modules/_csv.c"),
-    # decode
-    Path("Lib/encodings/"),
-    Path("Modules/_codecsmodule.c"),
-    Path("Modules/cjkcodecs/"),
-    Path("Modules/unicodedata*"),
-    # difflib
-    Path("Lib/difflib.py"),
-    # email
-    Path("Lib/email/"),
-    # html
-    Path("Lib/html/"),
-    Path("Lib/_markupbase.py"),
-    # http.client
-    Path("Lib/http/client.py"),
-    # json
-    Path("Lib/json/"),
-    Path("Modules/_json.c"),
-    # plist
-    Path("Lib/plistlib.py"),
-    # re
-    Path("Lib/re/"),
-    Path("Modules/_sre/"),
-    # tarfile
-    Path("Lib/tarfile.py"),
-    # tomllib
-    Path("Modules/tomllib/"),
-    # xml
-    Path("Lib/xml/"),
-    Path("Lib/_markupbase.py"),
-    Path("Modules/expat/"),
-    Path("Modules/pyexpat.c"),
-    # zipfile
-    Path("Lib/zipfile/"),
-    # zoneinfo
-    Path("Lib/zoneinfo/"),
-    Path("Modules/_zoneinfo.c"),
-})
-
-
 @dataclass(kw_only=True, slots=True)
 class Outputs:
     run_android: bool = False
-    run_ci_fuzz: bool = False
-    run_ci_fuzz_stdlib: bool = False
     run_docs: bool = False
     run_emscripten: bool = False
     run_ios: bool = False
@@ -144,16 +90,6 @@ def compute_changes() -> None:
         print("Run tests")
     if outputs.run_windows_tests:
         print("Run Windows tests")
-
-    if outputs.run_ci_fuzz:
-        print("Run CIFuzz tests")
-    else:
-        print("Branch too old for CIFuzz tests; or no C files were changed")
-
-    if outputs.run_ci_fuzz_stdlib:
-        print("Run CIFuzz tests for stdlib")
-    else:
-        print("Branch too old for CIFuzz tests; or no stdlib files were changed")
 
     if outputs.run_docs:
         print("Build documentation")
@@ -207,18 +143,8 @@ def get_file_platform(file: Path) -> str | None:
     return None
 
 
-def is_fuzzable_library_file(file: Path) -> bool:
-    return any(
-        (file.is_relative_to(needs_fuzz) and needs_fuzz.is_dir())
-        or (file == needs_fuzz and file.is_file())
-        for needs_fuzz in LIBRARY_FUZZER_PATHS
-    )
-
-
 def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_tests = False
-    run_ci_fuzz = False
-    run_ci_fuzz_stdlib = False
     run_docs = False
     run_windows_tests = False
     run_windows_msi = False
@@ -232,8 +158,8 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         doc_file = file.suffix in SUFFIXES_DOCUMENTATION or doc_or_misc
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
-            if file.name in ("build.yml", "reusable-cifuzz.yml"):
-                run_tests = run_ci_fuzz = run_ci_fuzz_stdlib = run_windows_tests = True
+            if file.name == "build.yml":
+                run_tests = run_windows_tests = True
                 has_platform_specific_change = False
                 continue
             if file.name == "reusable-docs.yml":
@@ -270,18 +196,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
                 if file not in UNIX_BUILD_SYSTEM_FILE_NAMES:
                     run_windows_tests = True
 
-        # The fuzz tests are pretty slow so they are executed only for PRs
-        # changing relevant files.
-        if file.suffix in SUFFIXES_C_OR_CPP:
-            run_ci_fuzz = True
-        if file.parts[:2] in {
-            ("configure",),
-            ("Modules", "_xxtestfuzz"),
-        }:
-            run_ci_fuzz = True
-        if not run_ci_fuzz_stdlib and is_fuzzable_library_file(file):
-            run_ci_fuzz_stdlib = True
-
         # Check for changed documentation-related files
         if doc_file:
             run_docs = True
@@ -316,8 +230,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
 
     return Outputs(
         run_android=run_android,
-        run_ci_fuzz=run_ci_fuzz,
-        run_ci_fuzz_stdlib=run_ci_fuzz_stdlib,
         run_docs=run_docs,
         run_emscripten=run_emscripten,
         run_ios=run_ios,
@@ -333,10 +245,6 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
 def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
     if not git_branch:
         outputs.run_tests = True
-
-    # CIFuzz / OSS-Fuzz compatibility with older branches may be broken.
-    if git_branch != GITHUB_DEFAULT_BRANCH:
-        outputs.run_ci_fuzz = False
 
     if os.environ.get("GITHUB_EVENT_NAME", "").lower() == "workflow_dispatch":
         outputs.run_docs = True

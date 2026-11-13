@@ -22,7 +22,6 @@ MACOS_DIRS = compute_changes.MACOS_DIRS
 WASI_DIRS = compute_changes.WASI_DIRS
 RUN_TESTS_IGNORE = compute_changes.RUN_TESTS_IGNORE
 UNIX_BUILD_SYSTEM_FILE_NAMES = compute_changes.UNIX_BUILD_SYSTEM_FILE_NAMES
-LIBRARY_FUZZER_PATHS = compute_changes.LIBRARY_FUZZER_PATHS
 
 
 class TestProcessChangedFiles(unittest.TestCase):
@@ -43,18 +42,6 @@ class TestProcessChangedFiles(unittest.TestCase):
                 result = process_changed_files({Path(f)})
                 self.assertTrue(result.run_docs)
                 self.assertFalse(result.run_tests)
-
-    def test_ci_fuzz_stdlib(self):
-        for p in LIBRARY_FUZZER_PATHS:
-            with self.subTest(p=p):
-                if p.is_dir():
-                    f = p / "file"
-                elif p.is_file():
-                    f = p
-                else:
-                    continue
-                result = process_changed_files({f})
-                self.assertTrue(result.run_ci_fuzz_stdlib)
 
     def test_android(self):
         for d in ANDROID_DIRS:
