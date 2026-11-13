@@ -1,0 +1,2 @@
+Preserve existing UTF-8 filename and entry-comment encoding flags when
+:mod:`zipfile` rewrites an archive in append mode.
