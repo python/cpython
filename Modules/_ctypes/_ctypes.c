@@ -215,37 +215,10 @@ static PyType_Spec dictremover_spec = {
     .slots = dictremover_slots,
 };
 
-int
-PyDict_SetItemProxy(ctypes_state *st, PyObject *dict, PyObject *key, PyObject *item)
-{
-    PyObject *obj;
-    DictRemoverObject *remover;
-    PyObject *proxy;
-    int result;
-
-    obj = _PyObject_CallNoArgs((PyObject *)st->DictRemover_Type);
-    if (obj == NULL)
-        return -1;
-
-    remover = (DictRemoverObject *)obj;
-    assert(remover->key == NULL);
-    assert(remover->dict == NULL);
-    remover->key = Py_NewRef(key);
-    remover->dict = Py_NewRef(dict);
-
-    proxy = PyWeakref_NewProxy(item, obj);
-    Py_DECREF(obj);
-    if (proxy == NULL)
-        return -1;
-
-    result = PyDict_SetItem(dict, key, proxy);
-    Py_DECREF(proxy);
-    return result;
-}
-
-/* Like PyDict_SetItemProxy(), but does not replace an existing live entry.
-   On success *presult is a new reference to whatever is cached for `key`
-   afterwards: `item` itself, or the object another thread cached first.
+/* Cache `item` in `dict` under `key` through a weakref proxy, unless a live
+   entry already exists.  On success *presult is a new reference to whatever
+   is cached for `key` afterwards: `item` itself, or the object another
+   thread cached first.
    Returns 0 on success, -1 with an exception set on failure. */
 static int
 _PyDict_SetDefaultItemProxy(ctypes_state *st, PyObject *dict, PyObject *key,
@@ -270,13 +243,14 @@ _PyDict_SetDefaultItemProxy(ctypes_state *st, PyObject *dict, PyObject *key,
 
     PyObject *stored;
     int present = PyDict_SetDefaultRef(dict, key, proxy, &stored);
-    Py_DECREF(proxy);
     if (present < 0) {
+        Py_DECREF(proxy);
         return -1;
     }
     if (present == 0) {
         /* Our proxy was inserted; `item` is the canonical object. */
         Py_DECREF(stored);
+        Py_DECREF(proxy);
         *presult = Py_NewRef(item);
         return 0;
     }
@@ -290,15 +264,19 @@ _PyDict_SetDefaultItemProxy(ctypes_state *st, PyObject *dict, PyObject *key,
     }
     Py_DECREF(stored);
     if (rc < 0) {
+        Py_DECREF(proxy);
         return -1;
     }
     if (existing != NULL) {
+        Py_DECREF(proxy);
         *presult = existing;
         return 0;
     }
 
     /* The cached entry had already been cleared; install ours instead. */
-    if (PyDict_SetItemProxy(st, dict, key, item) < 0) {
+    rc = PyDict_SetItem(dict, key, proxy);
+    Py_DECREF(proxy);
+    if (rc < 0) {
         return -1;
     }
     *presult = Py_NewRef(item);
@@ -5499,11 +5477,6 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    /* Creating the type above can run Python code (a metaclass
-       __set_name__, for instance), so another thread may have created and
-       cached an array type for the same key in the meantime. Insert ours only
-       if the key is still absent, and otherwise return the cached object, so
-       that `itemtype * length` always evaluates to the same type. */
     PyObject *cached;
     if (_PyDict_SetDefaultItemProxy(st, st->array_cache, key, result,
                                     &cached) < 0) {
