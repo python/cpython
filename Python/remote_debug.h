@@ -359,6 +359,19 @@ typedef struct {
     size_t pointer_size;
 } DyldImageList;
 
+static uint64_t
+read_dyld_pointer(const void *source, size_t pointer_size)
+{
+    if (pointer_size == 4) {
+        uint32_t address;
+        memcpy(&address, source, sizeof(address));
+        return address;
+    }
+    uint64_t address;
+    memcpy(&address, source, sizeof(address));
+    return address;
+}
+
 static int
 read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
 {
@@ -403,8 +416,7 @@ read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
     uint32_t version;
     memcpy(&version, prefix, sizeof(version));
     memcpy(&list->count, prefix + 4, sizeof(list->count));
-    uint64_t images = 0;
-    memcpy(&images, prefix + 8, list->pointer_size);
+    uint64_t images = read_dyld_pointer(prefix + 8, list->pointer_size);
     if (images > UINTPTR_MAX) {
         PyErr_SetString(PyExc_RuntimeError, "dyld image address does not fit uintptr_t");
         return -1;
@@ -483,8 +495,8 @@ search_loaded_images_for_section(proc_handle_t *handle, const char *section,
     }
     uintptr_t result = 0;
     for (uint32_t index = 0; index < list.count; index++) {
-        uint64_t address = 0;
-        memcpy(&address, images + index * (3 * list.pointer_size), list.pointer_size);
+        uint64_t address = read_dyld_pointer(
+            images + index * (3 * list.pointer_size), list.pointer_size);
         if (address == 0 || address > UINTPTR_MAX) {
             continue;
         }

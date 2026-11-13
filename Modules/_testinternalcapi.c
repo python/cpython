@@ -3532,8 +3532,8 @@ get_dyld_image_addresses(PyObject *self, PyObject *Py_UNUSED(ignored))
         goto done;
     }
     for (uint32_t index = 0; index < list.count; index++) {
-        uint64_t address = 0;
-        memcpy(&address, images + index * (3 * list.pointer_size), list.pointer_size);
+        uint64_t address = read_dyld_pointer(
+            images + index * (3 * list.pointer_size), list.pointer_size);
         PyObject *item = PyLong_FromUnsignedLongLong(address);
         if (item == NULL) {
             Py_CLEAR(result);

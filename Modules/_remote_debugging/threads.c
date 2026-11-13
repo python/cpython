@@ -231,7 +231,8 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid) {
     {
         return THREAD_STATE_UNKNOWN;
     }
-    return info.ThreadState == WIN32_THREADSTATE_RUNNING
+    const ULONG running = 2;
+    return info.ThreadState == running
         ? THREAD_STATE_RUNNING : THREAD_STATE_IDLE;
 #else
     return THREAD_STATE_UNKNOWN;
@@ -359,7 +360,8 @@ unwind_stack_for_thread(
         STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
     }
 
-    long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
+    unsigned long tid = GET_MEMBER(unsigned long, ts,
+                                   unwinder->debug_offsets.thread_state.native_thread_id);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;
@@ -556,7 +558,7 @@ unwind_stack_for_thread(
         }
     }
     if (thread_id == NULL) {
-        thread_id = PyLong_FromLongLong(tid);
+        thread_id = PyLong_FromUnsignedLong(tid);
         if (thread_id == NULL) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
             goto error;

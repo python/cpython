@@ -104,16 +104,6 @@ typedef struct {
 #ifdef MS_WINDOWS
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #define STATUS_NO_MORE_ENTRIES           ((NTSTATUS)0x8000001AL)
-typedef enum _WIN32_THREADSTATE {
-    WIN32_THREADSTATE_INITIALIZED = 0,
-    WIN32_THREADSTATE_READY       = 1,
-    WIN32_THREADSTATE_RUNNING     = 2,
-    WIN32_THREADSTATE_STANDBY     = 3,
-    WIN32_THREADSTATE_TERMINATED  = 4,
-    WIN32_THREADSTATE_WAITING     = 5,
-    WIN32_THREADSTATE_TRANSITION  = 6,
-    WIN32_THREADSTATE_UNKNOWN     = 7
-} WIN32_THREADSTATE;
 #endif
 
 /* ============================================================================
