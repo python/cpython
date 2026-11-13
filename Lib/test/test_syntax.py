@@ -2923,6 +2923,34 @@ Asserts:
     Traceback (most recent call last):
     SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
+Named expressions in keyword arguments:
+
+    >>> def g(): return f(a=(x := 1))  # ok
+
+    >>> f(a=x := 1)
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> f(1, a=x := 1, b=2)
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> f(*args, a=x := 1)
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> f(**kwargs, a=x := 1)
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> class C(metaclass=x := type): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> f(a=x.y := 1)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
+
 """
 
 import re
