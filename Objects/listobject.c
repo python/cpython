@@ -6,7 +6,7 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
-#include "pycore_interp.h"        // PyInterpreterState.list
+#include "pycore_interp.h"        // PyInterpreterState.list_deque_hooks
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
@@ -1508,6 +1508,64 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     return 0;
 }
 
+PyObject **
+_PyList_ReserveForExtendLockHeld(PyListObject *self, Py_ssize_t n)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    assert(n > 0);
+    Py_ssize_t m = Py_SIZE(self);
+    if (m > PY_SSIZE_T_MAX - n) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    // Same steps as list_extend_iter_lock_held() with an exact length hint.
+    if (self->ob_item == NULL) {
+        if (list_preallocate_exact(self, n) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (list_resize(self, m + n) < 0) {
+            return NULL;
+        }
+        /* Make the list sane again. */
+        Py_SET_SIZE(self, m);
+    }
+    return self->ob_item + m;
+}
+
+void
+_PyList_SetDequeHooks(const _PyList_DequeHooks *hooks)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_atomic_store_ptr_release(&interp->list_deque_hooks, (void *)hooks);
+}
+
+static inline const _PyList_DequeHooks *
+list_get_deque_hooks(PyObject *iterable)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const _PyList_DequeHooks *hooks =
+        _Py_atomic_load_ptr_acquire(&interp->list_deque_hooks);
+    if (hooks == NULL) {
+        return NULL;
+    }
+    PyTypeObject *tp = Py_TYPE(iterable);
+    if (tp->tp_iternext == hooks->dequeiter_next) {
+        // The deque iterator type cannot be subclassed.
+        return hooks;
+    }
+    if (tp->tp_iter == hooks->deque_iter
+        && tp->tp_as_sequence != NULL
+        && tp->tp_as_sequence->sq_length == hooks->deque_len)
+    {
+        // The generic path would only call deque_len() and deque_iter(),
+        // neither of which runs user code.
+        return hooks;
+    }
+    return NULL;
+}
+
 static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
@@ -1558,6 +1616,13 @@ _list_extend(PyListObject *self, PyObject *iterable)
         Py_END_CRITICAL_SECTION2();
     }
     else {
+        const _PyList_DequeHooks *hooks = list_get_deque_hooks(iterable);
+        if (hooks != NULL) {
+            res = hooks->extend(self, iterable);
+            if (res != 1) {
+                return res;
+            }
+        }
         Py_BEGIN_CRITICAL_SECTION(self);
         res = list_extend_iter_lock_held(self, iterable);
         Py_END_CRITICAL_SECTION();
