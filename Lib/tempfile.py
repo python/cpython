@@ -932,6 +932,9 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False, repeated=False, dir_fd=None,
                 fullname=None):
+        if fullname is None:
+            fullname = name
+
         def onerror(func, path, exc_info, direntry=None, dir_fd=None):
             if issubclass(exc_info[0], PermissionError):
                 if repeated and path == name:
