@@ -29,6 +29,9 @@ class MIMEText(MIMENonMultipart):
         # XXX: This can be removed once #7304 is fixed.
         if _charset is None:
             try:
+                if len(_text) > 998:
+                    import textwrap
+                    _text = '\n'.join(textwrap.wrap(_text, 998))
                 _text.encode('us-ascii')
                 _charset = 'us-ascii'
             except UnicodeEncodeError:
