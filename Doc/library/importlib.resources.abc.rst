@@ -89,7 +89,11 @@
        the file system then those subdirectory names can be used
        directly.
 
-       The abstract method returns an iterable of no items.
+       The abstract method raises :exc:`FileNotFoundError`.
+
+       .. versionchanged:: 3.10
+          The abstract method changed from returning an empty iterable
+          to raising :exc:`FileNotFoundError`.
 
 
 .. class:: Traversable
