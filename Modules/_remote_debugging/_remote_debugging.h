@@ -179,6 +179,9 @@ typedef enum _WIN32_THREADSTATE {
 #define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 #define THREAD_STATUS_MAIN_THREAD         (1 << 5)
 
+// Internal marker, removed before returning the sample.
+#define THREAD_STATUS_UNBOUND             (1 << 6)
+
 /* Exception cause macro */
 #define set_exception_cause(unwinder, exc_type, message)                              \
     do {                                                                              \
@@ -686,7 +689,7 @@ extern int get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint6
 extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
-    uintptr_t gil_holder_tstate,
+    int *has_unbound,
     uintptr_t gc_frame,
     uintptr_t main_thread_tstate,
     const RemoteReadPrefetch *prefetch

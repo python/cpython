@@ -1,0 +1,2 @@
+Fix :mod:`profiling.sampling` attributing CPU samples to suspended thread states
+when multiple thread states share the same native thread.
