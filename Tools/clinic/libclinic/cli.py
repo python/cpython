@@ -12,7 +12,7 @@ from typing import NoReturn
 
 # Local imports.
 import libclinic
-import libclinic.cpp
+import libclinic.errors
 from libclinic import ClinicError
 from libclinic.language import Language, PythonLanguage
 from libclinic.block_parser import BlockParser
@@ -340,10 +340,15 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
 def main(argv: list[str] | None = None) -> NoReturn:
     parser = create_cli()
     args = parser.parse_args(argv)
+    libclinic.errors.reset_warning_count()
     try:
         run_clinic(parser, args)
     except ClinicError as exc:
         sys.stderr.write(exc.report())
         sys.exit(1)
-    else:
-        sys.exit(0)
+    count = libclinic.errors.warning_count
+    if count:
+        noun = "warning" if count == 1 else "warnings"
+        sys.stderr.write(f"{count} {noun} emitted\n")
+        sys.exit(1)
+    sys.exit(0)
