@@ -86,9 +86,9 @@ class SlicesTestCase(unittest.TestCase):
             a[::2] = BadLen()
         with self.assertRaisesRegex(ValueError, "custom value error"):
             a[0:1] = BadValueErrorLen()
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "object of type 'int' has no len"):
             a[0:1] = 42
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "dict is not a sequence"):
             a[0:1] = {"x": 1}
         self.assertEqual(a[:], [1, 2, 3])
 
