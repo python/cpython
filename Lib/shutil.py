@@ -644,7 +644,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
             entries = list(scandir_it)
     except OSError as err:
         err.filename = path
-        onerror(os.scandir, path, sys.exc_info())
+        onerror(os.scandir, path, sys.exc_info(), dir_fd=topfd)
         return
     for entry in entries:
         fullname = os.path.join(path, entry.name)
@@ -658,14 +658,14 @@ def _rmtree_safe_fd(topfd, path, onerror):
                     orig_st = entry.stat(follow_symlinks=False)
                     is_dir = stat.S_ISDIR(orig_st.st_mode)
                 except OSError:
-                    onerror(os.lstat, fullname, sys.exc_info())
+                    onerror(os.lstat, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
                     continue
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=topfd)
                 dirfd_closed = False
             except OSError:
-                onerror(os.open, fullname, sys.exc_info())
+                onerror(os.open, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
             else:
                 try:
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
@@ -675,12 +675,12 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         except OSError:
                             # close() should not be retried after an error.
                             dirfd_closed = True
-                            onerror(os.close, fullname, sys.exc_info())
+                            onerror(os.close, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
                         dirfd_closed = True
                         try:
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError:
-                            onerror(os.rmdir, fullname, sys.exc_info())
+                            onerror(os.rmdir, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
                     else:
                         try:
                             # This can only happen if someone replaces
@@ -689,25 +689,26 @@ def _rmtree_safe_fd(topfd, path, onerror):
                             raise OSError("Cannot call rmtree on a symbolic "
                                           "link")
                         except OSError:
-                            onerror(os.path.islink, fullname, sys.exc_info())
+                            onerror(os.path.islink, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
                 finally:
                     if not dirfd_closed:
                         try:
                             os.close(dirfd)
                         except OSError:
-                            onerror(os.close, fullname, sys.exc_info())
+                            onerror(os.close, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
             except OSError:
-                onerror(os.unlink, fullname, sys.exc_info())
+                onerror(os.unlink, fullname, sys.exc_info(), direntry=entry, dir_fd=topfd)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
 
-def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None,
+           _onerror_kwargs=False):
     """Recursively delete a directory tree.
 
     If dir_fd is not None, it should be a file descriptor open to a directory;
@@ -725,11 +726,15 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
     """
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
-        def onerror(*args):
+        def onerror(*args, **kwargs):
             pass
     elif onerror is None:
-        def onerror(*args):
+        def onerror(*args, **kwargs):
             raise
+    elif not _onerror_kwargs:
+        _orig_onerror = onerror
+        def onerror(*args, **kwargs):
+            return _orig_onerror(*args)
     if _use_fd_functions:
         # While the unsafe rmtree works fine on bytes, the fd based does not.
         if isinstance(path, bytes):
