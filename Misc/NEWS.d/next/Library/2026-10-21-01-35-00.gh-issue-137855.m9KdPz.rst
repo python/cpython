@@ -1,0 +1,2 @@
+Improve :mod:`textwrap` import time by compiling the module's regular
+expressions lazily, on first use, instead of at import time.
