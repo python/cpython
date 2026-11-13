@@ -352,6 +352,19 @@ def _read_directory(archive):
                 central_directory_position = _unpack_uint32(buffer[16:20])
                 num_entries = _unpack_uint16(buffer[8:10])
 
+                # gh-103051: Validate that the archive comment length stored in
+                # the EOCD is consistent with the actual end-of-file position.
+                # Without this check a crafted .pyc file whose compiled bytecode
+                # happens to contain a PK\x05\x06 signature can be misidentified
+                # as a ZIP archive (pyc/zip polyglot attack).  For every valid ZIP
+                # (plain, with archive comment, or with prepended bytes such as PEX
+                # or self-extracting .exe) the invariant holds exactly:
+                #   header_position + END_CENTRAL_DIR_SIZE + comment_size == file_size
+                comment_size = _unpack_uint16(buffer[20:22])
+                if header_position + END_CENTRAL_DIR_SIZE + comment_size != file_size:
+                    raise ZipImportError(f'not a Zip file: {archive!r}',
+                                         path=archive)
+
                 # N.b. if someday you want to prefer the standard (non-zip64) EOCD,
                 # you need to adjust position by 76 for arc to be 0.
             else:

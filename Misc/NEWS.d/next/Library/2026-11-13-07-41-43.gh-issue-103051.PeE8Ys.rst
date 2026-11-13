@@ -1,0 +1,5 @@
+:mod:`zipimport` now validates that the archive-comment-length field in the
+ZIP End-of-Central-Directory record is consistent with the actual file size.
+Previously the field was silently ignored, allowing a crafted ``.pyc`` file
+whose compiled bytecode happened to contain a ``PK\\x05\\x06`` signature to
+be misidentified as a ZIP archive (pyc/zip polyglot attack).
