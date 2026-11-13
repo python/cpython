@@ -19,14 +19,14 @@ PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 // Add an attribute with name 'name' and value 'obj' to the module 'mod.
 // On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
 #endif   /* Py_LIMITED_API */
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 // Similar to PyModule_AddObjectRef() but steal a reference to 'value'.
 PyAPI_FUNC(int) PyModule_Add(PyObject *mod, const char *name, PyObject *value);
 #endif   /* Py_LIMITED_API */
@@ -39,7 +39,7 @@ PyAPI_FUNC(int) PyModule_AddObject(PyObject *mod, const char *, PyObject *value)
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 9)
 /* New in 3.9 */
 PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 #endif /* Py_LIMITED_API */
@@ -47,7 +47,7 @@ PyAPI_FUNC(int) PyModule_AddType(PyObject *module, PyTypeObject *type);
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant((m), #c, (c))
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant((m), #c, (c))
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* New in 3.5 */
 PyAPI_FUNC(int) PyModule_SetDocString(PyObject *, const char *);
 PyAPI_FUNC(int) PyModule_AddFunctions(PyObject *, PyMethodDef *);
@@ -66,7 +66,7 @@ PyAPI_FUNC(PyObject *) PyModule_Create2(PyModuleDef*, int apiver);
         PyModule_Create2((module), PYTHON_API_VERSION)
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* New in 3.5 */
 PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
                                                 PyObject *spec,

@@ -12,7 +12,7 @@ PyAPI_DATA(PyTypeObject) PyModule_Type;
 #define PyModule_Check(op) PyObject_TypeCheck((op), &PyModule_Type)
 #define PyModule_CheckExact(op) Py_IS_TYPE((op), &PyModule_Type)
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject *) PyModule_NewObject(
     PyObject *name
     );
@@ -21,7 +21,7 @@ PyAPI_FUNC(PyObject *) PyModule_New(
     const char *name            /* UTF-8 encoded string */
     );
 PyAPI_FUNC(PyObject *) PyModule_GetDict(PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 3)
 PyAPI_FUNC(PyObject *) PyModule_GetNameObject(PyObject *);
 #endif
 PyAPI_FUNC(const char *) PyModule_GetName(PyObject *);
@@ -30,7 +30,7 @@ PyAPI_FUNC(PyObject *) PyModule_GetFilenameObject(PyObject *);
 PyAPI_FUNC(PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* New in 3.5 */
 PyAPI_FUNC(PyObject *) PyModuleDef_Init(PyModuleDef*);
 PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
@@ -66,7 +66,7 @@ typedef struct PyModuleDef_Base {
   }
 #endif  // _Py_OPAQUE_PYOBJECT
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 5)
 /* New in 3.5 */
 struct PyModuleDef_Slot {
     int slot;
@@ -76,14 +76,14 @@ struct PyModuleDef_Slot {
 #endif /* New in 3.5 */
 
 /* for Py_mod_multiple_interpreters: */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #  define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
 #  define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
 #  define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
 #endif
 
 /* for Py_mod_gil: */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_MOD_GIL_USED ((void *)0)
 #  define Py_MOD_GIL_NOT_USED ((void *)1)
 #endif

@@ -8,7 +8,7 @@ extern "C" {
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_Ellipsis Py_GetConstantBorrowed(Py_CONSTANT_ELLIPSIS)
 #else
 #  define Py_Ellipsis (&_Py_EllipsisObject)
@@ -31,7 +31,8 @@ PyAPI_FUNC(int) PySlice_GetIndicesEx(PyObject *r, Py_ssize_t length,
                                      Py_ssize_t *step,
                                      Py_ssize_t *slicelength);
 
-#if !defined(Py_LIMITED_API) || (Py_LIMITED_API+0 >= 0x03050400 && Py_LIMITED_API+0 < 0x03060000) || Py_LIMITED_API+0 >= 0x03060100
+
+#if !defined(Py_LIMITED_API) || (Py_LIMITED_API+0 >= _Py_PACK_FULL_VERSION(3, 5, 4, 0, 0) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 6)) || Py_LIMITED_API+0 >= _Py_PACK_FULL_VERSION(3, 6, 1, 0, 0)
 #define PySlice_GetIndicesEx(slice, length, start, stop, step, slicelen) (  \
     PySlice_Unpack((slice), (start), (stop), (step)) < 0 ?                  \
     ((*(slicelen) = 0), -1) :                                               \

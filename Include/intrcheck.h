@@ -7,7 +7,7 @@ extern "C" {
 PyAPI_FUNC(int) PyOS_InterruptOccurred(void);
 
 #ifdef HAVE_FORK
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 7)
 PyAPI_FUNC(void) PyOS_BeforeFork(void);
 PyAPI_FUNC(void) PyOS_AfterFork_Parent(void);
 PyAPI_FUNC(void) PyOS_AfterFork_Child(void);

@@ -83,7 +83,7 @@ PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 9)
 #define PyCFunction_NewEx(ML, SELF, MOD) PyCMethod_New((ML), (SELF), (MOD), NULL)
 PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
                                      PyObject *, PyTypeObject *);
@@ -111,7 +111,7 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 #  define METH_FASTCALL  0x0080
 #endif
 
@@ -129,7 +129,7 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
  * May not be combined with METH_NOARGS, METH_O, METH_CLASS or METH_STATIC.
  */
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 9)
 #define METH_METHOD 0x0200
 #endif
 
