@@ -42,7 +42,7 @@ def _build_graph_for_future(
     future: futures.Future,
     *,
     limit: int | None = None,
-    seen: set[int] | None = None,
+    seen: set[futures.Future] | None = None,
 ) -> FutureCallGraph:
     if not isinstance(future, futures.Future):
         raise TypeError(
