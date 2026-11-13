@@ -56,7 +56,6 @@ extern "C" {
 #  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <sys/types.h>
-#    define MAX_NATIVE_THREADS 4096
 #  endif
 #endif
 
@@ -104,7 +103,6 @@ typedef struct {
 
 #ifdef MS_WINDOWS
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
-#define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
 #define STATUS_NO_MORE_ENTRIES           ((NTSTATUS)0x8000001AL)
 typedef enum _WIN32_THREADSTATE {
     WIN32_THREADSTATE_INITIALIZED = 0,
@@ -387,14 +385,6 @@ typedef struct {
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
-#endif
-#ifdef __APPLE__
-    uint64_t thread_id_offset;
-    int thread_id_offset_initialized;
-#endif
-#ifdef MS_WINDOWS
-    PVOID win_process_buffer;
-    ULONG win_process_buffer_size;
 #endif
     // Thread stopping state (only on platforms that support it)
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
@@ -681,7 +671,7 @@ extern int find_running_frame(
     uintptr_t *frame
 );
 
-extern int get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id);
+extern int get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid);
 
 extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,

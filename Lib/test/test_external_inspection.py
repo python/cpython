@@ -3502,6 +3502,46 @@ t.join()
 
 
 @skip_if_not_supported
+class TestThreadStatusInProcess(RemoteInspectionTestBase):
+    def test_new_threads_with_reused_unwinder(self):
+        from test.support import threading_helper
+
+        try:
+            unwinder = RemoteUnwinder(
+                os.getpid(), all_threads=True, mode=PROFILING_MODE_CPU,
+                skip_non_matching_threads=False,
+            )
+        except PermissionError as exc:
+            self.skipTest(f"self-inspection is unavailable: {exc}")
+
+        # Reuse one unwinder across thread exits and new native thread IDs.
+        for iteration in range(5):
+            with self.subTest(iteration=iteration):
+                ready = threading.Event()
+                stop = threading.Event()
+
+                def sleeper():
+                    ready.set()
+                    stop.wait()
+
+                thread = threading.Thread(target=sleeper)
+                with threading_helper.start_threads([thread], stop.set):
+                    self.assertTrue(ready.wait(SHORT_TIMEOUT))
+                    statuses = {}
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        with contextlib.suppress(*TRANSIENT_ERRORS):
+                            statuses = self._get_thread_statuses(unwinder.get_stack_trace())
+                            status = statuses.get(thread.native_id)
+                            if status is not None and not status & (
+                                THREAD_STATUS_UNKNOWN | THREAD_STATUS_ON_CPU
+                            ):
+                                break
+                    self.assertIn(thread.native_id, statuses)
+                    self.assertFalse(statuses[thread.native_id] & THREAD_STATUS_UNKNOWN)
+                    self.assertFalse(statuses[thread.native_id] & THREAD_STATUS_ON_CPU)
+
+
+@skip_if_not_supported
 class TestExceptionDetectionInProcess(RemoteInspectionTestBase):
     """gh-158539: HAS_EXCEPTION for handlers running in generators/coroutines.
 

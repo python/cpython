@@ -40,14 +40,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
         }
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
-    // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "libpython",
-                                     NULL);
-    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
-        PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "python",
-                                         NULL);
-    }
+    address = search_loaded_images_for_section(handle, "AsyncioDebug", NULL);
     if (address == 0) {
         if (!_Py_RemoteDebug_HasPermissionError()) {
             PyObject *exc = PyErr_GetRaisedException();

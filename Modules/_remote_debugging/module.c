@@ -456,15 +456,6 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
-#if defined(__APPLE__)
-    self->thread_id_offset = 0;
-    self->thread_id_offset_initialized = 0;
-#endif
-
-#ifdef MS_WINDOWS
-    self->win_process_buffer = NULL;
-    self->win_process_buffer_size = 0;
-#endif
 #ifdef __linux__
     self->thread_tids = NULL;
     self->thread_tids_capacity = 0;
@@ -1347,11 +1338,6 @@ RemoteUnwinder_dealloc(PyObject *op)
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
     }
-#ifdef MS_WINDOWS
-    if (self->win_process_buffer != NULL) {
-        PyMem_Free(self->win_process_buffer);
-    }
-#endif
 
 #ifdef Py_GIL_DISABLED
     if (self->tlbc_cache) {

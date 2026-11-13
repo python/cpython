@@ -61,9 +61,7 @@ extern "C" {
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 #  include <libproc.h>
-#  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
-#  include <mach-o/nlist.h>
 #  include <mach/error.h>
 #  include <mach/mach.h>
 #  include <mach/mach_vm.h>
@@ -72,7 +70,6 @@ extern "C" {
 #  include <mach/thread_act.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
-#  include <sys/sysctl.h>
 #endif
 
 #ifdef MS_WINDOWS
@@ -282,6 +279,11 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
     }
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    if (handle->task != MACH_PORT_NULL) {
+        mach_port_deallocate(mach_task_self(), handle->task);
+        handle->task = MACH_PORT_NULL;
+    }
 #elif defined(__linux__)
     if (handle->memfd != -1) {
         close(handle->memfd);
@@ -294,233 +296,40 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 
-static uintptr_t
-return_section_address64(
-    const char* section,
-    uintptr_t base,
-    void* map
-) {
-    struct mach_header_64* hdr = (struct mach_header_64*)map;
-    int ncmds = hdr->ncmds;
-
-    int cmd_cnt = 0;
-    struct segment_command_64* cmd = map + sizeof(struct mach_header_64);
-
-    uintptr_t vmaddr = 0;
-
-    for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
-        if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__TEXT") == 0) {
-            vmaddr = cmd->vmaddr;
-        }
-        if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
-            // The section address only needs the image's ASLR slide.
-            // VM regions need not match the segment's on-disk size.
-
-            int nsects = cmd->nsects;
-            struct section_64* sec = (struct section_64*)(
-                (void*)cmd + sizeof(struct segment_command_64)
-                );
-            for (int j = 0; j < nsects; j++) {
-                if (strcmp(sec[j].sectname, section) == 0) {
-                    return base + sec[j].addr - vmaddr;
-                }
-            }
-            cmd_cnt++;
-        }
-
-        cmd = (struct segment_command_64*)((void*)cmd + cmd->cmdsize);
-    }
-
-    return 0;
-}
+#include "remote_debug_macho.h"
 
 static uintptr_t
-return_section_address32(
-    const char* section,
-    uintptr_t base,
-    void* map
-) {
-    struct mach_header* hdr = (struct mach_header*)map;
-    int ncmds = hdr->ncmds;
-
-    int cmd_cnt = 0;
-    struct segment_command* cmd = map + sizeof(struct mach_header);
-
-    uintptr_t vmaddr = 0;
-
-    for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
-        if (cmd->cmd == LC_SEGMENT && strcmp(cmd->segname, "__TEXT") == 0) {
-            vmaddr = cmd->vmaddr;
-        }
-        if (cmd->cmd == LC_SEGMENT && strcmp(cmd->segname, "__DATA") == 0) {
-            // The section address only needs the image's ASLR slide.
-            // VM regions need not match the segment's on-disk size.
-
-            int nsects = cmd->nsects;
-            struct section* sec = (struct section*)(
-                (void*)cmd + sizeof(struct segment_command)
-                );
-            for (int j = 0; j < nsects; j++) {
-                if (strcmp(sec[j].sectname, section) == 0) {
-                    return base + sec[j].addr - vmaddr;
-                }
-            }
-            cmd_cnt++;
-        }
-
-        cmd = (struct segment_command*)((void*)cmd + cmd->cmdsize);
-    }
-
-    return 0;
-}
-
-static uintptr_t
-return_section_address_fat(
-    const char* section,
-    uintptr_t base,
-    void* map
-) {
-    struct fat_header* fat_hdr = (struct fat_header*)map;
-
-    // Determine host CPU type for architecture selection
-    cpu_type_t cpu;
-    int is_abi64;
-    size_t cpu_size = sizeof(cpu), abi64_size = sizeof(is_abi64);
-
-    if (sysctlbyname("hw.cputype", &cpu, &cpu_size, NULL, 0) != 0) {
-        int err = errno;
-        _set_debug_oserror_from_errno(err,
-            "Failed to determine CPU type via sysctlbyname "
-            "for fat binary analysis at 0x%lx: %s",
-            base, strerror(err));
-        return 0;
-    }
-    if (sysctlbyname("hw.cpu64bit_capable", &is_abi64, &abi64_size, NULL, 0) != 0) {
-        int err = errno;
-        _set_debug_oserror_from_errno(err,
-            "Failed to determine CPU ABI capability via sysctlbyname "
-            "for fat binary analysis at 0x%lx: %s",
-            base, strerror(err));
-        return 0;
-    }
-
-    cpu |= is_abi64 * CPU_ARCH_ABI64;
-
-    // Check endianness
-    int swap = fat_hdr->magic == FAT_CIGAM;
-    struct fat_arch* arch = (struct fat_arch*)(map + sizeof(struct fat_header));
-
-    // Get number of architectures in fat binary
-    uint32_t nfat_arch = swap ? __builtin_bswap32(fat_hdr->nfat_arch) : fat_hdr->nfat_arch;
-
-    // Search for matching architecture
-    for (uint32_t i = 0; i < nfat_arch; i++) {
-        cpu_type_t arch_cpu = swap ? __builtin_bswap32(arch[i].cputype) : arch[i].cputype;
-
-        if (arch_cpu == cpu) {
-            // Found matching architecture, now process it
-            uint32_t offset = swap ? __builtin_bswap32(arch[i].offset) : arch[i].offset;
-            struct mach_header_64* hdr = (struct mach_header_64*)(map + offset);
-
-            // Determine which type of Mach-O it is and process accordingly
-            switch (hdr->magic) {
-                case MH_MAGIC:
-                case MH_CIGAM:
-                    return return_section_address32(section, base, (void*)hdr);
-
-                case MH_MAGIC_64:
-                case MH_CIGAM_64:
-                    return return_section_address64(section, base, (void*)hdr);
-
-                default:
-                    PyErr_Format(PyExc_RuntimeError,
-                        "Unknown Mach-O magic number 0x%x in fat binary architecture %u at base 0x%lx",
-                        hdr->magic, i, base);
-                    return 0;
-            }
-        }
-    }
-
-    PyErr_Format(PyExc_RuntimeError,
-        "No matching architecture found for CPU type 0x%x "
-        "in fat binary at base 0x%lx (%u architectures examined)",
-        cpu, base, nfat_arch);
-    return 0;
-}
-
-static uintptr_t
-search_section_in_file(const char* secname, char* path, uintptr_t base)
+search_section_in_memory(proc_handle_t *handle, uintptr_t base,
+                         const char *section)
 {
-    int fd = open(path, O_RDONLY);
-    if (fd == -1) {
-        int err = errno;
-        _set_debug_oserror_from_errno_with_filename(err, path,
-            "Cannot open binary file '%s' for section '%s' search: %s",
-            path, secname, strerror(err));
+    struct mach_header header;
+    if (_Py_RemoteDebug_ReadRemoteMemory(handle, base, sizeof(header), &header) < 0) {
         return 0;
     }
-
-    struct stat fs;
-    if (fstat(fd, &fs) == -1) {
-        int err = errno;
-        _set_debug_oserror_from_errno_with_filename(err, path,
-            "Cannot get file size for binary '%s' during section '%s' search: %s",
-            path, secname, strerror(err));
-        close(fd);
+    size_t header_size = macho_header_size(header.magic);
+    if (header_size == 0) {
         return 0;
     }
-
-    void* map = mmap(0, fs.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (map == MAP_FAILED) {
-        int err = errno;
-        _set_debug_oserror_from_errno_with_filename(err, path,
-            "Cannot memory map binary file '%s' (size: %lld bytes) for section '%s' search: %s",
-            path, (long long)fs.st_size, secname, strerror(err));
-        close(fd);
+    int swap = header.magic == MH_CIGAM || header.magic == MH_CIGAM_64;
+    size_t commands_size = macho_u32(header.sizeofcmds, swap);
+    /* A corrupt remote header must not trigger an unbounded allocation. */
+    const size_t max_commands_size = 16 * 1024 * 1024;
+    if (commands_size > max_commands_size ||
+        base > UINTPTR_MAX - header_size - commands_size)
+    {
+        return macho_invalid_image();
+    }
+    size_t size = header_size + commands_size;
+    void *image = PyMem_Malloc(size);
+    if (image == NULL) {
+        PyErr_NoMemory();
         return 0;
     }
-
     uintptr_t result = 0;
-    uint32_t magic = *(uint32_t*)map;
-
-    switch (magic) {
-    case MH_MAGIC:
-    case MH_CIGAM:
-        result = return_section_address32(secname, base, map);
-        break;
-    case MH_MAGIC_64:
-    case MH_CIGAM_64:
-        result = return_section_address64(secname, base, map);
-        break;
-    case FAT_MAGIC:
-    case FAT_CIGAM:
-        result = return_section_address_fat(secname, base, map);
-        break;
-    default:
-        PyErr_Format(PyExc_RuntimeError,
-            "Unrecognized Mach-O magic number 0x%x in binary file '%s' for section '%s' search",
-            magic, path, secname);
-        break;
+    if (_Py_RemoteDebug_ReadRemoteMemory(handle, base, size, image) == 0) {
+        result = macho_section_address(image, size, base, section);
     }
-
-    if (munmap(map, fs.st_size) != 0) {
-        if (!PyErr_Occurred()) {
-            int err = errno;
-            _set_debug_oserror_from_errno_with_filename(err, path,
-                "Failed to unmap binary file '%s' (size: %lld bytes): %s",
-                path, (long long)fs.st_size, strerror(err));
-        }
-        result = 0;
-    }
-    if (close(fd) != 0) {
-        if (!PyErr_Occurred()) {
-            int err = errno;
-            _set_debug_oserror_from_errno_with_filename(err, path,
-                "Failed to close binary file '%s': %s",
-                path, strerror(err));
-        }
-        result = 0;
-    }
+    PyMem_Free(image);
     return result;
 }
 
@@ -542,86 +351,156 @@ pid_to_task(pid_t pid)
     return task;
 }
 
-static uintptr_t
-search_map_for_section(proc_handle_t *handle, const char* secname, const char* substr,
-                       section_validator_t validator) {
-    mach_vm_address_t address = 0;
-    mach_vm_size_t size = 0;
-    mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_64_t);
-    vm_region_basic_info_data_64_t region_info;
-    mach_port_t object_name;
+typedef struct {
+    uintptr_t address;
+    uintptr_t images;
+    uint64_t timestamp;
+    uint32_t count;
+    size_t pointer_size;
+} DyldImageList;
 
-    mach_port_t proc_ref = pid_to_task(handle->pid);
-    if (proc_ref == 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_Format(PyExc_PermissionError,
-                "Cannot get task port for PID %d during section search",
-                handle->pid);
+static int
+read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
+{
+    task_dyld_info_data_t info;
+    mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
+    kern_return_t status = task_info(handle->task, TASK_DYLD_INFO,
+                                     (task_info_t)&info, &count);
+    if (status != KERN_SUCCESS) {
+        PyErr_Format(status == KERN_PROTECTION_FAILURE
+                     ? PyExc_PermissionError : PyExc_RuntimeError,
+                     "Cannot read dyld information for PID %d (Mach error %d)",
+                     handle->pid, status);
+        return -1;
+    }
+    if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
+        list->pointer_size = 8;
+    }
+    else if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_32) {
+        list->pointer_size = 4;
+    }
+    else {
+        PyErr_SetString(PyExc_RuntimeError, "Unknown dyld image-info format");
+        return -1;
+    }
+
+    /* dyld_all_image_infos starts with version, count, and an array pointer.
+     * Decode the target layout rather than the host's pointer-bearing struct. */
+    size_t timestamp_offset = list->pointer_size == 8 ? 184 : 104;
+    size_t size = (size_t)Py_MIN(info.all_image_info_size,
+                                timestamp_offset + sizeof(list->timestamp));
+    unsigned char prefix[192];
+    if (size < 8 + list->pointer_size ||
+        info.all_image_info_addr > UINTPTR_MAX - size)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid dyld image-info address");
+        return -1;
+    }
+    list->address = (uintptr_t)info.all_image_info_addr;
+    if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->address, size, prefix) < 0) {
+        return -1;
+    }
+    uint32_t version;
+    memcpy(&version, prefix, sizeof(version));
+    memcpy(&list->count, prefix + 4, sizeof(list->count));
+    uint64_t images = 0;
+    memcpy(&images, prefix + 8, list->pointer_size);
+    if (images > UINTPTR_MAX) {
+        PyErr_SetString(PyExc_RuntimeError, "dyld image address does not fit uintptr_t");
+        return -1;
+    }
+    list->images = (uintptr_t)images;
+    list->timestamp = 0;
+    if (version >= 15) {
+        /* Version 15 added infoArrayChangeTimestamp at these ABI offsets. */
+        if (size < timestamp_offset + sizeof(list->timestamp)) {
+            PyErr_SetString(PyExc_RuntimeError, "Truncated dyld image information");
+            return -1;
         }
+        memcpy(&list->timestamp, prefix + timestamp_offset, sizeof(list->timestamp));
+    }
+    return 0;
+}
+
+static unsigned char *
+copy_dyld_images(proc_handle_t *handle, DyldImageList *list)
+{
+    for (int attempt = 0; attempt < 3; attempt++) {
+        if (read_dyld_image_list(handle, list) < 0) {
+            if (_Py_RemoteDebug_IsFatalReadError()) {
+                return NULL;
+            }
+            PyErr_Clear();
+            continue;
+        }
+        /* dyld clears infoArray while it changes the image list. */
+        if (list->images == 0) {
+            continue;
+        }
+        if (list->count == 0) {
+            return NULL;
+        }
+        size_t record_size = 3 * list->pointer_size;
+        if (list->count > 65536 ||
+            list->images > UINTPTR_MAX - list->count * record_size)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Invalid dyld image array");
+            return NULL;
+        }
+        size_t size = list->count * record_size;
+        unsigned char *images = PyMem_Malloc(size);
+        if (images == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        DyldImageList after;
+        if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->images, size, images) == 0 &&
+            read_dyld_image_list(handle, &after) == 0 &&
+            after.address == list->address && after.images == list->images &&
+            after.count == list->count && after.timestamp == list->timestamp &&
+            after.pointer_size == list->pointer_size)
+        {
+            return images;
+        }
+        PyMem_Free(images);
+        if (_Py_RemoteDebug_IsFatalReadError()) {
+            return NULL;
+        }
+        PyErr_Clear();
+    }
+    PyErr_SetString(PyExc_RuntimeError, "The remote dyld image list changed during inspection");
+    return NULL;
+}
+
+static uintptr_t
+search_loaded_images_for_section(proc_handle_t *handle, const char *section,
+                                 section_validator_t validator)
+{
+    DyldImageList list;
+    unsigned char *images = copy_dyld_images(handle, &list);
+    if (images == NULL) {
         return 0;
     }
-
-    char map_filename[MAXPATHLEN + 1];
-
-    kern_return_t kr;
-    while ((kr = mach_vm_region(
-            proc_ref,
-            &address,
-            &size,
-            VM_REGION_BASIC_INFO_64,
-            (vm_region_info_t)&region_info,
-            &count,
-            &object_name)) == KERN_SUCCESS)
-    {
-
-        if ((region_info.protection & VM_PROT_READ) == 0
-            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
-            address += size;
+    uintptr_t result = 0;
+    for (uint32_t index = 0; index < list.count; index++) {
+        uint64_t address = 0;
+        memcpy(&address, images + index * (3 * list.pointer_size), list.pointer_size);
+        if (address == 0 || address > UINTPTR_MAX) {
             continue;
         }
-
-        int path_len = proc_regionfilename(
-            handle->pid, address, map_filename, MAXPATHLEN);
-        if (path_len == 0) {
-            address += size;
-            continue;
+        uintptr_t candidate = search_section_in_memory(handle, address, section);
+        if (candidate != 0 && (validator == NULL || validator(handle, candidate))) {
+            result = candidate;
+            break;
         }
-
-        char* filename = strrchr(map_filename, '/');
-        if (filename != NULL) {
-            filename++;  // Move past the '/'
-        } else {
-            filename = map_filename;  // No path, use the whole string
+        if (_Py_RemoteDebug_IsFatalReadError()) {
+            break;
         }
-
-        if (strncmp(filename, substr, strlen(substr)) == 0) {
-            PyErr_Clear();
-            uintptr_t result = search_section_in_file(
-                secname, map_filename, address);
-            if (result != 0) {
-                if (validator == NULL || validator(handle, result)) {
-                    return result;
-                }
-                if (_Py_RemoteDebug_HasPermissionError()) {
-                    return 0;
-                }
-            }
-            else if (_Py_RemoteDebug_HasPermissionError()) {
-                return 0;
-            }
-        }
-
-        address += size;
+        /* A library can unload after the image-list snapshot. */
+        PyErr_Clear();
     }
-
-    if (kr != KERN_INVALID_ADDRESS && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_RuntimeError,
-            "mach_vm_region failed while searching PID %d for section '%s' "
-            "(kern_return_t: %d)",
-            handle->pid, secname, kr);
-    }
-
-    return 0;
+    PyMem_Free(images);
+    return result;
 }
 
 #endif // (__APPLE__ && defined(TARGET_OS_OSX) && TARGET_OS_OSX)
@@ -1173,22 +1052,14 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         }
     }
 #elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
-    // On macOS, try libpython first, then fall back to python
-    const char* candidates[] = {"libpython", "python", "Python", NULL};
-    for (const char** candidate = candidates; *candidate; candidate++) {
-        PyErr_Clear();
-        address = search_map_for_section(handle, "PyRuntime", *candidate,
-                                         _Py_RemoteDebug_ValidatePyRuntimeCookie);
-        if (address != 0 || _Py_RemoteDebug_HasPermissionError()) {
-            break;
-        }
-    }
+    address = search_loaded_images_for_section(
+        handle, "PyRuntime", _Py_RemoteDebug_ValidatePyRuntimeCookie);
     if (address == 0) {
         if (!_Py_RemoteDebug_HasPermissionError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_Format(PyExc_RuntimeError,
                 "Failed to find the PyRuntime section in process %d "
-                "on macOS platform (tried both libpython and python)",
+                "on macOS platform",
                 handle->pid);
             _PyErr_ChainExceptions1(exc);
         }

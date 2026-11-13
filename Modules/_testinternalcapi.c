@@ -3482,7 +3482,80 @@ static PyTypeObject SelfInterruptingContextManager_Type = {
 };
 
 
+#ifdef __APPLE__
+#  include <TargetConditionals.h>
+#  if TARGET_OS_OSX
+#    include "pycore_debug_offsets.h"
+#    include "../Python/remote_debug.h"
+
+static PyObject *
+get_macho_section_address(PyObject *self, PyObject *args)
+{
+    const char *image, *section;
+    Py_ssize_t size;
+    unsigned long long base;
+    if (!PyArg_ParseTuple(args, "y#Ks", &image, &size, &base, &section)) {
+        return NULL;
+    }
+    if (base > UINTPTR_MAX) {
+        return PyErr_Format(PyExc_OverflowError, "base does not fit uintptr_t");
+    }
+    uintptr_t address = macho_section_address(image, size, base, section);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(address);
+}
+
+static PyObject *
+get_dyld_image_addresses(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    proc_handle_t *handle = PyMem_Calloc(1, sizeof(*handle));
+    if (handle == NULL) {
+        return PyErr_NoMemory();
+    }
+    PyObject *result = NULL;
+    unsigned char *images = NULL;
+    if (_Py_RemoteDebug_InitProcHandle(handle, getpid()) < 0) {
+        goto done;
+    }
+    DyldImageList list;
+    images = copy_dyld_images(handle, &list);
+    if (images == NULL) {
+        if (!PyErr_Occurred()) {
+            result = PyList_New(0);
+        }
+        goto done;
+    }
+    result = PyList_New(list.count);
+    if (result == NULL) {
+        goto done;
+    }
+    for (uint32_t index = 0; index < list.count; index++) {
+        uint64_t address = 0;
+        memcpy(&address, images + index * (3 * list.pointer_size), list.pointer_size);
+        PyObject *item = PyLong_FromUnsignedLongLong(address);
+        if (item == NULL) {
+            Py_CLEAR(result);
+            goto done;
+        }
+        PyList_SET_ITEM(result, index, item);
+    }
+done:
+    PyMem_Free(images);
+    _Py_RemoteDebug_CleanupProcHandle(handle);
+    PyMem_Free(handle);
+    return result;
+}
+
+#  endif
+#endif
+
 static PyMethodDef module_functions[] = {
+#if defined(__APPLE__) && TARGET_OS_OSX
+    {"get_macho_section_address", get_macho_section_address, METH_VARARGS},
+    {"get_dyld_image_addresses", get_dyld_image_addresses, METH_NOARGS},
+#endif
     {"get_configs", get_configs, METH_NOARGS},
     {"get_eval_frame_stats", get_eval_frame_stats, METH_NOARGS, NULL},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
