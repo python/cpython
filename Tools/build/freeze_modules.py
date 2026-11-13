@@ -55,13 +55,16 @@ FROZEN = [
     ('stdlib - startup, without site (python -S)', [
         'abc',
         'codecs',
-        # gh-148750: Partially freezing encodings causes import errors of
-        # submodules when using a zipped standard library.
-        #'<encodings>',
-        #'encodings.aliases',
-        #'encodings.utf_8',
-        #'encodings._win_cp_codecs',
-        #'encodings._iconv_codecs',
+        # Only the parts of the encodings package that every interpreter
+        # imports at startup are frozen.  The other codecs are found via
+        # encodings.__path__, which FrozenImporter resolves through the
+        # path-based finders when the stdlib directory is not available
+        # (e.g. a zipped stdlib).
+        '<encodings>',
+        'encodings.aliases',
+        'encodings.utf_8',
+        'encodings._win_cp_codecs',
+        'encodings._iconv_codecs',
         'io',
         ]),
     ('stdlib - startup, with site', [
