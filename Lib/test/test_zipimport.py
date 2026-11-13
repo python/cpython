@@ -1183,27 +1183,21 @@ def tearDownModule():
 
 
 class EocdCommentSizeTests(unittest.TestCase):
-    """gh-103051 -- zipimport must validate the EOCD archive-comment-length
-    field (bytes 20-21 of the EOCD record).  A crafted .pyc whose compiled
-    bytecode happens to contain a PK\x05\x06 signature must be rejected.
-
-    Invariant for every valid ZIP:
-        header_position + END_CENTRAL_DIR_SIZE + comment_size == file_size
-    """
+    """gh-103051: validate the EOCD archive-comment-length field."""
 
     def _make_zip(self, files, comment=b"", prepend=b""):
-        import io as _io
-        import zipfile as _zf
-        buf = _io.BytesIO()
-        with _zf.ZipFile(buf, "w", _zf.ZIP_STORED) as zf:
+        import io
+        import zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
             for name, data in files:
                 zf.writestr(name, data)
             zf.comment = comment
         return prepend + buf.getvalue()
 
     def _write_tmp(self, data, suffix=".zip"):
-        import tempfile as _tmp
-        fd, path = _tmp.mkstemp(suffix=suffix)
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=suffix)
         self.addCleanup(os.unlink, path)
         with os.fdopen(fd, "wb") as f:
             f.write(data)
@@ -1223,15 +1217,13 @@ class EocdCommentSizeTests(unittest.TestCase):
         zipimport.zipimporter(path)
 
     def test_zip_with_max_comment_accepted(self):
-        """ZIP with a maximum-length (65535-byte) archive comment must be
-        accepted -- the comment exactly fills the EOCD comment field."""
+        """ZIP with a maximum-length (65535-byte) archive comment must be accepted."""
         path = self._write_tmp(
             self._make_zip([("hello.py", b"x = 1\n")], comment=b"z" * 65535))
         zipimport.zipimporter(path)
 
     def test_pex_style_zip_accepted(self):
-        """ZIP with prepended bytes (PEX / zipapp shebang) must be accepted.
-        arc_offset handles the prefix; the EOCD stays at the true end."""
+        """ZIP with prepended bytes (PEX-style shebang) must be accepted."""
         path = self._write_tmp(
             self._make_zip([("hello.py", b"x = 1\n")],
                            prepend=b"#!/usr/bin/env python3\n"))
@@ -1248,9 +1240,7 @@ class EocdCommentSizeTests(unittest.TestCase):
     # -- attack variants that must be rejected --------------------------------
 
     def test_polyglot_pyc_zip_rejected(self):
-        """gh-103051: file with fake .pyc header + embedded ZIP + trailing
-        bytecode must be rejected.  EOCD is in the middle; comment_size=0
-        but bytes follow -> header_position + 22 + 0 != file_size."""
+        """gh-103051: pyc/zip polyglot must be rejected."""
         inner_zip = self._make_zip([("__main__.py", b"print('hacked')\n")])
         fake_pyc_header = b"\x6f\x0d\x0d\x0a" + b"\x00" * 12
         trailing_bytecode = b"\x00" * 50
@@ -1260,8 +1250,7 @@ class EocdCommentSizeTests(unittest.TestCase):
             zipimport.zipimporter(path)
 
     def test_trailing_garbage_after_eocd_rejected(self):
-        """ZIP with bytes appended after the EOCD must be rejected:
-        comment_size=0 but file continues past EOCD end."""
+        """ZIP with bytes appended after the EOCD must be rejected."""
         data = self._make_zip([("hello.py", b"x = 1\n")]) + b"\xde\xad" * 20
         path = self._write_tmp(data)
         with self.assertRaises(zipimport.ZipImportError):
@@ -1289,8 +1278,7 @@ class EocdCommentSizeTests(unittest.TestCase):
             zipimport.zipimporter(path)
 
     def test_junk_after_real_comment_rejected(self):
-        """ZIP with a valid archive comment AND extra trailing bytes must be
-        rejected: extra bytes are not covered by comment_size."""
+        """ZIP with extra bytes after a real archive comment must be rejected."""
         data = self._make_zip([("hello.py", b"x = 1\n")], comment=b"real comment")
         data += b"\xff" * 30
         path = self._write_tmp(data)
