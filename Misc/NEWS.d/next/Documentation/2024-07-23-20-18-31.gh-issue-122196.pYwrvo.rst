@@ -1,0 +1,1 @@
+The former docstring for `TestCase(object)` inappropriately uses the technical term 'fixture' before introducing or defining it. This violates the principle of term definition prior to usage. Therefore, I have re-arranged the description so that the definition comes before the usage. Additional semantic changes made to be clearer, more understandable, and linear.
