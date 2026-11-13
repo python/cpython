@@ -4066,6 +4066,12 @@ _socket_socket_recv_impl(PySocketSockObject *s, Py_ssize_t recvlen,
         PyBytesWriter_Discard(writer);
         return NULL;
     }
+    /* With MSG_TRUNC, recv() can return the real length of the datagram,
+       which may be larger than the buffer.  Only recvlen bytes were
+       written. */
+    if (outlen > recvlen) {
+        outlen = recvlen;
+    }
 
     return PyBytesWriter_FinishWithSize(writer, outlen);
 }
@@ -4241,6 +4247,10 @@ _socket_socket_recvfrom_impl(PySocketSockObject *s, Py_ssize_t recvlen,
     if (outlen < 0) {
         PyBytesWriter_Discard(writer);
         goto error;
+    }
+    /* See the comment in _socket_socket_recv_impl(). */
+    if (outlen > recvlen) {
+        outlen = recvlen;
     }
 
     PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
