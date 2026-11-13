@@ -64,6 +64,27 @@ class TestSpecifics(unittest.TestCase):
         """)
         script_helper.assert_python_ok('-c', code)
 
+    @support.requires_subprocess()
+    @support.nomemtest
+    def test_push_cold_blocks_to_end_allocation_failure(self):
+        code = textwrap.dedent("""
+            from test import support
+
+            source = "async def f():\\n    await x\\n"
+            for n in range(1, 1000):
+                with support.inject_memory_error_cm(n, n + 1):
+                    try:
+                        compile(source, "<test>", "exec")
+                    except MemoryError:
+                        continue
+                break
+            else:
+                raise AssertionError("compile() never succeeded")
+            if n == 1:
+                raise AssertionError("no MemoryError raised")
+        """)
+        script_helper.assert_python_ok('-c', code)
+
     def test_other_newlines(self):
         compile("\r\n", "<test>", "exec")
         compile("\r", "<test>", "exec")
@@ -2342,6 +2363,29 @@ class TestConstantsIdentity(unittest.TestCase):
                         return [__x]
                 """,
             strings=['_ID_A__x']),
+        # A constant of an earlier method is equal to the co_names of a
+        # later one.  The mangled name is not an ASCII identifier, so the
+        # compiler does not intern the equal string constants.
+        'mangled_names_non_ascii': Case(
+            source="""
+                class ID_\xe9:
+                    def g(self):
+                        return ("_ID_\xe9__x",), "_ID_\xe9__x"
+                    def f(self):
+                        return self.__x
+                """,
+            strings=['_ID_\xe9__x']),
+        # The same with the names of local variables.
+        'mangled_varnames_non_ascii': Case(
+            source="""
+                class ID_\xe9:
+                    def g(self):
+                        return ("_ID_\xe9__x",), "_ID_\xe9__x"
+                    @staticmethod
+                    def f(__x):
+                        return __x
+                """,
+            strings=['_ID_\xe9__x']),
         # The names of the keyword arguments are a constant equal to
         # the co_names of the function.
         'kwnames': Case(
@@ -2547,6 +2591,29 @@ class TestConstantsIdentity(unittest.TestCase):
                 ]:
                     self.assertEqual(len(names), 1)
                     self.assertTrue(any(const is names for const in consts))
+
+    def test_ast_names_not_interned(self):
+        # The identifiers of an AST which was not created by the parser are
+        # not interned yet.  A constant of an earlier function is equal to
+        # the co_names of a later one.
+        source = textwrap.dedent("""
+            def g(self):
+                return ("gh129724_ast_\xe9",), "gh129724_ast_\xe9"
+            def f(self):
+                return self.placeholder
+            """)
+        keep = []
+        dumps = []
+        for attempt in range(2):
+            tree = ast.parse(source)
+            attribute, = [node for node in ast.walk(tree)
+                          if isinstance(node, ast.Attribute)]
+            # Not a literal: a new string object, which is not interned.
+            attribute.attr = ''.join(['gh129724_ast_', '\xe9'])
+            code = compile(tree, '<test>', 'exec')
+            keep.append(code)
+            dumps.append(marshal.dumps(code))
+        self.assertEqual(dumps[0], dumps[1])
 
     @support.cpython_only
     def test_slice_strings(self):

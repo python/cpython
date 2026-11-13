@@ -161,7 +161,7 @@ Tuple Objects
    :c:func:`PyTuple_SetItem`; except if *newsize* is zero in which case it
    returns the immutable empty tuple.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       The function now fails if the tuple hash value was already computed.
 
 

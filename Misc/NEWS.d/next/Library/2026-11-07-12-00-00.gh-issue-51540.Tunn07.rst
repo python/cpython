@@ -1,0 +1,8 @@
+:class:`urllib.request.ProxyBasicAuthHandler` and
+:class:`urllib.request.ProxyDigestAuthHandler` now handle a ``407 Proxy
+Authentication Required`` response to the CONNECT request for an ``https``
+URL.  :mod:`http.client` raises the new :exc:`~http.client.ProxyTunnelError`,
+a subclass of :exc:`OSError`, when a proxy rejects a CONNECT request.
+For such a proxy, :class:`~urllib.request.ProxyDigestAuthHandler` computes
+the digest over the CONNECT request (``CONNECT host:port``) instead of the
+request sent to the origin server.

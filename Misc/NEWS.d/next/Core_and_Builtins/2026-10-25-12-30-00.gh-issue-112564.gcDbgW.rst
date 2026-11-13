@@ -1,0 +1,5 @@
+Fix a crash in the garbage collector when :data:`gc.DEBUG_COLLECTABLE` or
+:data:`gc.DEBUG_UNCOLLECTABLE` is set and writing the debug output to
+:data:`sys.stderr` frees one of the objects being reported. Object addresses
+in this output now use the same ``0x``-prefixed lowercase format on all
+platforms, including Windows.

@@ -1,3 +1,0 @@
-Add :c:func:`PyDict_AsFrozenDictAndClear` C-API function to create
-:class:`frozendict` from existing :class:`dict` object and clear the input
-dict instance.

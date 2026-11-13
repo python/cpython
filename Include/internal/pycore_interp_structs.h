@@ -654,7 +654,7 @@ struct _warnings_runtime_state {
     // Whether the thread calling fork() owns the warnings lock.
     bool lock_held_at_fork;
 #endif
-    long filters_version;
+    Py_ssize_t filters_version;
     PyObject *context;
 };
 
