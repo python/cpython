@@ -31,8 +31,8 @@ the :py:mod:`Python module documentation <marshal>` for details.
 
    .. note::
 
-      In Python 3.15 and earlier, this function does not set the error
-      indicator if writing to *file* fails.
+      This function does not set the error indicator if writing to *file*
+      fails.
       The same caveat applies as for :c:func:`PyMarshal_WriteObjectToFile`.
 
 .. c:function:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
@@ -40,19 +40,28 @@ the :py:mod:`Python module documentation <marshal>` for details.
    Marshal a Python object, *value*, to *file*.
    *version* indicates the file format.
 
+   The marshalled representation of *value* is built in memory
+   and then written to *file*.
+   Nothing is written if *value* cannot be marshalled.
+
    This function can fail, in which case it sets the error indicator.
    Use :c:func:`PyErr_Occurred` to check for that.
 
    .. note::
 
-      In Python 3.15 and earlier, this function can write only part of the
-      data to *file* and return without setting the error indicator, for
-      example if *value* contains an object which cannot be marshalled or
-      if writing to *file* fails (see :gh:`155907`).
-      Code which has to support these versions cannot rely on
-      :c:func:`PyErr_Occurred` alone to know that all the data was written.
+      This function can write only part of the data to *file* and return
+      without setting the error indicator if writing to *file* fails
+      (see :gh:`155907`).
+      Code cannot rely on :c:func:`PyErr_Occurred` alone to know that all
+      the data was written.
       It can use :c:func:`PyMarshal_WriteObjectToString` and write the
       result itself, or validate what was written.
+
+   .. versionchanged:: next
+      Previously, the data was written to *file* as it was produced,
+      using a buffer of constant size,
+      and incomplete data could be written without setting the error
+      indicator if *value* could not be marshalled.
 
 .. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
