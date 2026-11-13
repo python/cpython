@@ -999,7 +999,7 @@ case-insensitive, but the exact comparison semantics vary.
    [<Company>/]<Tag>[-<Platform>]
 
 The Company is optional and defaults to ``PythonCore``. It may contain slashes,
-while the rest may not, and so the last forward slash or backslash separates it 
+while the rest may not, and so the last forward slash or backslash separates it
 from the Tag. When omitting Company, also omit any slash. In general, Company is
 matched as a prefix.
 
