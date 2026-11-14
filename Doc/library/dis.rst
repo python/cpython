@@ -208,7 +208,7 @@ code.
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 Example:
@@ -314,7 +314,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
@@ -339,7 +339,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
@@ -379,7 +379,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False, show_jit=False)
@@ -395,9 +395,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *adaptive* parameter works as it does in :func:`dis`.
+   The *adaptive* parameter works as it does in :func:`~dis.dis`.
 
-   The *show_jit* parameter works as it does in :func:`dis`.
+   The *show_jit* parameter works as it does in :func:`~dis.dis`.
 
    .. versionadded:: 3.4
 
@@ -410,7 +410,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       field populated (regardless of the value of *show_caches*) and it no longer
       generates separate items for the cache entries.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *show_jit* parameter.
 
 .. function:: findlinestarts(code)
@@ -621,9 +621,13 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: POP_ITER
 
-   Removes the iterator from the top of the stack.
+   Removes the iterator and the value pushed with it by :opcode:`GET_ITER`
+   from the top of the stack.
 
    .. versionadded:: 3.14
+
+   .. versionchanged:: 3.15
+      Two values are now removed.
 
 
 .. opcode:: POP_TOP
@@ -644,10 +648,14 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_SEND
 
-   Implements ``del STACK[-2]``.
+   Implements ``del STACK[-3:-1]``.
    Used to clean up when a generator exits.
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The receiver and the value pushed with it by :opcode:`GET_ITER` are
+      removed, instead of only the receiver.
 
 
 .. opcode:: COPY (i)
@@ -712,17 +720,23 @@ result back on the stack.
    Implements ``STACK[-1] = ~STACK[-1]``.
 
 
-.. opcode:: GET_ITER
+.. opcode:: GET_ITER (yield_from)
 
-   Implements ``STACK[-1] = iter(STACK[-1])``.
+   Replaces ``STACK[-1]`` with an iterator for it and pushes a second value,
+   which is used by :opcode:`FOR_ITER`, :opcode:`SEND` and :opcode:`POP_ITER`.
 
+   For some built-in sequence types, such as :class:`list` and :class:`tuple`,
+   the object itself is left on the stack as a "virtual iterator" and the
+   index to start iterating from is pushed.  Otherwise, implements
+   ``STACK[-1] = iter(STACK[-1])`` and pushes ``NULL``.
 
-.. opcode:: GET_YIELD_FROM_ITER
+   If *yield_from* is non-zero, the instruction is used for ``yield from``:
+   a :term:`coroutine` object is left as is, unless the current code is
+   a regular generator, in which case :exc:`TypeError` is raised.
 
-   If ``STACK[-1]`` is a :term:`generator iterator` or :term:`coroutine` object
-   it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
-
-   .. versionadded:: 3.5
+   .. versionchanged:: 3.15
+      A second value is now pushed after the iterator.  The *yield_from*
+      argument was added, replacing the ``GET_YIELD_FROM_ITER`` instruction.
 
 
 .. opcode:: TO_BOOL
@@ -1299,7 +1313,7 @@ iterations of the loop.
    * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
-   except that ``namei`` is shifted left by 2 bits instead of 1.
+   except that ``namei`` is shifted right by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
    :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
@@ -1425,7 +1439,10 @@ iterations of the loop.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   ``STACK[-2]`` is an :term:`iterator` (or a virtual iterator, see
+   :opcode:`GET_ITER`) and ``STACK[-1]`` is the value pushed with it by
+   :opcode:`GET_ITER`.  Get the next item, calling the iterator's
+   :meth:`~iterator.__next__` method if needed.
    If this yields a new value, push it on the stack (leaving the iterator below
    it).  If the iterator indicates it is :term:`exhausted` then the byte code counter is
    incremented by *delta*.
@@ -1433,13 +1450,21 @@ iterations of the loop.
    .. versionchanged:: 3.12
       Up until 3.11 the iterator was popped when it was exhausted.
 
+   .. versionchanged:: 3.15
+      The iterator is now followed on the stack by the value pushed with it
+      by :opcode:`GET_ITER`.
+
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei>>1]`` onto the stack.
+   If the low bit of ``namei`` is set, a ``NULL`` is pushed onto the stack
+   after the global variable.
 
    .. versionchanged:: 3.11
-      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
-      stack before the global variable.
+      The low bit of ``namei`` indicates whether a ``NULL`` is pushed.
+
+   .. versionchanged:: 3.13
+      The ``NULL`` is pushed after the global variable, rather than before it.
 
 .. opcode:: LOAD_FAST (var_num)
 
@@ -1806,14 +1831,20 @@ iterations of the loop.
 
 .. opcode:: SEND (delta)
 
-   Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
-   and ``await`` statements.
+   Equivalent to ``STACK[-1] = STACK[-3].send(STACK[-1])``. Used in ``yield from``
+   and ``await`` statements.  ``STACK[-2]`` is the value pushed with the
+   receiver by :opcode:`GET_ITER`; if the receiver is a virtual iterator,
+   it is advanced as by :opcode:`FOR_ITER`.
 
    If the call raises :exc:`StopIteration`, pop the top value from the stack,
    push the exception's ``value`` attribute, and increment the bytecode counter
    by *delta*.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.15
+      The receiver is now at ``STACK[-3]``, followed by the value pushed with
+      it by :opcode:`GET_ITER`.
 
 
 .. opcode:: HAVE_ARGUMENT

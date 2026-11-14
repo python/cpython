@@ -1,2 +1,0 @@
-Speed up the parser by not materializing the text of tokens whose text is
-never read.

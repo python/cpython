@@ -15,6 +15,7 @@ Here is the definition of :c:type:`PyTypeObject`, with some fields only used in
 :ref:`debug builds <debug-build>` omitted:
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 Now that's a *lot* of methods.  Don't worry too much though -- if you have
@@ -285,7 +286,7 @@ be read-only or read-write.  The structures in the table are defined as::
    typedef struct PyMemberDef {
        const char *name;
        int         type;
-       int         offset;
+       Py_ssize_t  offset;
        int         flags;
        const char *doc;
    } PyMemberDef;
@@ -304,8 +305,8 @@ have an associated doc string simply by providing the text in the table.  An
 application can use the introspection API to retrieve the descriptor from the
 class object, and get the doc string using its :attr:`~type.__doc__` attribute.
 
-As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :c:member:`~PyMethodDef.ml_name` value
-of ``NULL`` is required.
+As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a
+:c:member:`~PyMemberDef.name` value of ``NULL`` is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
 

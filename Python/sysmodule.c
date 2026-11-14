@@ -64,6 +64,10 @@ extern const char *PyWin_DLLVersionString;
 #  include <emscripten.h>
 #endif
 
+#ifdef __wasi__
+#  include <wasi/version.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
 #endif
@@ -444,7 +448,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
-        PyMem_RawFree(e);
+        free(e);
         e = n;
     }
 }
@@ -492,7 +496,11 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+    /* Use malloc(), not PyMem_RawMalloc(): a hook can be added before
+       Py_Initialize(), and the entry is freed during finalization, after
+       PYTHONMALLOC may have changed the raw allocator (and, in debug builds,
+       the allocator under the debug hooks). */
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)malloc(
             sizeof(_Py_AuditHookEntry));
     if (!e) {
         if (tstate != NULL) {
@@ -3837,6 +3845,49 @@ error:
 }
 
 
+#ifdef __wasi__
+
+static PyObject *
+make_wasi_info(void)
+{
+#if defined(__wasip1__)
+    const char *wasi_version = "p1";
+#elif defined(__wasip2__)
+    const char *wasi_version = "p2";
+#elif defined(__wasip3__)
+    const char *wasi_version = "p3";
+#else
+#  error "Unknown WASI target version"
+#endif
+
+    // The SDK version is only defined for SDK builds of wasi-libc.
+#ifdef __wasi_sdk_version__
+    const char *wasi_sdk_version = __wasi_sdk_version__;
+#else
+#  error "Unknown WASI SDK version"
+#endif
+
+#ifdef __wasi_cooperative_threads__
+    PyObject *cooperative_threads = Py_True;
+#else
+    PyObject *cooperative_threads = Py_False;
+#endif
+
+    PyObject *wasi_info = Py_BuildValue(
+        "{s:s,s:s,s:O}",
+        "wasi_version", wasi_version,
+        "wasi_sdk_version", wasi_sdk_version,
+        "cooperative_threads", cooperative_threads);
+    if (wasi_info == NULL) {
+        return NULL;
+    }
+    PyObject *ns = _PyNamespace_New(wasi_info);
+    Py_DECREF(wasi_info);
+    return ns;
+}
+
+#endif // __wasi__
+
 #ifdef __EMSCRIPTEN__
 
 PyDoc_STRVAR(emscripten_info__doc__,
@@ -4084,6 +4135,10 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     SET_SYS("abi_info", make_abi_info());
 
+#ifdef __wasi__
+    SET_SYS("_wasi_info", make_wasi_info());
+#endif
+
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
                                       &asyncgen_hooks_desc) < 0)
@@ -4105,6 +4160,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("meta_path", PyList_New(0));
     SET_SYS("path_importer_cache", PyDict_New());
     SET_SYS("path_hooks", PyList_New(0));
+
+    SET_SYS("_path0", Py_None);
 
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
@@ -4328,6 +4385,13 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
 #endif
+
+    if (PyModule_AddIntMacro(sysmod, EXIT_SUCCESS) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(sysmod, EXIT_FAILURE) < 0) {
+        goto error;
+    }
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {

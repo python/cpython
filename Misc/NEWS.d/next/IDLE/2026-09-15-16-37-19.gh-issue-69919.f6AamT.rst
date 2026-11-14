@@ -1,2 +1,0 @@
-IDLE now reports any exception raised by compiling the source, such as
-:exc:`MemoryError` for too deeply nested source, instead of hanging the Shell.

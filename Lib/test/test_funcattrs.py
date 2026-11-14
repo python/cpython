@@ -1,8 +1,10 @@
+import gc
 import textwrap
 import types
 import typing
 import unittest
 import warnings
+import weakref
 from test import support
 
 
@@ -49,6 +51,35 @@ class FunctionPropertiesTest(FuncAttrsTest):
     # Include the external setUp method that is common to all tests
     def test_module(self):
         self.assertEqual(self.b.__module__, __name__)
+
+    def test_qualname_replaced_during_argument_error(self):
+        class Qualname(str):
+            pass
+
+        def target(x, /):
+            pass
+
+        target.__qualname__ = Qualname('original_qualname')
+        ref = weakref.ref(target.__qualname__)
+
+        class Keyword(str):
+            __hash__ = str.__hash__
+
+            def __eq__(self, other):
+                # Replacing and freeing the qualname while comparisons
+                # execute Python must not leave a dangling pointer.
+                target.__qualname__ = 'new_qualname'
+                gc.collect()
+                return True
+
+        with self.assertRaisesRegex(
+            TypeError,
+            r"new_qualname\(\) got some positional-only arguments "
+            r"passed as keyword arguments: 'x'",
+        ):
+            target(**{Keyword('x'): 1})
+        gc.collect()
+        self.assertIsNone(ref())
 
     def test_dir_includes_correct_attrs(self):
         self.b.known_attr = 7

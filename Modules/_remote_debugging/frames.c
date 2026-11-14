@@ -307,9 +307,7 @@ process_frame_chain(
     uintptr_t frame_addr = ctx->frame_addr;
     uintptr_t prev_frame_addr = 0;
     uintptr_t last_frame_addr = 0;
-    const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
-    assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
     ctx->stopped_at_cached_frame = 0;
     ctx->last_frame_visited = 0;
@@ -321,12 +319,12 @@ process_frame_chain(
         uintptr_t stackpointer = 0;
         last_frame_addr = frame_addr;
 
-        if (++frame_count > MAX_FRAMES) {
+        if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain iteration limit exceeded");
             return -1;
         }
-        assert(frame_count <= MAX_FRAMES);
+        assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
             parse_result = parse_frame_from_chunks(
@@ -467,7 +465,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         uintptr_t tstate_addr;
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                current_interp + unwinder->debug_offsets.interpreter_state.threads_head,
+                current_interp + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &tstate_addr) < 0) {
             // Non-fatal: just skip clearing
@@ -488,7 +486,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
             // Move to next thread
             if (_Py_RemoteDebug_PagedReadRemoteMemory(
                     &unwinder->handle,
-                    tstate_addr + unwinder->debug_offsets.thread_state.next,
+                    tstate_addr + (uintptr_t)unwinder->debug_offsets.thread_state.next,
                     sizeof(void*),
                     &tstate_addr) < 0) {
                 PyErr_Clear();
@@ -499,7 +497,7 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         // Move to next interpreter
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                current_interp + unwinder->debug_offsets.interpreter_state.next,
+                current_interp + (uintptr_t)unwinder->debug_offsets.interpreter_state.next,
                 sizeof(void*),
                 &current_interp) < 0) {
             PyErr_Clear();

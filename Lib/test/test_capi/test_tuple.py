@@ -1,6 +1,7 @@
-import unittest
 import gc
-from sys import getrefcount
+import sys
+import unittest
+from test import support
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -131,9 +132,9 @@ class CAPITest(unittest.TestCase):
         class Temp:
             pass
         temp = Temp()
-        temp_rc = getrefcount(temp)
+        temp_rc = sys.getrefcount(temp)
         self.assertEqual(from_pair(temp, temp), (temp, temp))
-        self.assertEqual(getrefcount(temp), temp_rc)
+        self.assertEqual(sys.getrefcount(temp), temp_rc)
 
         self._not_tracked(from_pair(1, 2))
         self._not_tracked(from_pair(None, None))
@@ -299,31 +300,91 @@ class CAPITest(unittest.TestCase):
 
     def test__tuple_resize(self):
         # Test _PyTuple_Resize()
-        resize = _testcapi._tuple_resize
+        _resize = _testcapi._tuple_resize
         checknull = _testcapi._check_tuple_item_is_NULL
 
-        a = ()
-        b = resize(a, 0, False)
-        self.assertEqual(len(a), 0)
-        self.assertEqual(len(b), 0)
-        b = resize(a, 2, False)
-        self.assertEqual(len(a), 0)
-        self.assertEqual(len(b), 2)
-        self.assertTrue(checknull(b, 0))
-        self.assertTrue(checknull(b, 1))
+        def assert_is_fresh_copy(result, refcnt, is_new_obj):
+            self.assertEqual(refcnt, 1)
+            self.assertTrue(is_new_obj)
+            self.assertFalse(sys._is_immortal(result))
 
-        a = ([1], [2], [3])
-        b = resize(a, 3)
+        def resize(tup, new_size, new=True, compute_hash=False):
+            if isinstance(tup, tuple):
+                old_size = len(tup)
+            else:
+                old_size = 0
+            result, refcnt, is_new_obj = _resize(tup, new_size, new,
+                                                 compute_hash=compute_hash)
+            if new_size == old_size:
+                # Return the same object unchanged
+                self.assertFalse(is_new_obj)
+            elif old_size == 0:
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            elif new_size == 0:
+                # check that the result is the empty bytes string singleton
+                self.assertEqual(result, ())
+                self.assertTrue(sys._is_immortal(result))
+                self.assertTrue(is_new_obj)
+            elif not new:
+                # Make sure that the result is a fresh object.
+                assert_is_fresh_copy(result, refcnt, is_new_obj)
+            else:
+                # An in-place resize can return the same memory address, or
+                # not. 'is_new_obj' cannot be tested.
+                self.assertEqual(refcnt, 1)
+                self.assertFalse(sys._is_immortal(result))
+
+            return result
+
+        # Resizing the empty tuple singleton always create a new tuple
+        for compute_hash in (False, True):
+            with self.subTest(compute_hash=compute_hash):
+                a = ()
+                b = resize(a, 0, False, compute_hash)
+                self.assertEqual(len(a), 0)
+                self.assertEqual(len(b), 0)
+                b = resize(a, 2, False, compute_hash)
+                self.assertEqual(len(a), 0)
+                self.assertEqual(len(b), 2)
+                self.assertTrue(checknull(b, 0))
+                self.assertTrue(checknull(b, 1))
+
+        a = tuple(object() for _ in range(3))
+        b = resize(a, 3, True)
         self.assertEqual(b, a)
-        b = resize(a, 2)
+        b = resize(a, 2, True)
         self.assertEqual(b, a[:2])
-        b = resize(a, 5)
+        b = resize(a, 5, True)
         self.assertEqual(len(b), 5)
         self.assertEqual(b[:3], a)
         self.assertTrue(checknull(b, 3))
         self.assertTrue(checknull(b, 4))
 
+        # gh-161226: Disallow resizing a tuple if the hash value is cached
+        a = tuple(object() for _ in range(3))
+        with self.assertRaises(SystemError):
+            resize(a, 3, True, compute_hash=True)
+
+        # Test _PyTuple_Resize() failure: inject MemoryError on
+        # PyObject_GC_Resize(). Check that the test doesn't leak references
+        # if the test is run with -R 3:3.
+        a = tuple(object() for _ in range(10))
+        got_memory_error = False
+        # Test different start values since _testcapi _tuple_resize() also
+        # allocates memory (to copy the tuple).
+        for start in range(5):
+            try:
+                with support.inject_memory_error_cm(start=start):
+                    resize(a, 30)
+            except MemoryError:
+                got_memory_error = True
+        self.assertTrue(got_memory_error)
+
         a = ()
+        self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
+        self.assertRaises(SystemError, resize, a, -1)
+        self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
+        a = ([1], [2], [3])
         self.assertRaises(MemoryError, resize, a, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, resize, a, -1)
         self.assertRaises(SystemError, resize, a, PY_SSIZE_T_MIN)
