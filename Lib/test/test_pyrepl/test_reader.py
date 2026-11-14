@@ -470,8 +470,9 @@ class TestErrorMessages(TestCase):
         theme = default_theme.syntax
         self.assertEqual(
             reader.msg,
-            f"{theme.error}! {theme.reset}nothing to yank",
+            f"{theme.error}[ nothing to yank ]{theme.reset}",
         )
+        self.assertEqual(reader.screen[-1], reader.msg)
 
     def _test_error_message(
         self,
@@ -490,42 +491,42 @@ class TestErrorMessages(TestCase):
         while not reader.msg:
             reader.handle1()
 
-        self.assertEqual(reader.msg, f"! {expected}")
-        self.assertEqual(reader.screen[-1], f"! {expected}")
+        self.assertEqual(reader.msg, expected)
+        self.assertEqual(reader.screen[-1], expected)
         console.beep.assert_called_once()
 
     def test_invalid_key_message(self):
-        self._test_error_message("\x1bo", "no command is bound to this key")
+        self._test_error_message("\x1bo", "[ no command is bound to this key ]")
 
     def test_unimplemented_command_message(self):
         self._test_error_message(
             "x",
-            "command 'missing-command' is not implemented",
+            "[ command 'missing-command' is not implemented ]",
             command="missing-command",
         )
 
     def test_nothing_to_yank_message(self):
-        self._test_error_message("\x19", "nothing to yank")
+        self._test_error_message("\x19", "[ nothing to yank ]")
 
     def test_yank_pop_with_empty_kill_ring_message(self):
-        self._test_error_message("\x1by", "nothing to yank")
+        self._test_error_message("\x1by", "[ nothing to yank ]")
 
     def test_yank_pop_after_other_command_message(self):
         self._test_error_message(
             "x\x01\x0b\x1by",
-            "previous command was not a yank",
+            "[ previous command was not a yank ]",
         )
 
     def test_start_of_history_message(self):
-        self._test_error_message("\x10", "start of history list")
+        self._test_error_message("\x10", "[ start of history list ]")
 
     def test_end_of_history_message(self):
-        self._test_error_message("\x0e", "end of history list")
+        self._test_error_message("\x0e", "[ end of history list ]")
 
     def test_yank_arg_at_beginning_of_history_message(self):
         self._test_error_message(
             "\x1b.\x1b.\x1b.",
-            "beginning of history list",
+            "[ beginning of history list ]",
             history=["one"],
             historyi=1,
         )
@@ -533,7 +534,7 @@ class TestErrorMessages(TestCase):
     def test_yank_arg_with_no_argument_message(self):
         self._test_error_message(
             "\x1b.",
-            "no such arg",
+            "[ no such arg ]",
             history=[""],
             historyi=1,
         )
@@ -541,23 +542,23 @@ class TestErrorMessages(TestCase):
     def test_empty_incremental_search_backspace_message(self):
         self._test_error_message(
             "x",
-            "nothing to rubout",
+            "[ nothing to rubout ]",
             command="isearch-backspace",
         )
 
     def test_history_search_not_found_message(self):
         self._test_error_message(
             "missingx",
-            "not found",
+            "[ not found ]",
             command="history-search-backward",
             binding="x",
         )
 
     def test_incremental_search_not_found_message(self):
-        self._test_error_message("\x12x", "not found")
+        self._test_error_message("\x12x", "[ not found ]")
 
     def test_no_completion_matches_message(self):
-        self._test_error_message("does_not_exist\t", "no matches")
+        self._test_error_message("does_not_exist\t", "[ no matches ]")
 
 
 @force_colorized_test_class
