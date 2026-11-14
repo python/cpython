@@ -559,7 +559,8 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks, dirs_exist_ok=False):
+              ignore_dangling_symlinks, dirs_exist_ok=False,
+              copy_dir_stat=True):
     if ignore is not None:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
@@ -599,12 +600,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
                                  copy_function, ignore_dangling_symlinks,
-                                 dirs_exist_ok)
+                                 dirs_exist_ok,
+                                 copy_dir_stat=copy_dir_stat)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
-                         ignore_dangling_symlinks, dirs_exist_ok)
+                         ignore_dangling_symlinks, dirs_exist_ok,
+                         copy_dir_stat=copy_dir_stat)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -615,7 +618,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
-        copystat(src, dst)
+        if copy_dir_stat:
+            copystat(src, dst)
     except OSError as why:
         # Copying file access times may fail on Windows
         if getattr(why, 'winerror', None) is None:
@@ -625,7 +629,8 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+             ignore_dangling_symlinks=False, dirs_exist_ok=False,
+             *, copy_dir_stat=True):
     """Recursively copy a directory tree and return the destination directory.
 
     If exception(s) occur, an Error is raised with a list of reasons.
@@ -663,6 +668,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     operation will continue if it encounters existing directories, and files
     within the `dst` tree will be overwritten by corresponding files from the
     `src` tree.
+
+    If copy_dir_stat is false, directory metadata is not copied with
+    copystat(), e.g. to copy a read-only tree into a writable one. It
+    defaults to true. Note that file metadata is always handled by
+    copy_function: use e.g. `copy_function=shutil.copyfile` to skip
+    that as well.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
@@ -670,7 +681,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                      ignore=ignore, copy_function=copy_function,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
-                     dirs_exist_ok=dirs_exist_ok)
+                     dirs_exist_ok=dirs_exist_ok,
+                     copy_dir_stat=copy_dir_stat)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     def _rmtree_islink(st):
@@ -1117,6 +1129,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
             if root_dir is not None:
                 base_dir = os.path.join(root_dir, base_dir)
             base_dir = os.path.normpath(base_dir)
+            zip_stat = os.stat(zip_filename)
             if arcname != os.curdir:
                 zf.write(base_dir, arcname)
                 if logger is not None:
@@ -1135,7 +1148,13 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                 for name in filenames:
                     path = os.path.join(dirpath, name)
                     path = os.path.normpath(path)
-                    if os.path.isfile(path):
+                    try:
+                        st = os.stat(path)
+                    except OSError:
+                        continue
+                    # Do not add the archive to itself.
+                    if (stat.S_ISREG(st.st_mode) and
+                            not os.path.samestat(st, zip_stat)):
                         arcname = os.path.join(arcdirpath, name)
                         zf.write(path, arcname)
                         if logger is not None:
@@ -1364,6 +1383,7 @@ def _unpack_tarfile(filename, extract_dir, *, filter=None):
 _UNPACK_FORMATS = {
     'tar':   (['.tar'], _unpack_tarfile, [], "uncompressed tar file"),
     'zip':   (['.zip'], _unpack_zipfile, [], "ZIP file"),
+    'whl':   (['.whl'], _unpack_zipfile, [], "Wheel file"),
 }
 
 if _ZLIB_SUPPORTED:
@@ -1398,9 +1418,9 @@ def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     is unpacked. If not provided, the current working directory is used.
 
     `format` is the archive format: one of "zip", "tar", "gztar", "bztar",
-    "xztar", or "zstdtar".  Or any other registered format.  If not provided,
-    unpack_archive will use the filename extension and see if an unpacker
-    was registered for that extension.
+    "xztar", "zstdtar", or "whl".  Or any other registered format.  If not
+    provided, unpack_archive will use the filename extension and see if an
+    unpacker was registered for that extension.
 
     In case none is found, a ValueError is raised.
 

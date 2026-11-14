@@ -434,7 +434,8 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
-static PyObject *
+// gh-161288: the trampoline has no -fsanitize=function type signature
+static PyObject * _Py_NO_SANITIZE_FUNCTION
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
 {

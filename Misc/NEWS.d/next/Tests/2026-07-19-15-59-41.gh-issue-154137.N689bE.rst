@@ -1,1 +1,0 @@
-Check for Windows handle leaks in regrtest. Patch by Victor Stinner.

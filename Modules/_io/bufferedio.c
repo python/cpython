@@ -1280,16 +1280,14 @@ _buffered_readline(buffered *self, Py_ssize_t limit)
             n = limit;
         }
         start = self->buffer;
-        const char *end = start + n;
-        s = start;
-        while (s < end) {
-            if (*s++ == '\n') {
-                if (PyBytesWriter_WriteBytes(writer, start, s - start) < 0) {
-                    goto error;
-                }
-                self->pos = s - start;
-                goto found;
+        const char *newline = memchr(start, '\n', n);
+        if (newline != NULL) {
+            n = newline - start + 1;
+            if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+                goto error;
             }
+            self->pos = n;
+            goto found;
         }
 
         if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {

@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
@@ -143,25 +144,52 @@ resize_buffer(stringio *self, size_t size)
     return -1;
 }
 
+/* Shrink the buffer of the writer to its contents, so that the following
+   PyUnicodeWriter_Finish() has nothing to allocate and cannot fail.
+   If this fails, the writer is unchanged. */
+static int
+shrink_writer(stringio *self)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter *)self->writer;
+    if (writer->readonly || writer->buffer == NULL
+        || writer->pos == 0 || writer->pos == writer->size)
+    {
+        return 0;
+    }
+    PyObject *buffer = _PyUnicode_ResizeCompact(writer->buffer, writer->pos);
+    if (buffer == NULL) {
+        return -1;
+    }
+    writer->buffer = NULL;
+    _PyUnicodeWriter_SetBuffer(writer, buffer);
+    return 0;
+}
+
 static PyObject *
 make_intermediate(stringio *self)
 {
-    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
-    self->writer = NULL;
-    self->state = STATE_REALIZED;
-    if (intermediate == NULL)
+    /* Create the new writer and shrink the old one first: if this fails,
+       the object keeps its contents. */
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL)
         return NULL;
+    if (shrink_writer(self) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
 
-    self->writer = PyUnicodeWriter_Create(0);
-    if (self->writer == NULL) {
-        Py_DECREF(intermediate);
+    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
+    self->writer = writer;
+    if (intermediate == NULL) {
+        /* The contents are lost, the new writer is empty. */
+        self->string_size = 0;
         return NULL;
     }
     if (PyUnicodeWriter_WriteStr(self->writer, intermediate)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return NULL;
     }
-    self->state = STATE_ACCUMULATING;
     return intermediate;
 }
 
@@ -174,23 +202,30 @@ realize(stringio *self)
     if (self->state == STATE_REALIZED)
         return 0;
     assert(self->state == STATE_ACCUMULATING);
+
+    /* Allocate the internal buffer and shrink the writer first: if this
+       fails, the object stays in the accumulating state and keeps its
+       contents. */
+    if (resize_buffer(self, self->string_size) < 0)
+        return -1;
+    if (shrink_writer(self) < 0)
+        return -1;
     self->state = STATE_REALIZED;
 
     intermediate = PyUnicodeWriter_Finish(self->writer);
     self->writer = NULL;
-    if (intermediate == NULL)
-        return -1;
-
-    /* Append the intermediate string to the internal buffer.
-       The length should be equal to the current cursor position.
-     */
-    len = PyUnicode_GET_LENGTH(intermediate);
-    if (resize_buffer(self, len) < 0) {
-        Py_DECREF(intermediate);
+    if (intermediate == NULL) {
+        /* The contents are lost, the internal buffer contains nothing. */
+        self->string_size = 0;
         return -1;
     }
+
+    /* Copy the intermediate string to the internal buffer. */
+    len = PyUnicode_GET_LENGTH(intermediate);
+    assert(len == self->string_size);
     if (!PyUnicode_AsUCS4(intermediate, self->buf, len, 0)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return -1;
     }
 
@@ -358,7 +393,9 @@ _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
     /* Optimization for seek(0); read() */
     if (self->state == STATE_ACCUMULATING && self->pos == 0 && size == n) {
         PyObject *result = make_intermediate(self);
-        self->pos = self->string_size;
+        if (result != NULL) {
+            self->pos = self->string_size;
+        }
         return result;
     }
 
@@ -420,13 +457,18 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
     return _stringio_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.StringIO.__next__ as stringio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-stringio_iternext_lock_held(PyObject *op)
+stringio_iternext_impl(stringio *self)
+/*[clinic end generated code: output=51eb3991b1c79c41 input=b6cf3e73fab6b42e]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     PyObject *line;
-    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -438,7 +480,7 @@ stringio_iternext_lock_held(PyObject *op)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -458,16 +500,6 @@ stringio_iternext_lock_held(PyObject *op)
     }
 
     return line;
-}
-
-static PyObject *
-stringio_iternext(PyObject *op)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = stringio_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 /*[clinic input]
@@ -495,7 +527,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
         size = self->pos;
     }
     else {
-        size = PyLong_AsLong(pos);
+        size = PyNumber_AsSsize_t(pos, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             return NULL;
         }
@@ -504,6 +536,9 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
                          "negative pos value %zd", size);
             return NULL;
         }
+        /* __index__ may have closed or reinitialized the stream. */
+        CHECK_INITIALIZED(self);
+        CHECK_CLOSED(self);
     }
 
     if (size < self->string_size) {

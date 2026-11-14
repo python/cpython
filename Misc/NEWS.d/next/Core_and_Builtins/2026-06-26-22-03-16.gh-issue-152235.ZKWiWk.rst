@@ -1,3 +1,0 @@
-Defer GC tracking of :meth:`set.intersection`, :meth:`set.difference`,
-:meth:`set.symmetric_difference`, :meth:`set.union` and ``set.__sub__``.
-Patch by Donghee Na.

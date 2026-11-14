@@ -31,6 +31,7 @@
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -310,13 +311,6 @@
 #endif
 
 
-#if !defined(_MSC_VER) && defined(__sgi) && _COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char *ctermid_r(char *);
-#endif
-
-
 #if defined(__VXWORKS__)
 #  include <vxCpuLib.h>
 #  include <rtpLib.h>
@@ -505,6 +499,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_UNLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_OPENAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_READLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
+#  define HAVE_FREADLINK_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, *)
 #  define HAVE_SYMLINKAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FUTIMENS_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
@@ -512,8 +507,8 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_MKFIFOAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_MKNODAT_RUNTIME __builtin_available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
 #  define HAVE_PTSNAME_R_RUNTIME __builtin_available(macOS 10.13.4, iOS 11.3, tvOS 11.3, watchOS 4.3, *)
-#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, *)
-#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, *)
+#  define HAVE_DUP3_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+#  define HAVE_PIPE2_RUNTIME __builtin_available(macOS 27.0, iOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
 
 #  define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macOS 10.15, *)
 
@@ -569,6 +564,10 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 
 #  ifdef HAVE_READLINKAT
 #    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#  endif
+
+#  ifdef _Py_HAVE_FREADLINK
+#    define HAVE_FREADLINK_RUNTIME (freadlink != NULL)
 #  endif
 
 #  ifdef HAVE_SYMLINKAT
@@ -639,6 +638,7 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 #  define HAVE_PTSNAME_R_RUNTIME 1
 #  define HAVE_DUP3_RUNTIME 1
 #  define HAVE_PIPE2_RUNTIME 1
+#  define HAVE_FREADLINK_RUNTIME 1
 #endif
 
 
@@ -716,6 +716,7 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyWarnings_BeforeFork(interp);
 }
 
 void
@@ -785,6 +786,9 @@ PyOS_AfterFork_Child(void)
     // Reinitialize it before any executor cleanup can unregister JIT code.
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
+
+    // Thread-state cleanup can run finalizers that issue warnings.
+    _PyWarnings_AfterFork(tstate->interp);
 
     reset_remotedebug_data(tstate);
 
@@ -2557,7 +2561,7 @@ static PyStructSequence_Field waitid_result_fields[] = {
 };
 
 static PyStructSequence_Desc waitid_result_desc = {
-    MODNAME ".waitid_result", /* name */
+    "os.waitid_result", /* name */
     waitid_result__doc__, /* doc */
     waitid_result_fields,
     5
@@ -3669,6 +3673,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
                      "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
         return NULL;
     }
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
+    }
 
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
@@ -4014,6 +4021,12 @@ win32_hchmod(HANDLE hfile, int mode)
     }
     if (mode & _S_IWRITE) {
         info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+        if (info.FileAttributes == 0) {
+            /* SetFileInformationByHandle() interprets FileAttributes == 0
+               as "leave the attributes unchanged"; FILE_ATTRIBUTE_NORMAL
+               is the documented way to clear all attributes. */
+            info.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+        }
     }
     else {
         info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
@@ -5664,8 +5677,9 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, -1);
-    if (PyBytes_Check(path->object))
+    if (result != NULL && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 exit:
     PyMem_Free(mountpath);
@@ -6760,7 +6774,7 @@ or via the attributes sysname, nodename, release, version, and machine.\n\
 See os.uname for more information.");
 
 static PyStructSequence_Desc uname_result_desc = {
-    MODNAME ".uname_result", /* name */
+    "os.uname_result", /* name */
     uname_result__doc__, /* doc */
     uname_result_fields,
     5
@@ -8361,7 +8375,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
-                "spawnv() arg 2 first element cannot be empty");
+                "spawnve() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
@@ -8810,7 +8824,7 @@ static PyStructSequence_Field sched_param_fields[] = {
 };
 
 static PyStructSequence_Desc sched_param_desc = {
-    MODNAME ".sched_param", /* name */
+    "os.sched_param", /* name */
     os_sched_param__doc__, /* doc */
     sched_param_fields,
     1
@@ -10083,13 +10097,13 @@ os.getppid
 Return the parent's process id.
 
 If the parent process has already exited, Windows machines will still
-return its id; others systems will return the id of the 'init' proces
+return its id; other systems will return the id of the 'init' process
 (1).
 [clinic start generated code]*/
 
 static PyObject *
 os_getppid_impl(PyObject *module)
-/*[clinic end generated code: output=43b2a946a8c603b4 input=e17c1de18f41316b]*/
+/*[clinic end generated code: output=43b2a946a8c603b4 input=158cc6dd661d54d9]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -10979,11 +10993,19 @@ os_unshare_impl(PyObject *module, int flags)
 #endif
 
 
+
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
+
+#if (defined(__linux__) || defined(__ANDROID__)) && defined(O_PATH)
+// readlinkat(fd, "", ...) reads the symlink that fd refers to.
+// supported since Linux 2.6.39 (same version that O_PATH was introduced).
+#define _Py_READLINKAT_SUPPORTS_EMPTY_PATH
+#endif
+
 /*[clinic input]
 os.readlink
 
-    path: path_t
+    path: path_t(allow_fd=True)
     *
     dir_fd: dir_fd(requires='readlinkat') = None
 
@@ -10995,48 +11017,74 @@ that directory.
 
 dir_fd may not be implemented on your platform.  If it is unavailable,
 using it will raise a NotImplementedError.
+
+On Linux, Android, macOS and iOS, path may be a file descriptor
+referring to a symlink. If it is, dir_fd must be None.
 [clinic start generated code]*/
 
 static PyObject *
 os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=d21b732a2e814030 input=03d10130870dbca8]*/
+/*[clinic end generated code: output=d21b732a2e814030 input=d90bddfeee86f673]*/
 {
 #if defined(HAVE_READLINK)
     char buffer[MAXPATHLEN+1];
     ssize_t length;
-#ifdef HAVE_READLINKAT
-    int readlinkat_unavailable = 0;
-#endif
 
-    Py_BEGIN_ALLOW_THREADS
+    if (path_and_dir_fd_invalid("readlink", path, dir_fd)) {
+        return NULL;
+    }
+
+    if (path->is_fd) {
+#if defined(_Py_HAVE_FREADLINK)
+        if (HAVE_FREADLINK_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = freadlink(path->fd, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#elif defined(HAVE_READLINKAT) && defined(_Py_READLINKAT_SUPPORTS_EMPTY_PATH)
+        // linux/android:
+        // readlinkat(fd, "", ...) reads the link that fd refers to.
+        if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
+            length = readlinkat(path->fd, "", buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
+        } else
+#endif
+        {
+            PyErr_SetString(PyExc_NotImplementedError,
+                "readlink cannot read file descriptors on this platform");
+            return NULL;
+        }
+    } else
 #ifdef HAVE_READLINKAT
     if (dir_fd != DEFAULT_DIR_FD) {
         if (HAVE_READLINKAT_RUNTIME) {
+            Py_BEGIN_ALLOW_THREADS
             length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
+            Py_END_ALLOW_THREADS
         } else {
-            readlinkat_unavailable = 1;
+            argument_unavailable_error(NULL, "dir_fd");
+            return NULL;
         }
     } else
 #endif
+    {
+        Py_BEGIN_ALLOW_THREADS
         length = readlink(path->narrow, buffer, MAXPATHLEN);
-    Py_END_ALLOW_THREADS
-
-#ifdef HAVE_READLINKAT
-    if (readlinkat_unavailable) {
-        argument_unavailable_error(NULL, "dir_fd");
-        return NULL;
+        Py_END_ALLOW_THREADS
     }
-#endif
 
     if (length < 0) {
         return path_error(path);
     }
     buffer[length] = '\0';
 
-    if (PyUnicode_Check(path->object))
+    if (path->is_fd || PyUnicode_Check(path->object)) {
         return PyUnicode_DecodeFSDefaultAndSize(buffer, length);
-    else
+    }
+    else {
         return PyBytes_FromStringAndSize(buffer, length);
+    }
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
     DWORD io_result = 0;
@@ -11044,6 +11092,12 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
     PyObject *result = NULL;
+
+    if (path->is_fd) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "readlink cannot read file descriptors on this platform");
+        return NULL;
+    }
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -11328,7 +11382,7 @@ and elapsed.\n\
 See os.times for more information.");
 
 static PyStructSequence_Desc times_result_desc = {
-    MODNAME ".times_result", /* name */
+    "os.times_result", /* name */
     times_result__doc__, /* doc */
     times_result_fields,
     5
@@ -12406,7 +12460,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (!PySequence_Check(buffers)) {
         PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
+            "preadv() arg 2 must be a sequence");
         return -1;
     }
 
@@ -13923,86 +13977,7 @@ static PyObject *
 os_strerror_impl(PyObject *module, int code)
 /*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
 {
-#ifdef _Py_HAVE_STRERROR_R
-   // Check which strerror_r() API is used
-#  if defined(__GLIBC__) && !((_POSIX_C_SOURCE >= 200112L) && !defined(_GNU_SOURCE))
-#    define Py_STRERROR_R_GNU
-#  elif defined(__ANDROID__) && defined(_GNU_SOURCE)
-#    define Py_STRERROR_R_GNU
-#  endif
-#endif
-
-#ifdef Py_STRERROR_R_GNU
-    // Implementation for the GNU flavor of strerror_r()
-
-    // On Linux, the longest translated strerror() message is 86 bytes
-    // (including the NUL byte).
-    char buffer[100];
-    char *message = strerror_r(code, buffer, Py_ARRAY_LENGTH(buffer));
-    // The strerror_r() GNU flavor doesn't provide a way to check if the error
-    // message was truncated or not.
-    //
-    // When the buffer is used, a trailing NUL byte is always written.
-    assert(message != buffer || memchr(buffer, 0, Py_ARRAY_LENGTH(buffer)) != NULL);
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
-
-#elif defined(_Py_HAVE_STRERROR_R)
-    // Implementation for the XSI-compliant flavor of strerror_r()
-
-    // On Linux and FreeBSD, the longest translated strerror() message is 86
-    // bytes (including the NUL byte).
-    char small_buffer[100];
-    size_t buflen = Py_ARRAY_LENGTH(small_buffer);
-    char *buffer = NULL;
-#ifndef NDEBUG
-    // Make sure that strerror_r() writes a trailing null byte
-    small_buffer[buflen - 1] = '#';
-#endif
-    int len = strerror_r(code, small_buffer, buflen);
-    if (len == ERANGE) {
-        while (len == ERANGE) {
-            if (buflen > (size_t)PY_SSIZE_T_MAX / 2) {
-                PyMem_Free(buffer);
-                PyErr_NoMemory();
-                return NULL;
-            }
-            buflen = buflen * 2;
-
-            char *new_buffer = PyMem_Realloc(buffer, buflen);
-            if (new_buffer == NULL) {
-                PyMem_Free(buffer);
-                PyErr_NoMemory();
-                return NULL;
-            }
-            buffer = new_buffer;
-#ifndef NDEBUG
-            buffer[buflen - 1] = '#';
-#endif
-            len = strerror_r(code, buffer, buflen);
-        }
-    }
-    else {
-        buffer = small_buffer;
-    }
-
-    // strerror_r() always writes a trailing NUL byte
-    assert(memchr(buffer, 0, buflen) != NULL);
-    PyObject *result = PyUnicode_DecodeLocale(buffer, "surrogateescape");
-    if (buffer != small_buffer) {
-        PyMem_Free(buffer);
-    }
-    return result;
-
-#else
-    // strerror() implementation
-    char *message = strerror(code);
-    if (message == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "strerror() argument out of range");
-        return NULL;
-    }
-    return PyUnicode_DecodeLocale(message, "surrogateescape");
-#endif
+    return _Py_strerror(code);
 }
 
 
@@ -14177,11 +14152,6 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 
 #if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
-#ifdef _SCO_DS
-/* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
-   needed definitions in sys/statvfs.h */
-#define _SVID3
-#endif
 #include <sys/statvfs.h>
 
 #ifdef __APPLE__
@@ -16871,7 +16841,7 @@ static PyType_Slot DirEntryType_slots[] = {
 };
 
 static PyType_Spec DirEntryType_spec = {
-    .name = MODNAME ".DirEntry",
+    .name = "os.DirEntry",
     .basicsize = sizeof(DirEntry),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -17428,7 +17398,7 @@ static PyType_Slot ScandirIteratorType_slots[] = {
 };
 
 static PyType_Spec ScandirIteratorType_spec = {
-    .name = MODNAME ".ScandirIterator",
+    .name = "os.ScandirIterator",
     .basicsize = sizeof(ScandirIterator),
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
@@ -18957,6 +18927,10 @@ PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
 PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
 #endif
 
+#ifdef _Py_HAVE_FREADLINK
+PROBE(probe_freadlink, HAVE_FREADLINK_RUNTIME)
+#endif
+
 #ifdef HAVE_SYMLINKAT
 PROBE(probe_symlinkat, HAVE_SYMLINKAT_RUNTIME)
 #endif
@@ -19022,6 +18996,10 @@ static const struct have_function {
 
 #ifdef HAVE_FPATHCONF
     { "HAVE_FPATHCONF", NULL },
+#endif
+
+#ifdef _Py_HAVE_FREADLINK
+    { "HAVE_FREADLINK", probe_freadlink },
 #endif
 
 #ifdef HAVE_FSTATAT

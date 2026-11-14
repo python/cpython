@@ -138,7 +138,7 @@ await createEmscriptenModule({
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
+  linker flags ``-pthread -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).

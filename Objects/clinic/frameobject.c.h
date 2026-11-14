@@ -287,6 +287,21 @@ frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+static PyObject *
+frame_repr_impl(PyFrameObject *self);
+
+static PyObject *
+frame_repr(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame_repr_impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define FRAME_F_LOCALS_GETSETDEF {"f_locals", (getter)frame_locals_get, (setter)NULL, frame_locals__doc__},
 
 #define FRAME_F_LINENO_GETSETDEF {"f_lineno", (getter)frame_lineno_get, (setter)frame_lineno_set, frame_lineno__doc__},
@@ -307,4 +322,4 @@ frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #define FRAME_F_GENERATOR_GETSETDEF {"f_generator", (getter)frame_generator_get, (setter)NULL, frame_generator__doc__},
 
-/*[clinic end generated code: output=dfa59114b6dbce08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e86fc251b0396a11 input=a9049054013a1b77]*/

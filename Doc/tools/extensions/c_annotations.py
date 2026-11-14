@@ -28,12 +28,25 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
-ROLE_TO_OBJECT_TYPE = {
-    "func": "function",
-    "macro": "macro",
-    "member": "member",
-    "type": "type",
-    "data": "var",
+ABI_KIND_TO_OBJECT_TYPES = {
+    "function": ["function"],
+    "member": ["member"],
+    "struct": ["type"],
+    "data": ["var"],
+    "const": ["macro"],
+    "typedef": ["type"],
+    # Some macros are documented as functions
+    "macro": ["macro", "function"],
+}
+
+ABI_KIND_TO_ROLE = {
+    'function': 'func',
+    "member": 'member',
+    'data': 'data',
+    'struct': 'type',
+    'macro': 'macro',
+    'const': 'macro',
+    'typedef': 'type',
 }
 
 
@@ -61,11 +74,11 @@ class ThreadSafetyEntry:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class StableABIEntry:
-    # Role of the object.
-    # Source: Each [item_kind] in stable_abi.toml is mapped to a C Domain role.
-    role: str
+    # Kind of the object.
+    # Source: [<kind>.<name>] in stable_abi.toml.
+    kind: str
     # Name of the object.
-    # Source: [<item_kind>.*] in stable_abi.toml.
+    # Source: [<kind>.<name>] in stable_abi.toml.
     name: str
     # Version when the object was added to the stable ABI.
     # (Source: [<item_kind>.*.added] in stable_abi.toml.
@@ -177,14 +190,28 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
 
         # Stable ABI annotation.
         if record := stable_abi_data.get(name):
-            if ROLE_TO_OBJECT_TYPE[record.role] != objtype:
+            record_object_types = ABI_KIND_TO_OBJECT_TYPES[record.kind]
+            if objtype not in record_object_types:
                 msg = (
                     f"Object type mismatch in limited API annotation for {name}: "
-                    f"{ROLE_TO_OBJECT_TYPE[record.role]!r} != {objtype!r}"
+                    f"{objtype!r} not in {record_object_types!r}"
                 )
                 raise ValueError(msg)
-            annotation = _stable_abi_annotation(record)
-            node.insert(0, annotation)
+
+            # Skip the note if any ancestor has 'omit-stable-abi-notes'
+            # in a 'c_annotations' attribute.
+            ancestor = node
+            while ancestor:
+                if 'omit-stable-abi-notes' in ancestor.get(
+                    'c_annotations',
+                    [],
+                ):
+                    break
+                ancestor = ancestor.parent
+            else:
+                # no skip; add the annotation
+                annotation = _stable_abi_annotation(record)
+                node.insert(0, annotation)
 
         # Unstable API annotation.
         if name.startswith("PyUnstable"):
@@ -238,10 +265,14 @@ def _stable_abi_annotation(
         emph_node += nodes.Text(" ")
         emph_node += nodes.literal(record.name, record.name)
         message = sphinx_gettext("is part of the")
-        emph_node += nodes.Text(" " + message + " ")
+    elif record.kind == "macro":
+        # Macros are not part of the ABI
+        message = sphinx_gettext(
+            "This macro is available when compiling for the"
+        )
     else:
         message = sphinx_gettext("Part of the")
-        emph_node += nodes.Text(" " + message + " ")
+    emph_node += nodes.Text(" " + message + " ")
     ref_node = addnodes.pending_xref(
         "Stable ABI",
         refdomain="std",
@@ -365,7 +396,7 @@ class LimitedAPIList(SphinxDirective):
     def run(self) -> list[nodes.Node]:
         state = self.env.domaindata["c_annotations"]
         content = [
-            f"* :c:{record.role}:`{record.name}`"
+            f"* :c:{ABI_KIND_TO_ROLE[record.kind]}:`{record.name}`"
             for record in state["stable_abi_data"].values()
         ]
         node = nodes.paragraph()
@@ -445,6 +476,43 @@ class CorrespondingTypeSlot(SphinxDirective):
         return [node]
 
 
+class StableABINote(SphinxDirective):
+    """A manual Stable ABI note
+
+    Normally, notes are auto-generated.
+    This directive allows adding a similarly styled note manually.
+    Pair with omit-stable-abi-notes to override the automatic generation.
+    """
+
+    has_content = True
+
+    def run(self) -> list[nodes.Node]:
+        self.assert_has_content()
+        nodes = self.parse_content_to_nodes()
+        for node in nodes:
+            node.setdefault("classes", []).append('stableabi')
+        return nodes
+
+
+class OmitStableABINotes(SphinxDirective):
+    """A block where automatic Stable ABI notes are not generated
+
+    Normally used for dense lists/tables of definitions, where individual notes
+    are omitted and the whole block has a common manual note.
+    """
+
+    has_content = True
+
+    def run(self) -> list[nodes.Node]:
+        self.assert_has_content()
+        nodes = self.parse_content_to_nodes()
+        for node in nodes:
+            node.setdefault("c_annotations", []).append(
+                'omit-stable-abi-notes',
+            )
+        return nodes
+
+
 def init_annotations(app: Sphinx) -> None:
     # Using domaindata is a bit hack-ish,
     # but allows storing state without a global variable or closure.
@@ -467,6 +535,8 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive("limited-api-list", LimitedAPIList)
     app.add_directive("version-hex-cheatsheet", VersionHexCheatsheet)
     app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
+    app.add_directive("omit-stable-abi-notes", OmitStableABINotes)
+    app.add_directive("stable-abi-note", StableABINote)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
 

@@ -1,2 +1,0 @@
-Speed up parsing by reusing memoized rule prefixes across consecutive grammar
-alternatives, avoiding repeated rule calls and cache lookups.

@@ -11,7 +11,7 @@
 These functions provide access to some useful capabilities on Windows platforms.
 Some higher-level modules use these functions to build the Windows
 implementations of their services. For example, the :mod:`getpass` module uses
-this in the implementation of the :func:`getpass` function.
+this in the implementation of the :func:`~getpass.getpass` function.
 
 Further documentation on these functions can be found in the Platform API
 documentation.
@@ -139,7 +139,7 @@ Console I/O
    :exc:`OSError` on failure, for example when the process has no console
    attached.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Failures are now reported by raising :exc:`OSError` instead of being
       silently ignored.
 
@@ -148,7 +148,7 @@ Console I/O
 
    Wide char variant of :func:`putch`, accepting a Unicode value.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Failures are now reported by raising :exc:`OSError` instead of being
       silently ignored.
 

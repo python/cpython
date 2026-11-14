@@ -1,2 +1,0 @@
-Speed up parsing of left-recursive rules by updating their memoization
-entries in place.

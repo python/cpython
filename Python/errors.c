@@ -154,7 +154,6 @@ void
 _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
     PyObject *exc_value;
-    PyObject *tb = NULL;
 
     if (exception != NULL &&
         !PyExceptionClass_Check(exception)) {
@@ -237,9 +236,8 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
         }
     }
     assert(value != NULL);
-    if (PyExceptionInstance_Check(value))
-        tb = PyException_GetTraceback(value);
-    _PyErr_Restore(tstate, Py_NewRef(Py_TYPE(value)), value, tb);
+    assert(PyExceptionInstance_Check(value));
+    _PyErr_SetRaisedException(tstate, value);
 }
 
 void
@@ -842,8 +840,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 
 #ifndef MS_WINDOWS
     if (i != 0) {
-        const char *s = strerror(i);
-        message = PyUnicode_DecodeLocale(s, "surrogateescape");
+        message = _Py_strerror(i);
     }
     else {
         /* Sometimes errno didn't get set */

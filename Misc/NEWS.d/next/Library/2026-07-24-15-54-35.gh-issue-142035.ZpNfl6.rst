@@ -1,1 +1,0 @@
-Fix incorrect wrapping of :mod:`argparse` help text when color is enabled.

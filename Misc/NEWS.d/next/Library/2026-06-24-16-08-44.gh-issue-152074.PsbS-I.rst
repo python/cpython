@@ -1,1 +1,0 @@
-Increase the buffer size to 256 KiB in :meth:`asyncio.loop.sendfile` method fallback.

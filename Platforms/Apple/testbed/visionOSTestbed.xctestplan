@@ -1,0 +1,46 @@
+{
+  "configurations" : [
+    {
+      "id" : "C17FA044-0B70-48CA-AFF8-BC252081002F",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "test"
+      },
+      {
+        "argument" : "-uall"
+      },
+      {
+        "argument" : "--single-process"
+      },
+      {
+        "argument" : "--rerun"
+      },
+      {
+        "argument" : "-W"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:visionOSTestbed.xcodeproj",
+      "identifier" : "607A66112B0EFA380010BFC8",
+      "name" : "visionOSTestbed"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:visionOSTestbed.xcodeproj",
+        "identifier" : "607A662C2B0EFA3A0010BFC8",
+        "name" : "TestbedTests"
+      }
+    }
+  ],
+  "version" : 1
+}

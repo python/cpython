@@ -1,2 +1,0 @@
-Avoid a data-race in free-threaded builds when reading and writing context
-variables from different threads.

@@ -348,7 +348,7 @@ straightforward to compute the linearizations of O, X, Y, A and B:
 
  .. code-block:: text
 
-  L[O] = 0
+  L[O] = O
   L[X] = X O
   L[Y] = Y O
   L[A] = A X Y O

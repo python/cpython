@@ -62,7 +62,7 @@ ENCODER(big5hkscs)
                     else
                         c2 = 0;
 
-                    if (inlen - *inpos >= 2 &&
+                    if (inlen - *inpos >= 2 && c2 <= 0xffff &&
                         ((c & 0xffdf) == 0x00ca) &&
                         ((c2 & 0xfff7) == 0x0304)) {
                         code = big5hkscs_pairenc_table[

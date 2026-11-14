@@ -12,7 +12,7 @@
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
-   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2026      Matthew Fernandez <matthew.fernandez@gmail.com>
@@ -169,6 +169,9 @@ typedef char XML_LChar;
 #  endif   /* XML_UNICODE */
 
 #  ifdef XML_LARGE_SIZE /* Use large integers for file/stream positions. */
+#    if defined(__clang__) || defined(__GNUC__)
+#      warning Macro XML_LARGE_SIZE is deprecated, please use the 64bit location API functions instead.
+#    endif
 typedef long long XML_Index;
 typedef unsigned long long XML_Size;
 #  else

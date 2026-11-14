@@ -174,9 +174,8 @@ ENCODER_RESET(iso2022)
     if (STATE_G0 != CHARSET_ASCII) {
         WRITEBYTE3(ESC, '(', 'B');
         NEXT_OUT(3);
-        STATE_SETG0(CHARSET_ASCII);
     }
-    return 0;
+    return iso2022_encode_init(state, codec);
 }
 
 ENCODER(iso2022)
@@ -311,9 +310,7 @@ DECODER_INIT(iso2022)
 
 DECODER_RESET(iso2022)
 {
-    STATE_SETG0(CHARSET_ASCII);
-    STATE_CLEARFLAG(F_SHIFTED);
-    return 0;
+    return iso2022_decode_init(state, codec);
 }
 
 static Py_ssize_t
@@ -382,16 +379,21 @@ iso2022processesc(const MultibyteCodec *codec, MultibyteCodec_State *state,
         return esclen;
     }
 
-    /* raise error when the charset is not designated for this encoding */
+    /* raise error when the charset is not designated to this plane for
+     * this encoding (ASCII is only ever designated to G0) */
     if (charset != CHARSET_ASCII) {
         const struct iso2022_designation *dsg;
 
         for (dsg = CONFIG_DESIGNATIONS; dsg->mark; dsg++) {
-            if (dsg->mark == charset)
+            if (dsg->mark == charset && dsg->plane == designation) {
                 break;
+            }
         }
         if (!dsg->mark)
             return esclen;
+    }
+    else if (designation != 0) {
+        return esclen;
     }
 
     STATE_SETG(designation, charset);
@@ -804,7 +806,7 @@ jisx0213_encoder(const MultibyteCodec *codec, const Py_UCS4 *data,
 
     case 2: /* second character of unicode pair */
         if (data[1] != 0) { /* Don't consume null char as part of pair */
-            coded = find_pairencmap((ucs2_t)data[0], (ucs2_t)data[1],
+            coded = find_pairencmap((ucs2_t)data[0], data[1],
                                     jisx0213_pair_encmap, JISX0213_ENCPAIRS);
             if (coded != DBCINV) {
                 return coded;

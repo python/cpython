@@ -17,6 +17,10 @@ The following exception is defined:
 
    Exception raised by the :class:`Bdb` class for quitting the debugger.
 
+   .. versionchanged:: 3.16
+      :exc:`BdbQuit` now inherits from :exc:`BaseException` instead of
+      :exc:`Exception`.
+
 
 The :mod:`!bdb` module also defines two classes:
 

@@ -1,3 +1,0 @@
-Error messages from :meth:`imaplib.IMAP4.select` and :meth:`imaplib.IMAP4.uid`
-no longer raise :exc:`BytesWarning` under :option:`!-bb`
-when the mailbox or command argument is :class:`bytes`.

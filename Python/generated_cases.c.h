@@ -3984,6 +3984,22 @@
                 int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
                 UNLOCK_OBJECT(self_o);
                 if (err) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyStackRef tmp = self;
+                    self = PyStackRef_NULL;
+                    stack_pointer[-2] = self;
+                    PyStackRef_CLOSE(tmp);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    tmp = callable;
+                    callable = PyStackRef_NULL;
+                    stack_pointer[-3] = callable;
+                    PyStackRef_CLOSE(tmp);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    stack_pointer += -3;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     JUMP_TO_LABEL(error);
                 }
                 c = callable;
@@ -9213,7 +9229,7 @@
                 uint32_t dict_version = read_u32(&this_instr[2].cache);
                 uint16_t index = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
+                if (!PyModule_CheckExact(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);

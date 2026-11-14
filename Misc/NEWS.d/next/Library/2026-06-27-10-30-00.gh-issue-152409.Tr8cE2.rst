@@ -1,3 +1,0 @@
-Fix the :mod:`trace` command-line tool not saving the ``--file`` counts
-when ``--no-report`` is used, which prevented accumulating counts over
-several runs.  Patch by tonghuaroot.

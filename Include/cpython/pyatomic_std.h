@@ -1032,6 +1032,14 @@ _Py_atomic_store_int8_release(int8_t *obj, int8_t value)
 }
 
 static inline void
+_Py_atomic_store_uint8_release(uint8_t *obj, uint8_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(uint8_t)*)obj, value,
+                          memory_order_release);
+}
+
+static inline void
 _Py_atomic_store_uint_release(unsigned int *obj, unsigned int value)
 {
     _Py_USING_STD;

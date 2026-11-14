@@ -1073,7 +1073,7 @@ As you can see, most actions involve storing or updating a value somewhere.
    :class:`!Values` objects support :func:`copy.replace`,
    which returns a copy of the object with the specified attributes replaced.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 Option
@@ -1786,7 +1786,7 @@ where
 
    ``parser.values``
       the object where option values are by default stored (an instance of
-      optparse.OptionValues).  This lets callbacks use the same mechanism as the
+      optparse.Values).  This lets callbacks use the same mechanism as the
       rest of :mod:`!optparse` for storing option values; you don't need to mess
       around with globals or closures.  You can also access or modify the
       value(s) of any options already encountered on the command-line.
@@ -2003,7 +2003,7 @@ To add new types, you need to define your own subclass of :mod:`!optparse`'s
    (e.g., ``-f``), and ``value`` is the string from the command line that must
    be checked and converted to your desired type.  ``check_mytype()`` should
    return an object of the hypothetical type ``mytype``.  The value returned by
-   a type-checking function will wind up in the OptionValues instance returned
+   a type-checking function will wind up in the Values instance returned
    by :meth:`OptionParser.parse_args`, or be passed to a callback as the
    ``value`` parameter.
 
@@ -2040,10 +2040,10 @@ Finally, the Option subclass::
        TYPE_CHECKER = copy(Option.TYPE_CHECKER)
        TYPE_CHECKER["complex"] = check_complex
 
-(If we didn't make a :func:`copy` of :attr:`Option.TYPE_CHECKER`, we would end
-up modifying the :attr:`~Option.TYPE_CHECKER` attribute of :mod:`!optparse`'s
-Option class.  This being Python, nothing stops you from doing that except good
-manners and common sense.)
+(If we didn't make a :func:`~copy.copy` of :attr:`Option.TYPE_CHECKER`, we would
+end up modifying the :attr:`~Option.TYPE_CHECKER` attribute of
+:mod:`!optparse`'s Option class.  This being Python, nothing stops you from
+doing that except good manners and common sense.)
 
 That's it!  Now you can write a script that uses the new option type just like
 any other :mod:`!optparse`\ -based script, except you have to instruct your
@@ -2070,7 +2070,7 @@ Adding new actions is a bit trickier, because you have to understand that
 
 "store" actions
    actions that result in :mod:`!optparse` storing a value to an attribute of the
-   current OptionValues instance; these options require a :attr:`~Option.dest`
+   current Values instance; these options require a :attr:`~Option.dest`
    attribute to be supplied to the Option constructor.
 
 "typed" actions
@@ -2152,8 +2152,8 @@ Features of note:
   control back to :meth:`Option.take_action` for the standard :mod:`!optparse`
   actions.
 
-* ``values`` is an instance of the optparse_parser.Values class, which provides
-  the very useful :meth:`ensure_value` method. :meth:`ensure_value` is
+* ``values`` is an instance of the optparse.Values class, which provides
+  the very useful :meth:`!ensure_value` method. :meth:`!ensure_value` is
   essentially :func:`getattr` with a safety valve; it is called as ::
 
      values.ensure_value(attr, value)
@@ -2163,9 +2163,9 @@ Features of note:
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using
-  :meth:`ensure_value` means that scripts using your action don't have to worry
+  :meth:`!ensure_value` means that scripts using your action don't have to worry
   about setting a default value for the option destinations in question; they
-  can just leave the default as ``None`` and :meth:`ensure_value` will take care of
+  can just leave the default as ``None`` and :meth:`!ensure_value` will take care of
   getting it right when it's needed.
 
 Exceptions

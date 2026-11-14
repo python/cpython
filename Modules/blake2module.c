@@ -392,6 +392,29 @@ new_Blake2Object(PyTypeObject *type)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(self);
+    self->impl = type_to_impl(type);
+    // Ensure that the states are NULL-initialized in case of an error.
+    // See: py_blake2_clear() for more details.
+    switch (self->impl) {
+#if _Py_HACL_CAN_COMPILE_VEC256
+        case Blake2b_256:
+            self->blake2b_256_state = NULL;
+            break;
+#endif
+#if _Py_HACL_CAN_COMPILE_VEC128
+        case Blake2s_128:
+            self->blake2s_128_state = NULL;
+            break;
+#endif
+        case Blake2b:
+            self->blake2b_state = NULL;
+            break;
+        case Blake2s:
+            self->blake2s_state = NULL;
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
 
     PyObject_GC_Track(self);
     return self;
@@ -551,30 +574,6 @@ py_blake2_new(PyTypeObject *type, PyObject *data, int digest_size,
     self = new_Blake2Object(type);
     if (self == NULL) {
         goto error;
-    }
-
-    self->impl = type_to_impl(type);
-    // Ensure that the states are NULL-initialized in case of an error.
-    // See: py_blake2_clear() for more details.
-    switch (self->impl) {
-#if _Py_HACL_CAN_COMPILE_VEC256
-        case Blake2b_256:
-            self->blake2b_256_state = NULL;
-            break;
-#endif
-#if _Py_HACL_CAN_COMPILE_VEC128
-        case Blake2s_128:
-            self->blake2s_128_state = NULL;
-            break;
-#endif
-        case Blake2b:
-            self->blake2b_state = NULL;
-            break;
-        case Blake2s:
-            self->blake2s_state = NULL;
-            break;
-        default:
-            Py_UNREACHABLE();
     }
 
     // Unlike the state types, the parameters share a single (client-friendly)

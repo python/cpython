@@ -1,3 +1,0 @@
-Fix :meth:`asyncio.subprocess.Process.communicate` losing already-read
-output when it is cancelled; the output is now retained and returned by a
-subsequent ``communicate()`` call. Patch by Kumar Aditya.

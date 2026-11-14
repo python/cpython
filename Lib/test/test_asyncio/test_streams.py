@@ -14,6 +14,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test import support
 from test.support import socket_helper
 
 
@@ -591,6 +592,14 @@ class StreamTests(test_utils.TestCase):
         stream.set_exception(exc)
         self.assertIs(stream.exception(), exc)
 
+        # Raised even when the data is already buffered.
+        stream.feed_data(b'line\n')
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readline())
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readuntil())
+        self.assertEqual(b'line\n', stream._buffer)
+
     def test_exception_waiter(self):
         stream = asyncio.StreamReader(loop=self.loop)
 
@@ -856,6 +865,56 @@ class StreamTests(test_utils.TestCase):
             server.close()
             await server.wait_closed()
 
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(run_test())
+        self.assertEqual(messages, [])
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_connection_lost_during_handshake(self):
+        # The protocol must get connection_lost() when the connection is
+        # lost while the start_tls() handshake is in progress, so that
+        # wait_closed() completes instead of hanging forever.
+
+        async def server_handler(client_reader, client_writer):
+            line = await client_reader.readline()
+            self.assertEqual(line, b"STARTTLS\n")
+            client_writer.write(b"go ahead\n")
+            await client_writer.drain()
+            with self.assertRaises(ConnectionAbortedError):
+                await client_writer.start_tls(
+                    test_utils.simple_server_sslcontext(),
+                    ssl_handshake_timeout=0.1)
+            client_writer.close()
+            with self.assertRaises(ConnectionAbortedError):
+                await asyncio.wait_for(client_writer.wait_closed(),
+                                       support.SHORT_TIMEOUT)
+            handler_done.set()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(*addr)
+            writer.write(b"STARTTLS\n")
+            await writer.drain()
+            line = await reader.readline()
+            self.assertEqual(line, b"go ahead\n")
+            # Never send a ClientHello: the server's handshake times out.
+            data = await reader.read()
+            self.assertEqual(data, b"")
+            writer.close()
+            await writer.wait_closed()
+
+        async def run_test():
+            server = await asyncio.start_server(
+                server_handler, socket_helper.HOSTv4, 0)
+            server_addr = server.sockets[0].getsockname()
+
+            await client(server_addr)
+            await asyncio.wait_for(handler_done.wait(),
+                                   support.SHORT_TIMEOUT)
+            server.close()
+            await server.wait_closed()
+
+        handler_done = asyncio.Event()
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
         self.loop.run_until_complete(run_test())

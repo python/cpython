@@ -942,11 +942,16 @@ double_round(double x, int ndigits) {
     _Py_SET_53BIT_PRECISION_START;
     rounded = _Py_dg_strtod(mybuf, NULL);
     _Py_SET_53BIT_PRECISION_END;
-    if (errno == ERANGE && fabs(rounded) >= 1.)
+    if (errno == ENOMEM) {
+        PyErr_NoMemory();
+    }
+    else if (errno == ERANGE && fabs(rounded) >= 1.) {
         PyErr_SetString(PyExc_OverflowError,
                         "rounded value too large to represent");
-    else
+    }
+    else {
         result = PyFloat_FromDouble(rounded);
+    }
 
     /* done computing value;  now clean up */
     if (mybuf != shortbuf)
@@ -1556,6 +1561,7 @@ static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *x);
 
 /*[clinic input]
+@vectorcall
 @classmethod
 float.__new__ as float_new
     x: object(c_default="NULL") = 0
@@ -1566,7 +1572,7 @@ Convert a string or number to a floating-point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=55909f888aa0c8a6]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=39b40d663c372a91]*/
 {
     if (type != &PyFloat_Type) {
         if (x == NULL) {
@@ -1608,23 +1614,6 @@ float_subtype_new(PyTypeObject *type, PyObject *x)
     ((PyFloatObject *)newobj)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
     Py_DECREF(tmp);
     return newobj;
-}
-
-static PyObject *
-float_vectorcall(PyObject *type, PyObject *const *args,
-                 size_t nargsf, PyObject *kwnames)
-{
-    if (!_PyArg_NoKwnames("float", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    PyObject *x = nargs >= 1 ? args[0] : NULL;
-    return float_new_impl(_PyType_CAST(type), x);
 }
 
 

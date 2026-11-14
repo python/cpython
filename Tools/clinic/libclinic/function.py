@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from libclinic.converters import self_converter
     from libclinic.return_converters import CReturnConverter
     from libclinic.app import Clinic
+    from libclinic.slots import SlotSpec
 
 from libclinic import VersionTuple, unspecified
 
@@ -94,6 +95,8 @@ class FunctionKind(enum.Enum):
     GETTER          = enum.auto()
     SETTER          = enum.auto()
     SETTER_AND_DELETER  = enum.auto()
+    # A type slot ("tp slot"), see libclinic.slots.
+    SLOT            = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -111,6 +114,7 @@ METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
 SETTER_AND_DELETER: Final = FunctionKind.SETTER_AND_DELETER
+SLOT: Final = FunctionKind.SLOT
 
 # The kinds which implement the setter of an entry of PyGetSetDef.
 SETTERS: Final = frozenset({SETTER, SETTER_AND_DELETER})
@@ -156,6 +160,8 @@ class Function:
     # Line on which the docstring starts (`None` if there is no docstring).
     docstring_line_number: int | None = None
     vectorcall: bool = False
+    # The type slot which the function implements (kind is SLOT).
+    slot: SlotSpec | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -224,7 +230,8 @@ class Function:
 
     @property
     def methoddef_flags(self) -> str | None:
-        if self.kind.new_or_init:
+        if self.kind.new_or_init or self.kind is SLOT:
+            # Slot functions are not stored in a PyMethodDef.
             return None
         flags = []
         match self.kind:

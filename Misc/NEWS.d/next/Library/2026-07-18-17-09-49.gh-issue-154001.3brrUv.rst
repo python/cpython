@@ -1,2 +1,0 @@
-Fix :func:`random.binomialvariate` raising :exc:`ZeroDivisionError`
-when :func:`random.random` returns zero.

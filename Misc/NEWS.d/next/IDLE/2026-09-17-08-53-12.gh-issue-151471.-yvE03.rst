@@ -1,1 +1,0 @@
-Colorize the soft keyword ``type`` in IDLE.

@@ -1,2 +1,0 @@
-Speed up the tokenizer by copying source text verbatim when it contains no
-carriage returns.

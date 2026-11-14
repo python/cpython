@@ -271,7 +271,7 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&kk" F_POINTER "kk"_Py_PARSE_UINTPTR":CreateFile",
+    if (!PyArg_ParseArray(args, nargs, "O&kk" F_POINTER "kk"_Py_PARSE_UINTPTR":CreateFile",
         _PyUnicode_WideCharString_Converter, &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
     }
@@ -318,7 +318,7 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
     LPCWSTR name = NULL;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"" F_POINTER "kkkO&:CreateFileMapping",
+    if (!PyArg_ParseArray(args, nargs, ""_Py_PARSE_UINTPTR"" F_POINTER "kkkO&:CreateFileMapping",
         &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, _PyUnicode_WideCharString_Converter, &name)) {
         goto exit;
     }
@@ -487,7 +487,7 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&kkkkkk" F_POINTER ":CreateNamedPipe",
+    if (!PyArg_ParseArray(args, nargs, "O&kkkkkk" F_POINTER ":CreateNamedPipe",
         _PyUnicode_WideCharString_Converter, &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
         goto exit;
     }
@@ -2123,7 +2123,7 @@ _winapi_TerminateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nar
     HANDLE handle;
     UINT exit_code;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"I:TerminateProcess",
+    if (!PyArg_ParseArray(args, nargs, ""_Py_PARSE_UINTPTR"I:TerminateProcess",
         &handle, &exit_code)) {
         goto exit;
     }
@@ -3057,4 +3057,4 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=8173751196d44211 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15ab8b04851932e1 input=a9049054013a1b77]*/

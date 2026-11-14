@@ -81,6 +81,123 @@ class TestFTFunctionAttributes(TestCase):
         threading_helper.run_concurrently(
             [set_annotations, set_annotate] * (NUM_THREADS // 2))
 
+    def test_read_while_replacing_name_attrs(self):
+        # Readers load __name__, __qualname__, __doc__ and __module__
+        # without holding a lock. A writer thread replacing them must not
+        # free a value a reader thread is about to incref.
+        def target():
+            yield
+
+        def writer():
+            for _ in range(ITERS):
+                target.__name__ = random_string()
+                target.__qualname__ = random_string()
+                target.__doc__ = random_string()
+                target.__module__ = random_string()
+
+        def reader():
+            for _ in range(ITERS):
+                target.__name__
+                target.__qualname__
+                target.__doc__
+                target.__module__
+                # make_gen() copies __name__ and __qualname__.
+                gen = target()
+                gen.__name__
+                gen.__qualname__
+                gen.close()
+
+        threading_helper.run_concurrently(
+            [writer, reader] * (NUM_THREADS // 2))
+
+    def test_repr_while_replacing_qualname(self):
+        def target():
+            pass
+
+        def writer():
+            for _ in range(ITERS):
+                target.__qualname__ = random_string()
+
+        def reader():
+            for _ in range(ITERS):
+                self.assertRegex(repr(target), r"^<function .* at 0x[0-9a-fA-F]+>$")
+
+        threading_helper.run_concurrently(
+            [writer, reader] * (NUM_THREADS // 2))
+
+    def test_c_api_read_while_replacing_module(self):
+        from test.support import import_helper
+        _testcapi = import_helper.import_module('_testcapi')
+
+        def target():
+            pass
+
+        def writer():
+            for _ in range(ITERS):
+                target.__module__ = random_string()
+                target.__module__ = object()
+                target.__module__ = None
+
+        def reader():
+            for _ in range(ITERS):
+                for get_module in (_testcapi.function_get_module,
+                                   _testcapi.function_get_module_macro):
+                    value = get_module(target)
+                    self.assertIn(type(value), (str, object, type(None)))
+
+        threading_helper.run_concurrently(
+            [writer, reader] * (NUM_THREADS // 2))
+
+    def test_c_api_read_while_replacing_name(self):
+        from test.support import import_helper
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
+        def target():
+            pass
+
+        def writer():
+            for _ in range(ITERS):
+                # Non-ASCII names exercise lazy UTF-8 conversion.
+                target.__name__ = 'name_\u03bb' + random_string()
+
+        def reader():
+            for _ in range(ITERS):
+                name = _testlimitedcapi.eval_get_func_name(target)
+                self.assertIsInstance(name, str)
+
+        threading_helper.run_concurrently(
+            [writer, reader] * (NUM_THREADS // 2))
+
+    def test_argument_errors_while_replacing_qualname(self):
+        def target(x, *, y):
+            pass
+
+        def posonly(x, /):
+            pass
+
+        calls = (
+            lambda: target(),
+            lambda: target(1),
+            lambda: target(1, 2),
+            lambda: target(1, x=2),
+            lambda: target(1, extra=2),
+            lambda: posonly(x=1),
+        )
+
+        def writer():
+            for _ in range(ITERS):
+                target.__qualname__ = random_string()
+                posonly.__qualname__ = random_string()
+
+        def reader():
+            for _ in range(ITERS):
+                for call in calls:
+                    with self.assertRaises(TypeError):
+                        call()
+
+        threading_helper.run_concurrently(
+            [writer, reader] * (NUM_THREADS // 2))
+
     def test_call_while_replacing_defaults(self):
         # The eval loop reads __defaults__ and __kwdefaults__ without holding
         # a lock while pushing a frame.

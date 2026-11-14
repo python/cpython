@@ -1,2 +1,0 @@
-Fix :exc:`OSError` when importing :mod:`ctypes` from a statically linked
-interpreter.

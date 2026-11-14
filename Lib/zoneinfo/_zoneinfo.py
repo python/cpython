@@ -144,7 +144,7 @@ class ZoneInfo(tzinfo):
             if num_trans > 1 and timestamp >= self._trans_utc[1]:
                 tti_prev, tti = self._ttinfos[idx - 2 : idx]
             elif timestamp > self._trans_utc[-1]:
-                tti_prev = self._ttinfos[-1]
+                tti_prev = self._tti_before
                 tti = self._tz_after
             else:
                 tti_prev = self._tti_before
@@ -535,7 +535,7 @@ class _DayOffset:
         days_before_year = _post_epoch_days_before_year(year)
 
         d = self.d
-        if self.julian and d >= 59 and calendar.isleap(year):
+        if self.julian and d >= 60 and calendar.isleap(year):
             d += 1
 
         epoch = (days_before_year + d) * 86400

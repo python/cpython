@@ -1,6 +1,8 @@
+import sys
 import unittest
 import threading
 
+from test import support
 from test.support import import_helper, threading_helper
 from test.support.threading_helper import run_concurrently
 
@@ -38,6 +40,27 @@ class TestSyslog(unittest.TestCase):
             worker_func=worker,
             nthreads=NTHREADS,
         )
+
+    def test_racing_openlog_argv(self):
+        # gh-159864: openlog() without an ident reads sys.argv[0] while
+        # another thread replaces it.
+        argv = ["prog"]
+
+        def opener():
+            for _ in range(1000):
+                syslog.openlog()
+
+        def writer():
+            for i in range(1000):
+                argv[0] = f"prog-{i}"
+
+        with support.swap_attr(sys, "argv", argv):
+            try:
+                run_concurrently(
+                    worker_func=[opener] * (NTHREADS - 1) + [writer],
+                )
+            finally:
+                syslog.closelog()
 
 
 if __name__ == "__main__":

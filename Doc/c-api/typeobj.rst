@@ -480,6 +480,7 @@ definition found there:
 .. XXX Drop this?
 
 .. literalinclude:: ../includes/typestruct.h
+   :end-at: } PyTypeObject;
 
 
 PyObject Slots
@@ -2526,7 +2527,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       Specifically, if *type* uses the default metaclass,
       ``type->tp_vectorcall`` must behave the same as
-      :c:expr:`PyType_Type->tp_call`, which:
+      ``Py_TYPE(type)->tp_call``, which:
 
       - calls ``type->tp_new``,
 
@@ -3342,7 +3343,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        .tp_new = myobj_new,
        .tp_traverse = (traverseproc)myobj_traverse,
        .tp_clear = (inquiry)myobj_clear,
-       .tp_alloc = PyType_GenericNew,
+       .tp_alloc = PyType_GenericAlloc,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
        .tp_hash = (hashfunc)myobj_hash,

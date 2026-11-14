@@ -2,10 +2,8 @@
 
 #include <stdlib.h>
 
-#if _MSC_VER >= 1900
-/* pyconfig.h uses this function in the _Py_BEGIN/END_SUPPRESS_IPH
- * macros. It does not need to be defined when building using MSVC
- * earlier than 14.0 (_MSC_VER == 1900).
+/* pycore_fileutils.h uses this function in the _Py_BEGIN/END_SUPPRESS_IPH
+ * macros.
  */
 
 static void __cdecl _silent_invalid_parameter_handler(
@@ -16,7 +14,5 @@ static void __cdecl _silent_invalid_parameter_handler(
     uintptr_t pReserved) { }
 
 _invalid_parameter_handler _Py_silent_invalid_parameter_handler = _silent_invalid_parameter_handler;
-
-#endif
 
 #endif

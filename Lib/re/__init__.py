@@ -391,6 +391,13 @@ copyreg.pickle(Pattern, _pickle, _compile)
 # experimental stuff (see python-dev discussions for details)
 
 class Scanner:
+    """Experimental regex-based tokenizer, not part of the documented API.
+
+    New code is better off starting from the tokenizer example in the
+    documentation:
+        https://docs.python.org/3/library/re.html#writing-a-tokenizer
+    """
+
     def __init__(self, lexicon, flags=0):
         from ._constants import BRANCH, SUBPATTERN
         if isinstance(flags, RegexFlag):

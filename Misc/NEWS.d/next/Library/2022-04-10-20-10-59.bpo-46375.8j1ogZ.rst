@@ -1,1 +1,0 @@
-Add :meth:`io.BytesIO.peek` method to read without advancing position.

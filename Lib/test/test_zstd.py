@@ -7,10 +7,12 @@ import re
 import os
 import unittest
 import tempfile
+import textwrap
 import threading
 
 from test import support
 from test.support.import_helper import import_module
+from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
 from test.support import _1M
 
@@ -211,6 +213,52 @@ class FunctionsTestCase(unittest.TestCase):
         dat = decompress(DAT_130K_C + DAT_130K_C)
         self.assertEqual(len(dat), 2 * _130_1K)
 
+    def test_decompress_multi_frames(self):
+        big = random.randbytes(100_000)
+        frames = [b"a" * 100, b"", big, b"b" * 100, big]
+        expected = b"".join(frames)
+        dat = b"".join(map(compress, frames))
+        self.assertEqual(decompress(dat), expected)
+        self.assertEqual(decompress(bytearray(dat)), expected)
+        self.assertEqual(decompress(memoryview(dat)), expected)
+        with self.assertRaisesRegex(ZstdError, "Compressed data ended before"):
+            decompress(dat[:-50_000])
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(dat + b"junk")
+
+    def test_decompress_error_releases_buffer(self):
+        # The argument can be resized while the exception is handled.
+        for dat in COMPRESSED_100_PLUS_32KB[:-10], b"junk" * 10:
+            with self.subTest(dat=dat[:10]):
+                dat = bytearray(dat)
+                try:
+                    decompress(dat)
+                except ZstdError:
+                    dat += b"more"
+                else:
+                    self.fail("no exception")
+
+    def test_decompress_many_frames(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of frames.
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = ZstdDecompressor(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        dat = compress(b"")
+        with support.swap_attr(zstd, "ZstdDecompressor", Decompressor):
+            fed = 0
+            self.assertEqual(decompress(dat * 1000), b"")
+            fed1 = fed
+            fed = 0
+            self.assertEqual(decompress(dat * 2000), b"")
+        self.assertLess(fed, fed1 * 3)
+
 
 class CompressorTestCase(unittest.TestCase):
 
@@ -368,6 +416,58 @@ class CompressorTestCase(unittest.TestCase):
         # ZstdFile
         with ZstdFile(io.BytesIO(), 'w', options=options) as f:
             f.write(b)
+
+    @unittest.skipIf(not SUPPORT_MULTITHREADING,
+                     "zstd build doesn't support multi-threaded compression")
+    def test_free_busy_multithread_compressor_with_dict(self):
+        # A compressor can be freed while a worker thread is still
+        # compressing with a dictionary that the compression context owns.
+        # Whether a failure is detected depends on the memory allocator,
+        # so use a fresh process for each case.
+        code = textwrap.dedent("""
+            import gc, random, sys
+            from compression.zstd import (CompressionParameter,
+                                          ZstdCompressor, ZstdDict)
+
+            job_size = 1 << 20
+            zd = ZstdDict(random.randbytes(1 << 10) * (1 << 10), is_raw=True)
+            options = {CompressionParameter.compression_level: 10,
+                       CompressionParameter.nb_workers: 1,
+                       CompressionParameter.job_size: job_size}
+            c = ZstdCompressor(options=options, zstd_dict=zd)
+            # Returns while the worker thread is compressing the first job.
+            c.compress(random.randbytes(1 << 10) * ((job_size >> 10) + 64))
+            if sys.argv[1] == 'error':
+                # A failed call does not wait for the worker thread either.
+                import _testcapi
+                _testcapi.set_nomemory(0)
+                try:
+                    c.compress(b'x')
+                except MemoryError:
+                    pass
+                finally:
+                    _testcapi.remove_mem_hooks()
+            if sys.argv[1] == 'gc':
+                # The garbage collector clears the compressor before
+                # deallocating it.
+                cycle = [c]
+                cycle.append(cycle)
+                del c, cycle
+                gc.collect()
+            elif sys.argv[1] != 'exit':
+                del c
+            # Otherwise the compressor is freed at interpreter exit.
+        """)
+        cases = ['del', 'gc', 'exit']
+        try:
+            import _testcapi  # noqa: F401
+        except ImportError:
+            pass
+        else:
+            cases.append('error')
+        for case in cases:
+            with self.subTest(case=case):
+                assert_python_ok('-c', code, case)
 
     def test_compress_flushblock(self):
         point = len(THIS_FILE_BYTES) // 2
@@ -1570,6 +1670,42 @@ class ZstdDictTestCase(unittest.TestCase):
     def test_len(self):
         self.assertEqual(len(TRAINED_DICT), len(TRAINED_DICT.dict_content))
         self.assertIn(str(len(TRAINED_DICT)), str(TRAINED_DICT))
+
+    @unittest.skipUnless(SUPPORT_MULTITHREADING,
+                         "zstd build doesn't support multi-threaded compression")
+    @support.requires_subprocess()
+    def test_collect_cycle_with_busy_compressor(self):
+        # The dictionary must outlive the compression context when both are
+        # collected by the garbage collector while a worker thread is still
+        # using the dictionary.  Whether the failure is detected depends on
+        # the memory allocator, so use a fresh process for each case.
+        code = textwrap.dedent("""
+            import gc, random, sys
+            from compression.zstd import (CompressionParameter,
+                                          ZstdCompressor, ZstdDict)
+
+            class Cycle:
+                pass
+
+            job_size = 1 << 20
+            content = random.randbytes(1 << 10) * (1 << 8)
+            zd = ZstdDict(content, is_raw=True)
+            options = {CompressionParameter.compression_level: 10,
+                       CompressionParameter.nb_workers: 1,
+                       CompressionParameter.job_size: job_size}
+            c = ZstdCompressor(options=options,
+                               zstd_dict=getattr(zd, sys.argv[1]))
+            cycle = Cycle()
+            cycle.cycle = cycle
+            cycle.compressor = c
+            # Returns while the worker thread is compressing the first job.
+            c.compress(random.randbytes(1 << 10) * ((job_size >> 10) + 64))
+            del zd, c, cycle
+            gc.collect()
+        """)
+        for attr in 'as_digested_dict', 'as_prefix':
+            with self.subTest(attr=attr):
+                assert_python_ok('-c', code, attr)
 
 class FileTestCase(unittest.TestCase):
     def setUp(self):

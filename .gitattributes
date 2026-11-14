@@ -102,6 +102,7 @@ Modules/_testinternalcapi/test_cases.c.h            generated
 Modules/_testinternalcapi/test_targets.h            generated
 PC/python3dll.c                                     generated
 Parser/parser.c                                     generated
+Parser/parser_invalid.c                             generated
 Parser/token.c                                      generated
 Programs/test_frozenmain.h                          generated
 Python/Python-ast.c                                 generated

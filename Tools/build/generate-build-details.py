@@ -72,6 +72,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
 
     LIBDIR = sysconfig.get_config_var('LIBDIR')
+    LIBPL = sysconfig.get_config_var('LIBPL')
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
@@ -84,7 +85,21 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # dynamic library if enabled, otherwise it's the static library.
         # If LIBRARY != LDLIBRARY, support for the dynamic library is enabled.
         has_dynamic_library = LDLIBRARY != LIBRARY
-        has_static_library = sysconfig.get_config_var('STATIC_LIBPYTHON')
+        # Framework builds don't install the static library (see libainstall).
+        has_static_library = (
+            sysconfig.get_config_var('STATIC_LIBPYTHON')
+            and not sysconfig.get_config_var('PYTHONFRAMEWORK')
+        )
+        # The static library is only installed into LIBDIR when it is also
+        # LDLIBRARY; otherwise it is only installed into LIBPL.
+        static_library_dir = LIBPL if has_dynamic_library else LIBDIR
+        # In framework builds, LDLIBRARY is the path of the framework library
+        # relative to PYTHONFRAMEWORKPREFIX (e.g.
+        # Python.framework/Versions/3.X/Python), not a file in LIBDIR.
+        if sysconfig.get_config_var('PYTHONFRAMEWORK'):
+            dynamic_library_dir = sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX')
+        else:
+            dynamic_library_dir = LIBDIR
     elif os.name == 'nt':
         # Windows can only use a dynamic library or a static library.
         # If it's using a dynamic library, sys.dllhandle will be set.
@@ -92,6 +107,8 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # More context: https://github.com/python/cpython/issues/110234
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
+        static_library_dir = LIBDIR
+        dynamic_library_dir = LIBDIR
     else:
         raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -112,7 +129,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
                 data['abi']['stable_abi_suffix'] = suffix
                 break
 
-        data['libpython']['dynamic'] = os.path.join(LIBDIR, LDLIBRARY)
+        data['libpython']['dynamic'] = os.path.join(dynamic_library_dir, LDLIBRARY)
         # FIXME: Not sure if windows has a different dll for the stable ABI, and
         #        even if it does, currently we don't have a way to get its name.
         if PY3LIBRARY:
@@ -123,7 +140,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         data['libpython']['link_extensions'] = bool(LIBPYTHON)
 
     if has_static_library:
-        data['libpython']['static'] = os.path.join(LIBDIR, LIBRARY)
+        data['libpython']['static'] = os.path.join(static_library_dir, LIBRARY)
 
     data['c_api']['headers'] = INCLUDEPY
     if LIBPC:
@@ -133,11 +150,12 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 
 
 def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
-    # Make base_prefix relative to the config_path directory
-    if config_path:
-        data['base_prefix'] = relative_path(data['base_prefix'],
-                                            os.path.dirname(config_path))
     base_prefix = data['base_prefix']
+    # Make base_prefix relative to the config_path directory.  The other paths
+    # are still made relative to the absolute base_prefix below.
+    if config_path:
+        data['base_prefix'] = relative_path(base_prefix,
+                                            os.path.dirname(config_path))
 
     # Update path values to make them relative to base_prefix
     PATH_KEYS = (

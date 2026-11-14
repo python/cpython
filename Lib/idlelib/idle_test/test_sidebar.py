@@ -317,6 +317,10 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
     def test_scroll(self):
+        # Synchronized scrolling needs the geometry of mapped widgets.
+        self.root.deiconify()
+        self.addCleanup(self.root.withdraw)
+
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'line\n' * 100)
         self.root.update()

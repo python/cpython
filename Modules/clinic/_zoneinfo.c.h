@@ -425,15 +425,7 @@ zoneinfo_ZoneInfo___init_subclass__(PyObject *type, PyObject *args, PyObject *kw
     if (!_PyArg_NoPositional("__init_subclass__", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        __clinic_kwargs = PyDict_New();
-        if (__clinic_kwargs == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwargs = Py_NewRef(kwargs);
-    }
+    __clinic_kwargs = Py_XNewRef(kwargs);
     return_value = zoneinfo_ZoneInfo___init_subclass___impl((PyTypeObject *)type, __clinic_kwargs);
 
 exit:
@@ -442,4 +434,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d7aeeec4b950fc35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42fad9178a9395ea input=a9049054013a1b77]*/

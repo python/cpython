@@ -832,6 +832,31 @@ class TestInterpreterClose(TestBase):
         assert_python_ok('-c', code)
 
 
+class TestInterpreterContextManager(TestBase):
+
+    def test_basic(self):
+        main, = interpreters.list_all()
+        with interpreters.create() as interp:
+            self.assertIsInstance(interp, interpreters.Interpreter)
+            self.assertEqual(interpreters.list_all(), [main, interp])
+        self.assertEqual(interpreters.list_all(), [main])
+        with self.assertRaises(InterpreterNotFoundError):
+            interp.exec('pass')
+
+    def test_exception(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(ZeroDivisionError):
+            with interpreters.create() as interp:
+                1/0
+        self.assertEqual(interpreters.list_all(), [main])
+
+    def test_main(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(InterpreterError):
+            with main:
+                pass
+
+
 class TestInterpreterPrepareMain(TestBase):
 
     def test_empty(self):

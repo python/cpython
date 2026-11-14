@@ -250,10 +250,10 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       :attr:`fix_sentence_endings` is false by default.
 
-      Since the sentence detection algorithm relies on ``string.lowercase`` for
-      the definition of "lowercase letter", and a convention of using two spaces
-      after a period to separate sentences on the same line, it is specific to
-      English-language texts.
+      Since the sentence detection algorithm defines "lowercase letter" using
+      the characters in ``string.ascii_lowercase``, and relies on a convention
+      of using two spaces after a period to separate sentences on the same line,
+      it is specific to English-language texts.
 
 
    .. attribute:: break_long_words

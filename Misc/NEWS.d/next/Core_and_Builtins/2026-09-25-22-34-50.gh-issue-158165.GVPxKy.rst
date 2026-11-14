@@ -1,2 +1,0 @@
-Fix compilation of ``_Py_get_machine_stack_pointer()`` with MinGW on Windows.
-Patch by Donghee Na.

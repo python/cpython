@@ -15,6 +15,7 @@ from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases, collect_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
+from .reporter import get_reporter
 from .result import TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
@@ -68,6 +69,7 @@ class Regrtest:
 
         # Logger
         self.logger = Logger(self.results, self.quiet, self.pgo)
+        self.reporter = get_reporter()
 
         # Actions
         self.want_header: bool = ns.header
@@ -284,8 +286,10 @@ class Regrtest:
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
-            output_on_failure=False)
+            output_on_failure=False,
+            final_run=True)
         self.logger.set_tests(runtests)
+        self.reporter.run_started(runtests)
 
         msg = f"Re-running {len(tests)} failed tests in verbose mode"
         if not self.single_process:
@@ -395,6 +399,7 @@ class Regrtest:
             result = run_single_test(test_name, runtests)
 
         self.results.accumulate_result(result, runtests)
+        self.reporter.test_result(result)
 
         return result
 
@@ -459,7 +464,8 @@ class Regrtest:
 
     def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
         from .run_workers import RunWorkers
-        RunWorkers(num_workers, runtests, self.logger, self.results).run()
+        RunWorkers(num_workers, runtests, self.logger, self.results,
+                   self.reporter).run()
 
     def finalize_tests(self, coverage: trace.CoverageResults | None) -> None:
         if self.next_single_filename:
@@ -479,6 +485,8 @@ class Regrtest:
 
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
+
+        self.reporter.summary(self.results, self.get_state())
 
     def display_summary(self) -> None:
         if self.first_runtests is None:
@@ -517,6 +525,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
+            final_run=not self.want_rerun or bool(self.python_cmd),
             coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
@@ -568,6 +577,7 @@ class Regrtest:
             runtests = runtests.copy(tests=case_ids, case_groups=case_groups)
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
+        self.reporter.run_started(runtests)
 
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check

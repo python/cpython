@@ -242,7 +242,7 @@ the *new_callable* argument to :func:`patch`.
       :attr:`~object.__class__` returns the class of the spec object. This
       allows mocks to pass :func:`isinstance` tests.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          :func:`dir` now works for a mock created with a tuple *spec*.
 
     * *spec_set*: A stricter variant of *spec*. If used, attempting to *set*

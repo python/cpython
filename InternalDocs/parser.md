@@ -498,6 +498,42 @@ Pegen has some special grammatical elements and rules:
     reporting incorrect locations due to the invalid rules).
   - The order of the alternatives involving invalid rules matter
     (like any rule in PEG).
+  - These rules live in [`Grammar/invalid.gram`](../Grammar/invalid.gram),
+    which is included from [`Grammar/python.gram`](../Grammar/python.gram).
+
+A grammar can be split into several files with the `@include` meta, which
+takes a file name relative to the including file:
+
+```
+@include "invalid.gram"
+```
+
+The rules of each included file are appended, in order, to the rules of the
+including file, so the parser is the same as if the files were concatenated.
+Included files may themselves use `@include`, but may not define other metas
+(such as `@trailer`), and a rule can only be defined in one of the files.
+Includes are resolved by `pegen.build.build_parser()`, which every pegen
+command uses to load a grammar file. A grammar parsed some other way must be
+passed to `pegen.build.resolve_includes()` before generating a parser from it;
+otherwise the generator refuses it.
+
+The C generator emits the rules of each included file into a separate C file,
+with the included file's name appended: for `invalid.gram` that is
+[`Parser/parser_invalid.c`](../Parser/parser_invalid.c). An included file in a
+subdirectory of the root grammar file's directory gets its C file in the same
+subdirectory of the output's directory (`sub/extra.gram` gives
+`Parser/sub/parser_extra.c`); included files outside that directory are
+rejected. This keeps the generated files smaller, and lets them be compiled
+separately. The keyword tables and the `@trailer` code are only in the main C
+file, while the `@header` and `@subheader` code is copied into every C file,
+so it must not define non-`static` functions or variables (they would be defined
+more than once). Rules that are called from another C file, including rules of
+included files that the trailer or a C action calls, can't be `static`; the
+generated code gives them a `_PyPegen_` prefix with a `#define`, since CPython
+requires that prefix on its non-static symbols, and marks them
+`Py_LOCAL_SYMBOL` so that they aren't exported from the shared library. Helper
+rules (for groups, repetitions and so on)
+are never shared between files: each C file gets its own `static` copy.
 
 Tokenization
 ------------
@@ -579,6 +615,51 @@ The consumption analysis follows grammar items; it cannot inspect arbitrary C
 actions. As with memoization, actions must not invalidate cached results. In
 particular, suffix actions must not move the parser before their starting mark,
 rewrite buffered input, or replace memo entries for earlier positions.
+
+Fast-path hooks
+---------------
+
+Some rules are entered so often that even the bookkeeping of trying their
+alternatives is expensive. Consider parsing the argument ``a`` in a call
+like ``f(a, b)``: the argument is a full expression, so the parser descends
+the whole operator precedence chain
+
+```
+expression -> disjunction -> conjunction -> inversion -> comparison
+    -> bitwise_or -> bitwise_xor -> bitwise_and -> shift_expr -> sum
+    -> term -> factor -> power -> await_primary -> primary -> atom
+```
+
+before it can produce the ``Name`` node for ``a``: around fourteen rule
+invocations, each paying its own C-stack check and memoization lookups, to
+consume a single token. But since the following token is ``,``, which
+cannot continue any binary or postfix expression, that outcome is already
+known after peeking at two tokens.
+
+For cases like this a rule can declare a hand-written C hook with the
+``fastpath`` flag, next to where ``memo`` goes:
+
+```
+disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+```
+
+The generator calls the hook on rule entry, before any alternative is tried:
+
+```c
+if (_PyPegen_atom_fast_path(p, &_res)) {
+    p->level--;
+    return _res;
+}
+```
+
+The hook receives the parser and a pointer to the rule's result variable and
+returns 1 if it handled the parse (storing its result, which can be ``NULL``
+to signal failure with ``p->error_indicator`` set) or 0 to fall through to
+the rule's normal alternatives. The generator knows nothing about what the
+hook does: all parsing logic lives in the hook itself, next to the other
+token helpers in [`Parser/pegen.c`](../Parser/pegen.c). A hook must behave
+exactly like the rule it accelerates, including which tokens it fills,
+because error reporting depends on the number of tokens read (``p->fill``).
 
 Automatic variables
 -------------------

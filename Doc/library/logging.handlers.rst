@@ -450,7 +450,7 @@ timed intervals.
    .. versionchanged:: 3.9
       The *errors* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Use the creation time instead of the last modification time, if supported by the OS and file system.
 
 
@@ -665,7 +665,7 @@ supports sending logging messages to a remote or local Unix syslog.
    .. versionchanged:: 3.14
       *timeout* was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       *address* can now be a :class:`bytes` object.
 
    .. method:: close()

@@ -1284,8 +1284,8 @@ as internal buffering of data.
    * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
    * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
    * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
-   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
-   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_HOLE` -- set *pos* to the next data hole, relative to *pos*
 
    .. versionchanged:: 3.3
 
@@ -1479,7 +1479,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Return a pair of file descriptors ``(r, w)`` usable for reading and writing,
    respectively.
 
-   .. availability:: Unix, macOS >= 27.0, not WASI, not iOS.
+   .. availability:: Unix, macOS >= 27.0, iOS >= 27.0, not WASI.
 
    .. versionadded:: 3.3
 
@@ -2799,13 +2799,22 @@ features:
    may be converted to an absolute pathname using
    ``os.path.join(os.path.dirname(path), result)``.
 
-   If the *path* is a string object (directly or indirectly through a
-   :class:`PathLike` interface), the result will also be a string object,
-   and the call may raise a UnicodeDecodeError. If the *path* is a bytes
-   object (direct or indirectly), the result will be a bytes object.
-
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   On Linux, Android, macOS and iOS, *path* can also be a file descriptor referring
+   to a symbolic link. In that case, *dir_fd* must be ``None``.
+   (On Linux and Android, such a file descriptor must be obtained through
+   :func:`os.open` with ``os.O_RDONLY | os.O_PATH | os.O_NOFOLLOW``.
+   On macOS and iOS, :func:`os.open` must be called with
+   ``os.O_RDONLY | os.O_SYMLINK``.)
+   On other operating systems, a ``NotImplementedError`` is raised if *path*
+   is an integer.
+
+   If the *path* is a string object (directly or indirectly through a
+   :class:`PathLike` interface) or a file descriptor, the result will be a
+   string object, and the call may raise a UnicodeDecodeError. If the *path*
+   is a bytes object (direct or indirectly), the result will be a bytes object.
 
    When trying to resolve a path that may contain links, use
    :func:`~os.path.realpath` to properly handle recursion and platform
@@ -2828,6 +2837,10 @@ features:
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
+
+   .. versionchanged:: 3.16
+      Accepts file descriptors pointing to symbolic links as *path* on
+      Linux, Android, macOS and iOS.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -3361,7 +3374,7 @@ features:
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
-         for the file creation time. In the future, ``st_ctime`` will contain
+         for the file creation time. In the future, ``st_ctime_ns`` will contain
          the time of the most recent metadata change, as for other platforms.
 
    .. attribute:: st_birthtime
@@ -5313,7 +5326,7 @@ written in Python, such as a mail server's external command delivery program.
    See the :manpage:`pidfd_getfd(2)` man page for more details.
 
    .. availability:: Linux >= 5.6, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. function:: plock(op, /)
 
@@ -5443,7 +5456,7 @@ written in Python, such as a mail server's external command delivery program.
    parent's signal mask. This argument corresponds to the C library
    :c:macro:`!POSIX_SPAWN_SETSIGMASK` flag.
 
-   The *sigdef* argument will reset the disposition of all signals in the set
+   The *setsigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
    :c:macro:`!POSIX_SPAWN_SETSIGDEF` flag.
 
@@ -5517,16 +5530,16 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.7
 
 
-.. function:: spawnl(mode, path, ...)
-              spawnle(mode, path, ..., env)
+.. function:: spawnl(mode, file, ...)
+              spawnle(mode, file, ..., env)
               spawnlp(mode, file, ...)
               spawnlpe(mode, file, ..., env)
-              spawnv(mode, path, args)
-              spawnve(mode, path, args, env)
+              spawnv(mode, file, args)
+              spawnve(mode, file, args, env)
               spawnvp(mode, file, args)
               spawnvpe(mode, file, args, env)
 
-   Execute the program *path* in a new process.
+   Execute the program *file* in a new process.
 
    (Note that the :mod:`subprocess` module provides more powerful facilities for
    spawning new processes and retrieving their results; using that module is
@@ -5558,7 +5571,7 @@ written in Python, such as a mail server's external command delivery program.
    discussed in the next paragraph), the new environment is used as the source of
    the :envvar:`PATH` variable.  The other variants, :func:`spawnl`,
    :func:`spawnle`, :func:`spawnv`, and :func:`spawnve`, will not use the
-   :envvar:`PATH` variable to locate the executable; *path* must contain an
+   :envvar:`PATH` variable to locate the executable; *file* must contain an
    appropriate absolute or relative path.
 
    For :func:`spawnle`, :func:`spawnlpe`, :func:`spawnve`, and :func:`spawnvpe`
@@ -5579,7 +5592,7 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
-   .. audit-event:: os.spawn mode,path,args,env os.spawnl
+   .. audit-event:: os.spawn mode,file,args,env os.spawnl
 
    .. availability:: Unix, Windows, not WASI, not Android, not iOS.
 

@@ -309,9 +309,25 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime, "");
 _Py_COMP_DIAG_POP
 
+/* Remote profilers access interpreter and thread states without synchronizing
+   with their lifetime.  Until the runtime is finalized, keep deleted states in
+   per-type free lists, so that a stale access only reaches a state of the same
+   type. */
+typedef struct state_header {
+    struct state_header *next;  // Next entry in the free list
+    void *mem;                  // Block to free at finalization
+} state_header;
+
+static struct {
+    PyMutex mutex;
+    state_header *tstates;
+    state_header *interpreters;
+} state_freelists;
+
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
+        &state_freelists.mutex, \
         &(runtime)->xi.data_lookup.registry.mutex, \
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
@@ -390,6 +406,19 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
     gilstate_clear();
+
+    state_header **lists[] = {&state_freelists.tstates, &state_freelists.interpreters};
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(lists); i++) {
+        PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
+        state_header *entry = *lists[i];
+        *lists[i] = NULL;
+        PyMutex_Unlock(&state_freelists.mutex);
+        while (entry != NULL) {
+            state_header *next = entry->next;
+            PyMem_RawFree(entry->mem);
+            entry = next;
+        }
+    }
 }
 
 #ifdef HAVE_FORK
@@ -445,27 +474,63 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-static PyInterpreterState *
-alloc_interpreter(void)
+static void *
+alloc_state(state_header **freelist, size_t size, size_t alignment)
 {
-    // Aligned allocation for PyInterpreterState.
-    // the first word of the memory block is used to store
-    // the original pointer to be used later to free the memory.
-    size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void *) + alignment - 1;
+    PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
+    state_header *entry = *freelist;
+    if (entry != NULL) {
+        *freelist = entry->next;
+    }
+    PyMutex_Unlock(&state_freelists.mutex);
+    if (entry != NULL) {
+        return entry + 1;
+    }
+
+    size_t allocsize = size + sizeof(state_header) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void *), alignment);
-    ((void **)ptr)[-1] = mem;
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(state_header), alignment);
+    ((state_header *)ptr - 1)->mem = mem;
     assert(_Py_IS_ALIGNED(ptr, alignment));
     return ptr;
 }
 
 static void
+recycle_state(state_header **freelist, void *state, size_t size)
+{
+    memset(state, 0, size);
+    state_header *entry = (state_header *)state - 1;
+
+    PyMutex_LockFlags(&state_freelists.mutex, _Py_LOCK_DONT_DETACH);
+    entry->next = *freelist;
+    // Keep the list consistent for a child forked by another thread.
+    _Py_atomic_store_ptr_release(freelist, entry);
+    PyMutex_Unlock(&state_freelists.mutex);
+}
+
+static PyInterpreterState *
+alloc_interpreter(void)
+{
+    return alloc_state(&state_freelists.interpreters, sizeof(PyInterpreterState),
+                       _Alignof(PyInterpreterState));
+}
+
+static void
 free_interpreter(PyInterpreterState *interp)
 {
+#ifdef Py_GIL_DISABLED
+    mi_subproc_t *subproc = interp->mimalloc.subproc;
+    if (subproc != NULL) {
+        // Delete the sub-process only when no abandoned segment points to it.
+        if (mi_atomic_load_relaxed(&subproc->abandoned_count) == 0) {
+            mi_subproc_delete(subproc);
+        }
+        interp->mimalloc.subproc = NULL;
+    }
+#endif
 #ifdef Py_STATS
     if (interp->pystats_struct) {
         PyMem_RawFree(interp->pystats_struct);
@@ -481,7 +546,13 @@ free_interpreter(PyInterpreterState *interp)
             interp->obmalloc = NULL;
         }
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        PyMem_RawFree(((void **)interp)[-1]);
+        // A daemon thread may still own the embedded initial thread state.
+        if (interp->_initialized
+            && _Py_atomic_load_ptr(&interp->threads.preallocated) == NULL)
+        {
+            return;
+        }
+        recycle_state(&state_freelists.interpreters, interp, sizeof(*interp));
     }
 }
 
@@ -573,6 +644,11 @@ init_interpreter(PyInterpreterState *interp,
     PyConfig_InitPythonConfig(&interp->config);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
+
+    interp->mimalloc.subproc = mi_subproc_new();
+    if (interp->mimalloc.subproc == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 #endif
 
     llist_init(&interp->mem_free_queue.head);
@@ -1502,7 +1578,8 @@ alloc_threadstate(PyInterpreterState *interp)
 
     // Fall back to the allocator.
     if (tstate == NULL) {
-        tstate = PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
+        tstate = alloc_state(&state_freelists.tstates, sizeof(*tstate),
+                             _Alignof(_PyThreadStateImpl));
         if (tstate == NULL) {
             return NULL;
         }
@@ -1529,7 +1606,7 @@ free_threadstate(_PyThreadStateImpl *tstate)
         _Py_atomic_store_ptr(&interp->threads.preallocated, tstate);
     }
     else {
-        PyMem_RawFree(tstate);
+        recycle_state(&state_freelists.tstates, tstate, sizeof(*tstate));
     }
 }
 
@@ -1837,13 +1914,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
-    // merge any lingering tasks from thread state to interpreter's
-    // tasks list
-    llist_concat(&tstate->interp->asyncio_tasks_head,
-                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
-    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
-
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
 
@@ -1919,11 +1989,30 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
-/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
+// `release_gil` releases the current thread's GIL. For states already removed
+// by _PyThreadState_RemoveExcept(), `is_unlinked` limits cleanup to task transfer.
 static void
-tstate_delete_common(PyThreadState *tstate, int release_gil)
+tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    assert(!is_unlinked || !release_gil);
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    // Finalizers may register tasks during or after PyThreadState_Clear().
+    // Transfer them before normal unlinking or GIL release: cross-thread task
+    // removal uses stop-the-world or the GIL, not asyncio_tasks_lock.
+    if (!llist_empty(&tstate_impl->asyncio_tasks_head)) {
+        // Serialize transfers from concurrently exiting threads.
+        PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+        llist_concat(&tstate->interp->asyncio_tasks_head,
+                     &tstate_impl->asyncio_tasks_head);
+        PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
+    }
+    assert(llist_empty(&tstate_impl->asyncio_tasks_head));
+    if (is_unlinked) {
+        return;
+    }
+
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -1959,7 +2048,6 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     // Add our portion of the total refcount to the interpreter's total.
-    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
     assert(tstate_impl->refcounts.values == NULL);
@@ -2006,7 +2094,7 @@ zapthreads(PyInterpreterState *interp)
     */
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
-        tstate_delete_common(tstate, 0);
+        tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
         free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
@@ -2017,7 +2105,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate, 0);
+    tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2033,7 +2121,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _PyStats_Detach((_PyThreadStateImpl *)tstate);
 #endif
     current_fast_clear(tstate->interp->runtime);
-    tstate_delete_common(tstate, 1);  // release GIL as part of call
+    tstate_delete_common(tstate, /*release_gil=*/1, /*is_unlinked=*/0);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
@@ -2103,6 +2191,7 @@ _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
+        tstate_delete_common(p, /*release_gil=*/0, /*is_unlinked=*/1);
         if (is_after_fork) {
             free_threadstate((_PyThreadStateImpl *)p);
         }
@@ -3325,10 +3414,11 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
     llist_init(&mts->page_list);
 
-    // Exiting threads push any remaining in-use segments to the abandoned
-    // pool to be re-claimed later by other threads. We use per-interpreter
-    // pools to keep Python objects from different interpreters separate.
-    tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
+    // Exiting threads abandon any remaining in-use segments to be re-claimed
+    // later by other threads. We use a per-interpreter mimalloc sub-process
+    // to keep Python objects from different interpreters separate.
+    assert(tstate->interp->mimalloc.subproc != NULL);
+    tld->segments.subproc = tstate->interp->mimalloc.subproc;
 
     // Don't fill in the first N bytes up to ob_type in debug builds. We may
     // access ob_tid and the refcount fields in the dict and list lock-less
@@ -3346,7 +3436,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
 
     // Initialize each heap
     for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
-        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
+        _mi_heap_init(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
         mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
 

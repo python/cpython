@@ -113,6 +113,7 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
             } else {
                 PyObject* t = cfstring_to_pystring(aString);
                 if (!t) {
+                    if (PyErr_Occurred()) goto error;
                     PyTuple_SetItem(v, i, Py_NewRef(Py_None));
                 } else {
                     PyTuple_SetItem(v, i, t);
@@ -161,6 +162,7 @@ set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
                 Py_DECREF(v);
                 return r;
             }
+            if (PyErr_Occurred()) return -1;
         }
 
     }

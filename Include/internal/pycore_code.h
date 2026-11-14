@@ -699,6 +699,10 @@ PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
  * compare bytes and str which can raise a BytesWarning exception. */
 extern PyObject* _PyCode_ConstantKey(PyObject *obj);
 
+// Return true if the string constant *o* gets interned when it is stored in
+// the co_consts of a code object. *o* must be an exact str.
+extern int _PyCode_ShouldInternString(PyObject *o);
+
 
 #ifdef __cplusplus
 }

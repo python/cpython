@@ -1096,7 +1096,7 @@ Prefixing the name with ``iconv:`` forces the use of the ``iconv``-based codec
 even when a built-in codec of the same name exists (for example ``iconv:latin1``),
 which is mostly useful for testing.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Added support for encodings provided by the C library's ``iconv``.
 
 .. impl-detail::
@@ -1642,7 +1642,7 @@ This module implements the following exception:
    :synopsis: Internationalized Domain Names implementation
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
-Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
+Applications) and :rfc:`3491` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
 
@@ -1704,7 +1704,7 @@ functions can be used directly if desired.
       This may cause issues when processing the result with the
       ``punycode`` encoding, whose algorithms scale poorly.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
 
       Added the *limit* parameter.
 

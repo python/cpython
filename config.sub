@@ -1743,7 +1743,7 @@ case $os in
 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
 	     | sym* |  plan9* | psp* | sim* | xray* | os68k* | v88r* \
 	     | hiux* | abug | nacl* | netware* | windows* \
-	     | os9* | macos* | osx* | ios* | tvos* | watchos* \
+	     | os9* | macos* | osx* | ios* | tvos* | watchos* | xros* \
 	     | mpw* | magic* | mmixware* | mon960* | lnews* \
 	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
 	     | aos* | aros* | cloudabi* | sortix* | twizzler* \
@@ -1867,7 +1867,7 @@ case $kernel-$os-$obj in
 		;;
 	*-eabi*- | *-gnueabi*-)
 		;;
-	ios*-simulator- | tvos*-simulator- | watchos*-simulator- )
+	ios*-simulator- | tvos*-simulator- | watchos*-simulator- | xros*-simulator-)
 		;;
 	none--*)
 		# None (no kernel, i.e. freestanding / bare metal),

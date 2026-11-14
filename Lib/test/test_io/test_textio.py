@@ -6,6 +6,7 @@ import pickle
 import sys
 import threading
 import time
+import tracemalloc
 import unittest
 import warnings
 import weakref
@@ -243,6 +244,7 @@ class TextIOWrapperTest:
         r = self.BytesIO()
         b = self.BufferedWriter(r)
         t = self.TextIOWrapper(b, encoding="ascii")
+        self.assertIs(t.buffer, b)
         self.assertIs(t.detach(), b)
 
         t = self.TextIOWrapper(b, encoding="ascii")
@@ -258,6 +260,7 @@ class TextIOWrapperTest:
         self.assertEqual(t.errors, "strict")
         self.assertFalse(t.line_buffering)
         self.assertFalse(t.write_through)
+        self.assertIsNone(t.buffer)
 
     def test_repr(self):
         raw = self.BytesIO("hello".encode("utf-8"))
@@ -704,6 +707,22 @@ class TextIOWrapperTest:
             remaining = f.read()
             self.assertEqual(remaining, "")
 
+    def test_tell_after_seek_past_cr(self):
+        # tell() must tolerate a stale bytes-per-char ratio after seek().
+        for data in (b'one\rtwo\rthree\r',
+                     ('ab\r' + '\u20ac' * 15).encode()):
+            expected = data.decode().replace('\r', '\n')
+            for i in range(len(expected)):
+                with self.subTest(data=data, i=i):
+                    f = self.TextIOWrapper(self.BytesIO(data),
+                                           encoding='utf-8')
+                    f.read(i)
+                    pos = f.tell()
+                    f.read(1)
+                    f.seek(pos)
+                    self.assertEqual(f.read(1), expected[i])
+                    f.seek(f.tell())
+                    self.assertEqual(f.read(), expected[i + 1:])
 
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
@@ -1448,6 +1467,41 @@ def _to_memoryview(buf):
 class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
+    def test_write_newline_replace_returns_non_string(self):
+        class Text(str):
+            def replace(self, *args):
+                return None
+
+        with self.TextIOWrapper(self.BytesIO(), newline='\r\n') as stream:
+            with self.assertRaisesRegex(TypeError, 'replace.*str'):
+                stream.write(Text('a\n'))
+
+    def test_write_newline_replace_changes_stream(self):
+        def fail_init(stream, buffer):
+            with self.assertRaises(LookupError):
+                stream.__init__(buffer, encoding='nonexistent-encoding')
+
+        actions = (
+            (lambda stream, buffer: stream.close(), ValueError, 'closed'),
+            (lambda stream, buffer: stream.detach(), ValueError, 'detached'),
+            (lambda stream, buffer: stream.__init__(buffer),
+             self.UnsupportedOperation, 'not writable'),
+            (fail_init, ValueError, 'uninitialized'),
+        )
+        for action, error, message in actions:
+            with self.subTest(message=message):
+                with (self.BytesIO() as raw,
+                      self.BufferedReader(self.BytesIO()) as readonly):
+                    stream = self.TextIOWrapper(raw, newline='\r\n')
+
+                    class Text(str):
+                        def replace(self, *args):
+                            action(stream, readonly)
+                            return 'a\r\n'
+
+                    with self.assertRaisesRegex(error, message):
+                        stream.write(Text('a\n'))
+
     def test_chunk_size(self):
         t = self.TextIOWrapper(self.BytesIO(), encoding="utf-8")
         self.assertGreater(t._CHUNK_SIZE, 0)
@@ -1545,6 +1599,21 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
 
+    def test_write_empty_no_memory_growth(self):
+        # gh-151814: Writing empty string should have stable memory usage.
+        t = self.TextIOWrapper(self.BytesIO())
+        nwrites = 200_000
+        tracemalloc.start()
+        try:
+            for _ in range(nwrites):
+                t.write("")
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+
+        # No longer leaks several bytes per write.
+        self.assertLess(peak, nwrites)
+
     def test_issue119506(self):
         chunk_size = 8192
 
@@ -1633,6 +1702,45 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
+    def test_read_reinitialized_as_write_only(self):
+        class Buffer(self.BytesIO):
+            def read(self, size=-1):
+                stream.__init__(writer, encoding="ascii")
+                return b"a"
+
+        with (self.BufferedWriter(self.BytesIO()) as writer,
+              self.TextIOWrapper(Buffer(), encoding="ascii") as stream):
+            with self.assertRaises(self.UnsupportedOperation):
+                stream.read()
+
+    def test_reentrant_detach_during_read(self):
+        # gh-157363, gh-157364: The buffer must stay alive until its active
+        # read operation returns.
+        wrapper = None
+
+        class DetachOnRead(self.RawIOBase):
+            detached = False
+
+            def readable(self):
+                return True
+
+            def readinto(self, b):
+                if self.detached:
+                    return 0
+                self.detached = True
+                wrapper.detach()
+                b[:3] = b"ab\n"
+                return 3
+
+        for method_name in ("read", "readline"):
+            with self.subTest(method_name):
+                raw = DetachOnRead()
+                wrapper = self.TextIOWrapper(
+                    self.BufferedReader(raw), encoding="utf-8")
+                method = getattr(wrapper, method_name)
+                self.assertEqual(method(), "ab\n")
+                self.assertIsNone(wrapper.buffer)
+
     def test_reentrant_seek_during_tell(self):
         # gh-153539: reading short of _CHUNK_SIZE leaves residual bytes in the
         # snapshot, so tell() re-decodes and calls the decoder's getstate(); a
@@ -1679,6 +1787,17 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_tell_with_invalid_b2cratio(self):
+        for ratio in (float('nan'), float('inf'), -float('inf'), 1e100):
+            with self.subTest(ratio=ratio):
+                with self.TextIOWrapper(self.BytesIO(b'abc'),
+                                        encoding='utf-8') as f:
+                    self.assertEqual(f.read(1), 'a')
+                    f._b2cratio = ratio
+                    position = f.tell()
+                    f.seek(position)
+                    self.assertEqual(f.read(), 'bc')
 
 
 class IncrementalNewlineDecoderTest:

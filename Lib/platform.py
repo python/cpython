@@ -89,26 +89,23 @@
 #
 #    If that URL should fail, try contacting the author.
 
-__copyright__ = """
-    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
-    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
-
-    Permission to use, copy, modify, and distribute this software and its
-    documentation for any purpose and without fee or royalty is hereby granted,
-    provided that the above copyright notice appear in all copies and that
-    both that copyright notice and this permission notice appear in
-    supporting documentation or portions thereof, including modifications,
-    that you make.
-
-    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
-    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
-    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
-    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
-    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
-    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
-
-"""
+#    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
+#    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
+#
+#    Permission to use, copy, modify, and distribute this software and its
+#    documentation for any purpose and without fee or royalty is hereby granted,
+#    provided that the above copyright notice appear in all copies and that
+#    both that copyright notice and this permission notice appear in
+#    supporting documentation or portions thereof, including modifications,
+#    that you make.
+#
+#    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
+#    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+#    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+#    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+#    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+#    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+#    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 
 import collections
 import os
@@ -116,6 +113,7 @@ import re
 import sys
 import functools
 import itertools
+lazy import warnings
 try:
     import _wmi
 except ImportError:
@@ -526,13 +524,13 @@ IOSVersionInfo = collections.namedtuple(
 
 
 def ios_ver(system="", release="", model="", is_simulator=False):
-    """Get iOS version information, and return it as a namedtuple:
-        (system, release, model, is_simulator).
+    """Get iOS/tvOS/watchOS/visionOS version information, and return it as a
+    namedtuple: (system, release, model, is_simulator).
 
     If values can't be determined, they are set to values provided as
     parameters.
     """
-    if sys.platform == "ios":
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         import _ios_support
         result = _ios_support.get_platform_ios()
         if result is not None:
@@ -685,7 +683,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'watchos'}:
+    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'visionos', 'watchos'}:
         # XXX Others too ?
         return default
 
@@ -849,13 +847,29 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
-    # On the iOS simulator, os.uname returns the architecture as uname.machine.
-    # On device it returns the model name for some reason; but there's only one
-    # CPU architecture for iOS devices, so we know the right answer.
+    # On the iOS/tvOS/visionOS/watchOS simulator, os.uname returns the
+    # architecture as uname.machine. On device it returns the model name for
+    # some reason; but there's only one CPU architecture for devices, so we know
+    # the right answer.
     def get_ios():
         if sys.implementation._multiarch.endswith("simulator"):
             return os.uname().machine
         return 'arm64'
+
+    def get_tvos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
+    def get_visionos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
+    def get_watchos():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64_32'
 
     def from_subprocess():
         """
@@ -1009,8 +1023,8 @@ def uname():
         system = 'Android'
         release = android_ver().release
 
-    # Normalize responses on iOS
-    if sys.platform == 'ios':
+    # Normalize responses on Apple mobile platforms
+    if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
         system, release, _, _ = ios_ver()
 
     vals = system, node, release, version, machine
@@ -1299,7 +1313,7 @@ def platform(aliased=False, terse=False):
 
     if system == 'Darwin':
         # macOS and iOS both report as a "Darwin" kernel
-        if sys.platform == "ios":
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
             system, release, _, _ = ios_ver()
         else:
             macos_release = mac_ver()[0]
@@ -1443,11 +1457,31 @@ def _main(args: list[str] | None = None):
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
+    if name in ("__version__", "__copyright__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "1.1.0",
+            "__copyright__": """
+    Copyright (c) 1999-2000, Marc-Andre Lemburg; mailto:mal@lemburg.com
+    Copyright (c) 2000-2010, eGenix.com Software GmbH; mailto:info@egenix.com
 
-        _deprecated("__version__", remove=(3, 20))
-        return "1.1.0"  # Do not change
+    Permission to use, copy, modify, and distribute this software and its
+    documentation for any purpose and without fee or royalty is hereby granted,
+    provided that the above copyright notice appear in all copies and that
+    both that copyright notice and this permission notice appear in
+    supporting documentation or portions thereof, including modifications,
+    that you make.
+
+    EGENIX.COM SOFTWARE GMBH DISCLAIMS ALL WARRANTIES WITH REGARD TO
+    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+    FITNESS, IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+    INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+    FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+    NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+    WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
+
+""",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

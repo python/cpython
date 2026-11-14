@@ -3,6 +3,11 @@
 #include "ceval.h"
 #include "pycore_long.h"
 
+#ifdef HAVE_PTHREAD_NP_H
+#  include <pthread_np.h>         // pthread_attr_get_np()
+#endif
+
+
 int
 Py_GetRecursionLimit(void)
 {
@@ -65,64 +70,6 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #  define Py_C_STACK_SIZE 4000000
 #endif
 
-#if defined(__EMSCRIPTEN__)
-
-// Temporary workaround to make `pthread_getattr_np` work on Emscripten.
-// Emscripten 4.0.6 will contain a fix:
-// https://github.com/emscripten-core/emscripten/pull/23887
-
-#include "emscripten/stack.h"
-
-#define pthread_attr_t workaround_pthread_attr_t
-#define pthread_getattr_np workaround_pthread_getattr_np
-#define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
-#define pthread_attr_getstack workaround_pthread_attr_getstack
-#define pthread_attr_destroy workaround_pthread_attr_destroy
-
-typedef struct {
-    void *_a_stackaddr;
-    size_t _a_stacksize, _a_guardsize;
-} pthread_attr_t;
-
-extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
-
-// Modified version of pthread_getattr_np from the upstream PR.
-
-int pthread_getattr_np(pthread_t thread, pthread_attr_t *attr) {
-  attr->_a_stackaddr = (void*)emscripten_stack_get_base();
-  attr->_a_stacksize = emscripten_stack_get_base() - emscripten_stack_get_end();
-  attr->_a_guardsize = __default_guardsize;
-  return 0;
-}
-
-// These three functions copied without any changes from Emscripten libc.
-
-int pthread_attr_getguardsize(const pthread_attr_t *restrict a, size_t *restrict size)
-{
-	*size = a->_a_guardsize;
-	return 0;
-}
-
-int pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size)
-{
-/// XXX musl is not standard-conforming? It should not report EINVAL if _a_stackaddr is zero, and it should
-///     report EINVAL if a is null: http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_attr_getstack.html
-	if (!a) return EINVAL;
-//	if (!a->_a_stackaddr)
-//		return EINVAL;
-
-	*size = a->_a_stacksize;
-	*addr = (void *)(a->_a_stackaddr - *size);
-	return 0;
-}
-
-int pthread_attr_destroy(pthread_attr_t *a)
-{
-	return 0;
-}
-
-#endif
-
 static void
 hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
 {
@@ -142,15 +89,24 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     *top = (uintptr_t)stack_addr;
     *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
-    /// (on alpine at least) is much smaller than expected and imposes undue limits
-    /// compared to the old stack size estimation.  (We assume musl is not glibc.)
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
-        !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
+    // musl supports HAVE_PTHREAD_GETATTR_NP, but the resulting stack size
+    // (on alpine at least) is much smaller than expected and imposes undue
+    // limits compared to the old stack size estimation. musl doesn't give
+    // us a way to detect it, so we have to assume any non-glibc,
+    // non-Android Linux is musl and mustn't rely on pthread_getattr_np.
+#  if (defined(HAVE_PTHREAD_GETATTR_NP) || defined(_Py_HAVE_PTHREAD_ATTR_GET_NP)) \
+        && !defined(_AIX) && !defined(__NetBSD__) \
+        && (defined(__GLIBC__) || defined(__ANDROID__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
-    int err = pthread_getattr_np(pthread_self(), &attr);
+
+    int err = pthread_attr_init(&attr);
+#ifdef _Py_HAVE_PTHREAD_ATTR_GET_NP
+    err |= pthread_attr_get_np(pthread_self(), &attr);
+#else
+    err |= pthread_getattr_np(pthread_self(), &attr);
+#endif
     if (err == 0) {
         err = pthread_attr_getguardsize(&attr, &guard_size);
         err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
@@ -162,6 +118,7 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         return;
     }
 #  endif
+
     // Add some space for caller function then round to minimum page size
     // This is a guess at the top of the stack, but should be a reasonably
     // good guess if called from _PyThreadState_Attach when creating a thread.
@@ -1204,8 +1161,16 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
@@ -1219,15 +1184,29 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     int lineno;
 
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    PyObject *exc = PyErr_GetRaisedException();
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
+    PyErr_SetRaisedException(exc);
+    if (filename == NULL) {
+        filename = "<unknown>";
+    }
+    if (funcname == NULL) {
+        funcname = "<unknown>";
+    }
     lineno = PyUnstable_InterpreterFrame_GetLine(frame);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 #endif
 
-PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
+/*
+ * _PyEval_EvalFrameDefault must remain a separate frame in the C call stack:
+ * stack unwinders, profilers and other tools that walk the stack use it to
+ * find the interpreter loop. With the tail-calling interpreter it is small
+ * enough to be inlined into its callers, e.g. by Clang with PGO.
+ */
+Py_NO_INLINE PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
@@ -1607,12 +1586,14 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, PyObject *defaults,
-                    _PyStackRef *localsplus, PyObject *qualname)
+                    _PyStackRef *localsplus, PyObject *qualname,
+                    int should_suggest_missing_self)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
     Py_ssize_t i;
     PyObject *sig, *kwonly_sig;
+    const char *self_hint = "";
     Py_ssize_t co_argcount = co->co_argcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
@@ -1650,22 +1631,59 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
         kwonly_sig = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         assert(kwonly_sig != NULL);
     }
+    if (should_suggest_missing_self) {
+        self_hint = ". Did you forget the 'self' parameter "
+                    "in the function definition?";
+    }
     _PyErr_Format(tstate, PyExc_TypeError,
-                  "%U() takes %U positional argument%s but %zd%U %s given",
+                  "%U() takes %U positional argument%s but %zd%U %s given%s",
                   qualname,
                   sig,
                   plural ? "s" : "",
                   given,
                   kwonly_sig,
-                  given == 1 && !kwonly_given ? "was" : "were");
+                  given == 1 && !kwonly_given ? "was" : "were",
+                  self_hint
+                );
     Py_DECREF(sig);
     Py_DECREF(kwonly_sig);
 }
 
 static int
+suggest_missing_self(PyFunctionObject *func, PyCodeObject *co,
+                     PyObject *first_argument, Py_ssize_t argcount)
+{
+    /* Missing self shows up as exactly one extra positional argument. */
+    if ((co->co_argcount + 1) != argcount) {
+        return 0;
+    }
+
+    if (first_argument == NULL || PyType_Check(first_argument)) {
+        /* When first arg is NULL, it's not really about self.
+           If it's a type object, then it's a classmethod. */
+        return 0;
+    }
+
+    if (co->co_argcount > 0) {
+        PyObject *first_parameter_name = PyTuple_GET_ITEM(co->co_localsplusnames, 0);
+        /* If the receiver parameter is already declared, another hint would be misleading. */
+        if (PyUnicode_CompareWithASCIIString(first_parameter_name, "self") == 0 ||
+            PyUnicode_CompareWithASCIIString(first_parameter_name, "cls") == 0)
+        {
+            return 0;
+        }
+    }
+    /* If the current function matches on the type, it's likely worth adding the hint. */
+    PyTypeObject *self_cls = Py_TYPE(first_argument);
+    PyFunctionObject *possibly_current_function =
+        (PyFunctionObject *)_PyType_Lookup(self_cls, co->co_name);
+    return possibly_current_function == func;
+}
+
+static int
 positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
                                   Py_ssize_t kwcount, PyObject* kwnames,
-                                  PyObject *qualname)
+                                  PyFunctionObject *func)
 {
     int posonly_conflicts = 0;
     PyObject* posonly_names = PyList_New(0);
@@ -1712,7 +1730,8 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
         _PyErr_Format(tstate, PyExc_TypeError,
                       "%U() got some positional-only arguments passed"
                       " as keyword arguments: '%U'",
-                      qualname, error_names);
+                      FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname),
+                      error_names);
         Py_DECREF(error_names);
         goto fail;
     }
@@ -1736,6 +1755,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
+    PyObject *first_argument = NULL;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL) {
@@ -1750,6 +1770,10 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     }
     else {
         kwdict = NULL;
+    }
+
+    if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
+        first_argument = PyStackRef_AsPyObjectNew(args[0]);
     }
 
     /* Copy all positional arguments into local variables */
@@ -1803,8 +1827,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                            "%U() keywords must be strings",
-                          func->func_qualname);
+                              "%U() keywords must be strings",
+                              FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname));
                 goto kw_fail;
             }
 
@@ -1836,7 +1860,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 if (co->co_posonlyargcount
                     && positional_only_passed_as_keyword(tstate, co,
                                                         kwcount, kwnames,
-                                                        func->func_qualname))
+                                                        func))
                 {
                     goto kw_fail;
                 }
@@ -1857,15 +1881,16 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     }
                 }
 
+                PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname);
                 if (suggestion_keyword) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                 "%U() got an unexpected keyword argument '%S'. Did you mean '%S'?",
-                                func->func_qualname, keyword, suggestion_keyword);
+                                qualname, keyword, suggestion_keyword);
                     Py_DECREF(suggestion_keyword);
                 } else {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                 "%U() got an unexpected keyword argument '%S'",
-                                func->func_qualname, keyword);
+                                qualname, keyword);
                 }
 
                 goto kw_fail;
@@ -1886,8 +1911,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         kw_found:
             if (PyStackRef_AsPyObjectBorrow(localsplus[j]) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                            "%U() got multiple values for argument '%S'",
-                          func->func_qualname, keyword);
+                              "%U() got multiple values for argument '%S'",
+                              FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname),
+                              keyword);
                 goto kw_fail;
             }
             localsplus[j] = value_stackref;
@@ -1896,8 +1922,10 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
+        int missing_self_hint = suggest_missing_self(func, co, first_argument, argcount);
         too_many_positional(tstate, co, argcount, func->func_defaults, localsplus,
-                            func->func_qualname);
+                            FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname),
+                            missing_self_hint);
         goto fail_post_args;
     }
 
@@ -1913,7 +1941,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, localsplus,
-                              func->func_qualname);
+                              FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname));
             goto fail_post_args;
         }
         if (n > m)
@@ -1952,10 +1980,11 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, -1, localsplus,
-                              func->func_qualname);
+                              FT_ATOMIC_LOAD_PTR_ACQUIRE(func->func_qualname));
             goto fail_post_args;
         }
     }
+    Py_XDECREF(first_argument);
     return 0;
 
 fail_pre_positional:
@@ -1972,6 +2001,7 @@ fail_post_positional:
     }
     /* fall through */
 fail_post_args:
+    Py_XDECREF(first_argument);
     return -1;
 }
 
@@ -2154,14 +2184,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
-    for (size_t i = 0; i < argcount; i++) {
+    for (size_t i = 0; i < total_args; i++) {
         arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
-    }
-    if (kwnames) {
-        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
-        for (Py_ssize_t i = 0; i < kwcount; i++) {
-            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
-        }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,
@@ -2906,14 +2930,40 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
     return result;
 }
 
+static const char *
+functionobject_get_name(PyFunctionObject *f)
+{
+#ifdef Py_GIL_DISABLED
+    for (;;) {
+        PyObject *name = Py_NewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_name));
+        // UTF-8 conversion may detach while acquiring the string's lock.
+        // This could result in func_name being freed if func_name was
+        // recently replaced using _PyObject_XSetRefDelayed().  The returned
+        // char* is only valid until the next quiescent point.
+        const char *result = PyUnicode_AsUTF8(name);
+        if (result == NULL) {
+            Py_DECREF(name);
+            return NULL;
+        }
+        int unchanged = name == FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_name);
+        Py_DECREF(name);
+        if (unchanged) {
+            return result;
+        }
+    }
+#else
+    return PyUnicode_AsUTF8(f->func_name);
+#endif
+}
 
 const char *
 PyEval_GetFuncName(PyObject *func)
 {
     if (PyMethod_Check(func))
         return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
-    else if (PyFunction_Check(func))
-        return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_name);
+    else if (PyFunction_Check(func)) {
+        return functionobject_get_name((PyFunctionObject *)func);
+    }
     else if (PyCFunction_Check(func))
         return ((PyCFunctionObject*)func)->m_ml->ml_name;
     else

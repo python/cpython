@@ -4,8 +4,10 @@ from http import client, HTTPStatus
 import io
 import itertools
 import os
+import pickle
 import array
 import re
+import select
 import socket
 import threading
 
@@ -16,6 +18,7 @@ TestCase = unittest.TestCase
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import threading_helper
 
 support.requires_working_socket(module=True)
 
@@ -125,6 +128,7 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
         super().__init__('example.com')
         self.fake_socket_args = args
         self._create_connection = self.create_connection
+        self._select = self.fake_select
 
     def connect(self):
         """Count the number of times connect() is invoked"""
@@ -133,6 +137,23 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
 
     def create_connection(self, *pos, **kw):
         return FakeSocket(*self.fake_socket_args)
+
+    @staticmethod
+    def fake_select(rlist, wlist, xlist, timeout=None):
+        """Real select.select() won't work on our fake socket"""
+        # Only needs to support read select for current tests
+        ret = []
+        for r in rlist:
+            assert isinstance(r, FakeSocket)
+            if r.data and not hasattr(r, 'file'):
+                # Has data to read, hasn't called makefile() yet
+                ret.append(r)
+            elif getattr(r, 'file', None) and not r.file_closed:
+                if r.file.read(1):
+                    r.file.seek(r.file.tell() - 1)
+                    ret.append(r)
+        return ret, [], []
+
 
 class HeaderTests(TestCase):
     def test_auto_headers(self):
@@ -405,6 +426,11 @@ class HeaderTests(TestCase):
             'invalid.host\r\n',
             'invalid.host\x00',
             'invalid host',
+            # The IDNA codec normalizes these to an ASCII space
+            'invalid\xa0host',
+            'invalid\u3000host',
+            # ... and this one to a space and a combining character
+            'invalid\xa8host',
         )
         for tunnel_host in cases:
             with self.subTest(tunnel_host):
@@ -1347,6 +1373,49 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), b'Hello\r\n')
         self.assertTrue(resp.isclosed())
+
+    def test_malformed_content_length(self):
+        # RFC 9112: Content-Length = 1*DIGIT.  Values that int() accepts but
+        # the grammar forbids must not be used to frame the body.
+        for value in ('+5', '5_0', '5 0'):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\nHello\r\n' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertIsNone(resp.length)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
+    def test_content_length_with_whitespace(self):
+        # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+        # the field value is not part of the value, so it must not
+        # prevent the Content-Length from being used to frame the body.
+        for value in ('7 ', '7\t', '7 \t ', ' 7 '):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n'
+                    'Hello\r\nextra' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.length, 7)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
+    def test_malformed_chunk_size(self):
+        # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
+        # but the grammar forbids (a sign, an "0x" prefix, underscores or
+        # leading whitespace).
+        start = 'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+        for size in ('-5', '+5', '0x5', '1_f', ' 5'):
+            with self.subTest(size=size):
+                sock = FakeSocket(start + '%s\r\nHELLO\r\n0\r\n\r\n' % size)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertRaises(client.IncompleteRead, resp.read)
+                self.assertTrue(resp.isclosed())
+                resp.close()
 
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
@@ -2460,6 +2529,274 @@ class RequestBodyTest(TestCase):
             self.assertEqual(b'5\r\nbody\xc1\r\n0\r\n\r\n', f.read())
 
 
+class ExpectContinueTests(TestCase):
+
+    def test_data_sent_on_continue(self):
+        # Prior versions would pass this too, as they send body immediately
+        # and ignore the Continue, but make sure it still behaves as expected.
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 200)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertIn(b'Body content', conn.sock.data)
+
+    def test_data_not_sent_on_error(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 429 Too Many Requests\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 429)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertNotIn(b'Body content', conn.sock.data)
+
+    def test_request_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content', continue_timeout=0.25)
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertEqual(conn.getresponse().code, 200)
+
+    def test_putrequest_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.putrequest('PUT', '/', continue_timeout=0.25)
+        conn.putheader('Expect', '100-continue')
+        conn.putheader('Content-Length', '12')
+        conn.endheaders(b'Body content')
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertIn(b'Body content', conn.sock.data)
+        self.assertEqual(conn.getresponse().code, 200)
+
+    def test_failed_putrequest_preserves_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.putrequest('PUT', '/', continue_timeout=0.25)
+        with self.assertRaises(client.CannotSendRequest):
+            conn.putrequest('GET', '/', continue_timeout=10)
+        conn.putheader('Expect', '100-continue')
+        conn.putheader('Content-Length', '12')
+        conn.endheaders(b'Body content')
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+
+    def test_invalid_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(b'')
+        for timeout in (0, -1):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(ValueError):
+                    conn.request('PUT', '/', body=b'Body content',
+                                 continue_timeout=timeout)
+                with self.assertRaises(ValueError):
+                    conn.putrequest('PUT', '/', continue_timeout=timeout)
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_pending_data_skips_select(self):
+        # Data already decrypted and buffered in the SSLSocket is not
+        # visible to select(), so it must be checked with pending().
+        class FakeSSLSocket(FakeSocket):
+            def pending(self):
+                return len(self.text)
+
+        conn = client.HTTPSConnection('example.com')
+        conn.sock = FakeSSLSocket(
+            b'HTTP/1.1 417 Expectation Failed\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(side_effect=AssertionError('select called'))
+        with mock.patch.object(client, 'ssl',
+                               mock.Mock(SSLSocket=FakeSSLSocket)):
+            conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                         body=b'Body content')
+        conn._select.assert_not_called()
+        self.assertEqual(conn.getresponse().code, 417)
+        self.assertNotIn(b'Body content', conn.sock.data)
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_no_pending_data_uses_select(self):
+        class FakeSSLSocket(FakeSocket):
+            def pending(self):
+                return 0
+
+        conn = client.HTTPSConnection('example.com')
+        conn.sock = FakeSSLSocket(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=FakeSocketHTTPConnection.fake_select)
+        with mock.patch.object(client, 'ssl',
+                               mock.Mock(SSLSocket=FakeSSLSocket)):
+            conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                         body=b'Body content', continue_timeout=0.25)
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertEqual(conn.getresponse().code, 200)
+        self.assertIn(b'Body content', conn.sock.data)
+
+    def test_pending_response_kept_on_invalid_putrequest(self):
+        # A real socket is needed: FakeSocket.makefile() returns the whole
+        # response again, which would hide a lost early response.
+        def server_thread(sock):
+            conn, _ = sock.accept()
+            with conn:
+                conn.recv(4096)
+                conn.sendall(
+                    b'HTTP/1.1 417 Expectation Failed\r\n'
+                    b'Content-Length: 4\r\n'
+                    b'\r\n'
+                    b'nope'
+                )
+                # Keep the connection open until the client is done.
+                conn.recv(4096)
+
+        with socket.socket() as sock:
+            sock.bind(('localhost', 0))
+            sock.listen(1)
+            t = threading.Thread(target=server_thread, args=(sock,))
+            t.start()
+            conn = client.HTTPConnection('localhost', sock.getsockname()[1],
+                                         timeout=support.SHORT_TIMEOUT)
+            try:
+                conn.request('PUT', '/',
+                             headers={'Expect': '100-continue'},
+                             body=b'Body content')
+                with self.assertRaises(client.CannotSendRequest):
+                    conn.putrequest('GET', '/')
+                with conn.getresponse() as resp:
+                    self.assertEqual(resp.status, 417)
+                    self.assertEqual(resp.read(), b'nope')
+            finally:
+                conn.close()
+                t.join()
+
+    def test_body_sent_on_timeout(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port)
+            conn.request('PUT', '/',
+                         headers={'Expect': '100-continue'},
+                         body=b'Body content', continue_timeout=0.75)
+            resp = conn.getresponse()
+            self.assertEqual(resp.code, 200)
+            resp.close()
+            conn.close()
+
+        with threading_helper.catch_threading_exception() as cm:
+            with socket.socket() as sock:
+                sock.bind(('localhost', 0))
+                sock.listen(1)
+                t = threading.Thread(target=client_thread,
+                                     args=(sock.getsockname()[1],))
+                t.start()
+                conn, _ = sock.accept()
+                req_data = conn.recv(4096)
+                self.assertTrue(req_data.startswith(b'PUT / HTTP/1.1\r\n'))
+                self.assertIn(b'Expect: 100-continue\r\n', req_data)
+                self.assertIn(b'Content-Length: 12\r\n', req_data)
+                # Client should not send body data yet
+                self.assertNotIn(b'Body content', req_data)
+
+                # Server does not respond to the continue request with 100 Continue
+                # so the client will time out and send the body data
+                # Wait for 0.5 seconds to see if the client sends the body data
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [])
+                # Client should time out and send body data in another ~0.25s
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [conn])
+                body = conn.recv(4096)
+                self.assertEqual(body, b'Body content')
+                conn.sendall(
+                    b'HTTP/1.1 200 OK\r\n'
+                    b'Content-Length: 0\r\n'
+                    b'\r\n'
+                )
+                conn.close()
+                sock.close()
+                t.join()
+            if cm.exc_value is not None:
+                raise cm.exc_value
+
+    def test_manual_getresponse(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port)
+            conn.putrequest("PUT", "/file", continue_timeout=0.1)
+            conn.putheader('Expect', '100-Continue')
+            conn.putheader('Content-Length', '42')
+            conn.endheaders()
+            with conn.getresponse(support_continue=True) as resp:
+                self.assertEqual(resp.status, 100)
+            conn.send(b'Go away or I shall taunt you a second time')
+            with conn.getresponse() as resp:
+                self.assertEqual(resp.status, 200)
+            conn.close()
+
+        with threading_helper.catch_threading_exception() as cm:
+            with socket.socket() as sock:
+                sock.bind(('localhost', 0))
+                sock.listen(1)
+                t = threading.Thread(target=client_thread,
+                                     args=(sock.getsockname()[1],))
+                t.start()
+                conn, _ = sock.accept()
+                req_data = conn.recv(4096)
+                self.assertTrue(req_data.startswith(b'PUT /file HTTP/1.1\r\n'))
+                self.assertIn(b'Expect: 100-Continue\r\n', req_data)
+                self.assertIn(b'Content-Length: 42\r\n', req_data)
+                self.assertNotIn(b'I shall taunt you', req_data)
+                # Client is not expected to send body data until we respond,
+                # regardless of continue_timeout
+                rr, _, _ = select.select([conn], [], [], 1.0)
+                self.assertEqual(rr, [])
+                conn.sendall(b'HTTP/1.1 100 Continue\r\n\r\n')
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [conn])
+                b = conn.recv(42)
+                self.assertEqual(
+                    b, b'Go away or I shall taunt you a second time')
+                conn.sendall(
+                    b'HTTP/1.1 200 OK\r\n'
+                    b'Content-Length: 0\r\n'
+                    b'\r\n'
+                )
+                conn.close()
+                sock.close()
+                t.join()
+            if cm.exc_value is not None:
+                raise cm.exc_value
+
+
+
 class HTTPResponseTest(TestCase):
 
     def setUp(self):
@@ -2743,6 +3080,36 @@ class TunnelTests(TestCase):
         headers = self.conn.get_proxy_response_headers()
         self.assertIsNone(headers)
 
+    def test_tunnel_error(self):
+        response_text = (
+            'HTTP/1.1 407 Proxy Authentication Required\r\n'
+            'Proxy-Authenticate: Basic realm="proxy"\r\n\r\n'
+        )
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        with self.assertRaises(client.ProxyTunnelError) as cm:
+            self.conn.request('HEAD', '/', '')
+        exc = cm.exception
+        self.assertIsInstance(exc, OSError)
+        self.assertEqual(exc.code, 407)
+        self.assertEqual(exc.reason, 'Proxy Authentication Required')
+        self.assertEqual(exc.headers['Proxy-Authenticate'],
+                         'Basic realm="proxy"')
+        self.assertEqual(str(exc), 'Tunnel connection failed: '
+                                   '407 Proxy Authentication Required')
+        self.assertIsNone(self.conn.sock)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                copy = pickle.loads(pickle.dumps(exc, proto))
+                self.assertIs(type(copy), client.ProxyTunnelError)
+                self.assertEqual(copy.code, 407)
+                self.assertEqual(copy.reason, exc.reason)
+                self.assertEqual(copy.headers['Proxy-Authenticate'],
+                                 'Basic realm="proxy"')
+                self.assertEqual(str(copy), str(exc))
+
     def test_tunnel_leak(self):
         sock = None
 
@@ -2765,6 +3132,23 @@ class TunnelTests(TestCase):
             exc = e
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
+
+    def test_tunnel_nonstr_headers(self):
+        class CustomObject:
+            def __str__(self):
+                return 'custom-str'
+
+        self.conn.set_tunnel('destination.com', headers={
+            'None-Value': None,
+            'Integer-Value': 9,
+            'Custom-Value': CustomObject(),
+        })
+
+        self.conn.request('HEAD', '/', '')
+
+        self.assertIn(b'None-Value: None\r\n', self.conn.sock.data)
+        self.assertIn(b'Integer-Value: 9\r\n', self.conn.sock.data)
+        self.assertIn(b'Custom-Value: custom-str\r\n', self.conn.sock.data)
 
 
 if __name__ == '__main__':

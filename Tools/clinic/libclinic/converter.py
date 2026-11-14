@@ -275,6 +275,11 @@ class CConverter(metaclass=CConverterAutoRegister):
     else:  # pragma: no cover
         pass
 
+    @classmethod
+    def dsl_name(cls) -> str:
+        """The name of the converter in the DSL, e.g. 'object'."""
+        return cls.__name__.removesuffix('_converter')
+
     def converter_init(self) -> None:
         pass
 

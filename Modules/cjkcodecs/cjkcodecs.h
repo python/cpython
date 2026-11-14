@@ -237,6 +237,7 @@ add_mappings(cjkcodecs_module_state *st)                            \
     st->num_mappings = NUM;                                         \
     st->mapping_list = PyMem_Calloc(NUM, sizeof(struct dbcs_map));  \
     if (st->mapping_list == NULL) {                                 \
+        PyErr_NoMemory();                                           \
         return -1;                                                  \
     }
 
@@ -261,6 +262,7 @@ add_codecs(cjkcodecs_module_state *st)                          \
     st->num_codecs = NUM;                                       \
     st->codec_list = PyMem_Calloc(NUM, sizeof(MultibyteCodec)); \
     if (st->codec_list == NULL) {                               \
+        PyErr_NoMemory();                                       \
         return -1;                                              \
     }
 
@@ -406,10 +408,13 @@ register_maps(PyObject *module)
 
 #ifdef USING_BINARY_PAIR_SEARCH
 static DBCHAR
-find_pairencmap(ucs2_t body, ucs2_t modifier,
+find_pairencmap(ucs2_t body, Py_UCS4 modifier,
                 const struct pair_encodemap *haystack, int haystacksize)
 {
     int pos, min, max;
+    if (modifier > 0xffff) {
+        return DBCINV;
+    }
     Py_UCS4 value = body << 16 | modifier;
 
     min = 0;

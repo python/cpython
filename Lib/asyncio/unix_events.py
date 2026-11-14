@@ -681,10 +681,10 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # end polls as readable whenever unread data sits in the FIFO, and no
         # event is delivered when the read end is closed, so it can only
         # ever report a false disconnection (gh-145030). The same XNU
-        # behaviour applies on iOS/tvOS/watchOS (sys.platform is not
+        # behaviour applies on iOS/tvOS/visionOS/watchOS (sys.platform is not
         # "darwin" there).
         is_named_fifo_without_close_event = (
-            sys.platform in {"darwin", "ios", "tvos", "watchos", "sunos5"}
+            sys.platform in {"darwin", "ios", "tvos", "visionos", "watchos", "sunos5"}
             and is_fifo and pipe_stat.st_nlink > 0)
         if is_socket or (is_fifo
                          and not sys.platform.startswith("aix")
@@ -968,7 +968,15 @@ class _ThreadedChildWatcher:
             # This makes the reaping of the child and notification of the return code
             # atomic with respect to the event loop thread.
             try:
-                os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
+                while True:
+                    res = os.waitid(os.P_PID, expected_pid, os.WEXITED | os.WNOWAIT)
+                    # On macOS, waitid() with WEXITED incorrectly returns stopped
+                    # child processes (si_code == CLD_STOPPED). Consume the stop
+                    # notification so we wait for actual process termination.
+                    if res.si_code == os.CLD_STOPPED:
+                        os.waitid(os.P_PID, expected_pid, os.WSTOPPED | os.WNOHANG)
+                        continue
+                    break
             except ChildProcessError:
                 # The child process is already reaped
                 pass

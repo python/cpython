@@ -1,0 +1,2 @@
+Preserve the active request's ``continue_timeout`` when a second
+:meth:`~http.client.HTTPConnection.putrequest` call is rejected.

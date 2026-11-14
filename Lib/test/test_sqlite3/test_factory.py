@@ -21,6 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
+import weakref
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
@@ -155,6 +156,17 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         # gh-149738: deleting text_factory should raise an exception
         with self.assertRaises(AttributeError):
             del self.con.text_factory
+
+    def test_replace_active_row_factory(self):
+        class Factory:
+            def row(self, cursor, values):
+                cursor.row_factory = None
+                return factory_ref() is not None
+
+        cursor = self.con.cursor()
+        cursor.row_factory = Factory().row
+        factory_ref = weakref.ref(cursor.row_factory)
+        self.assertIs(cursor.execute("select 1").fetchone(), True)
 
     def test_delete_cursor_row_factory(self):
         # gh-149738: deleting row_factory should raise an exception

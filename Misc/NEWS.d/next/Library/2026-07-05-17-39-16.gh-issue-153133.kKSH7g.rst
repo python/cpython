@@ -1,2 +1,0 @@
-Fix a socket leak in :meth:`asyncio.loop.create_connection` when the
-transport cannot be created.

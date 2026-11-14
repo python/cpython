@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>Python</string>
+	<string>@PYTHONFRAMEWORK@</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Python Runtime and Library</string>
 	<key>CFBundleIdentifier</key>
@@ -13,17 +13,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Python</string>
+	<string>@PYTHONFRAMEWORK@</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>@VERSION@</string>
+	<string>%VERSION%</string>
 	<key>CFBundleLongVersionString</key>
 	<string>%VERSION%, (c) 2001-2024 Python Software Foundation.</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>%VERSION%</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>iPhoneOS</string>

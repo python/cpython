@@ -974,6 +974,12 @@ class DefaultCookiePolicy(CookiePolicy):
             _debug("   Set-Cookie2 without version attribute (%s=%s)",
                    cookie.name, cookie.value)
             return False
+        if cookie.version < 0:
+            # Neither the Netscape (version 0) nor the RFC 2965 (version > 0)
+            # rules would apply, so the domain checks would all be skipped.
+            _debug("   negative version attribute (%s=%s)",
+                   cookie.name, cookie.value)
+            return False
         if cookie.version > 0 and not self.rfc2965:
             _debug("   RFC 2965 cookies are switched off")
             return False
@@ -1117,6 +1123,9 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_version(self, cookie, request):
+        if cookie.version < 0:
+            _debug("   negative version attribute")
+            return False
         if cookie.version > 0 and not self.rfc2965:
             _debug("   RFC 2965 cookies are switched off")
             return False
@@ -1505,6 +1514,8 @@ class CookieJar:
                 version = int(version)
             except ValueError:
                 return None  # invalid version, ignore cookie
+            if version < 0:
+                return None  # invalid version, ignore cookie
         secure = standard.get("secure", False)
         # (discard is also set if expires is Absent)
         discard = standard.get("discard", False)
@@ -1557,28 +1568,33 @@ class CookieJar:
         if expires is Absent:
             expires = None
             discard = True
-        elif expires <= self._now:
-            # Expiry date in past is request to delete cookie.  This can't be
-            # in DefaultCookiePolicy, because can't delete cookies there.
-            try:
-                self.clear(domain, path, name)
-            except KeyError:
-                pass
-            _debug("Expiring cookie, domain='%s', path='%s', name='%s'",
-                   domain, path, name)
+
+        cookie = Cookie(version,
+                        name, value,
+                        port, port_specified,
+                        domain, domain_specified, domain_initial_dot,
+                        path, path_specified,
+                        secure,
+                        expires,
+                        discard,
+                        comment,
+                        comment_url,
+                        rest)
+
+        if expires is not None and expires <= self._now:
+            # RFC 6265 section 5.3 ignores the cookie entirely if its Domain
+            # attribute does not match the request host (step 6) before an
+            # existing cookie is removed (steps 11-12)
+            if self._policy.set_ok(cookie, request):
+                try:
+                    self.clear(domain, path, name)
+                except KeyError:
+                    pass
+                _debug("Expiring cookie, domain='%s', path='%s', name='%s'",
+                       domain, path, name)
             return None
 
-        return Cookie(version,
-                      name, value,
-                      port, port_specified,
-                      domain, domain_specified, domain_initial_dot,
-                      path, path_specified,
-                      secure,
-                      expires,
-                      discard,
-                      comment,
-                      comment_url,
-                      rest)
+        return cookie
 
     def _cookies_from_attrs_set(self, attrs_set, request):
         cookie_tuples = self._normalized_cookie_tuples(attrs_set)

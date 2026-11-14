@@ -2326,7 +2326,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_unspecified(self):
-        return self._ip == 0 and self.network.is_unspecified
+        return super().is_unspecified and self.network.is_unspecified
 
     @property
     def is_loopback(self):

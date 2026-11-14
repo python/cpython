@@ -1,0 +1,490 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		60F7C0012EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F7C0072EB0000000A1B2C3 /* Python{{abiflags}}.xcframework */; };
+		60F7C0022EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F7C0072EB0000000A1B2C3 /* Python{{abiflags}}.xcframework */; };
+		60F7C0032EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 60F7C0072EB0000000A1B2C3 /* Python{{abiflags}}.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		60F7C0042EB0000000A1B2C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 60F7C0132EB0000000A1B2C3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 60F7C0112EB0000000A1B2C3;
+			remoteInfo = watchOSTestbed;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		60F7C0052EB0000000A1B2C3 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				60F7C0032EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		60F7C0062EB0000000A1B2C3 /* watchOSTestbed.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = watchOSTestbed.xctestplan; sourceTree = "<group>"; };
+		60F7C0072EB0000000A1B2C3 /* Python{{abiflags}}.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python{{abiflags}}.xcframework; sourceTree = "<group>"; };
+		60F7C0082EB0000000A1B2C3 /* watchOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60F7C0092EB0000000A1B2C3 /* TestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		60F7C00A2EB0000000A1B2C3 /* Exceptions for "watchOSTestbed" folder in "watchOSTestbed" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"watchOSTestbed-Info.plist",
+			);
+			target = 60F7C0112EB0000000A1B2C3 /* watchOSTestbed */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		60F7C00B2EB0000000A1B2C3 /* watchOSTestbed */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				60F7C00A2EB0000000A1B2C3 /* Exceptions for "watchOSTestbed" folder in "watchOSTestbed" target */,
+			);
+			explicitFolders = (
+				app,
+				app_packages,
+			);
+			path = watchOSTestbed;
+			sourceTree = "<group>";
+		};
+		60F7C00C2EB0000000A1B2C3 /* TestbedTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TestbedTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		60F7C00D2EB0000000A1B2C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60F7C0022EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F7C00E2EB0000000A1B2C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60F7C0012EB0000000A1B2C3 /* Python{{abiflags}}.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		60F7C00F2EB0000000A1B2C3 = {
+			isa = PBXGroup;
+			children = (
+				60F7C0062EB0000000A1B2C3 /* watchOSTestbed.xctestplan */,
+				60F7C0072EB0000000A1B2C3 /* Python{{abiflags}}.xcframework */,
+				60F7C00B2EB0000000A1B2C3 /* watchOSTestbed */,
+				60F7C00C2EB0000000A1B2C3 /* TestbedTests */,
+				60F7C0102EB0000000A1B2C3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		60F7C0102EB0000000A1B2C3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				60F7C0082EB0000000A1B2C3 /* watchOSTestbed.app */,
+				60F7C0092EB0000000A1B2C3 /* TestbedTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		60F7C0112EB0000000A1B2C3 /* watchOSTestbed */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60F7C0212EB0000000A1B2C3 /* Build configuration list for PBXNativeTarget "watchOSTestbed" */;
+			buildPhases = (
+				60F7C0172EB0000000A1B2C3 /* Sources */,
+				60F7C00D2EB0000000A1B2C3 /* Frameworks */,
+				60F7C0142EB0000000A1B2C3 /* Resources */,
+				60F7C0162EB0000000A1B2C3 /* Process Python libraries */,
+				60F7C0052EB0000000A1B2C3 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				60F7C00B2EB0000000A1B2C3 /* watchOSTestbed */,
+			);
+			name = watchOSTestbed;
+			packageProductDependencies = (
+			);
+			productName = watchOSTestbed;
+			productReference = 60F7C0082EB0000000A1B2C3 /* watchOSTestbed.app */;
+			productType = "com.apple.product-type.application";
+		};
+		60F7C0122EB0000000A1B2C3 /* TestbedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60F7C0222EB0000000A1B2C3 /* Build configuration list for PBXNativeTarget "TestbedTests" */;
+			buildPhases = (
+				60F7C0182EB0000000A1B2C3 /* Sources */,
+				60F7C00E2EB0000000A1B2C3 /* Frameworks */,
+				60F7C0152EB0000000A1B2C3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				60F7C0192EB0000000A1B2C3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				60F7C00C2EB0000000A1B2C3 /* TestbedTests */,
+			);
+			name = TestbedTests;
+			packageProductDependencies = (
+			);
+			productName = TestbedTests;
+			productReference = 60F7C0092EB0000000A1B2C3 /* TestbedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		60F7C0132EB0000000A1B2C3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					60F7C0112EB0000000A1B2C3 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					60F7C0122EB0000000A1B2C3 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 60F7C0112EB0000000A1B2C3;
+					};
+				};
+			};
+			buildConfigurationList = 60F7C0202EB0000000A1B2C3 /* Build configuration list for PBXProject "watchOSTestbed" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 60F7C00F2EB0000000A1B2C3;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 60F7C0102EB0000000A1B2C3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				60F7C0112EB0000000A1B2C3 /* watchOSTestbed */,
+				60F7C0122EB0000000A1B2C3 /* TestbedTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		60F7C0142EB0000000A1B2C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F7C0152EB0000000A1B2C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		60F7C0162EB0000000A1B2C3 /* Process Python libraries */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Process Python libraries";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\nsource $PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\n\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		60F7C0172EB0000000A1B2C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F7C0182EB0000000A1B2C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		60F7C0192EB0000000A1B2C3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 60F7C0112EB0000000A1B2C3 /* watchOSTestbed */;
+			targetProxy = 60F7C0042EB0000000A1B2C3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		60F7C01A2EB0000000A1B2C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = watchos;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		60F7C01B2EB0000000A1B2C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Python{{abiflags}}.framework/Headers";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = watchos;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+		60F7C01C2EB0000000A1B2C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "watchOSTestbed/watchOSTestbed-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.python.watchOSTestbed;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		60F7C01D2EB0000000A1B2C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "watchOSTestbed/watchOSTestbed-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.python.watchOSTestbed;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		60F7C01E2EB0000000A1B2C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.python.TestbedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/watchOSTestbed.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/watchOSTestbed";
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		60F7C01F2EB0000000A1B2C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.python.TestbedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/watchOSTestbed.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/watchOSTestbed";
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		60F7C0202EB0000000A1B2C3 /* Build configuration list for PBXProject "watchOSTestbed" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F7C01A2EB0000000A1B2C3 /* Debug */,
+				60F7C01B2EB0000000A1B2C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60F7C0212EB0000000A1B2C3 /* Build configuration list for PBXNativeTarget "watchOSTestbed" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F7C01C2EB0000000A1B2C3 /* Debug */,
+				60F7C01D2EB0000000A1B2C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60F7C0222EB0000000A1B2C3 /* Build configuration list for PBXNativeTarget "TestbedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F7C01E2EB0000000A1B2C3 /* Debug */,
+				60F7C01F2EB0000000A1B2C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 60F7C0132EB0000000A1B2C3 /* Project object */;
+}

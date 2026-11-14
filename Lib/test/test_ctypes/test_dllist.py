@@ -7,7 +7,7 @@ from test.support import import_helper
 
 
 WINDOWS = os.name == "nt"
-APPLE = sys.platform in {"darwin", "ios", "tvos", "watchos"}
+APPLE = sys.platform in {"darwin", "ios", "tvos", "watchos", "visionos"}
 
 if WINDOWS:
     KNOWN_LIBRARIES = ["KERNEL32.DLL"]

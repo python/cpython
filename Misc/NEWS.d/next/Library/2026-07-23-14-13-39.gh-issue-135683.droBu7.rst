@@ -1,3 +1,0 @@
-:class:`logging.FileHandler` and :class:`logging.handlers.WatchedFileHandler`
-now honor :data:`logging.raiseExceptions` for errors that occur while opening
-the file, like for other errors during logging.

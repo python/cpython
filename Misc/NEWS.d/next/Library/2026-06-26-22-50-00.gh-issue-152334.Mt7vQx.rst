@@ -1,2 +1,0 @@
-Add the :func:`curses.define_key`, :func:`curses.key_defined` and
-:func:`curses.keyok` key-management functions.

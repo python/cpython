@@ -64,7 +64,7 @@ The different font weights and slants are:
       Two fonts now compare equal (``==``) only when both are :class:`Font`
       instances with the same name belonging to the same Tcl interpreter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       A font description can now be wrapped without creating a new named font,
       and keyword options now override the attributes of the specified *font*.
 
@@ -120,13 +120,13 @@ The different font weights and slants are:
       Options include:
 
       *ascent* - distance between baseline and highest point that a
-         character of the font can occupy
+      character of the font can occupy
 
       *descent* - distance between baseline and lowest point that a
-         character of the font can occupy
+      character of the font can occupy
 
       *linespace* - minimum vertical separation necessary between any two
-         characters of the font that ensures no vertical overlap between lines.
+      characters of the font that ensures no vertical overlap between lines.
 
       *fixed* - 1 if font is fixed-width else 0
 

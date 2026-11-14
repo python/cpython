@@ -314,7 +314,7 @@ class JSONDecoder(object):
         be used along ``object_pairs_hook`` to customize the resulting data
         structure - for example, by setting that to ``frozendict`` and
         ``array_hook`` to ``tuple``, one can get a deep immutable data
-        structute from any JSON data.
+        structure from any JSON data.
 
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to

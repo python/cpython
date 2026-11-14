@@ -837,7 +837,7 @@ the following constants:
    This may be different from the zstd library actually used at runtime, which
    is available as :const:`zstd_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: zstd_version
@@ -855,7 +855,7 @@ the following constants:
    This may be different from the zstd library actually used at runtime, which
    is available as :const:`zstd_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: zstd_version_info
@@ -864,7 +864,7 @@ the following constants:
    actually loaded by the interpreter,
    with the same fields as :const:`ZSTD_VERSION_INFO`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       It is now a named tuple.
 
 

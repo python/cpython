@@ -51,15 +51,7 @@ _elementtree_SubElement(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     attrib = PyTuple_GET_ITEM(args, 2);
 skip_optional:
-    if (kwargs == NULL) {
-        extra = PyDict_New();
-        if (extra == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        extra = Py_NewRef(kwargs);
-    }
+    extra = Py_XNewRef(kwargs);
     return_value = _elementtree_SubElement_impl(module, parent, tag, attrib, extra);
 
 exit:
@@ -1482,4 +1474,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01693c4bcc6c63b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d454d27e90eb399e input=a9049054013a1b77]*/
