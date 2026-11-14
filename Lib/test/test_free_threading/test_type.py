@@ -266,9 +266,12 @@ class TestType(TestCase):
                 pass
 
             Dummy()
+            abstract = frozenset({"x"})
+            concrete = frozenset()
             while not stop_all[0]:
                 try:
-                    Dummy.__abstractmethods__ = frozenset()
+                    Dummy.__abstractmethods__ = abstract
+                    Dummy.__abstractmethods__ = concrete
                 except Exception:
                     pass
 
@@ -646,6 +649,37 @@ class TestType(TestCase):
         with threading_helper.start_threads(threads):
             pass
         self.assertEqual(mismatches, [])
+
+    def test_concurrent_abc_subclass_creation(self):
+        from abc import ABC, abstractmethod
+        from collections.abc import Sized
+
+        N = 200
+        errors = []
+
+        def create_concrete():
+            for _ in range(N):
+                class C(Sized):
+                    def __len__(self):
+                        return 0
+                if not isinstance(C(), Sized):
+                    errors.append("concrete")
+
+        def create_abstract():
+            for _ in range(N):
+                class D(ABC):
+                    @abstractmethod
+                    def f(self): ...
+                try:
+                    D()
+                except TypeError:
+                    pass
+                else:
+                    errors.append("abstract")
+
+        threading_helper.run_concurrently(
+            [create_concrete, create_concrete, create_abstract])
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":

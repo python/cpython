@@ -1,0 +1,4 @@
+Creating a concrete subclass of an :term:`abstract base class` no longer
+stops the world in the :term:`free-threaded build`.  Setting
+``__abstractmethods__`` now only does so when the new value changes
+whether the class is abstract.

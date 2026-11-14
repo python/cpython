@@ -5106,6 +5106,35 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del X.__abstractmethods__
 
+    def test_abstractmethods_flag(self):
+        IS_ABSTRACT = 1 << 20
+
+        class X:
+            pass
+
+        def check(abstract):
+            self.assertEqual(bool(X.__flags__ & IS_ABSTRACT), abstract)
+            if abstract:
+                self.assertRaises(TypeError, X)
+            else:
+                X()
+
+        check(False)
+        X.__abstractmethods__ = frozenset()
+        self.assertEqual(X.__abstractmethods__, frozenset())
+        check(False)
+        X.__abstractmethods__ = frozenset({"f"})
+        check(True)
+        X.__abstractmethods__ = frozenset({"f", "g"})
+        self.assertEqual(X.__abstractmethods__, frozenset({"f", "g"}))
+        check(True)
+        X.__abstractmethods__ = frozenset()
+        check(False)
+        X.__abstractmethods__ = frozenset({"f"})
+        check(True)
+        del X.__abstractmethods__
+        check(False)
+
     def test_gh55664(self):
         # gh-55664: issue a warning when the
         # __dict__ of a class contains non-string keys
