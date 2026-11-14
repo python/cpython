@@ -1,0 +1,2 @@
+Tab completion of global names in the :term:`REPL` no longer imports
+lazily imported modules.
