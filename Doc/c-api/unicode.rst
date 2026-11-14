@@ -1663,8 +1663,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    :c:expr:`PyUnicode_CheckExact(*p_unicode)` must be true. If it is not,
    then -- as with any other error -- the argument is left unchanged.
 
-   Note that interned strings are not “immortal”.
+   Note that in the default build, interned strings are not :term:`immortal`.
    You must keep a reference to the result to benefit from interning.
+   In the :term:`free-threaded build`, interned strings are immortal.
 
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)

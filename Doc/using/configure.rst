@@ -444,7 +444,7 @@ General options
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
-   See :ref:`whatsnew313-free-threaded-cpython` for more detail.
+   See :ref:`freethreading-python-howto` for more detail.
 
    .. versionadded:: 3.13
 
