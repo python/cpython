@@ -1,0 +1,2 @@
+Fix ``smtplib.send_message`` to add a ``Date`` header if it is missing as
+per :rfc:`5322`.
