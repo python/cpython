@@ -1,0 +1,2 @@
+Fix a crash when :exc:`MemoryError` is raised while compiling a
+:keyword:`match` statement with a nested or-pattern.

@@ -6444,6 +6444,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     // NOTE: We can't use returning macros anymore! goto error on error.
     for (Py_ssize_t i = 0; i < size; i++) {
         pattern_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
         PyObject *pc_stores = PyList_New(0);
         if (pc_stores == NULL) {
             goto error;
@@ -6451,8 +6453,6 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
         Py_SETREF(pc->stores, pc_stores);
         // An irrefutable sub-pattern must be last, if it is allowed at all:
         pc->allow_irrefutable = (i == size - 1) && old_pc.allow_irrefutable;
-        pc->fail_pop = NULL;
-        pc->fail_pop_size = 0;
         pc->on_top = 0;
         if (codegen_addop_i(INSTR_SEQUENCE(c), COPY, 1, LOC(alt)) < 0 ||
             codegen_pattern(c, alt, pc) < 0) {
