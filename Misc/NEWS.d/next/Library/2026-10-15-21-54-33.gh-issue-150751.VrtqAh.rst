@@ -1,0 +1,6 @@
+:mod:`http.client` now handles a repeated or comma-separated
+``Content-Length`` header as required by :rfc:`9112`: identical values
+frame the response body like a single header, while differing values are
+treated as an invalid header and the body is read until the connection is
+closed. Previously the first of several ``Content-Length`` headers was
+used, which could leave part of the body unread on a reused connection.
