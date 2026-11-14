@@ -1631,6 +1631,13 @@ ghi\0jkl
         self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
                                sniffer.sniff, sample)
 
+    def test_sniff_long_run_of_spaces(self):
+        # gh-160556: a long run of spaces not followed by a quote character
+        # used to take quadratic time.
+        sniffer = csv.Sniffer()
+        sample = ('a,b' + ' ' * 100_000 + 'c"\n') * 4
+        self.assertEqual(sniffer.sniff(sample).delimiter, ',')
+
     def test_sniff_non_ascii_delimiter(self):
         # gh-111820: an explicitly requested delimiter can be non-ASCII.
         sniffer = csv.Sniffer()
