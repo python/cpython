@@ -194,6 +194,9 @@ Module contents
      glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
 
+     This setting only applies to fields defined in the class being decorated;
+     it does not affect inherited fields.
+
      Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
@@ -687,6 +690,16 @@ must use :meth:`!object.__setattr__`.
 
 Inheritance
 -----------
+
+The :deco:`dataclass` decorator is not automatically applied to subclasses.
+If a subclass is not itself decorated, no new dataclass fields are collected
+and no dataclass methods are generated for it.  Instead, it inherits fields and
+methods through the normal method resolution order.  This can be significant
+with multiple dataclass bases because their fields are not combined.  Decorate
+the subclass to combine the fields of its dataclass bases as described below.
+Nevertheless, :func:`is_dataclass` considers an undecorated subclass of a
+dataclass to be a dataclass because it inherits dataclass metadata from a base
+class.
 
 When the dataclass is being created by the :deco:`dataclass` decorator,
 it looks through all of the class's base classes in reverse MRO (that
