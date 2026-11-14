@@ -997,7 +997,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     Py_ssize_t idx = start;
     int is_float = 0;
     PyObject *rval;
-    PyObject *numstr = NULL;
     PyObject *custom_func;
 
     str = PyUnicode_DATA(pystr);
@@ -1064,32 +1063,67 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (custom_func) {
         /* copy the section we determined to be a number */
-        numstr = PyUnicode_FromKindAndData(kind,
-                                           (char*)str + kind * start,
-                                           idx - start);
-        if (numstr == NULL)
+        PyObject *numstr = PyUnicode_FromKindAndData(kind,
+                                                    (char*)str + kind * start,
+                                                    idx - start);
+        if (numstr == NULL) {
             return NULL;
+        }
         rval = PyObject_CallOneArg(custom_func, numstr);
+        Py_DECREF(numstr);
     }
     else {
         Py_ssize_t i, n;
-        char *buf;
+
+        n = idx - start;
+        if (!is_float && n <= 19) {
+            *next_idx_ptr = idx;
+            if (PyUnicode_READ(kind, str, start) == '-') {
+                /* integer with at most 18 digits (excluding sign) fits in
+                   long long (10 ** 18 - 1 <= 2 ** 63 < 10 ** 19 - 1) */
+                long long value = 0;
+                for (i = start + 1; i < idx; i++) {
+                    value = value * 10 - (PyUnicode_READ(kind, str, i) - '0');
+                }
+                return PyLong_FromLongLong(value);
+            }
+            else {
+                /* integer with at most 19 digits fits in unsigned long
+                   long (10 ** 19 - 1 <= 2 ** 64 - 1 < 10 ** 20 - 1) */
+                unsigned long long value = 0;
+                for (i = start; i < idx; i++) {
+                    value = value * 10 + (PyUnicode_READ(kind, str, i) - '0');
+                }
+                return PyLong_FromUnsignedLongLong(value);
+            }
+        }
+
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
-        n = idx - start;
-        numstr = PyBytes_FromStringAndSize(NULL, n);
-        if (numstr == NULL)
-            return NULL;
-        buf = PyBytes_AS_STRING(numstr);
+        char stackbuf[64];
+        char *buf = stackbuf;
+        if (n >= (Py_ssize_t)sizeof(stackbuf)) {
+            buf = PyMem_Malloc(n + 1);
+            if (buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+        }
         for (i = 0; i < n; i++) {
             buf[i] = (char) PyUnicode_READ(kind, str, i + start);
         }
-        if (is_float)
-            rval = PyFloat_FromString(numstr);
-        else
+        buf[n] = '\0';
+        if (is_float) {
+            double d = PyOS_string_to_double(buf, NULL, NULL);
+            rval = (d == -1.0 && PyErr_Occurred()) ? NULL : PyFloat_FromDouble(d);
+        }
+        else {
             rval = PyLong_FromString(buf, NULL, 10);
+        }
+        if (buf != stackbuf) {
+            PyMem_Free(buf);
+        }
     }
-    Py_DECREF(numstr);
     *next_idx_ptr = idx;
     return rval;
 }
