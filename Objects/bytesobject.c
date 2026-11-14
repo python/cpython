@@ -265,6 +265,9 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         s += _len; \
     } while (0)
 
+#define SNPRINTF_BYTES(BUFFER, PATTERN, TYP) \
+    PyOS_snprintf(BUFFER, sizeof(BUFFER), PATTERN, va_arg(vargs, TYP))
+
     for (const char *f = format; *f; f++) {
         if (*f != '%') {
             *s++ = *f;
@@ -324,13 +327,13 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 
         case 'd':
             if (longflag) {
-                len = sprintf(buffer, "%ld", va_arg(vargs, long));
+                len = SNPRINTF_BYTES(buffer, "%ld", long);
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+                len = SNPRINTF_BYTES(buffer, "%zd", Py_ssize_t);
             }
             else {
-                len = sprintf(buffer, "%d", va_arg(vargs, int));
+                len = SNPRINTF_BYTES(buffer, "%d", int);
             }
             assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
@@ -338,26 +341,26 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 
         case 'u':
             if (longflag) {
-                len = sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+                len = SNPRINTF_BYTES(buffer, "%lu", unsigned long);
             }
             else if (size_tflag) {
-                len = sprintf(buffer, "%zu", va_arg(vargs, size_t));
+                len = SNPRINTF_BYTES(buffer, "%zu", size_t);
             }
             else {
-                len = sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+                len = SNPRINTF_BYTES(buffer, "%u", unsigned int);
             }
             assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
         case 'i':
-            len = sprintf(buffer, "%i", va_arg(vargs, int));
+            len = SNPRINTF_BYTES(buffer, "%i", int);
             assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
         case 'x':
-            len = sprintf(buffer, "%x", va_arg(vargs, int));
+            len = SNPRINTF_BYTES(buffer, "%x", int);
             assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
@@ -382,7 +385,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         }
 
         case 'p':
-            len = sprintf(buffer, "%p", va_arg(vargs, void*));
+            len = SNPRINTF_BYTES(buffer, "%p", void*);
             assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             /* %p is ill-defined:  ensure leading 0x. */
             if (buffer[1] == 'X') {
@@ -415,6 +418,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
     return s;
 
 #undef WRITE_BYTES
+#undef SNPRINTF_BYTES
 }
 
 
