@@ -1,0 +1,5 @@
+On Windows, :mod:`multiprocessing` no longer leaks a handle in the parent
+process for each handle passed to a child process which is terminated before
+it can steal them. Handles are now duplicated directly into the child
+process, so that they are released by the operating system if the child dies
+early.
