@@ -278,7 +278,10 @@ class Wave_read:
                 break
             chunkname = chunk.getname()
             if chunkname == b'fmt ':
-                self._read_fmt_chunk(chunk)
+                try:
+                    self._read_fmt_chunk(chunk)
+                except EOFError:
+                    raise Error('fmt chunk is truncated') from None
                 self._fmt_chunk_read = 1
             elif chunkname == b'data':
                 if not self._fmt_chunk_read:
