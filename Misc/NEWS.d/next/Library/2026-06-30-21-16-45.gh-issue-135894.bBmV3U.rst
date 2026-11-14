@@ -1,0 +1,2 @@
+:meth:`~ctypes._CData.from_buffer` now sets :attr:`~ctypes._CData._b_base_`
+when the source is a ctypes object.
