@@ -425,6 +425,21 @@ class GlobTests(unittest.TestCase):
         self.assertIsNotNone(match(os.path.join('foo', 'bar.txt')))
         self.assertIsNone(match(os.path.join('foo', '.bar.txt')))
 
+    def test_translate_slow(self):
+        match = re.compile(glob.translate('*a' * 8 + '*b', seps='/')).match
+        self.assertIsNotNone(match('a' * 100 + 'b'))
+        # The next "takes forever" if the regexp translation is
+        # straightforward.  See bpo-40480.
+        self.assertIsNone(match('a' * 100))
+
+    def test_translate_negated_class_matches_sep(self):
+        # A character class can match a separator, so each star is not
+        # limited to a single segment there.
+        match = re.compile(glob.translate('*[!x]*x', seps='/')).match
+        self.assertIsNotNone(match('a/x'))
+        self.assertIsNotNone(match('ab/x'))
+        self.assertIsNone(match('a/b/x'))
+
     def test_translate(self):
         def fn(pat):
             return glob.translate(pat, seps='/')
@@ -443,7 +458,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:(?!\.)[^/]*b)\z')
         self.assertEqual(fn('/**/*/*.*/**'),
-                         r'(?s:/(?!\.)[^/]*/[^/.][^/]*/(?!\.)[^/]*\.[^/]*/(?!\.)[^/]*)\z')
+                         r'(?s:/(?!\.)[^/]*/[^/.][^/]*/(?!\.)(?>[^/]*?\.)[^/]*/(?!\.)[^/]*)\z')
 
     def test_translate_include_hidden(self):
         def fn(pat):
@@ -462,7 +477,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('***'), r'(?s:[^/]*)\z')
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:[^/]*b)\z')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]*/[^/]+/[^/]*\.[^/]*/[^/]*)\z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]*/[^/]+/(?>[^/]*?\.)[^/]*/[^/]*)\z')
 
     def test_translate_recursive(self):
         def fn(pat):
@@ -474,7 +489,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('***'), r'(?s:[^/]*)\z')
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\z')
         self.assertEqual(fn('**b'), r'(?s:[^/]*b)\z')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/(?>[^/]*?\.)[^/]*/.*)\z')
 
     def test_translate_seps(self):
         def fn(pat):

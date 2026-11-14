@@ -324,11 +324,33 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
-                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
+                results.extend(_translate_segment(part, not_sep, seps))
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
     return fr'(?s:{res})\z'
+
+
+def _translate_segment(part, not_sep, seps):
+    # Wrap each interior `STAR fixed` pair in an atomic group to prevent
+    # catastrophic backtracking, as fnmatch._join_translated_parts() does.
+    # A pair whose fixed part can match a separator (a character class) is
+    # left as it is, since the atomic group could change what it matches.
+    star = f'{not_sep}*'
+    parts, star_indices = fnmatch._translate(part, star, not_sep)
+    if not star_indices:
+        return parts
+    res = parts[:star_indices[0]]
+    for i, j in zip(star_indices, star_indices[1:]):
+        fixed = parts[i + 1:j]
+        if any(re.match(p, sep) for p in fixed for sep in seps):
+            res.extend(parts[i:j])
+        else:
+            res.append(f'(?>{star}?')
+            res.extend(fixed)
+            res.append(')')
+    res.extend(parts[star_indices[-1]:])
+    return res
 
 
 @functools.lru_cache(maxsize=512)
