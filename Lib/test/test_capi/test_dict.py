@@ -635,6 +635,18 @@ class CAPITest(unittest.TestCase):
         self.assertIs(type(d), DictSubtype)
         self.assertEqual(d, DictSubtype({}))
 
+        # instance dict that still has inline values
+        class A: ...
+        a = A()
+        a.x = 1
+        f = as_frozendict(a.__dict__)
+        self.assertEqual(vars(a), {})
+        a.x = 2
+        self.assertEqual(f, frozendict(x=1))
+        self.assertEqual(vars(a), {'x': 2})
+        del a
+        self.assertEqual(f, frozendict(x=1))
+
         for wrong_input in (frozendict(), [], None):
             with self.subTest(wrong_input=wrong_input):
                 with self.assertRaises(SystemError):

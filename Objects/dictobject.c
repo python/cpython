@@ -8662,33 +8662,50 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return d;
 }
 
-static void
+static int
 transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 {
     PyDictObject *new = (PyDictObject *)res;
     PyDictObject *old = (PyDictObject *)dict;
     assert(can_modify_dict(old));
 
-    // Fast path: do nothing on an empty dict:
     if (old->ma_keys == Py_EMPTY_KEYS) {
-        return;
+        return 0;
     }
 
     Py_ssize_t used = old->ma_used;
     PyDictKeysObject *keys = old->ma_keys;
     PyDictValues *values = old->ma_values;
 
-    // Clear the old dict keys and values, but do not decref them:
-    clear_common(old);
-    set_keys(old, Py_EMPTY_KEYS);
-    set_values(old, NULL);
+    if (values && values->embedded) {
+        // values are inline in the object, copy them and clear the object's copy
+        PyDictValues *v = values;
+        values = copy_values(v);
+        if (!values) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        dictkeys_incref(keys);
+        clear_common(old);
+        for (Py_ssize_t i = 0; i < v->capacity; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(v->values[i], NULL);
+        }
+        FT_ATOMIC_STORE_UINT8_RELEASE(v->size, 0);
+    }
+    else {
+        clear_common(old);
+        set_keys(old, Py_EMPTY_KEYS);
+        set_values(old, NULL);
+    }
     ASSERT_CONSISTENT(old);
 
-    // Transfer keys and values from dict to frozendict:
+    // Only transfer keys and values to the new dict
+    // once the old dict is cleared
     new->ma_used = used;
     new->ma_keys = keys;
     new->ma_values = values;
     ASSERT_CONSISTENT(new);
+    return 0;
 }
 
 PyObject *
@@ -8704,9 +8721,14 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
+    int err;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    transfer_keys_and_values_lock_held(res, dict);
+    err = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
+    if (err < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
 
     _PyObject_GC_TRACK(res);
     assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);
