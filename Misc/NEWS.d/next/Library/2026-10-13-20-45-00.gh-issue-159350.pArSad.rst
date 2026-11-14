@@ -1,0 +1,2 @@
+Fix :func:`email.utils.parseaddr` raising :exc:`IndexError` for an empty
+list in strict mode. It now returns ``('', '')``, as in non-strict mode.

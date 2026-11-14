@@ -349,6 +349,8 @@ def parseaddr(addr, *, strict=True):
         return addrs[0]
 
     if isinstance(addr, list):
+        if not addr:
+            return ('', '')
         addr = addr[0]
 
     if not isinstance(addr, str):
