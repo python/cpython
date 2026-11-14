@@ -12,15 +12,15 @@
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
-           'cached_property', 'Placeholder']
+           'cached_method', 'cached_property', 'Placeholder']
 
 from abc import get_cache_token
 from collections import namedtuple
-# import weakref  # Deferred to single_dispatch()
 from operator import itemgetter
 from reprlib import recursive_repr
 from types import FunctionType, GenericAlias, MethodType, MappingProxyType, UnionType
 from _thread import RLock
+lazy import weakref
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -884,11 +884,6 @@ def singledispatch(func):
     implementations can be registered using the register() attribute of the
     generic function.
     """
-    # There are many programs that use functools without singledispatch, so we
-    # trade-off making singledispatch marginally slower for the benefit of
-    # making start-up of such applications slightly faster.
-    import weakref
-
     registry = {}
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
@@ -1118,6 +1113,125 @@ class _singledispatchmethod_get:
     @property
     def register(self):
         return self._unbound.register
+
+################################################################################
+### cached_method -- a version of lru_cache() which uses id(self)
+################################################################################
+
+
+class _bound_cached_method:
+    """
+    A wrapper over a cached method which acts like a bound method.
+
+    It holds a reference to the instance and the caching variant of the
+    function, and it calls the function when called. This is constructed
+    dynamically whenever a cached method is accessed on an instance.
+    """
+    def __init__(self, func, inst):
+        self.func = func
+        self.inst = inst
+
+        update_wrapper(self, self.func)
+
+        self.cache_clear = func.cache_clear
+        self.cache_info = func.cache_info
+        self.cache_parameters = func.cache_parameters
+
+    def __repr__(self):
+        return f"<bound cached method {self.func.__qualname__} of {self.inst!r}>"
+
+    def __call__(self, /, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
+def _cached_method_weakref_callback(cache_dict, id_key):
+    def callback(ref):
+        cache_dict.pop(id_key, None)
+    return callback
+
+
+def _wrap_unbound_cached_method(ref, unbound_method, maxsize, typed):
+    @wraps(unbound_method)
+    @lru_cache(maxsize, typed)
+    def wrapped(*args, **kwargs):
+        return unbound_method(ref(), *args, **kwargs)
+    return wrapped
+
+
+class _cached_method:
+    def __init__(self, func, /, maxsize=None, typed=False):
+        self._function_table = {}
+
+        self._maxsize = maxsize
+        self._typed = typed
+
+        self.func = func
+        update_wrapper(self, func)
+
+    def __call__(self, instance, /, *args, **kwargs):
+        # a direct call skips construction of a bound cached method, since it
+        # isn't needed in order to guarantee that `instance` is not released
+        # before `cached_func` runs
+        cached_func = self._get_or_create_cached_func(instance)
+        return cached_func(*args, **kwargs)
+
+    def __repr__(self):
+        return f"<unbound cached method {self.func.__qualname__}>"
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        # construct a bound method, to guarantee that the instance cannot be
+        # released until after the returned function is called
+        unbound_func = self._get_or_create_cached_func(instance)
+        return _bound_cached_method(unbound_func, instance)
+
+    def _get_or_create_cached_func(self, instance):
+        instance_id = id(instance)
+
+        try:
+            ref, cached_func = self._function_table[instance_id]
+        except KeyError:
+            cb = _cached_method_weakref_callback(self._function_table, instance_id)
+            try:
+                ref = weakref.ref(instance, cb)
+            except TypeError as exc:
+                exc.__suppress_context__ = True
+                raise TypeError(
+                    "`cached_method` requires the instances of "
+                    f"{type(instance).__name__!r} to be weakly referencable"
+                ) from exc
+
+            cached_func = _wrap_unbound_cached_method(
+                ref, self.func, self._maxsize, self._typed
+            )
+            self._function_table[instance_id] = ref, cached_func
+
+        return cached_func
+
+
+def cached_method(func=None, /, maxsize=None, typed=False):
+    """
+    A caching decorator for use on instance methods.
+
+    Using cache or lru_cache on methods is problematic because the instance is put into
+    the cache and cannot be garbage collected until the cache is cleared. This decorator
+    uses a cache based on `id(self)` and a weakref to clear cache entries.
+
+    The instance must be weak-referencable.
+
+    By default, this provides an infinite sized cache similar to `functools.cache`. Use
+    *maxsize* and *typed* to set these attributes of the underlying LRU cache.
+    """
+    if maxsize is not None and not isinstance(maxsize, int):
+        raise TypeError(
+            'Expected maxsize to be an integer or None')
+    if func is None:
+        def decorator(func):
+            return _cached_method(func, maxsize=maxsize, typed=typed)
+        return decorator
+    else:
+        return _cached_method(func, maxsize=maxsize, typed=typed)
 
 
 ################################################################################
