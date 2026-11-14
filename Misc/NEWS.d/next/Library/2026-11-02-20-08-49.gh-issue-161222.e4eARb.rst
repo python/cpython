@@ -1,0 +1,3 @@
+Fix :func:`email.utils.encode_rfc2231` writing the literal string ``None``
+as the charset when only *language* is given.  The charset field is now left
+blank, as permitted by :rfc:`2231`.

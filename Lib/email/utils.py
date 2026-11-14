@@ -394,6 +394,8 @@ def encode_rfc2231(s, charset=None, language=None):
     s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if charset is None and language is None:
         return s
+    if charset is None:
+        charset = ''
     if language is None:
         language = ''
     return "%s'%s'%s" % (charset, language, s)
