@@ -1,0 +1,5 @@
+Fix :mod:`!cProfile` and :mod:`profile` when profiling a module with the
+``-m`` option: the module now runs as ``__main__`` and ``sys.argv[0]`` is
+set to its path, as with ``python -m``. This fixes errors when pickling
+objects defined in the module, for example when using :mod:`multiprocessing`
+with the ``spawn`` start method.
