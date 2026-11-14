@@ -3,6 +3,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_token.h"
 #include "pycore_tuple.h"         // _PyTuple_FromPair
+#include "pycore_unicodeobject.h" // _Py_find_first_nonascii()
 
 #include "../lexer/state.h"
 
@@ -257,14 +258,14 @@ error:
    the sequence if yes, 0 if not.  The special cases match
    those in stringlib/codecs.h:utf8_decode.
 */
-static int
-valid_utf8(const unsigned char* s)
+static Py_ssize_t
+valid_utf8(const unsigned char *s, const unsigned char *end)
 {
     int expected = 0;
     int length;
     if (*s < 0x80) {
-        /* single-byte code */
-        return 1;
+        /* as many ASCII chars as we can find in a row */
+        return _Py_find_first_nonascii(s, end);
     }
     else if (*s < 0xE0) {
         /* \xC2\x80-\xDF\xBF -- 0080-07FF */
@@ -321,19 +322,22 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
 {
     const char *badchar = NULL;
     const char *c;
-    int length;
-    const char *line_start = line;
+    const unsigned char *end = (const unsigned char *)line + strlen(line);
+    Py_ssize_t length;
     for (c = line; *c; c += length) {
-        if (!(length = valid_utf8((const unsigned char *)c))) {
+        if (!(length = valid_utf8((const unsigned char *)c, end))) {
             badchar = c;
             break;
         }
-        if (*c == '\n') {
-            lineno++;
-            line_start = c + 1;
-        }
     }
     if (badchar) {
+        const char *line_start = line;
+        for (c = line; c < badchar; c++) {
+            if (*c == '\n') {
+                lineno++;
+                line_start = c + 1;
+            }
+        }
         _PyTokenizer_syntaxerror_at(
                 tok, line_start, badchar - line_start + 1, lineno,
                 -1, -1,
