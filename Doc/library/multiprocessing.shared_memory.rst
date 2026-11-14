@@ -112,6 +112,32 @@ copying of data.
       This method has no effect on Windows, where the only way to delete a
       shared memory block is to close all handles.
 
+   .. method:: rename(newname, flags=0)
+
+      Rename the underlying shared memory block to *newname*.
+      By default, if *newname* already exists, it will be unlinked beforehand.
+
+      *flags* (0 by default) takes :ref:`bitwise ORed <bitwise>` flags together.
+
+   .. availability:: FreeBSD >= 13.0
+
+   .. versionadded:: next
+
+   .. data:: SHM_RENAME_EXCHANGE
+             SHM_RENAME_NOREPLACE
+
+      Parameters to the :func:`rename` function.
+
+      :const:`SHM_RENAME_EXCHANGE`
+        Atomically exchange the SharedMemory to the *newname*.
+
+      :const:`SHM_RENAME_NOREPLACE`
+        Raise an error if *newname* exists, rather than unlinking it.
+
+   .. availability:: FreeBSD >= 13.0
+
+   .. versionadded:: next
+
    .. attribute:: buf
 
       A memoryview of contents of the shared memory block.
