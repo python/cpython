@@ -1,0 +1,2 @@
+Fix :class:`zoneinfo.ZoneInfo` applying recurring TZ string rules to local
+times whose UTC offset is still determined by the explicit transition table.
