@@ -18,6 +18,14 @@
 #include <sys/wait.h>
 #endif
 
+#ifdef MS_WINDOWS
+enum {
+    /* ThreadSystemThreadInformation is not named in the Windows SDK. */
+    WIN32_THREAD_SYSTEM_INFORMATION = 40,
+    WIN32_THREAD_RUNNING = 2,
+};
+#endif
+
 /* Bound traversal of corrupted remote exception chains. */
 #define MAX_EXCEPTION_CHAIN_DEPTH (2 << 15)
 
@@ -213,12 +221,11 @@ get_thread_status(RemoteUnwinderObject *unwinder, unsigned long tid) {
     if (thread == NULL) {
         return THREAD_STATE_UNKNOWN;
     }
-    /* ThreadSystemThreadInformation is not named in the Windows SDK. */
-    const THREADINFOCLASS system_thread_information = (THREADINFOCLASS)40;
     SYSTEM_THREAD_INFORMATION info;
     ULONG size = 0;
     NTSTATUS result = NtQueryInformationThread(
-        thread, system_thread_information, &info, sizeof(info), &size);
+        thread, (THREADINFOCLASS)WIN32_THREAD_SYSTEM_INFORMATION,
+        &info, sizeof(info), &size);
     CloseHandle(thread);
     if (result != STATUS_SUCCESS || size != sizeof(info) ||
         (ULONG_PTR)info.ClientId.UniqueProcess != (ULONG_PTR)unwinder->handle.pid ||
@@ -226,8 +233,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, unsigned long tid) {
     {
         return THREAD_STATE_UNKNOWN;
     }
-    const ULONG running = 2;
-    return info.ThreadState == running
+    return info.ThreadState == WIN32_THREAD_RUNNING
         ? THREAD_STATE_RUNNING : THREAD_STATE_IDLE;
 #else
     return THREAD_STATE_UNKNOWN;

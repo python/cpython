@@ -297,16 +297,30 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 
+enum {
+    MACHO_NAME_SIZE = 16,
+    MACHO_MAX_LOAD_COMMAND_BYTES = 16 * 1024 * 1024,
+    DYLD_MAX_IMAGE_COUNT = 65536,
+    DYLD_SNAPSHOT_ATTEMPTS = 3,
+    DYLD_IMAGE_RECORD_FIELDS = 3,
+    DYLD_IMAGE_COUNT_OFFSET = sizeof(uint32_t),
+    DYLD_IMAGE_ARRAY_OFFSET = 2 * sizeof(uint32_t),
+    DYLD_TIMESTAMP_VERSION = 15,
+    DYLD_TIMESTAMP_OFFSET_32 = 104,
+    DYLD_TIMESTAMP_OFFSET_64 = 184,
+    DYLD_INFO_PREFIX_SIZE = DYLD_TIMESTAMP_OFFSET_64 + sizeof(uint64_t),
+};
+
 static uint32_t
-macho_u32(uint32_t value, int swap)
+macho_u32(uint32_t value, int swap_bytes)
 {
-    return swap ? _Py_bswap32(value) : value;
+    return swap_bytes ? _Py_bswap32(value) : value;
 }
 
 static uint64_t
-macho_u64(uint64_t value, int swap)
+macho_u64(uint64_t value, int swap_bytes)
 {
-    return swap ? _Py_bswap64(value) : value;
+    return swap_bytes ? _Py_bswap64(value) : value;
 }
 
 static uintptr_t
@@ -335,7 +349,7 @@ static uintptr_t
 macho_section_address(const void *image, size_t image_size,
                       uintptr_t base, const char *name)
 {
-    if (strlen(name) > 16) {
+    if (strlen(name) > MACHO_NAME_SIZE) {
         return 0;
     }
     struct mach_header header;
@@ -343,13 +357,13 @@ macho_section_address(const void *image, size_t image_size,
         return macho_invalid_image();
     }
     memcpy(&header, image, sizeof(header));
-    int wide = header.magic == MH_MAGIC_64 || header.magic == MH_CIGAM_64;
-    int swap = header.magic == MH_CIGAM || header.magic == MH_CIGAM_64;
+    int is_64_bit = header.magic == MH_MAGIC_64 || header.magic == MH_CIGAM_64;
+    int swap_bytes = header.magic == MH_CIGAM || header.magic == MH_CIGAM_64;
     size_t header_size = macho_header_size(header.magic);
     if (header_size == 0 || image_size < header_size) {
         return macho_invalid_image();
     }
-    size_t commands_size = macho_u32(header.sizeofcmds, swap);
+    size_t commands_size = macho_u32(header.sizeofcmds, swap_bytes);
     if (commands_size > image_size - header_size) {
         return macho_invalid_image();
     }
@@ -358,52 +372,52 @@ macho_section_address(const void *image, size_t image_size,
     size_t remaining = commands_size;
     uint64_t header_address = 0, section_address = 0;
     int have_header = 0, have_section = 0;
-    uint32_t commands = macho_u32(header.ncmds, swap);
-    for (uint32_t index = 0; index < commands; index++) {
+    uint32_t command_count = macho_u32(header.ncmds, swap_bytes);
+    for (uint32_t index = 0; index < command_count; index++) {
         struct load_command command;
         if (remaining < sizeof(command)) {
             return macho_invalid_image();
         }
         memcpy(&command, cursor, sizeof(command));
-        uint32_t kind = macho_u32(command.cmd, swap);
-        size_t length = macho_u32(command.cmdsize, swap);
-        if (length < sizeof(command) || length > remaining) {
+        uint32_t command_type = macho_u32(command.cmd, swap_bytes);
+        size_t command_size = macho_u32(command.cmdsize, swap_bytes);
+        if (command_size < sizeof(command) || command_size > remaining) {
             return macho_invalid_image();
         }
-        if (kind == (wide ? LC_SEGMENT_64 : LC_SEGMENT)) {
+        if (command_type == (is_64_bit ? LC_SEGMENT_64 : LC_SEGMENT)) {
             uint64_t address, file_offset, file_size;
-            uint32_t sections;
+            uint32_t section_count;
             size_t segment_size, section_size;
             int data_segment;
-            if (wide) {
+            if (is_64_bit) {
                 struct segment_command_64 segment;
                 segment_size = sizeof(segment);
                 section_size = sizeof(struct section_64);
-                if (length < segment_size) {
+                if (command_size < segment_size) {
                     return macho_invalid_image();
                 }
                 memcpy(&segment, cursor, segment_size);
-                address = macho_u64(segment.vmaddr, swap);
-                file_offset = macho_u64(segment.fileoff, swap);
-                file_size = macho_u64(segment.filesize, swap);
-                sections = macho_u32(segment.nsects, swap);
-                data_segment = strncmp(segment.segname, "__DATA", 16) == 0;
+                address = macho_u64(segment.vmaddr, swap_bytes);
+                file_offset = macho_u64(segment.fileoff, swap_bytes);
+                file_size = macho_u64(segment.filesize, swap_bytes);
+                section_count = macho_u32(segment.nsects, swap_bytes);
+                data_segment = strncmp(segment.segname, "__DATA", MACHO_NAME_SIZE) == 0;
             }
             else {
                 struct segment_command segment;
                 segment_size = sizeof(segment);
                 section_size = sizeof(struct section);
-                if (length < segment_size) {
+                if (command_size < segment_size) {
                     return macho_invalid_image();
                 }
                 memcpy(&segment, cursor, segment_size);
-                address = macho_u32(segment.vmaddr, swap);
-                file_offset = macho_u32(segment.fileoff, swap);
-                file_size = macho_u32(segment.filesize, swap);
-                sections = macho_u32(segment.nsects, swap);
-                data_segment = strncmp(segment.segname, "__DATA", 16) == 0;
+                address = macho_u32(segment.vmaddr, swap_bytes);
+                file_offset = macho_u32(segment.fileoff, swap_bytes);
+                file_size = macho_u32(segment.filesize, swap_bytes);
+                section_count = macho_u32(segment.nsects, swap_bytes);
+                data_segment = strncmp(segment.segname, "__DATA", MACHO_NAME_SIZE) == 0;
             }
-            if (sections > (length - segment_size) / section_size) {
+            if (section_count > (command_size - segment_size) / section_size) {
                 return macho_invalid_image();
             }
             /* __PAGEZERO has no file contents and does not define the slide. */
@@ -413,28 +427,28 @@ macho_section_address(const void *image, size_t image_size,
             }
             if (data_segment) {
                 const unsigned char *record = cursor + segment_size;
-                for (uint32_t item = 0; item < sections;
+                for (uint32_t item = 0; item < section_count;
                      item++, record += section_size)
                 {
-                    if (strncmp((const char *)record, name, 16) != 0) {
+                    if (strncmp((const char *)record, name, MACHO_NAME_SIZE) != 0) {
                         continue;
                     }
-                    if (wide) {
+                    if (is_64_bit) {
                         struct section_64 section;
                         memcpy(&section, record, sizeof(section));
-                        section_address = macho_u64(section.addr, swap);
+                        section_address = macho_u64(section.addr, swap_bytes);
                     }
                     else {
                         struct section section;
                         memcpy(&section, record, sizeof(section));
-                        section_address = macho_u32(section.addr, swap);
+                        section_address = macho_u32(section.addr, swap_bytes);
                     }
                     have_section = 1;
                 }
             }
         }
-        cursor += length;
-        remaining -= length;
+        cursor += command_size;
+        remaining -= command_size;
     }
     if (!have_section) {
         return 0;
@@ -459,10 +473,9 @@ search_section_in_memory(proc_handle_t *handle, uintptr_t base,
     if (header_size == 0) {
         return 0;
     }
-    int swap = header.magic == MH_CIGAM || header.magic == MH_CIGAM_64;
-    size_t commands_size = macho_u32(header.sizeofcmds, swap);
-    const size_t max_commands_size = 16 * 1024 * 1024;
-    if (commands_size > max_commands_size ||
+    int swap_bytes = header.magic == MH_CIGAM || header.magic == MH_CIGAM_64;
+    size_t commands_size = macho_u32(header.sizeofcmds, swap_bytes);
+    if (commands_size > MACHO_MAX_LOAD_COMMAND_BYTES ||
         base > UINTPTR_MAX - header_size - commands_size)
     {
         return macho_invalid_image();
@@ -499,8 +512,8 @@ pid_to_task(pid_t pid)
 }
 
 typedef struct {
-    uintptr_t address;
-    uintptr_t images;
+    uintptr_t info_address;
+    uintptr_t array_address;
     uint64_t timestamp;
     uint32_t count;
     size_t pointer_size;
@@ -509,7 +522,7 @@ typedef struct {
 static uint64_t
 read_dyld_pointer(const void *source, size_t pointer_size)
 {
-    if (pointer_size == 4) {
+    if (pointer_size == sizeof(uint32_t)) {
         uint32_t address;
         memcpy(&address, source, sizeof(address));
         return address;
@@ -520,7 +533,7 @@ read_dyld_pointer(const void *source, size_t pointer_size)
 }
 
 static int
-read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
+read_dyld_image_metadata(proc_handle_t *handle, DyldImageList *list)
 {
     task_dyld_info_data_t info = {0};
     mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
@@ -551,10 +564,10 @@ read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
             ? TASK_DYLD_ALL_IMAGE_INFO_64 : TASK_DYLD_ALL_IMAGE_INFO_32;
     }
     if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_64) {
-        list->pointer_size = 8;
+        list->pointer_size = sizeof(uint64_t);
     }
     else if (info.all_image_info_format == TASK_DYLD_ALL_IMAGE_INFO_32) {
-        list->pointer_size = 4;
+        list->pointer_size = sizeof(uint32_t);
     }
     else {
         PyErr_SetString(PyExc_RuntimeError, "Unknown dyld image-info format");
@@ -562,32 +575,33 @@ read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
     }
 
     /* dyld_all_image_infos uses the target's pointer width. */
-    size_t timestamp_offset = list->pointer_size == 8 ? 184 : 104;
+    size_t timestamp_offset = list->pointer_size == sizeof(uint64_t)
+        ? DYLD_TIMESTAMP_OFFSET_64 : DYLD_TIMESTAMP_OFFSET_32;
     size_t size = (size_t)Py_MIN(info.all_image_info_size,
                                 timestamp_offset + sizeof(list->timestamp));
-    unsigned char prefix[192];
-    if (size < 8 + list->pointer_size ||
+    unsigned char prefix[DYLD_INFO_PREFIX_SIZE];
+    if (size < DYLD_IMAGE_ARRAY_OFFSET + list->pointer_size ||
         info.all_image_info_addr > UINTPTR_MAX - size)
     {
         PyErr_SetString(PyExc_RuntimeError, "Invalid dyld image-info address");
         return -1;
     }
-    list->address = (uintptr_t)info.all_image_info_addr;
-    if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->address, size, prefix) < 0) {
+    list->info_address = (uintptr_t)info.all_image_info_addr;
+    if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->info_address, size, prefix) < 0) {
         return -1;
     }
     uint32_t version;
     memcpy(&version, prefix, sizeof(version));
-    memcpy(&list->count, prefix + 4, sizeof(list->count));
-    uint64_t images = read_dyld_pointer(prefix + 8, list->pointer_size);
+    memcpy(&list->count, prefix + DYLD_IMAGE_COUNT_OFFSET, sizeof(list->count));
+    uint64_t images = read_dyld_pointer(
+        prefix + DYLD_IMAGE_ARRAY_OFFSET, list->pointer_size);
     if (images > UINTPTR_MAX) {
         PyErr_SetString(PyExc_RuntimeError, "dyld image address does not fit uintptr_t");
         return -1;
     }
-    list->images = (uintptr_t)images;
+    list->array_address = (uintptr_t)images;
     list->timestamp = 0;
-    if (version >= 15) {
-        /* Version 15 added infoArrayChangeTimestamp. */
+    if (version >= DYLD_TIMESTAMP_VERSION) {
         if (size < timestamp_offset + sizeof(list->timestamp)) {
             PyErr_SetString(PyExc_RuntimeError, "Truncated dyld image information");
             return -1;
@@ -598,10 +612,10 @@ read_dyld_image_list(proc_handle_t *handle, DyldImageList *list)
 }
 
 static unsigned char *
-copy_dyld_images(proc_handle_t *handle, DyldImageList *list)
+snapshot_dyld_images(proc_handle_t *handle, DyldImageList *list)
 {
-    for (int attempt = 0; attempt < 3; attempt++) {
-        if (read_dyld_image_list(handle, list) < 0) {
+    for (int attempt = 0; attempt < DYLD_SNAPSHOT_ATTEMPTS; attempt++) {
+        if (read_dyld_image_metadata(handle, list) < 0) {
             if (_Py_RemoteDebug_IsFatalReadError()) {
                 return NULL;
             }
@@ -609,15 +623,15 @@ copy_dyld_images(proc_handle_t *handle, DyldImageList *list)
             continue;
         }
         /* dyld clears infoArray while it changes the image list. */
-        if (list->images == 0) {
+        if (list->array_address == 0) {
             continue;
         }
         if (list->count == 0) {
             return NULL;
         }
-        size_t record_size = 3 * list->pointer_size;
-        if (list->count > 65536 ||
-            list->images > UINTPTR_MAX - list->count * record_size)
+        size_t record_size = DYLD_IMAGE_RECORD_FIELDS * list->pointer_size;
+        if (list->count > DYLD_MAX_IMAGE_COUNT ||
+            list->array_address > UINTPTR_MAX - list->count * record_size)
         {
             PyErr_SetString(PyExc_RuntimeError, "Invalid dyld image array");
             return NULL;
@@ -629,10 +643,12 @@ copy_dyld_images(proc_handle_t *handle, DyldImageList *list)
             return NULL;
         }
         DyldImageList after;
-        if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->images, size, images) == 0 &&
-            read_dyld_image_list(handle, &after) == 0 &&
-            after.address == list->address && after.images == list->images &&
-            after.count == list->count && after.timestamp == list->timestamp &&
+        if (_Py_RemoteDebug_ReadRemoteMemory(handle, list->array_address, size, images) == 0 &&
+            read_dyld_image_metadata(handle, &after) == 0 &&
+            after.info_address == list->info_address &&
+            after.array_address == list->array_address &&
+            after.count == list->count &&
+            after.timestamp == list->timestamp &&
             after.pointer_size == list->pointer_size)
         {
             return images;
@@ -700,7 +716,7 @@ search_loaded_images_for_section(proc_handle_t *handle, const char *section,
                                  section_validator_t validator)
 {
     DyldImageList list;
-    unsigned char *images = copy_dyld_images(handle, &list);
+    unsigned char *images = snapshot_dyld_images(handle, &list);
     if (images == NULL) {
         if (_Py_RemoteDebug_IsFatalReadError()) {
             return 0;
@@ -710,9 +726,10 @@ search_loaded_images_for_section(proc_handle_t *handle, const char *section,
         return search_memory_regions_for_section(handle, section, validator);
     }
     uintptr_t result = 0;
+    size_t record_size = DYLD_IMAGE_RECORD_FIELDS * list.pointer_size;
     for (uint32_t index = 0; index < list.count; index++) {
         uint64_t address = read_dyld_pointer(
-            images + index * (3 * list.pointer_size), list.pointer_size);
+            images + index * record_size, list.pointer_size);
         if (address == 0 || address > UINTPTR_MAX) {
             continue;
         }
