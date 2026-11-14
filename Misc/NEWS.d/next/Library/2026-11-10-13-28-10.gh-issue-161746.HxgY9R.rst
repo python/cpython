@@ -1,0 +1,7 @@
+Speed up conversion of ordinals to dates in :mod:`datetime` by switching to
+the `Neri–Schneider algorithm <https://doi.org/10.1002/spe.3172>`__.
+:meth:`~datetime.date.fromordinal` is about 15% faster in the C
+implementation and about 30% faster in the pure-Python implementation.
+Other operations that convert ordinals to dates, such as
+:meth:`~datetime.date.fromisocalendar` and :class:`~datetime.timedelta`
+arithmetic, also benefit.

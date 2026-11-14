@@ -471,88 +471,35 @@ days_before_month(int year, int month)
 #define DI100Y  36524   /* _PyTime_DaysBeforeYear(101); days in 100 years */
 #define DI400Y  146097  /* _PyTime_DaysBeforeYear(401); days in 400 years  */
 
-/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1. */
+/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1.
+ *
+ * Neri and Schneider's algorithm, https://doi.org/10.1002/spe.3172; see
+ * _ord2ymd() in Lib/_pydatetime.py for an explanation of the steps.
+ *
+ * The intermediate values only fit in 32 bits for small ordinals;
+ * iso_to_ymd() passes the largest, MAXORDINAL + 2 (10000-01-02).
+ */
 static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
-    int n, n1, n4, n100, n400, leapyear, preceding;
-
-    /* ordinal is a 1-based index, starting at 1-Jan-1.  The pattern of
-     * leap years repeats exactly every 400 years.  The basic strategy is
-     * to find the closest 400-year boundary at or before ordinal, then
-     * work with the offset from that boundary to ordinal.  Life is much
-     * clearer if we subtract 1 from ordinal first -- then the values
-     * of ordinal at 400-year boundaries are exactly those divisible
-     * by DI400Y:
-     *
-     *    D  M   Y            n              n-1
-     *    -- --- ----        ----------     ----------------
-     *    31 Dec -400        -DI400Y       -DI400Y -1
-     *     1 Jan -399         -DI400Y +1   -DI400Y      400-year boundary
-     *    ...
-     *    30 Dec  000        -1             -2
-     *    31 Dec  000         0             -1
-     *     1 Jan  001         1              0          400-year boundary
-     *     2 Jan  001         2              1
-     *     3 Jan  001         3              2
-     *    ...
-     *    31 Dec  400         DI400Y        DI400Y -1
-     *     1 Jan  401         DI400Y +1     DI400Y      400-year boundary
-     */
-    assert(ordinal >= 1);
-    --ordinal;
-    n400 = ordinal / DI400Y;
-    n = ordinal % DI400Y;
-    *year = n400 * 400 + 1;
-
-    /* Now n is the (non-negative) offset, in days, from January 1 of
-     * year, to the desired date.  Now compute how many 100-year cycles
-     * precede n.
-     * Note that it's possible for n100 to equal 4!  In that case 4 full
-     * 100-year cycles precede the desired day, which implies the
-     * desired day is December 31 at the end of a 400-year cycle.
-     */
-    n100 = n / DI100Y;
-    n = n % DI100Y;
-
-    /* Now compute how many 4-year cycles precede it. */
-    n4 = n / DI4Y;
-    n = n % DI4Y;
-
-    /* And now how many single years.  Again n1 can be 4, and again
-     * meaning that the desired day is December 31 at the end of the
-     * 4-year cycle.
-     */
-    n1 = n / 365;
-    n = n % 365;
-
-    *year += n100 * 100 + n4 * 4 + n1;
-    if (n1 == 4 || n100 == 4) {
-        assert(n == 0);
-        *year -= 1;
-        *month = 12;
-        *day = 31;
-        return;
+    assert(1 <= ordinal && ordinal <= MAXORDINAL + 2);
+    const uint32_t days = (uint32_t)ordinal + 305;
+    const uint32_t century = (4 * days + 3) / DI400Y;
+    const uint32_t day_of_century = (4 * days + 3) % DI400Y / 4;
+    const uint32_t year_of_century = (4 * day_of_century + 3) / DI4Y;
+    const uint32_t day_of_year = (4 * day_of_century + 3) % DI4Y / 4;
+    const uint32_t m = (5 * day_of_year + 461) / 153;
+    const uint32_t d = (5 * day_of_year + 461) % 153 / 5 + 1;
+    const uint32_t y = 100 * century + year_of_century;
+    if (m > 12) {  /* January or February */
+        *year = (int)(y + 1);
+        *month = (int)(m - 12);
     }
-
-    /* Now the year is correct, and n is the offset from January 1.  We
-     * find the month via an estimate that's either exact or one too
-     * large.
-     */
-    leapyear = n1 == 3 && (n4 != 24 || n100 == 3);
-    assert(leapyear == is_leap(*year));
-    *month = (n + 50) >> 5;
-    preceding = (_days_before_month[*month] + (*month > 2 && leapyear));
-    if (preceding > n) {
-        /* estimate is too large */
-        *month -= 1;
-        preceding -= days_in_month(*year, *month);
+    else {
+        *year = (int)y;
+        *month = (int)m;
     }
-    n -= preceding;
-    assert(0 <= n);
-    assert(n < days_in_month(*year, *month));
-
-    *day = n + 1;
+    *day = (int)d;
 }
 
 /* year, month, day -> ordinal, considering 01-Jan-0001 as day 1. */
@@ -3444,7 +3391,16 @@ datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
         PyErr_SetString(PyExc_ValueError, "ordinal must be >= 1");
         return NULL;
     }
-    ord_to_ymd(ordinal, &year, &month, &day);
+    if (ordinal <= MAXORDINAL) {
+        ord_to_ymd(ordinal, &year, &month, &day);
+    }
+    else {
+        /* Out of range, but compute the year for the error message.
+         * The calendar repeats every 400 years (DI400Y days). */
+        int cycles = (ordinal - 1) / DI400Y;
+        ord_to_ymd(ordinal - cycles * DI400Y, &year, &month, &day);
+        year += 400 * cycles;
+    }
     return new_date_subclass_ex(year, month, day, type);
 }
 
