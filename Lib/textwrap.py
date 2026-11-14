@@ -194,6 +194,17 @@ class TextWrapper:
             else:
                 i += 1
 
+    def _break_end(self, chunk, start, width):
+        """Return where to break chunk to fit width characters from start."""
+        end = start + width
+        if self.break_on_hyphens and len(chunk) > end:
+            # break after last hyphen, but only if there are
+            # non-hyphens before it
+            hyphen = chunk.rfind('-', start, end)
+            if hyphen > start and any(c != '-' for c in chunk[start:hyphen]):
+                end = hyphen + 1
+        return end
+
     def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
@@ -212,39 +223,26 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words and space_left > 0:
-            end = space_left
             chunk = reversed_chunks[-1]
-            if self.break_on_hyphens and len(chunk) > space_left:
-                # break after last hyphen, but only if there are
-                # non-hyphens before it
-                hyphen = chunk.rfind('-', 0, space_left)
-                if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
-                    end = hyphen + 1
+            end = self._break_end(chunk, 0, space_left)
             cur_line.append(chunk[:end])
-            rest = chunk[end:]
             # Pre-split the rest to avoid quadratic copying. This relies on
             # _wrap_chunks() giving every following line the width
             # self.width - len(self.subsequent_indent). Words with whitespace
             # take the slow path, since a piece could be dropped.
             line_width = self.width - len(self.subsequent_indent)
-            if (line_width >= 1 and len(rest) > line_width and
+            if (line_width >= 1 and len(chunk) - end > line_width and
                 chunk.split(None, 1) == [chunk]):
                 pieces = []
-                start = 0
-                while len(rest) - start > line_width:
-                    end = start + line_width
-                    if self.break_on_hyphens:
-                        hyphen = rest.rfind('-', start, end)
-                        if (hyphen > start and
-                            any(c != '-' for c in rest[start:hyphen])):
-                            end = hyphen + 1
-                    pieces.append(rest[start:end])
+                while len(chunk) - end > line_width:
                     start = end
-                pieces.append(rest[start:])
+                    end = self._break_end(chunk, start, line_width)
+                    pieces.append(chunk[start:end])
+                pieces.append(chunk[end:])
                 pieces.reverse()
                 reversed_chunks[-1:] = pieces
             else:
-                reversed_chunks[-1] = rest
+                reversed_chunks[-1] = chunk[end:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
