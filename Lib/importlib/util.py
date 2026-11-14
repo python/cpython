@@ -1,5 +1,6 @@
 """Utility code for constructing importers, etc."""
 
+from . import _bootstrap
 from ._bootstrap import _resolve_name
 from ._bootstrap import _find_spec
 
@@ -168,6 +169,33 @@ class _incompatible_extension_module_restrictions:
         return -1 if self.disable_check else 1
 
 
+class _LazyModuleLock:
+
+    """Hold the import system's lock for a module while it loads lazily.
+
+    Unlike a plain lock, the module lock detects a deadlock between threads
+    that are loading each other's modules. On a deadlock, proceed without the
+    lock as _bootstrap._lock_unlock_module() does for eager imports, so that
+    the partially initialized module is returned.
+    """
+
+    def __init__(self, name):
+        self._lock = _bootstrap._get_module_lock(name)
+        self._acquired = False
+
+    def __enter__(self):
+        try:
+            self._lock.acquire()
+        except _bootstrap._DeadlockError:
+            pass
+        else:
+            self._acquired = True
+
+    def __exit__(self, *args):
+        if self._acquired:
+            self._lock.release()
+
+
 class _LazyModule(types.ModuleType):
 
     """A subclass of the module type which triggers loading upon attribute access."""
@@ -176,7 +204,7 @@ class _LazyModule(types.ModuleType):
         """Trigger the load of the module and return the attribute."""
         __spec__ = object.__getattribute__(self, '__spec__')
         loader_state = __spec__.loader_state
-        with loader_state['lock']:
+        with _LazyModuleLock(__spec__.name):
             # Only the first thread to get the lock should trigger the load
             # and reset the module's class. The rest can now getattr().
             if object.__getattribute__(self, '__class__') is _LazyModule:
@@ -259,9 +287,6 @@ class LazyLoader(Loader):
 
     def exec_module(self, module):
         """Make the module load lazily."""
-        # Threading is only needed for lazy loading, and importlib.util can
-        # be pulled in at interpreter startup, so defer until needed.
-        import threading
         module.__spec__.loader = self.loader
         module.__loader__ = self.loader
         # Don't need to worry about deep-copying as trying to set an attribute
@@ -271,7 +296,6 @@ class LazyLoader(Loader):
         loader_state = {}
         loader_state['__dict__'] = module.__dict__.copy()
         loader_state['__class__'] = module.__class__
-        loader_state['lock'] = threading.RLock()
         loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
