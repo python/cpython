@@ -1,0 +1,3 @@
+:func:`sys.setprofile` and :func:`sys.settrace` callbacks are no longer called
+for :mod:`sys.monitoring` events that extension modules fire for their own code
+objects through the :ref:`monitoring C API <c-api-monitoring>`.
