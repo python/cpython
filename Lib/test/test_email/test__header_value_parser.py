@@ -75,6 +75,13 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_fws_ws_run(self):
         self._test_get_x(parser.get_fws, ' \t foo ', ' \t ', ' ', [], 'foo ')
 
+    def test_get_fws_only_space_and_tab(self):
+        # FWS is only SP and HTAB, other Unicode whitespace is not consumed.
+        for ws in '\xa0', '\u2003', '\u3000', '\x0b', '\x0c':
+            with self.subTest(ws=ws):
+                self._test_get_x(parser.get_fws, f' \t{ws}foo', ' \t', ' ',
+                                 [], f'{ws}foo')
+
     # get_encoded_word
 
     def test_get_encoded_word_missing_start_raises(self):
@@ -158,6 +165,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                         '=?us-ascii?q?=20foo?=',
                         ' foo',
                         ' foo',
+                        [],
+                        '')
+
+    def test_get_encoded_word_space_then_non_ascii_whitespace(self):
+        self._test_get_x(parser.get_encoded_word,
+                        '=?utf-8?q?foo_=C2=A0bar?=',
+                        'foo \xa0bar',
+                        'foo \xa0bar',
                         [],
                         '')
 
