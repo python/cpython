@@ -112,10 +112,17 @@ support.
    *path* should be either ``None`` or a list of paths to look for modules in.
 
    *prefix* is a string to output on the front of every module name on output.
+   It also becomes part of the name under which each package is imported
+   during the recursive descent.
 
    Note that this function must import all *packages* (*not* all modules!) on
    the given *path*, in order to access the ``__path__`` attribute to find
-   submodules.
+   submodules.  The import is done by name, so ``prefix + name`` must resolve
+   to the package that was found on *path*.  If it resolves to a different
+   package, the submodules of that one are listed instead.  If it raises
+   :exc:`ImportError`, the submodules are left out and nothing in the results
+   shows that they are missing.  Passing a package's ``__path__`` together
+   with its ``__name__`` and a trailing dot avoids both.
 
    *onerror* is a function which gets called with one argument (the name of the
    package which was being imported) if any exception occurs while trying to
