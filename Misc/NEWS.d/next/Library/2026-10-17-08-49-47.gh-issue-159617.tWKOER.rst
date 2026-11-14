@@ -1,0 +1,3 @@
+Fix the :term:`REPL` dropping the last characters of a long line that wraps
+across several rows, which could raise :exc:`IndexError` when moving the
+cursor with the arrow keys.
