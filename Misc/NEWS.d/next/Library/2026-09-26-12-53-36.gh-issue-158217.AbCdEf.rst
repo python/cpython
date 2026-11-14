@@ -1,0 +1,2 @@
+Fix :mod:`dbm.dumb` to accept ``bytearray`` keys, consistent with the
+other :mod:`dbm` backends. Patch by Tony Leung.
