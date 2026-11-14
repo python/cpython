@@ -1,5 +1,6 @@
 import atexit
 import errno
+import json
 import os
 import selectors
 import signal
@@ -162,27 +163,20 @@ class ForkServer(object):
                 self._forkserver_alive_fd = None
                 self._forkserver_pid = None
 
-            # gh-144503: sys_argv is passed as real argv elements after the
-            # ``-c cmd`` rather than repr'd into main_kws so that a large
-            # parent sys.argv cannot push the single ``-c`` command string
-            # over the OS per-argument length limit (MAX_ARG_STRLEN on Linux).
-            # The child sees them as sys.argv[1:].
-            cmd = ('import sys; '
-                   'from multiprocessing.forkserver import main; '
-                   'main(%d, %d, %r, sys_argv=sys.argv[1:], **%r)')
+            cmd = ('from multiprocessing.forkserver import main; ' +
+                   'main(listener_fd=%d, alive_r=%d, init_r=%d)')
 
-            main_kws = {}
-            sys_argv = None
             if self._preload_modules:
                 data = spawn.get_preparation_data('ignore')
-                if 'sys_path' in data:
-                    main_kws['sys_path'] = data['sys_path']
-                if 'init_main_from_path' in data:
-                    main_kws['main_path'] = data['init_main_from_path']
-                if 'sys_argv' in data:
-                    sys_argv = data['sys_argv']
-                if self._preload_on_error != 'ignore':
-                    main_kws['on_error'] = self._preload_on_error
+                preload_kwargs = {
+                    "preload": self._preload_modules,
+                    "sys_path": data.get("sys_path"),
+                    "main_path": data.get("init_main_from_path"),
+                    "sys_argv": data.get("sys_argv"),
+                    "on_error": self._preload_on_error,
+                }
+            else:
+                preload_kwargs = None
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -195,32 +189,34 @@ class ForkServer(object):
                 # when they all terminate the read end becomes ready.
                 alive_r, alive_w = os.pipe()
                 # A short lived pipe to initialize the forkserver authkey.
-                authkey_r, authkey_w = os.pipe()
+                init_r, init_w = os.pipe()
                 try:
-                    fds_to_pass = [listener.fileno(), alive_r, authkey_r]
-                    main_kws['authkey_r'] = authkey_r
-                    cmd %= (listener.fileno(), alive_r, self._preload_modules,
-                            main_kws)
+                    fds_to_pass = [listener.fileno(), alive_r, init_r]
+                    cmd %= (listener.fileno(), alive_r, init_r)
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
-                    if sys_argv is not None:
-                        args += sys_argv
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
-                    os.close(authkey_w)
+                    os.close(init_w)
                     raise
                 finally:
                     os.close(alive_r)
-                    os.close(authkey_r)
+                    os.close(init_r)
                 # Authenticate our control socket to prevent access from
                 # processes we have not shared this key with.
                 try:
                     self._forkserver_authkey = os.urandom(_AUTHKEY_LEN)
-                    os.write(authkey_w, self._forkserver_authkey)
+                    preload_data = json.dumps(preload_kwargs).encode()
+                    # Use a buffered writer so that payloads larger than
+                    # PIPE_BUF are written fully (os.write may short-write).
+                    with os.fdopen(init_w, 'wb', closefd=False) as f:
+                        f.write(self._forkserver_authkey)
+                        f.write(struct.pack("Q", len(preload_data)))
+                        f.write(preload_data)
                 finally:
-                    os.close(authkey_w)
+                    os.close(init_w)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
                 self._forkserver_pid = pid
@@ -290,19 +286,22 @@ def _handle_preload(preload, main_path=None, sys_path=None, sys_argv=None,
     util._flush_std_streams()
 
 
-def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, sys_argv=None, authkey_r=None, on_error='ignore'):
+def main(listener_fd, alive_r, init_r):
     """Run forkserver."""
-    if authkey_r is not None:
-        try:
-            authkey = os.read(authkey_r, _AUTHKEY_LEN)
-            assert len(authkey) == _AUTHKEY_LEN, f'{len(authkey)} < {_AUTHKEY_LEN}'
-        finally:
-            os.close(authkey_r)
-    else:
-        authkey = b''
+    try:
+        # Buffered reader handles short reads on the length prefix and body.
+        with os.fdopen(init_r, 'rb', closefd=False) as f:
+            authkey = f.read(_AUTHKEY_LEN)
+            assert len(authkey) == _AUTHKEY_LEN, (
+                f'{len(authkey)} < {_AUTHKEY_LEN}')
+            preload_data_len, = struct.unpack("Q",
+                                              f.read(struct.calcsize("Q")))
+            preload_kwargs = json.loads(f.read(preload_data_len))
+    finally:
+        os.close(init_r)
 
-    _handle_preload(preload, main_path, sys_path, sys_argv, on_error)
+    if preload_kwargs:
+        _handle_preload(**preload_kwargs)
 
     util._close_stdin()
 
