@@ -352,7 +352,11 @@ class Message:
                 return
             if not isinstance(charset, Charset):
                 charset = Charset(charset)
-            payload = payload.encode(charset.output_charset, 'surrogateescape')
+            # If the input and output charsets differ, set_charset()
+            # converts the text, so don't encode it twice.
+            if charset == charset.get_output_charset():
+                payload = payload.encode(charset.output_charset,
+                                         'surrogateescape')
         if hasattr(payload, 'decode'):
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:

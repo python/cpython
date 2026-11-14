@@ -1483,6 +1483,13 @@ that may require changes to your code.
   raises :exc:`io.UnsupportedOperation` unless buffering is disabled.
   (Contributed by An Long in :gh:`86768`.)
 
+* The ``iso2022_*`` codecs no longer encode U+001B ESCAPE, and
+  ``iso2022_kr`` no longer encodes U+000E SHIFT OUT and U+000F SHIFT IN.
+  Written as bare bytes, they start an escape or shift sequence, so any
+  ISO-2022 decoder misread the result.  Encoding them now raises
+  :exc:`UnicodeEncodeError`, or calls the error handler.
+  (Contributed by Ahmed Semih Özmekik in :gh:`160302`.)
+
 
 Build changes
 =============

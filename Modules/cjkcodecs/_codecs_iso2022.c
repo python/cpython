@@ -187,6 +187,13 @@ ENCODER(iso2022)
         Py_ssize_t insize;
 
         if (c < 0x80) {
+            /* A bare ESC would be read as the start of an escape sequence,
+               and SO and SI as shifts where they are used, so these
+               characters cannot be encoded. */
+            if (c == ESC ||
+                ((c == SO || c == SI) && !CONFIG_ISSET(NO_SHIFT))) {
+                return 1;
+            }
             if (STATE_G0 != CHARSET_ASCII) {
                 WRITEBYTE3(ESC, '(', 'B');
                 STATE_SETG0(CHARSET_ASCII);

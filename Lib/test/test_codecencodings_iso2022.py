@@ -8,12 +8,23 @@ COMMON_CODEC_TESTS = (
         (b'ab\xFFcd', 'replace', 'ab\uFFFDcd'),
         (b'ab\x1Bdef', 'replace', 'ab\x1Bdef'),
         (b'ab\x1B$def', 'replace', 'ab\uFFFD'),
+        # a bare ESC would start an escape sequence
+        ('ab\x1Bdef', 'strict', None),
+        ('x\x1B$B$"', 'strict', None),
+        ('ab\x1Bdef', 'replace', b'ab?def'),
+        ('ab\x1Bdef', 'ignore', b'abdef'),
+        ('ab\x1Bdef', 'backslashreplace', b'ab\\x1bdef'),
+    )
+
+# SO and SI are not shifts in these encodings
+NO_SHIFT_CODEC_TESTS = (
+        ('a\x0Eb\x0Fc', 'strict', b'a\x0Eb\x0Fc'),
     )
 
 class Test_ISO2022_JP(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'iso2022_jp'
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
-    codectests = COMMON_CODEC_TESTS + (
+    codectests = COMMON_CODEC_TESTS + NO_SHIFT_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'ab\x1BNdef'),
         # there is no G1 in this encoding
         (b'ab\x1B$)Bdef', 'strict', None),
@@ -24,7 +35,7 @@ class Test_ISO2022_JP(multibytecodec_support.TestBase, unittest.TestCase):
 class Test_ISO2022_JP2(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'iso2022_jp_2'
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
-    codectests = COMMON_CODEC_TESTS + (
+    codectests = COMMON_CODEC_TESTS + NO_SHIFT_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'abdef'),
         # a charset can only be designated to the G set (G0, G1 or G2)
         # that RFC 1554 assigns it
@@ -40,7 +51,7 @@ class Test_ISO2022_JP2(multibytecodec_support.TestBase, unittest.TestCase):
 class Test_ISO2022_JP3(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'iso2022_jp_3'
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
-    codectests = COMMON_CODEC_TESTS + (
+    codectests = COMMON_CODEC_TESTS + NO_SHIFT_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'ab\x1BNdef'),
         (b'\x1B$(O\x2E\x23\x1B(B', 'strict', '\u3402'      ),
         (b'\x1B$(O\x2E\x22\x1B(B', 'strict', '\U0002000B'  ),
@@ -63,7 +74,7 @@ class Test_ISO2022_JP3(multibytecodec_support.TestBase, unittest.TestCase):
 class Test_ISO2022_JP2004(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'iso2022_jp_2004'
     tstring = multibytecodec_support.load_teststring('iso2022_jp')
-    codectests = COMMON_CODEC_TESTS + (
+    codectests = COMMON_CODEC_TESTS + NO_SHIFT_CODEC_TESTS + (
         (b'ab\x1BNdef', 'replace', 'ab\x1BNdef'),
         (b'\x1B$(Q\x2E\x23\x1B(B', 'strict', '\u3402'      ),
         (b'\x1B$(Q\x2E\x22\x1B(B', 'strict', '\U0002000B'  ),
@@ -94,6 +105,11 @@ class Test_ISO2022_KR(multibytecodec_support.TestBase, unittest.TestCase):
         (b'ab\x1B$Cdefg', 'strict', None),
         (b'ab\x1B)Bdefg', 'strict', None),
         (b'ab\x1B$(Cdefg', 'replace', 'ab\ufffddefg'),
+        # SO and SI shift between ASCII and KS X 1001
+        ('a\x0Eb', 'strict', None),
+        ('a\x0Fb', 'strict', None),
+        ('a\x0Eb\x0Fc', 'replace', b'a?b?c'),
+        ('\uac00\x0E', 'replace', b'\x1B$)C\x0E\x30\x21\x0F?'),
     )
 
     # iso2022_kr.txt cannot be used to test "chunk coding": the escape
