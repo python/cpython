@@ -2018,6 +2018,14 @@ _PyXI_ApplyError(_PyXI_error *error, const char *failure)
     PyThreadState *tstate = PyThreadState_Get();
 
     if (failure != NULL) {
+        if (error->override != NULL
+            && error->override->code == _PyXI_ERR_NO_MEMORY)
+        {
+            PyErr_NoMemory();
+        }
+        else {
+            PyErr_SetString(PyExc_InterpreterError, failure);
+        }
         xi_error_clear(error);
         return NULL;
     }

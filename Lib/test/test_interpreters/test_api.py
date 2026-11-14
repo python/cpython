@@ -947,6 +947,16 @@ class TestInterpreterExec(TestBase):
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
 
+    def test_failure_with_broken_exception_str(self):
+        interp = interpreters.create()
+        with self.assertRaises(interpreters.InterpreterError):
+            interp.exec(dedent("""
+                class BrokenError(Exception):
+                    def __str__(self):
+                        raise ValueError
+                raise BrokenError
+                """))
+
     @force_not_colorized
     def test_display_preserved_exception(self):
         tempdir = self.temp_dir()
