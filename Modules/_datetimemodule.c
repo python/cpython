@@ -473,44 +473,16 @@ days_before_month(int year, int month)
 
 /* ordinal -> year, month, day, considering 01-Jan-0001 as day 1.
  *
- * This follows Neri and Schneider [1]; _ord2ymd() in Lib/_pydatetime.py
- * does the same steps.
+ * Neri and Schneider's algorithm, https://doi.org/10.1002/spe.3172; see
+ * _ord2ymd() in Lib/_pydatetime.py for an explanation of the steps.
  *
- * February is the irregular month, so we count in a calendar whose years
- * start on March 1.  Then the leap day, when there is one, is the last day
- * of its year, and the long year of each 4-year cycle and the long century
- * of each 400-year cycle come last as well.
- *
- * A century is DI400Y/4 = 36524.25 days on average, so century c starts on
- * day floor(DI400Y*c/4); the first three centuries of a 400-year cycle have
- * 36524 days and the last one 36525.  Inverting that, day n is in century
- * (4*n + 3) / DI400Y, and (4*n + 3) % DI400Y / 4 is its day within the
- * century.  Within a century, years follow the same pattern with
- * DI4Y/4 = 365.25 days (three common years, then a leap year; a 36524-day
- * century just ends one day early), so the same step with DI4Y gives the
- * year and the day within it.
- *
- * From March on, month lengths follow 31, 30, 31, 30, 31, a 153-day block
- * that repeats: March-July, August-December, then January-February (cut
- * short by the end of the year).  So for day n of the year (March 1 is
- * day 0), (5*n + 2) / 153 is the number of whole months before it and
- * (5*n + 2) % 153 / 5 is the day within its month.  We add 3*153 = 459 so
- * that March is month 3; months 13 and 14 are January and February of the
- * next calendar year.
- *
- * All intermediate values fit in 32 bits as long as ordinal is at most
- * MAXORDINAL + 2 (iso_to_ymd() can reach 10000-01-02).
- * date.fromordinal() handles larger ordinals itself.
- *
- * [1] Neri C, Schneider L. Euclidean affine functions and their application
- *     to calendar algorithms. Softw Pract Exper. 2023;53(4):937-970.
- *     https://doi.org/10.1002/spe.3172
+ * The intermediate values only fit in 32 bits for small ordinals;
+ * iso_to_ymd() passes the largest, MAXORDINAL + 2 (10000-01-02).
  */
 static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
     assert(1 <= ordinal && ordinal <= MAXORDINAL + 2);
-    /* Days since 0000-03-01; 0001-01-01 is 306 days later. */
     const uint32_t days = (uint32_t)ordinal + 305;
     const uint32_t century = (4 * days + 3) / DI400Y;
     const uint32_t day_of_century = (4 * days + 3) % DI400Y / 4;
@@ -3418,11 +3390,8 @@ datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
         ord_to_ymd(ordinal, &year, &month, &day);
     }
     else {
-        /* Out of range: find the year anyway, so new_date_subclass_ex()
-         * raises the usual "year must be in 1..9999, not N" error.  The
-         * calendar repeats every 400 years (DI400Y days), so convert the
-         * equivalent date in the first 400-year cycle and add the years
-         * back. */
+        /* Out of range, but compute the year for the error message.
+         * The calendar repeats every 400 years (DI400Y days). */
         int cycles = (ordinal - 1) / DI400Y;
         ord_to_ymd(ordinal - cycles * DI400Y, &year, &month, &day);
         year += 400 * cycles;
