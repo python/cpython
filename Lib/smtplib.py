@@ -589,16 +589,50 @@ class SMTP:
                 self._print_debug('data:', (code, msg))
             return (code, msg)
 
-    def verify(self, address):
-        """SMTP 'verify' command -- checks for address validity."""
-        self.putcmd("vrfy", _addr_only(address))
+    def _putcmd_addr(self, cmd, address, smtputf8):
+        """Send an address command (VRFY or EXPN) to the server.
+
+        If 'smtputf8' is true, send the address as UTF-8 together with the
+        SMTPUTF8 parameter.
+        """
+        address = _addr_only(address)
+        if smtputf8:
+            self.ehlo_or_helo_if_needed()
+            if not self.has_extn('smtputf8'):
+                raise SMTPNotSupportedError('SMTPUTF8 not supported by server')
+            # RFC 6531 section 3.7.4.2: the argument may be UTF-8, and the
+            # SMTPUTF8 parameter allows UTF-8 in the reply.
+            command_encoding = self.command_encoding
+            self.command_encoding = 'utf-8'
+            try:
+                self.putcmd(cmd, f'{address} SMTPUTF8')
+            finally:
+                self.command_encoding = command_encoding
+        else:
+            self.putcmd(cmd, address)
+
+    def verify(self, address, *, smtputf8=False):
+        """SMTP 'verify' command - checks for address validity.
+
+        If 'smtputf8' is true, send the address as UTF-8 together with the
+        SMTPUTF8 parameter (per RFC 6531), which also allows UTF-8 in the
+        reply.  In that case, if there has been no previous EHLO or HELO
+        command this session, this method tries ESMTP EHLO first.
+        """
+        self._putcmd_addr("vrfy", address, smtputf8)
         return self.getreply()
     # a.k.a.
     vrfy = verify
 
-    def expn(self, address):
-        """SMTP 'expn' command -- expands a mailing list."""
-        self.putcmd("expn", _addr_only(address))
+    def expn(self, address, *, smtputf8=False):
+        """SMTP 'expn' command - expands a mailing list.
+
+        If 'smtputf8' is true, send the list name as UTF-8 together with the
+        SMTPUTF8 parameter (per RFC 6531), which also allows UTF-8 in the
+        reply.  In that case, if there has been no previous EHLO or HELO
+        command this session, this method tries ESMTP EHLO first.
+        """
+        self._putcmd_addr("expn", address, smtputf8)
         return self.getreply()
 
     # some useful methods

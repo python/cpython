@@ -806,6 +806,7 @@ sim_users = {'Mr.A@somewhere.com':'John A',
              'Ms.B@xn--fo-fka.com':'Sally B',
              'Mrs.C@somewhereesle.com':'Ruth C',
             }
+sim_utf8_users = {'Ms.É@somewhere.com': 'Éva É'}
 
 sim_auth = ('Mr.A@somewhere.com', 'somepassword')
 sim_cram_md5_challenge = ('PENCeUxFREJoU0NnbmhNWitOMjNGNn'
@@ -813,6 +814,7 @@ sim_cram_md5_challenge = ('PENCeUxFREJoU0NnbmhNWitOMjNGNn'
 sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
              'list-2':['Ms.B@xn--fo-fka.com',],
             }
+sim_utf8_lists = {'list-é': ['Mr.A@somewhere.com', 'Ms.É@somewhere.com']}
 
 # Simulated SMTP channel & server
 class ResponseException(Exception): pass
@@ -949,23 +951,39 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         self.seen_greeting = arg
         self.extended_smtp = True
 
+    def _strip_smtputf8(self, arg):
+        # RFC 6531 section 3.7.4.2: VRFY and EXPN take an optional SMTPUTF8
+        # parameter which allows UTF-8 in the reply.
+        if not arg:
+            return arg
+        arg, _, params = arg.partition(' ')
+        params = self._getparams(params.upper().split())
+        if params and params.pop('SMTPUTF8', False) is True:
+            self.require_SMTPUTF8 = True
+        return arg
+
     def smtp_VRFY(self, arg):
         # For max compatibility smtplib should be sending the raw address.
-        if arg in sim_users:
-            self.push('250 %s %s' % (sim_users[arg], smtplib.quoteaddr(arg)))
+        arg = self._strip_smtputf8(arg)
+        users = sim_users | sim_utf8_users
+        if arg in users:
+            self.push('250 %s %s' % (users[arg], smtplib.quoteaddr(arg)))
         else:
             self.push('550 No such user: %s' % arg)
 
     def smtp_EXPN(self, arg):
+        arg = self._strip_smtputf8(arg)
         list_name = arg.lower()
-        if list_name in sim_lists:
-            user_list = sim_lists[list_name]
+        lists = sim_lists | sim_utf8_lists
+        users = sim_users | sim_utf8_users
+        if list_name in lists:
+            user_list = lists[list_name]
             for n, user_email in enumerate(user_list):
                 quoted_addr = smtplib.quoteaddr(user_email)
                 if n < len(user_list) - 1:
-                    self.push('250-%s %s' % (sim_users[user_email], quoted_addr))
+                    self.push('250-%s %s' % (users[user_email], quoted_addr))
                 else:
-                    self.push('250 %s %s' % (sim_users[user_email], quoted_addr))
+                    self.push('250 %s %s' % (users[user_email], quoted_addr))
         else:
             self.push('550 No access for you!')
 
@@ -1357,6 +1375,40 @@ class SMTPSimTests(unittest.TestCase):
         self.addCleanup(smtp.close)
         self.assertRaises(UnicodeEncodeError, smtp.sendmail, 'Alice', 'Böb', '')
         self.assertRaises(UnicodeEncodeError, smtp.mail, 'Älice')
+        self.assertRaises(UnicodeEncodeError, smtp.verify, 'Ms.É@somewhere.com')
+        self.assertRaises(UnicodeEncodeError, smtp.expn, 'list-é')
+
+    def test_vrfy_NotSupportedError_if_no_SMTPUTF8(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.ehlo()
+        self.assertFalse(smtp.has_extn('smtputf8'))
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.vrfy('Mr.A@somewhere.com', smtputf8=True)
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.vrfy('Ms.É@somewhere.com', smtputf8=True)
+
+        # Nothing was sent, the connection is still usable
+        self.assertEqual(smtp.noop(), (250, b'OK'))
+
+    def test_expn_NotSupportedError_if_no_SMTPUTF8(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.ehlo()
+        self.assertFalse(smtp.has_extn('smtputf8'))
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.expn('list-1', smtputf8=True)
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.expn('list-é', smtputf8=True)
+
+        # Nothing was sent, the connection is still usable
+        self.assertEqual(smtp.noop(), (250, b'OK'))
 
     def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
         # This test is located here and not in the SMTPUTF8SimTests
@@ -1484,6 +1536,76 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
+
+    def test_vrfy_with_SMTPUTF8(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.ehlo()
+        self.assertTrue(smtp.has_extn('smtputf8'))
+        self.assertEqual(
+            smtp.vrfy('Ms.É@somewhere.com', smtputf8=True),
+            (250, 'Éva É <Ms.É@somewhere.com>'.encode('utf-8'))
+        )
+        # ASCII reply
+        self.assertEqual(
+            smtp.vrfy('Mr.A@somewhere.com', smtputf8=True),
+            (250, b'John A <Mr.A@somewhere.com>')
+        )
+        # encoding doesn't leak out of a command
+        self.assertEqual(smtp.command_encoding, 'ascii')
+        self.assertEqual(
+            smtp.vrfy('unknown@unknown.com', smtputf8=True),
+            (550, b'No such user: unknown@unknown.com')
+        )
+        # Reply stream still in sync
+        self.assertEqual(smtp.noop(), (250, b'OK'))
+
+    def test_vrfy_smtputf8_ehlo_if_needed(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        self.assertEqual(
+            smtp.vrfy('Ms.É@somewhere.com', smtputf8=True),
+            (250, 'Éva É <Ms.É@somewhere.com>'.encode('utf-8'))
+        )
+        self.assertTrue(smtp.has_extn('smtputf8'))
+        # No reply was left unread
+        self.assertEqual(smtp.noop(), (250, b'OK'))
+
+    def test_vrfy_smtputf8_helo_fails(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.helo()
+        with self.assertRaises(smtplib.SMTPNotSupportedError):
+            smtp.vrfy('Mr.A@somewhere.com', smtputf8=True)
+        self.assertFalse(smtp.has_extn('smtputf8'))
+        # Nothing was sent, the connection is still usable
+        self.assertEqual(smtp.noop(), (250, b'OK'))
+
+    def test_expn_with_SMTPUTF8(self):
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.ehlo()
+        self.assertTrue(smtp.has_extn('smtputf8'))
+        self.assertEqual(
+            smtp.expn('list-é', smtputf8=True),
+            (250, ('John A <Mr.A@somewhere.com>\n'
+                  'Éva É <Ms.É@somewhere.com>').encode('utf-8')))
+        # Encoding doesn't leak out of a command
+        self.assertEqual(smtp.command_encoding, 'ascii')
+        # No reply was left unread
+        self.assertEqual(smtp.noop(), (250, b'OK'))
 
     def test_send_unicode_with_SMTPUTF8_via_low_level_API(self):
         m = '¡a test message containing unicode!'.encode('utf-8')
