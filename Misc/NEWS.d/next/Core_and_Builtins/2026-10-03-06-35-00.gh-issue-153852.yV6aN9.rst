@@ -1,0 +1,3 @@
+Fix data races in frame tracing state in the free-threaded build. Protect
+access to the frame trace callback and use atomic accesses for line and opcode
+tracing flags.

@@ -1212,7 +1212,7 @@ static PyObject *
 frame_trace_opcodes_get_impl(PyFrameObject *self)
 /*[clinic end generated code: output=53ff41d09cc32e87 input=4eb91dc88e04677a]*/
 {
-    return self->f_trace_opcodes ? Py_True : Py_False;
+    return FT_ATOMIC_LOAD_CHAR_RELAXED(self->f_trace_opcodes) ? Py_True : Py_False;
 }
 
 /*[clinic input]
@@ -1231,13 +1231,13 @@ frame_trace_opcodes_set_impl(PyFrameObject *self, PyObject *value)
         return -1;
     }
     if (value == Py_True) {
-        self->f_trace_opcodes = 1;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->f_trace_opcodes, 1);
         if (self->f_trace) {
             return _PyEval_SetOpcodeTrace(self, true);
         }
     }
     else {
-        self->f_trace_opcodes = 0;
+        FT_ATOMIC_STORE_CHAR_RELAXED(self->f_trace_opcodes, 0);
         return _PyEval_SetOpcodeTrace(self, false);
     }
     return 0;
@@ -1956,7 +1956,8 @@ frame_trace_set_impl(PyFrameObject *self, PyObject *value)
     }
     if (value != self->f_trace) {
         Py_XSETREF(self->f_trace, Py_XNewRef(value));
-        if (value != NULL && self->f_trace_opcodes) {
+        if (value != NULL &&
+            FT_ATOMIC_LOAD_CHAR_RELAXED(self->f_trace_opcodes)) {
             return _PyEval_SetOpcodeTrace(self, true);
         }
     }
