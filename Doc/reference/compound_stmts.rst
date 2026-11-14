@@ -1852,14 +1852,14 @@ The following example indicates the full set of allowed type parameter declarati
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
       TypeVarWithDefault = int,
-      *SimpleTypeVarTuple = (int, float),
-      **SimpleParamSpec = (str, bytearray),
+      *SimpleTypeVarTuple = *tuple[int, float],
+      **SimpleParamSpec = [str, bytearray],
    ](
       a: SimpleTypeVar,
-      b: TypeVarWithDefault,
-      c: TypeVarWithBound,
-      d: Callable[SimpleParamSpec, TypeVarWithConstraints],
-      *e: SimpleTypeVarTuple,
+      b: TypeVarWithBound,
+      c: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      d: TypeVarWithDefault,
+      *e: *SimpleTypeVarTuple,
    ): ...
 
 .. _generic-functions:
