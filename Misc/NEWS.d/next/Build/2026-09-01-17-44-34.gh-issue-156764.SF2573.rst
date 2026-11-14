@@ -1,0 +1,2 @@
+Honor ``--disable-safety`` and ``--disable-slower-safety`` without enabling
+their compiler options. Both options remain disabled by default.
