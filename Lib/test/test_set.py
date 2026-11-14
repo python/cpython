@@ -832,6 +832,17 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
                 u = len({h & mask for h in map(hash, powerset(nums(n)))})
                 self.assertGreater(4*u, t)
 
+        # gh-150134: element hashes which differ only in their high-order
+        # bits, e.g. hash(i / 256) == i << 53 on 64-bit builds.
+        floats = [i / 256 for i in range(256)]
+        hashes = [hash(self.thetype(c))
+                  for c in itertools.combinations(floats, 2)]
+        self.assertGreater(len(set(hashes)), 0.99 * len(hashes))
+        t = 2 ** 12
+        mask = t - 1
+        u = len({h & mask for h in hashes})
+        self.assertGreater(u, 0.9 * t)
+
 class FrozenSetSubclass(frozenset):
     pass
 
