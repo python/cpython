@@ -1,0 +1,6 @@
+The pure Python pickler (``pickle._Pickler``) no longer
+raises :exc:`RecursionError` for deeply nested lists, tuples, dicts, sets,
+frozensets, weak references and object states: containers are now saved
+with an explicit stack instead of recursive calls.  Overrides of
+:meth:`!save`, :meth:`!save_reduce` and dispatch table entries are still
+honoured.

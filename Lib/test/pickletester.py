@@ -4843,6 +4843,53 @@ class AbstractPickleTests:
     def test_deep_nested_struct_dict(self):
         self.deep_nested_struct(lambda data: {'x': data})
 
+    def deeply_nested(self, create_nested, minprotocol=0):
+        # gh-47369: The pure Python pickler saves nested containers and
+        # object states without recursion, so the nesting depth is not
+        # limited by the recursion limit.
+        if getattr(self, "pickler", None) is not pickle._Pickler:
+            self.skipTest("the C pickler is limited by the C stack")
+        depth = sys.getrecursionlimit() * 5
+        data = None
+        for i in range(depth):
+            data = create_nested(data)
+        for proto in range(minprotocol, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                buf = io.BytesIO()
+                self.pickler(buf, protocol=proto).dump(data)
+                buf.seek(0)
+                x = data
+                y = self.unpickler(buf).load()
+                for i in range(depth):
+                    self.assertIs(type(y), type(x))
+                    x, y = self.unnest(x), self.unnest(y)
+                self.assertIsNone(y)
+
+    @staticmethod
+    def unnest(data):
+        if isinstance(data, dict):
+            return data['x']
+        if isinstance(data, frozenset):
+            return next(x for x in data if x != 1)
+        if isinstance(data, types.SimpleNamespace):
+            return data.x
+        return data[0]
+
+    def test_deeply_nested_list(self):
+        self.deeply_nested(lambda data: [data])
+
+    def test_deeply_nested_tuple(self):
+        self.deeply_nested(lambda data: (data,))
+
+    def test_deeply_nested_dict(self):
+        self.deeply_nested(lambda data: {'x': data})
+
+    def test_deeply_nested_frozenset(self):
+        self.deeply_nested(lambda data: frozenset((1, data)))
+
+    def test_deeply_nested_object_state(self):
+        self.deeply_nested(lambda data: types.SimpleNamespace(x=data))
+
 
 class BigmemPickleTests:
 
