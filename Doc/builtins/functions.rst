@@ -1742,6 +1742,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
 
+   .. versionchanged:: 3.16
+      The output is now written in a single ``write()`` call whenever possible,
+      instead of writing each argument, separator, and terminator separately.
+
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
 

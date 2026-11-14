@@ -1,0 +1,3 @@
+:func:`print` now writes its output in a single ``write()`` call whenever
+possible, reducing interleaving between concurrent calls and the overhead of
+repeated writes. Patch by Inada Naoki.

@@ -225,7 +225,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
         self.sysmod.excepthook = 1
         self.console.interact()
-        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        self.stdout.write.assert_called_once_with('123\n')
         error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
         self.assertIn("Error in sys.excepthook:", error)
         self.assertEqual(error.count("'int' object is not callable"), 1)
@@ -239,7 +239,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             raise BaseException(s)
         self.sysmod.excepthook = raise_base
         self.console.interact()
-        self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
+        self.stdout.write.assert_called_once_with('123\n')
         error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
         self.assertIn("Error in sys.excepthook:", error)
         self.assertEqual(error.count("not so fast"), 1)
