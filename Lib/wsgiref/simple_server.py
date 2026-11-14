@@ -66,6 +66,42 @@ class WSGIServer(HTTPServer):
         self.application = application
 
 
+class InputWrapper:
+
+    def __init__(self, stream, remaining):
+        self.stream = stream
+        self.remaining = remaining
+
+    def read(self, size=-1, /):
+        readable = min(size, self.remaining) if size >= 0 else self.remaining
+        if readable == 0:
+            return b''
+        data = self.stream.read(readable)
+        self.remaining -= readable
+        return data
+
+    def readline(self, size=-1, /):
+        readable = min(size, self.remaining) if size >= 0 else self.remaining
+        if readable == 0:
+            return b''
+        line = self.stream.readline(readable)
+        self.remaining -= len(line)
+        return line
+
+    def readlines(self, hint=-1, /):
+        lines = []
+        read = 0
+        while line := self.readline():
+            lines.append(line)
+            read += len(line)
+            if hint > 0 and read >= hint:
+                break
+        return lines
+
+    def __iter__(self):
+        while line := self.readline():
+            yield line
+
 
 class WSGIRequestHandler(BaseHTTPRequestHandler):
 
@@ -104,6 +140,13 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
                 env['HTTP_'+k] = v
         return env
 
+    def get_stdin(self):
+        length = self.headers.get('content-length')
+        if length:
+            return InputWrapper(self.rfile, int(length))
+        else:
+            return self.rfile
+
     def get_stderr(self):
         return sys.stderr
 
@@ -122,8 +165,8 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             return
 
         handler = ServerHandler(
-            self.rfile, self.wfile, self.get_stderr(), self.get_environ(),
-            multithread=False,
+            self.get_stdin(), self.wfile, self.get_stderr(),
+            self.get_environ(), multithread=False,
         )
         handler.request_handler = self      # backpointer for logging
         handler.run(self.server.get_app())

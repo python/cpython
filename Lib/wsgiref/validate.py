@@ -77,8 +77,6 @@ Some of the things this checks:
 
 * That wsgi.input is used properly:
 
-  - .read() is called with exactly one argument
-
   - That it returns a string
 
   - That readline, readlines, and __iter__ return strings
@@ -194,7 +192,7 @@ class InputWrapper:
         self.input = wsgi_input
 
     def read(self, *args):
-        assert_(len(args) == 1)
+        assert_(len(args) <= 1)
         v = self.input.read(*args)
         assert_(type(v) is bytes)
         return v
