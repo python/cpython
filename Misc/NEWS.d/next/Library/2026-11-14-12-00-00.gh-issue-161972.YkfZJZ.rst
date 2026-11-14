@@ -1,1 +1,1 @@
-Fix :func:`cmath.log` with a base: ``cmath.log(0, base)`` now raises :exc:`ValueError` instead of returning ``(-inf+nanj)``. The domain error from the first logarithm was lost when the second call reset ``errno``.
+Fix :func:`cmath.log` with a nonzero base: ``cmath.log(0, base)`` now raises :exc:`ValueError` instead of returning ``(-inf+nanj)``.
