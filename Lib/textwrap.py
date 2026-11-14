@@ -221,7 +221,32 @@ class TextWrapper:
                 if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
                     end = hyphen + 1
             cur_line.append(chunk[:end])
-            reversed_chunks[-1] = chunk[end:]
+            rest = chunk[end:]
+            # The rest of the word starts each of the following lines, which
+            # all have the same width.  Break it into all of those lines'
+            # pieces now: breaking off one piece per line would copy the
+            # rest of the word every time, which takes quadratic time.
+            # Only do so if the word has no whitespace, so that no piece is
+            # dropped as whitespace at the start of a line.
+            line_width = self.width - len(self.subsequent_indent)
+            if (line_width >= 1 and len(rest) > line_width and
+                chunk.split(None, 1) == [chunk]):
+                pieces = []
+                start = 0
+                while len(rest) - start > line_width:
+                    end = start + line_width
+                    if self.break_on_hyphens:
+                        hyphen = rest.rfind('-', start, end)
+                        if (hyphen > start and
+                            any(c != '-' for c in rest[start:hyphen])):
+                            end = hyphen + 1
+                    pieces.append(rest[start:end])
+                    start = end
+                pieces.append(rest[start:])
+                pieces.reverse()
+                reversed_chunks[-1:] = pieces
+            else:
+                reversed_chunks[-1] = rest
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
