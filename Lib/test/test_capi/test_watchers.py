@@ -56,12 +56,16 @@ class TestDictWatchers(unittest.TestCase):
             self.assert_events(["mod:foo:baz"])
 
     def test_clone(self):
-        d = {}
-        d2 = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.update(d2)
-            self.assert_events(["clone"])
+        sparse = {str(i): i for i in range(100)}
+        for i in range(99):
+            del sparse[str(i)]
+        for d2 in ({"foo": "bar"}, sparse):
+            d = {}
+            with self.watcher() as wid:
+                self.watch(wid, d)
+                d.update(d2)
+                self.assert_events(["clone"])
+            self.assertEqual(d, d2)
 
     def test_no_event_if_not_watched(self):
         d = {}
