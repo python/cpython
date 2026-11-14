@@ -39,7 +39,7 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import captured_stdout, captured_stderr
+from test.support import captured_stdout, captured_stderr, force_not_colorized
 
 from .mocks import (
     MockAwaitedInfo,
@@ -2938,6 +2938,43 @@ class TestRecursiveFunctionHandling(unittest.TestCase):
         self.assertEqual(collector.result[("test.py", 15, "func")]["cumulative_calls"], 1)
         self.assertEqual(collector.result[("test.py", 12, "func")]["cumulative_calls"], 1)
         self.assertEqual(collector.result[("test.py", 10, "func")]["cumulative_calls"], 1)
+
+    @force_not_colorized
+    def test_pstats_collector_summary_counts_recursive_function_once(self):
+        # gh-159175
+        collector = PstatsCollector(sample_interval_usec=1000)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("/src/test.py", 7, "f"),
+                            MockFrameInfo("/src/test.py", 5, "f"),
+                            MockFrameInfo("/src/test.py", 3, "f"),
+                            MockFrameInfo("/src/test.py", 9, "main"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        for _ in range(2):
+            collector.collect(frames, timestamps_us=[0] * 5)
+
+        with captured_stdout() as stdout:
+            collector.print_stats(limit=1)
+        output = stdout.getvalue()
+
+        self.assertIn(
+            "1.000 direct/cumulative ratio, 100.0% direct samples: test.py:(f)",
+            output,
+        )
+        self.assertEqual(output.count("test.py:(f)"), 1)
+        self.assertIn(
+            "10 indirect calls, 100.0% total stack presence: test.py:(main)",
+            output,
+        )
 
 
 class TestLocationHelpers(unittest.TestCase):
