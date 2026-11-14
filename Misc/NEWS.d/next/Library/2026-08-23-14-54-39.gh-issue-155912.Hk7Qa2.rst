@@ -1,0 +1,3 @@
+Fix :class:`concurrent.futures.ProcessPoolExecutor` construction when
+:func:`os.sysconf` raises :exc:`OSError`, for instance when a sandbox denies
+the read.
