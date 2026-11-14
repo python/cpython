@@ -261,10 +261,16 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     // Create and configure SQLite database object.
     sqlite3 *db;
     int rc;
+    int open_flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+                     (uri ? SQLITE_OPEN_URI : 0);
+    if (sqlite3_threadsafe()) {
+        // The compile-time default may be multi-thread mode. Force each
+        // connection to serialize concurrent use, as check_same_thread=False
+        // permits sharing one connection between threads.
+        open_flags |= SQLITE_OPEN_FULLMUTEX;
+    }
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_open_v2(PyBytes_AS_STRING(bytes), &db,
-                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
-                         (uri ? SQLITE_OPEN_URI : 0), NULL);
+    rc = sqlite3_open_v2(PyBytes_AS_STRING(bytes), &db, open_flags, NULL);
     if (rc == SQLITE_OK) {
         (void)sqlite3_busy_timeout(db, (int)(timeout*1000));
     }
