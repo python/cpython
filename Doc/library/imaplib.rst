@@ -542,6 +542,10 @@ An :class:`IMAP4` instance has the following methods:
    the password. It will only work if the server ``CAPABILITY`` response includes
    the phrase ``AUTH=CRAM-MD5``.
 
+   .. deprecated:: 3.16
+      Use :meth:`login` or :meth:`login_plain` instead.
+      Will be removed in version 3.18.
+
    .. versionchanged:: 3.15
       An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
