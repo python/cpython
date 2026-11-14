@@ -2326,6 +2326,28 @@ class NewIMAPTestsMixin:
                 self.assertEqual(name.encode('ascii').decode('utf-7-imap'),
                                  f'a{c}b')
 
+    def test_control_characters_append_literal(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for bad_mailbox in (b'a\nb', b'a\rb', b'a\0b'):
+            with self.subTest(mailbox=bad_mailbox):
+                with self.assertRaises(ValueError):
+                    client.append(bad_mailbox, None, None, b'message')
+                self.assertIsNone(client.literal)
+                typ, _ = client.select('INBOX')
+                self.assertEqual(typ, 'OK')
+        with self.subTest(case='flags'):
+            with self.assertRaises(ValueError):
+                client.append('INBOX', '(\\Flag\n)', None, b'message')
+            self.assertIsNone(client.literal)
+            typ, _ = client.select('INBOX')
+            self.assertEqual(typ, 'OK')
+        client.logout()
+        with self.subTest(case='illegal_state'):
+            with self.assertRaises(imaplib.IMAP4.error):
+                client.append('INBOX', None, None, b'message')
+            self.assertIsNone(client.literal)
+
     def test_mutf7_mailbox_name(self):
         # Without UTF8=ACCEPT a non-ASCII mailbox name is sent as modified
         # UTF-7 (RFC 3501, 5.1.3).  A name that is already modified UTF-7 (e.g.
