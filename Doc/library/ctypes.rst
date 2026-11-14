@@ -1584,6 +1584,14 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    they are not added automatically.
    See :ref:`ctypes-finding-shared-libraries` for more information.
 
+   On macOS, a *name* that is not an absolute path may only be searched
+   for in system locations such as :file:`/usr/lib`. Libraries and
+   frameworks in folders like :file:`/usr/local/lib`, :file:`~/lib` or
+   :file:`~/Library/Frameworks` are then not found, so pass the full path.
+   Setting :envvar:`!DYLD_LIBRARY_PATH` or :envvar:`!DYLD_FRAMEWORK_PATH`
+   before starting Python adds search locations, but macOS ignores these
+   variables for some executables.
+
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
    as a "library".
