@@ -1,0 +1,3 @@
+Fix undefined shifts and corruption of the evaluation stack model when
+setting ``frame.f_lineno`` in code with a deep value stack (e.g. a
+comprehension with 11 or more nested ``for`` loops).
