@@ -1,0 +1,2 @@
+:mod:`xml.sax.saxutils`: Add warning about lack of
+validation for :class:`~xml.sax.saxutils.XMLGenerator`.
