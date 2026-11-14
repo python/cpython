@@ -1,0 +1,2 @@
+Fix a data race in the :class:`array.array` buffer export counter when buffers
+are acquired and released concurrently in free-threaded builds.
