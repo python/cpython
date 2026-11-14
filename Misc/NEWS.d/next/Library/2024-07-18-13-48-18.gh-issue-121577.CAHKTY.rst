@@ -1,0 +1,2 @@
+:mod:`compileall` now verifies whether recompilation is necessary with all
+``.pyc`` invalidation modes. Patch by Jakub Kulik.
