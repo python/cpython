@@ -45,6 +45,32 @@ class StatsTestCase(unittest.TestCase):
         stats = pstats.Stats(stream=stream)
         stats.add(self.stats, self.stats)
 
+    def test_add_updates_callees(self):
+        caller = ('example.py', 1, 'caller')
+        callee = ('example.py', 2, 'callee')
+        new_callee = ('example.py', 3, 'new_callee')
+        for call_info, merged_info in (
+            (1, 2),
+            ((1, 1, 0.1, 0.2), (2, 2, 0.2, 0.4)),
+        ):
+            with self.subTest(call_info=call_info):
+                stats = pstats.Stats()
+                stats.stats = {
+                    callee: (1, 1, 0.1, 0.2, {caller: call_info}),
+                }
+                stats.calc_callees()
+                other = pstats.Stats()
+                other.stats = {
+                    callee: (1, 1, 0.1, 0.2, {caller: call_info}),
+                    new_callee: (1, 1, 0.1, 0.2, {caller: call_info}),
+                }
+                stats.add(other)
+                stats.calc_callees()
+                self.assertEqual(stats.all_callees[caller], {
+                    callee: merged_info,
+                    new_callee: call_info,
+                })
+
     def test_dump_and_load_works_correctly(self):
         temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
         try:
