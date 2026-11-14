@@ -29,6 +29,7 @@ from configparser import ConfigParser, Error as ConfigParserError
 import os
 import sys
 
+from tkinter import TclError
 from tkinter.font import Font
 import idlelib
 
@@ -159,7 +160,9 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        self.userdir_warnings = []  # About the user config directory.
         self.file_load_errors = []  # (file, error) for unparsable cfg files.
+        self.highlight_errors = []  # (theme, element, color, error).
 
         # See https://bugs.python.org/issue4630#msg356516 for following.
         # self.blink_off_time = <first editor text>['insertofftime']
@@ -181,19 +184,17 @@ class IdleConf:
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
 
-        Creates it if required.
+        Create it if required.  Return '' if it cannot be created, so
+        that IDLE runs without saving settings (gh-58781).  Problems
+        are saved in self.userdir_warnings to be reported when Tk is
+        available.
         """
         cfgDir = '.idlerc'
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                if not idlelib.testing:
-                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                            userDir + ',\n but the path does not exist.')
-                    try:
-                        print(warn, file=sys.stderr)
-                    except OSError:
-                        pass
+                self.userdir_warnings.append(
+                    f'The home directory {userDir} does not exist.')
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -202,16 +203,12 @@ class IdleConf:
         if not os.path.exists(userDir):
             try:
                 os.mkdir(userDir)
-            except OSError:
-                if not idlelib.testing:
-                    warn = ('\n Warning: unable to create user config directory\n' +
-                            userDir + '\n Check path and permissions.\n Exiting!\n')
-                    try:
-                        print(warn, file=sys.stderr)
-                    except OSError:
-                        pass
-                raise SystemExit
-        # TODO continue without userDIr instead of exit
+            except OSError as err:
+                self.userdir_warnings.append(
+                    f'The user configuration directory {userDir} could not '
+                    f'be created:\n    {type(err).__name__}: {err}\n'
+                    'Settings will not be saved.')
+                return ''
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
@@ -808,16 +805,47 @@ class IdleConf:
                 except OSError:
                     pass
 
-    def file_load_error_message(self):
-        "Return a warning about invalid config files, or None."
-        if not self.file_load_errors:
-            return None
-        files = '\n'.join(
-            f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
-            for file, err in self.file_load_errors)
-        return ('The following IDLE configuration files could not be read.  '
+    def check_highlight(self, root):
+        """Remove invalid colors from user themes (gh-85604).
+
+        Colors can only be checked with Tk, so this is called after
+        the root is created, while the config files are loaded on
+        import.  The default colors are used instead of the removed
+        ones.  The user file is not changed until the settings are
+        saved.
+        """
+        cfg = self.userCfg['highlight']
+        for theme in cfg.sections():
+            for element in cfg.options(theme):
+                color = cfg.Get(theme, element)
+                try:
+                    root.winfo_rgb(color)
+                except TclError as err:
+                    self.highlight_errors.append((theme, element, color, err))
+                    cfg.RemoveOption(theme, element)
+
+    def config_error_message(self, root):
+        "Check the config with Tk and return a warning, or None."
+        self.check_highlight(root)
+        parts = list(self.userdir_warnings)
+        if self.file_load_errors:
+            files = '\n'.join(
+                f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
+                for file, err in self.file_load_errors)
+            parts.append(
+                'The following IDLE configuration files could not be read.  '
                 'They were renamed by appending ".bad", and default settings '
                 'are used instead:\n\n' + files)
+        if self.highlight_errors:
+            colors = '\n'.join(
+                f'  {theme}: {element} = {color} ({err})'
+                for theme, element, color, err in self.highlight_errors)
+            parts.append(
+                'The following colors in IDLE highlight themes are invalid, '
+                'and default colors are used instead:\n\n' + colors +
+                '\n\nYou can fix them in Options => Configure IDLE => '
+                'Highlights.')
+        return '\n\n'.join(parts) if parts else None
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."
