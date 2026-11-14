@@ -1,0 +1,52 @@
+diff --git a/Lib/difflib.py b/Lib/difflib.py
+index 54fc57d..a4f0e8b 100644
+--- a/Lib/difflib.py
++++ b/Lib/difflib.py
+@@ -570,7 +570,7 @@ def get_grouped_opcodes(self, n=3):
+           ('equal', 35, 38, 31, 34)]]
+         """
+ 
+-        codes = self.get_opcodes()
++        codes = self.get_opcodes().copy()
+         if not codes:
+             codes = [("equal", 0, 1, 0, 1)]
+         # Fixup leading and trailing groups if they show no changes.
+diff --git a/Lib/test/test_difflib.py b/Lib/test/test_difflib.py
+index 8c554d7..539e744 100644
+--- a/Lib/test/test_difflib.py
++++ b/Lib/test/test_difflib.py
+@@ -179,6 +179,27 @@ def test_matching_blocks_cache(self):
+         self.assertEqual(second[1].size, 2)
+         self.assertEqual(second[2].size, 0)
+ 
++    def test_grouped_opcodes_does_not_mutate_opcodes(self):
++        # gh-161973: get_grouped_opcodes() must not mutate the cached
++        # opcodes, so a later get_opcodes() still returns the full list.
++        old = ["line %d\n" % i for i in range(10)]
++        new = old[:]
++        new[5] = "changed\n"
++        sm = difflib.SequenceMatcher(None, old, new)
++        expected = [
++            ("equal", 0, 5, 0, 5),
++            ("replace", 5, 6, 5, 6),
++            ("equal", 6, 10, 6, 10),
++        ]
++        self.assertEqual(sm.get_opcodes(), expected)
++        list(sm.get_grouped_opcodes(1))
++        self.assertEqual(sm.get_opcodes(), expected)
++        # A later request for wider context must not inherit the trimming.
++        fresh = difflib.SequenceMatcher(None, old, new)
++        self.assertEqual(
++            list(sm.get_grouped_opcodes(3)), list(fresh.get_grouped_opcodes(3))
++        )
++
+     def test_added_tab_hint(self):
+         # Check fix for bug #1488943
+         diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
+diff --git a/Misc/NEWS.d/next/Library/2026-11-14-11-30-00.gh-issue-161973.M9YLnQ.rst b/Misc/NEWS.d/next/Library/2026-11-14-11-30-00.gh-issue-161973.M9YLnQ.rst
+new file mode 100644
+index 0000000..ed6b022
+--- /dev/null
++++ b/Misc/NEWS.d/next/Library/2026-11-14-11-30-00.gh-issue-161973.M9YLnQ.rst
+@@ -0,0 +1 @@
++Fix :meth:`difflib.SequenceMatcher.get_grouped_opcodes` mutating the cached opcodes, so a later :meth:`difflib.SequenceMatcher.get_opcodes` call returned the trimmed list instead of the full one.

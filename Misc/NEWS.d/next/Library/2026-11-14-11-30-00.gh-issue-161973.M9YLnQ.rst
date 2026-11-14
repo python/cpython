@@ -1,0 +1,1 @@
+Fix :meth:`difflib.SequenceMatcher.get_grouped_opcodes` mutating the cached opcodes, so a later :meth:`difflib.SequenceMatcher.get_opcodes` call returned the trimmed list instead of the full one.
