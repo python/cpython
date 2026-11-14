@@ -1276,10 +1276,12 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
+        if hasattr(target, 'with_segments'):
+            result = target
+        else:
+            result = self.with_segments(target)
         os.rename(self, target)
-        if not hasattr(target, 'with_segments'):
-            target = self.with_segments(target)
-        return target
+        return result
 
     def replace(self, target):
         """
@@ -1291,10 +1293,12 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
+        if hasattr(target, 'with_segments'):
+            result = target
+        else:
+            result = self.with_segments(target)
         os.replace(self, target)
-        if not hasattr(target, 'with_segments'):
-            target = self.with_segments(target)
-        return target
+        return result
 
     def copy(self, target, **kwargs):
         """
