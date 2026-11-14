@@ -1,0 +1,2 @@
+Normalize AST arguments construction to always allocate
+kwonlyargs/kw_defaults (with length parity) and assert the invariant.
