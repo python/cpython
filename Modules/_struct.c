@@ -2874,9 +2874,9 @@ in the C struct.\n\
 \n\
 The optional first format char indicates byte order, size and alignment:\n\
   @: native order, size & alignment (default)\n\
-  =: native order, std. size & alignment\n\
-  <: little-endian, std. size & alignment\n\
-  >: big-endian, std. size & alignment\n\
+  =: native order, std. size, no alignment\n\
+  <: little-endian, std. size, no alignment\n\
+  >: big-endian, std. size, no alignment\n\
   !: same as >\n\
 \n\
 The remaining characters indicate types of args and must match exactly;\n\
