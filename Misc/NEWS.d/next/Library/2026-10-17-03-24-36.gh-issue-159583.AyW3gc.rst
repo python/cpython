@@ -1,0 +1,2 @@
+Fix :exc:`IndexError` in :mod:`imaplib` IDLE iteration when a tagged
+response for an earlier command arrives before an untagged response.
