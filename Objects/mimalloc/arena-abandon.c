@@ -240,17 +240,20 @@ static mi_segment_t* mi_arena_segment_clear_abandoned_next_field(mi_arena_field_
     mi_arena_t* arena = mi_arena_from_index(arena_idx);
     if (arena != NULL) {
       bool has_lock = false;
+      // CPython: gh-161751: for a full visit, take the lock before reading the bitmap.
+      // A reclaim from another sub-process can clear our bit for a short time.
+      if (previous->visit_all && mi_option_is_enabled(mi_option_visit_abandoned)) {
+        mi_lock_acquire(&arena->abandoned_visit_lock);
+        has_lock = true;
+      }
       // visit the abandoned fields (starting at previous_idx)
       for (; field_idx < arena->field_count; field_idx++, bit_idx = 0) {
         size_t field = mi_atomic_load_relaxed(&arena->blocks_abandoned[field_idx]);
         if mi_unlikely(field != 0) { // skip zero fields quickly
-          // we only take the arena lock if there are actually abandoned segments present
+          // a reclaim tries to take the lock only when the field has abandoned segments
           if (!has_lock && mi_option_is_enabled(mi_option_visit_abandoned)) {
-            has_lock = (previous->visit_all ? (mi_lock_acquire(&arena->abandoned_visit_lock),true) : mi_lock_try_acquire(&arena->abandoned_visit_lock));
+            has_lock = mi_lock_try_acquire(&arena->abandoned_visit_lock);
             if (!has_lock) {
-              if (previous->visit_all) {
-                _mi_error_message(EFAULT, "internal error: failed to visit all abandoned segments due to failure to acquire the visitor lock");
-              }
               // skip to next arena
               break;
             }
