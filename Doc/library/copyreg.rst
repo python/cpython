@@ -39,6 +39,30 @@ Such constructors may be factory functions or class instances.
    object or subclass of :class:`pickle.Pickler` can also be used for
    declaring reduction functions.
 
+
+.. class:: Proxy(obj)
+
+   A wrapper for an object which is pickled weakly.
+   Reduction functions can use it to pickle objects
+   to which the reconstructed object only holds weak references.
+   For example, a weak reference is reduced to
+   ``(weakref.ref, (Proxy(referent),))``.
+
+   A proxy is pickled as the wrapped object *obj*,
+   which is unpickled in its place.
+   *obj* must also be strongly referenced elsewhere in the same pickle;
+   otherwise pickling raises :exc:`pickle.PicklingError`.
+
+   :func:`copy.copy` of a proxy returns *obj*,
+   and :func:`copy.deepcopy` returns the deep copy of *obj*.
+
+   .. attribute:: obj
+
+      The wrapped object.
+
+   .. versionadded:: next
+
+
 Example
 -------
 
