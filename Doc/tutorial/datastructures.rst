@@ -43,6 +43,13 @@ of the methods of list objects:
    :exc:`ValueError` if there is no such item.
 
 
+.. method:: list.discard(value, /)
+   :noindex:
+
+   Remove the first item from the list whose value is equal to *value*, if there
+   is such an item.  Return ``True`` if an item was removed, ``False`` otherwise.
+
+
 .. method:: list.pop(index=-1, /)
    :noindex:
 
