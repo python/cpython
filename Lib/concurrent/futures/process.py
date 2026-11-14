@@ -929,11 +929,13 @@ class ProcessPoolExecutor(_base.Executor):
             self._pending_work_items[self._queue_count] = w
             self._work_ids.put(self._queue_count)
             self._queue_count += 1
-            # Wake up queue management thread
-            self._executor_manager_thread_wakeup.wakeup()
-
-            if self._safe_to_dynamically_spawn_children:
-                self._adjust_process_count()
+            try:
+                if self._safe_to_dynamically_spawn_children:
+                    self._adjust_process_count()
+            finally:
+                # Wake up after spawning so the manager can wait on the new
+                # process's sentinel.
+                self._executor_manager_thread_wakeup.wakeup()
             self._start_executor_manager_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__

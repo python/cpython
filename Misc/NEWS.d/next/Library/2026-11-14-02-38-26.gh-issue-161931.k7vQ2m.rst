@@ -1,0 +1,4 @@
+Fix a hang in :class:`concurrent.futures.ProcessPoolExecutor` when a worker
+started with the ``spawn`` or ``forkserver`` method exits abruptly while other
+workers are busy. The manager thread now waits on the new worker's process
+sentinel.
