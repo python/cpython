@@ -1,0 +1,2 @@
+Fix the :mod:`!iso2022_jp_3` codec decoding the JIS X 0213:2000 plane 2
+character at row 93, cell 27 as U+9B1C instead of U+9B1D.
