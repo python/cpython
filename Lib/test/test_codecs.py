@@ -832,6 +832,81 @@ class UTF16BETest(ReadTest, unittest.TestCase):
         self.assertEqual(b'\xd8\x00\xde\x03'.decode(self.encoding),
                          "\U00010203")
 
+class BufferedIncrementalDecoderTest(unittest.TestCase):
+    """Test the buffering machinery independently of individual codecs."""
+
+    class Decoder(codecs.BufferedIncrementalDecoder):
+        def __init__(self, errors='strict'):
+            super().__init__(errors)
+            self.calls = []
+
+        def _buffer_decode(self, data, errors, final):
+            self.calls.append((data, errors, final))
+            return codecs.utf_8_decode(data, errors, final)
+
+    def test_default_buffer_decode_raises(self):
+        decoder = codecs.BufferedIncrementalDecoder()
+        with self.assertRaises(NotImplementedError):
+            decoder.decode(b'abc')
+        self.assertEqual(decoder.getstate(), (b'', 0))
+
+    def test_buffers_incomplete_sequence(self):
+        decoder = self.Decoder()
+        self.assertEqual(decoder.decode(b'A\xe2'), 'A')
+        self.assertEqual(decoder.getstate(), (b'\xe2', 0))
+        self.assertEqual(decoder.decode(b'\x82'), '')
+        self.assertEqual(decoder.getstate(), (b'\xe2\x82', 0))
+        self.assertEqual(decoder.decode(b'\xacB', final=True), '\u20acB')
+        self.assertEqual(decoder.getstate(), (b'', 0))
+        self.assertEqual(decoder.calls, [
+            (b'A\xe2', 'strict', False),
+            (b'\xe2\x82', 'strict', False),
+            (b'\xe2\x82\xacB', 'strict', True),
+        ])
+
+    def test_setstate_restores_pending_input(self):
+        original = self.Decoder()
+        self.assertEqual(original.decode(b'\xe2\x82'), '')
+        state = original.getstate()
+        restored = self.Decoder()
+        restored.setstate(state)
+        self.assertEqual(restored.decode(b'\xac', final=True), '\u20ac')
+        self.assertEqual(restored.getstate(), (b'', 0))
+        self.assertEqual(original.getstate(), state)
+
+    def test_reset_discards_pending_input(self):
+        decoder = self.Decoder()
+        decoder.decode(b'\xe2\x82')
+        decoder.reset()
+        self.assertEqual(decoder.getstate(), (b'', 0))
+        self.assertEqual(decoder.decode(b'Z', final=True), 'Z')
+
+    def test_final_flushes_incomplete_sequence(self):
+        decoder = self.Decoder()
+        self.assertEqual(decoder.decode(b'\xe2'), '')
+        with self.assertRaises(UnicodeDecodeError):
+            decoder.decode(b'', final=True)
+        self.assertEqual(decoder.getstate(), (b'\xe2', 0))
+        self.assertEqual(decoder.decode(b'\x82\xac', final=True), '\u20ac')
+
+    def test_errors_argument_forwarded(self):
+        decoder = self.Decoder(errors='replace')
+        self.assertEqual(decoder.decode(b'\xe2'), '')
+        self.assertEqual(decoder.decode(b'A', final=True), '\ufffdA')
+        self.assertEqual(decoder.calls, [
+            (b'\xe2', 'replace', False),
+            (b'\xe2A', 'replace', True),
+        ])
+
+    def test_separate_decoder_buffers(self):
+        first = self.Decoder()
+        second = self.Decoder()
+        self.assertEqual(first.decode(b'\xe2'), '')
+        self.assertEqual(second.decode(b'B', final=True), 'B')
+        self.assertEqual(first.getstate(), (b'\xe2', 0))
+        self.assertEqual(second.getstate(), (b'', 0))
+
+
 class UTF8Test(ReadTest, unittest.TestCase):
     encoding = "utf-8"
     ill_formed_sequence = b"\xed\xb2\x80"
