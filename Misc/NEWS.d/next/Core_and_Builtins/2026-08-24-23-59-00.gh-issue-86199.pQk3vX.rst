@@ -1,0 +1,6 @@
+Speed up calls of the form ``f(**kwargs)`` by no longer always copying the
+keyword arguments before the call; such calls are now up to 1.4x faster.
+This also fixes :c:func:`PyObject_Call` to copy the keyword arguments before
+passing them to a callee that would otherwise receive the caller's dict, so a
+called object can no longer mutate the caller's dict (:gh:`86795`), and makes
+unpacking a shared keyword-arguments dict safe on the free-threaded build.
