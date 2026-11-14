@@ -213,6 +213,15 @@ def _parse_mode(mode_string):
     return mode_map[mode_string]
 
 
+def _skip_idle_for_mode(mode):
+    """Return whether collectors should discard idle threads for a mode."""
+    return mode not in (
+        PROFILING_MODE_WALL,
+        PROFILING_MODE_ALL,
+        PROFILING_MODE_EXCEPTION,
+    )
+
+
 def _check_process_died(process):
     """Check if process died and raise an error with stderr if available."""
     if process.poll() is None:
@@ -1186,9 +1195,7 @@ def _handle_attach(args):
     )
 
     # Determine skip_idle based on mode
-    skip_idle = (
-        mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
-    )
+    skip_idle = _skip_idle_for_mode(mode)
 
     output_file = None
     if args.format == "binary":
@@ -1294,9 +1301,7 @@ def _handle_run(args):
     )
 
     # Determine skip_idle based on mode
-    skip_idle = (
-        mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
-    )
+    skip_idle = _skip_idle_for_mode(mode)
 
     output_file = None
     if args.format == "binary":
@@ -1344,7 +1349,7 @@ def _handle_live_attach(args, pid):
     mode = _parse_mode(args.mode)
 
     # Determine skip_idle based on mode
-    skip_idle = mode != PROFILING_MODE_WALL
+    skip_idle = _skip_idle_for_mode(mode)
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
@@ -1391,7 +1396,7 @@ def _handle_live_run(args):
     mode = _parse_mode(args.mode)
 
     # Determine skip_idle based on mode
-    skip_idle = mode != PROFILING_MODE_WALL
+    skip_idle = _skip_idle_for_mode(mode)
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
