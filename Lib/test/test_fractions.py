@@ -434,6 +434,7 @@ class FractionTest(unittest.TestCase):
         # Imitate float's parsing.
         check_invalid("+ 3/2")
         check_invalid("- 3/2")
+        check_invalid("+ 343.33")
         # Avoid treating '.' as a regex special character.
         check_invalid("3a2")
         # Don't accept combinations of decimals and rationals.
@@ -445,6 +446,7 @@ class FractionTest(unittest.TestCase):
         # No space around e.
         check_invalid("3.2 e1")
         check_invalid("3.2e 1")
+        check_invalid("232e\t2")
         # Fractional part don't need a sign.
         check_invalid("3.+2")
         check_invalid("3.-2")
