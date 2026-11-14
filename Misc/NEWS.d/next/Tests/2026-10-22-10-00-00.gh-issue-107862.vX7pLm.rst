@@ -1,0 +1,3 @@
+Add ``example.xfail()`` and ``example.via()`` to the Hypothesis stubs used
+when Hypothesis is not installed, so that property tests can mark an explicit
+example as an expected failure in both modes.

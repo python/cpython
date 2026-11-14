@@ -1,3 +1,4 @@
+from dataclasses import dataclass, replace
 from enum import Enum
 import functools
 import unittest
@@ -18,21 +19,52 @@ __all__ = [
 from . import stateful, strategies
 
 
+@dataclass(frozen=True)
+class _Example:
+    args: tuple
+    kwargs: dict
+    # Set by example.xfail(): the exception types the example must raise.
+    raises: type[BaseException] | tuple[type[BaseException], ...] | None = None
+    reason: str = ""
+
+    def __repr__(self):
+        bits = [repr(a) for a in self.args]
+        bits += [f"{k}={v!r}" for k, v in self.kwargs.items()]
+        return f"@example({', '.join(bits)})"
+
+
+def _run_example(f, self, ex):
+    if ex.raises is None:
+        f(self, *ex.args, **ex.kwargs)
+        return
+    try:
+        f(self, *ex.args, **ex.kwargs)
+    except Exception as exc:
+        if not isinstance(exc, ex.raises):
+            raise
+        return
+    reason = f" because {ex.reason}" if ex.reason else ""
+    raise AssertionError(
+        f"Expected an exception from {ex!r}{reason}, "
+        "but no exception was raised"
+    )
+
+
 def given(*_args, **_kwargs):
     def decorator(f):
         if examples := getattr(f, "_examples", []):
 
             @functools.wraps(f)
             def test_function(self):
-                for example_args, example_kwargs in examples:
-                    if len(example_args) < 2:
-                        subtest_args = example_args
+                for ex in examples:
+                    if len(ex.args) < 2:
+                        subtest_args = ex.args
                     else:
                         # subTest takes up to one positional argument.
                         # When there are more, display them as a tuple
-                        subtest_args = [example_args]
-                    with self.subTest(*subtest_args, **example_kwargs):
-                        f(self, *example_args, **example_kwargs)
+                        subtest_args = [ex.args]
+                    with self.subTest(*subtest_args, **ex.kwargs):
+                        _run_example(f, self, ex)
 
         else:
             # If we have found no examples, we must skip the test. If @example
@@ -49,16 +81,26 @@ def given(*_args, **_kwargs):
     return decorator
 
 
-def example(*args, **kwargs):
-    if bool(args) == bool(kwargs):
-        raise ValueError("Must specify exactly one of *args or **kwargs")
+class example:
+    """Stub for ``hypothesis.example``.
 
-    def decorator(f):
+    Upstream, ``@example(...)`` adds an explicit input that Hypothesis
+    always runs before generating any, with the same positional-or-keyword
+    rules as ``@given``.  Here the explicit examples are all that runs:
+    ``given`` replays each one in a ``subTest``.
+    """
+
+    def __init__(self, *args, **kwargs):
+        if bool(args) == bool(kwargs):
+            raise ValueError("Must specify exactly one of *args or **kwargs")
+        self._example = _Example(args, kwargs)
+
+    def __call__(self, f):
         base_func = getattr(f, "__wrapped__", f)
         if not hasattr(base_func, "_examples"):
             base_func._examples = []
 
-        base_func._examples.append((args, kwargs))
+        base_func._examples.append(self._example)
 
         if getattr(f, "_given", False):
             # If the given decorator is below all the example decorators,
@@ -68,7 +110,30 @@ def example(*args, **kwargs):
 
         return f
 
-    return decorator
+    def xfail(self, condition=True, *, reason="", raises=BaseException):
+        """Mark this example as an expected failure, as upstream does.
+
+        Upstream, ``@example(...).xfail()`` means the example must raise
+        one of the ``raises`` exceptions (any exception by default), like
+        ``pytest.mark.xfail(strict=True)``: a different exception
+        propagates, and an unexpected pass fails the test, with ``reason``
+        in the message.  ``condition=False`` makes it an ordinary example.
+        The stub replays it the same way.
+        """
+        if condition:
+            self._example = replace(self._example, raises=raises,
+                                    reason=reason)
+        return self
+
+    def via(self, whence, /):
+        """Accept and ignore an example's provenance label.
+
+        Upstream, ``@example(...).via("...")`` only records where the
+        example came from, for tools that add or remove ``@example``
+        decorators (HypoFuzz, for instance); it changes nothing at run
+        time there either.
+        """
+        return self
 
 
 def assume(condition):
