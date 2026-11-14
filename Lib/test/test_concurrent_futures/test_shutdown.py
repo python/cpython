@@ -24,9 +24,11 @@ def sleep_and_print(t, msg):
 class ExecutorShutdownTest:
     def test_run_after_shutdown(self):
         self.executor.shutdown()
-        self.assertRaises(RuntimeError,
-                          self.executor.submit,
-                          pow, 2, 5)
+        with self.assertRaises(futures.ExecutorShutdownError) as cm:
+            self.executor.submit(pow, 2, 5)
+        self.assertIsInstance(cm.exception, RuntimeError)
+        self.assertEqual(str(cm.exception),
+                         "cannot schedule new futures after shutdown")
 
     def test_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
@@ -59,10 +61,10 @@ class ExecutorShutdownTest:
             def run_last():
                 try:
                     t.submit(id, None)
-                except RuntimeError:
-                    print("runtime-error")
+                except ExecutorShutdownError:
+                    print("executor-shutdown-error")
                     raise
-            from concurrent.futures import {executor_type}
+            from concurrent.futures import {executor_type}, ExecutorShutdownError
             if __name__ == "__main__":
                 context = '{context}'
                 if not context:
@@ -76,8 +78,9 @@ class ExecutorShutdownTest:
                        context=getattr(self, "ctx", "")))
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
-        self.assertIn("RuntimeError: cannot schedule new futures", err.decode())
-        self.assertEqual(out.strip(), b"runtime-error")
+        self.assertIn("ExecutorShutdownError: cannot schedule new futures",
+                      err.decode())
+        self.assertEqual(out.strip(), b"executor-shutdown-error")
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_hang_issue12364(self):
