@@ -1,0 +1,2 @@
+When looking for possibly misspelled Python keywords after a :exc:`SyntaxError`,
+candidate names are now ranked to improve accuracy. Patch by Bartosz Sławecki.
