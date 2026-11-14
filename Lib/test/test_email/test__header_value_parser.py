@@ -1377,6 +1377,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_dtext,
                         '', '', '', [], '')
 
+    def test_get_dtext_leading_wsp(self):
+        self._test_get_x(parser.get_dtext,
+                        ' foo]', '', '', [], ' foo]')
+
     # get_domain_literal
 
     def test_get_domain_literal_only(self):
@@ -2896,6 +2900,17 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(message_id.token_type, 'message-id')
         self.assertEqual(str(message_id.all_defects[-1]),
                          "end of input inside domain-literal")
+
+    def test_parse_message_id_with_wsp_in_literal(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<T@[ x]>",
+            "<T@[ x]>",
+            "<T@[ x]>",
+            [errors.ObsoleteHeaderDefect],
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
 
     def test_parse_message_id_with_remaining(self):
         message_id = self._test_parse_x(
