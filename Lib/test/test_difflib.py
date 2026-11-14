@@ -179,6 +179,23 @@ class TestSFbugs(unittest.TestCase):
         self.assertEqual(second[1].size, 2)
         self.assertEqual(second[2].size, 0)
 
+    def test_grouped_opcodes_keep_cached_opcodes(self):
+        # get_grouped_opcodes() must not modify the list cached by
+        # get_opcodes().
+        a = 'abcdefghxijklmnop'
+        b = 'abcdefghyijklmnop'
+        s = difflib.SequenceMatcher(None, a, b)
+        opcodes = list(s.get_opcodes())
+        self.assertEqual(list(s.get_grouped_opcodes(1)),
+                         [[('equal', 7, 8, 7, 8),
+                           ('replace', 8, 9, 8, 9),
+                           ('equal', 9, 10, 9, 10)]])
+        self.assertEqual(s.get_opcodes(), opcodes)
+        self.assertEqual(list(s.get_grouped_opcodes(3)),
+                         [[('equal', 5, 8, 5, 8),
+                           ('replace', 8, 9, 8, 9),
+                           ('equal', 9, 12, 9, 12)]])
+
     def test_added_tab_hint(self):
         # Check fix for bug #1488943
         diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
