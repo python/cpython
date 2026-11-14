@@ -1,0 +1,2 @@
+Comparing :ref:`code objects <code-objects>` with ``==`` no longer takes
+time exponential in the nesting depth of their classes and functions.
