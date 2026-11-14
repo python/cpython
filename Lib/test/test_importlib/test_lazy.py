@@ -180,6 +180,7 @@ class LazyLoaderTests(unittest.TestCase):
             # Or multiple load attempts
             self.assertEqual(loader.load_count, 1)
 
+    @threading_helper.requires_working_threading()
     def test_lazy_circular_import_no_deadlock(self):
         # gh-161962: two threads first-touching two lazily loaded modules
         # that import each other must not deadlock. The import system's
