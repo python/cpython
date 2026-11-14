@@ -164,7 +164,12 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # just close our end.  First calling shutdown() seems to
             # cure it, but maybe using DisconnectEx() would be better.
             if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
-                self._sock.shutdown(socket.SHUT_RDWR)
+                try:
+                    self._sock.shutdown(socket.SHUT_RDWR)
+                except ConnectionError:
+                    # The connection is already gone.
+                    # The peer has already reset the connection.
+                    pass
             self._sock.close()
             self._sock = None
             server = self._server
@@ -874,6 +879,11 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                         logger.debug("%r got a new connection from %r: %r",
                                      server, addr, conn)
                     protocol = protocol_factory()
+                    if server is not None and not server.is_serving():
+                        # The server was closed after the connection was
+                        # accepted.
+                        conn.close()
+                        return
                     if sslcontext is not None:
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
@@ -887,6 +897,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)
+            except (ConnectionResetError, ConnectionAbortedError):
+                # The peer closed the connection before it was accepted.
+                # The listening socket is still usable: keep accepting.
+                if self._debug:
+                    logger.debug("Accept failed on socket %r",
+                                 sock, exc_info=True)
+                self.call_soon(loop)
             except OSError as exc:
                 if sock.fileno() != -1:
                     self.call_exception_handler({

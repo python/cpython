@@ -356,6 +356,13 @@ A new statistical sampling profiler (Tachyon) has been added as
 :mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
+Tachyon follows earlier work on external sampling profilers such as
+`Austin <https://github.com/P403n1x87/austin>`__,
+`py-spy <https://github.com/benfred/py-spy>`__,
+`Pyflame <https://github.com/uber-archive/pyflame>`__, and
+`rbspy <https://github.com/rbspy/rbspy>`__. We thank their authors and the wider
+profiling community for their work and ideas.
+
 Unlike deterministic profilers (such as :mod:`profiling.tracing`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
@@ -1548,7 +1555,7 @@ ssl
     key agreement, extending the previous
     :meth:`ssl.SSLContext.set_ecdh_curve` method.
     This new API provides the ability to list multiple groups and
-    supports fixed-field and post-quantum groups in addition to ECDH
+    supports finite-field and post-quantum groups in addition to ECDH
     curves. This method can also be used to control what key shares
     are sent in the TLS handshake.
   * :meth:`ssl.SSLSocket.group` returns the group selected for doing key

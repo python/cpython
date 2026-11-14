@@ -309,6 +309,42 @@ class TestChainMap(unittest.TestCase):
         self.assertIs(type(tmp), SubclassRor)
         self.assertIs(type(tmp.maps[0]), dict)
 
+    def test_reverse_union_with_counter(self):
+        left = {'shared': 99, 'left_only': 3}
+        front = Counter(front=2)
+        back = {'shadowed': 5, 'shared': 7, 'back': 9}
+        cm = ChainMap(front, back)
+
+        self.assertEqual(cm['shadowed'], 0)
+        result = left | cm
+        self.assertEqual(list(result.items()), [
+            ('shared', 0), ('left_only', 3), ('shadowed', 0),
+            ('back', 0), ('front', 2),
+        ])
+        self.assertEqual(left, {'shared': 99, 'left_only': 3})
+        self.assertEqual(dict(front), {'front': 2})
+        self.assertEqual(back, {'shadowed': 5, 'shared': 7, 'back': 9})
+
+    def test_reverse_union_with_defaultdict(self):
+        left = {'shared': 99, 'left_only': 3}
+        front = collections.defaultdict(lambda: -1, {'front': 2})
+        back = {'shadowed': 5, 'shared': 7}
+        cm = ChainMap(front, back)
+
+        fresh_front = collections.defaultdict(lambda: -1, {'front': 2})
+        fresh = ChainMap(fresh_front, {'shadowed': 5, 'shared': 7})
+        self.assertEqual(fresh['shadowed'], -1)
+        self.assertEqual(fresh['shared'], -1)
+        self.assertEqual(fresh_front, {'front': 2, 'shadowed': -1, 'shared': -1})
+
+        result = left | cm
+        self.assertEqual(list(result.items()), [
+            ('shared', -1), ('left_only', 3), ('shadowed', -1), ('front', 2),
+        ])
+        self.assertEqual(left, {'shared': 99, 'left_only': 3})
+        self.assertEqual(front, {'front': 2, 'shadowed': -1, 'shared': -1})
+        self.assertEqual(back, {'shadowed': 5, 'shared': 7})
+
 
 ################################################################################
 ### Named Tuples

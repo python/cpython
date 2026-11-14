@@ -250,7 +250,7 @@ Interpreter objects
       with interpreters.create() as interp:
           interp.exec('print("hello")')
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for using :class:`!Interpreter` objects in
       a :term:`context manager`.
 

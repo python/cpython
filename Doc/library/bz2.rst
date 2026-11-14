@@ -277,7 +277,7 @@ Incremental (de)compression
    .. attribute:: needs_input
 
       ``False`` if the :meth:`.decompress` method can provide more
-      decompressed data before requiring new uncompressed input.
+      decompressed data before requiring new compressed input.
 
       .. versionadded:: 3.5
 

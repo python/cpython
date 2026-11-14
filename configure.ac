@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
@@ -194,6 +194,9 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -202,6 +205,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
@@ -209,6 +213,7 @@ AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
+AC_SUBST([RUNSHARED_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
@@ -238,11 +243,6 @@ AH_TOP([
 #define Py_PYCONFIG_H
 ])
 AH_BOTTOM([
-/* Define the macros needed if on a UnixWare 7.x system. */
-#if defined(__USLC__) && defined(__SCO_VERSION__)
-#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
-#endif
-
 #endif /*Py_PYCONFIG_H*/
 ])
 
@@ -377,8 +377,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -1019,15 +1018,6 @@ case $ac_sys_system/$ac_sys_release in
   # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.@<:@0-4@:>@)
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
-    define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
@@ -1153,12 +1143,12 @@ if test -z "$CFLAGS"; then
 fi
 
 dnl Emscripten SDK and WASI SDK default to wasm32.
-dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl On Emscripten use -m64 to build target wasm64-emscripten.
 dnl for wasm64.
 AS_CASE([$host],
   [wasm64-*-emscripten], [
-    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
-    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([CFLAGS], [" -m64"])
+    AS_VAR_APPEND([LDFLAGS], [" -m64"])
   ],
 )
 
@@ -2230,6 +2220,32 @@ if test "$Py_LTO" = 'true' ; then
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
+          LTOCFLAGS="$LTOFLAGS"
+          # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
+          # cannot link LTO objects, try lld, which does not need that plugin.
+          WITH_SAVE_ENV([
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            AC_MSG_CHECKING([whether Clang LTO works with the configured linker])
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+            AC_MSG_RESULT([$clang_lto_link])
+          ])
+          if test "$clang_lto_link" = no; then
+            WITH_SAVE_ENV([
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              AC_MSG_CHECKING([whether Clang LTO works with lld])
+              AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+              AC_MSG_RESULT([$clang_lto_link])
+            ])
+            if test "$clang_lto_link" = no; then
+              AC_MSG_ERROR([m4_normalize([
+                Clang LTO requires a working LTO-aware linker.
+                Install lld or the LLVMgold.so plugin, select a linker
+                with LDFLAGS, or disable LTO with --without-lto.
+              ])])
+            fi
+            LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
+            LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
+          fi
           ;;
       esac
       ;;
@@ -2622,11 +2638,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -2659,7 +2670,7 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
       AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
-      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -pthread"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
@@ -2994,10 +3005,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -3150,15 +3157,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 
         # end of Darwin* tests
         ;;
-    esac
-], [
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
     esac
 ])
 
@@ -3541,13 +3539,6 @@ AC_DEFINE([_LARGEFILE_SOURCE], [1],
 AC_DEFINE([_FILE_OFFSET_BITS], [64],
 [This must be set to 64 on some systems to enable large file support.])
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 AC_TYPE_MODE_T
@@ -3967,17 +3958,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not implemented yet
@@ -4025,16 +4005,6 @@ then
 		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -4085,9 +4055,6 @@ then
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -4466,6 +4433,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -6359,8 +6331,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 
 dnl no longer used, now always defined for backwards compatibility
 AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.

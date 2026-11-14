@@ -1,6 +1,7 @@
 /* Author: Daniel Stutzbach */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -300,14 +301,17 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             return -1;
         }
     }
-    fd = PyLong_AsInt(nameobj);
-    if (fd < 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "negative file descriptor");
-            return -1;
+    if (_PyIndex_Check(nameobj)) {
+        fd = PyLong_AsInt(nameobj);
+        if (fd < 0) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_ValueError,
+                                "negative file descriptor");
+                return -1;
+            }
+            /* Failed to convert; try other paths. */
+            PyErr_Clear();
         }
-        PyErr_Clear();
     }
 
     if (fd < 0) {

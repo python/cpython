@@ -1,3 +1,0 @@
-The ``--enable-loadable-sqlite-extensions=no`` and
-``--disable-loadable-sqlite-extensions`` configure options now disable
-loadable SQLite extensions instead of enabling them.

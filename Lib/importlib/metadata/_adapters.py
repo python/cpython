@@ -54,7 +54,7 @@ class Message(email.message.Message):
     <BLANKLINE>
     """
 
-    multiple_use_keys = set(
+    multiple_use_keys = frozenset(
         map(
             FoldedCase,
             [

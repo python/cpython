@@ -1,3 +1,0 @@
-Fix a race in free-threaded builds where storing an instance attribute could
-use a stale borrowed reference to an instance ``__dict__`` after another thread
-replaced it.

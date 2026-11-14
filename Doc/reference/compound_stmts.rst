@@ -1849,9 +1849,9 @@ The following example indicates the full set of allowed type parameter declarati
 
    def overly_generic[
       SimpleTypeVar,
-      TypeVarWithDefault = int,
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
+      TypeVarWithDefault = int,
       *SimpleTypeVarTuple = (int, float),
       **SimpleParamSpec = (str, bytearray),
    ](
@@ -1952,7 +1952,7 @@ and decorators are evaluated outside that scope. This is illustrated
 by this example::
 
    @decorator
-   class Bag(Base[T], arg=T): ...
+   class Bag[T](Base[T], arg=T): ...
 
 This is equivalent to::
 

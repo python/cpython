@@ -485,6 +485,19 @@ class TypeTests(unittest.TestCase):
         self.assertFalse(type_issubtype(frozendict, dict))
         self.assertFalse(type_issubtype(MyList, tuple))
 
+    def test_subclass_type_with_dict_subclass_tp_dict(self):
+        # gh-132042: MyListDictSubclass initializes tp_dict with a dict
+        # subclass before PyType_Ready(), as extensions may do.  Creating a
+        # subclass must still find the special methods in that dict.
+        class Sub(_testcapi.MyListDictSubclass):
+            pass
+        self.assertEqual(len(Sub([1, 2, 3])), 3)
+
+        class Sub2(_testcapi.MyListDictSubclass):
+            def __len__(self):
+                return 5
+        self.assertEqual(len(Sub2([1, 2, 3])), 5)
+
     def test_type_modified(self):
         # Test PyType_Modified()
         type_modified = _testlimitedcapi.type_modified

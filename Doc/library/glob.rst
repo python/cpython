@@ -102,7 +102,7 @@ The :mod:`!glob` module defines the following functions:
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
                     include_hidden=False)
 
-   Return an :term:`iterator` which yields the same values as :func:`glob`
+   Return an :term:`iterator` which yields the same values as :func:`~glob.glob`
    without actually storing them all simultaneously.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
@@ -182,7 +182,7 @@ Examples
 
 Consider a directory containing the following files:
 :file:`1.gif`, :file:`2.txt`, :file:`card.gif` and a subdirectory :file:`sub`
-which contains only the file :file:`3.txt`.  :func:`glob` will produce
+which contains only the file :file:`3.txt`.  :func:`~glob.glob` will produce
 the following results.  Notice how any leading components of the path are
 preserved. ::
 

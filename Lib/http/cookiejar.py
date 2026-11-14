@@ -1568,28 +1568,33 @@ class CookieJar:
         if expires is Absent:
             expires = None
             discard = True
-        elif expires <= self._now:
-            # Expiry date in past is request to delete cookie.  This can't be
-            # in DefaultCookiePolicy, because can't delete cookies there.
-            try:
-                self.clear(domain, path, name)
-            except KeyError:
-                pass
-            _debug("Expiring cookie, domain='%s', path='%s', name='%s'",
-                   domain, path, name)
+
+        cookie = Cookie(version,
+                        name, value,
+                        port, port_specified,
+                        domain, domain_specified, domain_initial_dot,
+                        path, path_specified,
+                        secure,
+                        expires,
+                        discard,
+                        comment,
+                        comment_url,
+                        rest)
+
+        if expires is not None and expires <= self._now:
+            # RFC 6265 section 5.3 ignores the cookie entirely if its Domain
+            # attribute does not match the request host (step 6) before an
+            # existing cookie is removed (steps 11-12)
+            if self._policy.set_ok(cookie, request):
+                try:
+                    self.clear(domain, path, name)
+                except KeyError:
+                    pass
+                _debug("Expiring cookie, domain='%s', path='%s', name='%s'",
+                       domain, path, name)
             return None
 
-        return Cookie(version,
-                      name, value,
-                      port, port_specified,
-                      domain, domain_specified, domain_initial_dot,
-                      path, path_specified,
-                      secure,
-                      expires,
-                      discard,
-                      comment,
-                      comment_url,
-                      rest)
+        return cookie
 
     def _cookies_from_attrs_set(self, attrs_set, request):
         cookie_tuples = self._normalized_cookie_tuples(attrs_set)

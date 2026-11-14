@@ -92,7 +92,7 @@ FTP objects
 
    :param str user:
       |param_doc_user|
-      If given, :code:`login(host, passwd, acct)` is implicitly called
+      If given, :code:`login(user, passwd, acct)` is implicitly called
       by the constructor.
 
    :param str passwd:
@@ -464,7 +464,7 @@ FTP_TLS objects
 
    :param str user:
       |param_doc_user|
-      If given, :code:`login(host, passwd, acct)` is implicitly called
+      If given, :code:`login(user, passwd, acct)` is implicitly called
       by the constructor.
 
    :param str passwd:

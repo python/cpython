@@ -70,70 +70,6 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 #  define Py_C_STACK_SIZE 4000000
 #endif
 
-#if defined(__EMSCRIPTEN__)
-
-// Temporary workaround to make `pthread_getattr_np` work on Emscripten.
-// Emscripten 4.0.6 will contain a fix:
-// https://github.com/emscripten-core/emscripten/pull/23887
-
-#include "emscripten/stack.h"
-
-#define pthread_attr_t workaround_pthread_attr_t
-#define pthread_attr_init workaround_pthread_attr_init
-#define pthread_getattr_np workaround_pthread_getattr_np
-#define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
-#define pthread_attr_getstack workaround_pthread_attr_getstack
-#define pthread_attr_destroy workaround_pthread_attr_destroy
-
-typedef struct {
-    void *_a_stackaddr;
-    size_t _a_stacksize, _a_guardsize;
-} pthread_attr_t;
-
-extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
-
-int pthread_attr_init(pthread_attr_t *a)
-{
-	return 0;
-}
-
-// Modified version of pthread_getattr_np from the upstream PR.
-
-int pthread_getattr_np(pthread_t thread, pthread_attr_t *attr) {
-  attr->_a_stackaddr = (void*)emscripten_stack_get_base();
-  attr->_a_stacksize = emscripten_stack_get_base() - emscripten_stack_get_end();
-  attr->_a_guardsize = __default_guardsize;
-  return 0;
-}
-
-// These three functions copied without any changes from Emscripten libc.
-
-int pthread_attr_getguardsize(const pthread_attr_t *restrict a, size_t *restrict size)
-{
-	*size = a->_a_guardsize;
-	return 0;
-}
-
-int pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size)
-{
-/// XXX musl is not standard-conforming? It should not report EINVAL if _a_stackaddr is zero, and it should
-///     report EINVAL if a is null: http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_attr_getstack.html
-	if (!a) return EINVAL;
-//	if (!a->_a_stackaddr)
-//		return EINVAL;
-
-	*size = a->_a_stacksize;
-	*addr = (void *)(a->_a_stackaddr - *size);
-	return 0;
-}
-
-int pthread_attr_destroy(pthread_attr_t *a)
-{
-	return 0;
-}
-
-#endif
-
 static void
 hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
 {
@@ -1264,7 +1200,13 @@ dtrace_function_return(_PyInterpreterFrame *frame)
 }
 #endif
 
-PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
+/*
+ * _PyEval_EvalFrameDefault must remain a separate frame in the C call stack:
+ * stack unwinders, profilers and other tools that walk the stack use it to
+ * find the interpreter loop. With the tail-calling interpreter it is small
+ * enough to be inlined into its callers, e.g. by Clang with PGO.
+ */
+Py_NO_INLINE PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
@@ -2242,14 +2184,8 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     /* _PyEvalFramePushAndInit consumes the references
      * to func, locals and all its arguments */
     Py_XINCREF(locals);
-    for (size_t i = 0; i < argcount; i++) {
+    for (size_t i = 0; i < total_args; i++) {
         arguments[i] = PyStackRef_FromPyObjectNew(args[i]);
-    }
-    if (kwnames) {
-        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
-        for (Py_ssize_t i = 0; i < kwcount; i++) {
-            arguments[i+argcount] = PyStackRef_FromPyObjectNew(args[i+argcount]);
-        }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
         tstate, PyStackRef_FromPyObjectNew(func), locals,

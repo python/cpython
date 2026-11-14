@@ -28,8 +28,8 @@
 """Read from and write to tar format archives.
 """
 
-__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
-__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
+# Original author: Lars Gustäbel (lars@gustaebel.de)
+# Credits: Gustavo Niemeyer, Niels Gustäbel, Richard Townsend.
 
 #---------
 # Imports
@@ -44,6 +44,7 @@ import time
 import struct
 import copy
 import re
+lazy import warnings
 
 try:
     import pwd
@@ -593,6 +594,8 @@ class _Stream:
             else:
                 # Other decompressors have needs_input.
                 # decompress() can buffer data internally.
+                if self.cmp.eof:
+                    break
                 if self.cmp.needs_input:
                     cbuf = self.fileobj.read(self.bufsize)
                     if not cbuf:
@@ -838,10 +841,6 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
     # Include os.sep (target OS directory separator) as well.
     if name.startswith(('/', os.sep)):
         name = new_attrs['name'] = member.path.lstrip('/' + os.sep)
-    if os.path.isabs(name):
-        # Path is absolute even after stripping.
-        # For example, 'C:/foo' on Windows.
-        raise AbsolutePathError(member)
     # Ensure we stay in the destination
     if '..' in name.replace(os.sep, '/').split('/'):
         # Directories are created from the name as given, so a name that
@@ -850,6 +849,11 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         normalized = os.path.normpath(name)
         if normalized != name:
             name = new_attrs['name'] = normalized
+    if os.path.isabs(name) or os.path.splitdrive(name)[0]:
+        # Path is absolute even after stripping, or has a drive.
+        # For example, 'C:/foo' or 'C:foo' on Windows.
+        # os.path.join() ignores a destination without a drive for 'C:foo'.
+        raise AbsolutePathError(member)
     target_path = os.path.realpath(os.path.join(dest_path, name),
                                    strict=os.path.ALLOW_MISSING)
     if os.path.commonpath([target_path, dest_path]) != dest_path:
@@ -893,11 +897,11 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
             new_attrs['gname'] = None
         # Check link destination for 'data'
         if member.islnk() or member.issym():
-            if os.path.isabs(member.linkname):
-                raise AbsoluteLinkError(member)
             normalized = os.path.normpath(member.linkname)
             if normalized != member.linkname:
                 new_attrs['linkname'] = normalized
+            if os.path.isabs(normalized) or os.path.splitdrive(normalized)[0]:
+                raise AbsoluteLinkError(member)
             if member.issym():
                 # The symlink is created at `name` with trailing separators
                 # stripped, so its target is relative to the directory
@@ -1626,6 +1630,8 @@ class TarInfo(object):
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
+        data_offset = next.offset_data
+
         # Process GNU sparse information.
         if "GNU.sparse.map" in pax_headers:
             # GNU extended sparse format version 0.1.
@@ -1647,7 +1653,7 @@ class TarInfo(object):
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset + BLOCKSIZE
+                offset = data_offset
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
                     try:
                         size = PAX_NUMBER_FIELDS["size"](pax_headers["size"])
@@ -2734,6 +2740,13 @@ class TarFile(object):
         else:
             self.makefile(tarinfo, targetpath)
 
+        if tarinfo.islnk() and os.path.islink(targetpath):
+            # makelink_with_filter() fell back to extracting a copy of a
+            # symlink member, which already has its own attributes set.
+            # Setting the hard link's attributes here would follow the
+            # symlink, possibly to a file outside the destination directory.
+            set_attrs = False
+
         if set_attrs:
             self.chown(tarinfo, targetpath, numeric_owner)
             if not tarinfo.issym():
@@ -3161,6 +3174,10 @@ open = TarFile.open
 
 def main():
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description)
@@ -3259,11 +3276,13 @@ def main():
 
 
 def __getattr__(name):
-    if name == "version":
-        from warnings import _deprecated
-
-        _deprecated("version", remove=(3, 20))
-        return "0.9.0"  # Do not change
+    if name in ("version", "__author__", "__credits__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "version": "0.9.0",
+            "__author__": "Lars Gust\u00e4bel (lars@gustaebel.de)",
+            "__credits__": "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend.",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

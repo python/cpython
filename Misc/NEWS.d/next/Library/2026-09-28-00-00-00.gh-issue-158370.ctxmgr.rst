@@ -1,2 +1,0 @@
-:class:`concurrent.interpreters.Interpreter` objects now support the
-:term:`context manager` protocol.

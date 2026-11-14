@@ -240,8 +240,9 @@ def _check_zipfile(fp):
                 return True     # Empty zipfiles are still zipfiles
             elif endrec[_ECD_DISK_NUMBER] == endrec[_ECD_DISK_START]:
                 # Central directory is on the same disk
-                fp.seek(sum(_handle_prepended_data(endrec)))
-                if endrec[_ECD_SIZE] >= sizeCentralDir:
+                start_dir = sum(_handle_prepended_data(endrec))
+                if start_dir >= 0 and endrec[_ECD_SIZE] >= sizeCentralDir:
+                    fp.seek(start_dir)
                     data = fp.read(sizeCentralDir)   # CD is where we expect it to be
                     if len(data) == sizeCentralDir:
                         centdir = struct.unpack(structCentralDir, data) # CD is the right size
@@ -576,11 +577,11 @@ class ZipInfo:
 
     def _encodeFilenameFlags(self):
         if self.flag_bits & _MASK_UTF_FILENAME:
-            encoding = 'ascii'
+            encoding = 'utf-8'
         else:
             encoding = 'cp437'
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode(encoding), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -2318,7 +2319,9 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = _MASK_UTF_FILENAME
+        zinfo.flag_bits &= _MASK_UTF_FILENAME
+        if not zinfo.filename.isascii():
+            zinfo.flag_bits |= _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -2925,6 +2928,10 @@ class PyZipFile(ZipFile):
 
 def main(args=None):
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)

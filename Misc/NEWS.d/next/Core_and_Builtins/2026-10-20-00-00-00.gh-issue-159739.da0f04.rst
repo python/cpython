@@ -1,2 +1,0 @@
-Fix reference leaks when free-threaded garbage collection aborts early because
-of an allocation error.

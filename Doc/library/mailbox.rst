@@ -1747,6 +1747,6 @@ due to malformed messages in the mailbox::
                inbox.unlock()
                break               # Found destination, so stop looking.
 
-   for box in boxes.itervalues():
+   for box in boxes.values():
        box.close()
 

@@ -32,7 +32,10 @@ def skip_if_missing(tool=None):
 @contextlib.contextmanager
 def imports_under_tool(name, *subdirs):
     tooldir = os.path.join(toolsdir, name, *subdirs)
-    with import_helper.DirsOnSysPath(tooldir) as cm:
+    with (
+        import_helper.force_eager_imports(),
+        import_helper.DirsOnSysPath(tooldir) as cm,
+    ):
         yield cm
 
 def import_tool(toolname):

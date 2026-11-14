@@ -964,11 +964,12 @@ New and Improved Modules
   :rfc:`2104`. (Contributed by Gerhard Häring.)
 
 * Several functions that originally returned lengthy tuples now return
-  pseudo-sequences that still behave like tuples but also have mnemonic attributes such
-  as :attr:`!memberst_mtime` or :attr:`~time.struct_time.tm_year`. The enhanced functions include
-  :func:`~os.stat`, :func:`~os.fstat`, :func:`~os.statvfs`, and :func:`~os.fstatvfs` in the
-  :mod:`os` module, and :func:`~time.localtime`, :func:`~time.gmtime`, and :func:`~time.strptime` in
-  the :mod:`time` module.
+  pseudo-sequences that still behave like tuples but also have mnemonic
+  attributes such as :attr:`~os.stat_result.st_mtime` or
+  :attr:`~time.struct_time.tm_year`. The enhanced functions include
+  :func:`~os.stat`, :func:`~os.fstat`, :func:`~os.statvfs`, and
+  :func:`~os.fstatvfs` in the :mod:`os` module, and :func:`~time.localtime`,
+  :func:`~time.gmtime`, and :func:`~time.strptime` in the :mod:`time` module.
 
   For example, to obtain a file's size using the old tuples, you'd end up writing
   something like ``file_size = os.stat(filename)[stat.ST_SIZE]``, but now this can

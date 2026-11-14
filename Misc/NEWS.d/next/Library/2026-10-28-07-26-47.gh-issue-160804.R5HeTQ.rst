@@ -1,3 +1,0 @@
-:mod:`asyncio` call graph introspection now includes frames of generator
-based awaitables, such as generators returned by ``__await__`` and
-:func:`types.coroutine` generators.

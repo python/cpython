@@ -424,7 +424,7 @@ string objects are immutable)::
    >>> print(c_s)
    c_wchar_p(139966785747344)
    >>> print(c_s.value)
-   Hello World
+   Hello, World
    >>> c_s.value = "Hi, there"
    >>> print(c_s)              # the memory location has changed
    c_wchar_p(139966783348904)
@@ -851,9 +851,8 @@ compiler does it.  It is possible to override this behavior entirely by specifyi
 :attr:`~Structure._layout_` class attribute in the subclass definition; see
 the attribute documentation for details.
 
-It is possible to specify the maximum alignment for the fields and/or for the
-structure itself by setting the class attributes :attr:`~Structure._pack_`
-and/or :attr:`~Structure._align_`, respectively.
+The :attr:`~Structure._align_` class attribute specifies the minimum alignment
+for the structure itself.
 See the attribute documentation for details.
 
 :mod:`!ctypes` uses the native byte order for Structures and Unions.  To build
@@ -1074,10 +1073,10 @@ to synchronize access to memory:
       >>> lock = threading.Lock()
       >>> # Thread 1
       >>> with lock:
-      ...    pointer_a.contents = 24
+      ...    pointer_a[0] = 24
       >>> # Thread 2
       >>> with lock:
-      ...    pointer_b.contents = 42
+      ...    pointer_b[0] = 42
 
 
 .. _ctypes-type-conversions:
@@ -1118,7 +1117,7 @@ an object passed for a pointer argument (see
 ``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
 is a ``c_int`` array is accepted as well.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Objects with an :attr:`!_as_parameter_` attribute now receive the same
    implicit conversions for pointer arguments as the object they wrap.
 
@@ -1219,7 +1218,7 @@ other, and finally follow the pointer chain a few times::
    ...     print(p.name, end=" ")
    ...     p = p.next[0]
    ...
-   foo bar foo bar foo bar foo bar
+   b'foo' b'bar' b'foo' b'bar' b'foo' b'bar' b'foo' b'bar'
    >>>
 
 
@@ -1359,7 +1358,7 @@ the simple types:
    same requirement C itself imposes. Returning a pointer to memory owned by
    a temporary Python object will leave the C caller with a dangling pointer.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Callback functions can now return structures and unions.
 
 .. _ctypes-accessing-values-exported-from-dlls:
@@ -1380,17 +1379,13 @@ api::
    0x30c00a0
 
 An extended example which also demonstrates the use of pointers accesses the
-:c:data:`PyImport_FrozenModules` pointer exported by Python.
+``_PyImport_FrozenBootstrap`` pointer exported by Python. It points to an array
+of :c:struct:`_frozen` records describing frozen modules used during startup,
+terminated by one whose members are all ``NULL`` or zero. This is similar to
+the :c:data:`PyImport_FrozenModules` table, which third-party code can use to
+provide additional frozen modules.
 
-Quoting the docs for that value:
-
-   This pointer is initialized to point to an array of :c:struct:`_frozen`
-   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
-   module is imported, it is searched in this table.  Third-party code could play
-   tricks with this to provide a dynamically created collection of frozen modules.
-
-So manipulating this pointer could even prove useful. To restrict the example
-size, we show only how this table can be read with :mod:`!ctypes`::
+We can read this table with :mod:`!ctypes`::
 
    >>> from ctypes import *
    >>>
@@ -1398,7 +1393,7 @@ size, we show only how this table can be read with :mod:`!ctypes`::
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
    ...                 ("size", c_int),
-   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
+   ...                 ("is_package", c_int),
    ...                ]
    ...
    >>>
@@ -1426,9 +1421,9 @@ hit the ``NULL`` entry::
    zipimport 12345
    >>>
 
-The fact that standard Python has a frozen module and a frozen package
-(indicated by the negative ``size`` member) is not well known, it is only used
-for testing. Try it out with ``import __hello__`` for example.
+Frozen packages are indicated by a nonzero ``is_package`` member. Python also
+includes frozen modules and packages used for testing, such as ``__hello__``
+and ``__phello__``, in a separate table, ``_PyImport_FrozenTest``.
 
 
 .. _ctypes-surprises:
@@ -2009,8 +2004,8 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
       :meth:`~_CData.from_param` class method of the items in the :attr:`argtypes`
       tuple, this method allows adapting the actual argument to an object that
       the foreign function accepts.  For example, a :class:`c_char_p` item in
-      the :attr:`argtypes` tuple will convert a string passed as argument into
-      a bytes object using ctypes conversion rules.
+      the :attr:`argtypes` tuple will adapt a bytes object passed as an argument
+      to a C pointer to its contents. It does not accept a :class:`str` object.
 
       New: It is now possible to put items in argtypes which are not ctypes
       types, but each item must have a :meth:`~_CData.from_param` method which returns a
@@ -2715,7 +2710,7 @@ Fundamental data types
       and :c:expr:`time_t` C types are the same, then :class:`c_long`,
       :class:`c_longlong` and :class:`c_time_t` all refer to a single class,
       :class:`c_long`, whose :attr:`_type_` code is ``'l'``.
-      The ``'L'`` code will be unused.
+      The ``'q'`` code will be unused.
 
       .. seealso::
 
@@ -2727,10 +2722,8 @@ Fundamental data types
 Fundamental data types, when returned as foreign function call results, or, for
 example, by retrieving structure field members or array items, are transparently
 converted to native Python types.  In other words, if a foreign function has a
-:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will always receive a Python bytes
-object, *not* a :class:`c_char_p` instance.
-
-.. XXX above is false, it actually returns a Unicode string
+:attr:`~_CFuncPtr.restype` of :class:`c_char_p`, you will receive a Python bytes
+object or ``None`` for a ``NULL`` pointer, *not* a :class:`c_char_p` instance.
 
 Subclasses of fundamental data types do *not* inherit this behavior. So, if a
 foreign functions :attr:`!restype` is a subclass of :class:`c_void_p`, you will
@@ -2927,7 +2920,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
    On platforms where ``sizeof(long long) == sizeof(long)`` it is an alias
-   to :class:`c_long`.
+   to :class:`c_ulong`.
 
 
 .. class:: c_ushort
@@ -3440,7 +3433,7 @@ fields, or any other data types containing pointer type fields.
    Concrete structure and union types must be created by subclassing one of these
    types, and at least define a :attr:`_fields_` class variable. :mod:`!ctypes` will
    create :term:`descriptor`\s which allow reading and writing the fields by direct
-   attribute accesses.  These are the
+   attribute accesses.
 
 
    .. attribute:: _fields_
@@ -3470,8 +3463,8 @@ fields, or any other data types containing pointer type fields.
       Later assignments will raise an :exc:`AttributeError`.
 
       Additionally, the :attr:`!_fields_` class variable must be defined before
-      the structure or union type is first used: an instance or subclass is
-      created, :func:`sizeof` is called on it, and so on.
+      the structure or union type is first used, for example when an instance
+      or subclass is created.
       Later assignments to :attr:`!_fields_` will raise an :exc:`AttributeError`.
       If :attr:`!_fields_` has not been set before such use,
       the structure or union will have no own fields, as if :attr:`!_fields_`
@@ -3568,15 +3561,17 @@ fields, or any other data types containing pointer type fields.
 
       Here is an example type (Windows)::
 
+         class TYPEDESC(Structure):
+             pass
+
          class _U(Union):
              _fields_ = [("lptdesc", POINTER(TYPEDESC)),
                          ("lpadesc", POINTER(ARRAYDESC)),
                          ("hreftype", HREFTYPE)]
 
-         class TYPEDESC(Structure):
-             _anonymous_ = ("u",)
-             _fields_ = [("u", _U),
-                         ("vt", VARTYPE)]
+         TYPEDESC._anonymous_ = ("u",)
+         TYPEDESC._fields_ = [("u", _U),
+                             ("vt", VARTYPE)]
 
 
       The ``TYPEDESC`` structure describes a COM data type, the ``vt`` field
@@ -3586,10 +3581,11 @@ fields, or any other data types containing pointer type fields.
       are equivalent, but the former is faster since it does not need to create
       a temporary union instance::
 
+         some_type = TYPEDESC()
          td = TYPEDESC()
          td.vt = VT_PTR
-         td.lptdesc = POINTER(some_type)
-         td.u.lptdesc = POINTER(some_type)
+         td.lptdesc = pointer(some_type)
+         td.u.lptdesc = pointer(some_type)
 
    It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
@@ -3684,7 +3680,7 @@ fields, or any other data types containing pointer type fields.
       :attr:`~CField.byte_offset`.
 
       To get the field's value, read the storage unit as an integer,
-      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      :ref:`shift right <shifting>` by :attr:`!bit_offset` and
       take the :attr:`!bit_size` least significant bits.
 
       For non-bitfields, :attr:`!bit_offset` is zero
@@ -3758,9 +3754,9 @@ fields, or any other data types containing pointer type fields.
 .. class:: CFieldInfo(anonymous=False, bit_width=None)
    :module: ctypes.util
 
-   Information regarding a structure field defined by the :func:`struct`
-   decorator. This should be used in the second argument of a
-   :class:`typing.Annotated` wrapping a ctypes type.
+   Information regarding a structure field defined by the
+   :func:`~ctypes.util.struct` decorator. This should be used in the second
+   argument of a :class:`typing.Annotated` wrapping a ctypes type.
 
    *anonymous* specifies whether the field will be present in the
    :attr:`~ctypes.Structure._anonymous_` attribute of the generated class.

@@ -1,1 +1,0 @@
-Fix a race in ``list.__sizeof__()`` when a list is concurrently resized on a free-threaded build.

@@ -1,3 +1,0 @@
-Fix the macOS shared library and framework builds not linking the libraries
-required by built-in modules, such as the HACL* objects needed by ``_blake2``
-when it is built in via :file:`Modules/Setup.local`.

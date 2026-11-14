@@ -1,2 +1,0 @@
-On FreeBSD, call ``pthread_attr_get_np()`` to get the stack size (and guard
-size) of the current thread. Patch by Victor Stinner.

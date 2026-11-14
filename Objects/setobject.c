@@ -1348,19 +1348,20 @@ static PyObject *
 make_new_set_untracked(PyTypeObject *type, PyObject *iterable)
 {
     assert(PyType_Check(type));
-    PySetObject *so;
 
-    so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
-    if (so == NULL)
+    // fields are zero-initialized by _PyType_AllocNoTrack
+    PySetObject *so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
+    if (so == NULL) {
         return NULL;
+    }
 
-    so->fill = 0;
-    so->used = 0;
+    assert(so->fill == 0);
+    assert(so->used == 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
     so->hash = -1;
-    so->finger = 0;
-    so->weakreflist = NULL;
+    assert(so->finger == 0);
+    assert(so->weakreflist == NULL);
 
     if (iterable != NULL) {
         if (set_update_local(so, iterable)) {
@@ -1571,6 +1572,7 @@ _PySet_Freeze(PyObject *set)
     assert(PySet_CheckExact(set));
     assert(_PyObject_IsUniquelyReferenced(set));
     set->ob_type = &PyFrozenSet_Type;
+    _PyFrozenSet_MaybeUntrack(set);
     return Py_NewRef(set);
 }
 

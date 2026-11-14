@@ -1,1 +1,0 @@
-Detect recursive ``_as_parameter_`` chains for :mod:`ctypes` calls without argument types.

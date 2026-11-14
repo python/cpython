@@ -1,2 +1,0 @@
-Fix a reference leak in binary, ternary, and comparison operations on weak
-reference proxies when another operand is a dead proxy.

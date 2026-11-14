@@ -173,8 +173,16 @@ should_immortalize_constant(PyObject *v)
                 _Py_IsImmortal(slice->stop) &&
                 _Py_IsImmortal(slice->step));
     }
-    return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
-            PyComplex_CheckExact(v) || PyBytes_CheckExact(v));
+    // The hash of a NaN depends on its address, so the table would keep every
+    // NaN object it gets (and merging them would shrink frozensets).
+    if (PyFloat_CheckExact(v)) {
+        return !isnan(PyFloat_AS_DOUBLE(v));
+    }
+    if (PyComplex_CheckExact(v)) {
+        Py_complex c = ((PyComplexObject *)v)->cval;
+        return !isnan(c.real) && !isnan(c.imag);
+    }
+    return PyLong_CheckExact(v) || PyBytes_CheckExact(v);
 }
 #endif
 

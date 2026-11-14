@@ -135,7 +135,7 @@ PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 # LDFLAGS used to build executables and shared targets.
 PY_CORE_LDFLAGS=$(PY_LDFLAGS) $(PY_LDFLAGS_NODIST)
 CONFIGURE_EXE_LDFLAGS=@EXE_LDFLAGS@
-PY_CORE_EXE_LDFLAGS:= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
+PY_CORE_EXE_LDFLAGS= $(if $(CONFIGURE_EXE_LDFLAGS), $(CONFIGURE_EXE_LDFLAGS) $(PY_LDFLAGS_NODIST), $(PY_CORE_LDFLAGS))
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
 # Compilation flags only for ceval.c.
@@ -242,6 +242,7 @@ LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
 
 # Environment to run shared python without installed libraries
 RUNSHARED=       @RUNSHARED@
+RUNSHARED_FOR_BUILD= @RUNSHARED_FOR_BUILD@
 
 # ensurepip options
 ENSUREPIP=      @ENSUREPIP@
@@ -659,6 +660,7 @@ LIBEXPAT_OBJS= \
 LIBEXPAT_HEADERS= \
 		Modules/expat/ascii.h \
 		Modules/expat/asciitab.h \
+		Modules/expat/entities.h \
 		Modules/expat/expat.h \
 		Modules/expat/expat_config.h \
 		Modules/expat/expat_external.h \
@@ -1012,7 +1014,7 @@ $(BUILDPYTHON):	Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_EXE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(PLATFORM_MAIN_OBJS) $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
+	$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
 # Create build directory and generate the sysconfig build-time data there.
 # pybuilddir.txt contains the name of the build dir and is used for
@@ -1023,7 +1025,7 @@ platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 # or removed in case of failure.
 pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	@echo "none" > ./pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -X pathconfig_warnings=0 -m sysconfig --generate-posix-vars ;\
+	$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) -S -X pathconfig_warnings=0 -m sysconfig --generate-posix-vars ;\
 	if test $$? -ne 0 ; then \
 		echo "generate-posix-vars failed" ; \
 		rm -f ./pybuilddir.txt ; \
@@ -1031,7 +1033,7 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 	fi
 
 $(BUILD_DETAILS): pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
+	$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1603,11 +1605,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 .PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@if [ -n "@MISSING_STDLIB_CONFIG@" ]; then \
-		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
+		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
 	else \
-		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
+		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
 	fi
-	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
+	@$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
 
 .PHONY: rundsymutil
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
@@ -1914,6 +1916,7 @@ regen-unicodedata:
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
+# Keep the list of targets to run manually in sync with Doc/using/configure.rst.
 .PHONY: regen-all
 regen-all: regen-cases regen-slots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
@@ -2435,7 +2438,7 @@ install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
 			upgrade) ensurepip="--upgrade" ;; \
 			install|*) ensurepip="" ;; \
 		esac; \
-		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
+		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) -m ensurepip \
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
@@ -2446,7 +2449,7 @@ altinstall: commoninstall
 			upgrade) ensurepip="--altinstall --upgrade" ;; \
 			install|*) ensurepip="--altinstall" ;; \
 		esac; \
-		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
+		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) -m ensurepip \
 			$$ensurepip --root=$(DESTDIR)/ ; \
 	fi
 
@@ -2912,12 +2915,12 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		patch --force --reject-file "$(abs_builddir)/app-store-compliance.rej" --strip 2 --directory "$(DESTDIR)$(LIBDEST)" --input "$(abs_srcdir)/$(APP_STORE_COMPLIANCE_PATCH)" || true ; \
 	fi
 	@ # Build PYC files for the 3 optimization levels (0, 1, 2)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED_FOR_BUILD) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages' \
 		$(DESTDIR)$(LIBDEST)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED_FOR_BUILD) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
@@ -3137,7 +3140,7 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; \
 	fi
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
-	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
+	sed 's/%VERSION%/'"`$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBDIR)
 	$(LN) -fs "../$(LDLIBRARY)" "$(DESTDIR)$(prefix)/lib/libpython$(LDVERSION).dylib"

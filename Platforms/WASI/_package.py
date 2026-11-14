@@ -26,32 +26,18 @@ set -eu
 
 script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
 root=$(CDPATH= cd "$script_dir/.." && pwd -P)
-wasm_file="$root/lib/python{python_version(context)}/lib-wasm/python{python_version(context, debug_ok=True)}.wasm"
+wasm_file="$root/lib/python{context.python_version()}/lib-wasm/python{context.python_version(debug_ok=True)}.wasm"
 
 exec wasmtime run \\
     --argv0 "$wasm_file" \\
-    --config "$root/etc/python{python_version(context)}/wasmtime.toml" \\
+    --config "$root/etc/python{context.python_version()}/wasmtime.toml" \\
     --dir "/" \\
     "$wasm_file" "$@"
 """
 
 
-def python_version(context, debug_ok=False):
-    """Calculate the M.N part of Python's version.
-
-    If *debug_ok* is True, then "d" is appended as appropriate.
-    """
-    details = context.wasi_build_details
-    major = details["language"]["version_info"]["major"]
-    minor = details["language"]["version_info"]["minor"]
-    version = f"{major}.{minor}"
-    if debug_ok and context.is_debug:
-        version += "d"
-    return version
-
-
 def lib_python(context):
-    return pathlib.PurePath("lib") / f"python{python_version(context)}"
+    return pathlib.PurePath("lib") / f"python{context.python_version()}"
 
 
 def license_file(context):
@@ -101,12 +87,12 @@ def pkgconfig_files(context):
     pkgconfig = pathlib.PurePath("lib") / "pkgconfig"
     return [
         (
-            pkgconfig / f"python-{python_version(context, debug_ok=True)}.pc",
+            pkgconfig / f"python-{context.python_version(debug_ok=True)}.pc",
             misc_dir / "python.pc",
         ),
         (
             pkgconfig
-            / f"python-{python_version(context, debug_ok=True)}-embed.pc",
+            / f"python-{context.python_version(debug_ok=True)}-embed.pc",
             misc_dir / "python-embed.pc",
         ),
     ]
@@ -127,11 +113,11 @@ def pkgconfig_symlinks(pkgconfig_files, context):
         paths += [
             (
                 embed_path.parent
-                / f"python-{python_version(context)}-embed.pc",
+                / f"python-{context.python_version()}-embed.pc",
                 embed_path,
             ),
             (
-                plain_path.parent / f"python-{python_version(context)}.pc",
+                plain_path.parent / f"python-{context.python_version()}.pc",
                 plain_path,
             ),
         ]
@@ -143,7 +129,7 @@ def pyconfig_file(context):
     """Have <build>/pyconfig.h end up in include/pythonXYd?/pyconfig.h."""
     return (
         pathlib.PurePath("include")
-        / f"python{python_version(context, debug_ok=True)}"
+        / f"python{context.python_version(debug_ok=True)}"
         / "pyconfig.h",
         context.wasi_build_path / "pyconfig.h",
     )
@@ -158,7 +144,7 @@ def header_files(context):
             file_path = pathlib.Path(root) / filename
             details = (
                 pathlib.PurePath("include")
-                / f"python{python_version(context, debug_ok=True)}"
+                / f"python{context.python_version(debug_ok=True)}"
                 / file_path.relative_to(include_dir),
                 file_path,
             )
@@ -171,7 +157,7 @@ def man_file(context):
     man_dir = pathlib.PurePath("share", "man", "man1")
     man_file = context.checkout / "Misc" / "python.man"
     return (
-        man_dir / f"python{python_version(context)}.1",
+        man_dir / f"python{context.python_version()}.1",
         man_file,
     )
 
@@ -187,7 +173,7 @@ def wasmtime_config_file(context):
     config = context.checkout / "Platforms" / "WASI" / "wasmtime.toml"
     return (
         pathlib.PurePath("etc")
-        / f"python{python_version(context)}"
+        / f"python{context.python_version()}"
         / "wasmtime.toml",
         config,
     )
@@ -198,17 +184,15 @@ def wasm_file(context):
     return (
         lib_python(context)
         / "lib-wasm"
-        / f"python{python_version(context, debug_ok=True)}.wasm",
+        / f"python{context.python_version(debug_ok=True)}.wasm",
         context.wasi_build_path / "python.wasm",
     )
 
 
-def python_wasmtime_script(base, context):
+def python_wasmtime_script(context):
     """Create bin/pythonN.Md?.wasmtime."""
     script = wasmtime_script(context)
-    path = (
-        base / f"bin/python{python_version(context, debug_ok=True)}.wasmtime"
-    )
+    path = context.dist_python_interpreter
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         f.write(script)
@@ -221,7 +205,7 @@ def python_wasmtime_symlink(path, context):
     """Symlink bin/pythonN.Md?.wasmtime.
 
     - bin/pythonN.M.wasmtime (if debug build)
-    - bin/pythonN.wasmtime (if debug build)
+    - bin/pythonN.wasmtime
     """
     symlinks = [
         path.parent / f"python{context.wasi_build_version['major']}.wasmtime"
@@ -229,7 +213,7 @@ def python_wasmtime_symlink(path, context):
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.
         symlinks.append(
-            path.parent / f"python{python_version(context)}.wasmtime"
+            path.parent / f"python{context.python_version()}.wasmtime"
         )
 
     return [(symlink, path) for symlink in symlinks]
@@ -239,7 +223,7 @@ def config_file(context):
     """Have Misc/config.sh end up at bin/pythonN.Md?.config."""
     return (
         pathlib.PurePath("bin")
-        / f"python{python_version(context, debug_ok=True)}-config",
+        / f"python{context.python_version(debug_ok=True)}-config",
         context.wasi_build_path / "Misc" / "python-config.sh",
     )
 
@@ -258,7 +242,7 @@ def config_symlink(config_path, context):
     if context.is_debug:
         # The file already has the debug name, so the missing symlink is the non-debug name.
         symlinks.append(
-            config_path.parent / f"python{python_version(context)}-config"
+            config_path.parent / f"python{context.python_version()}-config"
         )
 
     return [(symlink, config_path) for symlink in symlinks]
@@ -281,8 +265,8 @@ def symlink_files(files, base):
 
 
 def gather(context):
-    py_version = python_version(context)
-    py_d_version = python_version(context, debug_ok=True)
+    py_version = context.python_version()
+    py_d_version = context.python_version(debug_ok=True)
 
     dist = context.dist_path
     if dist.exists():
@@ -300,7 +284,7 @@ def gather(context):
     symlink_files(config_symlink(config_location[0], context), base)
 
     _shared.log("📄", f"python{py_d_version}.wasmtime", spacing=indent * 3)
-    script_path = python_wasmtime_script(base, context)
+    script_path = python_wasmtime_script(context)
     symlink_files(python_wasmtime_symlink(script_path, context), base)
 
     _shared.log("📁", "etc/", spacing=indent * 2)
@@ -353,8 +337,7 @@ def gather(context):
 
 
 def archive(context):
-    file_name = f"{context.archive_stem}.tar.xz"
-    file_path = context.dist_path / file_name
+    file_path = context.archive_path
     if file_path.exists():
         _shared.log("🧹", f"Deleting {file_path} ...")
         file_path.unlink()
@@ -399,6 +382,7 @@ def archive(context):
                 "--owner=0",
                 "--group=0",
                 "--numeric-owner",
+                "--format=pax",
                 "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime",
                 "--mode=go+u,go-w",
                 # Explicitly using `-T` because if you don't compress with threads you can't

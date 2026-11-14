@@ -98,7 +98,7 @@ necessary entitlement and add it to the Python binary:
     codesign --sign - --entitlements get-task-allow.plist path/to/bin/python3
 
 where ``path/to/bin/python3`` is the path to your Python binary, which you can
-find by e.g. running ``which python3`` or evaluating ``sys.base_executable`` at
+find by e.g. running ``which python3`` or evaluating ``sys._base_executable`` at
 the Python REPL. (These instructions are for a non-framework build of Python.
 Framework builds may need to be configured differently.)
 

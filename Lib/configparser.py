@@ -1006,11 +1006,19 @@ class RawConfigParser(MutableMapping):
 
         The section DEFAULT is never returned because it cannot be removed.
         """
-        for key in self.sections():
+        for key in self._sections:
             value = self[key]
             del self[key]
             return key, value
         raise KeyError
+
+    def clear(self):
+        """Remove all sections from the parser.
+
+        The section DEFAULT is left intact because it cannot be removed.
+        """
+        for section in self.sections():
+            del self[section]
 
     def optionxform(self, optionstr):
         return optionstr.lower()
@@ -1431,6 +1439,39 @@ class SectionProxy(MutableMapping):
             return self._parser.options(self._name)
         else:
             return self._parser.defaults()
+
+    # MutableMapping.popitem() and MutableMapping.clear() create a new
+    # iterator for every removed option, and __iter__() copies the names
+    # of all options.  Emptying a section that way takes quadratic time.
+
+    def popitem(self):
+        """Remove an option from the section and return it as
+        an (option_name, value) tuple. If no option is present, raise KeyError.
+
+        Options of the section DEFAULT are only returned for that section
+        because they cannot be removed from other sections.
+        """
+        if self._name != self._parser.default_section:
+            try:
+                options = self._parser._sections[self._name]
+            except KeyError:
+                raise NoSectionError(self._name) from None
+        else:
+            options = self._parser.defaults()
+        for key in options:
+            value = self[key]
+            del self[key]
+            return key, value
+        raise KeyError
+
+    def clear(self):
+        """Remove all options from the section.
+
+        Options of the section DEFAULT are left intact for other sections
+        because they cannot be removed from them.
+        """
+        for key in list(self._options()):
+            self._parser.remove_option(self._name, key)
 
     @property
     def parser(self):

@@ -306,16 +306,15 @@ extern "C" {
  * Usage:
  *    int _Py_HOT_FUNCTION x(void) { return 3; }
  *
- * Issue #28618: This attribute must not be abused, otherwise it can have a
+ * Issue gh-72804: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
  * its time must use it. Use a profiler when running performance benchmark
  * suite to find these functions.
  */
-#if defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
-#define _Py_HOT_FUNCTION __attribute__((hot))
+#if _Py__has_attribute(hot)
+#   define _Py_HOT_FUNCTION __attribute__((hot))
 #else
-#define _Py_HOT_FUNCTION
+#   define _Py_HOT_FUNCTION
 #endif
 
 // Ask the compiler to always inline a static inline function. The compiler can
@@ -491,7 +490,7 @@ extern "C" {
 #ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
-#  elif _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
+#  elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
 #    define _Py_thread_local _Thread_local
 #  elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #    define _Py_thread_local __declspec(thread)
@@ -550,6 +549,11 @@ extern "C" {
 #  define _Py_TYPEOF(expr) __typeof__(expr)
 #endif
 
+#ifdef _Py_TESTCEXT_NO_TYPEOF
+   // Exercise fallback implementations in test_cext.
+#  undef _Py_TYPEOF
+#endif
+
 
 /* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
@@ -579,6 +583,9 @@ extern "C" {
 #      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_FUNCTION __attribute__((no_sanitize("function")))
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
@@ -605,6 +612,9 @@ extern "C" {
 #endif
 #ifndef _Py_NO_SANITIZE_MEMORY
 #  define _Py_NO_SANITIZE_MEMORY
+#endif
+#ifndef _Py_NO_SANITIZE_FUNCTION
+#  define _Py_NO_SANITIZE_FUNCTION
 #endif
 #ifndef _Py_MSAN_UNPOISON
 #  define _Py_MSAN_UNPOISON(PTR, SIZE)

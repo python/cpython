@@ -1,2 +1,0 @@
-Fix clearing a :class:`pickle.Unpickler` memo so that the unpickler can be
-reused for independent records.

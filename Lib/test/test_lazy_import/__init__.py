@@ -770,6 +770,20 @@ class DunderLazyImportTests(LazyImportTestCase):
             b"TypeError: Item in ``from list'' must be str, not int",
             result.err)
 
+    @support.requires_subprocess()
+    def test_dunder_lazy_import_explicit_none(self):
+        """__lazy_import__ should accept None for globals and locals."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy = __lazy_import__("test.test_lazy_import.data.basic2",
+                                   globals=None, locals=None)
+            assert type(globals()["lazy"]) is types.LazyImportType
+            assert "test.test_lazy_import.data.basic2" not in sys.modules
+        """)
+        assert_python_ok("-c", code)
+
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""
         from test.test_lazy_import.data import dunder_lazy_import_builtins

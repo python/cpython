@@ -199,7 +199,36 @@ python3 Platforms/WASI clean
 
 ### Testing
 
-To find out where the WASI build directory is, you can run:
+After building, you can run the CI tests with:
+
+```shell
+python3 Platforms/WASI test
+```
+
+The mutually exclusive CI flags to select which tests to run:
+
+- `--fast-ci` (the default): `make test`
+- `--slow-ci`: `make buildbottest`
+
+The `--target` flag selects the files to test:
+
+- `build` (the default): the WASI build in `cross-build/`.
+- `dist`: the distribution files gathered in `dist/`.
+- `archive`: the contents of the release archive, unpacked into `dist/`.
+
+To thoroughly test the contents of the release archive, use:
+
+```shell
+python3 Platforms/WASI test --slow-ci --target archive
+```
+
+This requires an archive created by `package` or `release`. It deletes the
+selected versioned distribution directory inside `dist/`, then restores it
+from the matching `.tar.xz` archive before running the tests.
+The archive and other distributions in `dist/` are left untouched.
+
+You can also run tests more directly. To find out where the WASI build directory
+is, you can run:
 
 ```shell
 python3 Platforms/WASI path

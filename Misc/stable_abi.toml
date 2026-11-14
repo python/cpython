@@ -2915,3 +2915,29 @@
     added = '3.16'
 [macro.Py_XSETREF]
     added = '3.16'
+[function.PyUnicodeWriter_Create]
+    added = '3.16'
+[function.PyUnicodeWriter_Discard]
+    added = '3.16'
+[function.PyUnicodeWriter_Finish]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteChar]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteUTF8]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteASCII]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteWideChar]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteUCS4]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteStr]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteRepr]
+    added = '3.16'
+[function.PyUnicodeWriter_WriteSubstring]
+    added = '3.16'
+[function.PyUnicodeWriter_Format]
+    added = '3.16'
+[function.PyUnicodeWriter_DecodeUTF8Stateful]
+    added = '3.16'

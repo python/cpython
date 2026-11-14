@@ -167,9 +167,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e
 
 [[packages]]
 name = "docutils"
-version = "0.21.2"
-sdist = { url = "https://files.pythonhosted.org/packages/ae/ed/aefcc8cd0ba62a0560c3c18c33925362d46c6075480bfa4df87b28e169a9/docutils-0.21.2.tar.gz", upload-time = 2024-04-23T18:57:18Z, size = 2204444, hashes = { sha256 = "3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929e75e7e5e6255e614fcc67572cfd083959cdef3b7aad79/docutils-0.21.2-py3-none-any.whl", upload-time = 2024-04-23T18:57:14Z, size = 587408, hashes = { sha256 = "dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2" } }]
+version = "0.22.4"
+sdist = { url = "https://files.pythonhosted.org/packages/ae/b6/03bb70946330e88ffec97aefd3ea75ba575cb2e762061e0e62a213befee8/docutils-0.22.4.tar.gz", upload-time = 2025-12-18T19:00:26Z, size = 2291750, hashes = { sha256 = "4db53b1fde9abecbb74d91230d32ab626d94f6badfc575d6db9194a49df29968" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/02/10/5da547df7a391dcde17f59520a231527b8571e6f46fc8efb02ccb370ab12/docutils-0.22.4-py3-none-any.whl", upload-time = 2025-12-18T19:00:18Z, size = 633196, hashes = { sha256 = "d0013f540772d1420576855455d050a2180186c91c15779301ac2ccb3eeb68de" } }]
 
 [[packages]]
 name = "idna"
@@ -237,12 +237,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/ae/f9/41dc953bbeb056c17
 wheels = [{ url = "https://files.pythonhosted.org/packages/04/54/6f679c435d28e0a568d8e8a7c0a93a09010818634c3c3907fc98d8983770/roman_numerals-4.1.0-py3-none-any.whl", upload-time = 2025-12-17T18:25:33Z, size = 7676, hashes = { sha256 = "647ba99caddc2cc1e55a51e4360689115551bf4476d90e8162cf8c345fe233c7" } }]
 
 [[packages]]
-name = "roman-numerals-py"
-version = "4.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/cb/b5/de96fca640f4f656eb79bbee0e79aeec52e3e0e359f8a3e6a0d366378b64/roman_numerals_py-4.1.0.tar.gz", upload-time = 2025-12-17T18:25:41Z, size = 4274, hashes = { sha256 = "f5d7b2b4ca52dd855ef7ab8eb3590f428c0b1ea480736ce32b01fef2a5f8daf9" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/27/2c/daca29684cbe9fd4bc711f8246da3c10adca1ccc4d24436b17572eb2590e/roman_numerals_py-4.1.0-py3-none-any.whl", upload-time = 2025-12-17T18:25:40Z, size = 4547, hashes = { sha256 = "553114c1167141c1283a51743759723ecd05604a1b6b507225e91dc1a6df0780" } }]
-
-[[packages]]
 name = "snowballstemmer"
 version = "2.2.0"
 sdist = { url = "https://files.pythonhosted.org/packages/44/7b/af302bebf22c749c56c9c3e8ae13190b5b5db37a33d9068652e8f73b7089/snowballstemmer-2.2.0.tar.gz", upload-time = 2021-11-16T18:38:38Z, size = 86699, hashes = { sha256 = "09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1" } }
@@ -250,9 +244,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/ed/dc/c02e01294f7265e
 
 [[packages]]
 name = "sphinx"
-version = "8.2.3"
-sdist = { url = "https://files.pythonhosted.org/packages/38/ad/4360e50ed56cb483667b8e6dadf2d3fda62359593faabbe749a27c4eaca6/sphinx-8.2.3.tar.gz", upload-time = 2025-03-02T22:31:59Z, size = 8321876, hashes = { sha256 = "398ad29dee7f63a75888314e9424d40f52ce5a6a87ae88e7071e80af296ec348" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/31/53/136e9eca6e0b9dc0e1962e2c908fbea2e5ac000c2a2fbd9a35797958c48b/sphinx-8.2.3-py3-none-any.whl", upload-time = 2025-03-02T22:31:56Z, size = 3589741, hashes = { sha256 = "4405915165f13521d875a8c29c8970800a0141c14cc5416a38feca4ea5d9b9c3" } }]
+version = "9.1.1"
+sdist = { url = "https://files.pythonhosted.org/packages/fc/73/567727fc8c8d85bc3adc88a246e12937cfda8d565cf1d80e85bceaa61fe5/sphinx-9.1.1.tar.gz", upload-time = 2026-10-20T00:41:13Z, size = 8725638, hashes = { sha256 = "48b627f02908f22c601b3ba9c7b17265b4f315dd05c8bc64cd4da41183f44fbc" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/47/18/3c66ea76da7de47e716b181c35bdbfafbd5e9af0bb247b14578e9de348e9/sphinx-9.1.1-py3-none-any.whl", upload-time = 2026-10-20T00:41:11Z, size = 3923559, hashes = { sha256 = "f8b60013ce25017be41a509e5c2d265bc1918410061315c36b809c7f335646c0" } }]
 
 [[packages]]
 name = "sphinx-linklint"

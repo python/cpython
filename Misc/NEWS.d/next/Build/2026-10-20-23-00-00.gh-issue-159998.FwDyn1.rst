@@ -1,3 +1,0 @@
-Fix ``libpython.dynamic`` in the :pep:`739` ``build-details.json`` file for
-macOS and iOS framework builds. It now points at the framework's library
-instead of a nonexistent path under :file:`lib/`.

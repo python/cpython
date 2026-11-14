@@ -1475,5 +1475,12 @@ class ProtocolsTest(unittest.TestCase):
         self.assertNotIsSubclass(str, io.Writer)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, io, "__author__", remove=(3, 20),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,3 @@
+Fix :func:`os.chmod` with ``follow_symlinks=True``, :func:`os.fchmod` and
+:meth:`pathlib.Path.chmod` on Windows: clearing the read-only attribute of a
+file which has no other attribute set is no longer silently ignored.

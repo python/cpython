@@ -594,7 +594,16 @@ else:
                     if not islink(old_path):
                         path = old_path
                         break
-                    path = normpath(join(dirname(old_path), path))
+                    # Resolve the directory holding the link first, so that
+                    # '..' in the target is not applied to a directory link
+                    # in old_path.
+                    link_dir = dirname(old_path)
+                    try:
+                        link_dir = _getfinalpathname(link_dir)
+                    except ignored_error as ex:
+                        if ex.winerror not in allowed_winerror:
+                            raise
+                    path = normpath(join(link_dir, path))
             except ignored_error as ex:
                 if ex.winerror in allowed_winerror:
                     break

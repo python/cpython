@@ -472,11 +472,14 @@ Dictionary objects
 
 .. c:function:: int PyDict_Update(PyObject *a, PyObject *b)
 
-   This is the same as ``PyDict_Merge(a, b, 1)`` in C, and is similar to
-   ``a.update(b)`` in Python except that :c:func:`PyDict_Update` doesn't fall
-   back to the iterating over a sequence of key value pairs if the second
-   argument has no "keys" attribute.  Return ``0`` on success or ``-1`` if an
-   exception was raised.
+   This is the same as ``PyDict_Merge(a, b, 1)`` in C.
+
+   Similar to ``a.update(b)`` in Python, except that this function
+   does not fall back to the iterating over a sequence of key-value pairs
+   if *b* is not a mapping.
+   Use :c:func:`PyDict_MergeFromSeq2` for this case.
+
+   Return ``0`` on success or ``-1`` if an exception was raised.
 
    .. note::
 
@@ -505,6 +508,29 @@ Dictionary objects
       In the :term:`free-threaded <free threading>` build, only *a* is locked.
       The iteration over *seq2* is not synchronized; *seq2* may be concurrently
       modified by another thread.
+
+
+.. c:function:: PyObject* PyDict_AsFrozenDictAndClear(PyObject *dict)
+
+   Return a new :class:`frozendict` created
+   from the existing :class:`dict` instance.
+
+   Transfers all keys and values from *dict*
+   to the newly allocated :class:`!frozendict`.
+   Clears the input *dict* on success.
+   Returns ``NULL`` with the exception set on error.
+
+   This function is intended for building a :class:`!frozendict` instance via
+   a temporary *dict* that is not exposed to user code.
+   To "freeze" an arbitrary dictionary, for example one received from the user
+   as an argument, prefer :c:func:`PyFrozenDict_New` to leave the source
+   intact.
+
+   .. impl-detail::
+
+      Works with O(1) complexity.
+
+   .. versionadded:: 3.16
 
 
 .. c:function:: int PyDict_AddWatcher(PyDict_WatchCallback callback)

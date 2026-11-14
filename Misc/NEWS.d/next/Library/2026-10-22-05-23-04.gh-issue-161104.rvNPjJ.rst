@@ -1,0 +1,4 @@
+Fix :meth:`http.client.HTTPConnection.set_tunnel` accepting a tunnel host
+containing a non-ASCII character that IDNA encoding maps to a space, such as
+U+00A0 NO-BREAK SPACE. Connecting now raises :exc:`ValueError`, as it already
+does for an ASCII space.

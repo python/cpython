@@ -1,1 +1,0 @@
-Fix the ``truncate`` method on :class:`io.BytesIO` when converting its size argument closes the stream or exports its buffer.

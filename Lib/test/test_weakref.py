@@ -1,4 +1,5 @@
 import gc
+import io
 import sys
 import doctest
 import unittest
@@ -1055,6 +1056,29 @@ class ReferencesTestCase(TestBase):
         del cur, child
         del head
         self.assertEqual(found, [])
+
+    def test_ref_to_object_dying_after_finalizer(self):
+        cleared = []
+        class Attr:
+            def __del__(self):
+                cleared.append(self.wr() is None)
+
+        class SetWithDel(set):
+            __slots__ = ('a',)
+            def __del__(self):
+                pass
+
+        class Raw(io.RawIOBase):
+            __slots__ = ('a',)
+
+        for cls in (SetWithDel, Raw):
+            with self.subTest(cls=cls.__name__):
+                cleared.clear()
+                o = cls()
+                o.a = Attr()
+                o.a.wr = weakref.ref(o)
+                del o
+                self.assertEqual(cleared, [True])
 
     def test_callback_attribute(self):
         x = Object(1)

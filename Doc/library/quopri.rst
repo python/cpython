@@ -31,7 +31,7 @@ sending a graphics file.
    If the optional argument *strip_ws* is true,
    trailing whitespace is stripped from each line, as required by :rfc:`2045`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *strip_ws* parameter.
 
 
@@ -53,7 +53,7 @@ sending a graphics file.
    Like :func:`decode`, except that it accepts a source :class:`bytes` and
    returns the corresponding decoded :class:`bytes`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *strip_ws* parameter.
 
 

@@ -1642,7 +1642,7 @@ This module implements the following exception:
    :synopsis: Internationalized Domain Names implementation
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
-Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
+Applications) and :rfc:`3491` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
 

@@ -1720,6 +1720,7 @@ static int test_initconfig_api(void)
         goto error;
     }
 
+    // Set an integer option
     if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
         goto error;
     }
@@ -1746,6 +1747,11 @@ static int test_initconfig_api(void)
         goto error;
     }
 
+    // Set an optional string to NULL explicitly (must not crash).
+    if (PyInitConfig_SetStr(config, "prefix", NULL) < 0) {
+        goto error;
+    }
+
     if (Py_InitializeFromInitConfig(config) < 0) {
         goto error;
     }
@@ -1754,6 +1760,99 @@ static int test_initconfig_api(void)
 
     dump_config();
     Py_Finalize();
+    return 0;
+
+error:
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init failed: %s\n", err_msg);
+        exit(1);
+    }
+}
+
+
+static void
+check_initconfig_error(PyInitConfig *config, const char *expected)
+{
+    const char *err_msg;
+    assert(PyInitConfig_GetError(config, &err_msg) == 1);
+    assert(strcmp(err_msg, expected) == 0);
+}
+
+
+// Test errors of PyInitConfig_Set*() functions
+static int test_initconfig_set_errors(void)
+{
+    char* strlist[] = {"value"};
+
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    // Unknown option
+    assert(PyInitConfig_SetInt(config, "non-existent", 123) < 0);
+    check_initconfig_error(config, "unknown config option name");
+    assert(PyInitConfig_SetStr(config, "non-existent", "abc") < 0);
+    check_initconfig_error(config, "unknown config option name");
+    assert(PyInitConfig_SetStrList(config, "non-existent",
+                                   Py_ARRAY_LENGTH(strlist), strlist) < 0);
+    check_initconfig_error(config, "unknown config option name");
+
+
+    // Wrong type
+    assert(PyInitConfig_SetInt(config, "platlibdir", 123) == -1);
+    check_initconfig_error(config, "config option type is not int");
+
+    assert(PyInitConfig_SetStr(config, "cpu_count", "abc") == -1);
+    check_initconfig_error(config, "config option type is not string");
+
+    assert(PyInitConfig_SetStrList(config, "cpu_count",
+                                   Py_ARRAY_LENGTH(strlist), strlist) < 0);
+    check_initconfig_error(config, "config option type is not strings list");
+
+
+    // Test SetInt() range: cpu_count option type is PyConfig_MEMBER_INT
+    assert(PyInitConfig_SetInt(config, "cpu_count", INT_MIN) == 0);
+    assert(PyInitConfig_SetInt(config, "cpu_count", INT_MAX) == 0);
+
+    assert(PyInitConfig_SetInt(config, "cpu_count", INT64_MIN) == -1);
+    check_initconfig_error(config, "config option value is out of int range");
+    assert(PyInitConfig_SetInt(config, "cpu_count", INT64_MAX) == -1);
+    check_initconfig_error(config, "config option value is out of int range");
+
+
+    // Test SetInt() range: verbose option type is PyConfig_MEMBER_UINT
+    assert(PyInitConfig_SetInt(config, "verbose", 0) == 0);
+    assert(PyInitConfig_SetInt(config, "verbose", UINT_MAX) == 0);
+
+    assert(PyInitConfig_SetInt(config, "verbose", -1) == -1);
+    check_initconfig_error(config, "config option value is out of unsigned int range");
+    assert(PyInitConfig_SetInt(config, "verbose", INT64_MAX) == -1);
+    check_initconfig_error(config, "config option value is out of unsigned int range");
+
+
+    // SetStr() decode error
+    assert(PyInitConfig_SetStr(config, "platlibdir", "\xff") == -1);
+    check_initconfig_error(config, "decoding error");
+
+
+    // Setting a non-optional string to NULL fails with an error,
+    // but leaves the optional unchanged.
+    if (PyInitConfig_SetStr(config, "program_name", PROGRAM_NAME_UTF8) < 0) {
+        goto error;
+    }
+    assert(PyInitConfig_SetStr(config, "program_name", NULL) < 0);
+    check_initconfig_error(config, "config option string cannot be NULL");
+    char *str;
+    assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
+    assert(strcmp(str, PROGRAM_NAME_UTF8) == 0);
+    free(str);
+
+
+    PyInitConfig_Free(config);
     return 0;
 
 error:
@@ -1778,6 +1877,7 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_HasOption(config, "verbose") == 1);
     assert(PyInitConfig_HasOption(config, "utf8_mode") == 1);
     assert(PyInitConfig_HasOption(config, "non-existent") == 0);
+    assert(PyInitConfig_HasOption(config, "") == 0);
 
     // test PyInitConfig_GetInt()
     assert(initconfig_getint(config, "dev_mode") == 0);
@@ -1789,7 +1889,7 @@ static int test_initconfig_get_api(void)
     assert(PyInitConfig_SetInt(config, "utf8_mode", 0) == 0);
     assert(initconfig_getint(config, "utf8_mode") == 0);
 
-    // test PyInitConfig_GetStr()
+    // test PyInitConfig_GetStr() on an unset string (NULL by default)
     char *str;
     assert(PyInitConfig_GetStr(config, "program_name", &str) == 0);
     assert(str == NULL);
@@ -1815,8 +1915,11 @@ static int test_initconfig_get_api(void)
 
     // Setting hash_seed sets use_hash_seed
     assert(initconfig_getint(config, "use_hash_seed") == 0);
+    assert(initconfig_getint(config, "hash_seed") == 0);
+
     assert(PyInitConfig_SetInt(config, "hash_seed", 123) == 0);
     assert(initconfig_getint(config, "use_hash_seed") == 1);
+    assert(initconfig_getint(config, "hash_seed") == 123);
 
     // Setting module_search_paths sets module_search_paths_set
     assert(initconfig_getint(config, "module_search_paths_set") == 0);
@@ -1825,6 +1928,7 @@ static int test_initconfig_get_api(void)
                                    Py_ARRAY_LENGTH(paths), paths) == 0);
     assert(initconfig_getint(config, "module_search_paths_set") == 1);
 
+    PyInitConfig_Free(config);
     return 0;
 }
 
@@ -3188,6 +3292,7 @@ static struct TestCase TestCases[] = {
     {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_initconfig_api", test_initconfig_api},
+    {"test_initconfig_set_errors", test_initconfig_set_errors},
     {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},
     {"test_initconfig_module", test_initconfig_module},

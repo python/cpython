@@ -44,6 +44,14 @@ bound into a function.
       The old name is deprecated, but will remain available until the
       signature changes again.
 
+.. c:function:: PyObject* PyUnstable_Code_GetLocalPlusNames(PyCodeObject *co)
+
+   Return a :term:`strong reference` to a tuple of names of the local, cell and
+   free variables of a code object. The names are in the same order as the
+   values returned by :c:func:`PyUnstable_InterpreterFrame_GetLocal`.
+
+   .. versionadded:: 3.16
+
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
    Return a new code object.  If you need a dummy code object to create a frame,
@@ -315,9 +323,9 @@ may change without deprecation warnings.
 
    Return a new opaque index value used to adding data to code objects.
 
-   You generally call this function once (per interpreter) and use the result
-   with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate
-   data on individual code objects.
+   You generally call this function once (per interpreter). Use the result with
+   :c:func:`PyUnstable_Code_GetExtra` and :c:func:`PyUnstable_Code_SetExtra`
+   to manipulate data on individual code objects.
 
    If *free* is not ``NULL``: when a code object is deallocated,
    *free* will be called on non-``NULL`` data stored under the new index.

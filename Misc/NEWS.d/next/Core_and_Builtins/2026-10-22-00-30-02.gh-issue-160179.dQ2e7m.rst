@@ -1,3 +1,0 @@
-Fix :meth:`!bytearray.__init__` leaving uninitialized memory in the object
-when it fails on a :class:`list` or :class:`tuple` containing an integer not
-in ``range(256)``. The object is now empty after the failed call.

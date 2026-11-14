@@ -13,11 +13,11 @@ class StringprepTests(unittest.TestCase):
         self.assertTrue(in_table_b1("\u00ad"))
         self.assertFalse(in_table_b1("\u00ae"))
 
-        self.assertTrue(map_table_b2("\u0041"), "\u0061")
-        self.assertTrue(map_table_b2("\u0061"), "\u0061")
+        self.assertEqual(map_table_b2("\u0041"), "\u0061")
+        self.assertEqual(map_table_b2("\u0061"), "\u0061")
 
-        self.assertTrue(map_table_b3("\u0041"), "\u0061")
-        self.assertTrue(map_table_b3("\u0061"), "\u0061")
+        self.assertEqual(map_table_b3("\u0041"), "\u0061")
+        self.assertEqual(map_table_b3("\u0061"), "\u0061")
 
         self.assertTrue(in_table_c11("\u0020"))
         self.assertFalse(in_table_c11("\u0021"))

@@ -74,6 +74,19 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
         ctypes.resize(value, 65536)
         self.assertEqual(value.value, 17)
 
+    def test_resized_scalar_bool(self):
+        # gh-160708: bool() only looks at the value, not at the extra
+        # space added by resize().
+        for size in (16, 1024):
+            with self.subTest(size=size):
+                value = c_int(0)
+                ctypes.resize(value, size)
+                ctypes.memset(ctypes.addressof(value) + sizeof(c_int), 1,
+                              size - sizeof(c_int))
+                self.assertIs(bool(value), False)
+                value.value = 1
+                self.assertIs(bool(value), True)
+
     def test_unsigned_values(self):
         # the value given to the constructor is available
         # as the 'value' attribute
@@ -141,6 +154,16 @@ class NumberTestCase(unittest.TestCase, ComplexesAreIdenticalMixin):
             self.assertEqual(memoryview(num).format, prefix + format)
             array = (t * 3)()
             self.assertEqual(memoryview(array).format, prefix + format)
+
+    @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
+                         "requires C11 complex type")
+    def test_complex_bool(self):
+        # gh-160708: long double complex can be larger than 16 bytes.
+        for t in [ctypes.c_double_complex, ctypes.c_float_complex,
+                  ctypes.c_longdouble_complex]:
+            with self.subTest(t=t):
+                self.assertIs(bool(t()), False)
+                self.assertIs(bool(t(1j)), True)
 
     @unittest.skipUnless(hasattr(ctypes, "c_double_complex"),
                          "requires C11 complex type")

@@ -2317,7 +2317,7 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = fd->code;
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
-    memcpy(&parg->value, self->b_ptr, self->b_size);
+    memcpy(&parg->value, self->b_ptr, info->size);
     return parg;
 }
 
@@ -2889,27 +2889,32 @@ static PyType_Spec pycfuncptr_type_spec = {
  */
 
 static CDataObject *
+PyCData_GetContainer_lock_held(CDataObject *root)
+{
+    assert(root->b_base == NULL);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(root);
+    if (root->b_objects == NULL) {
+        if (root->b_length) {
+            root->b_objects = PyDict_New();
+            if (root->b_objects == NULL) {
+                return NULL;
+            }
+        } else {
+            root->b_objects = Py_NewRef(Py_None);
+        }
+    }
+    return root;
+}
+
+static CDataObject *
 PyCData_GetContainer(CDataObject *self)
 {
     while (self->b_base) {
         self = self->b_base;
     }
-    CDataObject *res = self;
+    CDataObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    // avoid using return directly in this block because critical section
-    // needs to be released before returning
-    if (self->b_objects == NULL) {
-        if (self->b_length) {
-            self->b_objects = PyDict_New();
-            if (self->b_objects == NULL) {
-                res = NULL;
-                goto exit;
-            }
-        } else {
-            self->b_objects = Py_NewRef(Py_None);
-        }
-    }
-exit:;
+    res = PyCData_GetContainer_lock_held(self);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -2919,6 +2924,22 @@ GetKeepedObjects(CDataObject *target)
 {
     CDataObject *container;
     container = PyCData_GetContainer(target);
+    if (container == NULL)
+        return NULL;
+    return container->b_objects;
+}
+
+/* Like GetKeepedObjects(), for a caller that already holds target's lock. */
+static PyObject *
+GetKeepedObjects_lock_held(CDataObject *target)
+{
+    CDataObject *container;
+    if (target->b_base == NULL) {
+        container = PyCData_GetContainer_lock_held(target);
+    }
+    else {
+        container = PyCData_GetContainer(target);
+    }
     if (container == NULL)
         return NULL;
     return container->b_objects;
@@ -2960,7 +2981,15 @@ KeepRef_lock_held(CDataObject *target, Py_ssize_t index, PyObject *keep)
         Py_DECREF(Py_None);
         return 0;
     }
-    ob = PyCData_GetContainer(target);
+    if (target->b_base == NULL) {
+        // target is its own root and the caller already holds its lock:
+        // re-entering the critical section would be a nested same-object
+        // lock (failed CAS + slow path) on every field assignment.
+        ob = PyCData_GetContainer_lock_held(target);
+    }
+    else {
+        ob = PyCData_GetContainer(target);
+    }
     if (ob == NULL) {
         Py_DECREF(keep);
         return -1;
@@ -3564,7 +3593,7 @@ PyCData_set(ctypes_state *st,
     /* KeepRef steals a refcount from it's last argument */
     /* If KeepRef fails, we are stumped.  The dst memory block has already
        been changed */
-    return KeepRef(mem, index, result);
+    return KeepRef_lock_held(mem, index, result);
 }
 
 
@@ -5452,8 +5481,9 @@ _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value)
     if (!result)
         return -1;
 
-    /* consumes the refcount the setfunc returns */
-    return KeepRef(self, 0, result);
+    /* consumes the refcount the setfunc returns; self is already locked
+       by the critical section taken by the Argument Clinic wrapper */
+    return KeepRef_lock_held(self, 0, result);
 }
 
 
@@ -5530,7 +5560,20 @@ static int
 Simple_bool_impl(CDataObject *self)
 /*[clinic end generated code: output=c4466ece6a99fe8b input=326a1c8b24d8918e]*/
 {
-    return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return -1;
+    }
+    assert(info != NULL);
+
+    assert(info->size <= self->b_size);
+    for (Py_ssize_t i = 0; i < info->size; i++) {
+        if (self->b_ptr[i]) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
@@ -5763,15 +5806,15 @@ Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
        'value' itself as the second item of the b_objects list, additionally.
     */
     Py_INCREF(value);
-    if (-1 == KeepRef(self, 1, value))
+    if (-1 == KeepRef_lock_held(self, 1, value))
         return -1;
 
-    keep = GetKeepedObjects(dst);
+    keep = GetKeepedObjects_lock_held(dst);
     if (keep == NULL)
         return -1;
 
     Py_INCREF(keep);
-    return KeepRef(self, 0, keep);
+    return KeepRef_lock_held(self, 0, keep);
 }
 
 static int
@@ -6510,18 +6553,6 @@ _ctypes_add_version_constants(PyObject *mod)
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
-    // See https://github.com/python/cpython/issues/128485
-    // This allocates some memory and then frees it to ensure that the
-    // the dlmalloc allocator initializes itself to avoid data races
-    // in free-threading.
-    void *codeloc = NULL;
-    void *ptr = Py_ffi_closure_alloc(sizeof(void *), &codeloc);
-    if (ptr == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    Py_ffi_closure_free(ptr);
-
     _ctypes_init_fielddesc();
 
     ctypes_state *st = get_module_state(mod);

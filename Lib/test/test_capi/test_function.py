@@ -235,7 +235,7 @@ class FunctionTest(unittest.TestCase):
         self.assertEqual(len(closure), len(func.__code__.co_freevars))
         for cell in closure:
             self.assertIsInstance(cell, CellType)
-        self.assertTrue(closure[0].cell_contents, 5)
+        self.assertEqual(closure[0].cell_contents, 5)
 
         func = with_two_levels(1, 2)(3, 4)
         closure = _testcapi.function_get_closure(func)

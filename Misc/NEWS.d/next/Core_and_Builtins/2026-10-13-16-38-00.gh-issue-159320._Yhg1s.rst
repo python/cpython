@@ -1,2 +1,0 @@
-Add dynamic detection of stack sizes on Android, allowing safer deep
-recursion.

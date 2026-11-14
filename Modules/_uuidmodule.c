@@ -187,7 +187,7 @@ typedef struct {
     // We overfetch entropy to speed up successive uuid generations;
     // this enables 10x peformance boost.
     uint8_t random_buf[RANDOM_BUF_SIZE];
-    uint64_t random_idx;
+    Py_ssize_t random_idx;
     uint64_t random_last_pid;
 
     // UUID v7 state

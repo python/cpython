@@ -628,6 +628,27 @@ class BasicTest(BaseTest):
             venv.create(self.env_dir)
             listxattr_mock.assert_not_called()
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX-specific permission test')
+    def test_install_scripts_honors_umask(self):
+        """
+        gh-127172: Activation scripts must inherit the process umask (and any
+        default ACL) like every other created file, rather than a fixed mode
+        copied from the source template.
+        """
+        old_umask = os.umask(0o002)
+        try:
+            venv.create(self.env_dir, with_pip=False)
+            bindir = os.path.join(self.env_dir, self.bindir)
+            control = os.path.join(bindir, 'control')
+            with open(control, 'w'):
+                pass
+            expected = os.stat(control).st_mode & 0o777
+            for name in ('activate', 'activate.csh', 'activate.fish'):
+                mode = os.stat(os.path.join(bindir, name)).st_mode & 0o777
+                self.assertEqual(mode, expected)
+        finally:
+            os.umask(old_umask)
+
     def test_overwrite_existing(self):
         """
         Test creating environment in an existing directory.
@@ -662,6 +683,24 @@ class BasicTest(BaseTest):
                 f.write(b'')
             self.assertRaises((ValueError, OSError), venv.create, self.env_dir)
             self.clear_directory(self.env_dir)
+
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_symlinked_directory_error(self):
+        """
+        Test that venv creation fails when a directory inside the target
+        directory is a symlink.
+        """
+        outside = tempfile.mkdtemp()
+        self.addCleanup(rmtree, outside)
+        for n in range(1, len(self.lib) + 1):
+            subdirs = self.lib[:n]
+            with self.subTest(subdirs=subdirs):
+                rmtree(self.env_dir)
+                os.makedirs(os.path.join(self.env_dir, *subdirs[:-1]))
+                os.symlink(outside, os.path.join(self.env_dir, *subdirs),
+                           target_is_directory=True)
+                self.assertRaises(ValueError, venv.create, self.env_dir)
+                self.assertEqual(os.listdir(outside), [])
 
     def test_upgrade(self):
         """
@@ -845,6 +884,18 @@ class BasicTest(BaseTest):
         text = out.decode()
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
+
+    def test_fish_quoting(self):
+        """
+        Test that the template strings are quoted properly (fish)
+        """
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        context.script_path = 'activate.fish'
+        context.prompt = r"x\'$(echo PWNED)'\'"
+        self.assertEqual(
+            builder.replace_variables('__VENV_PROMPT__', context),
+            r"'x\\\'$(echo PWNED)\'\\\''")
 
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
