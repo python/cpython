@@ -48,6 +48,8 @@ struct faulthandler_user_signal {
 
 
 struct _faulthandler_runtime_state {
+    PyMutex mutex;
+
     struct {
         int enabled;
         PyObject *file;
