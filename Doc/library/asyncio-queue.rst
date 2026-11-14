@@ -57,6 +57,13 @@ Queue
       If the queue was initialized with ``maxsize=0`` (the default),
       then :meth:`full` never returns ``True``.
 
+      A slot freed while :meth:`put` calls are waiting is reserved
+      for the first of them until it resumes, so :meth:`full` can return
+      ``True`` while :meth:`qsize` is less than :attr:`maxsize`.
+
+      .. versionchanged:: next
+         Slots reserved for waiting :meth:`put` calls are counted as full.
+
    .. method:: get()
       :async:
 
@@ -89,6 +96,12 @@ Queue
 
       Put an item into the queue. If the queue is full, wait until a
       free slot is available before adding the item.
+
+      Waiting calls are served in first in, first out order: a freed
+      slot cannot be taken by a later :meth:`put` or :meth:`put_nowait`.
+
+      .. versionchanged:: next
+         A freed slot is reserved for the longest waiting call.
 
       Raises :exc:`QueueShutDown` if the queue has been shut down.
 
