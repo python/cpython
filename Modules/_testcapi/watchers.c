@@ -733,6 +733,19 @@ clear_context_watcher(PyObject *self, PyObject *watcher_id)
     Py_RETURN_NONE;
 }
 
+/* Register a watcher whose callback touches no shared state, so that a
+   concurrency test exercises only CPython's watcher registry and cannot
+   race on the test harness's own bookkeeping. */
+static PyObject *
+add_noop_context_watcher(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    int watcher_id = PyContext_AddWatcher(noop_context_event_handler);
+    if (watcher_id < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(watcher_id);
+}
+
 static PyObject *
 clear_context_stack(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
@@ -864,6 +877,7 @@ static PyMethodDef test_methods[] = {
 
     // Code object watchers.
     {"add_context_watcher",         add_context_watcher,        METH_O,       NULL},
+    {"add_noop_context_watcher",    add_noop_context_watcher,   METH_NOARGS,  NULL},
     {"clear_context_watcher",       clear_context_watcher,      METH_O,       NULL},
     {"clear_context_stack",      clear_context_stack,     METH_NOARGS,  NULL},
     {"get_context_switches",     get_context_switches,    METH_O,       NULL},

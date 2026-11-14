@@ -163,13 +163,16 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     assert(Py_REFCNT(ctx) > 0);
     PyInterpreterState *interp = ts->interp;
     assert(interp->_initialized);
-    uint8_t bits = interp->active_context_watchers;
+    uint8_t bits = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->active_context_watchers);
     int i = 0;
     while (bits) {
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
-            PyContext_WatchCallback cb = interp->context_watchers[i];
-            // A previous callback may have cleared this watcher.
+            // Pairs with the release store in PyContext_AddWatcher().
+            PyContext_WatchCallback cb =
+                FT_ATOMIC_LOAD_PTR_ACQUIRE(interp->context_watchers[i]);
+            // A previous callback or another thread may have cleared this
+            // watcher.
             if (cb != NULL && cb(event, ctx) < 0) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
@@ -182,22 +185,54 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
 }
 
 
+static inline void
+set_context_watcher_bit(PyInterpreterState *interp, int watcher_id)
+{
+    uint8_t bit = (uint8_t)(1 << watcher_id);
+#ifdef Py_GIL_DISABLED
+    (void)_Py_atomic_or_uint8(&interp->active_context_watchers, bit);
+#else
+    interp->active_context_watchers |= bit;
+#endif
+}
+
+
+static inline void
+clear_context_watcher_bit(PyInterpreterState *interp, int watcher_id)
+{
+    uint8_t bit = (uint8_t)(1 << watcher_id);
+#ifdef Py_GIL_DISABLED
+    (void)_Py_atomic_and_uint8(&interp->active_context_watchers, (uint8_t)~bit);
+#else
+    interp->active_context_watchers &= (uint8_t)~bit;
+#endif
+}
+
+
 int
 PyContext_AddWatcher(PyContext_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
 
+    int watcher_id = -1;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&interp->context_watchers_mutex);
     for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
-        if (!interp->context_watchers[i]) {
-            interp->context_watchers[i] = callback;
-            interp->active_context_watchers |= (1 << i);
-            return i;
+        if (interp->context_watchers[i] == NULL) {
+            // Publish the callback before setting its bit.
+            FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[i], callback);
+            set_context_watcher_bit(interp, i);
+            watcher_id = i;
+            break;
         }
     }
+    Py_END_CRITICAL_SECTION();
 
-    PyErr_SetString(PyExc_RuntimeError, "no more context watcher IDs available");
-    return -1;
+    if (watcher_id < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "no more context watcher IDs available");
+    }
+    return watcher_id;
 }
 
 
@@ -210,12 +245,21 @@ PyContext_ClearWatcher(int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid context watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->context_watchers[watcher_id]) {
+
+    int found = 0;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&interp->context_watchers_mutex);
+    if (interp->context_watchers[watcher_id] != NULL) {
+        // notify_context_watchers() skips a NULL callback.
+        clear_context_watcher_bit(interp, watcher_id);
+        FT_ATOMIC_STORE_PTR_RELEASE(interp->context_watchers[watcher_id], NULL);
+        found = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (!found) {
         PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
         return -1;
     }
-    interp->context_watchers[watcher_id] = NULL;
-    interp->active_context_watchers &= ~(1 << watcher_id);
     return 0;
 }
 

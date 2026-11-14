@@ -1,0 +1,5 @@
+Fix data races in the per-interpreter context watcher registry on
+:term:`free-threaded <free threading>` builds.  :c:func:`PyContext_AddWatcher`
+and :c:func:`PyContext_ClearWatcher` are now serialized, so concurrent callers
+can no longer receive the same watcher ID or both clear the same one.  Context
+switches still read the registry without locking, now with atomic loads.
