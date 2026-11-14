@@ -2824,6 +2824,95 @@ _winapi_GetFileType_impl(PyObject *module, HANDLE handle)
     return result;
 }
 
+/*[clinic input]
+_winapi.GetConsoleMode -> DWORD
+
+    handle: HANDLE
+    /
+
+Return the current mode of a console buffer.
+
+The handle may refer to a console input buffer or a console screen
+buffer.
+[clinic start generated code]*/
+
+static DWORD
+_winapi_GetConsoleMode_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=4c0155d4357673ac input=4768c2370a960135]*/
+{
+    DWORD mode;
+    BOOL ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetConsoleMode(handle, &mode);
+    Py_END_ALLOW_THREADS
+
+    if (!ret) {
+        PyErr_SetFromWindowsErr(0);
+        return PY_DWORD_MAX;
+    }
+
+    return mode;
+}
+
+/*[clinic input]
+_winapi.SetConsoleMode
+
+    handle: HANDLE
+    mode: DWORD(bitwise=True)
+    /
+
+Set the mode of a console buffer.
+
+The handle may refer to a console input buffer or a console screen
+buffer.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_SetConsoleMode_impl(PyObject *module, HANDLE handle, DWORD mode)
+/*[clinic end generated code: output=3351f12c46a8938f input=41ffc3f65998d7e1]*/
+{
+    BOOL ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = SetConsoleMode(handle, mode);
+    Py_END_ALLOW_THREADS
+
+    if (!ret) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_winapi.FlushConsoleInputBuffer
+
+    handle: HANDLE
+    /
+
+Flush the console input buffer.
+
+All input records currently in the input buffer are discarded.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_FlushConsoleInputBuffer_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=2edaf920d25233ab input=9684cbfada20c237]*/
+{
+    BOOL ret;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = FlushConsoleInputBuffer(handle);
+    Py_END_ALLOW_THREADS
+
+    if (!ret) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
 
 /*[clinic input]
 _winapi._mimetypes_read_windows_registry
@@ -3232,6 +3321,9 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETOEMCP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
+    _WINAPI_GETCONSOLEMODE_METHODDEF
+    _WINAPI_SETCONSOLEMODE_METHODDEF
+    _WINAPI_FLUSHCONSOLEINPUTBUFFER_METHODDEF
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     _WINAPI_COPYFILE2_METHODDEF

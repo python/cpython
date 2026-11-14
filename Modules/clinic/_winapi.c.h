@@ -2622,6 +2622,127 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_GetConsoleMode__doc__,
+"GetConsoleMode($module, handle, /)\n"
+"--\n"
+"\n"
+"Return the current mode of a console buffer.\n"
+"\n"
+"The handle may refer to a console input buffer or a console screen\n"
+"buffer.");
+
+#define _WINAPI_GETCONSOLEMODE_METHODDEF    \
+    {"GetConsoleMode", (PyCFunction)_winapi_GetConsoleMode, METH_O, _winapi_GetConsoleMode__doc__},
+
+static DWORD
+_winapi_GetConsoleMode_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_GetConsoleMode(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+    DWORD _return_value;
+
+    handle = PyLong_AsVoidPtr(arg);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = _winapi_GetConsoleMode_impl(module, handle);
+    if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_SetConsoleMode__doc__,
+"SetConsoleMode($module, handle, mode, /)\n"
+"--\n"
+"\n"
+"Set the mode of a console buffer.\n"
+"\n"
+"The handle may refer to a console input buffer or a console screen\n"
+"buffer.");
+
+#define _WINAPI_SETCONSOLEMODE_METHODDEF    \
+    {"SetConsoleMode", _PyCFunction_CAST(_winapi_SetConsoleMode), METH_FASTCALL, _winapi_SetConsoleMode__doc__},
+
+static PyObject *
+_winapi_SetConsoleMode_impl(PyObject *module, HANDLE handle, DWORD mode);
+
+static PyObject *
+_winapi_SetConsoleMode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+    DWORD mode;
+
+    if (!_PyArg_CheckPositional("SetConsoleMode", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyIndex_Check(args[1])) {
+        _PyArg_BadArgument("SetConsoleMode", "argument 2", "int", args[1]);
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &mode, sizeof(DWORD),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(DWORD)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    return_value = _winapi_SetConsoleMode_impl(module, handle, mode);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_FlushConsoleInputBuffer__doc__,
+"FlushConsoleInputBuffer($module, handle, /)\n"
+"--\n"
+"\n"
+"Flush the console input buffer.\n"
+"\n"
+"All input records currently in the input buffer are discarded.");
+
+#define _WINAPI_FLUSHCONSOLEINPUTBUFFER_METHODDEF    \
+    {"FlushConsoleInputBuffer", (PyCFunction)_winapi_FlushConsoleInputBuffer, METH_O, _winapi_FlushConsoleInputBuffer__doc__},
+
+static PyObject *
+_winapi_FlushConsoleInputBuffer_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_FlushConsoleInputBuffer(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+
+    handle = PyLong_AsVoidPtr(arg);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _winapi_FlushConsoleInputBuffer_impl(module, handle);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi__mimetypes_read_windows_registry__doc__,
 "_mimetypes_read_windows_registry($module, /, on_type_read)\n"
 "--\n"
@@ -3057,4 +3178,4 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=15ab8b04851932e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0242bed9703b56a7 input=a9049054013a1b77]*/
