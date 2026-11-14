@@ -5,6 +5,8 @@ import os
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import script_helper
+from test.support import threading_helper
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = import_helper.import_module('_tkinter')
@@ -32,6 +34,40 @@ class TkinterTest(unittest.TestCase):
         # (issue44608: there were leaks in the following cases)
         self.assertRaises(TypeError, _tkinter._flatten, 'string')
         self.assertRaises(TypeError, _tkinter._flatten, {'set'})
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "gh-154923 is a free-threading race")
+    @threading_helper.requires_working_threading()
+    def test_create_concurrent(self):
+        # Concurrent _tkinter.create() races Tcl's first-time library
+        # init and can double-free tcl_lock (gh-154923). Run in a
+        # subprocess so Tcl has not already been initialized.
+        script = """\
+import _tkinter
+import threading
+nthreads = 4
+rounds = 8
+start = threading.Barrier(nthreads)
+errors = []
+
+def worker():
+    try:
+        start.wait()
+        for _ in range(rounds):
+            app = _tkinter.create(None, '', 'Tk', False, 1, False, False, None)
+            del app
+    except Exception as e:
+        errors.append(repr(e))
+
+threads = [threading.Thread(target=worker) for _ in range(nthreads)]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+if errors:
+    raise SystemExit('\\n'.join(errors))
+"""
+        script_helper.assert_python_ok('-c', script, __isolated=False)
 
 
 class TclTest(unittest.TestCase):
