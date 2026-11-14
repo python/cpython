@@ -150,6 +150,7 @@ def main():
     import runpy
     import pstats
     from optparse import OptionParser
+    from pkgutil import get_importer
     usage = "cProfile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
@@ -183,27 +184,35 @@ def main():
             }
         else:
             progname = args[0]
+            importer = get_importer(progname)
             sys.path.insert(0, os.path.dirname(progname))
-            with io.open_code(progname) as fp:
-                code = compile(fp.read(), progname, 'exec', module='__main__')
-            spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
-                                                  origin=progname)
-            module = importlib.util.module_from_spec(spec)
-            # Set __main__ so that importing __main__ in the profiled code will
-            # return the same namespace that the code is executing under.
-            sys.modules['__main__'] = module
-            # Ensure that we're using the same __dict__ instance as the module
-            # for the global variables so that updates to globals are reflected
-            # in the module's namespace.
-            globs = module.__dict__
-            globs.update({
-                # Set __spec__ to None so the profiled program behaves like a
-                # script run directly (gh-140729).
-                '__spec__': None,
-                '__file__': spec.origin,
-                '__name__': spec.name,
-                '__package__': None,
-            })
+
+            if importer is not None:
+                code = "run_module_as_main('__main__', alter_argv=False)"
+                globs = {
+                    "run_module_as_main": runpy._run_module_as_main,
+                }
+            else:
+                with io.open_code(progname) as fp:
+                    code = compile(fp.read(), progname, 'exec', module='__main__')
+                spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
+                                                    origin=progname)
+                module = importlib.util.module_from_spec(spec)
+                # Set __main__ so that importing __main__ in the profiled code will
+                # return the same namespace that the code is executing under.
+                sys.modules['__main__'] = module
+                # Ensure that we're using the same __dict__ instance as the module
+                # for the global variables so that updates to globals are reflected
+                # in the module's namespace.
+                globs = module.__dict__
+                globs.update({
+                    # Set __spec__ to None so the profiled program behaves like a
+                    # script run directly (gh-140729).
+                    '__spec__': None,
+                    '__file__': spec.origin,
+                    '__name__': spec.name,
+                    '__package__': None,
+                })
 
         try:
             runctx(code, globs, None, options.outfile, options.sort)
