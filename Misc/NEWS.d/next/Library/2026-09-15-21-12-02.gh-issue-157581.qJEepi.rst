@@ -1,0 +1,1 @@
+Updated :func:``!_colorize.can_colorize`` to not raise when given a closed file stream.
