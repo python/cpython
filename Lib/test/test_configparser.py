@@ -904,6 +904,21 @@ boolean {self.delimiters[0]} NO
         with self.assertRaises(configparser.NoSectionError):
             cf.items("no such section")
 
+    def test_items_non_string_vars(self):
+        cf = self.newconfig(defaults={'default': 'original'})
+        cf.read_dict({'section': {'value': 'original'}})
+        for value in (42, 0, False):
+            for raw in (False, True):
+                with self.subTest(value=value, raw=raw):
+                    self.assertEqual(
+                        dict(cf.items('section', raw=raw, vars={
+                            'default': value,
+                            'VALUE': value,
+                            'extra': value,
+                        })),
+                        {'default': str(value), 'value': str(value)},
+                    )
+
     def test_popitem(self):
         cf = self.fromstring(
             f"""
