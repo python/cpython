@@ -1272,6 +1272,29 @@ class BaseTest:
         a = array.array('B', b"")
         self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, a)
 
+    @support.cpython_only
+    def test_sequence_delitem(self):
+        # PySequence_DelItem() goes through the sq_ass_item slot.
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+        delitem = _testlimitedcapi.sequence_delitem
+        a = array.array(self.typecode, self.example)
+        delitem(a, 0)
+        self.assertEqual(a, array.array(self.typecode, self.example[1:]))
+        self.assertRaises(IndexError, delitem, a, len(a))
+        self.assertRaises(IndexError, delitem, a, -len(a) - 1)
+        self.assertEqual(a, array.array(self.typecode, self.example[1:]))
+
+    def test_create_from_shared_iterator(self):
+        # The iterator returned by __iter__() can have other references.
+        class Iterable:
+            def __init__(self, it):
+                self.it = it
+            def __iter__(self):
+                return self.it
+
+        a = array.array(self.typecode, Iterable(iter(self.example)))
+        self.assertEqual(a, array.array(self.typecode, self.example))
+
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, array.array,
                                            (self.typecode,))
@@ -1315,6 +1338,22 @@ class UnicodeTest(StringTest, unittest.TestCase):
             f"array('{self.typecode}', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
 
         self.assertRaises(TypeError, a.fromunicode)
+
+    def test_invalid_code_point(self):
+        # An item that is not a valid code point raises ValueError, also
+        # for the following items.
+        a = array.array(self.typecode, 'ab')
+        a.frombytes((0x110000).to_bytes(a.itemsize, sys.byteorder))
+        a.fromunicode('c')
+        self.assertRaises(ValueError, a.__getitem__, 2)
+        self.assertRaises(ValueError, a.__getitem__, -2)
+        self.assertRaises(ValueError, a.tolist)
+        it = iter(a)
+        self.assertEqual(next(it), 'a')
+        self.assertEqual(next(it), 'b')
+        self.assertRaises(ValueError, next, it)
+        self.assertEqual(next(it), 'c')
+        self.assertRaises(StopIteration, next, it)
 
 
 class NumberTest(BaseTest):
