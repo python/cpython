@@ -232,6 +232,18 @@ PyBytes_FromString(const char *str)
     return (PyObject *) op;
 }
 
+static Py_ALWAYS_INLINE int
+_assert_written(int len, Py_ssize_t max_len)
+{
+    assert(len >= 1);
+    assert(len < max_len);
+    return len;
+}
+
+#define SNPRINTF_BYTES(BUFFER, PATTERN, TYP) \
+    _assert_written(PyOS_snprintf(BUFFER, sizeof(BUFFER), \
+                                  PATTERN, va_arg(vargs, TYP)), \
+                    (Py_ssize_t)sizeof(BUFFER))
 
 static char*
 bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
@@ -264,9 +276,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
         memcpy(s, (str), _len); \
         s += _len; \
     } while (0)
-
-#define SNPRINTF_BYTES(BUFFER, PATTERN, TYP) \
-    PyOS_snprintf(BUFFER, sizeof(BUFFER), PATTERN, va_arg(vargs, TYP))
 
     for (const char *f = format; *f; f++) {
         if (*f != '%') {
@@ -335,7 +344,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
             else {
                 len = SNPRINTF_BYTES(buffer, "%d", int);
             }
-            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
@@ -349,19 +357,16 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
             else {
                 len = SNPRINTF_BYTES(buffer, "%u", unsigned int);
             }
-            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
         case 'i':
             len = SNPRINTF_BYTES(buffer, "%i", int);
-            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
         case 'x':
             len = SNPRINTF_BYTES(buffer, "%x", int);
-            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             WRITE_BYTES(buffer, len);
             break;
 
@@ -386,7 +391,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 
         case 'p':
             len = SNPRINTF_BYTES(buffer, "%p", void*);
-            assert(1 <= len && len < (Py_ssize_t)sizeof(buffer));
             /* %p is ill-defined:  ensure leading 0x. */
             if (buffer[1] == 'X') {
                 buffer[1] = 'x';
