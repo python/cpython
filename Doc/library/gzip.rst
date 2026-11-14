@@ -163,6 +163,11 @@ The module defines the following items:
       since the Unix epoch (00:00:00 UTC, January 1, 1970).
       The initial value before reading any headers is ``None``.
 
+      When compressing, this attribute is set to the value passed to the constructor.
+
+      .. versionchanged:: 3.16
+         In previous versions, an :exc:`AttributeError` occured for compressing streams.
+
    .. attribute:: name
 
       The path to the gzip file on disk, as a :class:`str` or :class:`bytes`.
