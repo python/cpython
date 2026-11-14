@@ -1,0 +1,1 @@
+Fixes ``input`` prompt length miscalculation when dealing with ``\b`` character that caused the cursor to be placed in an incorrect position.
