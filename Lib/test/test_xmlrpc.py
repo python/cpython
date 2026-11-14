@@ -1,6 +1,7 @@
 import base64
 import datetime
 import decimal
+import pickle
 import sys
 import time
 import unittest
@@ -479,6 +480,29 @@ class FaultTestCase(unittest.TestCase):
 
         s = xmlrpclib.Marshaller().dumps(f)
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, s)
+
+    def test_pickle(self):
+        # gh-71468
+        f = xmlrpclib.Fault(42, 'Test Fault')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                newf = pickle.loads(pickle.dumps(f, proto))
+                self.assertIs(type(newf), xmlrpclib.Fault)
+                self.assertEqual(newf.faultCode, 42)
+                self.assertEqual(newf.faultString, 'Test Fault')
+
+    def test_protocol_error_pickle(self):
+        # gh-71468
+        e = xmlrpclib.ProtocolError('localhost/RPC2', 500,
+                                    'Internal Server Error', {'X-Test': '1'})
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                newe = pickle.loads(pickle.dumps(e, proto))
+                self.assertIs(type(newe), xmlrpclib.ProtocolError)
+                self.assertEqual(newe.url, 'localhost/RPC2')
+                self.assertEqual(newe.errcode, 500)
+                self.assertEqual(newe.errmsg, 'Internal Server Error')
+                self.assertEqual(newe.headers, {'X-Test': '1'})
 
     def test_dotted_attribute(self):
         # this will raise AttributeError because code don't want us to use
