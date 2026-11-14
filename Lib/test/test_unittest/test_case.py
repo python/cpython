@@ -645,6 +645,27 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertIs(retval, resultOut)
 
 
+    # This test verifies that cooperative multiple inheritance works correctly
+    # when unittest.TestCase is combined with another class.
+    def test_init_support_cooperative_multiple_inheritance(self):
+        class Base:
+            def __init__(self):
+                super().__init__()
+                self.base_initialized = True
+
+        class Foo(unittest.TestCase, Base):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.testcase_initialized = True
+
+            def test_inheritance(self):
+                self.assertTrue(self.base_initialized)
+                self.assertTrue(self.testcase_initialized)
+
+        result = Foo('test_inheritance').run()
+        self.assertTrue(result.wasSuccessful())
+
+
     def testShortDescriptionWithoutDocstring(self):
         self.assertIsNone(self.shortDescription())
 
