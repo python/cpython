@@ -88,6 +88,31 @@ def test_basic():
         assertEqual(hook.seen[0][1], (1, 2, 3))
 
 
+def test_concurrent_add_hook():
+    from test.support import threading_helper
+
+    # gh-154431: Race the first hook registrations against audit events.
+    seen = []
+
+    def add_hook(index):
+        def hook(event, args):
+            if event == "test.concurrent_add_hook":
+                seen.append(index)
+
+        sys.addaudithook(hook)
+
+    def audit():
+        for _ in range(2000):
+            sys.audit("test.concurrent_audit")
+
+    workers = [lambda i=i: add_hook(i) for i in range(24)]
+    workers.extend([audit] * 8)
+    threading_helper.run_concurrently(workers)
+
+    sys.audit("test.concurrent_add_hook")
+    assertEqual(sorted(seen), list(range(24)))
+
+
 def test_block_add_hook():
     # Raising an exception should prevent a new hook from being added,
     # but will not propagate out.
