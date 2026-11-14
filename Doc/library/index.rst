@@ -72,6 +72,7 @@ the `Python Package Index <https://pypi.org>`_.
    windows.rst
    unix.rst
    cmdline.rst
+   eastereggs.rst
    superseded.rst
    removed.rst
    security_warnings.rst
