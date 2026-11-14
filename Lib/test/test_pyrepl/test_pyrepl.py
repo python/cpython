@@ -25,7 +25,7 @@ from test.support import (
 )
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
-from test.support.os_helper import EnvironmentVarGuard, unlink
+from test.support.os_helper import EnvironmentVarGuard, fd_count, unlink
 
 from .support import (
     FakeConsole,
@@ -2733,3 +2733,24 @@ class TestWindowsConsoleEolWrap(TestCase):
         console, wc = self._make_mock_console(width=width)
         self._apply_changed_line(console, wc, y, "", "a" * width)
         self.assertEqual(console.posxy, (width - 1, y))
+
+
+@skipUnless(hasattr(os, "openpty"), "need os.openpty()")
+class TestReadlineWrapperFileDescriptors(TestCase):
+    def test_reader_does_not_open_file_descriptors(self):
+        controller, worker = os.openpty()
+        self.addCleanup(os.close, controller)
+        self.addCleanup(os.close, worker)
+        env = self.enterContext(EnvironmentVarGuard())
+        env["TERM"] = "ansi"
+        sys.stdout.flush()
+        for fd in (0, 1):
+            saved = os.dup(fd)
+            self.addCleanup(os.close, saved)
+            self.addCleanup(os.dup2, saved, fd)
+            os.dup2(worker, fd)
+
+        before = fd_count()
+        wrapper = _ReadlineWrapper()
+        wrapper.get_reader()
+        self.assertEqual(fd_count(), before)
