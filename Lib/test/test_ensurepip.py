@@ -342,6 +342,115 @@ class TestBootstrappingMainFunction(EnsurepipMixin, unittest.TestCase):
         exit_code = ensurepip._main([])
         self.assertEqual(exit_code, 2)
 
+    def test_bootstrapping_with_root(self):
+        exit_code = ensurepip._main(["--root", "/foo/bar/"])
+
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--root", "/foo/bar/", *COMPILE_OPT,
+                "pip",
+            ],
+            unittest.mock.ANY,
+        )
+        self.assertEqual(exit_code, 0)
+
+    def test_bootstrapping_with_user(self):
+        ensurepip._main(["--user"])
+
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--user", *COMPILE_OPT, "pip",
+            ],
+            unittest.mock.ANY,
+        )
+
+    def test_bootstrapping_with_upgrade(self):
+        for option in ("--upgrade", "-U"):
+            with self.subTest(option=option):
+                self.run_pip.reset_mock()
+                ensurepip._main([option])
+
+                self.run_pip.assert_called_once_with(
+                    [
+                        "install", "--no-cache-dir", "--no-index",
+                        "--find-links", unittest.mock.ANY, "--upgrade",
+                        *COMPILE_OPT, "pip",
+                    ],
+                    unittest.mock.ANY,
+                )
+
+    def test_bootstrapping_with_verbosity(self):
+        for argv, expected in (
+            (["-v"], "-v"),
+            (["--verbose"], "-v"),
+            (["-vv"], "-vv"),
+            (["-v", "-v", "-v"], "-vvv"),
+        ):
+            with self.subTest(argv=argv):
+                self.run_pip.reset_mock()
+                ensurepip._main(argv)
+
+                self.run_pip.assert_called_once_with(
+                    [
+                        "install", "--no-cache-dir", "--no-index",
+                        "--find-links", unittest.mock.ANY, expected,
+                        *COMPILE_OPT, "pip",
+                    ],
+                    unittest.mock.ANY,
+                )
+
+    def test_bootstrapping_with_altinstall(self):
+        ensurepip._main(["--altinstall"])
+        self.assertEqual(self.os_environ["ENSUREPIP_OPTIONS"], "altinstall")
+
+    def test_bootstrapping_with_default_pip(self):
+        ensurepip._main(["--default-pip"])
+        self.assertNotIn("ENSUREPIP_OPTIONS", self.os_environ)
+
+    def test_altinstall_default_pip_conflict(self):
+        with self.assertRaises(ValueError):
+            ensurepip._main(["--altinstall", "--default-pip"])
+        self.assertFalse(self.run_pip.called)
+
+    def test_bootstrapping_with_all_options(self):
+        # The order of the options on the command line doesn't matter.
+        exit_code = ensurepip._main([
+            "-v", "--user", "--upgrade", "--root", "/foo/bar/",
+            "--altinstall", "-v",
+        ])
+
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--root", "/foo/bar/", "--upgrade",
+                "--user", "-vv", *COMPILE_OPT, "pip",
+            ],
+            unittest.mock.ANY,
+        )
+        self.assertEqual(self.os_environ["ENSUREPIP_OPTIONS"], "altinstall")
+        self.assertEqual(exit_code, 0)
+
+    def test_help(self):
+        with test.support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit) as cm:
+                ensurepip._main(["--help"])
+        self.assertEqual(cm.exception.code, 0)
+        help_text = stdout.getvalue()
+        for option in ("--version", "--verbose", "--upgrade", "--user",
+                       "--root", "--altinstall", "--default-pip"):
+            self.assertIn(option, help_text)
+        self.assertFalse(self.run_pip.called)
+
+    def test_unknown_option(self):
+        with test.support.captured_stderr() as stderr:
+            with self.assertRaises(SystemExit) as cm:
+                ensurepip._main(["--unknown"])
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("unrecognized arguments: --unknown", stderr.getvalue())
+        self.assertFalse(self.run_pip.called)
+
 
 class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
