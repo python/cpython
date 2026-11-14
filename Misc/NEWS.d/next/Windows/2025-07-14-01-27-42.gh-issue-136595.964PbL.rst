@@ -1,0 +1,1 @@
+Fix a crash in the REPL on Windows when typing Unicode characters outside the Basic Multilingual Plane (≥ U+10000), such as emoji. These characters are now properly handled as surrogate pairs.
