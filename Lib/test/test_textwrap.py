@@ -615,6 +615,18 @@ How *do* you spell that odd word, anyways?
                          'word,',
                          'anyways?'])
 
+    def test_indent_wider_than_width(self):
+        # These used to loop forever or to add an extra last line when the
+        # indent was not narrower than the width.
+        self.check_wrap(' x', 1, ['  x'], initial_indent='  ')
+        self.check_wrap(' ', 5, [], initial_indent='      ')
+        self.check_wrap('abc', 2, ['ab', '   c'],
+                        subsequent_indent='   ', drop_whitespace=False)
+        self.check_wrap('x', 1, ['  x'],
+                        initial_indent='  ', drop_whitespace=False)
+        self.check_wrap('abcdef', 3, ['abc', '   d', '   e', '   f'],
+                        subsequent_indent='   ', drop_whitespace=False)
+
     def test_nobreak_long(self):
         # Test with break_long_words disabled
         self.wrapper.break_long_words = 0
