@@ -18,13 +18,16 @@ lots of shared  sub-objects.  The keys are ordinary strings.
 
 
 .. function:: open(filename, flag='c', protocol=None, writeback=False, *, \
-                   serializer=None, deserializer=None)
+                   mode=0o666, serializer=None, deserializer=None)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
    filename and more than one file may be created.  By default, the underlying
    database file is opened for reading and writing.  The optional *flag* parameter
    has the same interpretation as the *flag* parameter of :func:`dbm.open`.
+
+   .. versionchanged:: 3.15
+      The *mode* parameter was added.
 
    By default, pickles created with :const:`pickle.DEFAULT_PROTOCOL` are used
    to serialize values.  The version of the pickle protocol can be specified
