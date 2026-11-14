@@ -957,15 +957,23 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
 /*[clinic end generated code: output=4effdb7d258e0d94 input=eb25de0757baf4a0]*/
 {
     Py_complex y;
+    int errno_save;
 
     errno = 0;
     x = c_log(x);
     if (y_obj != NULL) {
+        /* Save the error from c_log(x): the second c_log() call resets
+           errno to 0 on success, which would hide a domain error from
+           the first call (gh-161972). */
+        errno_save = errno;
         y = PyComplex_AsCComplex(y_obj);
         if (PyErr_Occurred()) {
             return NULL;
         }
         y = c_log(y);
+        if (errno_save != 0) {
+            errno = errno_save;
+        }
         x = _Py_c_quot(x, y);
     }
     if (errno != 0)
