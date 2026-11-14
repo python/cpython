@@ -1637,6 +1637,8 @@ class _IPv4Constants:
         IPv4Network('192.0.0.0/24'),
         IPv4Network('192.0.0.170/31'),
         IPv4Network('192.0.2.0/24'),
+        # RFC 6751: https://www.rfc-editor.org/rfc/rfc6751.html
+        IPv4Network('192.88.99.2/32'),
         IPv4Network('192.168.0.0/16'),
         IPv4Network('198.18.0.0/15'),
         IPv4Network('198.51.100.0/24'),
