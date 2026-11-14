@@ -508,6 +508,13 @@ gzip
   (Contributed by Marin Misur in :gh:`91372`.)
 
 
+http
+----
+
+* Add the ``QUERY`` HTTP method (:rfc:`10008`) to :class:`~http.HTTPMethod`.
+  (Contributed by Michiel W. Beijen in :gh:`153309`.)
+
+
 http.client
 -----------
 
@@ -1407,6 +1414,28 @@ that may require changes to your code.
   them, which formerly defaulted to ``'PY_VAR'`` and ``'1'``, now raises
   :exc:`TypeError`.
   (Contributed by Serhiy Storchaka in :gh:`152587`.)
+
+* :func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlparse` now raise
+  :exc:`ValueError` when the URL is parsed if the port is not a decimal
+  number or is outside the range 0--65535.  Previously, the error was only
+  raised when the :attr:`!port` attribute was read.  This also affects
+  :func:`~urllib.parse.urljoin`, and :func:`~urllib.parse.urldefrag` for
+  URLs with a fragment.  Code which never read :attr:`!port` may now fail
+  on URLs such as:
+
+  * SCP-style addresses given a scheme, such as
+    ``git+ssh://git@github.com:org/repo.git``;
+  * multi-host URLs with ports, such as
+    ``mongodb://h1:27017,h2:27017/db`` or
+    ``postgresql://h1:5432,h2:5433/db``;
+  * URL templates with a placeholder port, such as
+    ``http://localhost:{port}/``.
+
+  These are not valid URLs under :rfc:`3986`.  To process them, split off
+  the netloc yourself before calling :func:`~urllib.parse.urlsplit`, for
+  example by replacing it with a placeholder host, or fill in templates
+  before parsing them.
+  (Contributed by Miguel Brito and Senthil Kumaran in :gh:`88037`.)
 
 * :class:`uuid.UUID` now consistently raises :exc:`TypeError` when the
   *bytes* or *bytes_le* argument is not a :class:`bytes` object.

@@ -1,0 +1,2 @@
+Fix :func:`shutil.which` for path-like command objects whose
+:meth:`~os.PathLike.__fspath__` method returns :class:`bytes`.
