@@ -1,0 +1,2 @@
+Fix formatting of :exc:`ModuleNotFoundError` when :data:`sys.path` contains
+no existing directories, including when displaying errors in the REPL.
