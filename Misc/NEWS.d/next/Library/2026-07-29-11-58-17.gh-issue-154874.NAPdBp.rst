@@ -1,0 +1,3 @@
+Fix :func:`curses.termattrs` returning a negative value on a terminal that
+supports :const:`curses.A_ITALIC`, which left its result unusable as an
+attribute mask.
