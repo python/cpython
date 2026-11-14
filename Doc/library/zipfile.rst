@@ -151,6 +151,44 @@ The module defines the following items:
 
    .. versionadded:: 3.14
 
+.. class:: PreserveMode
+
+   An :class:`~enum.Enum` of the values accepted by the *preserve_permissions*
+   parameter of :meth:`ZipFile.extract` and :meth:`ZipFile.extractall`.  It
+   controls how the Unix permissions stored in the upper 16 bits of
+   :attr:`ZipInfo.external_attr` are applied to the extracted files and
+   directories.  The stored permissions are used as they are; the current
+   umask is not applied.
+
+   These members always get the default permissions: members with no stored
+   Unix permissions, symbolic links, and members created on MS-DOS or Windows
+   (:attr:`ZipInfo.create_system` is ``0``).
+
+   .. attribute:: NONE
+
+      Do not preserve permissions.  Extracted files and directories get the
+      default permissions for newly created files and directories.  This is
+      the default.
+
+   .. attribute:: SAFE
+
+      Preserve only the read, write and execute permissions for the user,
+      group and others (``0o777``).  The set-user-ID, set-group-ID and
+      sticky bits are dropped.
+
+   .. attribute:: ALL
+
+      Preserve all permission bits (``0o7777``), including the set-user-ID
+      (:data:`stat.S_ISUID`), set-group-ID (:data:`stat.S_ISGID`) and sticky
+      (:data:`stat.S_ISVTX`) bits.
+
+      .. warning::
+
+         Only use this for archives from trusted sources.  An archive can
+         make extracted programs run with the privileges of their owner.
+
+   .. versionadded:: next
+
 .. note::
 
    The ZIP file format specification has included support for bzip2 compression
@@ -377,13 +415,20 @@ ZipFile objects
       object was changed from ``'r'`` to ``'rb'``.
 
 
-.. method:: ZipFile.extract(member, path=None, pwd=None)
+.. method:: ZipFile.extract(member, path=None, pwd=None, *, \
+                            preserve_permissions=PreserveMode.NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files as a :class:`bytes` object.
+
+   *preserve_permissions* is a :class:`PreserveMode` value that controls
+   whether the Unix permissions stored in the archive are applied to the
+   extracted file or directory.  By default, they are not.  If a read-only
+   directory is extracted first, extracting its contents afterwards will
+   fail; :meth:`extractall` avoids this.
 
    Returns the normalized path created (a directory or new file).
 
@@ -404,13 +449,22 @@ ZipFile objects
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      Added the *preserve_permissions* parameter.
 
-.. method:: ZipFile.extractall(path=None, members=None, pwd=None)
+
+.. method:: ZipFile.extractall(path=None, members=None, pwd=None, *, \
+                               preserve_permissions=PreserveMode.NONE)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files as a :class:`bytes` object.
+
+   *preserve_permissions* has the same meaning as for :meth:`extract`.
+   Permissions of directories are applied after all members have been
+   extracted, so that a read-only directory does not prevent its contents
+   from being extracted.
 
    .. warning::
 
@@ -426,6 +480,9 @@ ZipFile objects
 
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added the *preserve_permissions* parameter.
 
 
 .. method:: ZipFile.printdir()

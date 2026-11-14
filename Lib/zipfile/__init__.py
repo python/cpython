@@ -4,6 +4,7 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
+import enum
 import io
 import os
 import shutil
@@ -38,8 +39,8 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "ZIP_ZSTANDARD", "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile",
-           "LargeZipFile", "Path"]
+           "ZIP_ZSTANDARD", "PreserveMode", "is_zipfile", "ZipInfo", "ZipFile",
+           "PyZipFile", "LargeZipFile", "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -428,6 +429,26 @@ def _read_local_file_header(fp):
     if fheader[_FH_SIGNATURE] != stringFileHeader:
         raise BadZipFile("Bad magic number for file header")
     return fheader
+
+
+class PreserveMode(enum.Enum):
+    """Which stored file permissions to apply when extracting."""
+    NONE = enum.auto()
+    SAFE = enum.auto()
+    ALL = enum.auto()
+
+
+_PRESERVE_MODE_MASKS = {
+    PreserveMode.NONE: 0,
+    PreserveMode.SAFE: 0o777,
+    PreserveMode.ALL: 0o7777,
+}
+
+
+def _check_preserve_mode(preserve_permissions):
+    if not isinstance(preserve_permissions, PreserveMode):
+        raise TypeError("preserve_permissions must be a zipfile.PreserveMode, "
+                        f"not {type(preserve_permissions).__name__}")
 
 
 class ZipInfo:
@@ -2348,27 +2369,37 @@ class ZipFile:
         self._writing = True
         return _ZipWriteFile(self, zinfo, zip64)
 
-    def extract(self, member, path=None, pwd=None):
+    def extract(self, member, path=None, pwd=None, *,
+                preserve_permissions=PreserveMode.NONE):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. 'member' may be a filename or a ZipInfo object. You can
            specify a different directory using 'path'. You can specify the
-           password to decrypt the file using 'pwd'.
+           password to decrypt the file using 'pwd'. 'preserve_permissions'
+           chooses which stored Unix permissions to apply.
         """
+        _check_preserve_mode(preserve_permissions)
         if path is None:
             path = os.getcwd()
         else:
             path = os.fspath(path)
 
-        return self._extract_member(member, path, pwd)
+        targetpath = self._extract_member(member, path, pwd)
+        if targetpath is not None:
+            self._apply_permissions(member, targetpath, path,
+                                    preserve_permissions)
+        return targetpath
 
-    def extractall(self, path=None, members=None, pwd=None):
+    def extractall(self, path=None, members=None, pwd=None, *,
+                   preserve_permissions=PreserveMode.NONE):
         """Extract all members from the archive to the current working
            directory. 'path' specifies a different directory to extract to.
            'members' is optional and must be a subset of the list returned
            by namelist(). You can specify the password to decrypt all files
-           using 'pwd'.
+           using 'pwd'. 'preserve_permissions' chooses which stored Unix
+           permissions to apply.
         """
+        _check_preserve_mode(preserve_permissions)
         if members is None:
             members = self.namelist()
 
@@ -2377,8 +2408,25 @@ class ZipFile:
         else:
             path = os.fspath(path)
 
+        directories = []
         for zipinfo in members:
-            self._extract_member(zipinfo, path, pwd)
+            targetpath = self._extract_member(zipinfo, path, pwd)
+            if targetpath is None or preserve_permissions is PreserveMode.NONE:
+                continue
+            if not isinstance(zipinfo, ZipInfo):
+                zipinfo = self.getinfo(zipinfo)
+            if zipinfo.is_dir():
+                directories.append((targetpath, zipinfo))
+            else:
+                self._apply_permissions(zipinfo, targetpath, path,
+                                        preserve_permissions)
+
+        # Set directory modes last, deepest first, so a read-only
+        # directory doesn't stop files being written into it.
+        directories.sort(key=lambda item: item[0], reverse=True)
+        for targetpath, zipinfo in directories:
+            self._apply_permissions(zipinfo, targetpath, path,
+                                    preserve_permissions)
 
     def remove(self, zinfo_or_arcname):
         """Remove a member from the archive."""
@@ -2466,6 +2514,25 @@ class ZipFile:
         # rejoin, removing empty parts.
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
+
+    def _apply_permissions(self, member, targetpath, path,
+                           preserve_permissions):
+        """Set the Unix permissions stored for 'member' on targetpath."""
+        mask = _PRESERVE_MODE_MASKS[preserve_permissions]
+        if not mask:
+            return
+        # A member such as "./" or "/" names the directory extracted into.
+        # Only change what was created inside it, never 'path' itself.
+        if targetpath == os.path.normpath(path):
+            return
+        if not isinstance(member, ZipInfo):
+            member = self.getinfo(member)
+        # Made on MS-DOS/Windows: there is no real Unix mode.
+        if member.create_system == 0:
+            return
+        mode = member.external_attr >> 16
+        if mode and not stat.S_ISLNK(mode):
+            os.chmod(targetpath, mode & mask)
 
     def _extract_member(self, member, targetpath, pwd):
         """Extract the ZipInfo object 'member' to a physical
