@@ -18,6 +18,7 @@ Python Library Reference.
    curses.rst
    descriptor.rst
    gdb_helpers.rst
+   lldb_helpers.rst
    enum.rst
    functional.rst
    logging.rst
@@ -71,6 +72,7 @@ Advanced development:
 Debugging and profiling:
 
 * :ref:`gdb`
+* :ref:`lldb`
 * :ref:`instrumentation`
 * :ref:`perf_profiling`
 * :ref:`remote-debugging`
