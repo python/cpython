@@ -1,0 +1,5 @@
+Soft deprecate various typing-related classes: :class:`typing.Optional`,
+:class:`typing.NoReturn`, :class:`typing.ForwardRef`,
+:class:`types.UnionType`. Also deprecate creating :class:`typing.Union`
+instances using the constructor and explicitly inheriting from
+:class:`typing.Generic`.
