@@ -1,0 +1,2 @@
+Fixed a possible crash in free-threaded builds when interpreter creation fails
+due to memory allocation failure.
