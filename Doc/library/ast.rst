@@ -75,8 +75,9 @@ Node classes
 
    .. attribute:: _field_types
 
-      The :attr:`!_field_types` attribute on each concrete class is a dictionary
-      mapping field names (as also listed in :attr:`_fields`) to their types.
+      The :attr:`!_field_types` attribute on each class is a dictionary mapping
+      field names (as also listed in :attr:`_fields`) to their types.  Classes
+      without fields, such as the abstract classes, have an empty dictionary.
 
       .. doctest::
 
@@ -84,6 +85,10 @@ Node classes
            {'name': <class 'str'>, 'bound': ast.expr | None, 'default_value': ast.expr | None}
 
       .. versionadded:: 3.13
+
+      .. versionchanged:: 3.16
+         The attribute is now also available on abstract classes and on other
+         classes without fields.
 
    .. attribute:: lineno
                   col_offset
