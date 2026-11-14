@@ -1,0 +1,2 @@
+Allow :class:`datetime.datetime` to accept type parameters at runtime, for
+example ``datetime[tzinfo]``.

@@ -7389,6 +7389,9 @@ static PyMethodDef datetime_methods[] = {
     DATETIME_DATETIME___REDUCE_EX___METHODDEF
     DATETIME_DATETIME___REDUCE___METHODDEF
 
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
+
     {NULL,      NULL}
 };
 
