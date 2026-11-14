@@ -1,0 +1,2 @@
+Fix exponential growth of :func:`asyncio.print_call_graph` output when
+several tasks await the same future.
