@@ -1427,6 +1427,9 @@
     <ClCompile Include="..\Python\ceval.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ceval_tailcall.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\codecs.c">
       <Filter>Python</Filter>
     </ClCompile>

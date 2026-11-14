@@ -124,6 +124,7 @@ class TestGeneratedCases(unittest.TestCase):
             actual = instructions.strip() + "\n\n        " + labels.strip()
 
         self.assertEqual(actual.strip(), expected.strip())
+        return lines
 
     def test_inst_no_args(self):
         input = """
@@ -1790,6 +1791,45 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         self.run_cases_test(input, output)
+
+    def test_start_frame_separate_from_handlers(self):
+        input = """
+        spilled label(start_frame) {
+            RELOAD_STACK();
+            goto handler;
+        }
+
+        label(handler) {
+            SAVE_STACK();
+            goto start_frame;
+        }
+        """
+        output = """
+        LABEL(handler)
+        {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyFrame_StackPointerValidate(frame);
+            JUMP_TO_LABEL(start_frame);
+        }
+        """
+        generated = self.run_cases_test(input, output)
+        handlers, start_frame = generated.split(
+            "#if !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME)\n"
+        )
+        self.assertNotIn("\n        LABEL(start_frame)\n", handlers)
+        self.assertIn("#ifndef _Py_CEVAL_START_FRAME", handlers)
+        expected = """
+        LABEL(start_frame)
+        {
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_StackPointerInvalidate(frame);
+            JUMP_TO_LABEL(handler);
+        }
+
+#endif /* !_Py_TAIL_CALL_INTERP || defined(_Py_CEVAL_START_FRAME) */
+#undef TIER_ONE
+        """
+        self.assertEqual(start_frame.strip(), expected.strip())
 
 
     def test_incorrect_spills(self):

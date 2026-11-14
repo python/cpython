@@ -99,7 +99,7 @@
 #   define DISPATCH_TABLE_VAR instruction_funcptr_table
 #   define DISPATCH_TABLE instruction_funcptr_handler_table
 #   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
-#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _Py_TAIL_CALL_##op(TAIL_CALL_PARAMS)
 
 #   define DISPATCH_GOTO() \
         do { \
@@ -111,17 +111,17 @@
         } while (0)
 #   define JUMP_TO_LABEL(name) \
         do { \
-            Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+            Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
         } while (0)
 #   ifdef Py_STATS
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
+                Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
             } while (0)
 #   else
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
+                Py_MUSTTAIL return (_Py_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
             } while (0)
 #   endif
 #    define LABEL(name) TARGET(name)
@@ -329,18 +329,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
+#if _Py_TIER2 && !defined(Py_BUILD_CORE_MODULE)
+int _PyEval_StopTracingAndJit(PyThreadState *, _PyInterpreterFrame *);
+#define stop_tracing_and_jit _PyEval_StopTracingAndJit
+#endif
+
 #if defined(WITH_DTRACE) && !defined(Py_BUILD_CORE_MODULE)
-static void dtrace_function_entry(_PyInterpreterFrame *);
-static void dtrace_function_return(_PyInterpreterFrame *);
+void _PyEval_DTraceFunctionEntry(_PyInterpreterFrame *);
+void _PyEval_DTraceFunctionReturn(_PyInterpreterFrame *);
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
-        dtrace_function_entry(frame); \
+        _PyEval_DTraceFunctionEntry(frame); \
     }
 
 #define DTRACE_FUNCTION_RETURN() \
     if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
-        dtrace_function_return(frame); \
+        _PyEval_DTraceFunctionReturn(frame); \
     }
 #else
 #define DTRACE_FUNCTION_ENTRY() ((void)0)
