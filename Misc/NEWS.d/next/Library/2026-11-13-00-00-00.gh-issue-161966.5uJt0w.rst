@@ -1,0 +1,3 @@
+Fix :exc:`UnboundLocalError` in :mod:`email` header parsing when a
+domain literal in a ``Message-ID``, ``References`` or ``In-Reply-To``
+header starts with whitespace, such as ``<a@[ x]>``.
