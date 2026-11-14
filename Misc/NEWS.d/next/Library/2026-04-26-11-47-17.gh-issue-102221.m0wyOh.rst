@@ -1,0 +1,1 @@
+Optimize :func:`math.integer.lcm` for multiple arguments.
