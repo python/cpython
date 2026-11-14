@@ -267,6 +267,30 @@ class StrTest(string_tests.StringLikeTest,
             pass
         self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
+    def test_find_adaptive_widths(self):
+        # The adaptive path in Objects/stringlib/fastsearch.h needs a haystack
+        # of at least 2500 characters and a needle of at least a third of it,
+        # and it is compiled once per character width. Exercise all four.
+        cases = [
+            ('ascii', 'a', 'b', 'c'),
+            ('latin1', '\xe9', '\xea', '\xeb'),
+            ('ucs2', '\u0100', '\u0101', '\u0102'),
+            ('ucs4', '\U0001d11e', '\U0001d11f', '\U0001d120'),
+        ]
+        for kind, c, d, x in cases:
+            # A needle of 2000 characters, none of which is x.
+            needle = c * 1000 + d * 1000
+            with self.subTest(kind=kind):
+                # 4000 characters, mostly x: the skip branches jump by m.
+                haystack = c * 1000 + x * 3000
+                self.assertEqual(haystack.find(needle), -1)
+                self.assertEqual(haystack.count(needle), 0)
+                # A match at 3000 in a haystack of 5000, so count() reaches
+                # the match branch inside adaptive_find rather than two-way.
+                haystack = c * 1000 + x * 2000 + needle
+                self.assertEqual(haystack.find(needle), 3000)
+                self.assertEqual(haystack.count(needle), 1)
+
     def test_find(self):
         string_tests.StringLikeTest.test_find(self)
         # test implementation details of the memchr fast path
@@ -606,6 +630,16 @@ class StrTest(string_tests.StringLikeTest,
         pattern = 'abc'
         text = 'abc def'
         self.assertIs(text.replace(pattern, pattern), text)
+
+    @support.nomemtest
+    def test_replace_oom(self):
+        # https://github.com/python/cpython/issues/152228
+        s1 = "轘" * 4
+        s2 = "&"
+        s3 = "&amp;"
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                s1.replace(s2, s3)  # this line used to crash before
 
     def test_repeat_id_preserving(self):
         a = '123abc1@'
@@ -2595,7 +2629,7 @@ class StrTest(string_tests.StringLikeTest,
                 self.assertFalse(copy1 != copy2)
 
                 self.assertTrue(copy1 <= copy2)
-                self.assertTrue(copy2 >= copy2)
+                self.assertTrue(copy1 >= copy2)
 
         self.assertTrue(ascii < ascii2)
         self.assertTrue(ascii < latin)

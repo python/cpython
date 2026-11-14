@@ -3,7 +3,6 @@ import kotlin.math.max
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 val ANDROID_DIR = file("../..")
@@ -144,17 +143,9 @@ android {
         path("src/main/c/CMakeLists.txt")
     }
 
-    // Set this property to something nonexistent but non-empty. Otherwise it'll use the
-    // default list, which ignores asset directories beginning with an underscore, and
-    // maybe also other files required by tests.
-    aaptOptions.ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
     }
 
     testOptions {
@@ -191,6 +182,12 @@ android {
                 }
             }
         }
+    }
+    androidResources {
+        // Set this property to something nonexistent but non-empty. Otherwise it'll use
+        // the default list, which ignores asset directories beginning with an
+        // underscore, and maybe also other files required by tests.
+        ignoreAssetsPattern = "android-testbed-dont-ignore-anything"
     }
 }
 

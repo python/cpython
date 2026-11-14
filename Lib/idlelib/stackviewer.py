@@ -11,7 +11,7 @@ from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 def StackBrowser(root, exc, flist=None, top=None):
     global sc, item, node  # For testing.
     if top is None:
-        top = tk.Toplevel(root)
+        top = tk.Toplevel(root, class_='Idle')
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
     item = StackTreeItem(exc, flist)

@@ -7,3 +7,4 @@ If you are the distributor, see :ref:`optional-module-requirements`.
 .. Similar notes appear in the docs of the modules:
    - zipfile
    - tarfile
+   - turtle

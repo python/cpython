@@ -1,5 +1,6 @@
 import annotationlib
 import inspect
+import itertools
 import textwrap
 import types
 import unittest
@@ -325,6 +326,18 @@ class AnnotateTests(unittest.TestCase):
 
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
+        self.assertIs(f.__annotate__, None)
+
+    def test_annotate_sets_annotations(self):
+        # If __annotate__ sets the function's annotations while it runs,
+        # those are kept instead of the result of the call.
+        def f():
+            pass
+        def annotate(format):
+            f.__annotations__ = {"x": int}
+            return {"y": str}
+        f.__annotate__ = annotate
+        self.assertEqual(f.__annotations__, {"x": int})
         self.assertIs(f.__annotate__, None)
 
     def test_user_defined_annotate(self):
@@ -896,3 +909,18 @@ class RegressionTests(unittest.TestCase):
                 mod = build_module(code)
                 annos = mod.__annotations__
                 self.assertEqual(annos, {"annotated_name": 0})
+
+    # gh-154902
+    def test_conditional_annotations_rebound(self):
+        # user code can rebind __conditional_annotations__ to any object
+        lefts = ("__conditional_annotations__",
+                 'globals()["__conditional_annotations__"]')
+        values = ("0", "{}", "[]", "''", "object()", "frozenset()")
+        for left, value in itertools.product(lefts, values):
+            with self.subTest(left=left, value=value):
+                code = f"""
+                    {left} = {value}
+                    x: int
+                """
+                with self.assertRaises(TypeError):
+                    run_code(code)

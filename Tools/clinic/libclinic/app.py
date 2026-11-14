@@ -15,7 +15,7 @@ from libclinic.dsl_parser import DSLParser
 if TYPE_CHECKING:
     from libclinic.clanguage import CLanguage
     from libclinic.function import (
-        Module, Function, ClassDict, ModuleDict)
+        Module, Function, Property, ClassDict, ModuleDict)
     from libclinic.codegen import DestinationDict
 
 
@@ -87,6 +87,7 @@ impl_definition block
         filename: str,
         limited_capi: bool,
         verify: bool = True,
+        writer: libclinic.FileWriter | None = None,
     ) -> None:
         # maps strings to Parser objects.
         # (instantiated from the "parsers" global.)
@@ -95,12 +96,15 @@ impl_definition block
         if printer:
             fail("Custom printers are broken right now")
         self.printer = printer or BlockPrinter(language)
+        self.writer = writer or libclinic.FileWriter()
         self.verify = verify
         self.limited_capi = limited_capi
         self.filename = filename
         self.modules: ModuleDict = {}
         self.classes: ClassDict = {}
         self.functions: list[Function] = []
+        # The attributes implemented by accessors, in the order of definition.
+        self.properties: list[Property] = []
         self.codegen = CodeGen(self.limited_capi)
 
         self.line_prefix = self.line_suffix = ''
@@ -120,7 +124,9 @@ impl_definition block
             'methoddef_define': d('file'),
             'impl_prototype': d('file'),
             'parser_prototype': d('suppress'),
+            'parser_helper': d('file'),
             'parser_definition': d('file'),
+            'vectorcall_definition': d('file'),
             'cpp_endif': d('file'),
             'methoddef_ifndef': d('file', 1),
             'impl_definition': d('block'),
@@ -193,6 +199,10 @@ impl_definition block
                 parser.parse(block)
             printer.print_block(block)
 
+        # The entry of an attribute is composed of all its accessors, so it
+        # is rendered when the whole file is parsed.
+        self.language.render_properties(self)
+
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -213,7 +223,7 @@ impl_definition block
                     try:
                         dirname = os.path.dirname(destination.filename)
                         try:
-                            os.makedirs(dirname)
+                            self.writer.makedirs(dirname)
                         except FileExistsError:
                             if not os.path.isdir(dirname):
                                 fail(f"Can't write to destination "
@@ -234,8 +244,8 @@ impl_definition block
 
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, header_includes=includes)
-                    libclinic.write_file(destination.filename,
-                                         printer_2.f.getvalue())
+                    self.writer.write(destination.filename,
+                                      printer_2.f.getvalue())
                     continue
 
         return printer.f.getvalue()

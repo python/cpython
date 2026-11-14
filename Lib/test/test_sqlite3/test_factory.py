@@ -21,6 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
+import weakref
 import sqlite3 as sqlite
 from collections.abc import Sequence
 
@@ -156,6 +157,25 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         with self.assertRaises(AttributeError):
             del self.con.text_factory
 
+    def test_replace_active_row_factory(self):
+        class Factory:
+            def row(self, cursor, values):
+                cursor.row_factory = None
+                return factory_ref() is not None
+
+        cursor = self.con.cursor()
+        cursor.row_factory = Factory().row
+        factory_ref = weakref.ref(cursor.row_factory)
+        self.assertIs(cursor.execute("select 1").fetchone(), True)
+
+    def test_delete_cursor_row_factory(self):
+        # gh-149738: deleting row_factory should raise an exception
+        cur = self.con.cursor()
+        with self.assertRaises(AttributeError):
+            del cur.row_factory
+        # Executing a query here should succeed.
+        self.assertEqual(tuple(cur.execute("select 1").fetchone()), (1,))
+
     def test_sqlite_row_index_unicode(self):
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
@@ -238,6 +258,17 @@ class RowFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
             row_1 <= row_2
 
         self.assertEqual(hash(row_1), hash(row_2))
+
+    def test_sqlite_row_hash_unhashable(self):
+        # An unhashable value must raise TypeError, not SystemError.
+        sqlite.register_converter("LST", lambda b: [1, 2, 3])
+        self.addCleanup(sqlite.converters.pop, "LST", None)
+        with memory_database(detect_types=sqlite.PARSE_DECLTYPES) as con:
+            con.row_factory = sqlite.Row
+            con.execute("create table t(x LST)")
+            con.execute("insert into t values(?)", (b"x",))
+            row = con.execute("select x from t").fetchone()
+            self.assertRaisesRegex(TypeError, "unhashable", hash, row)
 
     def test_sqlite_row_as_sequence(self):
         # Checks if the row object can act like a sequence.

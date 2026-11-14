@@ -39,10 +39,13 @@ class GetpassGetuserTest(unittest.TestCase):
         expected_name = 'some_name'
         environ.get.return_value = None
         if pwd:
+            class User:
+                pass
             with mock.patch('os.getuid') as uid, \
                     mock.patch('pwd.getpwuid') as getpw:
                 uid.return_value = 42
-                getpw.return_value = [expected_name]
+                getpw.return_value = User()
+                getpw.return_value.pw_name = expected_name
                 self.assertEqual(expected_name,
                                  getpass.getuser())
                 getpw.assert_called_once_with(42)

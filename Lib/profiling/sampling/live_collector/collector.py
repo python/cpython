@@ -702,6 +702,7 @@ class LiveStatsCollector(Collector):
     def reset_stats(self):
         """Reset all collected statistics."""
         self.result.clear()
+        self.opcode_stats.clear()
         self.per_thread_data.clear()
         self.thread_ids.clear()
         self.view_mode = "ALL"

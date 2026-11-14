@@ -336,6 +336,19 @@ class ContextTest(unittest.TestCase):
         contextvars.copy_context().run(fun)
         self.assertEqual(c.get(), [])
 
+    @isolated_context
+    def test_reset_with_reentrant_finalizer(self):
+        var = contextvars.ContextVar('var')
+        var.set('original')
+
+        class Reenter:
+            def __del__(self):
+                var.set('finalizer')
+
+        token = var.set(Reenter())
+        var.reset(token)
+        self.assertEqual(var.get(), 'finalizer')
+
     def test_context_copy_1(self):
         ctx1 = contextvars.Context()
         c = contextvars.ContextVar('c', default=42)
@@ -1275,6 +1288,31 @@ class HamtTest(unittest.TestCase):
         next(hi)
 
         del h, hi
+
+        gc.collect()
+        gc.collect()
+        gc.collect()
+
+        self.assertIsNone(ref())
+
+    def test_hamt_gc_3(self):
+        # gh-154535: the iterators must be tracked by the GC, otherwise a
+        # cycle running through one is never collected and the HAMT it
+        # holds -- and everything in it -- leaks.
+        A = HashKey(100, 'A')
+
+        container = []
+        h = hamt()
+        h = h.set(A, container)
+
+        hi = h.items()
+        self.assertTrue(gc.is_tracked(hi))
+
+        # Close the cycle: hi -> h -> container -> hi.
+        container.append(hi)
+        ref = weakref.ref(h)
+
+        del h, hi, container
 
         gc.collect()
         gc.collect()

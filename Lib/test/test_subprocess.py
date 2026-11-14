@@ -1797,13 +1797,28 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
     def test_file_not_found_includes_filename(self):
+        missing = (r'C:\opt\nonexistent_binary' if mswindows
+                   else '/opt/nonexistent_binary')
         with self.assertRaises(FileNotFoundError) as c:
-            subprocess.call(['/opt/nonexistent_binary', 'with', 'some', 'args'])
-        self.assertEqual(c.exception.filename, '/opt/nonexistent_binary')
+            subprocess.call([missing, 'with', 'some', 'args'])
+        self.assertEqual(c.exception.filename, missing)
 
-    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    def test_args_filter_iterable(self):
+        # gh-119646: Windows used to index args[0] before list2cmdline.
+        # test_faulthandler.test_sys_xoptions passes a filter() object.
+        args = filter(None, (sys.executable, "-c", "import sys; sys.exit(17)"))
+        self.assertEqual(subprocess.call(args), 17)
+
+    def test_file_not_found_includes_filename_from_iterable(self):
+        missing = (r'C:\opt\nonexistent_binary' if mswindows
+                   else '/opt/nonexistent_binary')
+        args = filter(None, (missing, "with", "some", "args"))
+        with self.assertRaises(FileNotFoundError) as c:
+            subprocess.call(args)
+        self.assertEqual(c.exception.filename, missing)
+
+    @unittest.skipIf(mswindows, "Windows reports NotADirectoryError (WinError 267)")
     def test_file_not_found_with_bad_cwd(self):
         with self.assertRaises(FileNotFoundError) as c:
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
@@ -2051,8 +2066,9 @@ class RunFuncTestCase(BaseTestCase):
             run("echo hello", shell=True, text=True)
             check_output("echo hello", shell=True, text=True)
             """)
+        env = support.make_clean_env()
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
-                            capture_output=True)
+                            capture_output=True, env=env)
         lines = cp.stderr.splitlines()
         self.assertEqual(len(lines), 2, lines)
         self.assertStartsWith(lines[0], b"<string>:2: EncodingWarning: ")
@@ -2448,6 +2464,16 @@ class POSIXProcessTestCase(BaseTestCase):
         # unknown signal
         err = subprocess.CalledProcessError(-9876543, "fake cmd")
         self.assertEqual(str(err), "Command 'fake cmd' died with unknown signal 9876543.")
+
+        # returncode which is not an integer, which happens for example when
+        # Popen is mocked: str() must not fail
+        for returncode in (None, "2", 2.5, [2]):
+            with self.subTest(returncode=returncode):
+                err = subprocess.CalledProcessError(returncode, "fake cmd")
+                self.assertEqual(
+                    str(err),
+                    f"Command 'fake cmd' returned non-zero "
+                    f"exit status {returncode}.")
 
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
@@ -3707,6 +3733,34 @@ class POSIXProcessTestCase(BaseTestCase):
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
 
+    def test_createprocess_bad_cwd_includes_filename(self):
+        # gh-119646: invalid cwd should appear on OSError.filename.
+        missing_cwd = r'C:\some\nonexistent\directory'
+        with self.assertRaises(OSError) as c:
+            subprocess.Popen([sys.executable, '-c', 'pass'], cwd=missing_cwd)
+        self.assertEqual(c.exception.filename, missing_cwd)
+        self.assertEqual(c.exception.winerror, 267)
+
+    def test_command_string_filename_omits_later_args(self):
+        # gh-119646: a command-line string must not put later arguments
+        # on OSError.filename. Those arguments can hold secrets.
+        missing = r'C:\opt\nonexistent_binary'
+        secret = 'NOT-A-REAL-SECRET'
+        quoted = r'C:\Program Files\nonexistent_binary'
+        cases = [
+            (missing, missing),
+            (f'{missing} --token {secret}', missing),
+            (f'"{missing}" --token {secret}', missing),
+            (f'"{quoted}" --token {secret}', quoted),
+        ]
+        for command, expected in cases:
+            with self.subTest(command=command):
+                with self.assertRaises(FileNotFoundError) as c:
+                    subprocess.call(command)
+                self.assertEqual(c.exception.filename, expected)
+                self.assertNotIn(secret, c.exception.filename or '')
+                self.assertNotIn(secret, str(c.exception))
+
     def test_startupinfo(self):
         # startupinfo argument
         # We uses hardcoded constants, because we do not want to
@@ -3766,6 +3820,34 @@ class Win32ProcessTestCase(BaseTestCase):
             self.assertIsNone(startupinfo.hStdError)
             self.assertEqual(startupinfo.wShowWindow, subprocess.SW_HIDE)
             self.assertEqual(startupinfo.lpAttributeList, {"handle_list": []})
+
+    def test_startupinfo_shell_show_window(self):
+        # gh-85028: shell=True must not override wShowWindow set by the caller
+        import _winapi
+        SW_MAXIMIZE = 3
+        used = []
+        create_process = _winapi.CreateProcess
+
+        def spy(*args):
+            # The startup info is the last argument of CreateProcess()
+            used.append(args[-1])
+            return create_process(*args)
+
+        startupinfo = subprocess.STARTUPINFO(
+            dwFlags=subprocess.STARTF_USESHOWWINDOW,
+            wShowWindow=SW_MAXIMIZE)
+        with mock.patch.object(_winapi, 'CreateProcess', spy):
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True,
+                                 startupinfo=startupinfo)
+            self.assertEqual(rc, 0)
+            rc = subprocess.call(ZERO_RETURN_CMD, shell=True)
+            self.assertEqual(rc, 0)
+
+        requested, default = used
+        self.assertEqual(requested.wShowWindow, SW_MAXIMIZE)
+        # Without STARTF_USESHOWWINDOW the shell window is still hidden.
+        self.assertTrue(default.dwFlags & subprocess.STARTF_USESHOWWINDOW)
+        self.assertEqual(default.wShowWindow, subprocess.SW_HIDE)
 
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @support.requires_resource('gui')
@@ -4299,6 +4381,32 @@ class FastWaitTestCase(BaseTestCase):
                 p.wait(self.WAIT_TIMEOUT)
             self.assertEqual(p.wait(timeout=support.LONG_TIMEOUT), 0)
         self.assertFalse(m.called)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_huge_timeout(self):
+        # gh-154836: very large timeout values used to overflow the C
+        # timestamp conversion in poll() / kqueue.control() and raise
+        # OverflowError / TypeError.
+        for timeout in (10**10, sys.maxsize, float('inf')):
+            with self.subTest(timeout=timeout):
+                p = subprocess.Popen(ZERO_RETURN_CMD)
+                self.assertEqual(p.wait(timeout=timeout), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_run_huge_timeout(self):
+        # gh-154836: same as test_wait_huge_timeout, via the
+        # subprocess.run() / communicate() code path.
+        cp = subprocess.run(ZERO_RETURN_CMD, timeout=1e10)
+        self.assertEqual(cp.returncode, 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_slices_do_not_expire_early(self):
+        # A clamped wait slice must not raise TimeoutExpired before the
+        # real deadline: with a tiny slice limit, a process that
+        # outlives many slices must still be waited for successfully.
+        with mock.patch.object(subprocess, "_MAXIMUM_WAIT_TIMEOUT", 0.01):
+            p = subprocess.Popen(self.COMMAND)  # sleeps 0.3s
+            self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
 if __name__ == "__main__":
     unittest.main()

@@ -386,6 +386,8 @@ class HTTP09ServerTestCase(BaseTestCase):
     def test_invalid_request(self):
         self.sock.send(b'POST /index.html\r\n')
         res = self.sock.recv(1024)
+        # The error response is not sent in the bare HTTP/0.9 style.
+        self.assertStartsWith(res, b'HTTP/1.0 400 ')
         self.assertIn(b"Bad HTTP/0.9 request type ('POST')", res)
 
     def test_single_request(self):
@@ -1102,6 +1104,19 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(result[0], b'<html><body>Data</body></html>\r\n')
         self.verify_get_called()
 
+    @support.subTests('request,code', [
+        (b'GET / FUBAR\r\n\r\n', 400),     # bad version
+        (b'GET / HTTP/2.0\r\n\r\n', 505),  # unsupported version
+        (b'GET\r\n', 400),                 # bad syntax
+        (b'POST /\r\n', 400),              # bad HTTP/0.9 request type
+    ])
+    def test_request_line_error_has_status_line(self, request, code):
+        self.handler = SocketlessRequestHandler()
+        result = self.send_typical_request(request)
+        self.assertStartsWith(result[0], b'HTTP/1.1 %d ' % code)
+        self.verify_expected_headers(result[1:result.index(b'\r\n')])
+        self.assertFalse(self.handler.get_called)
+
     def test_extra_space(self):
         result = self.send_typical_request(
             b'GET /spaced out HTTP/1.1\r\n'
@@ -1727,13 +1742,10 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(http.server, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, http.server, "__version__", remove=(3, 20),
+        )
 
 
 def setUpModule():

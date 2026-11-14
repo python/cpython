@@ -153,6 +153,10 @@ class AutoComplete:
         comp_lists = self.fetch_completions(comp_what, mode)
         if not comp_lists[0]:
             return None
+        if (complete and mode == FILES
+                and not any(name.startswith(comp_start)
+                            for name in comp_lists[0])):
+            return None
         self.autocompletewindow = self._make_autocomplete_window()
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),

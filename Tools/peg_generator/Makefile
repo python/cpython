@@ -12,15 +12,16 @@ MYPY ?= ./venv/bin/mypy
 BLACK ?= ./venv/bin/black
 
 GRAMMAR = ../../Grammar/python.gram
+INCLUDED_GRAMMARS = ../../Grammar/invalid.gram
 TOKENS = ../../Grammar/Tokens
 
 build: peg_extension/parse.c
 
-peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/pegen_errors.c ../../Parser/string_parser.c ../../Parser/action_helpers.c ../../Parser/*.h pegen/grammar_parser.py
+peg_extension/parse.c: $(GRAMMAR) $(INCLUDED_GRAMMARS) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/pegen_errors.c ../../Parser/string_parser.c ../../Parser/action_helpers.c ../../Parser/*.h pegen/grammar_parser.py
 	$(VENVPYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
 clean:
-	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
+	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c peg_extension/parse_invalid.c
 	-rm -rf $(VENVDIR)
 
 regen-metaparser: pegen/metagrammar.gram pegen/*.py

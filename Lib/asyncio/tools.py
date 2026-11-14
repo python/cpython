@@ -27,6 +27,10 @@ class CycleFoundException(Exception):
 # ─── indexing helpers ───────────────────────────────────────────
 def _format_stack_entry(elem: str|FrameInfo) -> str:
     if not isinstance(elem, str):
+        if elem.location is None:
+            if elem.filename in ("", "~"):
+                return f"{elem.funcname}"
+            return f"{elem.funcname} {elem.filename}"
         if elem.location.lineno == 0 and elem.filename == "":
             return f"{elem.funcname}"
         else:
@@ -124,14 +128,22 @@ def _find_cycles(graph):
     def dfs(v):
         color[v] = GREY
         path.append(v)
-        for w in graph.get(v, ()):
-            if color[w] == WHITE:
-                dfs(w)
-            elif color[w] == GREY:            # back-edge → cycle!
-                i = path.index(w)
-                cycles.append(path[i:] + [w])  # make a copy
-        color[v] = BLACK
-        path.pop()
+        stack = [(v, iter(graph.get(v, ())))]
+        while stack:
+            node, children = stack[-1]
+            for w in children:
+                if color[w] == WHITE:
+                    color[w] = GREY
+                    path.append(w)
+                    stack.append((w, iter(graph.get(w, ()))))
+                    break
+                elif color[w] == GREY:            # back-edge → cycle!
+                    i = path.index(w)
+                    cycles.append(path[i:] + [w])  # make a copy
+            else:
+                color[node] = BLACK
+                path.pop()
+                stack.pop()
 
     for v in list(graph):
         if color[v] == WHITE:
@@ -163,14 +175,16 @@ def build_async_tree(result, task_emoji="(T)", cor_emoji=""):
         flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
         return f"{flag} {labels[node]}"
 
-    def render(node, prefix="", last=True, buf=None):
-        if buf is None:
-            buf = []
-        buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
-        new_pref = prefix + ("    " if last else "│   ")
-        kids = children.get(node, [])
-        for i, kid in enumerate(kids):
-            render(kid, new_pref, i == len(kids) - 1, buf)
+    def render(root):
+        buf = []
+        stack = [(root, "", True)]
+        while stack:
+            node, prefix, last = stack.pop()
+            buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
+            new_pref = prefix + ("    " if last else "│   ")
+            kids = children.get(node, [])
+            for i in range(len(kids) - 1, -1, -1):
+                stack.append((kids[i], new_pref, i == len(kids) - 1))
         return buf
 
     return [render(root) for root in _roots(labels, children)]
@@ -190,8 +204,7 @@ def build_task_table(result):
             # Build coroutine stack string
             frames = [frame for coro in task_info.coroutine_stack
                      for frame in coro.call_stack]
-            coro_stack = " -> ".join(_format_stack_entry(x).split(" ")[0]
-                                   for x in frames)
+            coro_stack = " -> ".join(x.funcname for x in frames)
 
             # Handle tasks with no awaiters
             if not task_info.awaited_by:
@@ -202,8 +215,7 @@ def build_task_table(result):
             # Handle tasks with awaiters
             for coro_info in task_info.awaited_by:
                 parent_id = coro_info.task_name
-                awaiter_frames = [_format_stack_entry(x).split(" ")[0]
-                                for x in coro_info.call_stack]
+                awaiter_frames = [x.funcname for x in coro_info.call_stack]
                 awaiter_chain = " -> ".join(awaiter_frames)
                 awaiter_name = id2name.get(parent_id, "Unknown")
                 parent_id_str = (hex(parent_id) if isinstance(parent_id, int)

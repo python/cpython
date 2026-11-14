@@ -55,6 +55,26 @@ err_restore(PyObject *self, PyObject *args) {
 }
 
 /*[clinic input]
+_testcapi.err_givenexceptionmatches
+    err: object
+    exc: object
+    /
+
+Test PyErr_GivenExceptionMatches().
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_givenexceptionmatches_impl(PyObject *module, PyObject *err,
+                                         PyObject *exc)
+/*[clinic end generated code: output=e40994ab6dd75001 input=7b8ef542df07575b]*/
+{
+    assert(!PyErr_Occurred());
+    int res = PyErr_GivenExceptionMatches(err, exc);
+    assert(!PyErr_Occurred());
+    return PyBool_FromLong(res);
+}
+
+/*[clinic input]
 _testcapi.exception_print
     exception as exc: object
     legacy: bool = False
@@ -552,6 +572,7 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_GIVENEXCEPTIONMATCHES_METHODDEF
     _TESTCAPI_ERR_SETSTRING_METHODDEF
     _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF

@@ -316,7 +316,10 @@ class CmdTestReadline(unittest.TestCase):
         for input in [b"! h\t\n", b"!h\t\n"]:
             with self.subTest(input=input):
                 output = run_pty(script, input)
-                self.assertIn(b'hello', output)
+                # libedit redraws only the untyped suffix after a
+                # cursor-forward escape, unlike GNU readline which retypes
+                # the whole completed word, so check the common suffix.
+                self.assertIn(b'ello', output)
                 self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):

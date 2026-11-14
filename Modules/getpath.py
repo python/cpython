@@ -232,6 +232,7 @@ stdlib_dir = config.get('stdlib_dir')
 stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
+base_executable_dir = None
 platstdlib_dir = None
 stdlib_zip = None
 
@@ -409,6 +410,20 @@ if not py_setpath:
                             if isfile(candidate):
                                 base_executable = candidate
                                 break
+                if base_executable and isfile(base_executable):
+                    # Search relative to the resolved base executable rather
+                    # than the potentially external symlink in pyvenv.cfg.
+                    # If nothing there locates a standard library (e.g. a
+                    # launcher binary stored outside the installation that
+                    # 'home' points into), keep searching from 'home'.
+                    # base_executable_dir is still used to find platform
+                    # dependent libraries (exec_prefix) in that case.
+                    base_executable_dir = dirname(base_executable)
+                    if (
+                        isfile(joinpath(base_executable_dir, BUILDDIR_TXT))
+                        or search_up(base_executable_dir, ZIP_LANDMARK, *STDLIB_LANDMARKS)
+                    ):
+                        executable_dir = real_executable_dir = base_executable_dir
             # home key found; stop iterating over lines
             break
 
@@ -618,6 +633,11 @@ else:
             exec_prefix = prefix
         if not exec_prefix and prefix and isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
             exec_prefix = prefix
+        if not exec_prefix and base_executable_dir and base_executable_dir != executable_dir:
+            # The venv's resolved base executable may live under a separate
+            # exec_prefix (e.g. ./configure --exec-prefix) even when the
+            # stdlib was found from 'home'.
+            exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
@@ -766,10 +786,10 @@ elif not pythonpath_was_set:
 # SANITY CHECKS
 # ******************************************************************************
 
-# Warn if the standard library is missing, unless pythonpath_was_set was set, as
-# that skips parts of the stdlib directories calculation — assume the provided
-# pythonpath is correct. This is how subinterpreters initialize the path for eg.
-if not py_setpath and not pythonpath_was_set:
+# Warn if we did a search for the standard library and couldn't find it. Never
+# show a warning if paths were provided explicitly, since we trust the caller
+# knows what they're doing even if the layout doesn't look "normal".
+if not (py_setpath or pythonpath_was_set or pth):
     home_hint = f"The Python 'home' directory was set to {home!r}, is this correct?"
     if (not stdlib_zip or not isfile(stdlib_zip)) and (not stdlib_dir or not isdir(stdlib_dir)):
         hint = home_hint if home else f'sys.prefix is set to {prefix}, is this correct?'

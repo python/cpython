@@ -13,6 +13,7 @@
  * */
 #include "Python.h"
 #include "opcode.h"
+#include "pycore_call.h"          // _Py_METH_CALL_FLAGS
 #include "pycore_dict.h"
 #include "pycore_interp.h"
 #include "pycore_opcode_metadata.h"

@@ -1,5 +1,6 @@
 import unittest
-from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData
+from collections.abc import Hashable
+from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData, POINTER
 from ._support import (_CData, PyCSimpleType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 
@@ -25,6 +26,28 @@ class Test(unittest.TestCase):
             with self.subTest(cls=cls):
                 self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_unhashable(self):
+        # gh-78327: CData objects are mutable and must not be hashable.
+        class S(Structure):
+            _fields_ = [("a", c_int)]
+
+        for cls in c_int, S, c_int * 2, POINTER(c_int), CFUNCTYPE(None):
+            with self.subTest(cls=cls):
+                self.assertIsNone(cls.__hash__)
+                obj = cls()
+                self.assertNotIsInstance(obj, Hashable)
+                with self.assertRaisesRegex(TypeError,
+                                            f"unhashable type: '{cls.__name__}'"):
+                    hash(obj)
+
+        # Subclasses can still opt in to hashing.
+        class H(S):
+            def __hash__(self):
+                return 42
+
+        self.assertEqual(hash(H()), 42)
+        self.assertIsInstance(H(), Hashable)
 
     def test_metaclass_details(self):
         # Abstract classes (whose metaclass __init__ was not called) can't be

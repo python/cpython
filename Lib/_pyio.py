@@ -528,7 +528,7 @@ class IOBase(metaclass=abc.ABCMeta):
                     return 1
                 n = (readahead.find(b"\n") + 1) or len(readahead)
                 if size >= 0:
-                    n = min(n, size)
+                    n = min(n, size - len(res))
                 return n
         else:
             def nreadahead():
@@ -921,7 +921,7 @@ class BytesIO(BufferedIOBase):
 
     def close(self):
         if self._buffer is not None:
-            self._buffer.clear()
+            self._buffer = bytearray()
         super().close()
 
     def read(self, size=-1):
@@ -999,6 +999,23 @@ class BytesIO(BufferedIOBase):
         if self.closed:
             raise ValueError("tell on closed file")
         return self._pos
+
+    def peek(self, size=0):
+        if self.closed:
+            raise ValueError("peek on closed file")
+        try:
+            size_index = size.__index__
+        except AttributeError:
+            raise TypeError(f"{size!r} is not an integer")
+        else:
+            size = size_index()
+
+        if size < 1:
+            size = io.DEFAULT_BUFFER_SIZE
+
+        with self._lock:
+            b = self._buffer[self._pos:self._pos + size]
+            return b.take_bytes()
 
     def truncate(self, pos=None):
         if self.closed:
@@ -2441,9 +2458,12 @@ class TextIOWrapper(TextIOBase):
             # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
-            skip_bytes = int(self._b2cratio * chars_to_skip)
+            skip_estimate = self._b2cratio * chars_to_skip
+            if 0 <= skip_estimate <= len(next_input):
+                skip_bytes = int(skip_estimate)
+            else:
+                skip_bytes = 0
             skip_back = 1
-            assert skip_bytes <= len(next_input)
             while skip_bytes > 0:
                 decoder.setstate((b'', dec_flags))
                 # Decode up to temptative start point

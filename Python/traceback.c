@@ -2,8 +2,9 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallMethodFormat()
+#include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
+#include "pycore_freelist.h"      // _Py_FREELIST_POP()
 #include "pycore_frame.h"         // PyFrameObject
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
@@ -12,6 +13,7 @@
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
+#include "../Parser/tokenizer/tokenizer.h"
 
 #include "osdefs.h"               // SEP
 #ifdef HAVE_UNISTD_H
@@ -57,9 +59,6 @@
 #define MAX_FRAME_DEPTH 100
 #define DEFAULT_MAX_NTHREADS 100
 
-/* Function from Parser/tokenizer/file_tokenizer.c */
-extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
-
 /*[clinic input]
 class traceback "PyTracebackObject *" "&PyTraceback_Type"
 [clinic start generated code]*/
@@ -71,7 +70,7 @@ class traceback "PyTracebackObject *" "&PyTraceback_Type"
 
 
 #ifdef MS_WINDOWS
-typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
+typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PWSTR*);
 static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
 #endif
 
@@ -81,15 +80,16 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
               int lineno)
 {
     PyTracebackObject *tb;
-    if ((next != NULL && !PyTraceBack_Check(next)) ||
-                    frame == NULL || !PyFrame_Check(frame)) {
-        PyErr_BadInternalCall();
-        return NULL;
+    assert(next == NULL || PyTraceBack_Check(next));
+    assert(frame != NULL);
+    assert(PyFrame_Check(frame));
+    tb = _Py_FREELIST_POP(PyTracebackObject, tracebacks);
+    if (tb == NULL) {
+        tb = PyObject_GC_New(PyTracebackObject, &PyTraceBack_Type);
     }
-    tb = PyObject_GC_New(PyTracebackObject, &PyTraceBack_Type);
     if (tb != NULL) {
         tb->tb_next = (PyTracebackObject*)Py_XNewRef(next);
-        tb->tb_frame = (PyFrameObject*)Py_XNewRef(frame);
+        tb->tb_frame = (PyFrameObject*)Py_NewRef(frame);
         tb->tb_lasti = lasti;
         tb->tb_lineno = lineno;
         PyObject_GC_Track(tb);
@@ -183,11 +183,6 @@ static int
 traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
 /*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
 {
-    if (!value) {
-        PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
-        return -1;
-    }
-
     /* We accept None or a traceback object, and map None -> NULL (inverse of
        tb_next_get) */
     if (value == Py_None) {
@@ -244,7 +239,7 @@ tb_dealloc(PyObject *op)
     PyObject_GC_UnTrack(tb);
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
-    PyObject_GC_Del(tb);
+    _Py_FREELIST_FREE(tracebacks, tb, PyObject_GC_Del);
 }
 
 static int
@@ -404,7 +399,6 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    PyThreadState *tstate = _PyThreadState_GET();
     if (PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
         PyErr_Clear();
         goto error;
@@ -444,7 +438,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
             namebuf[len++] = SEP;
         strcpy(namebuf+len, tail);
 
-        binary = _PyObject_CallMethodFormat(tstate, open, "ss", namebuf, "rb");
+        binary = PyObject_CallFunction(open, "ss", namebuf, "rb");
         if (binary != NULL) {
             result = binary;
             goto finally;

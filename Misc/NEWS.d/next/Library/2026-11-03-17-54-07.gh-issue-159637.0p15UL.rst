@@ -1,0 +1,4 @@
+Fix :meth:`Document.renameNode() <xml.dom.Document.renameNode>` in
+:mod:`xml.dom.minidom` rejecting a valid rename of an attribute to a
+prefixed name, and removing the attribute from its element when a rename
+is rejected.

@@ -1363,6 +1363,35 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    def test_verbosity_set_on_result(self):
+        class Suite:
+            def __call__(self, result):
+                pass
+
+        for verbosity in range(4):
+            with self.subTest(verbosity=verbosity):
+                runner = unittest.TextTestRunner(io.StringIO(),
+                                                 verbosity=verbosity)
+                result = runner.run(Suite())
+                self.assertEqual(result.verbosity, verbosity)
+
+    def test_verbosity_set_on_filtering_result(self):
+        # A result class is free to filter the verbosity which its
+        # constructor gets, as test.libregrtest does.
+        class FilteringResult(unittest.TextTestResult):
+            def __init__(self, stream, descriptions, verbosity):
+                super().__init__(stream, descriptions,
+                                 2 if verbosity else 0)
+
+        class Suite:
+            def __call__(self, result):
+                pass
+
+        runner = unittest.TextTestRunner(io.StringIO(), verbosity=3,
+                                         resultclass=FilteringResult)
+        result = runner.run(Suite())
+        self.assertEqual(result.verbosity, 3)
+
     @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):

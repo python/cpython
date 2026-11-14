@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(syslog_openlog__doc__,
 "openlog($module, /, ident=<unrepresentable>, logoption=0,\n"
@@ -105,35 +106,38 @@ PyDoc_STRVAR(syslog_syslog__doc__,
 "Send the string message to the system logger.");
 
 #define SYSLOG_SYSLOG_METHODDEF    \
-    {"syslog", (PyCFunction)syslog_syslog, METH_VARARGS, syslog_syslog__doc__},
+    {"syslog", _PyCFunction_CAST(syslog_syslog), METH_FASTCALL, syslog_syslog__doc__},
 
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
                    const char *message);
 
 static PyObject *
-syslog_syslog(PyObject *module, PyObject *args)
+syslog_syslog(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int group_left_1 = 0;
     int priority = LOG_INFO;
     const char *message;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "s:syslog", &message)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "is:syslog", &priority, &message)) {
-                goto exit;
-            }
-            group_left_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
+    if (nargs < 1 || nargs > 2) {
+        PyErr_SetString(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
+        goto exit;
+    }
+    if (nargs >= 2) {
+        priority = PyLong_AsInt(args[0]);
+        if (priority == -1 && PyErr_Occurred()) {
             goto exit;
+        }
+        group_left_1 = 1;
+    }
+    if (!PyUnicode_Check(args[nargs - 1])) {
+        _PyArg_BadArgument("syslog", "argument", "str", args[nargs - 1]);
+        goto exit;
+    }
+    message = _PyUnicode_AsUTF8NoNUL(args[nargs - 1]);
+    if (message == NULL) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(module);
     return_value = syslog_syslog_impl(module, group_left_1, priority, message);
@@ -265,4 +269,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f92ac9948fa6131e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c9607f279107505 input=a9049054013a1b77]*/

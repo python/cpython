@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_frame.h"         // FRAME_STATE_FINISHED()
 #include "pycore_interpframe_structs.h" // _PyGenObject
 
 #include <stddef.h>               // offsetof()
@@ -21,6 +22,14 @@ PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
+// The generator finalizer is a no-op once its frame is cleared.
+static inline int
+_PyGen_FinalizerIsNoop(PyObject *op)
+{
+    return Py_TYPE(op)->tp_finalize == PyGen_Type.tp_finalize &&
+        FRAME_STATE_FINISHED(((PyGenObject *)op)->gi_frame_state);
+}
+
 PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
 extern int _PyGen_ClearFrame(PyGenObject *self);
 
@@ -29,6 +38,9 @@ PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
+// Set the exception passed to throw(typ[, val[, tb]]).
+// Return 0 on success, -1 on failure.
+extern int _PyGen_SetException(PyObject *typ, PyObject *val, PyObject *tb);
 
 PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *)_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);

@@ -4,7 +4,7 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
@@ -135,35 +135,22 @@ static PyObject *
 _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "read",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("read", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = _io__BufferedIOBase_read_impl(self, cls, size);
 
 exit:
@@ -190,35 +177,22 @@ static PyObject *
 _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "read1",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("read1", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("read1", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_posonly:
+skip_optional:
     return_value = _io__BufferedIOBase_read1_impl(self, cls, size);
 
 exit:
@@ -248,25 +222,12 @@ static PyObject *
 _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "write",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("write", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("write", nargs, 1, 1)) {
         goto exit;
     }
     b = args[0];
@@ -342,16 +303,6 @@ _io__Buffered_simple_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-
-#if !defined(_io__Buffered_closed_DOCSTR)
-#  define _io__Buffered_closed_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
-#  undef _IO__BUFFERED_CLOSED_GETSETDEF
-#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, _io__Buffered_closed_DOCSTR},
-#else
-#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, _io__Buffered_closed_DOCSTR},
-#endif
 
 static PyObject *
 _io__Buffered_closed_get_impl(buffered *self);
@@ -483,16 +434,6 @@ _io__Buffered_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if !defined(_io__Buffered_name_DOCSTR)
-#  define _io__Buffered_name_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_NAME_GETSETDEF)
-#  undef _IO__BUFFERED_NAME_GETSETDEF
-#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, _io__Buffered_name_DOCSTR},
-#else
-#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, _io__Buffered_name_DOCSTR},
-#endif
-
 static PyObject *
 _io__Buffered_name_get_impl(buffered *self);
 
@@ -507,16 +448,6 @@ _io__Buffered_name_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-
-#if !defined(_io__Buffered_mode_DOCSTR)
-#  define _io__Buffered_mode_DOCSTR NULL
-#endif
-#if defined(_IO__BUFFERED_MODE_GETSETDEF)
-#  undef _IO__BUFFERED_MODE_GETSETDEF
-#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, _io__Buffered_mode_DOCSTR},
-#else
-#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, _io__Buffered_mode_DOCSTR},
-#endif
 
 static PyObject *
 _io__Buffered_mode_get_impl(buffered *self);
@@ -904,32 +835,19 @@ static PyObject *
 _io__Buffered_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "truncate",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *pos = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("truncate", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional_posonly;
+        goto skip_optional;
     }
     pos = args[0];
-skip_optional_posonly:
+skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_truncate_impl((buffered *)self, cls, pos);
     Py_END_CRITICAL_SECTION();
@@ -1186,6 +1104,256 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_io_BufferedRWPair_read__doc__,
+"read($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READ_METHODDEF    \
+    {"read", _PyCFunction_CAST(_io_BufferedRWPair_read), METH_FASTCALL, _io_BufferedRWPair_read__doc__},
+
+static PyObject *
+_io_BufferedRWPair_read_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_read_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_peek__doc__,
+"peek($self, size=0, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_PEEK_METHODDEF    \
+    {"peek", _PyCFunction_CAST(_io_BufferedRWPair_peek), METH_FASTCALL, _io_BufferedRWPair_peek__doc__},
+
+static PyObject *
+_io_BufferedRWPair_peek_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_peek_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_read1__doc__,
+"read1($self, size=-1, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READ1_METHODDEF    \
+    {"read1", _PyCFunction_CAST(_io_BufferedRWPair_read1), METH_FASTCALL, _io_BufferedRWPair_read1__doc__},
+
+static PyObject *
+_io_BufferedRWPair_read1_impl(rwpair *self, PyObject *size);
+
+static PyObject *
+_io_BufferedRWPair_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *size = NULL;
+
+    if (!_PyArg_CheckPositional("read1", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    size = args[0];
+skip_optional:
+    return_value = _io_BufferedRWPair_read1_impl((rwpair *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readinto__doc__,
+"readinto($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READINTO_METHODDEF    \
+    {"readinto", (PyCFunction)_io_BufferedRWPair_readinto, METH_O, _io_BufferedRWPair_readinto__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readinto_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_readinto(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_readinto_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readinto1__doc__,
+"readinto1($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READINTO1_METHODDEF    \
+    {"readinto1", (PyCFunction)_io_BufferedRWPair_readinto1, METH_O, _io_BufferedRWPair_readinto1__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readinto1_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_readinto1(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_readinto1_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_write__doc__,
+"write($self, buffer, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_WRITE_METHODDEF    \
+    {"write", (PyCFunction)_io_BufferedRWPair_write, METH_O, _io_BufferedRWPair_write__doc__},
+
+static PyObject *
+_io_BufferedRWPair_write_impl(rwpair *self, PyObject *buffer);
+
+static PyObject *
+_io_BufferedRWPair_write(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BufferedRWPair_write_impl((rwpair *)self, buffer);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_flush__doc__,
+"flush($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_FLUSH_METHODDEF    \
+    {"flush", (PyCFunction)_io_BufferedRWPair_flush, METH_NOARGS, _io_BufferedRWPair_flush__doc__},
+
+static PyObject *
+_io_BufferedRWPair_flush_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_flush_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_readable__doc__,
+"readable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_READABLE_METHODDEF    \
+    {"readable", (PyCFunction)_io_BufferedRWPair_readable, METH_NOARGS, _io_BufferedRWPair_readable__doc__},
+
+static PyObject *
+_io_BufferedRWPair_readable_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_readable_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_writable__doc__,
+"writable($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_WRITABLE_METHODDEF    \
+    {"writable", (PyCFunction)_io_BufferedRWPair_writable, METH_NOARGS, _io_BufferedRWPair_writable__doc__},
+
+static PyObject *
+_io_BufferedRWPair_writable_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_writable_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_io_BufferedRWPair_close, METH_NOARGS, _io_BufferedRWPair_close__doc__},
+
+static PyObject *
+_io_BufferedRWPair_close_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_close_impl((rwpair *)self);
+}
+
+PyDoc_STRVAR(_io_BufferedRWPair_isatty__doc__,
+"isatty($self, /)\n"
+"--\n"
+"\n");
+
+#define _IO_BUFFEREDRWPAIR_ISATTY_METHODDEF    \
+    {"isatty", (PyCFunction)_io_BufferedRWPair_isatty, METH_NOARGS, _io_BufferedRWPair_isatty__doc__},
+
+static PyObject *
+_io_BufferedRWPair_isatty_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _io_BufferedRWPair_isatty_impl((rwpair *)self);
+}
+
+static PyObject *
+_io_BufferedRWPair_closed_get_impl(rwpair *self);
+
+static PyObject *
+_io_BufferedRWPair_closed_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _io_BufferedRWPair_closed_get_impl((rwpair *)self);
+}
+
 PyDoc_STRVAR(_io_BufferedRandom___init____doc__,
 "BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)\n"
 "--\n"
@@ -1265,4 +1433,12 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3ee17211d2010462 input=a9049054013a1b77]*/
+#define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)NULL, NULL},
+
+#define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)NULL, NULL},
+
+#define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)NULL, NULL},
+
+#define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, (setter)NULL, NULL},
+
+/*[clinic end generated code: output=d9e1eb0efa4a2431 input=a9049054013a1b77]*/

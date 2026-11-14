@@ -35,9 +35,13 @@ typedef mi_bitmap_field_t*  mi_bitmap_t;
 typedef size_t mi_bitmap_index_t;
 
 // Create a bit index.
+static inline mi_bitmap_index_t mi_bitmap_index_create_ex(size_t idx, size_t bitidx) {
+  mi_assert_internal(bitidx <= MI_BITMAP_FIELD_BITS);
+  return (idx*MI_BITMAP_FIELD_BITS) + bitidx;
+}
 static inline mi_bitmap_index_t mi_bitmap_index_create(size_t idx, size_t bitidx) {
   mi_assert_internal(bitidx < MI_BITMAP_FIELD_BITS);
-  return (idx*MI_BITMAP_FIELD_BITS) + bitidx;
+  return mi_bitmap_index_create_ex(idx,bitidx);
 }
 
 // Create a bit index.
@@ -72,7 +76,7 @@ bool _mi_bitmap_try_find_claim_field(mi_bitmap_t bitmap, size_t idx, const size_
 // For now, `count` can be at most MI_BITMAP_FIELD_BITS and will never cross fields.
 bool _mi_bitmap_try_find_from_claim(mi_bitmap_t bitmap, const size_t bitmap_fields, const size_t start_field_idx, const size_t count, mi_bitmap_index_t* bitmap_idx);
 
-// Like _mi_bitmap_try_find_from_claim but with an extra predicate that must be fulfilled
+// Like _mi_bitmap_try_find_from_claim but with an extra predicate that must be fullfilled
 typedef bool (mi_cdecl *mi_bitmap_pred_fun_t)(mi_bitmap_index_t bitmap_idx, void* pred_arg);
 bool _mi_bitmap_try_find_from_claim_pred(mi_bitmap_t bitmap, const size_t bitmap_fields, const size_t start_field_idx, const size_t count, mi_bitmap_pred_fun_t pred_fun, void* pred_arg, mi_bitmap_index_t* bitmap_idx);
 
@@ -107,9 +111,9 @@ bool _mi_bitmap_unclaim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t 
 
 // Set `count` bits at `bitmap_idx` to 1 atomically
 // Returns `true` if all `count` bits were 0 previously. `any_zero` is `true` if there was at least one zero bit.
-bool _mi_bitmap_claim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, bool* pany_zero);
+bool _mi_bitmap_claim_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, bool* pany_zero, size_t* already_set);
 
-bool _mi_bitmap_is_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
+bool _mi_bitmap_is_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx, size_t* already_set);
 bool _mi_bitmap_is_any_claimed_across(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
 
 #endif

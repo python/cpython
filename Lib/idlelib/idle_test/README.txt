@@ -18,7 +18,7 @@ The idle directory, idlelib, has over 60 xyz.py files. The idle_test
 subdirectory contains test_xyz.py for each implementation file xyz.py.
 To add a test for abc.py, open idle_test/template.py and immediately
 Save As test_abc.py.  Insert 'abc' on the first line, and replace
-'zzdummy' with 'abc.
+'zzdummy' with 'abc'.
 
 Remove the imports of requires and tkinter if not needed.  Otherwise,
 add to the tkinter imports as needed.
@@ -33,9 +33,9 @@ insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_abc', verbosity=2)
 
-The ', exit=False' is only needed if an htest follows.
+Add ', exit=False' to the main call if and only if an htest follows.
 
 
 

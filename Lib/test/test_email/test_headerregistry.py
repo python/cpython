@@ -221,6 +221,14 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(len(h.defects), 1)
         self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
 
+    def test_out_of_range_date_value(self):
+        s = 'Mon, 20 Nov 9999999999 12:00:00 +0000'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
         with self.assertRaises(AttributeError):

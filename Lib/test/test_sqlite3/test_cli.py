@@ -82,6 +82,7 @@ class InteractiveSession(unittest.TestCase):
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "\001\002sqlite> \001\002"
     PS2 = "\001\002    ... \001\002"
+    EOF_KEY = "CTRL-Z" if sys.platform == "win32" else "CTRL-D"
 
     def run_cli(self, *args, commands=()):
         with (
@@ -104,9 +105,17 @@ class InteractiveSession(unittest.TestCase):
     def test_interact(self):
         out, err = self.run_cli()
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(f'type ".quit" or {self.EOF_KEY} to quit', err)
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_help(self):
+        out, err = self.run_cli(commands=(".help",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(f"Exit the CLI, equivalent to {self.EOF_KEY}", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_quit(self):
@@ -223,6 +232,9 @@ class Completion(unittest.TestCase):
         readline = import_module("readline")
         if readline.backend == "editline":
             raise unittest.SkipTest("libedit readline is not supported")
+        if sys.platform.startswith("openbsd"):
+            # OpenBSD's readline does not honor "completion-query-items 0".
+            raise unittest.SkipTest("OpenBSD readline hangs on completion")
 
     def write_input(self, input_, env=None):
         script = textwrap.dedent("""
@@ -323,6 +335,8 @@ class Completion(unittest.TestCase):
         input_ = textwrap.dedent("""\
             CREATE TABLE _table (_col_table);
             CREATE TEMP TABLE _temp_table (_col_temp);
+            CREATE VIEW _view AS SELECT _col_table AS _col_table_alias
+                                 FROM _table;
             ATTACH ':memory:' AS attached;
             CREATE TABLE attached._attached_table (_col_attached);
 
@@ -337,9 +351,9 @@ class Completion(unittest.TestCase):
         candidates = [l.strip() for l in lines[start+1:end]]
 
         self.assertEqual(
-            candidates, ["_col_attached", "_col_table", "_col_temp"]
+            candidates,
+            ["_col_attached", "_col_table", "_col_table_alias", "_col_temp"],
         )
-
     @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
                      "PRAGMA function_list is not available until "
                      "SQLite 3.30.0")
@@ -378,10 +392,10 @@ class Completion(unittest.TestCase):
         self.assertIn("main", candidates)
         self.assertIn("temp", candidates)
 
-    @unittest.skipIf(sys.platform.startswith("freebsd"),
+    @unittest.skipIf(sys.platform.startswith(("freebsd", "dragonfly", "sunos")),
                     "Two actual tabs are inserted when there are no matching"
                     " completions in the pseudo-terminal opened by run_pty()"
-                    " on FreeBSD")
+                    " on this platform")
     def test_complete_no_match(self):
         input_ = b"xyzzy\t\t\b\b\b\b\b\b\b.quit\n"
         # Set NO_COLOR to disable coloring for self.PS1.

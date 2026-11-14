@@ -7,9 +7,8 @@ Python distribution.
 
 These instructions are only needed if you're planning to compile Python for iOS
 yourself. Most users should *not* need to do this. If you're looking to
-experiment with writing an iOS app in Python, tools such as [BeeWare's
-Briefcase](https://briefcase.readthedocs.io) and [Kivy's
-Buildozer](https://buildozer.readthedocs.io) will provide a much more
+experiment with writing an iOS app in Python, use one of the tools listed in
+[Using Python on iOS](https://docs.python.org/3/using/ios.html) for a much more
 approachable user experience.
 
 ## Compilers for building on iOS
@@ -76,6 +75,39 @@ complete "build and test" CI run. The `--clean` flag can also be used on
 individual commands to ensure that a stale build product are removed before
 building.
 
+### Building with ABI flags
+
+By default, the `Platforms/Apple` build script produces a GIL-enabled,
+non-debug build of Python. The `--abiflags` option can be passed to any
+command of the build script to build a variant of Python with different
+ABI flags:
+
+* `t` - a free-threaded build (`--disable-gil`)
+* `d` - a debug build (`--with-pydebug`)
+* `td` - a free-threaded debug build
+
+For example, to build and test a free-threaded XCframework, run:
+
+    python Platforms/Apple ci iOS --abiflags t
+
+When ABI flags are specified:
+
+* The ABI flags are appended to the name of the cross-build directory. The
+  free-threaded example above uses `cross-build-t`. If you specify a custom
+  location with `--cross-build-dir` (or the `CROSS_BUILD_DIR` environment
+  variable), that location is used as the base name, so `--cross-build-dir foo
+  --abiflags t` uses `foo-t`. This lets builds with different ABI flags
+  co-exist.
+* The framework is named `Python` followed by the uppercased ABI flags. For
+  example, a free-threaded build produces `PythonT.framework` and
+  `PythonT.xcframework`, and its headers are included as
+  `#include <PythonT/Python.h>`.
+* The release archive includes the ABI flags in the version, e.g.
+  `python-3.X.Yt-iOS-XCframework.tar.gz`.
+
+The same `--abiflags` value must be passed to every command that operates on a
+given build.
+
 ### Building a single-architecture framework
 
 If you're using the `Platforms/Apple` build script, you won't need to build
@@ -90,19 +122,26 @@ Python build for a single framework, the following options are available.
   installed. If `DIR` is not specified, the framework will be installed into
   a subdirectory of the `iOS/Frameworks` folder.
 
-  This argument *must* be provided when configuring iOS builds. iOS does not
-  support non-framework builds.
+  This argument is required for any iOS build that will be distributed, and
+  for any build that needs to load binary extension modules.
+
+  Omitting it builds a static `libpython` for embedding directly in an app
+  binary, instead of a `Python.framework`. That configuration comes with
+  significant restrictions; see [Building a static
+  Python](#building-a-static-python) below.
 
 * `--with-framework-name=NAME`
 
   Specify the name for the Python framework; defaults to `Python`.
 
   > [!NOTE]
-  > Unless you know what you're doing, changing the name of the Python
-  > framework on iOS is not advised. If you use this option, you won't be able
-  > to run the `Platforms/Apple` build script without making significant manual
-  > alterations, and you won't be able to use any binary packages unless you
-  > compile them yourself using your own framework name.
+  > Builds that use ABI flags (such as free-threaded or debug builds) should
+  > use a framework name of `Python`, followed by the uppercased ABI flags
+  > (e.g., `PythonT` for a free-threaded build). The `Platforms/Apple` build
+  > script and the testbed rely on this naming convention. Other than this
+  > convention, changing the name of the Python framework on iOS is not
+  > advised; you won't be able to use any binary packages unless you compile
+  > them yourself using your own framework name.
 
 #### Building Python for iOS
 
@@ -113,9 +152,11 @@ framework to contain non-library content, so the iOS build will produce a
 The `lib` folder will be needed at runtime to support the Python library.
 
 If you want to use Python in a real iOS project, you need to produce multiple
-`Python.framework` builds, one for each ABI and architecture. iOS builds of
-Python *must* be constructed as framework builds. To support this, you must
-provide the `--enable-framework` flag when configuring the build. The build
+`Python.framework` builds, one for each ABI and architecture. Unless you are
+statically linking Python into your app (see [Building a static
+Python](#building-a-static-python) below), iOS builds of Python *must* be
+constructed as framework builds. To support this, you must provide the
+`--enable-framework` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like:
 ```
@@ -216,6 +257,68 @@ target, provide the version number as part of the `--host` argument - for
 example, `--host=arm64-apple-ios15.4-simulator` would compile an ARM64
 simulator build with a deployment target of 15.4.
 
+### Building a static Python
+
+The official iOS release artefact is a framework build. However, if you are
+embedding Python in an app that links `libpython` at compile time, you can
+instead build a static `libpython3.x.a`, and link that archive directly into
+your app binary.
+
+The App Store requirement that binary modules be packaged as signed frameworks
+does not apply to a static build, because a static build loads nothing at
+runtime; but for the same reason, this configuration cannot use *any* binary
+module that isn't compiled into the app binary. The restrictions that follow
+from that must be opted into explicitly at configure time:
+
+* `MODULE_BUILDTYPE=static` is required. There is no framework for a shared
+  extension module to link against, so every extension module, including the
+  ones in the standard library, must be linked into `libpython`.
+
+* `--disable-test-modules` is required. Some test modules must be compiled as
+  shared libraries (see `Modules/Setup.stdlib.in`), so they cannot be built in
+  this configuration at all.
+
+A non-framework build is selected by omitting `--enable-framework`;
+`--disable-framework` is accepted as an explicit spelling of the same thing.
+
+The minimal commands for a static build targeting ARM64 iOS devices are then:
+```
+export PATH="$(pwd)/Platforms/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+./configure \
+    --prefix=/path/to/install/dir \
+    --disable-test-modules \
+    MODULE_BUILDTYPE=static \
+    --host=arm64-apple-ios \
+    --build=arm64-apple-darwin \
+    --with-build-python=/path/to/python.exe
+make
+make install
+```
+This produces a `libpython3.x.a` containing the interpreter and the standard
+library's extension modules; `make install` installs that archive, along with
+the standard library's Python source, into the location given by `--prefix`.
+Unlike a framework build, `--prefix` is not set for you, so specify it
+explicitly - otherwise `libpython` will be installed into `/usr/local`.
+
+#### Limitations of a static build
+
+* **Binary wheels cannot be used.** There is no `libpython` dylib for a
+  third-party extension module to link against, and a static Python has nothing
+  to `dlopen` in any case. Pure Python wheels work as normal; any package with a
+  C extension must be compiled into the app binary alongside `libpython`.
+
+* **The standard library's extension modules are not loadable modules.** They
+  live in the archive, not in `.framework` bundles in the app's `Frameworks`
+  folder, so the packaging described in
+  [Using Python on iOS](https://docs.python.org/3/using/ios.html) does not apply
+  to them.
+
+* **The test suite cannot be run as-is**, as the test modules are not built.
+
+* This configuration is not covered by the `Platforms/Apple` build script, nor
+  by CPython's CI. It is not the configuration used to produce official
+  releases.
+
 ## Testing Python on iOS
 
 ### Testing a multi-architecture framework
@@ -271,10 +374,11 @@ project, and then boot and prepare the iOS simulator.
 
 Running `python Platforms/Apple test iOS` generates a standalone version of the
 `Platforms/Apple/testbed` project, and runs the full test suite. It does this using
-`Platforms/Apple/testbed` itself - the folder is an executable module that can be used
-to create and run a clone of the testbed project. The standalone version of the
-testbed will be created in a directory named
-`cross-build/iOS-testbed.<timestamp>`.
+`Platforms/Apple/testbed` itself - the folder is a template for an executable module
+that can be used to create and run a clone of the testbed project. The standalone
+version of the testbed will be created in a directory named
+`cross-build/iOS-testbed.<timestamp>`. Builds that use ABI flags use the
+`cross-build-<abiflags>` directory instead (e.g., `cross-build-t`).
 
 You can generate your own standalone testbed instance by running:
 ```
@@ -290,8 +394,21 @@ you can construct a standalone testbed instance by running:
 python Platforms/Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
 ```
 
-The framework path can be the path path to a `Python.xcframework`, or the
+The framework path can be the path to a `Python.xcframework`, or the
 path to a folder that contains a single-platform `Python.framework`.
+
+The `Platforms/Apple/testbed` folder is a template. Any reference to the
+Python framework uses the placeholder `Python{{abiflags}}`. When the template
+project is cloned, the placeholder is replaced with the name of the framework
+being installed; the ABI flags are inferred automatically from the
+`--framework` argument. For example, to clone a testbed for a free-threaded
+framework:
+```
+python Platforms/Apple/testbed clone --platform iOS --framework <path/to/PythonT.xcframework> my-testbed
+```
+
+A cloned testbed is configured for one specific framework. It can be cloned
+again, but it can't be re-targeted to a framework with different ABI flags.
 
 You can then use the `my-testbed` folder to run the Python test suite,
 passing in any command line arguments you may require. For example, if you're

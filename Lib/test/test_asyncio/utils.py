@@ -360,7 +360,6 @@ class TestLoop(base_events.BaseEventLoop):
         self._gen = gen()
         next(self._gen)
         self._time = 0
-        self._clock_resolution = 1e-9
         self._timers = []
         self._selector = TestSelector()
 
@@ -601,9 +600,3 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
-
-
-if sys.platform == 'win32':
-    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
-else:
-    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy

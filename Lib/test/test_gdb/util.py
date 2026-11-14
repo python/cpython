@@ -11,9 +11,16 @@ from test import support
 
 GDB_PROGRAM = shutil.which('gdb') or 'gdb'
 
+# First, try to use the build directory to support out-of-tree build
+for key in ('abs_builddir', 'abs_srcdir', 'srcdir'):
+    SRC_DIR = sysconfig.get_config_var(key)
+    if SRC_DIR:
+        break
+else:
+    raise Exception("unable to get the Python source directory")
+
 # Location of custom hooks file in a repository checkout.
-CHECKOUT_HOOK_PATH = os.path.join(os.path.dirname(sys.executable),
-                                  'python-gdb.py')
+CHECKOUT_HOOK_PATH = os.path.join(SRC_DIR, 'python-gdb.py')
 
 SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), 'gdb_sample.py')
 BREAKPOINT_FN = 'builtin_id'
@@ -78,7 +85,7 @@ def run_gdb(*args, exitcode=0, check=True, **env_vars):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding="utf8", errors="backslashreplace",
+        encoding="ascii", errors="surrogateescape",
         env=env)
 
     stdout = proc.stdout

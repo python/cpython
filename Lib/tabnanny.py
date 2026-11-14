@@ -47,7 +47,7 @@ def main():
         if o == '-v':
             verbose = verbose + 1
     if not args:
-        errprint("Usage:", sys.argv[0], "[-v] file_or_directory ...")
+        errprint(f"Usage: {sys.executable} -m tabnanny [-v] file_or_directory ...")
     for arg in args:
         check(arg)
 

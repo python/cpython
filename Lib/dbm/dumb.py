@@ -311,6 +311,7 @@ class _Database(collections.abc.MutableMapping):
                 reorganize_pos += blocks_occupied * _BLOCKSIZE
 
             f.truncate(reorganize_pos)
+        self._modified = True
         # Commit changes to index, which were not in-place.
         self._commit()
 

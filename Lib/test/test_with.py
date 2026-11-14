@@ -10,6 +10,7 @@ import traceback
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager, nullcontext
+from _testinternalcapi import SelfInterruptingContextManager
 
 
 def do_with(obj):
@@ -848,6 +849,22 @@ class NestedWith(unittest.TestCase):
                 self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
+
+
+class InterruptDuringEnter(unittest.TestCase):
+
+    def test_exit_called_after_interrupt(self):
+        cm = SelfInterruptingContextManager()
+        self.assertFalse(cm.within())
+        try:
+            with cm:
+                self.assertTrue(cm.within())
+        except KeyboardInterrupt:
+            self.assertFalse(cm.within())
+            return
+        except:
+            self.fail("Wrong exception raised")
+        self.fail("No exception raised")
 
 
 if __name__ == '__main__':

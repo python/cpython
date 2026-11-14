@@ -105,6 +105,8 @@ Please refer to :mod:`site`'s
    mechanism, such as :mod:`venv`, that many virtual environment implementations
    follow.
 
+.. _sys-path-init-_pth-files:
+
 _pth files
 ----------
 

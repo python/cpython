@@ -1,0 +1,15 @@
+version: ["3.16"]
+variant: ["default", "asan", "freethreading", "tsan_freethreading"]
+
+openssl:
+  - '3.5'
+
+# match `.github/workflows/reusable-san.yml`
+c_compiler:
+  - clang
+c_compiler_version:
+  - 21
+cxx_compiler:
+  - clangxx
+cxx_compiler_version:
+  - 21

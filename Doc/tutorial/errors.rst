@@ -608,7 +608,7 @@ be ones that have already been raised and caught by the program, along
 the following pattern::
 
    >>> excs = []
-   ... for test in tests:
+   >>> for test in tests:
    ...     try:
    ...         test.run()
    ...     except Exception as e:

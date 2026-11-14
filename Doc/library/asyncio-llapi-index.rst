@@ -19,10 +19,10 @@ Obtaining the Event Loop
       - The **preferred** function to get the running event loop.
 
     * - :func:`asyncio.get_event_loop`
-      - Get an event loop instance (running or current via the current policy).
+      - Get the running event loop or the event loop set for the current thread.
 
     * - :func:`asyncio.set_event_loop`
-      - Set the event loop as current via the current policy.
+      - Set the event loop for the current thread.
 
     * - :func:`asyncio.new_event_loop`
       - Create a new event loop.
@@ -497,27 +497,3 @@ Protocol classes can implement the following **callback methods**:
       - Called when the child process has exited. It can be called before
         :meth:`~SubprocessProtocol.pipe_data_received` and
         :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
-
-
-Event Loop Policies
-===================
-
-Policies is a low-level mechanism to alter the behavior of
-functions like :func:`asyncio.get_event_loop`.  See also
-the main :ref:`policies section <asyncio-policies>` for more
-details.
-
-
-.. rubric:: Accessing Policies
-.. list-table::
-    :widths: 50 50
-    :class: full-width-table
-
-    * - :meth:`asyncio.get_event_loop_policy`
-      - Return the current process-wide policy.
-
-    * - :meth:`asyncio.set_event_loop_policy`
-      - Set a new process-wide policy.
-
-    * - :class:`AbstractEventLoopPolicy`
-      - Base class for policy objects.

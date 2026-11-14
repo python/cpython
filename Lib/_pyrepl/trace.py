@@ -1,11 +1,7 @@
-from __future__ import annotations
-
 import os
 import sys
 
-# types
-if False:
-    from typing import IO
+lazy from typing import IO
 
 
 trace_file: IO[str] | None = None

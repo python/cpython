@@ -4,6 +4,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{cc45963d-bd25-4eb8-bdba-a5507090bca4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5abcdd3e-a8bc-4833-949c-9477609092b9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67630fa4-76e4-4035-bced-043a6df1e2e0}</UniqueIdentifier>
     </Filter>
@@ -12,6 +15,11 @@
     <ClCompile Include="..\Modules\_hashopenssl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Modules\_openssl_mem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc">

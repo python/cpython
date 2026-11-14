@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -107,6 +107,14 @@
   /* Heatmap span highlighting colors */
   --span-hot-base: 255, 100, 50;
   --span-cold-base: 150, 150, 150;
+
+  /* Summary card colors - optimized for 4.5:1 contrast on light bg */
+  --card-blue: 44, 102, 149;
+  --card-green: 26, 116, 49;
+  --card-yellow: 134, 100, 4;
+  --card-purple: 102, 57, 166;
+  --card-red: 180, 40, 50;
+  --card-orange: 166, 90, 0;
 }
 
 /* Dark theme */
@@ -131,15 +139,15 @@
 
   --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
 
-  /* Dark mode heat palette - muted colors that provide sufficient contrast with light text */
-  --heat-1: rgba(74, 123, 167, 0.35);
-  --heat-2: rgba(90, 159, 168, 0.38);
-  --heat-3: rgba(106, 181, 181, 0.40);
-  --heat-4: rgba(126, 196, 136, 0.42);
-  --heat-5: rgba(160, 216, 120, 0.45);
-  --heat-6: rgba(196, 222, 106, 0.48);
-  --heat-7: rgba(244, 212, 77, 0.50);
-  --heat-8: rgba(255, 107, 53, 0.55);
+  /* Dark mode heat palette - cool to warm gradient for visualization */
+  --heat-1: rgba(90, 123, 167, 1);
+  --heat-2: rgba(106, 148, 168, 1);
+  --heat-3: rgba(122, 172, 172, 1);
+  --heat-4: rgba(142, 196, 152, 1);
+  --heat-5: rgba(168, 216, 136, 1);
+  --heat-6: rgba(200, 222, 122, 1);
+  --heat-7: rgba(244, 212, 93, 1);
+  --heat-8: rgba(255, 122, 69, 1);
 
   /* Code view specific - dark mode */
   --code-bg: #0d1117;
@@ -169,6 +177,14 @@
   /* Heatmap span highlighting colors - dark theme */
   --span-hot-base: 255, 107, 53;
   --span-cold-base: 189, 189, 189;
+
+  /* Summary card colors - optimized for 4.5:1 contrast on dark bg */
+  --card-blue: 88, 166, 255;
+  --card-green: 63, 185, 80;
+  --card-yellow: 210, 153, 34;
+  --card-purple: 163, 113, 247;
+  --card-red: 248, 113, 113;
+  --card-orange: 251, 146, 60;
 }
 
 /* --------------------------------------------------------------------------
@@ -512,6 +528,18 @@ a.toolbar-btn:focus-visible {
    This file extends the shared foundation with heatmap-specific styles.
    ========================================================================== */
 
+/* Heatmap heat colors - using base.css colors with 60% opacity */
+[data-theme="dark"] {
+  --heat-1: rgba(90, 123, 167, 0.60);
+  --heat-2: rgba(106, 148, 168, 0.60);
+  --heat-3: rgba(122, 172, 172, 0.60);
+  --heat-4: rgba(142, 196, 152, 0.60);
+  --heat-5: rgba(168, 216, 136, 0.60);
+  --heat-6: rgba(200, 222, 122, 0.60);
+  --heat-7: rgba(244, 212, 93, 0.60);
+  --heat-8: rgba(255, 122, 69, 0.60);
+}
+
 /* --------------------------------------------------------------------------
    Layout Overrides (Heatmap-specific)
    -------------------------------------------------------------------------- */
@@ -564,12 +592,10 @@ a.toolbar-btn:focus-visible {
   overflow: hidden;
 }
 
-.stat-card:nth-child(1) { --i: 0; --card-color: 55, 118, 171; }
-.stat-card:nth-child(2) { --i: 1; --card-color: 40, 167, 69; }
-.stat-card:nth-child(3) { --i: 2; --card-color: 255, 193, 7; }
-.stat-card:nth-child(4) { --i: 3; --card-color: 111, 66, 193; }
-.stat-card:nth-child(5) { --i: 4; --card-color: 220, 53, 69; }
-.stat-card:nth-child(6) { --i: 5; --card-color: 23, 162, 184; }
+.stat-card:nth-child(1) { --i: 0; --card-color: var(--card-blue); }
+.stat-card:nth-child(2) { --i: 1; --card-color: var(--card-green); }
+.stat-card:nth-child(3) { --i: 2; --card-color: var(--card-yellow); }
+.stat-card:nth-child(4) { --i: 3; --card-color: var(--card-purple); }
 
 .stat-card:hover {
   border-color: rgba(var(--card-color), 0.6);
@@ -654,8 +680,8 @@ a.toolbar-btn:focus-visible {
   overflow: hidden;
 }
 
-.rate-card:nth-child(5) { animation-delay: 0.32s; --rate-color: 220, 53, 69; }
-.rate-card:nth-child(6) { animation-delay: 0.40s; --rate-color: 255, 152, 0; }
+.rate-card:nth-child(5) { animation-delay: 0.32s; --rate-color: var(--card-red); }
+.rate-card:nth-child(6) { animation-delay: 0.40s; --rate-color: var(--card-orange); }
 
 .rate-card:hover {
   border-color: rgba(var(--rate-color), 0.5);
@@ -1636,6 +1662,10 @@ a.toolbar-btn:focus-visible {
   .line-samples-cumulative {
     padding: 0 4px;
   }
+
+  .bytecode-panel {
+    margin: 8px 10px 8px 160px;
+  }
 }
 
 .bytecode-toggle {
@@ -1667,13 +1697,77 @@ a.toolbar-btn:focus-visible {
 }
 
 .bytecode-panel {
-  margin-left: 90px;
-  padding: 8px 15px;
-  background: var(--bg-secondary);
-  border-left: 3px solid var(--accent);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
   font-family: var(--font-mono);
   font-size: 12px;
-  margin-bottom: 4px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 0;
+  margin: 8px 10px 8px 250px;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  max-height: 500px;
+  flex: 1;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bytecode-panel.expanded {
+  padding: 14px;
+}
+
+.bytecode-wrapper {
+  position: relative;
+  display: flex;
+  overflow: visible;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out;
+}
+
+.bytecode-wrapper.expanded {
+  max-height: 600px;
+  opacity: 1;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+}
+
+/* Column backdrop matching table header columns (line/self/total) */
+.bytecode-columns {
+  display: none;
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bytecode-wrapper.expanded .bytecode-columns {
+  display: flex;
+  top: 0;
+  bottom: 0;
+}
+
+.bytecode-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bytecode-panel::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* Specialization summary bar */
@@ -2052,7 +2146,7 @@ a.toolbar-btn:focus-visible {
                     <div class="stat-label">Max Self</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">1054</div>
+                    <div class="stat-value">1,054</div>
                     <div class="stat-label">Max Total</div>
                 </div>
             </div>
@@ -2157,7 +2251,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">def fibonacci(n):</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-7" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-7">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-7"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-8">
             <div class="line-number">8</div>
             <div class="line-samples-self"></div>
@@ -2174,7 +2271,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    if <span class="instr-span" data-col-start="7" data-col-end="8" data-samples="1" data-max-samples="2" data-pct="33" data-opcodes="LOAD_FAST_BORROW">n</span><span class="instr-span" data-col-start="7" data-col-end="13" data-samples="2" data-max-samples="2" data-pct="66" data-opcodes="POP_JUMP_IF_FALSE, COMPARE_OP_INT (COMPARE_OP)"> &lt;= 1</span>:</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-9" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-9">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-9"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.542" data-cumulative-intensity="0.415" data-spec-color="rgba(158, 158, 158, 0.15)" id="line-10" title="Self: 17, Total: 17">
             <div class="line-number">10</div>
             <div class="line-samples-self">17</div>
@@ -2183,7 +2283,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="16" data-samples="17" data-max-samples="17" data-pct="94" data-opcodes="RETURN_VALUE">return </span><span class="instr-span" data-col-start="15" data-col-end="16" data-samples="1" data-max-samples="17" data-pct="5" data-opcodes="LOAD_FAST_BORROW">n</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav-multi='[{&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;fibonacci&quot;, &quot;count&quot;: 4170, &quot;link&quot;: &quot;#line-11&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;compute_heavy&quot;, &quot;count&quot;: 227, &quot;link&quot;: &quot;#line-78&quot;}]' title="2 callers (4,397 samples)">▲</button><button class="nav-btn callee" data-nav='{&quot;link&quot;: &quot;#line-10&quot;, &quot;func&quot;: &quot;fibonacci&quot;}' title="Go to callee: fibonacci (1 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-10" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-10">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-10"></div>
+        </div>
         <div class="code-line" data-self-intensity="1.000" data-cumulative-intensity="0.780" data-spec-color="rgba(5, 253, 1, 0.39749999999999996)" id="line-11" title="Self: 206, Total: 227">
             <div class="line-number">11</div>
             <div class="line-samples-self">206</div>
@@ -2192,7 +2295,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    <span class="instr-span" data-col-start="4" data-col-end="46" data-samples="32" data-max-samples="4315" data-pct="0" data-opcodes="RETURN_VALUE">return </span><span class="instr-span" data-col-start="11" data-col-end="20" data-samples="14" data-max-samples="4315" data-pct="0" data-opcodes="LOAD_GLOBAL_MODULE (LOAD_GLOBAL)">fibonacci</span><span class="instr-span" data-col-start="11" data-col-end="27" data-samples="4315" data-max-samples="4315" data-pct="49" data-opcodes="CALL_PY_EXACT_ARGS (CALL)">(</span><span class="instr-span" data-col-start="21" data-col-end="22" data-samples="8" data-max-samples="4315" data-pct="0" data-opcodes="LOAD_FAST_BORROW">n</span><span class="instr-span" data-col-start="21" data-col-end="26" data-samples="4" data-max-samples="4315" data-pct="0" data-opcodes="BINARY_OP_SUBTRACT_INT (BINARY_OP)"> - </span><span class="instr-span" data-col-start="25" data-col-end="26" data-samples="1" data-max-samples="4315" data-pct="0" data-opcodes="LOAD_SMALL_INT">1</span><span class="instr-span" data-col-start="11" data-col-end="27" data-samples="4315" data-max-samples="4315" data-pct="49" data-opcodes="CALL_PY_EXACT_ARGS (CALL)">)</span><span class="instr-span" data-col-start="11" data-col-end="46" data-samples="2" data-max-samples="4315" data-pct="0" data-opcodes="BINARY_OP_ADD_INT (BINARY_OP)"> + </span><span class="instr-span" data-col-start="30" data-col-end="39" data-samples="14" data-max-samples="4315" data-pct="0" data-opcodes="LOAD_GLOBAL_MODULE (LOAD_GLOBAL)">fibonacci</span><span class="instr-span" data-col-start="30" data-col-end="46" data-samples="4315" data-max-samples="4315" data-pct="49" data-opcodes="CALL_PY_EXACT_ARGS (CALL)">(</span><span class="instr-span" data-col-start="40" data-col-end="45" data-samples="4" data-max-samples="4315" data-pct="0" data-opcodes="BINARY_OP_SUBTRACT_INT (BINARY_OP)">n - 2</span><span class="instr-span" data-col-start="30" data-col-end="46" data-samples="4315" data-max-samples="4315" data-pct="49" data-opcodes="CALL_PY_EXACT_ARGS (CALL)">)</span></div>
             <div class="line-nav-buttons"><button class="nav-btn callee" data-nav='{&quot;link&quot;: &quot;#line-10&quot;, &quot;func&quot;: &quot;fibonacci&quot;}' title="Go to callee: fibonacci (4,170 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-11" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-11">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-11"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-12">
             <div class="line-number">12</div>
             <div class="line-samples-self"></div>
@@ -2249,7 +2355,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        for <span class="instr-span" data-col-start="12" data-col-end="13" data-samples="1" data-max-samples="1" data-pct="50" data-opcodes="STORE_FAST">j</span> in <span class="instr-span" data-col-start="17" data-col-end="36" data-samples="1" data-max-samples="1" data-pct="50" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(0, n - i - 1)</span>:</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-18" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-18">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-18"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.412" data-cumulative-intensity="0.316" data-spec-color="rgba(255, 180, 50, 0.275)" id="line-19" title="Self: 8, Total: 8">
             <div class="line-number">19</div>
             <div class="line-samples-self">8</div>
@@ -2258,7 +2367,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">            if <span class="instr-span" data-col-start="15" data-col-end="18" data-samples="2" data-max-samples="3" data-pct="20" data-opcodes="LOAD_FAST_BORROW_LOAD_FAST_BORROW">arr</span><span class="instr-span" data-col-start="15" data-col-end="21" data-samples="1" data-max-samples="3" data-pct="10" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">[j]</span><span class="instr-span" data-col-start="15" data-col-end="34" data-samples="3" data-max-samples="3" data-pct="30" data-opcodes="COMPARE_OP_INT (COMPARE_OP)"> &gt; </span><span class="instr-span" data-col-start="24" data-col-end="27" data-samples="2" data-max-samples="3" data-pct="20" data-opcodes="LOAD_FAST_BORROW_LOAD_FAST_BORROW">arr</span><span class="instr-span" data-col-start="15" data-col-end="34" data-samples="3" data-max-samples="3" data-pct="30" data-opcodes="COMPARE_OP_INT (COMPARE_OP)">[j + </span><span class="instr-span" data-col-start="32" data-col-end="33" data-samples="2" data-max-samples="3" data-pct="20" data-opcodes="LOAD_SMALL_INT">1</span><span class="instr-span" data-col-start="15" data-col-end="34" data-samples="3" data-max-samples="3" data-pct="30" data-opcodes="COMPARE_OP_INT (COMPARE_OP)">]</span>:</div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-90&quot;, &quot;func&quot;: &quot;data_processing&quot;}' title="Go to caller: data_processing (12 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-19" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-19">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-19"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.206" data-cumulative-intensity="0.158" data-spec-color="rgba(0, 255, 0, 0.4)" id="line-20" title="Self: 2, Total: 2">
             <div class="line-number">20</div>
             <div class="line-samples-self">2</div>
@@ -2267,7 +2379,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">                arr[j], arr[j + 1] = <span class="instr-span" data-col-start="37" data-col-end="47" data-samples="2" data-max-samples="2" data-pct="100" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">arr[j + 1]</span>, arr[j]</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-20" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-20">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-20"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-21">
             <div class="line-number">21</div>
             <div class="line-samples-self"></div>
@@ -2364,7 +2479,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">            for <span class="instr-span" data-col-start="16" data-col-end="17" data-samples="5" data-max-samples="5" data-pct="62" data-opcodes="STORE_FAST">k</span> in <span class="instr-span" data-col-start="21" data-col-end="34" data-samples="3" data-max-samples="5" data-pct="37" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(cols_a)</span>:</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-32" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-32">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-32"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.777" data-cumulative-intensity="0.595" data-spec-color="rgba(117, 220, 23, 0.3425)" id="line-33" title="Self: 62, Total: 62">
             <div class="line-number">33</div>
             <div class="line-samples-self">62</div>
@@ -2373,7 +2491,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">                <span class="instr-span" data-col-start="16" data-col-end="28" data-samples="38" data-max-samples="38" data-pct="22" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP), SWAP, COPY +2 more">result[i][j]</span><span class="instr-span" data-col-start="16" data-col-end="49" data-samples="11" data-max-samples="38" data-pct="6" data-opcodes="BINARY_OP_ADD_INT (BINARY_OP)"> += </span><span class="instr-span" data-col-start="32" data-col-end="33" data-samples="2" data-max-samples="38" data-pct="1" data-opcodes="LOAD_FAST_BORROW_LOAD_FAST_BORROW">a</span><span class="instr-span" data-col-start="32" data-col-end="36" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">[i]</span><span class="instr-span" data-col-start="32" data-col-end="39" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">[</span><span class="instr-span" data-col-start="37" data-col-end="38" data-samples="3" data-max-samples="38" data-pct="1" data-opcodes="LOAD_FAST_BORROW">k</span><span class="instr-span" data-col-start="32" data-col-end="39" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">]</span><span class="instr-span" data-col-start="32" data-col-end="49" data-samples="8" data-max-samples="38" data-pct="4" data-opcodes="BINARY_OP_MULTIPLY_INT (BINARY_OP)"> * </span><span class="instr-span" data-col-start="42" data-col-end="43" data-samples="2" data-max-samples="38" data-pct="1" data-opcodes="LOAD_FAST_BORROW_LOAD_FAST_BORROW">b</span><span class="instr-span" data-col-start="42" data-col-end="46" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">[k]</span><span class="instr-span" data-col-start="42" data-col-end="49" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">[</span><span class="instr-span" data-col-start="47" data-col-end="48" data-samples="3" data-max-samples="38" data-pct="1" data-opcodes="LOAD_FAST_BORROW">j</span><span class="instr-span" data-col-start="42" data-col-end="49" data-samples="26" data-max-samples="38" data-pct="15" data-opcodes="BINARY_OP_SUBSCR_LIST_INT (BINARY_OP)">]</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-78&quot;, &quot;func&quot;: &quot;compute_heavy&quot;}' title="Go to caller: compute_heavy (70 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-33" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-33">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-33"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-34">
             <div class="line-number">34</div>
             <div class="line-samples-self"></div>
@@ -2462,7 +2583,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">            for multiple in <span class="instr-span" data-col-start="28" data-col-end="60" data-samples="1" data-max-samples="1" data-pct="100" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(num * num, limit + 1, num)</span>:</div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-78&quot;, &quot;func&quot;: &quot;compute_heavy&quot;}' title="Go to caller: compute_heavy (3 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-44" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-44">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-44"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-45">
             <div class="line-number">45</div>
             <div class="line-samples-self"></div>
@@ -2487,7 +2611,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    return [num for num, prime in <span class="instr-span" data-col-start="34" data-col-end="53" data-samples="2" data-max-samples="2" data-pct="100" data-opcodes="FOR_ITER">enumerate(is_prime)</span> if prime]</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-47" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-47">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-47"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-48">
             <div class="line-number">48</div>
             <div class="line-samples-self"></div>
@@ -2552,7 +2679,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">            <span class="instr-span" data-col-start="12" data-col-end="18" data-samples="1" data-max-samples="39" data-pct="1" data-opcodes="LOAD_FAST_BORROW">result</span><span class="instr-span" data-col-start="12" data-col-end="34" data-samples="39" data-max-samples="39" data-pct="41" data-opcodes="BINARY_OP_INPLACE_ADD_UNICODE (BINARY_OP)"> += </span><span class="instr-span" data-col-start="22" data-col-end="34" data-samples="15" data-max-samples="39" data-pct="15" data-opcodes="BUILD_STRING">f&quot;</span><span class="instr-span" data-col-start="24" data-col-end="29" data-samples="4" data-max-samples="39" data-pct="4" data-opcodes="LOAD_CONST">item_</span><span class="instr-span" data-col-start="29" data-col-end="32" data-samples="32" data-max-samples="39" data-pct="33" data-opcodes="FORMAT_SIMPLE">{i}</span><span class="instr-span" data-col-start="32" data-col-end="33" data-samples="4" data-max-samples="39" data-pct="4" data-opcodes="LOAD_CONST">_</span><span class="instr-span" data-col-start="22" data-col-end="34" data-samples="15" data-max-samples="39" data-pct="15" data-opcodes="BUILD_STRING">&quot;</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-90&quot;, &quot;func&quot;: &quot;data_processing&quot;}' title="Go to caller: data_processing (123 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-55" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-55">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-55"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.588" data-cumulative-intensity="0.450" data-spec-color="rgba(163, 207, 31, 0.32)" id="line-56" title="Self: 22, Total: 22">
             <div class="line-number">56</div>
             <div class="line-samples-self">22</div>
@@ -2561,7 +2691,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="13" data-samples="7" data-max-samples="15" data-pct="31" data-opcodes="STORE_FAST">parts</span> = <span class="instr-span" data-col-start="16" data-col-end="33" data-samples="15" data-max-samples="15" data-pct="68" data-opcodes="CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS (CALL)">result.split(&quot;_&quot;)</span></div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-56" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-56">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-56"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.450" data-cumulative-intensity="0.344" data-spec-color="rgba(0, 255, 0, 0.4)" id="line-57" title="Self: 10, Total: 10">
             <div class="line-number">57</div>
             <div class="line-samples-self">10</div>
@@ -2570,7 +2703,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        joined = <span class="instr-span" data-col-start="17" data-col-end="32" data-samples="10" data-max-samples="10" data-pct="100" data-opcodes="CALL_METHOD_DESCRIPTOR_O (CALL)">&quot;-&quot;.join(parts)</span></div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-57" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-57">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-57"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-58">
             <div class="line-number">58</div>
             <div class="line-samples-self"></div>
@@ -2619,7 +2755,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="15" data-samples="10" data-max-samples="71" data-pct="8" data-opcodes="STORE_FAST">squares</span> = [<span class="instr-span" data-col-start="19" data-col-end="25" data-samples="71" data-max-samples="71" data-pct="60" data-opcodes="BINARY_OP, LIST_APPEND, JUMP_BACKWARD_NO_JIT (JUMP_BACKWARD)">x ** </span><span class="instr-span" data-col-start="24" data-col-end="25" data-samples="2" data-max-samples="71" data-pct="1" data-opcodes="LOAD_SMALL_INT">2</span> for <span class="instr-span" data-col-start="30" data-col-end="31" data-samples="9" data-max-samples="71" data-pct="7" data-opcodes="STORE_FAST_LOAD_FAST">x</span> in <span class="instr-span" data-col-start="35" data-col-end="45" data-samples="26" data-max-samples="71" data-pct="22" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(500)</span>]</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-63" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-63">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-63"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.898" data-cumulative-intensity="0.688" data-spec-color="rgba(206, 169, 104, 0.2125)" id="line-64" title="Self: 119, Total: 119">
             <div class="line-number">64</div>
             <div class="line-samples-self">119</div>
@@ -2628,7 +2767,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="13" data-samples="12" data-max-samples="48" data-pct="9" data-opcodes="STORE_FAST">evens</span> = [<span class="instr-span" data-col-start="17" data-col-end="18" data-samples="10" data-max-samples="48" data-pct="7" data-opcodes="LOAD_FAST_BORROW, LIST_APPEND, POP_JUMP_IF_TRUE +1 more">x</span> for <span class="instr-span" data-col-start="23" data-col-end="24" data-samples="6" data-max-samples="48" data-pct="4" data-opcodes="STORE_FAST_LOAD_FAST">x</span> in <span class="instr-span" data-col-start="28" data-col-end="35" data-samples="14" data-max-samples="48" data-pct="10" data-opcodes="FOR_ITER_LIST (FOR_ITER), GET_ITER">squares</span> if <span class="instr-span" data-col-start="39" data-col-end="44" data-samples="48" data-max-samples="48" data-pct="36" data-opcodes="BINARY_OP">x % </span><span class="instr-span" data-col-start="43" data-col-end="44" data-samples="13" data-max-samples="48" data-pct="9" data-opcodes="LOAD_SMALL_INT">2</span><span class="instr-span" data-col-start="39" data-col-end="49" data-samples="16" data-max-samples="48" data-pct="12" data-opcodes="COMPARE_OP_INT (COMPARE_OP)"> == </span><span class="instr-span" data-col-start="48" data-col-end="49" data-samples="13" data-max-samples="48" data-pct="9" data-opcodes="LOAD_SMALL_INT">0</span>]</div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-90&quot;, &quot;func&quot;: &quot;data_processing&quot;}' title="Go to caller: data_processing (249 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-64" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-64">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-64"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.481" data-cumulative-intensity="0.368" data-spec-color="rgba(0, 255, 0, 0.4)" id="line-65" title="Self: 12, Total: 12">
             <div class="line-number">65</div>
             <div class="line-samples-self">12</div>
@@ -2637,7 +2779,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="13" data-samples="1" data-max-samples="11" data-pct="8" data-opcodes="JUMP_BACKWARD_NO_JIT (JUMP_BACKWARD)">total</span> = <span class="instr-span" data-col-start="16" data-col-end="26" data-samples="11" data-max-samples="11" data-pct="91" data-opcodes="CALL_BUILTIN_FAST_WITH_KEYWORDS (CALL)">sum(evens)</span></div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-65" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-65">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-65"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-66">
             <div class="line-number">66</div>
             <div class="line-samples-self"></div>
@@ -2686,7 +2831,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="12" data-samples="12" data-max-samples="62" data-pct="5" data-opcodes="STORE_FAST">data</span> = {<span class="instr-span" data-col-start="16" data-col-end="26" data-samples="37" data-max-samples="62" data-pct="17" data-opcodes="BUILD_STRING">f&quot;</span><span class="instr-span" data-col-start="18" data-col-end="22" data-samples="1" data-max-samples="62" data-pct="0" data-opcodes="LOAD_CONST">key_</span><span class="instr-span" data-col-start="22" data-col-end="25" data-samples="56" data-max-samples="62" data-pct="27" data-opcodes="FORMAT_SIMPLE">{i}</span><span class="instr-span" data-col-start="16" data-col-end="26" data-samples="37" data-max-samples="62" data-pct="17" data-opcodes="BUILD_STRING">&quot;</span><span class="instr-span" data-col-start="16" data-col-end="34" data-samples="62" data-max-samples="62" data-pct="30" data-opcodes="MAP_ADD, JUMP_BACKWARD_NO_JIT (JUMP_BACKWARD)">: </span><span class="instr-span" data-col-start="28" data-col-end="29" data-samples="3" data-max-samples="62" data-pct="1" data-opcodes="LOAD_FAST_BORROW">i</span><span class="instr-span" data-col-start="28" data-col-end="34" data-samples="21" data-max-samples="62" data-pct="10" data-opcodes="BINARY_OP"> ** 2</span> for i in <span class="instr-span" data-col-start="44" data-col-end="54" data-samples="14" data-max-samples="62" data-pct="6" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(200)</span>}</div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-90&quot;, &quot;func&quot;: &quot;data_processing&quot;}' title="Go to caller: data_processing (369 samples)">▲</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-71" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-71">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-71"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.951" data-cumulative-intensity="0.728" data-spec-color="rgba(223, 172, 84, 0.235)" id="line-72" title="Self: 158, Total: 158">
             <div class="line-number">72</div>
             <div class="line-samples-self">158</div>
@@ -2695,7 +2843,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        <span class="instr-span" data-col-start="8" data-col-end="14" data-samples="4" data-max-samples="52" data-pct="2" data-opcodes="STORE_FAST">values</span> = [<span class="instr-span" data-col-start="18" data-col-end="34" data-samples="52" data-max-samples="52" data-pct="32" data-opcodes="BINARY_OP_SUBSCR_DICT (BINARY_OP), LIST_APPEND">data[</span><span class="instr-span" data-col-start="23" data-col-end="33" data-samples="43" data-max-samples="52" data-pct="27" data-opcodes="BUILD_STRING">f&quot;key_</span><span class="instr-span" data-col-start="29" data-col-end="32" data-samples="50" data-max-samples="52" data-pct="31" data-opcodes="FORMAT_SIMPLE">{</span><span class="instr-span" data-col-start="30" data-col-end="31" data-samples="1" data-max-samples="52" data-pct="0" data-opcodes="LOAD_FAST_BORROW">i</span><span class="instr-span" data-col-start="29" data-col-end="32" data-samples="50" data-max-samples="52" data-pct="31" data-opcodes="FORMAT_SIMPLE">}</span><span class="instr-span" data-col-start="23" data-col-end="33" data-samples="43" data-max-samples="52" data-pct="27" data-opcodes="BUILD_STRING">&quot;</span><span class="instr-span" data-col-start="18" data-col-end="34" data-samples="52" data-max-samples="52" data-pct="32" data-opcodes="BINARY_OP_SUBSCR_DICT (BINARY_OP), LIST_APPEND">]</span> for <span class="instr-span" data-col-start="39" data-col-end="40" data-samples="4" data-max-samples="52" data-pct="2" data-opcodes="STORE_FAST_LOAD_FAST">i</span> in <span class="instr-span" data-col-start="44" data-col-end="54" data-samples="4" data-max-samples="52" data-pct="2" data-opcodes="FOR_ITER_RANGE (FOR_ITER)">range(200)</span>]</div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-72" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-72">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-72"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.336" data-cumulative-intensity="0.257" data-spec-color="rgba(0, 255, 0, 0.4)" id="line-73" title="Self: 5, Total: 5">
             <div class="line-number">73</div>
             <div class="line-samples-self">5</div>
@@ -2704,7 +2855,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">        total = <span class="instr-span" data-col-start="16" data-col-end="27" data-samples="5" data-max-samples="5" data-pct="100" data-opcodes="CALL_BUILTIN_FAST_WITH_KEYWORDS (CALL)">sum(values)</span></div>
             
         </div>
-        <div class="bytecode-panel" id="bytecode-73" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-73">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-73"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-74">
             <div class="line-number">74</div>
             <div class="line-samples-self"></div>
@@ -2745,7 +2899,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    <span class="instr-span" data-col-start="4" data-col-end="17" data-samples="301" data-max-samples="301" data-pct="100" data-opcodes="CALL">fibonacci(30)</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-102&quot;, &quot;func&quot;: &quot;main&quot;}' title="Go to caller: main (301 samples)">▲</button><button class="nav-btn callee" data-nav-multi='[{&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;fibonacci&quot;, &quot;count&quot;: 227, &quot;link&quot;: &quot;#line-10&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;matrix_multiply&quot;, &quot;count&quot;: 70, &quot;link&quot;: &quot;#line-33&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;prime_sieve&quot;, &quot;count&quot;: 3, &quot;link&quot;: &quot;#line-44&quot;}]' title="3 callees (300 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-78" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-78">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-78"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-79">
             <div class="line-number">79</div>
             <div class="line-samples-self"></div>
@@ -2842,7 +2999,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    <span class="instr-span" data-col-start="4" data-col-end="27" data-samples="753" data-max-samples="753" data-pct="100" data-opcodes="CALL">string_processing(2000)</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-102&quot;, &quot;func&quot;: &quot;main&quot;}' title="Go to caller: main (753 samples)">▲</button><button class="nav-btn callee" data-nav-multi='[{&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;dict_operations&quot;, &quot;count&quot;: 369, &quot;link&quot;: &quot;#line-71&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;list_operations&quot;, &quot;count&quot;: 249, &quot;link&quot;: &quot;#line-64&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;string_processing&quot;, &quot;count&quot;: 123, &quot;link&quot;: &quot;#line-55&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;bubble_sort&quot;, &quot;count&quot;: 12, &quot;link&quot;: &quot;#line-19&quot;}]' title="4 callees (753 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-90" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-90">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-90"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-91">
             <div class="line-number">91</div>
             <div class="line-samples-self"></div>
@@ -2939,7 +3099,10 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    <span class="instr-span" data-col-start="4" data-col-end="19" data-samples="1054" data-max-samples="1054" data-pct="100" data-opcodes="CALL">compute_heavy()</span></div>
             <div class="line-nav-buttons"><button class="nav-btn caller" data-nav='{&quot;link&quot;: &quot;#line-107&quot;, &quot;func&quot;: &quot;&lt;module&gt;&quot;}' title="Go to caller: &lt;module&gt; (1,054 samples)">▲</button><button class="nav-btn callee" data-nav-multi='[{&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;data_processing&quot;, &quot;count&quot;: 753, &quot;link&quot;: &quot;#line-90&quot;}, {&quot;file&quot;: &quot;tachyon_selfcontained.py&quot;, &quot;func&quot;: &quot;compute_heavy&quot;, &quot;count&quot;: 301, &quot;link&quot;: &quot;#line-78&quot;}]' title="2 callees (1,054 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-102" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-102">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-102"></div>
+        </div>
         <div class="code-line" data-self-intensity="0.000" data-cumulative-intensity="0.000" id="line-103">
             <div class="line-number">103</div>
             <div class="line-samples-self"></div>
@@ -2980,12 +3143,74 @@ a.toolbar-btn:focus-visible {
             <div class="line-content">    <span class="instr-span" data-col-start="4" data-col-end="10" data-samples="1054" data-max-samples="1054" data-pct="100" data-opcodes="CALL">main()</span></div>
             <div class="line-nav-buttons"><button class="nav-btn callee" data-nav='{&quot;link&quot;: &quot;#line-102&quot;, &quot;func&quot;: &quot;main&quot;}' title="Go to callee: main (1,054 samples)">▼</button></div>
         </div>
-        <div class="bytecode-panel" id="bytecode-107" style="display:none;"></div>
+        <div class="bytecode-wrapper" id="bytecode-wrapper-107">
+            <div class="bytecode-columns"><div class="line-number"></div><div class="line-samples-self"></div><div class="line-samples-cumulative"></div></div>
+            <div class="bytecode-panel" id="bytecode-107"></div>
+        </div>
 
         </div>
     </div>
 
     <script>
+// Tachyon Profiler - Shared JavaScript
+// Common utilities shared between flamegraph and heatmap views
+
+// ============================================================================
+// Theme Support
+// ============================================================================
+
+// Storage key for theme preference
+const THEME_STORAGE_KEY = 'tachyon-theme';
+
+// Get the preferred theme from localStorage or system preference
+function getPreferredTheme() {
+  const saved = localStorage.getItem(THEME_STORAGE_KEY);
+  if (saved) return saved;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+// Apply theme and update UI
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    const moonIcon = btn.querySelector('.icon-moon');
+    const sunIcon = btn.querySelector('.icon-sun');
+    if (moonIcon) moonIcon.style.display = theme === 'dark' ? 'none' : '';
+    if (sunIcon) sunIcon.style.display = theme === 'dark' ? '' : 'none';
+  }
+}
+
+// Toggle theme and save preference. Returns the new theme.
+function toggleAndSaveTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem(THEME_STORAGE_KEY, next);
+  return next;
+}
+
+// ============================================================================
+// Toggle Switch UI
+// ============================================================================
+
+function updateToggleUI(toggleId, isOn) {
+  const toggle = document.getElementById(toggleId);
+  if (toggle) {
+    const track = toggle.querySelector('.toggle-track');
+    const labels = toggle.querySelectorAll('.toggle-label');
+    if (isOn) {
+      track.classList.add('on');
+      labels[0].classList.remove('active');
+      labels[1].classList.add('active');
+    } else {
+      track.classList.remove('on');
+      labels[0].classList.add('active');
+      labels[1].classList.remove('active');
+    }
+  }
+}
+
 // Tachyon Profiler - Shared Heatmap JavaScript
 // Common utilities shared between index and file views
 
@@ -3028,6 +3253,15 @@ function intensityToColor(intensity) {
 }
 
 // ============================================================================
+// Theme Support
+// ============================================================================
+
+// Restore theme from localStorage, or use browser preference
+function restoreUIState() {
+    applyTheme(getPreferredTheme());
+}
+
+// ============================================================================
 // Favicon (Reuse logo image as favicon)
 // ============================================================================
 
@@ -3059,35 +3293,11 @@ let coldCodeHidden = false;
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-        btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-    }
+    toggleAndSaveTheme();
     applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
-}
-
-function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-            btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-        }
-    }
 }
 
 // ============================================================================
@@ -3152,7 +3362,7 @@ function showNavigationMenu(button, items, title) {
 
         item.appendChild(funcDiv);
         item.appendChild(createElement('div', 'callee-menu-file', linkData.file));
-        item.addEventListener('click', () => window.location.href = linkData.link);
+        item.addEventListener('click', () => navigateToLine(linkData.link));
         menu.appendChild(item);
     });
 
@@ -3173,7 +3383,7 @@ function handleNavigationClick(button, e) {
 
     const navData = button.getAttribute('data-nav');
     if (navData) {
-        window.location.href = JSON.parse(navData).link;
+        navigateToLine(JSON.parse(navData).link);
         return;
     }
 
@@ -3185,11 +3395,29 @@ function handleNavigationClick(button, e) {
     }
 }
 
+function restartLineHighlight(target) {
+    target.style.animation = 'none';
+    // Force style recalculation so restoring the animation restarts it.
+    void target.offsetWidth;
+    target.style.animation = '';
+}
+
+function navigateToLine(link) {
+    const url = new URL(link, window.location.href);
+
+    if (url.href === window.location.href) {
+        scrollToTargetLine();
+    } else {
+        window.location.href = link;
+    }
+}
+
 function scrollToTargetLine() {
     if (!window.location.hash) return;
     const target = document.querySelector(window.location.hash);
     if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        restartLineHighlight(target);
     }
 }
 
@@ -3270,23 +3498,6 @@ function applyLineColors() {
 // ============================================================================
 // Toggle Controls
 // ============================================================================
-
-function updateToggleUI(toggleId, isOn) {
-    const toggle = document.getElementById(toggleId);
-    if (toggle) {
-        const track = toggle.querySelector('.toggle-track');
-        const labels = toggle.querySelectorAll('.toggle-label');
-        if (isOn) {
-            track.classList.add('on');
-            labels[0].classList.remove('active');
-            labels[1].classList.add('active');
-        } else {
-            track.classList.remove('on');
-            labels[0].classList.add('active');
-            labels[1].classList.remove('active');
-        }
-    }
-}
 
 function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;
@@ -3586,20 +3797,23 @@ function toggleBytecode(button) {
     const lineId = lineDiv.id;
     const lineNum = lineId.replace('line-', '');
     const panel = document.getElementById(`bytecode-${lineNum}`);
+    const wrapper = document.getElementById(`bytecode-wrapper-${lineNum}`);
 
-    if (!panel) return;
+    if (!panel || !wrapper) return;
 
-    const isExpanded = panel.style.display !== 'none';
+    const isExpanded = panel.classList.contains('expanded');
 
     if (isExpanded) {
-        panel.style.display = 'none';
+        panel.classList.remove('expanded');
+        wrapper.classList.remove('expanded');
         button.classList.remove('expanded');
         button.innerHTML = '&#9654;';  // Right arrow
     } else {
         if (!panel.dataset.populated) {
             populateBytecodePanel(panel, button);
         }
-        panel.style.display = 'block';
+        panel.classList.add('expanded');
+        wrapper.classList.add('expanded');
         button.classList.add('expanded');
         button.innerHTML = '&#9660;';  // Down arrow
     }
@@ -3642,10 +3856,12 @@ function populateBytecodePanel(panel, button) {
         else if (specPct >= 33) specClass = 'medium';
 
         // Build specialization summary
+        const instruction_word = instructions.length === 1 ? 'instruction' : 'instructions';
+        const sample_word = totalSamples === 1 ? 'sample' : 'samples';
         let html = `<div class="bytecode-spec-summary ${specClass}">
             <span class="spec-pct">${specPct}%</span>
             <span class="spec-label">specialized</span>
-            <span class="spec-detail">(${specializedCount}/${instructions.length} instructions, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} samples)</span>
+            <span class="spec-detail">(${specializedCount}/${instructions.length} ${instruction_word}, ${specializedSamples.toLocaleString()}/${totalSamples.toLocaleString()} ${sample_word})</span>
         </div>`;
 
         html += '<div class="bytecode-header">' +

@@ -18,6 +18,8 @@ import sysconfig
 import tempfile
 import threading
 import unittest
+from functools import partial
+from operator import attrgetter
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
@@ -52,18 +54,39 @@ if not get_fips_mode:
     def get_fips_mode():
         return 0
 
+
+try:
+    import _md5
+except ImportError:
+    _md5 = None
+requires_md5 = unittest.skipUnless(_md5, 'requires _md5')
+
+
 try:
     import _blake2
 except ImportError:
     _blake2 = None
-
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
+
+
+try:
+    import _sha1
+except ImportError:
+    _sha1 = None
+requires_sha1 = unittest.skipUnless(_sha1, 'requires _sha1')
+
+
+try:
+    import _sha2
+except ImportError:
+    _sha2 = None
+requires_sha2 = unittest.skipUnless(_sha2, 'requires _sha2')
+
 
 try:
     import _sha3
 except ImportError:
     _sha3 = None
-
 requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
@@ -691,12 +714,12 @@ class HashLibTestCase(unittest.TestCase):
         )
 
     @unittest.skipIf(sys.maxsize < _4G + 5, 'test cannot run on 32-bit systems')
-    @bigmemtest(size=_4G + 5, memuse=1, dry_run=False)
+    @bigmemtest(size=_4G + 5, memuse=2, dry_run=False)
     def test_case_md5_huge(self, size):
         self.check('md5', b'A'*size, 'c9af2dff37468ce5dfee8f2cfc0a9c6d')
 
     @unittest.skipIf(sys.maxsize < _4G - 1, 'test cannot run on 32-bit systems')
-    @bigmemtest(size=_4G - 1, memuse=1, dry_run=False)
+    @bigmemtest(size=_4G - 1, memuse=2, dry_run=False)
     def test_case_md5_uintmax(self, size):
         self.check('md5', b'A'*size, '28138d306ff1b8281f1a9067e1a1a2b3')
 
@@ -1213,6 +1236,11 @@ class KDFTests(unittest.TestCase):
         (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt',
          4096, -1),
         (b'pass\0word', b'sa\0lt', 4096, 16),
+        # more vectors that don't trip on self.fips_incompatible(...)
+        (b'password', b'salt'*4, 1024, None),
+        (b'password', b'salt'*4, 2048, None),
+        (b'password', b'salt'*4, 4096, None),
+        (b'pass\0word', b'sa\0lt'*4, 4096, 16),
     ]
 
     pbkdf2_results = {
@@ -1224,7 +1252,14 @@ class KDFTests(unittest.TestCase):
             #(bytes.fromhex('eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'), None),
             (bytes.fromhex('3d2eec4fe41c849b80c8d83662c0e44a8b291a964c'
                            'f2f07038'), 25),
-            (bytes.fromhex('56fa6aa75548099dcc37d7f03425e0c3'), None),],
+            (bytes.fromhex('56fa6aa75548099dcc37d7f03425e0c3'), None),
+            # more test vectors (not from RFC 6070)
+            (bytes.fromhex('1a39e29b04aa0488865b1e80fb125a8063e30b92'), None),
+            (bytes.fromhex('f19c46e6f912bc53a7b315ad4d3b717abe708c07'), None),
+            (bytes.fromhex('b7845a91aea7946bc875fcd9d19fd515381ddf94'), None),
+            (bytes.fromhex('bcc0d390b6671f99995e4c64223fa7c1fe12122460'
+                           '94abe408'), 25),
+        ],
         "sha256": [
             (bytes.fromhex('120fb6cffcf8b32c43e7225256c4f837'
                            'a86548c92ccc35480805987cb70be17b'), None),
@@ -1236,7 +1271,16 @@ class KDFTests(unittest.TestCase):
             #               'f7f179e89b3b0bcb17ad10e3ac6eba46'), None),
             (bytes.fromhex('348c89dbcbd32b2f32d814b8116e84cf2b17'
                            '347ebc1800181c4e2a1fb8dd53e1c635518c7dac47e9'), 40),
-            (bytes.fromhex('89b69d0516f829893c696226650a8687'), None),],
+            (bytes.fromhex('89b69d0516f829893c696226650a8687'), None),
+            (bytes.fromhex('72b62d16d04f2d4ce237e499167fa395'
+                           '07191d6f4579bac8952aa7c74d24ff49'), None),
+            (bytes.fromhex('bd9d964fc9a92bb860829d795063ea08'
+                           'a5deccc6f4bdf295c86f8ad834ce5479'), None),
+            (bytes.fromhex('16e35b12b41f465ca64d069578d75005'
+                           '9775ccad5df3ad53d6b204acb122d1ee'), None),
+            (bytes.fromhex('b6d737069a6b4aeed21574c73e38b342fa0f'
+                           '4449112470e1e80f075611d8d0ef6a82669d662e15e2'), 40),
+        ],
         "sha512": [
             (bytes.fromhex('867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5'
                            'd513554e1c8cf252c02d470a285a0501bad999bfe943c08f'
@@ -1250,7 +1294,20 @@ class KDFTests(unittest.TestCase):
             (bytes.fromhex('8c0511f4c6e597c6ac6315d8f0362e225f3c501495ba23b8'
                            '68c005174dc4ee71115b59f9e60cd9532fa33e0f75aefe30'
                            '225c583a186cd82bd4daea9724a3d3b8'), 64),
-            (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),],
+            (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),
+            (bytes.fromhex('38284e5354120cfe567a1f6d2fbed512a613b3db36ba695e'
+                           'cf876a9d178ef55462986f2df5eb71f1b90ae9fbc4211b29'
+                           '6405f882b910062d854d28953f90bde6'), None),
+            (bytes.fromhex('e41733921704084e8d31f823846c6d98ad3597a5035ce141'
+                           'f51963c08630a33cc2a1e263ed7a33b1e63e83adaf3ad912'
+                           '6c0f5b5496cfb2d29e7cd35ef9aa39c5'), None),
+            (bytes.fromhex('7dc69993c22ab444a13574b9d71b2cafc54e68914d9ddfd0'
+                           '0ed5c23545b854d5e0e68b7f5614eef5df9087573bab8360'
+                           'b20267791ed7a77669005fd94b5731e2'), None),
+            (bytes.fromhex('a7555be88503f21c2314259add27d302db6bb03b6ea52b36'
+                           '777f1af2e91f802c72b2b02b76745d7e0c3239e84cc8451c'
+                           '5188d526a56c740f5f0f7c85c44717e7'), 64),
+        ],
     }
 
     def _test_pbkdf2_hmac(self, pbkdf2, supported):
@@ -1259,21 +1316,23 @@ class KDFTests(unittest.TestCase):
                 continue
             for i, vector in enumerate(self.pbkdf2_test_vectors):
                 password, salt, rounds, dklen = vector
+                if self.fips_incompatible(password, salt, rounds):
+                    continue
                 expected, overwrite_dklen = results[i]
                 if overwrite_dklen:
                     dklen = overwrite_dklen
                 out = pbkdf2(digest_name, password, salt, rounds, dklen)
-                self.assertEqual(out, expected,
+                self.assertEqual(out.hex(), expected.hex(),
                                  (digest_name, password, salt, rounds, dklen))
                 out = pbkdf2(digest_name, memoryview(password),
                              memoryview(salt), rounds, dklen)
-                self.assertEqual(out, expected)
+                self.assertEqual(out.hex(), expected.hex())
                 out = pbkdf2(digest_name, bytearray(password),
                              bytearray(salt), rounds, dklen)
-                self.assertEqual(out, expected)
+                self.assertEqual(out.hex(), expected.hex())
                 if dklen is None:
                     out = pbkdf2(digest_name, password, salt, rounds)
-                    self.assertEqual(out, expected,
+                    self.assertEqual(out.hex(), expected.hex(),
                                      (digest_name, password, salt, rounds))
 
         with self.assertRaisesRegex(ValueError, '.*unsupported.*'):
@@ -1298,9 +1357,22 @@ class KDFTests(unittest.TestCase):
             self.assertRaises(
                 ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1
             )
-            out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
-                iterations=1, dklen=None)
-            self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
+            # Pick a single FIPS compatible vector
+            index = 5
+            password, salt, rounds, dklen = self.pbkdf2_test_vectors[index]
+            self.assertFalse(self.fips_incompatible(password, salt, rounds))
+            out = pbkdf2(hash_name='sha1', password=password, salt=salt,
+                iterations=rounds, dklen=dklen)
+            expected = self.pbkdf2_results['sha1'][index][0]
+            self.assertEqual(out.hex(), expected.hex())
+
+    # FIPS (NIST SP 800-132) needs:
+    #  - password of at least 64 bits (8 bytes)
+    #  - salt of at least 128 bits (16 bytes)
+    #  - rounds of least 1000
+    def fips_incompatible(self, password, salt, rounds):
+        return (get_fips_mode()
+                and (len(password) < 8 or len(salt) < 16 or rounds < 1000))
 
     @unittest.skipIf(openssl_hashlib is None, "requires OpenSSL bindings")
     def test_pbkdf2_hmac_c(self):
@@ -1416,6 +1488,77 @@ class TestScrypt(unittest.TestCase):
         self.assertRaises(ValueError, scrypt, dklen=0)
         MAX_DKLEN = ((1 << 32) - 1) * 32  # see RFC 7914
         self.assertRaises(numeric_exc_types, scrypt, dklen=MAX_DKLEN + 1)
+
+
+@threading_helper.requires_working_threading()
+class TestTSAN(unittest.TestCase):
+
+    @threading_helper.reap_threads
+    def check_attribute(self, write, read, expected, nthreads=8):
+        ready = threading.Event()
+        barrier = threading.Barrier(nthreads)
+
+        def writer():
+            barrier.wait()
+            while not ready.is_set():
+                write()
+
+        def reader():
+            barrier.wait()
+            while not ready.is_set():
+                self.assertEqual(read(), expected)
+
+        targets = [writer if i % 2 else reader for i in range(nthreads)]
+        workers = [threading.Thread(target=target) for target in targets]
+        with threading_helper.start_threads(workers, unlock=ready.set):
+            pass
+
+    def check_HACL_attribute(self, module, version, attrname):
+        blob = b"A" * 65536
+        obj = getattr(module, version)()
+        update = partial(obj.update, blob)
+        read = attrgetter(attrname)
+        self.check_attribute(update, partial(read, obj), read(obj))
+
+    @requires_md5
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_md5_attributes(self, attrname):
+        self.check_HACL_attribute(_md5, "md5", attrname)
+
+    @requires_sha1
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha1_attributes(self, attrname):
+        self.check_HACL_attribute(_sha1, "sha1", attrname)
+
+    @requires_sha2
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_sha2_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha2, f"sha{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [224, 256, 384, 512])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_sha3_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"sha3_{size}", attrname)
+
+    @requires_sha3
+    @support.subTests("size", [128, 256])
+    @support.subTests(
+        "attrname",
+        ["block_size", "digest_size", "_capacity_bits", "_rate_bits"],
+    )
+    def test_HACL_shake_attributes(self, size, attrname):
+        self.check_HACL_attribute(_sha3, f"shake_{size}", attrname)
+
+    @requires_blake2
+    @support.subTests("version", ["blake2s", "blake2b"])
+    @support.subTests("attrname", ["block_size", "digest_size"])
+    def test_HACL_blake2_attributes(self, version, attrname):
+        self.check_HACL_attribute(_blake2, version, attrname)
 
 
 if __name__ == "__main__":

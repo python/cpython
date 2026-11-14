@@ -144,6 +144,7 @@ def updatecache(filename, module_globals=None):
         lazy_entry = entry if entry is not None and len(entry) == 1 else None
         if lazy_entry is None:
             lazy_entry = _make_lazycache_entry(filename, module_globals)
+        data = None
         if lazy_entry is not None:
             try:
                 data = lazy_entry[0]()
@@ -154,14 +155,23 @@ def updatecache(filename, module_globals=None):
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []
-                entry = (
-                    len(data),
-                    None,
-                    [line + '\n' for line in data.splitlines()],
-                    fullname
-                )
-                cache[filename] = entry
-                return entry[2]
+        if data is None:
+            # The file may be inside an archive on the module search path,
+            # such as a zip file.
+            try:
+                data = _read_from_archive(fullname)
+            except ImportError:
+                # Can happen if the interpreter is shutting down.
+                return []
+        if data is not None:
+            entry = (
+                len(data),
+                None,
+                [line + '\n' for line in data.splitlines()],
+                fullname
+            )
+            cache[filename] = entry
+            return entry[2]
 
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.
@@ -195,6 +205,42 @@ def updatecache(filename, module_globals=None):
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
+
+
+def _read_from_archive(filename):
+    """Return the decoded contents of a file inside an archive on sys.path.
+
+    Path entry finders for archives, such as zipimport.zipimporter, have a
+    get_data() method that reads files by their path below the archive,
+    which is what __file__ and co_filename contain for modules imported
+    from it.  The archive is one of the parent directories of the file, so
+    look for a finder registered for one of them.  Return None if the file
+    is not in such an archive.
+    """
+    import os
+    import sys
+    importers = sys.path_importer_cache
+    if importers is None:
+        # Cleared while the interpreter is shutting down.
+        return None
+    path = filename
+    while True:
+        parent = os.path.dirname(path)
+        if parent == path:
+            return None
+        path = parent
+        get_data = getattr(importers.get(path), 'get_data', None)
+        if get_data is None:
+            continue
+        try:
+            data = get_data(filename)
+        except (ImportError, OSError):
+            continue
+        import importlib.util
+        try:
+            return importlib.util.decode_source(data)
+        except (UnicodeDecodeError, SyntaxError):
+            return None
 
 
 def lazycache(filename, module_globals):

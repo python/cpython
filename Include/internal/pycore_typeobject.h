@@ -41,7 +41,6 @@ extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
-extern void _PyTypes_AfterFork(void);
 extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **
@@ -147,6 +146,9 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 // subclasses without Py_TPFLAGS_IMMUTABLETYPE set.
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
+
+// Raise PyType_Modified with the type lock already held.
+extern void _PyType_Modified_Unlocked(PyTypeObject *type);
 
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);

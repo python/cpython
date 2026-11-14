@@ -1,2 +1,0 @@
-:class:`sentinel` objects now support a ``repr=`` argument and their
-:attr:`~sentinel.__module__` attribute is writable.

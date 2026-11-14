@@ -26,8 +26,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 /* elementary operations on complex numbers */
 
-static Py_complex c_1 = {1., 0.};
-
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -333,23 +331,36 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+        /* Don't rely on errno set by the math functions above, for
+           example cos() and sin() set EDOM for an infinite phase. */
+        errno = 0;
+        if (isfinite(a.real) && isfinite(a.imag)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        }
     }
     return r;
 }
 
+#define INT_EXP_CUTOFF 100
+
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex r, p;
-    long mask = 1;
-    r = c_1;
-    p = x;
-    while (mask > 0 && n >= mask) {
-        if (n & mask)
-            r = _Py_c_prod(r,p);
-        mask <<= 1;
-        p = _Py_c_prod(p,p);
+    assert(0 < n && n <= INT_EXP_CUTOFF);
+    while ((n & 1) == 0) {
+        x = _Py_c_prod(x, x);
+        n >>= 1;
+    }
+    Py_complex r = x;
+    n >>= 1;
+    while (n) {
+        x = _Py_c_prod(x, x);
+        if (n & 1) {
+            r = _Py_c_prod(r, x);
+        }
+        n >>= 1;
     }
     return r;
 }
@@ -358,17 +369,19 @@ static Py_complex
 c_powi(Py_complex x, long n)
 {
     if (n > 0)
-        return c_powu(x,n);
+        return c_powu(x, n);
+    else if (n < 0)
+        return _Py_rc_quot(1.0, c_powu(x, -n));
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
-
+        return (Py_complex){1., 0.};
 }
 
 double
 _Py_c_abs(Py_complex z)
 {
-    /* sets errno = ERANGE on overflow;  otherwise errno = 0 */
+    /* sets errno = ERANGE on overflow */
     double result;
+    int saved_errno = errno;
 
     if (!isfinite(z.real) || !isfinite(z.imag)) {
         /* C99 rules: if either the real or the imaginary part is an
@@ -376,23 +389,24 @@ _Py_c_abs(Py_complex z)
            NaN. */
         if (isinf(z.real)) {
             result = fabs(z.real);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         if (isinf(z.imag)) {
             result = fabs(z.imag);
-            errno = 0;
+            errno = saved_errno;
             return result;
         }
         /* either the real or imaginary part is a NaN,
            and neither is infinite. Result should be NaN. */
+        errno = saved_errno;
         return Py_NAN;
     }
     result = hypot(z.real, z.imag);
     if (!isfinite(result))
         errno = ERANGE;
     else
-        errno = 0;
+        errno = saved_errno;
     return result;
 }
 
@@ -751,9 +765,13 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+    if (b.imag == 0.0 && b.real == floor(b.real)
+        && fabs(b.real) <= INT_EXP_CUTOFF)
+    {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
+        if (isfinite(a.real) && isfinite(a.imag)) {
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
+        }
     }
     else {
         p = _Py_c_pow(a, b);
@@ -796,7 +814,10 @@ static PyObject *
 complex_abs(PyObject *op)
 {
     PyComplexObject *v = _PyComplexObject_CAST(op);
-    double result = _Py_c_abs(v->cval);
+    double result;
+
+    errno = 0;
+    result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");

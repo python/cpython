@@ -576,7 +576,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             c = 0;
             next++;
             end = next + 4;
-            if (end >= len) {
+            if (end > len) {
                 raise_errmsg("Invalid \\uXXXX escape", pystr, next - 1);
                 goto bail;
             }
@@ -1802,7 +1802,10 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     bool first = true;
 
-    if (PyDict_GET_SIZE(dct) == 0) {
+    // Only take the fast path for exact dicts: a subclass may keep its
+    // contents outside the dict storage, so PyDict_GET_SIZE could be 0 while
+    // the mapping is non-empty (gh-110941).
+    if (PyAnyDict_CheckExact(dct) && PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }

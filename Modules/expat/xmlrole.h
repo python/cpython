@@ -10,7 +10,7 @@
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-   Copyright (c) 2017-2025 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2026 Sebastian Pipping <sebastian@pipping.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -31,16 +31,14 @@
    DAMAGES OR  OTHER LIABILITY, WHETHER  IN AN  ACTION OF CONTRACT,  TORT OR
    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   SPDX-License-Identifier: MIT
 */
 
 #ifndef XmlRole_INCLUDED
 #  define XmlRole_INCLUDED 1
 
 #  include "xmltok.h"
-
-#  ifdef __cplusplus
-extern "C" {
-#  endif
 
 enum {
   XML_ROLE_ERROR = -1,
@@ -110,8 +108,8 @@ enum {
 };
 
 typedef struct prolog_state {
-  int(PTRCALL *handler)(struct prolog_state *state, int tok, const char *ptr,
-                        const char *end, const ENCODING *enc);
+  int (*handler)(struct prolog_state *state, int tok, const char *ptr,
+                 const char *end, const ENCODING *enc);
   unsigned level;
   int role_none;
 #  ifdef XML_DTD
@@ -128,9 +126,5 @@ void XmlPrologStateInitExternalEntity(PROLOG_STATE *state);
 
 #  define XmlTokenRole(state, tok, ptr, end, enc)                              \
     (((state)->handler)(state, tok, ptr, end, enc))
-
-#  ifdef __cplusplus
-}
-#  endif
 
 #endif /* not XmlRole_INCLUDED */

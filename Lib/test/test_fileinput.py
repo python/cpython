@@ -335,6 +335,101 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with open(temp_file, 'rb') as f:
             self.assertEqual(f.read().rstrip(b'\r\n'), b'New line ?')
 
+    def check_inplace_name_taken(self, take_name):
+        # Something else gets the name of the file after it has been moved
+        # to the backup file and before the output file is created.
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        orig_replace = os.replace
+        def replace(src, dst):
+            orig_replace(src, dst)
+            take_name(temp_file)
+        with mock.patch('os.replace', replace):
+            with self.assertRaises(FileExistsError):
+                with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                    fi.readline()
+        # The backup file is the only copy of the data, it must be kept.
+        with open(temp_file + '.bak', encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Initial text.')
+
+    @os_helper.skip_unless_symlink
+    def test_inplace_does_not_follow_symlink(self):
+        target = self.writeTmp('Other text.')
+        os.chmod(target, 0o600)
+        mode = os.stat(target).st_mode
+        def take_name(name):
+            os.chmod(name + '.bak', 0o644)
+            os.symlink(target, name)
+        self.check_inplace_name_taken(take_name)
+        with support.swap_attr(os, 'fstat', UnconditionallyRaise(OSError)):
+            self.check_inplace_name_taken(take_name)
+        with open(target, encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Other text.')
+        self.assertEqual(os.stat(target).st_mode, mode)
+
+    def test_inplace_does_not_reuse_existing_file(self):
+        names = []
+        def take_name(name):
+            with open(name, 'w', encoding="utf-8") as f:
+                f.write('Other text.')
+            names.append(name)
+        self.check_inplace_name_taken(take_name)
+        with support.swap_attr(os, 'fstat', UnconditionallyRaise(OSError)):
+            self.check_inplace_name_taken(take_name)
+        for name in names:
+            with open(name, encoding="utf-8") as f:
+                self.assertEqual(f.read(), 'Other text.')
+
+    def check_inplace_backup_kept(self, temp_file, exc_type):
+        with self.assertRaises(exc_type):
+            with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                fi.readline()
+        self.assertFalse(os.path.exists(temp_file))
+        with open(temp_file + '.bak', encoding="utf-8") as f:
+            self.assertEqual(f.read(), 'Initial text.')
+
+    def test_inplace_backup_kept_if_open_fails(self):
+        # The file can be moved to the backup file, but not opened.
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        with mock.patch('fileinput.open', create=True,
+                        side_effect=PermissionError):
+            self.check_inplace_backup_kept(temp_file, PermissionError)
+            # Trying again must not delete the backup file either.
+            self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+        self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+
+    def test_inplace_backup_kept_if_output_not_created(self):
+        temp_file = self.writeTmp('Initial text.')
+        self.addCleanup(os_helper.unlink, temp_file + '.bak')
+        with mock.patch('os.open', side_effect=PermissionError):
+            self.check_inplace_backup_kept(temp_file, PermissionError)
+            self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+        self.check_inplace_backup_kept(temp_file, FileNotFoundError)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(os.chmod in os.supports_fd,
+                         "os.chmod() does not support file descriptors")
+    @unittest.skipIf(sys.platform == 'win32',
+                     "cannot unlink an open file on Windows")
+    def test_inplace_chmod_does_not_follow_symlink(self):
+        # The output file is replaced by a symlink after it has been created
+        # and before its permissions are set.
+        target = self.writeTmp('Other text.')
+        os.chmod(target, 0o600)
+        mode = os.stat(target).st_mode
+        temp_file = self.writeTmp('Initial text.')
+        os.chmod(temp_file, 0o644)
+        orig_fdopen = os.fdopen
+        def fdopen(fd, *args, **kwargs):
+            os.unlink(temp_file)
+            os.symlink(target, temp_file)
+            return orig_fdopen(fd, *args, **kwargs)
+        with mock.patch('os.fdopen', fdopen):
+            with FileInput(temp_file, inplace=True, encoding="utf-8") as fi:
+                fi.readline()
+        self.assertEqual(os.stat(target).st_mode, mode)
+
     def test_file_hook_backward_compatibility(self):
         def old_hook(filename, mode):
             return io.StringIO("I used to receive only filename and mode")

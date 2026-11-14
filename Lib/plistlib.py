@@ -159,6 +159,25 @@ def _date_to_string(d, aware_datetime):
         d.hour, d.minute, d.second
     )
 
+def _dict_items(d, sort_keys, skipkeys):
+    """Return the (key, value) pairs of a dict, sorted if needed.
+
+    Sorting fails for keys of different types, so non-string keys are
+    removed or reported before sorting.
+    """
+    items = d.items()
+    if sort_keys:
+        if skipkeys:
+            items = [item for item in items if isinstance(item[0], str)]
+            items.sort()
+        else:
+            for key in d:
+                if not isinstance(key, str):
+                    raise TypeError("keys must be strings")
+            items = sorted(items)
+    return items
+
+
 def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
@@ -388,11 +407,7 @@ class _PlistWriter(_DumbXMLWriter):
     def write_dict(self, d):
         if d:
             self.begin_element("dict")
-            if self._sort_keys:
-                items = sorted(d.items())
-            else:
-                items = d.items()
-
+            items = _dict_items(d, self._sort_keys, self._skipkeys)
             for key, value in items:
                 if not isinstance(key, str):
                     if self._skipkeys:
@@ -684,7 +699,7 @@ class _BinaryPlistWriter (object):
         top_object = self._getrefnum(value)
         offset_table_offset = self._fp.tell()
         offset_size = _count_to_size(offset_table_offset)
-        offset_format = '>' + _BINARY_FORMAT[offset_size] * num_objects
+        offset_format = f'>{num_objects}{_BINARY_FORMAT[offset_size]}'
         self._fp.write(struct.pack(offset_format, *self._object_offsets))
 
         # Write trailer
@@ -718,10 +733,7 @@ class _BinaryPlistWriter (object):
         if isinstance(value, (dict, frozendict)):
             keys = []
             values = []
-            items = value.items()
-            if self._sort_keys:
-                items = sorted(items)
-
+            items = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in items:
                 if not isinstance(k, str):
                     if self._skipkeys:
@@ -834,16 +846,12 @@ class _BinaryPlistWriter (object):
             refs = [self._getrefnum(o) for o in value]
             s = len(refs)
             self._write_size(0xA0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *refs))
 
         elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
 
-            if self._sort_keys:
-                rootItems = sorted(value.items())
-            else:
-                rootItems = value.items()
-
+            rootItems = _dict_items(value, self._sort_keys, self._skipkeys)
             for k, v in rootItems:
                 if not isinstance(k, str):
                     if self._skipkeys:
@@ -854,8 +862,8 @@ class _BinaryPlistWriter (object):
 
             s = len(keyRefs)
             self._write_size(0xD0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *keyRefs))
-            self._fp.write(struct.pack('>' + self._ref_format * s, *valRefs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *keyRefs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *valRefs))
 
         else:
             raise TypeError(value)

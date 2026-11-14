@@ -421,7 +421,7 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
                         state = ModuleState.BUILTIN
                     case ["*disabled*"]:
                         state = ModuleState.DISABLED
-                    case ["*noconfig*"]:
+                    case ["*noconfig*"] | ["*bootstrap*"]:
                         continue
                     case [*items]:
                         if state == ModuleState.DISABLED:

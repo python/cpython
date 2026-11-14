@@ -8,6 +8,7 @@
 #include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyException_AddNote()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
 #include "pycore_tuple.h"         // _PyTupleIterObject
 
@@ -380,16 +381,43 @@ tuple_hash(PyObject *op)
 
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
+
+    /* Hashing an item recurses back into tuple_hash() when that item is
+       itself a tuple, so guard the descent to raise RecursionError rather
+       than overflow the C stack on a deeply nested tuple. */
+    if (_Py_EnterRecursiveCall(" while hashing a tuple")) {
+        return -1;
+    }
+
     acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                /* Preserve the original error while providing context for
+                   the element that could not be hashed. */
+                PyObject *exc = PyErr_GetRaisedException();
+                PyObject *note = PyUnicode_FromFormat(
+                    "when hashing tuple item %zd", i);
+                if (note != NULL) {
+                    if (_PyException_AddNote(exc, note) < 0) {
+                        PyErr_Clear();
+                    }
+                    Py_DECREF(note);
+                }
+                else {
+                    PyErr_Clear();
+                }
+                PyErr_SetRaisedException(exc);
+            }
+            _Py_LeaveRecursiveCall();
             return -1;
         }
         acc += lane * _PyTuple_HASH_XXPRIME_2;
         acc = _PyTuple_HASH_XXROTATE(acc);
         acc *= _PyTuple_HASH_XXPRIME_1;
     }
+    _Py_LeaveRecursiveCall();
 
     /* Add input length, mangled to keep the historical value of hash(()). */
     acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
@@ -781,6 +809,7 @@ static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *iterable);
 
 /*[clinic input]
+@vectorcall
 @classmethod
 tuple.__new__ as tuple_new
     iterable: object(c_default="NULL") = ()
@@ -796,7 +825,7 @@ If the argument is a tuple, the return value is the same object.
 
 static PyObject *
 tuple_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=4546d9f0d469bce7 input=86963bcde633b5a2]*/
+/*[clinic end generated code: output=4546d9f0d469bce7 input=8fdda913493ebe48]*/
 {
     if (type != &PyTuple_Type)
         return tuple_subtype_new(type, iterable);
@@ -806,27 +835,6 @@ tuple_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     else {
         return PySequence_Tuple(iterable);
-    }
-}
-
-static PyObject *
-tuple_vectorcall(PyObject *type, PyObject * const*args,
-                 size_t nargsf, PyObject *kwnames)
-{
-    if (!_PyArg_NoKwnames("tuple", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("tuple", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    if (nargs) {
-        return tuple_new_impl(_PyType_CAST(type), args[0]);
-    }
-    else {
-        return tuple_get_empty();
     }
 }
 
@@ -1041,8 +1049,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0
+        || (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))
+        // gh-161226: Disallow resizing a tuple if the hash value is cached
+        || (Py_SIZE(v) != 0 && v->ob_hash != -1))
+    {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
@@ -1068,6 +1079,14 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
     }
+    /* Check for overflow */
+    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *)) {
+        *pv = NULL;
+        Py_DECREF(v);
+        PyErr_NoMemory();
+        return -1;
+    }
 
     if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
@@ -1086,6 +1105,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
+        /* The failed reallocation leaves the original items owned by v. */
+        i = oldsize;
+        while (--i >= 0) {
+            Py_XDECREF(v->ob_item[i]);
+        }
         PyObject_GC_Del(v);
         return -1;
     }

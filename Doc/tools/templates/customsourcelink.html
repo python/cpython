@@ -1,4 +1,4 @@
-{%- if show_source and has_source and sourcename %}
+{%- if page_source_suffix is defined %}
   <script>
     document.addEventListener('DOMContentLoaded', () => {
         const title = document.querySelector('meta[property="og:title"]').content;
@@ -19,13 +19,13 @@
       <li><a href="{{ pathto('bugs') }}">{% trans %}Report a bug{% endtrans %}</a></li>
       <li><a class="improvepage" href="{{ pathto('improve-page-nojs') }}">{% trans %}Improve this page{% endtrans %}</a></li>
       <li>
-        <a href="https://github.com/python/cpython/blob/main/Doc/{{ pagename }}.rst?plain=1"
+        <a href="https://github.com/python/cpython/blob/{{ source_branch }}/Doc/{{ pagename }}.rst?plain=1"
             rel="nofollow">{{ _('Show source') }}
         </a>
       </li>
-      {% if language != "en" %}
+      {% if language != "en" and source_branch != "main" %}
       <li>
-        <a href="https://github.com/python/python-docs-{{ language }}/blob/{{ version }}/{{ pagename }}.po?plain=1"
+        <a href="https://github.com/python/python-docs-{{ language | replace('_', '-') | lower }}/blob/{{ source_branch }}/{{ pagename }}.po?plain=1"
            rel="nofollow">{{ _('Show translation source') }}</a>
       </li>
       {% endif %}

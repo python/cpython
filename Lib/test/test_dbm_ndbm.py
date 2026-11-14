@@ -1,3 +1,4 @@
+from test import support
 from test.support import import_helper
 from test.support import os_helper
 import_helper.import_module("dbm.ndbm") #skip if not supported
@@ -16,6 +17,53 @@ class DbmTestCase(unittest.TestCase):
     def tearDown(self):
         for suffix in ['', '.pag', '.dir', '.db']:
             os_helper.unlink(self.filename + suffix)
+
+    def _test_version_info(self, v):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 1)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+
+    def test_library_version(self):
+        library = dbm.ndbm.library
+        if support.verbose:
+            print(f'library = {library!r}', flush=True)
+        self.assertIsInstance(library, str)
+        if library == 'GNU gdbm':
+            prefix = 'GDBM'
+        elif library == 'Berkeley DB':
+            prefix = 'BDB'
+        else:
+            self.assertEqual(library, 'ndbm')
+            self.assertNotHasAttr(dbm.ndbm, 'GDBM_VERSION_INFO')
+            self.assertNotHasAttr(dbm.ndbm, 'BDB_VERSION_INFO')
+            return
+        V = getattr(dbm.ndbm, f'{prefix}_VERSION_INFO')
+        v = getattr(dbm.ndbm, f'{prefix.lower()}_version_info')
+        version = getattr(dbm.ndbm, f'{prefix.lower()}_version')
+        if support.verbose:
+            print(f'{prefix}_VERSION_INFO = {V}', flush=True)
+            print(f'{prefix.lower()}_version_info = {v}', flush=True)
+            print(f'{prefix.lower()}_version = {version!r}', flush=True)
+        self._test_version_info(V)
+        self._test_version_info(v)
+        self.assertEqual(V[0], v[0])
+        self.assertIsInstance(version, str)
+        if library == 'GNU gdbm':
+            self.assertStartsWith(version, 'GDBM version %d.%d' % v[:2])
+        else:
+            self.assertIsInstance(dbm.ndbm.BDB_VERSION, str)
+            self.assertIn('%d.%d.%d' % v[:3], version)
 
     def test_keys(self):
         self.d = dbm.ndbm.open(self.filename, 'c')

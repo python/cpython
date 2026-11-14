@@ -244,6 +244,9 @@ class TextTestRunner(object):
         result.failfast = self.failfast
         result.buffer = self.buffer
         result.tb_locals = self.tb_locals
+        # Not left to _makeResult(): a result class is free to filter the
+        # verbosity which its constructor gets.
+        result.verbosity = self.verbosity
         with warnings.catch_warnings():
             if self.warnings:
                 # if self.warnings is set, use it to filter all the warnings

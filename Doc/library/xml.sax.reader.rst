@@ -216,6 +216,15 @@ Instances of :class:`IncrementalParser` offer the following additional methods:
    allocated during parsing.
 
 
+.. method:: IncrementalParser.prepareParser(source)
+
+   Prepare the parser for parsing *source*, an
+   :class:`InputSource` instance.
+   It is called by :meth:`~XMLReader.parse` before feeding the data.
+   The parser implementation must override this method;
+   the default implementation raises :exc:`NotImplementedError`.
+
+
 .. method:: IncrementalParser.reset()
 
    This method is called after close has been called to reset the parser so that it

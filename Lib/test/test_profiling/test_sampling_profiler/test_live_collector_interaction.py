@@ -99,6 +99,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
             "cumulative_calls": 75,
             "total_rec_calls": 0,
         }
+        self.collector.opcode_stats[("test.py", 1, "func")][100] = 5
 
         # Reset
         self.collector.reset_stats()
@@ -107,6 +108,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.assertEqual(self.collector.successful_samples, 0)
         self.assertEqual(self.collector.failed_samples, 0)
         self.assertEqual(len(self.collector.result), 0)
+        self.assertEqual(len(self.collector.opcode_stats), 0)
 
     def test_increase_refresh_rate(self):
         """Test increasing refresh rate (faster updates)."""

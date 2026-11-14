@@ -30,6 +30,9 @@ bpo_issue_re: Final[re.Pattern[str]] = re.compile(
 gh_issue_re: Final[re.Pattern[str]] = re.compile(
     "gh-(?:issue-)?([0-9]+)", re.ASCII | re.IGNORECASE
 )
+cve_re: Final[re.Pattern[str]] = re.compile(
+    "CVE-([0-9]{4}-[0-9]{4,})", re.ASCII | re.IGNORECASE
+)
 whatsnew_re: Final[re.Pattern[str]] = re.compile(
     r"^what's new in (.*?)\??$", re.ASCII | re.IGNORECASE | re.MULTILINE
 )
@@ -59,6 +62,7 @@ class MiscNews(SphinxDirective):
         news_text = bpo_issue_re.sub(r":issue:`\1`", news_text)
         # Fallback handling for GitHub issues
         news_text = gh_issue_re.sub(r":gh:`\1`", news_text)
+        news_text = cve_re.sub(r":cve:`\1`", news_text)
         news_text = whatsnew_re.sub(r"\1", news_text)
 
         self.state_machine.insert_input(news_text.splitlines(), str(news_file))

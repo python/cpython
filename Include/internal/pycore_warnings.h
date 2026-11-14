@@ -12,6 +12,11 @@ extern int _PyWarnings_InitState(PyInterpreterState *interp);
 
 extern PyObject* _PyWarnings_Init(void);
 
+#ifdef HAVE_FORK
+extern void _PyWarnings_BeforeFork(PyInterpreterState *interp);
+extern void _PyWarnings_AfterFork(PyInterpreterState *interp);
+#endif
+
 extern void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
 extern void _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method);
 

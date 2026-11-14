@@ -20,9 +20,8 @@ def newer (source, target):
     if not os.path.exists(target):
         return 1
 
-    from stat import ST_MTIME
-    mtime1 = os.stat(source)[ST_MTIME]
-    mtime2 = os.stat(target)[ST_MTIME]
+    mtime1 = os.stat(source).st_mtime
+    mtime2 = os.stat(target).st_mtime
 
     return mtime1 > mtime2
 

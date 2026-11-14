@@ -3277,6 +3277,28 @@ class TestMiscellaneous(TestEmailBase):
         self.assertRaises(UnicodeError, utils.formataddr, (None, addr))
         self.assertRaises(UnicodeError, utils.formataddr, ("Name", addr))
 
+    def test_crlf_in_parts_raises_error(self):
+        # formataddr() must reject CR and LF in either part so that the
+        # returned header value cannot be used to inject extra headers,
+        # matching email.headerregistry.Address.
+        for name, addr in [
+            ('Real\rName', 'person@dom.ain'),
+            ('Real\nName', 'person@dom.ain'),
+            ('Real Name', 'person@dom.ain\r\nBcc: victim@dom.ain'),
+            ('Real Name', 'person@dom.ain\nSubject: spoofed'),
+        ]:
+            with self.subTest(name=name, addr=addr):
+                self.assertRaises(ValueError, utils.formataddr, (name, addr))
+
+    def test_crlf_in_parts_allowed_when_not_strict(self):
+        # strict=False keeps the old behaviour and passes CR/LF through.
+        self.assertEqual(
+            utils.formataddr(('Real\rName', 'person@dom.ain'), strict=False),
+            'Real\rName <person@dom.ain>')
+        self.assertEqual(
+            utils.formataddr(('Real Name', 'person@dom.ain\nfoo'), strict=False),
+            'Real Name <person@dom.ain\nfoo>')
+
     def test_name_with_dot(self):
         x = 'John X. Doe <jxd@example.com>'
         y = '"John X. Doe" <jxd@example.com>'
@@ -4812,6 +4834,14 @@ class TestQuopri(unittest.TestCase):
 
     def test_decode_two_lines_trailing_spaces(self):
         self._test_decode('hello    \r\nworld   \r\n', 'hello\nworld\n')
+
+    def test_decode_keep_trailing_spaces(self):
+        # strip_ws=False keeps trailing whitespace (the default strips it).
+        self.assertEqual(quoprimime.decode('hello    \r\n', strip_ws=False),
+                         'hello    \n')
+        self.assertEqual(quoprimime.decode('hello    \r\nworld   \r\n',
+                                           strip_ws=False),
+                         'hello    \nworld   \n')
 
     def test_decode_quoted_word(self):
         self._test_decode('=22quoted=20words=22', '"quoted words"')
