@@ -1,0 +1,4 @@
+Fix the misleading ``HeaderParseError`` raised for an email address whose
+domain ends with a dot (such as ``user@example.org.``) in
+:mod:`email.headerregistry`. It now reports a clear error instead of the
+internal ``expected atext but found ''``.
