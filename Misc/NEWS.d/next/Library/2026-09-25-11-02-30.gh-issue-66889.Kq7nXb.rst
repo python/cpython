@@ -1,0 +1,4 @@
+Parsing a malformed :mod:`email` address header no longer takes time
+quadratic in the number of defects the parser reports.  Collecting the
+defects of a parse tree copied the accumulated list once per node; it now
+appends to a single list.  Patch by Dmitry Voropaev.
