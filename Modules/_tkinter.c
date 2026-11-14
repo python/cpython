@@ -31,6 +31,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_tuple.h"         // _PyTupleWriter_SET_ITEM()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #include <signal.h>               // SIGINT
@@ -3401,7 +3402,7 @@ Tkapp_Dealloc(PyObject *op)
 /**** Tkinter Module ****/
 
 typedef struct {
-    PyObject* tuple;
+    PyTupleWriter *writer;
     Py_ssize_t size; /* current size */
     Py_ssize_t maxsize; /* allocated size */
 } FlattenContext;
@@ -3419,7 +3420,7 @@ _bump(FlattenContext* context, Py_ssize_t size)
 
     context->maxsize = maxsize;
 
-    return _PyTuple_Resize(&context->tuple, maxsize) >= 0;
+    return PyTupleWriter_Resize(&context->writer, maxsize) >= 0;
 }
 
 static int
@@ -3449,8 +3450,7 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
                 if (context->size + 1 > context->maxsize &&
                     !_bump(context, 1))
                     return 0;
-                PyTuple_SET_ITEM(context->tuple,
-                                 context->size++, Py_NewRef(o));
+                _PyTupleWriter_SET_ITEM(context->writer, context->size++, o);
             }
         }
     } else {
@@ -3480,21 +3480,18 @@ _tkinter__flatten(PyObject *module, PyObject *item)
     if (context.maxsize == 0)
         return PyTuple_New(0);
 
-    context.tuple = PyTuple_New(context.maxsize);
-    if (!context.tuple)
+    context.writer = PyTupleWriter_Create(context.maxsize);
+    if (!context.writer) {
         return NULL;
-
+    }
     context.size = 0;
 
     if (!_flatten1(&context, item, 0)) {
-        Py_XDECREF(context.tuple);
+        PyTupleWriter_Discard(context.writer);
         return NULL;
     }
 
-    if (_PyTuple_Resize(&context.tuple, context.size))
-        return NULL;
-
-    return context.tuple;
+    return PyTupleWriter_FinishWithSize(context.writer, context.size);
 }
 
 /*[clinic input]

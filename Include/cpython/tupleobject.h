@@ -30,7 +30,12 @@ static inline Py_ssize_t PyTuple_GET_SIZE(PyObject *op) {
 
 /* Function *only* to be used to fill in brand new tuples */
 static inline void
-PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
+PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value)
+{
+    // For backward compatibility, accept mutating a tuple even if
+    // _PyObject_IsUniquelyReferenced(op) is false and/or tuple->ob_hash != -1.
+    // See for example _PyTuple_Recycle(). Accept also setting an item which
+    // was already set: the caller must Py_DECREF() the old value in this case.
     PyTupleObject *tuple = _PyTuple_CAST(op);
     assert(0 <= index);
     assert(index < Py_SIZE(tuple));
@@ -42,3 +47,29 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 PyAPI_FUNC(PyObject*) PyTuple_FromArray(
     PyObject *const *array,
     Py_ssize_t size);
+
+
+/* --- PyTupleWriter API -------------------------------------------------- */
+
+struct PyTupleWriter;
+typedef struct PyTupleWriter PyTupleWriter;
+
+PyAPI_FUNC(PyTupleWriter*) PyTupleWriter_Create(Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyTupleWriter_Finish(PyTupleWriter *writer);
+PyAPI_FUNC(PyObject*) PyTupleWriter_FinishWithSize(
+    PyTupleWriter *writer,
+    Py_ssize_t final_size);
+PyAPI_FUNC(void) PyTupleWriter_Discard(PyTupleWriter *writer);
+PyAPI_FUNC(Py_ssize_t) PyTupleWriter_GetSize(PyTupleWriter *writer);
+PyAPI_FUNC(int) PyTupleWriter_SetItem(
+    PyTupleWriter *writer,
+    Py_ssize_t index,
+    PyObject *item);
+PyAPI_FUNC(int) PyTupleWriter_SetItems(
+    PyTupleWriter *writer,
+    Py_ssize_t index,
+    PyObject *const *items,
+    Py_ssize_t nitem);
+PyAPI_FUNC(int) PyTupleWriter_Resize(
+    PyTupleWriter **writer,
+    Py_ssize_t new_size);

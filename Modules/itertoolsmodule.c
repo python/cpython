@@ -207,25 +207,24 @@ batched_next(PyObject *op)
     Py_ssize_t n = FT_ATOMIC_LOAD_SSIZE_RELAXED(bo->batch_size);
     PyObject *it = bo->it;
     PyObject *item;
-    PyObject *result;
 
     if (n < 0) {
         return NULL;
     }
-    result = PyTuple_New(n);
-    if (result == NULL) {
+
+    PyTupleWriter *writer = PyTupleWriter_Create(n);
+    if (writer == NULL) {
         return NULL;
     }
     iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = _PyTuple_ITEMS(result);
     for (i=0 ; i < n ; i++) {
         item = iternext(it);
         if (item == NULL) {
             goto null_item;
         }
-        items[i] = item;
+        _PyTupleWriter_SET_ITEM_STEAL(writer, i, item);
     }
-    return result;
+    return PyTupleWriter_Finish(writer);
 
  null_item:
     if (PyErr_Occurred()) {
@@ -235,7 +234,7 @@ batched_next(PyObject *op)
 #ifndef Py_GIL_DISABLED
             Py_CLEAR(bo->it);
 #endif
-            Py_DECREF(result);
+            PyTupleWriter_Discard(writer);
             return NULL;
         }
         PyErr_Clear();
@@ -245,7 +244,7 @@ batched_next(PyObject *op)
 #ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
 #endif
-        Py_DECREF(result);
+        PyTupleWriter_Discard(writer);
         return NULL;
     }
     if (bo->strict) {
@@ -253,12 +252,11 @@ batched_next(PyObject *op)
 #ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
 #endif
-        Py_DECREF(result);
+        PyTupleWriter_Discard(writer);
         PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
     }
-    _PyTuple_Resize(&result, i);
-    return result;
+    return PyTupleWriter_FinishWithSize(writer, i);
 }
 
 static PyType_Slot batched_slots[] = {

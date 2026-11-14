@@ -130,6 +130,9 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
                         "tuple assignment index out of range");
         return -1;
     }
+    // For backward compatibility, accept mutating a tuple even
+    // if tuple->ob_hash != -1. See for example _PyTuple_Recycle().
+
     p = ((PyTupleObject *)op) -> ob_item + i;
     Py_XSETREF(*p, newitem);
     return 0;
@@ -858,13 +861,13 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
         Py_DECREF(tmp);
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(newobj);
+
     for (i = 0; i < n; i++) {
         item = PyTuple_GET_ITEM(tmp, i);
         PyTuple_SET_ITEM(newobj, i, Py_NewRef(item));
     }
     Py_DECREF(tmp);
-
-    _PyTuple_RESET_HASH_CACHE(newobj);
 
     // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
     if (!_PyObject_GC_IS_TRACKED(newobj)) {
@@ -1033,6 +1036,125 @@ PyTypeObject PyTuple_Type = {
     ._tp_iteritem = tuple_iteritem,
 };
 
+
+static int
+tuple_resize_inplace(PyTupleObject **pv, Py_ssize_t newsize, int gc_track)
+{
+    PyTupleObject *v = *pv;
+    Py_ssize_t oldsize = Py_SIZE(v);
+
+    assert(1 <= oldsize);
+    assert(oldsize < newsize);
+    assert(_PyTuple_CanMutate(v));
+
+    /* Check for overflow */
+    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
+                sizeof(PyObject *))) / sizeof(PyObject *))
+    {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    if (gc_track) {
+        if (_PyObject_GC_IS_TRACKED(v)) {
+            _PyObject_GC_UNTRACK(v);
+        }
+    }
+    else {
+        assert(!_PyObject_GC_IS_TRACKED(v));
+    }
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference((PyObject *) v);
+#endif
+    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
+
+    PyTupleObject *sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
+    if (sv == NULL) {
+        assert(PyErr_Occurred());
+#ifdef Py_TRACE_REFS
+        _Py_AddToAllObjects(v);
+#endif
+        _PyReftracerTrack((PyObject *)v, PyRefTracer_CREATE);
+        return -1;
+    }
+
+    _Py_NewReferenceNoTotal((PyObject *) sv);
+    /* Zero out items added by growing */
+    memset(&sv->ob_item[oldsize], 0,
+           sizeof(sv->ob_item[0]) * (newsize - oldsize));
+    *pv = sv;
+    if (gc_track) {
+        _PyObject_GC_TRACK(sv);
+    }
+    return 0;
+}
+
+
+static int
+_PyTuple_ResizeKeepOnError(PyTupleObject **pv, Py_ssize_t newsize, int gc_track)
+{
+    PyTupleObject *v = *pv;
+    assert(v != NULL);
+    assert(PyTuple_CheckExact(v));
+    assert(0 <= newsize);
+    assert(Py_SIZE(v) == 0 || Py_REFCNT(v) == 1);
+    assert(Py_SIZE(v) == 0 || v->ob_hash == -1);
+
+    Py_ssize_t oldsize = Py_SIZE(v);
+    if (oldsize == newsize) {
+        return 0;
+    }
+
+    if (newsize == 0) {
+        Py_DECREF(v);
+        *pv = (PyTupleObject*)tuple_get_empty();  // cannot fail
+        return 0;
+    }
+
+    // If the tuple is shrinked, copy the tuple to leave items unchanged
+    // on error
+    if (oldsize == 0
+        || newsize < oldsize
+        || v->ob_hash != -1)
+    {
+        /* The empty tuple is statically allocated so we never
+           resize it in-place. */
+        if (oldsize == 0) {
+            assert(_PyObject_CAST(v) == tuple_get_empty());
+        }
+
+        PyTupleObject *new_tuple = (PyTupleObject*)tuple_alloc(newsize);
+        if (new_tuple == NULL) {
+            return -1;
+        }
+        Py_ssize_t steal = Py_MIN(oldsize, newsize);
+        if (steal) {
+            // Steal items (avoid inefficient Py_INCREF/Py_DECREF dance):
+            // it is safe since Py_REFCNT(v) == 1 and the old tuple is
+            // destroyed above by Py_DECREF().
+            memcpy(new_tuple->ob_item, v->ob_item,
+                   steal * sizeof(v->ob_item[0]));
+            memset(v->ob_item, 0,
+                   steal * sizeof(v->ob_item[0]));
+        }
+        if (newsize > oldsize) {
+            // Set new items to NULL
+            memset(&new_tuple->ob_item[oldsize], 0,
+                   (newsize - oldsize) * sizeof(v->ob_item[0]));
+        }
+        Py_DECREF(v);
+        if (gc_track) {
+            _PyObject_GC_TRACK(new_tuple);
+        }
+
+        *pv = new_tuple;
+        return 0;
+    }
+
+    return tuple_resize_inplace(pv, newsize, gc_track);
+}
+
+
 /* The following function breaks the notion that tuples are immutable:
    it changes the size of a tuple.  We get away with this only if there
    is only one module referencing the object.  You can also think of it
@@ -1043,12 +1165,7 @@ PyTypeObject PyTuple_Type = {
 int
 _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 {
-    PyTupleObject *v;
-    PyTupleObject *sv;
-    Py_ssize_t i;
-    Py_ssize_t oldsize;
-
-    v = (PyTupleObject *) *pv;
+    PyTupleObject *v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) || newsize < 0
         || (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))
         // gh-161226: Disallow resizing a tuple if the hash value is cached
@@ -1060,66 +1177,12 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return -1;
     }
 
-    oldsize = Py_SIZE(v);
-    if (oldsize == newsize) {
-        return 0;
-    }
-    if (newsize == 0) {
-        Py_DECREF(v);
-        *pv = tuple_get_empty();
-        return 0;
-    }
-    if (oldsize == 0) {
-#ifdef Py_DEBUG
-        assert(v == &_Py_SINGLETON(tuple_empty));
-#endif
-        /* The empty tuple is statically allocated so we never
-           resize it in-place. */
-        Py_DECREF(v);
-        *pv = PyTuple_New(newsize);
-        return *pv == NULL ? -1 : 0;
-    }
-    /* Check for overflow */
-    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                sizeof(PyObject *))) / sizeof(PyObject *)) {
+    if (_PyTuple_ResizeKeepOnError((PyTupleObject **)pv, newsize, 1) < 0) {
+        PyObject *v = *pv;
         *pv = NULL;
         Py_DECREF(v);
-        PyErr_NoMemory();
         return -1;
     }
-
-    if (_PyObject_GC_IS_TRACKED(v)) {
-        _PyObject_GC_UNTRACK(v);
-    }
-#ifdef Py_TRACE_REFS
-    _Py_ForgetReference((PyObject *) v);
-#endif
-    /* DECREF items deleted by shrinkage */
-    for (i = newsize; i < oldsize; i++) {
-        Py_CLEAR(v->ob_item[i]);
-    }
-    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
-    sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
-    if (sv == NULL) {
-        *pv = NULL;
-#ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyThreadState_GET());
-#endif
-        /* The failed reallocation leaves the original items owned by v. */
-        i = oldsize;
-        while (--i >= 0) {
-            Py_XDECREF(v->ob_item[i]);
-        }
-        PyObject_GC_Del(v);
-        return -1;
-    }
-    _Py_NewReferenceNoTotal((PyObject *) sv);
-    /* Zero out items added by growing */
-    if (newsize > oldsize)
-        memset(&sv->ob_item[oldsize], 0,
-               sizeof(*sv->ob_item) * (newsize - oldsize));
-    *pv = (PyObject *) sv;
-    _PyObject_GC_TRACK(sv);
     return 0;
 }
 
@@ -1323,4 +1386,251 @@ _PyTuple_DebugMallocStats(FILE *out)
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
                                _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
+}
+
+
+// --- PyTupleWriter API -----------------------------------------------------
+
+#define _PyTupleWriter_CAST(obj) _Py_CAST(PyTupleWriter*, (obj))
+
+
+PyTupleWriter*
+PyTupleWriter_Create(Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return NULL;
+    }
+
+    PyTupleObject *tuple;
+    if (size == 0) {
+        tuple = (PyTupleObject*)tuple_get_empty();  // cannot fail
+    }
+    else {
+        tuple = tuple_alloc(size);
+        if (tuple == NULL) {
+            return NULL;
+        }
+
+        // Initialize items to NULL
+        memset(tuple->ob_item, 0, size * sizeof(tuple->ob_item[0]));
+    }
+
+    PyTupleWriter *writer = _PyTupleWriter_CAST(tuple);
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    return writer;
+}
+
+
+int
+PyTupleWriter_Resize(PyTupleWriter **writer, Py_ssize_t new_size)
+{
+    assert(writer != NULL);
+    assert(_PyTupleWriter_CheckConsistency(*writer));
+    PyTupleObject *tuple = _PyTuple_CAST(*writer);
+
+    if (_PyTuple_ResizeKeepOnError(&tuple, new_size, 0) < 0) {
+        assert(tuple != NULL);
+        assert(tuple == _PyTuple_CAST(*writer));
+        *writer = _PyTupleWriter_CAST(tuple);  // just in case
+        assert(_PyTupleWriter_CheckConsistency(*writer));
+        return -1;
+    }
+
+    assert(tuple != NULL);
+    *writer = _PyTupleWriter_CAST(tuple);
+    assert(_PyTupleWriter_CheckConsistency(*writer));
+    return 0;
+}
+
+
+#ifdef Py_DEBUG
+// Make sure that all items are set
+static int
+tuplewriter_check_final(PyTupleObject *tuple)
+{
+    Py_ssize_t size = Py_SIZE(tuple);
+    for (Py_ssize_t index = 0; index < size; index++) {
+        PyObject *item = tuple->ob_item[index];
+        if (item == NULL) {
+            PyErr_Format(PyExc_SystemError, "item #%zd is NULL", index);
+            return -1;
+        }
+    }
+    return 0;
+}
+#endif
+
+
+PyObject*
+PyTupleWriter_FinishWithSize(PyTupleWriter *writer, Py_ssize_t final_size)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyTupleObject *tuple = _PyTuple_CAST(writer);
+
+    if (final_size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be positive");
+        return NULL;
+    }
+    Py_ssize_t size = Py_SIZE(tuple);
+    if (final_size > size) {
+        PyErr_SetString(PyExc_ValueError, "size larger than allocated size");
+        return NULL;
+    }
+
+    if (final_size == 0) {
+        Py_DECREF(tuple);
+        tuple = (PyTupleObject*)tuple_get_empty();  // cannot fail
+    }
+    else {
+        if (final_size != size) {
+            if (_PyTuple_ResizeKeepOnError(&tuple, final_size, 0) < 0) {
+                Py_DECREF(tuple);
+                return NULL;
+            }
+        }
+
+        _PyObject_GC_TRACK(tuple);
+    }
+
+#ifdef Py_DEBUG
+    if (tuplewriter_check_final(tuple) < 0) {
+        Py_DECREF(tuple);
+        return NULL;
+    }
+#endif
+
+    return _PyObject_CAST(tuple);
+}
+
+
+PyObject*
+PyTupleWriter_Finish(PyTupleWriter *writer)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyTupleObject *result = _PyTuple_CAST(writer);
+
+    if (PyTuple_GET_SIZE(result) == 0) {
+        assert(_PyObject_CAST(result) == tuple_get_empty());
+    }
+    else {
+        _PyObject_GC_TRACK(result);
+    }
+
+#ifdef Py_DEBUG
+    if (tuplewriter_check_final(result) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
+#endif
+
+    return _PyObject_CAST(result);
+}
+
+
+void
+PyTupleWriter_Discard(PyTupleWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyObject *tuple = _PyObject_CAST(writer);
+    Py_DECREF(tuple);
+}
+
+
+Py_ssize_t
+PyTupleWriter_GetSize(PyTupleWriter *writer)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyTupleObject *tuple = _PyTuple_CAST(writer);
+    return Py_SIZE(tuple);
+}
+
+
+int
+PyTupleWriter_SetItem(PyTupleWriter *writer, Py_ssize_t index, PyObject *item)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+    PyTupleObject *tuple = _PyTuple_CAST(writer);
+    assert(_PyTuple_CanMutate(tuple));
+
+    if (!(0 <= index && index < Py_SIZE(tuple))) {
+        PyErr_SetString(PyExc_ValueError, "invalid index");
+        return -1;
+    }
+
+#ifdef Py_DEBUG
+    if (item == NULL) {
+        PyErr_SetString(PyExc_SystemError, "item is NULL");
+        return -1;
+    }
+#endif
+
+#ifdef Py_DEBUG
+    if (tuple->ob_item[index] != NULL) {
+        PyErr_Format(PyExc_SystemError, "tuple item %zd is already set", index);
+        return -1;
+    }
+#endif
+
+    tuple->ob_item[index] = Py_NewRef(item);
+    return 0;
+}
+
+
+int
+PyTupleWriter_SetItems(PyTupleWriter *writer, Py_ssize_t start,
+                       PyObject *const *items, Py_ssize_t nitem)
+{
+    assert(_PyTupleWriter_CheckConsistency(writer));
+
+    if (nitem == 0) {
+        return 0;
+    }
+
+    PyTupleObject *tuple = _PyTuple_CAST(writer);
+    assert(_PyTuple_CanMutate(tuple));
+
+    Py_ssize_t size = Py_SIZE(tuple);
+    if (!(0 <= start && start < size)) {
+        PyErr_SetString(PyExc_ValueError, "invalid start");
+        return -1;
+    }
+
+    if (nitem < 0) {
+        PyErr_SetString(PyExc_ValueError, "nitem must be positive");
+        return -1;
+    }
+
+#ifdef Py_DEBUG
+    for (Py_ssize_t index = 0; index < nitem; index++) {
+        if (items[index] == NULL) {
+            PyErr_Format(PyExc_SystemError, "item #%zd is NULL", index);
+            return -1;
+        }
+    }
+#endif
+
+    if (start + nitem > size) {
+        PyErr_SetString(PyExc_ValueError, "too many items");
+        return -1;
+    }
+
+#ifdef Py_DEBUG
+    for (Py_ssize_t index = 0; index < nitem; index++) {
+        if (tuple->ob_item[start + index] != NULL) {
+            PyErr_Format(PyExc_SystemError,
+                         "tuple item %zd is already set", start + index);
+            return -1;
+        }
+    }
+#endif
+
+    for (Py_ssize_t index = 0; index < nitem; index++) {
+        tuple->ob_item[start + index] = Py_NewRef(items[index]);
+    }
+    return 0;
 }
