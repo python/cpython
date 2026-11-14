@@ -222,12 +222,10 @@ class TextWrapper:
                     end = hyphen + 1
             cur_line.append(chunk[:end])
             rest = chunk[end:]
-            # The rest of the word starts each of the following lines, which
-            # all have the same width.  Break it into all of those lines'
-            # pieces now: breaking off one piece per line would copy the
-            # rest of the word every time, which takes quadratic time.
-            # Only do so if the word has no whitespace, so that no piece is
-            # dropped as whitespace at the start of a line.
+            # Pre-split the rest to avoid quadratic copying. This relies on
+            # _wrap_chunks() giving every following line the width
+            # self.width - len(self.subsequent_indent). Words with whitespace
+            # take the slow path, since a piece could be dropped.
             line_width = self.width - len(self.subsequent_indent)
             if (line_width >= 1 and len(rest) > line_width and
                 chunk.split(None, 1) == [chunk]):
