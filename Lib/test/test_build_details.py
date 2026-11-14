@@ -5,11 +5,12 @@ import os.path
 import sys
 import sysconfig
 import string
+import textwrap
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from test.support import is_android, is_apple_mobile, is_wasm32
+from test.support import is_android, is_apple_mobile, is_wasm32, os_helper
 
 BASE_PATH = Path(
     __file__,  # Lib/test/test_build_details.py
@@ -287,6 +288,44 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
             abs_rel_path = os.path.join(base_prefix, data_rel_path[part][key])
             abs_rel_path = os.path.normpath(abs_rel_path)
             self.assertEqual(data_abs_path[part][key], abs_rel_path)
+
+
+@unittest.skipIf(
+    generate_build_details is None,
+    "Failed to import generate-build-details"
+)
+class BuildDetailsVersionTests(unittest.TestCase):
+    def test_native(self):
+        version_info = generate_build_details.get_version_info()
+        self.assertEqual(version_info,
+                         generate_build_details.version_info_to_dict(
+                             sys.version_info))
+        self.assertEqual(generate_build_details.hexversion(version_info),
+                         sys.hexversion)
+
+    def test_patchlevel(self):
+        patchlevel_h = os.path.join(os_helper.TESTFN, 'patchlevel.h')
+        self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
+        os.mkdir(os_helper.TESTFN)
+        with open(patchlevel_h, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                #define PY_RELEASE_LEVEL_GAMMA  0xC     /* For release candidates */
+                #define PY_MAJOR_VERSION        3
+                #define PY_MINOR_VERSION        99
+                #define PY_MICRO_VERSION        7
+                #define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_GAMMA
+                #define PY_RELEASE_SERIAL       2
+                #define PY_VERSION              "3.99.7rc2"
+            '''))
+        with mock.patch.object(generate_build_details, 'PATCHLEVEL_H',
+                               patchlevel_h):
+            version_info = generate_build_details.get_version_info()
+        self.assertEqual(version_info, {
+            'major': 3, 'minor': 99, 'micro': 7,
+            'releaselevel': 'candidate', 'serial': 2,
+        })
+        self.assertEqual(generate_build_details.hexversion(version_info),
+                         0x036307c2)
 
 
 @unittest.skipIf(
