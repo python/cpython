@@ -1,0 +1,4 @@
+Optimize :mod:`argparse` actions 'append', 'append_const' and 'extend' for
+the case when the option is specified many times.
+The target list is no longer copied every time the action is taken, only
+the default value is copied the first time the action is taken.
