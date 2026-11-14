@@ -13,6 +13,7 @@ from test.support import is_emscripten, run_with_limited_c_stack, set_recursion_
 try:
     import _remote_debugging  # noqa: F401
     from profiling.sampling import gecko_collector
+    from profiling.sampling.binary_reader import _set_replay_stats
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import (
         CollapsedStackCollector,
@@ -1218,12 +1219,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
     def test_flamegraph_collector_restores_replay_stats(self):
         """Replay restores measured values from binary metadata."""
         collector = FlamegraphCollector(1000)
-        collector.set_replay_stats({
+        _set_replay_stats(collector, {
             "duration_sec": 1.25,
             "sample_rate": 4.0,
             "error_rate": 2.5,
             "missed_samples": 1.5,
-        })
+        }, 1000)
 
         self.assertEqual(collector.stats["duration_sec"], 1.25)
         self.assertEqual(collector.stats["sample_rate"], 4.0)
@@ -1233,10 +1234,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
     def test_flamegraph_collector_leaves_legacy_replay_stats_unavailable(self):
         collector = FlamegraphCollector(1000)
         original_stats = collector.stats.copy()
-        collector.set_replay_stats({
+        original_stats["mode"] = PROFILING_MODE_CPU
+        _set_replay_stats(collector, {
             "duration_sec": None,
             "sample_rate": None,
-        })
+            "mode": PROFILING_MODE_CPU,
+        }, 1000)
         self.assertEqual(collector.stats, original_stats)
 
     def test_flamegraph_collector_per_thread_stats(self):
