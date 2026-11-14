@@ -617,7 +617,7 @@ class GeckoCollector(Collector):
         func_resources.append(resource_idx)
 
         if is_python:
-            filename_idx = self._intern_string(os.path.basename(filename))
+            filename_idx = self._intern_string(filename)
             func_filenames.append(filename_idx)
             func_line_numbers.append(lineno)
         else:

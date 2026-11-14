@@ -1,0 +1,2 @@
+Fix the Gecko reporter (``--gecko``) in :mod:`profiling.sampling` to record
+full source file paths.
