@@ -371,7 +371,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Add ``aga_gen`` attribute to the awaitables returned by the ``asend()``,
    ``athrow()`` and ``aclose()`` methods of async generators.
 
-.. function:: getmembers(object[, predicate])
+.. function:: getmembers(object, predicate=None)
 
    Return all the members of an object in a list of ``(name, value)``
    pairs sorted by name. If the optional *predicate* argument—which will be
@@ -385,7 +385,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       listed in the metaclass' custom :meth:`~object.__dir__`.
 
 
-.. function:: getmembers_static(object[, predicate])
+.. function:: getmembers_static(object, predicate=None)
 
     Return all the members of an object in a list of ``(name, value)``
     pairs sorted by name without triggering dynamic lookup via the descriptor
@@ -487,9 +487,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionadded:: 3.14
 
 
-.. function:: isgeneratorfunction(object)
+.. function:: isgeneratorfunction(obj)
 
-   Return ``True`` if the object is a Python generator function.
+   Return ``True`` if *obj* is a Python generator function.
 
    It also returns ``True`` for bound methods created from Python generator functions
    (see :ref:`typesmethods` for more information).
@@ -511,9 +511,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object is a generator.
 
 
-.. function:: iscoroutinefunction(object)
+.. function:: iscoroutinefunction(obj)
 
-   Return ``True`` if the object is a :term:`coroutine function` (a function
+   Return ``True`` if the obj is a :term:`coroutine function` (a function
    defined with an :keyword:`async def` syntax), a :func:`functools.partial`
    wrapping a :term:`coroutine function`, or a sync function marked with
    :func:`markcoroutinefunction`.
@@ -583,9 +583,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionadded:: 3.5
 
 
-.. function:: isasyncgenfunction(object)
+.. function:: isasyncgenfunction(obj)
 
-   Return ``True`` if the object is an :term:`asynchronous generator` function,
+   Return ``True`` if the obj is an :term:`asynchronous generator` function,
    for example:
 
    .. doctest::
@@ -853,9 +853,9 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
+.. function:: signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False, annotation_format=Format.VALUE)
 
-   Return a :class:`Signature` object for the given *callable*:
+   Return a :class:`Signature` object for the given callable *obj*:
 
    .. doctest::
 
@@ -904,7 +904,7 @@ function.
    .. versionchanged:: 3.5
       The *follow_wrapped* parameter was added.
       Pass ``False`` to get a signature of
-      *callable* specifically (``callable.__wrapped__`` will not be used to
+      *obj* specifically (``obj.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
    .. versionchanged:: 3.10
@@ -1186,7 +1186,7 @@ function.
       to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
       This is no longer permitted.
 
-.. class:: BoundArguments
+.. class:: BoundArguments(signature, arguments)
 
    Result of a :meth:`Signature.bind` or :meth:`Signature.bind_partial` call.
    Holds the mapping of arguments to the function's parameters.
@@ -1469,7 +1469,7 @@ Some of the following functions return
 tuple-like operations on all attributes except ``positions``. This behavior
 is considered deprecated and may be removed in the future.
 
-.. class:: FrameInfo
+.. class:: FrameInfo(frame, filename, lineno, function, code_context, index, *, positions=None)
 
    .. attribute:: frame
 
@@ -1512,7 +1512,7 @@ is considered deprecated and may be removed in the future.
       (that is backwards compatible with the previous :term:`named tuple`).
 
 
-.. class:: Traceback
+.. class:: Traceback(filename, lineno, function, code_context, index, *, positions=None)
 
    .. attribute:: filename
 
