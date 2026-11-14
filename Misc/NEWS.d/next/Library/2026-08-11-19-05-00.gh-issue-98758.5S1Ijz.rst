@@ -1,0 +1,4 @@
+:func:`shutil.unpack_archive` now propagates the real underlying error
+(such as :exc:`FileNotFoundError` or :exc:`PermissionError`) when the
+input file is missing or inaccessible, instead of masking it with a
+generic ``shutil.ReadError`` about an unrecognized archive format.
