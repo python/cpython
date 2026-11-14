@@ -684,6 +684,54 @@ class MinidomTest(unittest.TestCase):
                 self.assertEqual(dom.documentElement.toxml(), str)
                 dom.unlink()
 
+    def testWriteXMLDOM1PrefixDeclaration(self):
+        # setAttribute() does not set the prefix of the attribute,
+        # but "xmlns:p" still declares the prefix "p".
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "p:root"))
+        root.setAttribute("xmlns:p", "http://xml.python.org/ns")
+        domstr = dom.documentElement.toxml()
+        dom.unlink()
+        self.assertEqual(domstr,
+                '<p:root xmlns:p="http://xml.python.org/ns"/>')
+        dom = parseString(domstr)
+        self.assertEqual(dom.documentElement.namespaceURI,
+                         "http://xml.python.org/ns")
+        dom.unlink()
+
+    def testWriteXMLDOM1PrefixDeclarationNoNamespace(self):
+        # A prefix declaration is not a declaration of the default namespace.
+        dom = Document()
+        root = dom.appendChild(dom.createElement("root"))
+        root.setAttribute("xmlns:xsi", "http://xml.python.org/ns")
+        self.assertEqual(dom.documentElement.toxml(),
+                '<root xmlns:xsi="http://xml.python.org/ns"/>')
+        dom.unlink()
+
+    def testWriteXMLDOM1PrefixDeclarationDefaultNamespace(self):
+        # The element still needs a declaration of its own default namespace.
+        dom = Document()
+        root = dom.appendChild(
+            dom.createElementNS("http://xml.python.org/ns", "root"))
+        root.setAttribute("xmlns:x", "http://xml.python.org/ns")
+        domstr = dom.documentElement.toxml()
+        dom.unlink()
+        self.assertEqual(domstr,
+                '<root xmlns="http://xml.python.org/ns" '
+                'xmlns:x="http://xml.python.org/ns"/>')
+        dom = parseString(domstr)
+        self.assertEqual(dom.documentElement.namespaceURI,
+                         "http://xml.python.org/ns")
+        dom.unlink()
+
+    def testWriteXMLParsedWithoutNamespaces(self):
+        src = ('<root xmlns:p="http://xml.python.org/ns">'
+               '<p:child/><other/></root>')
+        dom = xml.dom.expatbuilder.parseString(src, namespaces=False)
+        self.assertEqual(dom.documentElement.toxml(), src)
+        dom.unlink()
+
     def testWriteXMLNotANamespaceDeclaration(self):
         # an attribute whose name only starts with "xmlns" is not one
         dom = parseString('<root xmlns="http://xml.python.org/ns">'
