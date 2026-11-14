@@ -3661,6 +3661,18 @@ class PathWalkTest(unittest.TestCase):
         finally:
             path1new.rename(path1)
 
+    def test_walk_non_directory(self):
+        # gh-101420: walking a file raises instead of yielding nothing
+        path = self.walk_path / "tmp1"
+        with self.assertRaises(NotADirectoryError) as cm:
+            next(path.walk())
+        self.assertEqual(cm.exception.filename, str(path))
+
+        errors = []
+        self.assertEqual(list(path.walk(on_error=errors.append)), [])
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], NotADirectoryError)
+
     def test_walk_many_open_files(self):
         depth = 30
         base = self.cls(self.base, 'deep')
