@@ -1812,6 +1812,9 @@
 /* Define to 1 to build the sqlite module with loadable extensions support. */
 #undef PY_SQLITE_ENABLE_LOAD_EXTENSION
 
+/* Define if SQLite was compiled with mutexes (SQLITE_THREADSAFE != 0) */
+#undef PY_SQLITE_HAVE_MUTEX
+
 /* Define if SQLite was compiled with the serialize API */
 #undef PY_SQLITE_HAVE_SERIALIZE
 
