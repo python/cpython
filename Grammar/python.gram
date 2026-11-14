@@ -800,6 +800,7 @@ compare_op_bitwise_or_pair[CmpopExprPair*]:
     | 'in' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, In, a) }
     | 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, IsNot, a) }
     | 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
+    | invalid_eqeqeq
 
 # Bitwise operators
 # -----------------

@@ -279,123 +279,123 @@ static char *soft_keywords[] = {
 #define del_target_type 1190
 #define type_expressions_type 1191
 #define func_type_comment_type 1192
-#define _loop0_1_type 1265
-#define _loop1_2_type 1266
-#define _loop0_3_type 1267
-#define _gather_4_type 1268
-#define _tmp_5_type 1269
-#define _tmp_6_type 1270
-#define _tmp_7_type 1271
-#define _tmp_8_type 1272
-#define _tmp_9_type 1273
-#define _tmp_10_type 1274
-#define _tmp_11_type 1275
-#define _loop1_12_type 1276
-#define _loop0_13_type 1277
-#define _gather_14_type 1278
-#define _tmp_15_type 1279
-#define _tmp_16_type 1280
-#define _loop0_17_type 1281
-#define _loop1_18_type 1282
-#define _loop0_19_type 1283
-#define _gather_20_type 1284
-#define _tmp_21_type 1285
-#define _loop0_22_type 1286
-#define _gather_23_type 1287
-#define _loop1_24_type 1288
-#define _tmp_25_type 1289
-#define _tmp_26_type 1290
-#define _loop0_27_type 1291
-#define _loop0_28_type 1292
-#define _loop1_29_type 1293
-#define _loop1_30_type 1294
-#define _loop0_31_type 1295
-#define _loop1_32_type 1296
-#define _loop0_33_type 1297
-#define _gather_34_type 1298
-#define _tmp_35_type 1299
-#define _loop1_36_type 1300
-#define _loop1_37_type 1301
-#define _loop1_38_type 1302
-#define _loop0_39_type 1303
-#define _gather_40_type 1304
-#define _tmp_41_type 1305
-#define _tmp_42_type 1306
-#define _tmp_43_type 1307
-#define _loop0_44_type 1308
-#define _gather_45_type 1309
-#define _loop0_46_type 1310
-#define _gather_47_type 1311
-#define _tmp_48_type 1312
-#define _loop0_49_type 1313
-#define _gather_50_type 1314
-#define _loop0_51_type 1315
-#define _gather_52_type 1316
-#define _loop0_53_type 1317
-#define _gather_54_type 1318
-#define _loop1_55_type 1319
-#define _loop1_56_type 1320
-#define _loop0_57_type 1321
-#define _gather_58_type 1322
-#define _loop1_59_type 1323
-#define _loop1_60_type 1324
-#define _loop1_61_type 1325
-#define _tmp_62_type 1326
-#define _loop0_63_type 1327
-#define _gather_64_type 1328
-#define _tmp_65_type 1329
-#define _tmp_66_type 1330
-#define _tmp_67_type 1331
-#define _tmp_68_type 1332
-#define _tmp_69_type 1333
-#define _loop0_70_type 1334
-#define _loop0_71_type 1335
-#define _loop1_72_type 1336
-#define _loop1_73_type 1337
-#define _loop0_74_type 1338
-#define _loop1_75_type 1339
-#define _loop0_76_type 1340
-#define _loop0_77_type 1341
-#define _loop0_78_type 1342
-#define _loop0_79_type 1343
-#define _loop1_80_type 1344
-#define _loop1_81_type 1345
-#define _loop0_82_type 1346
-#define _gather_83_type 1347
-#define _tmp_84_type 1348
-#define _loop0_85_type 1349
-#define _gather_86_type 1350
-#define _loop1_87_type 1351
-#define _loop0_88_type 1352
-#define _tmp_89_type 1353
-#define _loop0_90_type 1354
-#define _gather_91_type 1355
-#define _tmp_92_type 1356
-#define _loop0_93_type 1357
-#define _gather_94_type 1358
-#define _tmp_95_type 1359
-#define _loop0_96_type 1360
-#define _gather_97_type 1361
-#define _loop0_98_type 1362
-#define _tmp_99_type 1363
-#define _tmp_100_type 1364
-#define _loop0_101_type 1365
-#define _gather_102_type 1366
-#define _loop0_103_type 1367
-#define _gather_104_type 1368
-#define _tmp_105_type 1369
-#define _tmp_178_type 1442
-#define _tmp_179_type 1443
-#define _tmp_180_type 1444
-#define _tmp_181_type 1445
-#define _tmp_182_type 1446
-#define _tmp_183_type 1447
-#define _tmp_184_type 1448
-#define _tmp_185_type 1449
-#define _tmp_186_type 1450
-#define _tmp_187_type 1451
-#define _tmp_188_type 1452
-#define _tmp_200_type 1464
+#define _loop0_1_type 1266
+#define _loop1_2_type 1267
+#define _loop0_3_type 1268
+#define _gather_4_type 1269
+#define _tmp_5_type 1270
+#define _tmp_6_type 1271
+#define _tmp_7_type 1272
+#define _tmp_8_type 1273
+#define _tmp_9_type 1274
+#define _tmp_10_type 1275
+#define _tmp_11_type 1276
+#define _loop1_12_type 1277
+#define _loop0_13_type 1278
+#define _gather_14_type 1279
+#define _tmp_15_type 1280
+#define _tmp_16_type 1281
+#define _loop0_17_type 1282
+#define _loop1_18_type 1283
+#define _loop0_19_type 1284
+#define _gather_20_type 1285
+#define _tmp_21_type 1286
+#define _loop0_22_type 1287
+#define _gather_23_type 1288
+#define _loop1_24_type 1289
+#define _tmp_25_type 1290
+#define _tmp_26_type 1291
+#define _loop0_27_type 1292
+#define _loop0_28_type 1293
+#define _loop1_29_type 1294
+#define _loop1_30_type 1295
+#define _loop0_31_type 1296
+#define _loop1_32_type 1297
+#define _loop0_33_type 1298
+#define _gather_34_type 1299
+#define _tmp_35_type 1300
+#define _loop1_36_type 1301
+#define _loop1_37_type 1302
+#define _loop1_38_type 1303
+#define _loop0_39_type 1304
+#define _gather_40_type 1305
+#define _tmp_41_type 1306
+#define _tmp_42_type 1307
+#define _tmp_43_type 1308
+#define _loop0_44_type 1309
+#define _gather_45_type 1310
+#define _loop0_46_type 1311
+#define _gather_47_type 1312
+#define _tmp_48_type 1313
+#define _loop0_49_type 1314
+#define _gather_50_type 1315
+#define _loop0_51_type 1316
+#define _gather_52_type 1317
+#define _loop0_53_type 1318
+#define _gather_54_type 1319
+#define _loop1_55_type 1320
+#define _loop1_56_type 1321
+#define _loop0_57_type 1322
+#define _gather_58_type 1323
+#define _loop1_59_type 1324
+#define _loop1_60_type 1325
+#define _loop1_61_type 1326
+#define _tmp_62_type 1327
+#define _loop0_63_type 1328
+#define _gather_64_type 1329
+#define _tmp_65_type 1330
+#define _tmp_66_type 1331
+#define _tmp_67_type 1332
+#define _tmp_68_type 1333
+#define _tmp_69_type 1334
+#define _loop0_70_type 1335
+#define _loop0_71_type 1336
+#define _loop1_72_type 1337
+#define _loop1_73_type 1338
+#define _loop0_74_type 1339
+#define _loop1_75_type 1340
+#define _loop0_76_type 1341
+#define _loop0_77_type 1342
+#define _loop0_78_type 1343
+#define _loop0_79_type 1344
+#define _loop1_80_type 1345
+#define _loop1_81_type 1346
+#define _loop0_82_type 1347
+#define _gather_83_type 1348
+#define _tmp_84_type 1349
+#define _loop0_85_type 1350
+#define _gather_86_type 1351
+#define _loop1_87_type 1352
+#define _loop0_88_type 1353
+#define _tmp_89_type 1354
+#define _loop0_90_type 1355
+#define _gather_91_type 1356
+#define _tmp_92_type 1357
+#define _loop0_93_type 1358
+#define _gather_94_type 1359
+#define _tmp_95_type 1360
+#define _loop0_96_type 1361
+#define _gather_97_type 1362
+#define _loop0_98_type 1363
+#define _tmp_99_type 1364
+#define _tmp_100_type 1365
+#define _loop0_101_type 1366
+#define _gather_102_type 1367
+#define _loop0_103_type 1368
+#define _gather_104_type 1369
+#define _tmp_105_type 1370
+#define _tmp_178_type 1443
+#define _tmp_179_type 1444
+#define _tmp_180_type 1445
+#define _tmp_181_type 1446
+#define _tmp_182_type 1447
+#define _tmp_183_type 1448
+#define _tmp_184_type 1449
+#define _tmp_185_type 1450
+#define _tmp_186_type 1451
+#define _tmp_187_type 1452
+#define _tmp_188_type 1453
+#define _tmp_200_type 1465
 
 // Rules shared between the C files of this parser
 #define simple_stmt_rule _PyPegen_simple_stmt_rule
@@ -660,6 +660,8 @@ Py_LOCAL_SYMBOL void *invalid_bitwise_and_rule(Parser *p);
 Py_LOCAL_SYMBOL void *invalid_bitwise_or_rule(Parser *p);
 #define invalid_noteq_rule _PyPegen_invalid_noteq_rule
 Py_LOCAL_SYMBOL void *invalid_noteq_rule(Parser *p);
+#define invalid_eqeqeq_rule _PyPegen_invalid_eqeqeq_rule
+Py_LOCAL_SYMBOL void *invalid_eqeqeq_rule(Parser *p);
 
 static mod_ty file_rule(Parser *p);
 static mod_ty interactive_rule(Parser *p);
@@ -12785,6 +12787,7 @@ comparison_rule(Parser *p)
 //     | 'in' bitwise_or
 //     | 'is' 'not' bitwise_or
 //     | 'is' bitwise_or
+//     | invalid_eqeqeq
 static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
@@ -13091,6 +13094,25 @@ compare_op_bitwise_or_pair_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s compare_op_bitwise_or_pair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'is' bitwise_or"));
+    }
+    if (p->call_invalid_rules) { // invalid_eqeqeq
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> compare_op_bitwise_or_pair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_eqeqeq"));
+        void *invalid_eqeqeq_var;
+        if (
+            (invalid_eqeqeq_var = invalid_eqeqeq_rule(p))  // invalid_eqeqeq
+        )
+        {
+            D(fprintf(stderr, "%*c+ compare_op_bitwise_or_pair[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_eqeqeq"));
+            _res = invalid_eqeqeq_var;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s compare_op_bitwise_or_pair[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_eqeqeq"));
     }
     _res = NULL;
   done:
