@@ -363,6 +363,13 @@ class ListTest(list_tests.CommonTest):
         lst = [X(), X()]
         X() in lst
 
+    def test_eq_identity_shortcut(self):
+        # PyObject_RichCompareBool() treats identity as equality, even for
+        # objects that are not equal to themselves (see seq_tests).
+        nan = float("nan")
+        self.assertIn(nan, [nan])
+        self.assertNotIn(float("nan"), [nan])
+
     def test_tier2_invalidates_iterator(self):
         # GH-121012
         for _ in range(100):
