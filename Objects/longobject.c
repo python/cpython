@@ -5627,6 +5627,10 @@ long_bitwise(PyLongObject *a,
         b = z;
     }
 
+    const digit *a_digits = a->long_value.ob_digit;
+    const digit *b_digits = b->long_value.ob_digit;
+    int nonnegative = !nega && !negb;
+
     /* JRH: The original logic here was to allocate the result value (z)
        as the longer of the two operands.  However, there are some cases
        where the result is guaranteed to be shorter than that: AND of two
@@ -5638,10 +5642,21 @@ long_bitwise(PyLongObject *a,
     case '^':
         negz = nega ^ negb;
         size_z = size_a;
+        if (nonnegative && size_a == size_b) {
+            while (size_z > 0 && a_digits[size_z - 1] == b_digits[size_z - 1]) {
+                --size_z;
+            }
+        }
         break;
     case '&':
         negz = nega & negb;
         size_z = negb ? size_a : size_b;
+        if (nonnegative) {
+            while (size_z > 0 &&
+                   (a_digits[size_z - 1] & b_digits[size_z - 1]) == 0) {
+                --size_z;
+            }
+        }
         break;
     case '|':
         negz = nega | negb;
@@ -5657,6 +5672,13 @@ long_bitwise(PyLongObject *a,
         return get_small_int(0);
     }
 
+    if (nonnegative && size_z == 1 && op != '|') {
+        digit a0 = a_digits[0];
+        digit b0 = size_b ? b_digits[0] : 0;
+        digit d = op == '&' ? a0 & b0 : a0 ^ b0;
+        return (PyObject *)_PyLong_FromSTwoDigits(d);
+    }
+
     /* We allow an extra digit if z is negative, to make sure that
        the final two's complement of z doesn't overflow. */
     z = long_alloc(size_z + negz);
@@ -5667,18 +5689,20 @@ long_bitwise(PyLongObject *a,
     }
 
     /* Compute digits for overlap of a and b. */
+    digit *z_digits = z->long_value.ob_digit;
+    Py_ssize_t size_overlap = Py_MIN(size_b, size_z);
     switch(op) {
     case '&':
-        for (i = 0; i < size_b; ++i)
-            z->long_value.ob_digit[i] = a->long_value.ob_digit[i] & b->long_value.ob_digit[i];
+        for (i = 0; i < size_overlap; ++i)
+            z_digits[i] = a_digits[i] & b_digits[i];
         break;
     case '|':
-        for (i = 0; i < size_b; ++i)
-            z->long_value.ob_digit[i] = a->long_value.ob_digit[i] | b->long_value.ob_digit[i];
+        for (i = 0; i < size_overlap; ++i)
+            z_digits[i] = a_digits[i] | b_digits[i];
         break;
     case '^':
-        for (i = 0; i < size_b; ++i)
-            z->long_value.ob_digit[i] = a->long_value.ob_digit[i] ^ b->long_value.ob_digit[i];
+        for (i = 0; i < size_overlap; ++i)
+            z_digits[i] = a_digits[i] ^ b_digits[i];
         break;
     default:
         Py_UNREACHABLE();
@@ -5687,16 +5711,19 @@ long_bitwise(PyLongObject *a,
     /* Copy any remaining digits of a, inverting if necessary. */
     if (op == '^' && negb)
         for (; i < size_z; ++i)
-            z->long_value.ob_digit[i] = a->long_value.ob_digit[i] ^ PyLong_MASK;
+            z_digits[i] = a_digits[i] ^ PyLong_MASK;
     else if (i < size_z)
-        memcpy(&z->long_value.ob_digit[i], &a->long_value.ob_digit[i],
-               (size_z-i)*sizeof(digit));
+        memcpy(z_digits + i, a_digits + i, (size_z-i)*sizeof(digit));
 
     /* Complement result if negative. */
     if (negz) {
         _PyLong_FlipSign(z);
-        z->long_value.ob_digit[size_z] = PyLong_MASK;
-        v_complement(z->long_value.ob_digit, z->long_value.ob_digit, size_z+1);
+        z_digits[size_z] = PyLong_MASK;
+        v_complement(z_digits, z_digits, size_z+1);
+    }
+
+    if (nonnegative) {
+        return (PyObject *)z;
     }
 
     Py_XDECREF(new_a);

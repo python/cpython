@@ -1,0 +1,2 @@
+Reduce memory usage for bitwise ``&`` and ``^`` operations on non-negative
+:class:`int` objects when their high bits cancel out. Patch by Shamil Abdulaev.
