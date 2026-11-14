@@ -1,0 +1,3 @@
+Fix :func:`lzma.decompress` and :class:`lzma.LZMAFile` raising an error for
+``.xz`` stream padding (null bytes in multiples of four) at the end of the
+data, and ignoring any ``.xz`` streams that follow such padding.
