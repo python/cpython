@@ -305,6 +305,83 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         with self.assertRaises(SyntaxError):
             spec.loader.exec_module(mod)
 
+    def test_find_spec_does_not_unmarshal_pyc(self):
+        files = {TESTMOD + pyc_ext: test_pyc}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        expected_path = os.path.join(TEMP_ZIP, TESTMOD + pyc_ext)
+
+        with unittest.mock.patch.object(zipimport, 'marshal', wraps=marshal) as m:
+            spec = zi.find_spec(TESTMOD)
+            self.assertEqual(spec.origin, expected_path)
+            self.assertEqual(zi.get_filename(TESTMOD), expected_path)
+            m.loads.assert_not_called()
+
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            m.loads.assert_called_once()
+        self.assertEqual(mod.get_file(), expected_path)
+
+    def test_corrupt_pyc_body_defers_to_exec(self):
+        # A valid header selects the .pyc; the body is only read on exec.
+        header = test_pyc[:16]
+        cases = [
+            (b'', EOFError),
+            (b'\xff\xff\xff', ValueError),
+            (marshal.dumps(42), TypeError),
+        ]
+        for body, exc in cases:
+            with self.subTest(body=body):
+                files = {TESTMOD + ".py": test_src,
+                         TESTMOD + pyc_ext: header + body}
+                self.makeZip(files)
+                zi = zipimport.zipimporter(TEMP_ZIP)
+                zi.invalidate_caches()
+
+                spec = zi.find_spec(TESTMOD)
+                self.assertEqual(spec.origin,
+                                 os.path.join(TEMP_ZIP, TESTMOD + pyc_ext))
+                mod = importlib.util.module_from_spec(spec)
+                with self.assertRaises(exc):
+                    spec.loader.exec_module(mod)
+
+    def test_get_filename_reads_only_pyc_header(self):
+        # Guard against regressing to reading or decompressing the whole
+        # member; the exact byte count depends on the compression method,
+        # hence the loose bound.
+        big_co = compile(f"x = {os.urandom(300_000)!r}\n", "<big>", "exec")
+        big_pyc = make_pyc(big_co, NOW, 0)
+        self.makeZip({TESTMOD + pyc_ext: big_pyc})
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        zi._get_files()
+
+        reads = []
+        class CountingReader(io.BufferedReader):
+            def read(self, size=-1):
+                data = super().read(size)
+                reads.append(len(data))
+                return data
+        with unittest.mock.patch.object(zipimport, '_io', wraps=zipimport._io) as m:
+            m.open_code.side_effect = lambda path: CountingReader(io.FileIO(path))
+            self.assertEqual(zi.get_filename(TESTMOD),
+                             os.path.join(TEMP_ZIP, TESTMOD + pyc_ext))
+        self.assertLess(sum(reads), len(big_pyc) // 2)
+
+    def test_get_data_prefix(self):
+        # Random (incompressible) bytes followed by a compressible run, so
+        # the output/input ratio jumps mid-stream and the prefix loop must
+        # stop cleanly.
+        data = os.urandom(10000) + b'x' * 50000
+        self.makeZip({'data.bin': data})
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        toc_entry = zi._get_files()['data.bin']
+        self.assertEqual(zipimport._get_data(TEMP_ZIP, toc_entry), data)
+        for size in (0, 16, 1024, 5000, 60000, 100000):
+            with self.subTest(size=size):
+                prefix = zipimport._get_data(TEMP_ZIP, toc_entry, size)
+                self.assertGreaterEqual(len(prefix), min(size, len(data)))
+                self.assertEqual(prefix, data[:len(prefix)])
+
     def testPyc(self):
         files = {TESTMOD + pyc_ext: test_pyc}
         self.doTest(pyc_ext, files, TESTMOD)
@@ -1097,6 +1174,45 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
+    def test_find_spec_invalid_deflate_stream(self):
+        # zlib.error must not be wrapped in ZipImportError (an ImportError):
+        # spec_from_loader() would swallow it and return a spec with an
+        # unknown origin instead of failing.
+        import zipfile
+        import zlib
+
+        class BadCompressor:
+            def compress(self, data):
+                return b"\xff" * len(data)
+
+            def flush(self):
+                return b""
+
+        with unittest.mock.patch.object(zipfile, "_get_compressor",
+                                        return_value=BadCompressor()):
+            self.makeZip({TESTMOD + pyc_ext: test_pyc})
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        with self.assertRaises(zlib.error):
+            zi.find_spec(TESTMOD)
+        with self.assertRaises(zlib.error):
+            zi.get_code(TESTMOD)
+
+    def test_decompress_prefix_small_chunks(self):
+        # A tiny chunk forces many loop iterations; the default chunk
+        # satisfies a header request in one.  Sizes probe the first byte,
+        # end of data, and past it.
+        import zlib
+        data = os.urandom(5000)
+        co = zlib.compressobj(wbits=-15)
+        raw = co.compress(data) + co.flush()
+        with unittest.mock.patch.object(zipimport, '_PREFIX_READ_CHUNK', 7):
+            for size in (1, 16, 4999, 5000, 6000):
+                with self.subTest(size=size):
+                    prefix = zipimport._decompress_prefix(
+                        io.BytesIO(raw), 8, len(raw), size)
+                    self.assertGreaterEqual(len(prefix), min(size, len(data)))
+                    self.assertEqual(prefix, data[:len(prefix)])
+
 
 @support.requires_zstd()
 class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
@@ -1157,6 +1273,20 @@ class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
             with self.subTest(data=data):
                 with self.assertRaises(zipimport.ZipImportError):
                     zipimport._zstd_decompress(data)
+
+    def test_decompress_prefix_concatenated_frames(self):
+        # A frame ends mid-prefix; the loop must switch to a fresh
+        # decompressor and carry over unused_data.
+        from compression import zstd
+
+        data = b'abc' + bytes(range(256)) * 10
+        raw = zstd.compress(data[:3]) + zstd.compress(data[3:])
+        for size in (1, 3, 4, 16, len(data), len(data) + 1):
+            with self.subTest(size=size):
+                prefix = zipimport._decompress_prefix(
+                    io.BytesIO(raw), 93, len(raw), size)
+                self.assertGreaterEqual(len(prefix), min(size, len(data)))
+                self.assertEqual(prefix, data[:len(prefix)])
 
 
 class BadFileZipImportTestCase(unittest.TestCase):
