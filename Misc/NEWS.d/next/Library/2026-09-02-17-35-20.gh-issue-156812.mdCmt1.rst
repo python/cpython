@@ -1,0 +1,3 @@
+Serializing an :mod:`xml.dom.minidom` comment node whose data ends with ``-``
+now raises :exc:`ValueError` instead of producing non-well-formed XML,
+completing the existing check for ``--``.
