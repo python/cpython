@@ -586,6 +586,19 @@ class TestInterpreterStack(IsTestBase):
              (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
         self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
+    def test_stack_context_zero_keeps_positions(self):
+        # context=0 drops source lines. Column positions stay filled, and
+        # the filename still comes from getsourcefile().
+        stack = inspect.stack(0)
+        top = stack[0]
+        self.assertIsNone(top.code_context)
+        self.assertIsNone(top.index)
+        self.assertIn(tuple(top.positions),
+                      list(top.frame.f_code.co_positions()))
+        self.assertEqual(
+            top.filename,
+            inspect.getsourcefile(top.frame) or inspect.getfile(top.frame))
+
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
         self.assertEqual(args, ['x', 'y'])
