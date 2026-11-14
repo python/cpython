@@ -1643,6 +1643,9 @@ class DSLParser:
             if p.group:
                 fail("@vectorcall does not support optional groups",
                      line_number=lineno)
+            if p.deprecated_positional or p.deprecated_keyword:
+                fail("@vectorcall does not support deprecated parameters",
+                     line_number=lineno)
             if p.is_vararg() or p.is_var_keyword():
                 continue
             if isinstance(p.converter, (self_converter,
