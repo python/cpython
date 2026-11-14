@@ -648,6 +648,19 @@ def test_sys_monitoring_register_callback():
     sys.monitoring.register_callback(1, 1, None)
 
 
+def test_sys_monitoring_clear_free_tool_id():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys.monitoring"):
+            print(event, args)
+
+    sys.addaudithook(hook)
+    sys.monitoring.use_tool_id(1, "test")
+    sys.monitoring.clear_tool_id(1)
+    sys.monitoring.free_tool_id(1)
+
+
 def test_winapi_createnamedpipe(pipe_name):
     import _winapi
 

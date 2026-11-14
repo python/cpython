@@ -2226,6 +2226,10 @@ monitoring_clear_tool_id_impl(PyObject *module, int tool_id)
         return NULL;
     }
 
+    if (PySys_Audit("sys.monitoring.clear_tool_id", "i", tool_id) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (interp->monitoring_tool_names[tool_id] != NULL) {
@@ -2252,6 +2256,11 @@ monitoring_free_tool_id_impl(PyObject *module, int tool_id)
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
+
+    if (PySys_Audit("sys.monitoring.free_tool_id", "i", tool_id) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (interp->monitoring_tool_names[tool_id] != NULL) {
