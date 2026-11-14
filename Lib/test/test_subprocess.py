@@ -943,6 +943,43 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, None)
         self.assertEqual(stderr, b"pineapple")
 
+    def test_communicate_closed_output_pipe(self):
+        for stream, extra_pipe, text, timeout in itertools.product(
+            ('stdout', 'stderr'), (False, True), (False, True),
+            (None, support.SHORT_TIMEOUT),
+        ):
+            with self.subTest(stream=stream, extra_pipe=extra_pipe,
+                              text=text, timeout=timeout):
+                pipes = {stream: subprocess.PIPE}
+                if extra_pipe:
+                    pipes.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                with subprocess.Popen(ZERO_RETURN_CMD, text=text, **pipes) as p:
+                    getattr(p, stream).close()
+                    output = p.communicate(timeout=timeout)
+                empty = '' if text else b''
+                self.assertEqual(output, tuple(
+                    empty if name in pipes else None
+                    for name in ('stdout', 'stderr')))
+                self.assertEqual(p.returncode, 0)
+
+    def test_communicate_closed_stdin_with_input(self):
+        for extra_pipe, text, timeout in itertools.product(
+            (False, True), (False, True), (None, support.SHORT_TIMEOUT),
+        ):
+            with self.subTest(extra_pipe=extra_pipe, text=text, timeout=timeout):
+                with subprocess.Popen(
+                    ZERO_RETURN_CMD, stdin=subprocess.PIPE, text=text,
+                    stdout=subprocess.PIPE if extra_pipe else None,
+                ) as p:
+                    p.stdin.close()
+                    with self.assertRaisesRegex(ValueError, 'closed stdin'):
+                        p.communicate('unused' if text else b'unused',
+                                      timeout=timeout)
+                    output = p.communicate(timeout=timeout)
+                empty = '' if text else b''
+                self.assertEqual(output, (empty if extra_pipe else None, None))
+                self.assertEqual(p.returncode, 0)
+
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os;'
@@ -3557,7 +3594,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # By not setting stdout or stderr or a timeout we force the fast path
         # that just calls _stdin_write() internally due to our mock.
         proc = subprocess.Popen(ZERO_RETURN_CMD)
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
+        with proc, mock.patch.object(proc, 'stdin', closed=False) as mock_proc_stdin:
             mock_proc_stdin.write.side_effect = BrokenPipeError
             proc.communicate(b'stuff')  # Should swallow the BrokenPipeError.
             mock_proc_stdin.write.assert_called_once_with(b'stuff')
@@ -3569,7 +3606,7 @@ class POSIXProcessTestCase(BaseTestCase):
         proc = subprocess.Popen([sys.executable, '-h'],
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin, \
+        with proc, mock.patch.object(proc, 'stdin', closed=False) as mock_proc_stdin, \
                 open(os.devnull, 'wb') as dev_null:
             mock_proc_stdin.flush.side_effect = BrokenPipeError
             # because _communicate registers a selector using proc.stdin...

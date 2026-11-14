@@ -1368,6 +1368,8 @@ class Popen:
 
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
+        if input and self.stdin is not None and self.stdin.closed:
+            raise ValueError("Cannot send input to closed stdin")
 
         # Optimization: If we are not worried about timeouts, we haven't
         # started communicating, and we have one or zero pipes, using select()
@@ -1376,13 +1378,14 @@ class Popen:
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
+            empty_output = '' if self.text_mode else b''
             if self.stdin:
                 self._stdin_write(input)
             elif self.stdout:
-                stdout = self.stdout.read()
+                stdout = self.stdout.read() if not self.stdout.closed else empty_output
                 self.stdout.close()
             elif self.stderr:
-                stderr = self.stderr.read()
+                stderr = self.stderr.read() if not self.stderr.closed else empty_output
                 self.stderr.close()
             self.wait()
         else:
@@ -1801,8 +1804,9 @@ class Popen:
 
 
         def _readerthread(self, fh, buffer):
-            buffer.append(fh.read())
-            fh.close()
+            if not fh.closed:
+                buffer.append(fh.read())
+                fh.close()
 
 
         def _writerthread(self, input):
@@ -1869,8 +1873,9 @@ class Popen:
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            stdout = stdout[0] if stdout else None
-            stderr = stderr[0] if stderr else None
+            empty_output = '' if self.text_mode else b''
+            stdout = empty_output.join(stdout) if stdout is not None else None
+            stderr = empty_output.join(stderr) if stderr is not None else None
 
             return (stdout, stderr)
 
