@@ -50,6 +50,7 @@ The following modules have a command-line interface.
 * :ref:`timeit <timeit-command-line-interface>`
 * :ref:`tokenize <tokenize-cli>`
 * :ref:`trace <trace-cli>`
+* :ref:`tracemalloc <tracemalloc-cli>`
 * :mod:`turtledemo`
 * :ref:`unittest <unittest-command-line-interface>`
 * :ref:`uuid <uuid-cli>`
