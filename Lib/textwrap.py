@@ -61,6 +61,11 @@ class TextWrapper:
         Truncate wrapped lines.
       placeholder (default: ' [...]')
         Append to the last line of truncated text.
+      text_len (default: len)
+        Callable returning the width of a string.  Override the default to
+        account for characters that are not one column wide, such as
+        double-width or zero-width characters.  The width of a string must
+        be the sum of the widths of its characters.
     """
 
     unicode_whitespace_trans = dict.fromkeys(map(ord, _whitespace), ord(' '))
@@ -122,7 +127,8 @@ class TextWrapper:
                  tabsize=8,
                  *,
                  max_lines=None,
-                 placeholder=' [...]'):
+                 placeholder=' [...]',
+                 text_len=len):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -135,6 +141,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self.text_len = text_len
 
 
     # -- Private methods -----------------------------------------------
@@ -194,6 +201,26 @@ class TextWrapper:
             else:
                 i += 1
 
+    def _truncate_to_width(self, text, width):
+        """_truncate_to_width(text : string, width : int) -> string
+
+        Return the longest prefix of *text* whose width, as measured by
+        self.text_len, does not exceed *width*.  The prefix is empty when
+        the first character is wider than *width*.
+        """
+        # Fast path for the default len(): the width is the number of
+        # characters, so the prefix can be sliced directly.
+        if self.text_len is len:
+            return text[:width]
+        # text_len is additive: the width of a prefix is the sum of the
+        # widths of its characters.
+        prefix_width = 0
+        for i, char in enumerate(text):
+            prefix_width += self.text_len(char)
+            if prefix_width > width:
+                return text[:i]
+        return text
+
     def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
@@ -212,16 +239,22 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words and space_left > 0:
-            end = space_left
             chunk = reversed_chunks[-1]
-            if self.break_on_hyphens and len(chunk) > space_left:
+            # Keep as many leading characters as fit in the width.  A wide
+            # character that does not fit moves to the next line, but an
+            # empty line takes one anyway, so that wrapping makes progress.
+            end = len(self._truncate_to_width(chunk, space_left))
+            if not end and not cur_line:
+                end = 1
+            if self.break_on_hyphens and self.text_len(chunk) > space_left:
                 # break after last hyphen, but only if there are
                 # non-hyphens before it
-                hyphen = chunk.rfind('-', 0, space_left)
+                hyphen = chunk.rfind('-', 0, end)
                 if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
                     end = hyphen + 1
-            cur_line.append(chunk[:end])
-            reversed_chunks[-1] = chunk[end:]
+            if end:
+                cur_line.append(chunk[:end])
+                reversed_chunks[-1] = chunk[end:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
@@ -256,7 +289,8 @@ class TextWrapper:
                 indent = self.subsequent_indent
             else:
                 indent = self.initial_indent
-            if len(indent) + len(self.placeholder.lstrip()) > self.width:
+            if (self.text_len(indent) +
+                    self.text_len(self.placeholder.lstrip()) > self.width):
                 raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
@@ -277,7 +311,7 @@ class TextWrapper:
                 indent = self.initial_indent
 
             # Maximum width for this line.
-            width = self.width - len(indent)
+            width = self.width - self.text_len(indent)
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
@@ -285,7 +319,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = len(chunks[-1])
+                l = self.text_len(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
@@ -298,13 +332,13 @@ class TextWrapper:
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and len(chunks[-1]) > width:
+            if chunks and self.text_len(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
-                cur_len = sum(map(len, cur_line))
+                cur_len = sum(map(self.text_len, cur_line))
 
             # If the last chunk on this line is all whitespace, drop it.
             if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
-                cur_len -= len(cur_line[-1])
+                cur_len -= self.text_len(cur_line[-1])
                 del cur_line[-1]
 
             if cur_line:
@@ -320,16 +354,17 @@ class TextWrapper:
                 else:
                     while cur_line:
                         if (cur_line[-1].strip() and
-                            cur_len + len(self.placeholder) <= width):
+                            cur_len + self.text_len(self.placeholder) <= width):
                             cur_line.append(self.placeholder)
                             lines.append(indent + ''.join(cur_line))
                             break
-                        cur_len -= len(cur_line[-1])
+                        cur_len -= self.text_len(cur_line[-1])
                         del cur_line[-1]
                     else:
                         if lines:
                             prev_line = lines[-1].rstrip()
-                            if (len(prev_line) + len(self.placeholder) <=
+                            if (self.text_len(prev_line) +
+                                    self.text_len(self.placeholder) <=
                                     self.width):
                                 lines[-1] = prev_line + self.placeholder
                                 break
