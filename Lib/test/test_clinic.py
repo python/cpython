@@ -1847,6 +1847,15 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_var_keyword_c_name(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                **kwargs as kwds: dict
+        """)
+        p = function.parameters['kwargs_as_kwds']
+        self.assertEqual("kwds", p.converter.name)
+
     def test_base_invalid_syntax(self):
         block = """
             module os

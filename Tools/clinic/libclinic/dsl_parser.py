@@ -996,7 +996,7 @@ class DSLParser:
 
         # handle "as" for  parameters too
         c_name = None
-        m = re.match(r'(?:\* *)?\w+( +as +(\w+))', line)
+        m = re.match(r'(?:\*{1,2} *)?\w+( +as +(\w+))', line)
         if m:
             c_name = m[2]
             line = line[:m.start(1)] + line[m.end(1):]
