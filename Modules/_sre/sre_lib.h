@@ -735,12 +735,17 @@ dispatch:
         TARGET(SRE_OP_LITERAL):
             /* match literal string */
             /* <LITERAL> <code> */
-            TRACE(("|%p|%p|LITERAL %d\n", pattern,
-                   ptr, *pattern));
-            if (ptr >= end || (SRE_CODE) ptr[0] != pattern[0])
-                RETURN_FAILURE;
-            pattern++;
-            ptr++;
+            do {
+                TRACE(("|%p|%p|LITERAL %d\n", pattern,
+                       ptr, *pattern));
+                if (ptr >= end || (SRE_CODE) ptr[0] != pattern[0])
+                    RETURN_FAILURE;
+                pattern++;
+                ptr++;
+                if (*pattern != SRE_OP_LITERAL)
+                    break;
+                pattern++;
+            } while (1);
             DISPATCH;
 
         TARGET(SRE_OP_NOT_LITERAL):
@@ -816,13 +821,18 @@ dispatch:
             DISPATCH;
 
         TARGET(SRE_OP_LITERAL_IGNORE):
-            TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
-                   pattern, ptr, pattern[0]));
-            if (ptr >= end ||
-                sre_lower_ascii(*ptr) != *pattern)
-                RETURN_FAILURE;
-            pattern++;
-            ptr++;
+            do {
+                TRACE(("|%p|%p|LITERAL_IGNORE %d\n",
+                       pattern, ptr, pattern[0]));
+                if (ptr >= end ||
+                    sre_lower_ascii(*ptr) != *pattern)
+                    RETURN_FAILURE;
+                pattern++;
+                ptr++;
+                if (*pattern != SRE_OP_LITERAL_IGNORE)
+                    break;
+                pattern++;
+            } while (1);
             DISPATCH;
 
         TARGET(SRE_OP_LITERAL_UNI_IGNORE):
