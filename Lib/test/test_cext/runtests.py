@@ -63,14 +63,19 @@ def main():
         '__STRICT_ANSI__',
         '__cplusplus',
         '_MSVC_LANG',
+        'Py_LIMITED_API',
+        'Py_TARGET_ABI3T',
     ):
         try:
             value = getattr(testmod, name)
         except AttributeError:
-            pass
-        else:
-            print(f'{name}: {value}')
-            newline = True
+            continue
+
+        if name in ('Py_LIMITED_API', 'Py_TARGET_ABI3T'):
+            value = f'0x{value:08x}'
+
+        print(f'{name}: {value}')
+        newline = True
     if newline:
         print()
 
