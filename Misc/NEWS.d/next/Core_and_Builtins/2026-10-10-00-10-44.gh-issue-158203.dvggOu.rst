@@ -1,0 +1,4 @@
+Fix a crash when using a static extension type from a subinterpreter. The
+type's ``_tp_cache`` field is globally shared; a second interpreter resizing
+the cache caused a use-after-free (SIGSEGV). Fix by disabling the type-cache
+for static non-heap types that lack per-interpreter state.

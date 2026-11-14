@@ -87,25 +87,39 @@ cache_slot(PyTypeObject *type)
         assert(state != NULL);
         return &state->_tp_cache;
     }
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return NULL;
+    }
     return &type->_tp_cache;
 }
 
 static inline struct type_cache *
 cache_get(PyTypeObject *type)
 {
-    return (struct type_cache *)FT_ATOMIC_LOAD_PTR_ACQUIRE(*cache_slot(type));
+    void **slot = cache_slot(type);
+    if (slot == NULL) {
+        return NULL;
+    }
+    return (struct type_cache *)FT_ATOMIC_LOAD_PTR_ACQUIRE(*slot);
 }
 
 static inline void
 cache_set(PyTypeObject *type, struct type_cache *cache)
 {
-    FT_ATOMIC_STORE_PTR_RELEASE(*cache_slot(type), cache);
+    void **slot = cache_slot(type);
+    if (slot == NULL) {
+        return;
+    }
+    FT_ATOMIC_STORE_PTR_RELEASE(*slot, cache);
 }
 
 void
 _PyTypeCache_InitType(PyTypeObject *type)
 {
-    *cache_slot(type) = &empty_cache;
+    void **slot = cache_slot(type);
+    if (slot != NULL) {
+        *slot = &empty_cache;
+    }
 }
 
 static inline void
@@ -175,6 +189,9 @@ void
 _PyTypeCache_Insert(PyTypeObject *type, PyObject *name, PyObject *value)
 {
     struct type_cache *cache = cache_get(type);
+    if (cache == NULL) {
+        return;
+    }
     // If the cache is full, resize it before inserting the new entry.
     // this also handles the case of empty cache where available is 0 but there are no entries.
     if (cache->available == 0) {
@@ -241,6 +258,9 @@ _PyTypeCache_Invalidate(PyTypeObject *type)
 {
     OBJECT_STAT_INC(type_cache_invalidations);
     struct type_cache *cache = cache_get(type);
+    if (cache == NULL) {
+        return;
+    }
     cache_set(type, &empty_cache);
     cache_free_delayed(cache);
 }
