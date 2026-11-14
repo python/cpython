@@ -99,6 +99,39 @@ _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
 }
 
 int
+_PyTokenizer_syntaxerror_with_opening(struct tok_state *tok,
+                                     int opening_col_offset,
+                                     const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    const char *line = _PyTok_SourcePointer(&tok->source, tok->line_start);
+    int ret = _syntaxerror_range(
+        tok, line, tok->cur - tok->line_start, tok->lineno,
+        format, -1, -1, vargs);
+    va_end(vargs);
+
+    /* Leave the error location on the closing bracket, but make the
+       opening bracket's character column available to traceback. */
+    if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *offset = PyLong_FromLong(
+            byte_col_to_char_col(line, opening_col_offset + 1));
+        if (offset != NULL) {
+            if (PyObject_SetAttrString(exc, "_opening_offset", offset) < 0) {
+                PyErr_Clear();
+            }
+            Py_DECREF(offset);
+        }
+        else {
+            PyErr_Clear();
+        }
+        PyErr_SetRaisedException(exc);
+    }
+    return ret;
+}
+
+int
 _PyTokenizer_syntaxerror_known_range(struct tok_state *tok,
                         int col_offset, int end_col_offset,
                         const char *format, ...)

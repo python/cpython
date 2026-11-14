@@ -148,6 +148,40 @@ class TracebackCases(unittest.TestCase):
         # "女女女 for 女女女 in range(30)" has display width 30
         self.assertEqual(err[2].count("^"), 30)
 
+    def test_mismatched_bracket_carets(self):
+        cases = (
+            ('obj{"some long expression"]', 3, 26,
+             '       ^                      ^\n'),
+            ('obj[func(x[store[arg, a[i], b[j])])[y]]', 16, 32,
+             '                    ^               ^\n'),
+            ('x = ("é女"]', 4, 9,
+             '        ^     ^\n'),
+            ('α = obj{1]', 7, 9,
+             '           ^ ^\n'),
+            ("f'{a[4)}'", 4, 6,
+             '        ^ ^\n'),
+        )
+        for source, opening, closing, expected_carets in cases:
+            with self.subTest(source=source):
+                with self.assertRaises(SyntaxError) as cm:
+                    compile(source, '<test>', 'exec')
+                exc = cm.exception
+                self.assertEqual(exc.offset, closing + 1)
+                self.assertEqual(exc._opening_offset, opening + 1)
+                formatted = traceback.format_exception_only(exc)
+                self.assertEqual(formatted[2], expected_carets)
+                colorized = ''.join(traceback.format_exception_only(exc, colorize=True))
+                self.assertEqual(
+                    re.sub(r'\x1b\[[0-9;]*m', '', colorized), ''.join(formatted)
+                )
+
+        # The existing one-caret display remains for brackets on different lines.
+        with self.assertRaises(SyntaxError) as cm:
+            compile('x = (\n    1 + ]', '<test>', 'exec')
+        exc = cm.exception
+        self.assertFalse(hasattr(exc, '_opening_offset'))
+        self.assertEqual(traceback.format_exception_only(exc)[2], '        ^\n')
+
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
         err = traceback.format_exception_only(SyntaxError, exc)
