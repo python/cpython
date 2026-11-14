@@ -1,11 +1,20 @@
 # UserString is a wrapper around the native builtin string type.
 # UserString instances should behave similar to builtin string objects.
 
+import re
 import unittest
 from test import string_tests
 from test import support
 
 from collections import UserString
+
+
+DEPRECATED_MAXSPLIT_PARAMETER = re.escape(
+    "the 'maxsplit' keyword parameter is deprecated since "
+    "Python 3.16 and slated for removal in Python 3.18; "
+    "use the 'count' keyword parameter or pass the count "
+    "as a positional argument instead"
+)
 
 
 class UserStringSubclass(UserString):
@@ -186,6 +195,29 @@ class UserStringTest(
             i2 = s.index(UserString('h'))
         self.assertEqual(i, 5)
         self.assertEqual(i2, 5)
+
+    def test_replace_count(self):
+        s = UserString('aaa')
+        self.assertEqual(s.replace('a', 'b', 2), 'bba')
+        self.assertEqual(s.replace('a', 'b', count=2), 'bba')
+        self.assertEqual(s.replace(UserString('a'), UserString('b'), count=1),
+                         'baa')
+
+    def test_replace_maxsplit_deprecated(self):
+        # gh-161970: the third parameter was misnamed 'maxsplit'.
+        s = UserStringSubclass('aaa')
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   DEPRECATED_MAXSPLIT_PARAMETER) as cm:
+            r = s.replace('a', 'b', maxsplit=2)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(r, 'bba')
+        self.assertIs(type(r), UserStringSubclass)
+
+        msg = "'count' and 'maxsplit' are mutually exclusive"
+        with self.assertRaisesRegex(TypeError, msg):
+            s.replace('a', 'b', 1, maxsplit=2)
+        with self.assertRaisesRegex(TypeError, msg):
+            s.replace('a', 'b', count=1, maxsplit=2)
 
 
 if __name__ == "__main__":

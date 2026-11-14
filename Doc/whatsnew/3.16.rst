@@ -1329,6 +1329,15 @@ New deprecations
 
     (Contributed by Stan Ulbrych in :gh:`159240`.)
 
+* :mod:`collections`:
+
+  * The third parameter of :meth:`!collections.UserString.replace` is now
+    named *count*, as in :meth:`str.replace`. Support for the undocumented
+    ``maxsplit`` keyword parameter is now deprecated and slated for removal
+    in Python 3.18. Prefer passing the count as a positional argument for
+    maximum backwards compatibility.
+    (Contributed by David Andrews in :gh:`161970`.)
+
 * :mod:`functools`:
 
   * Using a return annotation to infer the dispatch type for
