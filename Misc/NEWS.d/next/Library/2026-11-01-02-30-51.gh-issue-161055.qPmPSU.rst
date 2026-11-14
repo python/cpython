@@ -1,0 +1,3 @@
+Fix :meth:`io.TextIOWrapper.tell` returning a wrong position after
+:func:`next` and :meth:`~io.IOBase.flush`. It now raises :exc:`OSError`, as it
+does without the :meth:`!flush` call.
