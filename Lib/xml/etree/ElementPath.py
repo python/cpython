@@ -384,7 +384,7 @@ def iterfind(elem, path, namespaces=None):
         try:
             token = next()
         except StopIteration:
-            return
+            return iter(())
         selector = []
         while 1:
             try:
