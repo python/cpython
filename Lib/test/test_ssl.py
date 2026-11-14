@@ -40,6 +40,10 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+try:
+    from _hashlib import get_fips_mode
+except ImportError:
+    def get_fips_mode(): return False
 
 
 ssl = import_helper.import_module("ssl")
@@ -2478,6 +2482,9 @@ class ECHTests(unittest.TestCase):
         self.assertEqual(server.selected_alpn_protocol(), 'h2')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    # At 2026-11-13 (OpenSSL 4.0.3 on Fedora 45), the test is incompatible
+    # with FIPS mode: https://github.com/openssl/openssl/issues/33724
+    @unittest.skipIf(get_fips_mode(), 'gh-161932: test incompatible with FIPS')
     def test_outer_alpn_without_ech_config(self):
         for options in (0, ssl.OP_ECH_GREASE):
             client_ctx, server_ctx, hostname = testing_context()
@@ -2491,6 +2498,9 @@ class ECHTests(unittest.TestCase):
             self.assertEqual(server.selected_alpn_protocol(), 'h2')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    # At 2026-11-13 (OpenSSL 4.0.3 on Fedora 45), the test is incompatible
+    # with FIPS mode: https://github.com/openssl/openssl/issues/33724
+    @unittest.skipIf(get_fips_mode(), 'gh-161932: test incompatible with FIPS')
     def test_grease(self):
         client_ctx, server_ctx, hostname = testing_context()
         client_ctx.options |= ssl.OP_ECH_GREASE
