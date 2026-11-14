@@ -1,0 +1,2 @@
+Fix quadratic time complexity in :meth:`email.header.Header.encode` when
+folding long headers.  This also affects :meth:`email.message.Message.as_string`.
