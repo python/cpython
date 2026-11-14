@@ -1246,6 +1246,10 @@ ConfigParser Objects
          Raises InvalidWriteError if this would write a representation which cannot
          be accurately parsed by a future :meth:`read` call from this parser.
 
+      .. versionchanged:: next
+         Also raises InvalidWriteError for option names with leading or
+         trailing whitespace.
+
    .. note::
 
       Comments in the original configuration file are not preserved when
