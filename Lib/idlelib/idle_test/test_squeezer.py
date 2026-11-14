@@ -330,6 +330,9 @@ class ExpandingButtonTest(unittest.TestCase):
         # Check that the underlying tkinter.Button is properly configured.
         self.assertEqual(expandingbutton.master, text_widget)
         self.assertTrue('50 lines' in expandingbutton.cget('text'))
+        # gh-86997: both colors are set.
+        self.assertEqual(expandingbutton.cget('foreground'), 'black')
+        self.assertEqual(expandingbutton.cget('activeforeground'), 'black')
 
         # Check that the text widget still contains no text.
         self.assertEqual(text_widget.get('1.0', 'end'), '\n')

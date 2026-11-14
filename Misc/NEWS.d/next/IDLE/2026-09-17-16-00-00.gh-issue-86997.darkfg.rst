@@ -1,0 +1,3 @@
+Fix unreadable text in the IDLE debugger and in squeezed text buttons in
+macOS dark mode.  The debugger stack list and the stack viewer now use
+the colors of the IDLE theme.
