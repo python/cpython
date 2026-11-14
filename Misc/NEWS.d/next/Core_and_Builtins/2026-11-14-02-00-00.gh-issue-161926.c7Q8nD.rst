@@ -1,0 +1,2 @@
+Fix :class:`complex` ignoring an overridden :meth:`~object.__float__` method of a
+:class:`float` subclass when called with a single positional argument.
