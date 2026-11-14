@@ -1,0 +1,1 @@
+Fix :func:`cmath.log` with a nonzero base: ``cmath.log(0, base)`` now raises :exc:`ValueError` instead of returning ``(-inf+nanj)``.
