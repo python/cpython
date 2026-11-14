@@ -1,0 +1,3 @@
+Fix a regression where importing :mod:`ctypes` could leave an extra file
+descriptor open on some Linux systems, or hang in x86-64 macOS applications
+signed with the hardened runtime.
