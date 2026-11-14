@@ -917,6 +917,9 @@ If an error occurs during module loading (such as :exc:`ImportError` or
 :exc:`SyntaxError`), it is raised at the point where the lazy import is first
 used, not at the import statement itself.
 
+The :func:`__lazy_import__` built-in function provides programmatic access
+to lazy imports.
+
 See :pep:`810` for the full specification of lazy imports.
 
 .. versionadded:: 3.15

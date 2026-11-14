@@ -7,39 +7,40 @@ Built-in functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-+---------------------------------------------------------------------------------------------------+
-|                                        Built-in Functions                                         |
-+=========================+=======================+=======================+=========================+
-| |  **A**                | |  **E**              | |  **L**              | |  **R**                |
-| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
-| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
-| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`     |
-| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`        |
-| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`       |
-| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod` |
-| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_          |
-| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`          |
-| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`        |
-| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                       |
-| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                |
-| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_        |
-| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`         |
-| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                       |
-| |                       | |                     | |  :func:`pow`        | |  **V**                |
-| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`         |
-| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                       |
-| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                |
-| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                       |
-| |                       | |  :func:`issubclass` | |                     | |  **_**                |
-| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
-+-------------------------+-----------------------+-----------------------+-------------------------+
++------------------------------------------------------------------------------------------------------+
+|                                          Built-in Functions                                          |
++=========================+=======================+=======================+============================+
+| |  **A**                | |  **E**              | |  **L**              | |  **R**                   |
+| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_           |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`            |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`        |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`           |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                          |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                   |
+| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_             |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`         |
+| |  :func:`bin`          | |  |func-frozendict|_ | |  :func:`min`        | |  :func:`sentinel`        |
+| |  :func:`bool`         | |  |func-frozenset|_  | |                     | |  :func:`slice`           |
+| |  :func:`breakpoint`   | |                     | |  **N**              | |  :func:`sorted`          |
+| |  |func-bytearray|_    | |  **G**              | |  :func:`next`       | |  :func:`staticmethod`    |
+| |  |func-bytes|_        | |  :func:`getattr`    | |                     | |  |func-str|_             |
+| |                       | |  :func:`globals`    | |  **O**              | |  :func:`sum`             |
+| |  **C**                | |                     | |  :func:`object`     | |  :func:`super`           |
+| |  :func:`callable`     | |  **H**              | |  :func:`oct`        | |                          |
+| |  :func:`chr`          | |  :func:`hasattr`    | |  :func:`open`       | |  **T**                   |
+| |  :func:`classmethod`  | |  :func:`hash`       | |  :func:`ord`        | |  |func-tuple|_           |
+| |  :func:`compile`      | |  :func:`help`       | |                     | |  :func:`type`            |
+| |  :func:`complex`      | |  :func:`hex`        | |  **P**              | |                          |
+| |                       | |                     | |  :func:`pow`        | |  **V**                   |
+| |  **D**                | |  **I**              | |  :func:`print`      | |  :func:`vars`            |
+| |  :func:`delattr`      | |  :func:`id`         | |  :func:`property`   | |                          |
+| |  |func-dict|_         | |  :func:`input`      | |                     | |  **Z**                   |
+| |  :func:`dir`          | |  :func:`int`        | |                     | |  :func:`zip`             |
+| |  :func:`divmod`       | |  :func:`isinstance` | |                     | |                          |
+| |                       | |  :func:`issubclass` | |                     | |  **_**                   |
+| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`      |
+| |                       | |                     | |                     | |  :func:`__lazy_import__` |
++-------------------------+-----------------------+-----------------------+----------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -2470,3 +2471,39 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       When the command line options :option:`-E` or :option:`-I` are being used,
       the environment variable :envvar:`PYTHONCASEOK` is now ignored.
+
+
+.. _func-lazy-import:
+
+.. function:: __lazy_import__(name, globals=None, locals=None, fromlist=(), level=0)
+
+   Import a module lazily. Use this function for programmatic lazy imports.
+   Otherwise, use a :ref:`lazy import statement <lazy-imports>`.
+   The function must be called at module scope. Calling it from a function
+   or class body raises :exc:`SyntaxError`.
+
+   The *name*, *fromlist*, and *level* arguments have the same purpose as in
+   :func:`__import__`, except that *fromlist* must be ``None``, a string, or a
+   tuple of strings. A string is treated as a one-element tuple. When
+   *fromlist* is ``None`` or an empty tuple, the selected module is the
+   top-level package of a dotted *name*. A non-empty tuple selects the module
+   named by *name*, not an individual member of that module.
+
+   If *globals* is omitted or ``None``, the caller's global namespace is used.
+   Otherwise, it must be a dictionary containing a ``__builtins__`` entry.
+   The global namespace supplies the package context for relative imports
+   and the built-in import function used to resolve the lazy import.
+   If *locals* is omitted or ``None``, it defaults to *globals*.
+
+   Normally, the result is a :class:`types.LazyImportType` proxy. Assigning
+   it to a global name defers loading the module until that name is used::
+
+      json = __lazy_import__('json')
+      # Using the global name resolves the lazy import.
+      data = json.loads('{"answer": 42}')
+
+   The filter installed by :func:`sys.set_lazy_imports_filter` can force an
+   eager import. If the filter returns false, the function returns the import
+   result as :func:`__import__` would do.
+
+   .. versionadded:: 3.15
