@@ -1,0 +1,1 @@
+Clarify :func:`os.path.normcase` documentation: on POSIX it normalizes path-like objects via :func:`os.fspath` rather than returning the path unchanged.
