@@ -1,12 +1,16 @@
+import gc
+import threading
 import unittest
 
 from test.support import import_helper
+from test.support import threading_helper
 
 # Skip this test if the _testcapi, _testlimitedcapi or _testinternalcapi
 # modules aren't available.
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
 
 class set_subclass(set):
     pass
@@ -271,6 +275,209 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
         with self.assertRaises(SystemError):
             set_next(object(), 0)
         # CRASHES: set_next(NULL, 0)
+
+
+class FrozenSetWriterTests(unittest.TestCase):
+    PySet_MINSIZE = _testcapi.PySet_MINSIZE
+    UNHASHABLE = [1, 2, 3]
+
+    def create_writer(self, size=0):
+        # Test PyFrozenSetWriter_Create()
+        return _testcapi.PyFrozenSetWriter(size)
+
+    def frozenset_equal(self, result, expected):
+        if not isinstance(expected, frozenset):
+            expected = frozenset(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), frozenset)
+
+    def assert_unhashable(self):
+        err_msg = f"unhashable type: '{type(self.UNHASHABLE).__name__}'"
+        return self.assertRaisesRegex(TypeError, err_msg)
+
+    def test_empty(self):
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        for size in (0, 1024):
+            with self.subTest(size=size):
+                writer = self.create_writer(size)
+                empty_tuple = ()
+                writer.update(empty_tuple)
+                writer.update_array(empty_tuple)
+                writer.update_array_steal(empty_tuple)
+                result = writer.finish()
+                self.assertEqual(result, frozenset())
+                self.assertEqual(_set_get_table_size(result),
+                                 self.PySet_MINSIZE)
+
+    def test_get_table_set(self):
+        # Test size parameter of PyFrozenSetWriter_Create()
+        PySet_MINSIZE = self.PySet_MINSIZE
+
+        def check_table_size(size, table_size):
+            writer = self.create_writer(size)
+            self.assertEqual(writer.get_table_size(), table_size)
+
+        check_table_size(0, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE // 2, PySet_MINSIZE)
+        check_table_size(PySet_MINSIZE - 1, PySet_MINSIZE * 2)
+        check_table_size(PySet_MINSIZE, PySet_MINSIZE * 4)
+        check_table_size(2 ** 15 - 1, 2 ** 16)
+
+    def create_items(self, nitem):
+        # Use mortal (and unique) objects to be able to detect reference leaks
+        return tuple(object() for _ in range(nitem))
+
+    def check_add_method(self, add_method):
+        items = self.create_items(self.PySet_MINSIZE * 2 - 1)
+        for prealloc in (0, len(items) // 2, len(items), len(items) * 10):
+            with self.subTest(prealloc=prealloc):
+                writer = self.create_writer()
+                add = getattr(writer, add_method)
+                for item in items:
+                    add(item)
+                self.frozenset_equal(writer.finish(), items)
+
+        # Test error (unhashable type)
+        writer = self.create_writer(0)
+        writer.update('abc')
+        add = getattr(writer, add_method)
+        with self.assert_unhashable():
+            add(self.UNHASHABLE)
+        self.frozenset_equal(writer.finish(), frozenset('abc'))
+
+    def test_add(self):
+        # Test PyFrozenSetWriter_Add()
+        self.check_add_method('add')
+
+    def test_add_steal(self):
+        # Test PyFrozenSetWriter_AddSteal()
+        self.check_add_method('add_steal')
+
+    def check_update_method(self, update_method):
+        items = self.create_items(self.PySet_MINSIZE - 1)
+        items2 = self.create_items(self.PySet_MINSIZE - 1)
+        common = self.create_items(self.PySet_MINSIZE - 1)
+        expected = set(items) | set(items2) | set(common)
+        total = len(expected)
+        self.assertEqual(total, len(items) + len(items2) + len(common))
+        empty = ()
+
+        for prealloc in (0, total // 2, total, total * 10):
+            with self.subTest(prealloc=prealloc):
+                writer = self.create_writer(prealloc)
+                update = getattr(writer, update_method)
+                update(items + common)
+                update(common + items2)
+                update(empty)  # test nitem=0
+                self.frozenset_equal(writer.finish(), expected)
+
+        # Test error path: first or last item is not hashable
+        for first in (True, False):
+            with self.subTest(first=first):
+                if first:
+                    items_error = (self.UNHASHABLE, *items)
+                    expected = frozenset()
+                else:
+                    items_error = (*items, self.UNHASHABLE)
+                    expected = frozenset(items)
+                writer = self.create_writer(0)
+                update = getattr(writer, update_method)
+                with self.assert_unhashable():
+                    update(items_error)
+                self.frozenset_equal(writer.finish(), expected)
+
+    def test_update(self):
+        # Test PyFrozenSetWriter_Update()
+        self.check_update_method('update')
+
+    def test_update_array(self):
+        # Test PyFrozenSetWriter_UpdateArray()
+        self.check_update_method('update_array')
+
+    def test_update_array_steal(self):
+        # Test PyFrozenSetWriter_UpdateArraySteal()
+        self.check_update_method('update_array_steal')
+
+    def test_finish(self):
+        # Test PyFrozenSetWriter_Finish(): only track the frozenset in the GC
+        # if at least one item is tracked by the GC
+
+        # Integers are not tracked by the GC
+        items = [2, 5, 7]
+        self.assertTrue(all(not gc.is_tracked(item) for item in items))
+        writer = self.create_writer()
+        writer.update(items)
+        self.assertFalse(gc.is_tracked(writer.finish()))
+
+        # Create an object tracked by the GC
+        class MyObject:
+            pass
+        obj = MyObject()
+        self.assertTrue(gc.is_tracked(obj))
+
+        writer = self.create_writer()
+        writer.add(obj)
+        self.assertTrue(gc.is_tracked(writer.finish()))
+
+        # test again, now using PyFrozenSetWriter_Update()
+        writer = self.create_writer()
+        writer.update([obj])
+        self.assertTrue(gc.is_tracked(writer.finish()))
+
+    def test_finish_shrink(self):
+        # Check that PyFrozenSetWriter_Finish() shrinks the table
+        # if the frozenset table is way too big
+        _set_get_table_size = _testcapi._set_get_table_size
+
+        writer = self.create_writer(1024)
+        writer.update([1])
+        result = writer.finish()
+        self.assertEqual(result, frozenset([1]))
+        self.assertEqual(_set_get_table_size(result), self.PySet_MINSIZE)
+
+        items = self.create_items(127)
+        writer = self.create_writer(len(items) * 100)
+        writer.update(items)
+        result = writer.finish()
+        self.assertEqual(result, frozenset(items))
+        self.assertEqual(_set_get_table_size(result), 256)
+
+    def test_discard(self):
+        # Test PyFrozenSetWriter_Discard(): must not leak memory
+
+        writer = self.create_writer(0)
+        writer.discard()
+
+        for prealloc in (0, 3, 100):
+            for items in (
+                (),          # empty
+                [2, 5, 7],   # use the small table
+                range(100),  # allocate a new table
+            ):
+                with self.subTest(prealloc=prealloc, items=items):
+                    writer = self.create_writer(prealloc)
+                    writer.update(items)
+                    writer.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyFrozenSetWriter can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        writer = self.create_writer()
+
+        def thread_func(writer):
+            writer.add('a')
+            writer.add_steal('b')
+            writer.update(('c',))
+            writer.update_array(('d',))
+            writer.update_array_steal(('e',))
+
+        thread = threading.Thread(target=thread_func, args=(writer,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.frozenset_equal(writer.finish(), frozenset('abcde'))
 
 
 if __name__ == "__main__":
