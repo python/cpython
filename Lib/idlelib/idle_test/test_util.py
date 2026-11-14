@@ -8,6 +8,7 @@ from test.support.isolation import runInSubprocess
 import tkinter
 from tkinter import EventType
 from idlelib import util
+from idlelib.multicall import MC_SHIFT, MC_CONTROL
 from idlelib.idle_test.mock_tk import Event
 
 
@@ -72,9 +73,9 @@ class WheelEventTest(unittest.TestCase):
 
     # An unmapped widget has no height and does not scroll by lines,
     # so record the yview call instead of a real scroll.
-    def event(self, event_type, delta=0, num='??'):
+    def event(self, event_type, delta=0, num='??', state=0):
         # Tk leaves num '??' for a wheel event and delta 0 for a button.
-        return Event(type=event_type, delta=delta, num=num,
+        return Event(type=event_type, delta=delta, num=num, state=state,
                      widget=mock.Mock())
 
     def scroll(self, event, widget=None):
@@ -82,7 +83,16 @@ class WheelEventTest(unittest.TestCase):
         self.assertEqual(util.wheel_event(event, widget), 'break')
         scrolled = event.widget if widget is None else widget
         scrolled.yview.assert_called_once()
+        scrolled.xview.assert_not_called()
         return scrolled.yview.call_args.args
+
+    def hscroll(self, event, widget=None):
+        "Return the arguments of the xview call."
+        self.assertEqual(util.wheel_event(event, widget), 'break')
+        scrolled = event.widget if widget is None else widget
+        scrolled.xview.assert_called_once()
+        scrolled.yview.assert_not_called()
+        return scrolled.xview.call_args.args
 
     def test_mousewheel(self):
         # Delta is positive for up on all systems.
@@ -99,6 +109,26 @@ class WheelEventTest(unittest.TestCase):
                          ('scroll', -5, 'units'))
         self.assertEqual(self.scroll(self.event(EventType.ButtonPress, num=5)),
                          ('scroll', 5, 'units'))
+
+    def test_horizontal(self):
+        # The Shift modifier means horizontal.
+        for delta in 120, 1, 1200:
+            self.assertEqual(self.hscroll(self.event(EventType.MouseWheel,
+                                                     delta, state=MC_SHIFT)),
+                             ('scroll', -5, 'units'))
+            self.assertEqual(self.hscroll(self.event(EventType.MouseWheel,
+                                                     -delta, state=MC_SHIFT)),
+                             ('scroll', 5, 'units'))
+        self.assertEqual(self.hscroll(self.event(EventType.ButtonPress,
+                                                 num=4, state=MC_SHIFT)),
+                         ('scroll', -5, 'units'))
+        self.assertEqual(self.hscroll(self.event(EventType.ButtonPress,
+                                                 num=5, state=MC_SHIFT)),
+                         ('scroll', 5, 'units'))
+        # Other modifiers alone do not.
+        self.assertEqual(self.scroll(self.event(EventType.MouseWheel,
+                                                120, state=MC_CONTROL)),
+                         ('scroll', -5, 'units'))
 
     def test_widget_argument(self):
         # A tree label scrolls the canvas, not itself.
