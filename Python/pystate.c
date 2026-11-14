@@ -2383,11 +2383,9 @@ tstate_wait_attach(PyThreadState *tstate)
 void
 _PyThreadState_Attach(PyThreadState *tstate)
 {
-#if defined(Py_DEBUG)
     // This is called from PyEval_RestoreThread(). Similar
     // to it, we need to ensure errno doesn't change.
     int err = errno;
-#endif
 
     _Py_EnsureTstateNotNULL(tstate);
     if (current_fast_get() != NULL) {
@@ -2434,9 +2432,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
     _PyStats_Attach((_PyThreadStateImpl *)tstate);
 #endif
 
-#if defined(Py_DEBUG)
     errno = err;
-#endif
 }
 
 static void
