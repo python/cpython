@@ -1,0 +1,2 @@
+Fix a command injection in :mod:`venv` activation scripts when an environment
+path contains a template placeholder such as ``__VENV_PYTHON__``.
