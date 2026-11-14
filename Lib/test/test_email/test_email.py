@@ -839,6 +839,32 @@ class TestMessageAPI(TestEmailBase):
         msg.add_header('X-Status', None)
         self.assertEqual('', msg['X-Status'])
 
+    def test_add_header_copies_Header_returned_by_items(self):
+        # gh-151454: items() returns (name, Header) under the compat32 policy
+        # for a header carrying 8-bit data.  Copying such headers with the
+        # bug report's loop (newmsg.add_header(h, v)) used to raise
+        # "TypeError: sequence item 0: expected str instance, Header found".
+        old = email.message_from_bytes(b'X-Ham-Report: spam \xff report\n\n')
+        name, value = old.items()[0]
+        self.assertIsInstance(value, Header)
+        msg = Message()
+        msg.add_header(name, value)
+        # The Header is stored unmodified, exactly as __setitem__ does (rather
+        # than stringified, which would lose the 8-bit bytes to U+FFFD).
+        self.assertIs(next(msg.raw_items())[1], value)
+        ref = Message()
+        ref[name] = value
+        self.assertEqual(msg.as_bytes(), ref.as_bytes())
+
+    def test_add_header_with_Header_value_and_params_raises_clear_error(self):
+        # gh-151454: a Header combined with params isn't supported (the
+        # params would have no defined meaning for it), so this should raise
+        # a clear TypeError rather than fail inside SEMISPACE.join().
+        msg = Message()
+        header = Header('spam \xff report', charset='unknown-8bit')
+        with self.assertRaisesRegex(TypeError, 'must be a str'):
+            msg.add_header('X-Ham-Report', header, foo='bar')
+
     # Issue 5871: reject an attempt to embed a header inside a header value
     # (header injection attack).
     def test_embedded_header_via_Header_rejected(self):
