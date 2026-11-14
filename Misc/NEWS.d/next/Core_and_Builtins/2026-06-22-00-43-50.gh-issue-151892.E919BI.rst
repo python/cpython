@@ -1,0 +1,5 @@
+Fixed a crash in :meth:`concurrent.interpreters.Interpreter.call` when
+reconstructing the result in the calling interpreter raised an exception
+(for example when unpickling the returned object failed).  The failure is
+now reported as :exc:`concurrent.interpreters.NotShareableError` instead of
+aborting the interpreter.
