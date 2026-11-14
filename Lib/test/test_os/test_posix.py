@@ -296,6 +296,74 @@ class PosixTester(unittest.TestCase):
             """
         assert_python_ok('-c', code)
 
+    @support.requires_fork()
+    def test_register_at_fork_accumulates_across_forks(self):
+        # gh-103758: handlers registered after an earlier fork() must run
+        # together with the earlier ones.  'before' handlers run in reverse
+        # registration order, 'after_in_parent' and 'after_in_child' in
+        # registration order.
+        #
+        # Run in a subprocess: fork handlers cannot be unregistered.
+        # Every process checks its own copy of 'events', so there is no
+        # shared pipe; the child reports through its exit status only.
+        code = """if 1:
+            import os
+            import sys
+            import traceback
+            from test.support import wait_process
+
+            events = []
+
+            def recorder(tag):
+                return lambda: events.append(tag)
+
+            # Each stage: handlers registered before that fork, then the
+            # expected events in the parent and in the child.
+            stages = [
+                # Stage 1: first registration only.
+                (dict(before=recorder('before1'),
+                      after_in_parent=recorder('parent1'),
+                      after_in_child=recorder('child1')),
+                 ['before1', 'parent1'],
+                 ['before1', 'child1']),
+                # Stage 2: added after the first fork; no after_in_parent.
+                (dict(before=recorder('before2'),
+                      after_in_child=recorder('child2')),
+                 ['before2', 'before1', 'parent1'],
+                 ['before2', 'before1', 'child1', 'child2']),
+                # Stage 3: added after the second fork.
+                (dict(before=recorder('before3'),
+                      after_in_parent=recorder('parent3'),
+                      after_in_child=recorder('child3')),
+                 ['before3', 'before2', 'before1', 'parent1', 'parent3'],
+                 ['before3', 'before2', 'before1',
+                  'child1', 'child2', 'child3']),
+            ]
+
+            for n, (handlers, want_parent, want_child) in enumerate(stages, 1):
+                os.register_at_fork(**handlers)
+                events.clear()
+                pid = os.fork()
+                if pid == 0:
+                    # Child: os._exit() skips atexit hooks, the parent's
+                    # finally blocks and buffer flushing.
+                    exitcode = 2
+                    try:
+                        if events == want_child:
+                            exitcode = 0
+                        else:
+                            exitcode = 1
+                            print(f'stage {n}: child events {events!r}, '
+                                  f'expected {want_child!r}', file=sys.stderr)
+                    except BaseException:
+                        traceback.print_exc()
+                    finally:
+                        sys.stderr.flush()
+                        os._exit(exitcode)
+                wait_process(pid, exitcode=0)
+                assert events == want_parent, (n, events, want_parent)
+            """
+        assert_python_ok('-c', code)
     @unittest.skipUnless(hasattr(posix, 'lockf'), "test needs posix.lockf()")
     def test_lockf(self):
         fd = os.open(os_helper.TESTFN, os.O_WRONLY | os.O_CREAT)
