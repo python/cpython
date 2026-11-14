@@ -1186,7 +1186,10 @@ class UserDict(_collections_abc.MutableMapping):
 
     def __getitem__(self, key):
         if key in self.data:
-            return self.data[key]
+            try:
+                return self.data[key]
+            except KeyError:
+                pass
         if hasattr(self.__class__, "__missing__"):
             return self.__class__.__missing__(self, key)
         raise KeyError(key)
@@ -1207,7 +1210,10 @@ class UserDict(_collections_abc.MutableMapping):
 
     def get(self, key, default=None):
         if key in self:
-            return self[key]
+            try:
+                return self[key]
+            except KeyError:
+                pass
         return default
 
 
