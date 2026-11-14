@@ -1,0 +1,3 @@
+Fix :meth:`difflib.SequenceMatcher.get_grouped_opcodes` changing the list
+cached by :meth:`~difflib.SequenceMatcher.get_opcodes`, which made later calls
+on the same matcher return wrong results.
