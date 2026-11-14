@@ -15,7 +15,10 @@ When acting on this repository, apply the policy's core principles:
 - Write tests that exercise the change.
 - Keep backwards compatibility with prior releases in mind.
 
-## Duplicate-issue checks
+## Opening issues
+
+Do not auto-generate issues with AI tools. Write up the report yourself,
+in your own words, after you have understood and verified the problem.
 
 Before opening an issue, search for existing reports, including closed ones:
 
