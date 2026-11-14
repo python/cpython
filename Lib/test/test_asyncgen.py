@@ -665,6 +665,84 @@ class AsyncGenTest(unittest.TestCase):
             gen.send(None)
         self.assertEqual(cm.exception.value, 2)
 
+    def test_async_gen_awaitable_reentrant_send(self):
+        class YieldOnce:
+            def __await__(self):
+                yield "inner"
+
+        aw = None
+        seen_errors = []
+
+        async def reenter_on_asend():
+            try:
+                aw.send(None)
+            except ValueError as exc:
+                seen_errors.append(str(exc))
+            await YieldOnce()
+            yield 42
+
+        ag = reenter_on_asend()
+        aw = ag.asend(None)
+        self.assertEqual(aw.send(None), "inner")
+        self.assertEqual(seen_errors, ["async generator already executing"])
+        self.assertTrue(ag.ag_running)
+        with self.assertRaises(StopIteration) as cm:
+            aw.send(None)
+        self.assertEqual(cm.exception.value, 42)
+        self.assertFalse(ag.ag_running)
+        with self.assertRaisesRegex(RuntimeError, "cannot reuse"):
+            aw.send(None)
+
+        seen_errors.clear()
+
+        async def reenter_on_aclose():
+            try:
+                yield 1
+            finally:
+                try:
+                    aw.send(None)
+                except ValueError as exc:
+                    seen_errors.append(("send", str(exc)))
+                try:
+                    aw.throw(RuntimeError("boom"))
+                except ValueError as exc:
+                    seen_errors.append(("throw", str(exc)))
+                await YieldOnce()
+
+        ag = reenter_on_aclose()
+        with self.assertRaises(StopIteration):
+            ag.asend(None).send(None)
+        aw = ag.aclose()
+        self.assertEqual(aw.send(None), "inner")
+        self.assertEqual(seen_errors, [
+            ("send", "async generator already executing"),
+            ("throw", "async generator already executing"),
+        ])
+        self.assertTrue(ag.ag_running)
+        with self.assertRaises(StopIteration):
+            aw.send(None)
+        self.assertFalse(ag.ag_running)
+        with self.assertRaisesRegex(RuntimeError, "cannot reuse"):
+            aw.send(None)
+
+    def test_async_gen_finished_aclose_athrow_non_none_send(self):
+        async def empty():
+            if False:
+                yield
+
+        for make_aw in (
+            lambda ag: ag.aclose(),
+            lambda ag: ag.athrow(ValueError),
+        ):
+            ag = empty()
+            with self.assertRaises(StopAsyncIteration):
+                ag.asend(None).send(None)
+            aw = make_aw(ag)
+            with self.assertRaises(StopIteration):
+                aw.send(1)
+            with self.assertRaises(RuntimeError):
+                aw.send(None)
+
 
 class AsyncGenAsyncioTest(unittest.TestCase):
 
