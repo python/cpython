@@ -2729,7 +2729,9 @@ class TestWhich(BaseTest, unittest.TestCase):
                 self.assertIsNone(rv)
 
                 # look in current directory
-                with os_helper.change_cwd(self.dir):
+                with os_helper.change_cwd(self.dir), \
+                     unittest.mock.patch('shutil._win_path_needs_curdir',
+                                         return_value=True):
                     rv = shutil.which(self.file)
                     self.assertEqual(rv, expected_cwd)
 

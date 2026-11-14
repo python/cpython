@@ -1,0 +1,3 @@
+Fix ``test_shutil.test_environ_path_cwd`` on Windows, which relied on the
+user's ``NoDefaultCurrentDirectoryInExePath`` environment setting and was
+therefore non-deterministic.
