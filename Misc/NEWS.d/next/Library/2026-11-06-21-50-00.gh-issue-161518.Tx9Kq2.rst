@@ -1,0 +1,2 @@
+:class:`io.TextIOWrapper` now raises :exc:`TypeError`, instead of writing
+corrupt output, when an encoder returns its non-ASCII input string.

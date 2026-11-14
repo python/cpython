@@ -1831,7 +1831,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     Py_DECREF(text);
     if (b == NULL)
         return NULL;
-    if (b != text && !PyBytes_Check(b)) {
+    if (!PyBytes_Check(b) && !(b == text && PyUnicode_IS_ASCII(text))) {
         PyErr_Format(PyExc_TypeError,
                      "encoder should return a bytes object, not '%.200s'",
                      Py_TYPE(b)->tp_name);
