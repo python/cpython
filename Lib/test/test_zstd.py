@@ -2279,16 +2279,16 @@ class FileTestCase(unittest.TestCase):
         self.assertNotEqual(c.flush(c.FLUSH_FRAME), b'')
         self.assertNotEqual(c.flush(c.FLUSH_FRAME), b'')
 
-        # don't generate empty content frame
+        # generate an empty content frame when the file is closed
         bo = io.BytesIO()
         with ZstdFile(bo, 'w') as f:
             pass
-        self.assertEqual(bo.getvalue(), b'')
+        self.assertEqual(decompress(bo.getvalue()), b'')
 
         bo = io.BytesIO()
         with ZstdFile(bo, 'w') as f:
             f.flush(f.FLUSH_FRAME)
-        self.assertEqual(bo.getvalue(), b'')
+        self.assertEqual(decompress(bo.getvalue()), b'')
 
         # if .write(b''), generate empty content frame
         bo = io.BytesIO()
@@ -2664,8 +2664,108 @@ class FileTestCase(unittest.TestCase):
         with ZstdFile(filename, 'a') as f:
             pass
         self.assertTrue(os.path.isfile(filename))
+        with io.open(filename, 'rb') as f:
+            data = f.read()
+        self.assertNotEqual(data, b'')
+        self.assertEqual(decompress(data), b'')
 
         os.remove(filename)
+
+    def test_append_empty_file(self):
+        for mode in ('a', 'ab'):
+            for flush_mode in (None, ZstdFile.FLUSH_BLOCK, ZstdFile.FLUSH_FRAME):
+                with self.subTest(mode=mode, flush_mode=flush_mode):
+                    with tempfile.TemporaryDirectory() as directory:
+                        filename = pathlib.Path(directory) / 'empty.zst'
+                        filename.touch()
+                        with ZstdFile(filename, mode) as f:
+                            if flush_mode is not None:
+                                f.flush(flush_mode)
+                                f.flush(flush_mode)
+                            f.close()
+                        f.close()
+                        data = filename.read_bytes()
+                        # A block flush can change the frame header. Check
+                        # for exactly one complete empty frame instead.
+                        self.assertNotEqual(data, b'')
+                        decompressor = ZstdDecompressor()
+                        self.assertEqual(decompressor.decompress(data), b'')
+                        self.assertTrue(decompressor.eof)
+                        self.assertEqual(decompressor.unused_data, b'')
+                        self.assertEqual(decompress(data), b'')
+
+    def test_append_existing_file_without_writing(self):
+        for mode in ('a', 'ab'):
+            for flush in (False, True):
+                with self.subTest(mode=mode, flush=flush):
+                    with tempfile.TemporaryDirectory() as directory:
+                        filename = pathlib.Path(directory) / 'existing.zst'
+                        filename.write_bytes(self.FRAME_42)
+                        with ZstdFile(filename, mode) as f:
+                            if flush:
+                                f.flush(f.FLUSH_FRAME)
+                                f.flush(f.FLUSH_FRAME)
+                        f.close()
+                        self.assertEqual(filename.read_bytes(), self.FRAME_42)
+
+    def test_append_bytesio_without_writing(self):
+        # A caller-supplied stream's current position need not be its size.
+        # Preserve the no-op even for an empty stream, whose size is unknown
+        # to ZstdFile without probing the caller's object.
+        for data in (b'', self.FRAME_42):
+            for position in {0, len(data)}:
+                with self.subTest(data=data, position=position):
+                    with io.BytesIO(data) as dst:
+                        dst.seek(position)
+                        with ZstdFile(dst, 'a') as f:
+                            self.assertEqual(dst.tell(), position)
+                            f.flush(f.FLUSH_FRAME)
+                            f.flush(f.FLUSH_FRAME)
+                        f.close()
+                        self.assertFalse(dst.closed)
+                        self.assertEqual(dst.tell(), position)
+                        self.assertEqual(dst.getvalue(), data)
+
+    def test_append_write_only_wrapper(self):
+        class WriteOnly:
+            def write(self, data):
+                return dst.write(data)
+
+        class Unsupported(WriteOnly):
+            def unsupported(self, *args):
+                raise io.UnsupportedOperation
+
+            read = tell = seek = fileno = unsupported
+
+        class Unprobed(WriteOnly):
+            def unexpected(self, *args):
+                raise AssertionError('append must not probe the stream')
+
+            read = tell = seek = fileno = unexpected
+
+        for wrapper in (WriteOnly, Unsupported, Unprobed):
+            for initial in (b'', self.FRAME_42):
+                with self.subTest(wrapper=wrapper, initial=initial):
+                    with io.BytesIO(initial) as dst:
+                        dst.seek(0, io.SEEK_END)
+                        stream = wrapper()
+                        with ZstdFile(stream, 'a') as f:
+                            f.flush(f.FLUSH_FRAME)
+                            f.flush(f.FLUSH_FRAME)
+                        f.close()
+                        self.assertEqual(dst.getvalue(), initial)
+                        self.assertEqual(dst.tell(), len(initial))
+
+                        with ZstdFile(stream, 'a') as f:
+                            f.write(b'more')
+                            f.flush(f.FLUSH_FRAME)
+                            data = dst.getvalue()
+                            f.flush(f.FLUSH_FRAME)
+                        f.close()
+                        self.assertFalse(dst.closed)
+                        self.assertEqual(dst.getvalue(), data)
+                        expected = self.DECOMPRESSED_42 if initial else b''
+                        self.assertEqual(decompress(data), expected + b'more')
 
 class OpenTestCase(unittest.TestCase):
 
