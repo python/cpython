@@ -29,6 +29,46 @@ def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
     return container
 
 
+def get_extension_suffixes() -> list[str]:
+    """Return the extension module suffixes of the target interpreter.
+
+    importlib.machinery.EXTENSION_SUFFIXES describes the running interpreter,
+    which is not the target under --with-build-python. On POSIX, rebuild the
+    list from the target configuration instead, following
+    _PyImport_DynLoadFiletab in Python/dynload_*.c. The two are kept in sync
+    by test_build_details.BuildDetailsTargetTests.test_native_extension_suffixes.
+    """
+    if os.name != 'posix':
+        return importlib.machinery.EXTENSION_SUFFIXES
+
+    dynloadfile = sysconfig.get_config_var('DYNLOADFILE')
+    if dynloadfile == 'dynload_stub.o':
+        return []
+    if dynloadfile == 'dynload_hpux.o':
+        return [sysconfig.get_config_var('EXT_SUFFIX'), '.sl']
+    if dynloadfile != 'dynload_shlib.o':
+        raise ValueError(f'Unsupported DYNLOADFILE: {dynloadfile!r}')
+
+    soabi = sysconfig.get_config_var('SOABI')
+    if sysconfig.get_config_var('MACHDEP') == 'cygwin':
+        return [f'.{soabi}.dll', '.dll']
+
+    suffixes = [f'.{soabi}.so']
+    alt_soabi = sysconfig.get_config_var('ALT_SOABI')
+    if alt_soabi:
+        suffixes.append(f'.{alt_soabi}.so')
+    platform = sysconfig.get_config_var('SOABI_PLATFORM')
+    if not sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if platform:
+            suffixes.append(f'.abi3-{platform}.so')
+        suffixes.append('.abi3.so')
+    if platform:
+        suffixes.append(f'.abi3t-{platform}.so')
+    suffixes.append('.abi3t.so')
+    suffixes.append('.so')
+    return suffixes
+
+
 def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     """Generate the build-details.json data (PEP 739).
 
@@ -62,14 +102,20 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
+    if 'supports_isolated_interpreters' in data['implementation']:
+        # Mirrors Python/sysmodule.c.
+        data['implementation']['supports_isolated_interpreters'] = (
+            sysconfig.get_config_var('MACHDEP') not in ('wasi', 'emscripten')
+        )
 
-    data['abi']['flags'] = list(sys.abiflags)
+    data['abi']['flags'] = list(sysconfig.get_config_var('ABIFLAGS'))
 
     data['suffixes']['source'] = importlib.machinery.SOURCE_SUFFIXES
     data['suffixes']['bytecode'] = importlib.machinery.BYTECODE_SUFFIXES
     #data['suffixes']['optimized_bytecode'] = importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES
     #data['suffixes']['debug_bytecode'] = importlib.machinery.DEBUG_BYTECODE_SUFFIXES
-    data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
+    extension_suffixes = get_extension_suffixes()
+    data['suffixes']['extensions'] = extension_suffixes
 
     LIBDIR = sysconfig.get_config_var('LIBDIR')
     LIBPL = sysconfig.get_config_var('LIBPL')
@@ -118,17 +164,16 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     # regardless.
     #
     # We only want to set abi.extension_suffix and stable_abi_suffix if
-    # extension modules are supported.
-    if has_dynamic_library:
+    # extension modules are supported, regardless of how libpython is built.
+    if extension_suffixes:
         data['abi']['extension_suffix'] = sysconfig.get_config_var('EXT_SUFFIX')
 
-        # EXTENSION_SUFFIXES has been constant for a long time, and currently we
-        # don't have a better information source to find the stable ABI suffix.
-        for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+        for suffix in extension_suffixes:
             if suffix.startswith('.abi'):
                 data['abi']['stable_abi_suffix'] = suffix
                 break
 
+    if has_dynamic_library:
         data['libpython']['dynamic'] = os.path.join(dynamic_library_dir, LDLIBRARY)
         # FIXME: Not sure if windows has a different dll for the stable ABI, and
         #        even if it does, currently we don't have a way to get its name.
