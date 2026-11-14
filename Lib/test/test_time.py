@@ -1,5 +1,6 @@
 from test import support
 from test.support import warnings_helper
+import os
 import decimal
 import enum
 import fractions
@@ -577,6 +578,37 @@ class TimeTestCase(unittest.TestCase):
                 environ['TZ'] = org_TZ
             elif 'TZ' in environ:
                 del environ['TZ']
+            time.tzset()
+
+        #  verify the libc-backed values against localtime() under a controlled timezone.
+        old_tz = os.environ.get("TZ")
+        try:
+            os.environ["TZ"] = "America/Vancouver"
+            time.tzset()
+
+            local_time = time.localtime()
+
+            self.assertEqual(
+                time.tzname[0],
+                local_time.tm_zone
+            )
+
+            self.assertEqual(
+                time.timezone,
+                -local_time.tm_gmtoff
+            )
+            result = time.strptime(time.strftime('%Z'), '%Z')
+            self.assertEqual(result.tm_year, 1900)
+            self.assertEqual(result.tm_mon, 1)
+            self.assertEqual(result.tm_mday, 1)
+            self.assertEqual(result.tm_isdst, 0)
+
+
+        finally:
+            if old_tz is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = old_tz
             time.tzset()
 
     def test_insane_timestamps(self):
