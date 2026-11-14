@@ -1,0 +1,8 @@
+:func:`ftplib.FTP.retrbinary`, :func:`ftplib.FTP.retrlines`,
+:func:`ftplib.FTP.storbinary` and :func:`ftplib.FTP.storlines` no longer let
+the TLS shutdown of the data connection turn an already completed transfer
+into an exception or into an indefinite hang.  The shutdown handshake is
+still attempted, but it now runs with a short timeout and the errors a peer
+can cause there -- such as :exc:`ConnectionResetError` or
+:class:`ssl.SSLEOFError` when it does not complete the handshake on a data
+connection that only exists for a single transfer -- are ignored.
