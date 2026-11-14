@@ -1,0 +1,5 @@
+For codegen method ``codegen_deferred_annotations_body`` we can fail to
+decref ``mangled`` during the generation of the bytecode for an annotation
+entry. This change creates a subfunction for the bytecode generation of the
+annotation entry which will also to decref ``mangled`` in the event of
+errors.
