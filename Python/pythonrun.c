@@ -1157,6 +1157,13 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         }
     }
 
+    // gh-161863: Interpreter can be not fully initialized
+    // when calling this function. May be not safe to call the import.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->imports.importlib == NULL) {
+        goto fallback;
+    }
+
     // Try first with the stdlib traceback module
     PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
         "traceback",
