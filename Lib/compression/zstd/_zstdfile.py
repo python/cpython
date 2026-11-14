@@ -325,11 +325,11 @@ def open(file, /, mode='rb', *, level=None, options=None, zstd_dict=None,
     """
 
     text_mode = 't' in mode
-    mode = mode.replace('t', '')
 
     if text_mode:
         if 'b' in mode:
             raise ValueError(f'Invalid mode: {mode!r}')
+        mode = mode.replace('t', '')
     else:
         if encoding is not None:
             raise ValueError('Argument "encoding" not supported in binary mode')
