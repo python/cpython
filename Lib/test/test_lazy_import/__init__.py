@@ -2653,6 +2653,68 @@ class AttributeSideEffectTests(unittest.TestCase):
             "Copyright (c) 2001-2022 Python Software Foundation.",
         )
 
+    def test_submodule_imported_elsewhere_keeps_lazy_from_binding(self):
+        """Importing a submodule must not overwrite the parent's lazy
+        from-import of it: eagerly, that statement imported the submodule
+        itself and kept its own binding."""
+        import test.test_lazy_import.data.lazy_from_own_submodule as pkg
+        self.assertIsInstance(pkg.__dict__["thing"], types.LazyImportType)
+        import test.test_lazy_import.data.lazy_from_own_submodule.thing
+        self.assertEqual(pkg.thing, "the object")
+
+    def test_submodule_imported_elsewhere_keeps_from_binding_in_all_mode(self):
+        """The same, with an eager-spelled from-import made lazy by the
+        'all' mode."""
+        import importlib
+        sys.set_lazy_imports("all")
+        import test.test_lazy_import.data.eager_from_own_submodule as pkg
+        importlib.import_module(
+            "test.test_lazy_import.data.eager_from_own_submodule.thing")
+        self.assertEqual(pkg.thing, "the object")
+
+    def test_submodule_imported_elsewhere_keeps_lazy_import_of_its_child(self):
+        """A lazy import of a module inside the submodule imports the
+        submodule too, so its binding is kept as well."""
+        import test.test_lazy_import.data.lazy_import_inside_submodule as pkg
+        import test.test_lazy_import.data.lazy_import_inside_submodule.thing
+        self.assertEqual(
+            pkg.thing.__name__,
+            "test.test_lazy_import.data.lazy_import_inside_submodule.thing.inner",
+        )
+
+    def test_submodule_imported_elsewhere_keeps_lazy_from_package_import(self):
+        """A lazy "from . import sub" imports the submodule too, so its
+        binding is kept, and resolves to the submodule."""
+        import test.test_lazy_import.data.lazy_from_package_import_submodule as pkg
+        import test.test_lazy_import.data.lazy_from_package_import_submodule.thing
+        self.assertIsInstance(pkg.__dict__["thing"], types.LazyImportType)
+        self.assertIs(
+            pkg.thing,
+            sys.modules[
+                "test.test_lazy_import.data.lazy_from_package_import_submodule.thing"],
+        )
+
+    def test_submodule_overwrites_lazy_binding_from_elsewhere(self):
+        """A lazy binding of another module's name does not import the
+        submodule, so the submodule's import overwrites it, as it would
+        overwrite the eager binding."""
+        import test.test_lazy_import.data.lazy_from_other_module as pkg
+        import test.test_lazy_import.data.lazy_from_other_module.letters
+        self.assertIs(
+            pkg.letters,
+            sys.modules["test.test_lazy_import.data.lazy_from_other_module.letters"],
+        )
+
+    def test_submodule_overwrites_lazy_binding_from_a_sibling(self):
+        """A sibling whose name starts with the submodule's name is another
+        module: pkg.things is not inside pkg.thing."""
+        import test.test_lazy_import.data.lazy_from_prefixed_submodule as pkg
+        import test.test_lazy_import.data.lazy_from_prefixed_submodule.thing
+        self.assertIs(
+            pkg.thing,
+            sys.modules["test.test_lazy_import.data.lazy_from_prefixed_submodule.thing"],
+        )
+
 
 class ModuleVariableNameCollisionTests(unittest.TestCase):
     """Tests for name collision between a submodule and a variable."""

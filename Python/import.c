@@ -5570,6 +5570,38 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_imp._lazily_binds_child -> bool
+    parent: object
+    child: unicode
+    name: unicode
+    /
+Return whether the module parent binds child to a lazy import of name.
+
+A lazy import of a module inside name counts too: resolving either one
+imports name.
+[clinic start generated code]*/
+
+static int
+_imp__lazily_binds_child_impl(PyObject *module, PyObject *parent,
+                              PyObject *child, PyObject *name)
+/*[clinic end generated code: output=f5db314652b57fca input=c9da3c4d4d883490]*/
+{
+    if (!PyModule_Check(parent)) {
+        return 0;
+    }
+    PyObject *bound;
+    if (PyDict_GetItemRef(_PyModule_GetDict(parent), child, &bound) < 0) {
+        return -1;
+    }
+    int result = 0;
+    if (bound != NULL && PyLazyImport_CheckExact(bound)) {
+        result = _PyLazyImport_ImportsModule(bound, name);
+    }
+    Py_XDECREF(bound);
+    return result;
+}
+
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib.");
 
@@ -5594,6 +5626,7 @@ static PyMethodDef imp_methods[] = {
     _IMP__FIX_CO_FILENAME_METHODDEF
     _IMP_SOURCE_HASH_METHODDEF
     _IMP__SET_LAZY_ATTRIBUTES_METHODDEF
+    _IMP__LAZILY_BINDS_CHILD_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 

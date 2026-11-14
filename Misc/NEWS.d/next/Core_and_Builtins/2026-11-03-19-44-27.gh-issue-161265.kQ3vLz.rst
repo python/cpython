@@ -1,0 +1,4 @@
+Fix a :ref:`lazy <lazy-imports>` ``from .sub import sub`` in a package being
+replaced by the submodule when ``pkg.sub`` was first imported elsewhere. The
+name now resolves to the object the statement imports, as it does without
+``lazy``.
