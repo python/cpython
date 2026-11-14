@@ -1,0 +1,3 @@
+Fix :func:`platform.libc_ver` crashing with :exc:`TypeError` when the scanned
+binary references a threaded C library (such as ``libc_r``) that has no version
+number. Patch by tonghuaroot.
