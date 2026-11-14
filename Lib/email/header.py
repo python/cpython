@@ -88,28 +88,29 @@ def decode_header(header):
     # two parts will be None.
     words = []
     for line in header.splitlines():
+        # ecre.split() returns [unencoded, charset, encoding, encoded,
+        # unencoded, ...].  Walk it by index: popping from the front would
+        # be quadratic in the number of encoded words.
         parts = ecre.split(line)
-        first = True
-        while parts:
-            unencoded = parts.pop(0)
-            if first:
+        for i in range(0, len(parts), 4):
+            unencoded = parts[i]
+            if i == 0:
                 unencoded = unencoded.lstrip()
-                first = False
             if unencoded:
                 words.append((unencoded, None, None))
-            if parts:
-                charset = parts.pop(0).lower()
-                encoding = parts.pop(0).lower()
-                encoded = parts.pop(0)
+            if i + 1 < len(parts):
+                charset = parts[i + 1].lower()
+                encoding = parts[i + 2].lower()
+                encoded = parts[i + 3]
                 words.append((encoded, encoding, charset))
-    # Now loop over words and remove words that consist of whitespace
-    # between two encoded strings.
-    droplist = []
-    for n, w in enumerate(words):
-        if n>1 and w[1] and words[n-2][1] and words[n-1][0].isspace():
-            droplist.append(n-1)
-    for d in reversed(droplist):
-        del words[d]
+    # Now remove words that consist of whitespace between two encoded
+    # strings.  Build a new list instead of deleting items one by one,
+    # which would be quadratic.
+    droplist = {n - 1 for n, w in enumerate(words)
+                if n > 1 and w[1] and words[n-2][1]
+                and words[n-1][0].isspace()}
+    if droplist:
+        words = [w for n, w in enumerate(words) if n not in droplist]
 
     # The next step is to decode each encoded word by applying the reverse
     # base64 or quopri transformation.  decoded_words is now a list of the
@@ -135,24 +136,24 @@ def decode_header(header):
         else:
             raise AssertionError('Unexpected encoding: ' + encoding)
     # Now convert all words to bytes and collapse consecutive runs of
-    # similarly encoded words.
+    # similarly encoded words.  Each run is collected in a list and joined
+    # once, since repeated bytes concatenation would be quadratic.
+    def join_run(run, charset):
+        return (BSPACE if charset is None else b'').join(run)
+
     collapsed = []
-    last_word = last_charset = None
+    run = []
+    last_charset = None
     for word, charset in decoded_words:
         if isinstance(word, str):
             word = bytes(word, 'raw-unicode-escape')
-        if last_word is None:
-            last_word = word
-            last_charset = charset
-        elif charset != last_charset:
-            collapsed.append((last_word, last_charset))
-            last_word = word
-            last_charset = charset
-        elif last_charset is None:
-            last_word += BSPACE + word
-        else:
-            last_word += word
-    collapsed.append((last_word, last_charset))
+        if run and charset != last_charset:
+            collapsed.append((join_run(run, last_charset), last_charset))
+            run = []
+        run.append(word)
+        last_charset = charset
+    collapsed.append((join_run(run, last_charset) if run else None,
+                      last_charset))
     return collapsed
 
 
