@@ -1,0 +1,4 @@
+Fix a possible crash in :func:`signal.getsignal` on a free-threaded build when
+another thread replaces the signal handler at the same time.  A Python signal
+handler that replaces itself with :func:`signal.signal` now stays alive until
+it returns.
