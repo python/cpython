@@ -953,6 +953,338 @@ class DecompressorTestCase(unittest.TestCase):
         self.assertEqual(d.unused_data, b'')
         self.assertEqual(d.unused_data, b'') # twice
 
+    @staticmethod
+    def _patch_content_size(frame, new_size):
+        # Rewrite the Frame_Content_Size field of a frame header, see
+        # RFC 8878 section 3.1.1.1.
+        frame_header_descriptor = frame[4]
+        fcs_flag = frame_header_descriptor >> 6
+        single_segment = (frame_header_descriptor >> 5) & 1
+        did_field_size = (0, 1, 2, 4)[frame_header_descriptor & 3]
+        offset = 5 + (0 if single_segment else 1) + did_field_size
+        fcs_field_size = (1 if single_segment else 0, 2, 4, 8)[fcs_flag]
+        if fcs_field_size == 2:
+            new_size -= 256
+        patched = bytearray(frame)
+        patched[offset:offset+fcs_field_size] = \
+            new_size.to_bytes(fcs_field_size, 'little')
+        return bytes(patched)
+
+    def test_decompress_wrong_content_size(self):
+        # The decompressed size recorded in the frame header is used to
+        # pre-allocate the output buffer, so decompressing frames whose
+        # recorded size does not match the real one (only possible with
+        # hand-crafted frames) deserves extra attention.
+        frame = compress(DAT_130K_D)
+        self.assertEqual(get_frame_info(frame).decompressed_size, _130_1K)
+
+        # patching the real size back is harmless (checks the patch helper)
+        patched = self._patch_content_size(frame, _130_1K)
+        self.assertEqual(patched, frame)
+
+        for lie in (_130_1K + 1000, 1000, 0):
+            with self.subTest(lie=lie):
+                patched = self._patch_content_size(frame, lie)
+                self.assertEqual(get_frame_info(patched).decompressed_size,
+                                 lie)
+                with self.assertRaises(ZstdError):
+                    decompress(patched)
+
+    def test_decompress_absurd_content_size(self):
+        # A recorded size that is absurdly large for the frame's size, or
+        # even impossible to produce from it, must not lead to a huge
+        # pre-allocation.
+        for data in (DAT_130K_D,   # bigger than the compressed frame
+                     b'a' * 66000  # tiny compressed frame
+                     ):
+            frame = compress(data)
+            patched = self._patch_content_size(frame, 0xFFFF_FFFF)
+            with self.subTest(frame_size=len(frame)):
+                self.assertEqual(get_frame_info(patched).decompressed_size,
+                                 0xFFFF_FFFF)
+                with self.assertRaises(ZstdError):
+                    decompress(patched)
+
+    def test_decompress_content_size_known(self):
+        # frames whose header records the decompressed size, with sizes
+        # around the output buffer block boundaries
+        big_data = DAT_130K_D * 9
+        for size in (1, 100,
+                     32*_1K - 1, 32*_1K, 32*_1K + 1,
+                     _1M + 17):
+            with self.subTest(size=size):
+                data = big_data[:size]
+                frame = compress(data)
+                self.assertEqual(get_frame_info(frame).decompressed_size,
+                                 size)
+                self.assertEqual(decompress(frame), data)
+
+                d = ZstdDecompressor()
+                self.assertEqual(d.decompress(frame), data)
+                self.assertTrue(d.eof)
+
+    def test_decompress_content_size_unknown(self):
+        # streaming compression does not record the decompressed size in
+        # the frame header
+        c = ZstdCompressor()
+        frame = c.compress(DAT_130K_D) + c.flush()
+        self.assertIsNone(get_frame_info(frame).decompressed_size)
+        self.assertEqual(decompress(frame), DAT_130K_D)
+
+    def test_decompress_content_size_known_max_length(self):
+        frame = compress(DAT_130K_D)
+        d = ZstdDecompressor()
+        dat = d.decompress(frame, max_length=1000)
+        self.assertEqual(len(dat), 1000)
+        self.assertFalse(d.needs_input)
+        while not d.eof:
+            dat += d.decompress(b'', max_length=32*_1K)
+        self.assertEqual(dat, DAT_130K_D)
+
+    def test_decompress_content_size_known_split_input(self):
+        frame = compress(DAT_130K_D)
+        # a split point of 3 cuts the frame header's magic number,
+        # 18 cuts right after the (complete) frame header
+        for split in (3, 18, len(frame) // 2):
+            with self.subTest(split=split):
+                d = ZstdDecompressor()
+                dat = d.decompress(frame[:split])
+                dat += d.decompress(frame[split:])
+                self.assertEqual(dat, DAT_130K_D)
+                self.assertTrue(d.eof)
+
+# Hand-built frames, independent of what the compressor emits.  See RFC 8878.
+_BLOCK_SIZE_MAX = 128 * _1K
+
+def _frame(content_size, blocks, window_log=17):
+    """A frame whose header records *content_size*, whatever *blocks* hold."""
+    return (b'\x28\xb5\x2f\xfd'                      # magic number
+            + bytes([0b1100_0000])                   # 8-byte content size field
+            + bytes([(window_log - 10) << 3])        # window size
+            + content_size.to_bytes(8, 'little')
+            + b''.join(blocks))
+
+def _raw_block(data, last=False):
+    return (last | 0 << 1 | len(data) << 3).to_bytes(3, 'little') + data
+
+def _rle_block(byte, size, last=False):
+    return (last | 1 << 1 | size << 3).to_bytes(3, 'little') + bytes([byte])
+
+def _peak_allocation(func, *args, **kwargs):
+    """Call func() and return the peak of memory allocated by Python
+    during the call, above what was allocated before it."""
+    import tracemalloc
+    tracing = tracemalloc.is_tracing()
+    if not tracing:
+        tracemalloc.start()
+    try:
+        before = tracemalloc.get_traced_memory()[0]
+        tracemalloc.reset_peak()
+        try:
+            func(*args, **kwargs)
+        except ZstdError:
+            pass
+        return tracemalloc.get_traced_memory()[1] - before
+    finally:
+        if not tracing:
+            tracemalloc.stop()
+
+
+@support.cpython_only
+class DecompressorOutputSizeTestCase(unittest.TestCase):
+    # A frame that records its content size has its output allocated once,
+    # at that size.  The recorded size is input, though: it must never make
+    # the decompressor allocate more than the frame can decode to.
+
+    # Small enough not to stress the test machine, large enough that
+    # allocating it is not mistaken for the noise of a decompress() call.
+    CLAIM = 64 * _1M
+    NOISE = 1 * _1M
+
+    def assertAllocatedAbout(self, peak, size):
+        self.assertGreaterEqual(peak, size)
+        self.assertLess(peak, size + self.NOISE)
+
+    def test_hand_built_frames(self):
+        self.assertEqual(
+            decompress(_frame(5, [_raw_block(b'hello', last=True)])), b'hello')
+        self.assertEqual(
+            decompress(_frame(3, [_rle_block(ord('x'), 3, last=True)])), b'xxx')
+
+    def test_output_allocated_once(self):
+        data = bytes(range(256)) * (8 * _1K)                 # 2 MiB
+        frame = compress(data)
+        self.assertEqual(get_frame_info(frame).decompressed_size, len(data))
+        self.assertEqual(decompress(frame), data)
+        self.assertAllocatedAbout(_peak_allocation(decompress, frame), len(data))
+        self.assertAllocatedAbout(
+            _peak_allocation(ZstdDecompressor().decompress, frame), len(data))
+
+    def test_output_allocated_once_densest_frame(self):
+        # RLE blocks are the densest valid encoding: 4 bytes per 128 KiB.
+        # The plausibility check on the recorded size must accept them.
+        size = 64 * _BLOCK_SIZE_MAX                           # 8 MiB
+        frame = _frame(size, [_rle_block(ord('x'), _BLOCK_SIZE_MAX)] * 63
+                             + [_rle_block(ord('x'), _BLOCK_SIZE_MAX, last=True)])
+        self.assertEqual(len(frame), 14 + 64 * 4)
+        self.assertEqual(decompress(frame), b'x' * size)
+        self.assertAllocatedAbout(_peak_allocation(decompress, frame), size)
+
+    def test_output_allocated_once_with_dictionary(self):
+        data = b''.join(SAMPLES) * 50
+        frame = compress(data, zstd_dict=TRAINED_DICT)
+        self.assertEqual(get_frame_info(frame).decompressed_size, len(data))
+        self.assertEqual(decompress(frame, zstd_dict=TRAINED_DICT), data)
+        self.assertAllocatedAbout(
+            _peak_allocation(decompress, frame, zstd_dict=TRAINED_DICT),
+            len(data))
+
+    def test_output_allocated_per_frame(self):
+        data1 = bytes(range(256)) * (8 * _1K)                # 2 MiB
+        data2 = b'second frame' * 1000
+        frame1, frame2 = compress(data1), compress(data2)
+        d = ZstdDecompressor()
+        self.assertEqual(d.decompress(frame1 + frame2), data1)
+        self.assertEqual(d.unused_data, frame2)
+        self.assertEqual(decompress(frame1 + frame2), data1 + data2)
+        self.assertAllocatedAbout(
+            _peak_allocation(ZstdDecompressor().decompress, frame1 + frame2),
+            len(data1))
+
+    def test_output_allocated_once_after_empty_input(self):
+        data = bytes(range(256)) * (8 * _1K)                 # 2 MiB
+        frame = compress(data)
+        def decompress_after_empty_input():
+            d = ZstdDecompressor()
+            self.assertEqual(d.decompress(b''), b'')
+            return d.decompress(frame)
+        self.assertEqual(decompress_after_empty_input(), data)
+        self.assertAllocatedAbout(
+            _peak_allocation(decompress_after_empty_input), len(data))
+
+    def test_output_allocated_once_each_frame(self):
+        # decompress() feeds every frame to its decompressor whole.  This
+        # frame is larger than the 1 KiB that a later frame would get first
+        # otherwise, and most of its output is decoded from that first KiB.
+        data = bytes(2 * _1M) + random.randbytes(4 * _1K)
+        frame = compress(data)
+        small = compress(b'small frame')
+        skippable = (0x184D2A50).to_bytes(4, 'little') + (4).to_bytes(4, 'little')
+        skippable += b'skip'
+        for frames, expected in (([small, frame], b'small frame' + data),
+                                 ([skippable, frame], data),
+                                 ([frame, frame], data + data)):
+            with self.subTest(frames=[len(f) for f in frames]):
+                stream = b''.join(frames)
+                self.assertEqual(decompress(stream), expected)
+                # The output of each frame, and the joined result.
+                self.assertAllocatedAbout(
+                    _peak_allocation(decompress, stream), 2 * len(expected))
+
+    def test_max_length_limits_allocation(self):
+        size = 64 * _BLOCK_SIZE_MAX                           # 8 MiB
+        frame = compress(b'x' * size)
+        d = ZstdDecompressor()
+        self.assertEqual(d.decompress(frame, 1000), b'x' * 1000)
+        self.assertFalse(d.eof)
+        self.assertLess(
+            _peak_allocation(ZstdDecompressor().decompress, frame, 1000),
+            self.NOISE)
+
+    def test_untrusted_content_size(self):
+        # 27 bytes cannot decode to more than 6 blocks.
+        frame = _frame(self.CLAIM, [_raw_block(b'0123456789', last=True)])
+        self.assertRaises(ZstdError, decompress, frame)
+        self.assertRaises(ZstdError, ZstdDecompressor().decompress, frame)
+        self.assertLess(_peak_allocation(decompress, frame), self.NOISE)
+        self.assertLess(
+            _peak_allocation(ZstdDecompressor().decompress, frame), self.NOISE)
+
+    def test_untrusted_content_size_huge(self):
+        for claim in (2**40, 2**62, 2**63 - 1):
+            with self.subTest(claim=claim):
+                frame = _frame(claim, [_raw_block(b'0123456789', last=True)])
+                # A ZstdError, not a MemoryError or OverflowError
+                self.assertRaises(ZstdError, decompress, frame)
+                self.assertLess(_peak_allocation(decompress, frame), self.NOISE)
+
+    def test_untrusted_content_size_trailing_data(self):
+        # Only the frame itself vouches for its size, not the data after it.
+        frame = _frame(self.CLAIM, [_raw_block(b'0123456789', last=True)])
+        blocks = self.CLAIM // _BLOCK_SIZE_MAX
+        valid = _frame(self.CLAIM, [_rle_block(ord('x'), _BLOCK_SIZE_MAX)]
+                                   * (blocks - 1)
+                                   + [_rle_block(ord('x'), _BLOCK_SIZE_MAX,
+                                                 last=True)])
+        for trailing in (bytes(64 * _1K), valid):
+            with self.subTest(trailing=len(trailing)):
+                data = frame + trailing
+                self.assertRaises(ZstdError, decompress, data)
+                self.assertRaises(ZstdError, ZstdDecompressor().decompress, data)
+                self.assertLess(_peak_allocation(decompress, data), self.NOISE)
+                self.assertLess(
+                    _peak_allocation(ZstdDecompressor().decompress, data),
+                    self.NOISE)
+
+    def test_untrusted_content_size_partial_frame(self):
+        # Until the whole frame is in, nothing vouches for the recorded size.
+        blocks = [_raw_block(bytes([i]) * _1K) for i in range(64)]
+        partial = _frame(self.CLAIM, blocks)                  # no last block
+        d = ZstdDecompressor()
+        self.assertEqual(d.decompress(partial),
+                         b''.join(bytes([i]) * _1K for i in range(64)))
+        self.assertFalse(d.eof)
+        self.assertTrue(d.needs_input)
+        self.assertLess(
+            _peak_allocation(ZstdDecompressor().decompress, partial), self.NOISE)
+
+    def test_window_log_max(self):
+        # A frame that needs a larger window than allowed is refused, also
+        # when its output is allocated at once.  (zstd doesn't check the
+        # window of a frame whose output fits the first, 32 KiB, block of the
+        # output buffer.)
+        window_log_max = DecompressionParameter.window_log_max
+        size = 64 * _1K
+        blocks = [_rle_block(ord('x'), size, last=True)]
+        frame = _frame(size, blocks, window_log=28)
+        for options in (None, {window_log_max: 0}):          # default: 27
+            with self.subTest(options=options):
+                self.assertRaises(ZstdError, decompress, frame,
+                                  options=options)
+                self.assertRaises(ZstdError,
+                                  ZstdDecompressor(options=options).decompress,
+                                  frame)
+        self.assertEqual(decompress(frame, options={window_log_max: 28}),
+                         b'x' * size)
+        frame = _frame(size, blocks, window_log=20)
+        options = {window_log_max: 19}
+        self.assertRaises(ZstdError, decompress, frame, options=options)
+        self.assertRaises(ZstdError,
+                          ZstdDecompressor(options=options).decompress, frame)
+        self.assertEqual(decompress(frame, options={window_log_max: 20}),
+                         b'x' * size)
+        # A single-segment frame needs a window of its content size.
+        frame = compress(b'x' * _1M)
+        self.assertRaises(ZstdError, decompress, frame,
+                          options={window_log_max: 19})
+        self.assertEqual(decompress(frame, options={window_log_max: 20}),
+                         b'x' * _1M)
+
+    def test_content_size_too_small(self):
+        # The output must not be cut off at the recorded size.
+        frame = _frame(_BLOCK_SIZE_MAX,
+                       [_rle_block(ord('x'), _BLOCK_SIZE_MAX),
+                        _rle_block(ord('y'), _BLOCK_SIZE_MAX, last=True)])
+        self.assertRaises(ZstdError, decompress, frame)
+        self.assertRaises(ZstdError, ZstdDecompressor().decompress, frame)
+
+    def test_content_size_too_large(self):
+        frame = _frame(2 * _BLOCK_SIZE_MAX,
+                       [_rle_block(ord('x'), _BLOCK_SIZE_MAX, last=True)])
+        self.assertRaises(ZstdError, decompress, frame)
+        self.assertRaises(ZstdError, ZstdDecompressor().decompress, frame)
+
+
 class DecompressorFlagsTestCase(unittest.TestCase):
 
     @classmethod

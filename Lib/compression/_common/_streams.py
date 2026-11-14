@@ -172,7 +172,8 @@ class DecompressReader(io.RawIOBase):
 
 
 def _decompress_all(data, decomp_factory, trailing_error=(), *,
-                    stream_magic=(), truncated_error, **decomp_args):
+                    stream_magic=(), truncated_error, stream_size=None,
+                    **decomp_args):
     """Decompress all of the concatenated streams in *data*.
 
     Each stream is decompressed by a new decompressor, made by calling
@@ -180,6 +181,9 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
     of class *trailing_error* in a stream after the first one ends the
     data, unless that stream starts with *stream_magic*.  A stream without
     an end-of-stream marker raises *truncated_error*.
+
+    *stream_size*, if given, is called with the data that starts a stream
+    and returns the size of that stream, or None if it cannot tell.
     """
     results = []
     # The views are released on exit, so that the caller can resize a
@@ -190,6 +194,13 @@ def _decompress_all(data, decomp_factory, trailing_error=(), *,
         # data, to decompress it in one go.
         chunk_size = len(data)
         while True:
+            if stream_size is not None:
+                # A stream whose size is known is fed whole, in one chunk
+                # that ends where the stream ends.
+                with data[pos:] as rest:
+                    size = stream_size(rest)
+                if size:
+                    chunk_size = size
             decomp = decomp_factory(**decomp_args)
             start = pos
             res = []
