@@ -178,8 +178,8 @@ class Repr:
     def repr_str(self, x, level):
         s = builtins.repr(x[:self.maxstring])
         if len(s) > self.maxstring:
-            i = max(0, (self.maxstring-3)//2)
-            j = max(0, self.maxstring-3-i)
+            i = max(0, (self.maxstring-len(self.fillvalue))//2)
+            j = max(0, self.maxstring-len(self.fillvalue)-i)
             s = builtins.repr(x[:i] + x[len(x)-j:])
             s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
@@ -202,8 +202,8 @@ class Repr:
             return (f'<{x.__class__.__name__} instance with roughly {k} '
                     f'digits (limit at {max_digits}) at 0x{id(x):x}>')
         if len(s) > self.maxlong:
-            i = max(0, (self.maxlong-3)//2)
-            j = max(0, self.maxlong-3-i)
+            i = max(0, (self.maxlong-len(self.fillvalue))//2)
+            j = max(0, self.maxlong-len(self.fillvalue)-i)
             s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
 
@@ -215,8 +215,8 @@ class Repr:
         except Exception:
             return '<%s instance at %#x>' % (x.__class__.__name__, id(x))
         if len(s) > self.maxother:
-            i = max(0, (self.maxother-3)//2)
-            j = max(0, self.maxother-3-i)
+            i = max(0, (self.maxother-len(self.fillvalue))//2)
+            j = max(0, self.maxother-len(self.fillvalue)-i)
             s = s[:i] + self.fillvalue + s[len(s)-j:]
         return s
 
