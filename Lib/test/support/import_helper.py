@@ -120,6 +120,20 @@ def frozen_modules(enabled=True):
 
 
 @contextlib.contextmanager
+def force_eager_imports():
+    """Force eager imports inside the context manager."""
+    original_lazy_imports_filter = sys.get_lazy_imports_filter()
+    sys.set_lazy_imports_filter(
+        # Tools must be imported eagerly under this context manager:
+        lambda importing, imported, fromlist: False
+    )
+    try:
+        yield
+    finally:
+        sys.set_lazy_imports_filter(original_lazy_imports_filter)
+
+
+@contextlib.contextmanager
 def multi_interp_extensions_check(enabled=True):
     """Force legacy modules to be allowed in subinterpreters (or not).
 

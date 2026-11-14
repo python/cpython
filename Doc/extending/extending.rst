@@ -1040,7 +1040,7 @@ exporting module, not a client module. Finally, the module's :c:data:`mod_exec
    }
 
 Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
-array would disappear when :c:func:`!PyInit_spam` terminates!
+array would disappear when :c:func:`!spam_module_exec` terminates!
 
 The bulk of the work is in the header file :file:`spammodule.h`, which looks
 like this::

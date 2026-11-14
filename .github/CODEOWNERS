@@ -172,8 +172,12 @@ Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
 # WebAssembly (Emscripten)
-Platforms/emscripten          @freakboy3742 @emmatyping
-Tools/wasm/emscripten         @freakboy3742 @emmatyping
+Platforms/emscripten          @freakboy3742 @emmatyping @hoodmane
+Tools/wasm/emscripten         @freakboy3742 @emmatyping @hoodmane
+Python/wasm_trampoline.c      @hoodmane
+Python/emscripten_signal.c    @hoodmane
+Python/emscripten_syscalls.c  @hoodmane
+.github/workflows/reusable-emscripten.yml @hoodmane
 
 # WebAssembly (WASI)
 Platforms/WASI                @brettcannon @emmatyping @savannahostrowski
@@ -494,6 +498,11 @@ Lib/_markupbase.py                  @ezio-melotti
 Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
 
+# HTTP
+Doc/library/http*             @orsenthil
+Lib/http/                     @orsenthil
+Lib/test/test_http*.py        @orsenthil
+
 # IDLE
 Doc/library/idle.rst          @terryjreedy
 Lib/idlelib/                  @terryjreedy
@@ -509,6 +518,13 @@ Doc/library/importlib.resources.abc.rst   @jaraco @warsaw @FFY00
 Doc/library/importlib.resources.rst       @jaraco @warsaw @FFY00
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
+
+# IO
+Doc/library/io.rst            @cmaloney
+Lib/_pyio.py                  @cmaloney
+Lib/io.py                     @cmaloney
+Lib/test/test_io/             @cmaloney
+Modules/_io/                  @cmaloney
 
 # Itertools
 Doc/library/itertools.rst     @rhettinger
@@ -621,6 +637,11 @@ Modules/_typesmodule.c        @AA-Turner
 # Unittest
 Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
+
+# Urllib
+Doc/library/urllib*           @orsenthil
+Lib/urllib/                   @orsenthil
+Lib/test/test_urllib*.py      @orsenthil
 
 # Venv
 **/*venv*                     @vsajip @FFY00

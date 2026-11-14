@@ -195,7 +195,7 @@ backup file, :exc:`FileExistsError` is raised.  If the output file cannot be
 created, the backup file is kept.  In-place filtering of files in a directory
 that other, untrusted users can modify is not supported.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    The output file is now created exclusively, and the backup file is no
    longer deleted if the output file cannot be created.
 

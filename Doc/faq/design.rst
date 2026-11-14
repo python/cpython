@@ -5,6 +5,7 @@ Design and History FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 
 Why does Python use indentation for grouping of statements?
@@ -400,7 +401,7 @@ library that are impossible to free (e.g. a tool like Purify will complain about
 these).  Python is, however, aggressive about cleaning up memory on exit and
 does try to destroy every single object.
 
-If you want to force Python to delete certain things on deallocation use the
+If you want to force Python to delete certain things when Python exits, use the
 :mod:`atexit` module to run a function that will force those deletions.
 
 

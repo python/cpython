@@ -11,6 +11,13 @@ Pending removal in Python 3.18
     C implementation, has been deprecated since Python 3.13.
     (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* :mod:`urllib.parse`:
+
+  * Accepting objects with false values (like ``0`` and ``[]``) except empty
+    strings, byte-like objects and ``None`` in the URL parsing functions has
+    been deprecated since Python 3.16.
+    (Contributed by Jacob Walls in :gh:`63293`.)
+
 * Deprecations defined by :pep:`829`:
 
   * ``import`` lines in :file:`{name}.pth` files are silently ignored.

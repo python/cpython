@@ -762,6 +762,17 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
         t = self.thetype(s)
         self.assertEqual(id(s), id(t))
 
+    def test_gc_tracking(self):
+        # gh-140232: frozensets whose elements can never be tracked by the
+        # GC are not tracked, including the compiled frozenset({...}) form
+        s = {1, 2}
+        self.assertFalse(gc.is_tracked(frozenset(s)))
+        self.assertFalse(gc.is_tracked(frozenset({1, 2})))
+        self.assertFalse(gc.is_tracked(frozenset({x for x in range(2)})))
+        class C:
+            pass
+        self.assertTrue(gc.is_tracked(frozenset({C()})))
+
     def test_hash(self):
         self.assertEqual(hash(self.thetype('abcdeb')),
                          hash(self.thetype('ebecda')))

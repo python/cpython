@@ -33,15 +33,7 @@ lone_kwds(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("lone_kwds", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        __clinic_kwds = PyDict_New();
-        if (__clinic_kwds == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwds = Py_NewRef(kwargs);
-    }
+    __clinic_kwds = Py_XNewRef(kwargs);
     return_value = lone_kwds_impl(module, __clinic_kwds);
 
 exit:
@@ -76,15 +68,7 @@ kwds_with_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     a = PyTuple_GET_ITEM(args, 0);
     b = PyTuple_GET_ITEM(args, 1);
-    if (kwargs == NULL) {
-        __clinic_kwds = PyDict_New();
-        if (__clinic_kwds == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwds = Py_NewRef(kwargs);
-    }
+    __clinic_kwds = Py_XNewRef(kwargs);
     return_value = kwds_with_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
@@ -123,15 +107,7 @@ kwds_with_optional_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     b = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        __clinic_kwds = PyDict_New();
-        if (__clinic_kwds == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwds = Py_NewRef(kwargs);
-    }
+    __clinic_kwds = Py_XNewRef(kwargs);
     return_value = kwds_with_optional_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
@@ -160,18 +136,9 @@ kwds_with_stararg(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *__clinic_kwds = NULL;
 
     __clinic_args = Py_NewRef(args);
-    if (kwargs == NULL) {
-        __clinic_kwds = PyDict_New();
-        if (__clinic_kwds == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwds = Py_NewRef(kwargs);
-    }
+    __clinic_kwds = Py_XNewRef(kwargs);
     return_value = kwds_with_stararg_impl(module, __clinic_args, __clinic_kwds);
 
-exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
     /* Cleanup for kwds */
@@ -211,15 +178,7 @@ kwds_with_pos_only_and_stararg(PyObject *module, PyObject *args, PyObject *kwarg
     if (!__clinic_args) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        __clinic_kwds = PyDict_New();
-        if (__clinic_kwds == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwds = Py_NewRef(kwargs);
-    }
+    __clinic_kwds = Py_XNewRef(kwargs);
     return_value = kwds_with_pos_only_and_stararg_impl(module, a, b, __clinic_args, __clinic_kwds);
 
 exit:
@@ -230,4 +189,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=27a7ba9440b9a884 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad46500147228faf input=a9049054013a1b77]*/

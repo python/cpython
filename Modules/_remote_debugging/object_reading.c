@@ -279,7 +279,7 @@ read_py_long(
     }
 
     // Calculate how many digits fit inline in our local buffer
-    Py_ssize_t ob_digit_offset = unwinder->debug_offsets.long_object.ob_digit;
+    Py_ssize_t ob_digit_offset = (Py_ssize_t)unwinder->debug_offsets.long_object.ob_digit;
     Py_ssize_t inline_digits_space = SIZEOF_LONG_OBJ - ob_digit_offset;
     Py_ssize_t max_inline_digits = inline_digits_space / (Py_ssize_t)sizeof(digit);
 

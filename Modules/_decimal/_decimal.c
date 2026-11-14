@@ -1162,6 +1162,9 @@ context_settraps_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {
@@ -1228,6 +1231,9 @@ context_setstatus_dict(PyObject *self, PyObject *value)
 
     decimal_state *state = get_module_state_from_ctx(self);
     if (PyDecSignalDict_Check(state, value)) {
+        if (SdFlagAddr(value) == NULL) {
+            return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+        }
         flags = SdFlags(value);
     }
     else {
@@ -1997,6 +2003,13 @@ current_context(decimal_state *state)
     }
 
     if (tl_context != NULL) {
+        if (!PyDecContext_Check(state, tl_context)) {
+            PyErr_Format(PyExc_TypeError,
+                         "current decimal context must be a Context "
+                         "instance, got %T", tl_context);
+            Py_DECREF(tl_context);
+            return NULL;
+        }
         return tl_context;
     }
 

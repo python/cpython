@@ -668,6 +668,18 @@ check_date_args(int year, int month, int day)
     return 0;
 }
 
+static int
+year_from_tm(const struct tm *tm, int *year)
+{
+    if (tm->tm_year > INT_MAX - 1900) {
+        PyErr_Format(PyExc_ValueError, "year must be in %d..%d, not %lld",
+                     MINYEAR, MAXYEAR, (long long)tm->tm_year + 1900);
+        return -1;
+    }
+    *year = tm->tm_year + 1900;
+    return 0;
+}
+
 /* Check that time arguments are in range.  Return 0 if they are.  If they
  * aren't, raise ValueError and return -1.
  */
@@ -977,6 +989,10 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
             iso_day = 1;
         }
 
+        if ((size_t)(p - dtstr) != len) {
+            return -1;
+        }
+
         int rv = iso_to_ymd(*year, iso_week, iso_day, year, month, day);
         if (rv) {
             return -3 + rv;
@@ -995,6 +1011,9 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
     }
     p = parse_digits(p, day, 2);
     if (p == NULL) {
+        return -1;
+    }
+    if ((size_t)(p - dtstr) != len) {
         return -1;
     }
     return 0;
@@ -1851,12 +1870,17 @@ static PyObject *
 make_freplacement(PyObject *object)
 {
     char freplacement[64];
-    if (PyTime_Check(object))
-        sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
-    else if (PyDateTime_Check(object))
-        sprintf(freplacement, "%06d", DATE_GET_MICROSECOND(object));
-    else
-        sprintf(freplacement, "%06d", 0);
+    if (PyTime_Check(object)) {
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", TIME_GET_MICROSECOND(object));
+    }
+    else if (PyDateTime_Check(object)) {
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", DATE_GET_MICROSECOND(object));
+    }
+    else {
+        PyOS_snprintf(freplacement, sizeof(freplacement), "%06d", 0);
+    }
 
     return PyUnicode_FromString(freplacement);
 }
@@ -3290,14 +3314,18 @@ date_fromtimestamp(PyTypeObject *cls, PyObject *obj)
 {
     struct tm tm;
     time_t t;
+    int year;
 
     if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
 
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
+    if (year_from_tm(&tm, &year) < 0) {
+        return NULL;
+    }
 
-    return new_date_subclass_ex(tm.tm_year + 1900,
+    return new_date_subclass_ex(year,
                                 tm.tm_mon + 1,
                                 tm.tm_mday,
                                 cls);
@@ -5668,7 +5696,9 @@ datetime_from_timet_and_us(PyTypeObject *cls, TM_FUNC f, time_t timet, int us,
     if (f(timet, &tm) != 0)
         return NULL;
 
-    year = tm.tm_year + 1900;
+    if (year_from_tm(&tm, &year) < 0) {
+        return NULL;
+    }
     month = tm.tm_mon + 1;
     day = tm.tm_mday;
     hour = tm.tm_hour;

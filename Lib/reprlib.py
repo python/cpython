@@ -67,6 +67,10 @@ class Repr:
         self.fillvalue = fillvalue
         self.indent = indent
 
+    def __repr__(self):
+        args = ', '.join(f'{key}={value!r}' for key, value in self.__dict__.items())
+        return f'{type(self).__name__}({args})'
+
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
 
