@@ -36,6 +36,9 @@ class ParallelTestCase(TestCase):
         result.startTest(self)
 
         cases = [copy.copy(self.test_case) for _ in range(self.num_threads)]
+        for case in cases:
+            # Each worker must run its own cleanups, not another worker's.
+            case._cleanups = case._cleanups.copy()
         results = [unittest.TestResult() for _ in range(self.num_threads)]
 
         barrier = threading.Barrier(self.num_threads)
