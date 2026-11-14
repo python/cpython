@@ -1,0 +1,1 @@
+:mod:`platform` is now about 30% faster to import on Windows.

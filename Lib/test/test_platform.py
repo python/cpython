@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper, warnings_helper
+from test.support import import_helper, os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -435,6 +435,10 @@ class PlatformTest(unittest.TestCase):
         release, version, csd, ptype = 'a', '1.0', 'c', 'd'
         res = platform.win32_ver(release, version, csd, ptype)
         self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
+
+    @support.cpython_only
+    def test_wmi_is_lazily_imported(self):
+        import_helper.ensure_lazy_imports('platform', {'_wmi'})
 
     def test_mac_ver(self):
         res = platform.mac_ver()
