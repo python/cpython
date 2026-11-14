@@ -1414,6 +1414,9 @@ class UserList(_collections_abc.MutableSequence):
 ### UserString
 ################################################################################
 
+_MISSING = sentinel("MISSING")
+
+
 class UserString(_collections_abc.Sequence):
 
     def __init__(self, seq):
@@ -1611,12 +1614,27 @@ class UserString(_collections_abc.Sequence):
     def partition(self, sep):
         return self.data.partition(sep)
 
-    def replace(self, old, new, maxsplit=-1):
+    # The 'maxsplit' keyword parameter can be removed in Python 3.18.
+    def replace(self, old, new, count=-1, *, maxsplit=_MISSING):
+        if maxsplit is not _MISSING:
+            if count != -1:
+                raise TypeError("'count' and 'maxsplit' are mutually exclusive "
+                                "and support for 'maxsplit' keyword parameter "
+                                "is slated for removal in Python 3.18")
+            import warnings
+            warnings._deprecated(
+                "maxsplit",
+                message="the {name!r} keyword parameter is deprecated since "
+                        "Python 3.16 and slated for removal in Python {remove}; "
+                        "use the 'count' keyword parameter or pass the count "
+                        "as a positional argument instead",
+                remove=(3, 18))
+            count = maxsplit
         if isinstance(old, UserString):
             old = old.data
         if isinstance(new, UserString):
             new = new.data
-        return self.__class__(self.data.replace(old, new, maxsplit))
+        return self.__class__(self.data.replace(old, new, count))
 
     def rfind(self, sub, start=0, end=_sys.maxsize):
         if isinstance(sub, UserString):

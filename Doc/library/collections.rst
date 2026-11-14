@@ -1438,3 +1438,9 @@ attribute.
     .. versionchanged:: 3.5
        New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,
        ``format_map``, ``isprintable``, and ``maketrans``.
+
+    .. deprecated-removed:: 3.16 3.18
+       The third parameter of :meth:`!replace` is now named *count*, as in
+       :meth:`str.replace`, and the undocumented ``maxsplit`` keyword
+       parameter is deprecated. Prefer passing the count as a positional
+       argument for maximum backwards compatibility.

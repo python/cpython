@@ -1,0 +1,4 @@
+The third parameter of :meth:`!collections.UserString.replace` is now named
+*count*, matching :meth:`str.replace`, so that it can be passed as a keyword.
+Support for the undocumented ``maxsplit`` keyword parameter is deprecated and
+slated for removal in Python 3.18.
