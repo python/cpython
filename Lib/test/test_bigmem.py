@@ -373,7 +373,7 @@ class BaseStrTest:
     # suffer for the list size. (Otherwise, it'd cost another 48 times
     # size in bytes!) Nevertheless, a list of size takes
     # 8*size bytes.
-    @bigmemtest(size=_2G + 5, memuse=ascii_char_size * 2 + pointer_size)
+    @bigmemtest(size=_2G + 5, memuse=ascii_char_size * 3 + pointer_size)
     def test_split_large(self, size):
         _ = self.from_latin1
         s = _(' a') * size + _(' ')
@@ -936,11 +936,11 @@ class TupleTest(unittest.TestCase):
         self.assertEqual(s[:10], '(False, Fa')
         self.assertEqual(s[-10:], 'se, False)')
 
-    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 7)
+    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 8)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 7)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 8)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
@@ -1115,11 +1115,11 @@ class ListTest(unittest.TestCase):
         self.assertEqual(s[-10:], 'se, False]')
         self.assertEqual(s.count('F'), size)
 
-    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 7)
+    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 8)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 7)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 8)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
