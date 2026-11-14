@@ -1,0 +1,7 @@
+Fix a use-after-free in the C implementation of :mod:`pickle`. When
+unpickling from a file-like object that provides ``readinto()``, the
+:class:`~pickle.Unpickler` passed it a temporary :class:`memoryview` over an
+internal buffer. A ``readinto()`` implementation that kept a reference to that
+view could use it to read or write the buffer after it had been freed. The
+view is now released as soon as ``readinto()`` returns, so a surviving
+reference raises :exc:`ValueError` instead of accessing freed memory.
