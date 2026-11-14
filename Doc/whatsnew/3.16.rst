@@ -1538,6 +1538,10 @@ New features
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
+* Add :c:func:`PyList_AsTupleAndClear` function: similar to
+  :c:func:`PyList_AsTuple` but faster, and clear the input list.
+  (Contributed by Victor Stinner in :gh:`161635`.)
+
 * Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
   (Contributed by Victor Stinner in :gh:`161172`.)
 
