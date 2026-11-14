@@ -603,6 +603,38 @@ class TestFrameLocals(unittest.TestCase):
         d_copy['x'] = 1
         self.assertEqual(x, 0)
 
+    def test_update(self):
+        class CustomMapping(Mapping):
+            def __iter__(self):
+                return iter(('x', 'z'))
+
+            def __len__(self):
+                return 2
+
+            def __getitem__(self, key):
+                return {'x': 3, 'z': 4}[key]
+
+        for source in (CustomMapping(), [('x', 3), ('z', 4)],
+                       iter([('x', 3), ('z', 4)])):
+            with self.subTest(source=type(source)):
+                x = 1
+                d = sys._getframe().f_locals
+                d.update(source)
+                self.assertEqual(x, 3)
+                self.assertEqual(d['z'], 4)
+
+    def test_update_errors(self):
+        d = sys._getframe().f_locals
+        with self.assertRaises(ValueError):
+            d.update([('x',)])
+
+        def broken_iter():
+            raise RuntimeError('iteration failed')
+            yield
+
+        with self.assertRaisesRegex(RuntimeError, 'iteration failed'):
+            d.update(broken_iter())
+
     def test_update_with_self(self):
         def f():
             f_locals = sys._getframe().f_locals
