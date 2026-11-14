@@ -1,0 +1,3 @@
+Fix :func:`socket.sethostname` raising :exc:`SystemError` instead of
+propagating the exception raised by a :class:`bytes` subclass's
+:meth:`~object.__buffer__` method.

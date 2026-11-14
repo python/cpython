@@ -5990,11 +5990,14 @@ extern int sethostname(const char *, size_t);
         return NULL;
     }
 
-    res = PyObject_GetBuffer(hnobj, &buf, PyBUF_SIMPLE);
-    if (!res) {
-        res = sethostname(buf.buf, buf.len);
-        PyBuffer_Release(&buf);
+    if (PyObject_GetBuffer(hnobj, &buf, PyBUF_SIMPLE) < 0) {
+        if (flag) {
+            Py_DECREF(hnobj);
+        }
+        return NULL;
     }
+    res = sethostname(buf.buf, buf.len);
+    PyBuffer_Release(&buf);
     if (flag)
         Py_DECREF(hnobj);
     if (res)
