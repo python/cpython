@@ -26,6 +26,9 @@ available through the :mod:`os` interface.  Once :mod:`os` is imported, there is
 Errors are reported as exceptions; the usual exceptions are given for type
 errors, while errors reported by the system calls raise :exc:`OSError`.
 
+.. versionchanged:: next
+   This module and its contents report :mod:`os` as ``__module__`` and are
+   :ref:`pickled <pickle-picklable>` as ``os.<name>``.
 
 .. _posix-large-files:
 

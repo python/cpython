@@ -12,7 +12,7 @@
 # module C APIs are used in core
 atexit atexitmodule.c
 faulthandler faulthandler.c
-posix posixmodule.c
+_os posixmodule.c
 _signal signalmodule.c
 _tracemalloc _tracemalloc.c
 _suggestions _suggestions.c
