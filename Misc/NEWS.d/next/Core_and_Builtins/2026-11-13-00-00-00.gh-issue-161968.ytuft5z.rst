@@ -1,3 +1,0 @@
-Fix ``x *= seq`` raising :exc:`TypeError` when *x* is an instance of a Python
-class with :meth:`~object.__index__`, such as an :class:`int` subclass or an
-:class:`enum.IntEnum` member, while ``x * seq`` works.

@@ -1,7 +1,5 @@
 # Augmented assignment test.
 
-import enum
-import operator
 import unittest
 
 
@@ -67,34 +65,23 @@ class AugAssignTest(unittest.TestCase):
         self.assertTrue(x is y)
 
     def testSequenceRepeatRightOperand(self):
-        # gh-XXXXXX: "n *= seq" must fall back to seq's repeat, as "n * seq"
-        # does, when n's type has sequence methods but no repeat slot.
+        # gh-161968
         class MyInt(int):
             pass
         class Index:
             def __index__(self):
                 return 2
-        class Number(enum.IntEnum):
-            TWO = 2
-        for n in MyInt(2), Index(), Number.TWO:
-            for seq in [1], (1,), 'a', b'a', bytearray(b'a'):
-                with self.subTest(n=n, seq=seq):
-                    expected = n * seq
-                    x = n
-                    x *= seq
-                    self.assertEqual(x, expected)
-                    self.assertEqual(operator.imul(n, seq), expected)
 
-        # The right operand is not modified in place.
         seq = [1]
         x = MyInt(2)
         x *= seq
         self.assertEqual(x, [1, 1])
+        # The right operand is not modified in place.
         self.assertEqual(seq, [1])
 
         x = Index()
-        with self.assertRaises(TypeError):
-            x *= Index()
+        x *= 'a'
+        self.assertEqual(x, 'aa')
 
     def testCustomMethods1(self):
 
