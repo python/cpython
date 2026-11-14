@@ -554,10 +554,11 @@ parse_task_awaited_by(
     uintptr_t task_address,
     PyObject *awaited_by
 ) {
-    // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
+    size_t size = unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set
+                  + sizeof(char);
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
-                                              (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
+                                              size,
                                               task_obj) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object");
         return -1;
@@ -591,7 +592,16 @@ process_single_task_node(
     PyObject *result_item = NULL;
     PyObject *coroutine_stack = NULL;
 
-    tn = parse_task_name(unwinder, task_addr);
+    char is_task;
+    // task_is_task = 1 => task
+    // task_is_task = 0 => future
+    if (read_char(unwinder,
+            task_addr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
+            &is_task) < 0) {
+        goto error;
+    }
+    tn = is_task ? parse_task_name(unwinder, task_addr)
+                 : PyUnicode_FromFormat("Future-%p", (void *)task_addr);
     if (tn == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task name in single task node");
         goto error;
@@ -632,6 +642,7 @@ process_single_task_node(
     PyStructSequence_SetItem(result_item, 1, tn);  // steals ref
     PyStructSequence_SetItem(result_item, 2, coroutine_stack);  // steals ref
     PyStructSequence_SetItem(result_item, 3, current_awaited_by);  // steals ref
+    PyStructSequence_SetItem(result_item, 4, PyBool_FromLong(!is_task));
 
     // References transferred to tuple
     task_id = NULL;
@@ -672,13 +683,15 @@ error:
 static int
 process_task_waiters(
     RemoteUnwinderObject *unwinder,
-    PyObject *result
+    PyObject *result,
+    bool futures_only
 ) {
+    Py_ssize_t initial_count = futures_only ? PyList_GET_SIZE(result) : 0;
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
         PyObject *task_info = PyList_GET_ITEM(result, i);
         PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
         for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
-            if (PyList_GET_SIZE(result) >= MAX_TASK_WAITER_WALK_TASKS) {
+            if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
                 PyErr_SetString(PyExc_RuntimeError,
                     "Too many task waiters (possible infinite loop)");
                 set_exception_cause(unwinder, PyExc_RuntimeError,
@@ -686,13 +699,23 @@ process_task_waiters(
                 return -1;
             }
             PyObject *waiter = PyList_GET_ITEM(waiters, j);
-            // CoroInfo item 1 holds the waiter task address stored by parse_task().
             PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
                 set_exception_cause(unwinder, PyExc_RuntimeError,
                                     "Failed to parse waiter task ID");
                 return -1;
+            }
+            if (futures_only) {
+                char is_task;
+                if (read_char(unwinder,
+                        (uintptr_t)task_ptr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
+                        &is_task) < 0) {
+                    return -1;
+                }
+                if (is_task) {
+                    continue;
+                }
             }
             if (process_single_task_node(
                     unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
@@ -935,7 +958,7 @@ append_awaited_by(
         return -1;
     }
 
-    return 0;
+    return process_task_waiters(unwinder, awaited_by_for_thread, true);
 }
 
 /* ============================================================================
@@ -999,7 +1022,7 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_waiters(unwinder, result) < 0) {
+    if (process_task_waiters(unwinder, result, false) < 0) {
         return -1;
     }
 

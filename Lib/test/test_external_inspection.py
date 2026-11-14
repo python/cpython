@@ -576,6 +576,45 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(stacks["anext"], ["agen"])
 
     @skip_if_not_supported
+    def test_future_between_tasks(self):
+        # gh-161502
+        from asyncio.tools import build_async_tree
+
+        async def worker(method):
+            return getattr(RemoteUnwinder(os.getpid()), method)()
+
+        async def main(method):
+            parent = asyncio.current_task()
+            parent.set_name("main")
+            future = asyncio.Future()
+            task = asyncio.create_task(worker(method), name="worker")
+            asyncio.future_add_to_awaited_by(task, future)
+            task.add_done_callback(future.set_result)
+            try:
+                await future
+                return task.result(), {
+                    id(parent): [],
+                    id(future): [id(parent)],
+                    id(task): [id(future)],
+                }
+            finally:
+                asyncio.future_discard_from_awaited_by(task, future)
+
+        for method in ("get_all_awaited_by", "get_async_stack_trace"):
+            with self.subTest(method=method):
+                snapshot, expected = asyncio.run(main(method))
+                tree, = build_async_tree(snapshot)
+                rendered = "\n".join(tree)
+                self.assertIn("(T) main", rendered)
+                self.assertIn("(F) Future-", rendered)
+                self.assertIn("(T) worker", rendered)
+                relationships = {
+                    node.task_id: [edge.task_name for edge in node.awaited_by]
+                    for thread in snapshot for node in thread.awaited_by
+                }
+                self.assertEqual(relationships, expected)
+
+    @skip_if_not_supported
     def test_async_generator_running_task_stack(self):
         # gh-159620
         async def agen():
@@ -1583,7 +1622,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     ]
                     self.assertIn(
                         TaskInfo(
-                            [ANY, "Task-1", [CoroInfo([main_stack, ANY])], []]
+                            [ANY, "Task-1", [CoroInfo([main_stack, ANY])], [], False]
                         ),
                         entries,
                     )
@@ -1637,6 +1676,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                         ]
                                     )
                                 ],
+                                False,
                             ]
                         ),
                         entries,
@@ -1704,6 +1744,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                         ]
                                     )
                                 ],
+                                False,
                             ]
                         ),
                         entries,
