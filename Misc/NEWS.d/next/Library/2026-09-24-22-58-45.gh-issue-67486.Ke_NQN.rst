@@ -1,0 +1,4 @@
+When *readline* returns a string instead of bytes,
+:func:`tokenize.detect_encoding` now raises a :exc:`TypeError` that says so.
+Previously the failure came later, from whichever operation touched the line
+first, and did not mention *readline*. Patch by Dmitry Voropaev.
