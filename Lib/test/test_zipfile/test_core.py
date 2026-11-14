@@ -4415,6 +4415,17 @@ class OtherTests(unittest.TestCase):
         caught."""
         self.assertRaises(NotImplementedError, zipfile.ZipFile, TESTFN, "w", -1)
 
+    def test_mismatched_compression_method(self):
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, "w", zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", b"hello")
+
+        fp.seek(8)  # Compression method in the local file header.
+        fp.write(struct.pack("<H", zipfile.ZIP_DEFLATED))
+        with zipfile.ZipFile(fp) as zipf:
+            with self.assertRaisesRegex(zipfile.BadZipFile, "Compression method"):
+                zipf.open("foo.txt")
+
     def test_unsupported_compression(self):
         # data is declared as shrunk, but actually deflated
         data = (b'PK\x03\x04.\x00\x00\x00\x01\x00\xe4C\xa1@\x00\x00\x00'
