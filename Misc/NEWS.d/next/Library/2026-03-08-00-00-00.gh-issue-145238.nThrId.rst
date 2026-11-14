@@ -1,0 +1,3 @@
+Added ``nativeThreadId`` attribute to :class:`logging.LogRecord`, exposing
+the OS-native thread ID via :func:`threading.get_native_id`. This can be
+used in format strings as ``%(nativeThreadId)d``.
