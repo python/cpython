@@ -1,0 +1,4 @@
+Subclassing :data:`typing.Annotated` types now works if the annotated type
+is a generic alias, e.g. ``Annotated[list[int], "metadata"]``.  If the
+annotated type cannot be subclassed, the raised error is now the same as for
+that type.
