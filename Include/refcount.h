@@ -321,6 +321,7 @@ PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
 PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcountSpecialized(PyObject *, const destructor);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
