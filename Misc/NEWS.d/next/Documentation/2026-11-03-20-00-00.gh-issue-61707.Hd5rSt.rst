@@ -1,0 +1,3 @@
+Clarify that :meth:`email.header.Header.__str__` does not decode :rfc:`2047`
+encoded words, and point to :func:`email.header.decode_header` and
+:func:`email.header.make_header` for decoding raw header strings.
