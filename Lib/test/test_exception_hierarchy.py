@@ -1,10 +1,12 @@
 import builtins
+import locale
 import os
 import select
 import socket
 import unittest
 import errno
 from errno import EEXIST
+from test.support import cpython_only
 
 
 class SubOSError(OSError):
@@ -135,6 +137,27 @@ class AttributesTest(unittest.TestCase):
         self.assertEqual(e.filename, "foo.txt")
         if os.name == "nt":
             self.assertEqual(e.winerror, None)
+
+    @cpython_only
+    @unittest.skipIf(os.name == "nt", "POSIX-specific test")
+    def test_strerror_cached(self):
+        def strerror():
+            with self.assertRaises(FileNotFoundError) as cm:
+                open("some_hopefully_non_existing_file")
+            return cm.exception.strerror
+        message = strerror()
+        self.assertIs(strerror(), message)
+        self.assertIs(os.strerror(errno.ENOENT), message)
+        if hasattr(locale, "LC_MESSAGES"):
+            old = locale.setlocale(locale.LC_MESSAGES)
+            self.addCleanup(locale.setlocale, locale.LC_MESSAGES, old)
+            locale.setlocale(locale.LC_MESSAGES, "C")
+            message = strerror()
+            try:
+                locale.setlocale(locale.LC_MESSAGES, "C.UTF-8")
+                self.assertIsNot(strerror(), message)
+            except locale.Error:
+                pass
 
     @unittest.skipUnless(os.name == "nt", "Windows-specific test")
     def test_errno_translation(self):
