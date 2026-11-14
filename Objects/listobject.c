@@ -3424,7 +3424,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.index(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "value not in list");
     return NULL;
 }
 
@@ -3494,7 +3494,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+    PyErr_SetString(PyExc_ValueError, "value not in list");
     return NULL;
 }
 
