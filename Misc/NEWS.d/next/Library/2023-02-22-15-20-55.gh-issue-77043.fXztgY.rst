@@ -1,0 +1,1 @@
+Make :func:`os.dup2(fd, fd, False)` always remove fd inheritability.
