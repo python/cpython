@@ -88,9 +88,15 @@ class FakeHTTPMixin(object):
         fake_http_class = fakehttp(fakedata, mock_close=mock_close)
         self._connection_class = http.client.HTTPConnection
         http.client.HTTPConnection = fake_http_class
+        # Disable proxies during the test
+        self.getproxies = unittest.mock.patch.object(urllib.request, 'getproxies', return_value={})
+        self.getproxies.start()
+        # Clear cached opener
+        urllib.request.install_opener(None)
 
     def unfakehttp(self):
         http.client.HTTPConnection = self._connection_class
+        self.getproxies.stop()
 
 
 class urlopen_FileTests(unittest.TestCase):
