@@ -147,6 +147,8 @@ def _iter_file_finder_modules(importer, prefix=''):
             continue
 
         path = os.path.join(importer.path, fn)
+        if modname and not os.path.isfile(path):
+            continue
         ispkg = False
 
         if not modname and os.path.isdir(path) and '.' not in fn:
