@@ -1106,7 +1106,7 @@ Optimizations
   Startup performance is tracked on the `Python Speed Center
   <https://speed.python.org/timeline/?exe=12&base=&ben=python_startup.legacy&env=1%2C7&revs=50&equid=off&quarts=on&extr=on>`__.
   (Contributed by Pablo Galindo Salgado, Cody Maloney, and Pieter Eendebak in
-  :gh:`159137`, :gh:`160858`, :gh:`160913`, and :gh:`87613`.)
+  :gh:`159137`, :gh:`160858`, :gh:`160913`, :gh:`87613`, and :gh:`161941`.)
 
 * Speed up iteration over asynchronous generators: values yielded to
   ``async for`` no longer create and discard a :exc:`StopIteration` exception
