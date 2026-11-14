@@ -1,0 +1,1 @@
+Implement a ``__repr__`` method to :class:`csv.Dialect`, :class:`csv.DictReader` and :class:`csv.DictWriter`.
