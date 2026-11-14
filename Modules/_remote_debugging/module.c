@@ -608,6 +608,27 @@ read_interp_state_and_maybe_thread_frame(
 {
     prefetch->tstate = NULL;
     prefetch->frame = NULL;
+    int aliased = _Py_RemoteDebug_AliasedReadRemoteMemory(
+        &unwinder->handle, interpreter_addr, INTERP_STATE_BUFFER_SIZE,
+        interp_state_buffer);
+    if (aliased < 0) {
+        return -1;
+    }
+    if (aliased == 0) {
+        if (prefetch->tstate_addr != 0) {
+            size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
+            int rc = _Py_RemoteDebug_AliasedReadRemoteMemory(
+                &unwinder->handle, prefetch->tstate_addr, tstate_size,
+                tstate_buffer);
+            if (rc == 0) {
+                prefetch->tstate = tstate_buffer;
+            }
+            else if (rc < 0) {
+                PyErr_Clear();
+            }
+        }
+        return 0;
+    }
     if (prefetch->tstate_addr != 0) {
         size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
         _Py_RemoteReadSegment segments[3] = {
