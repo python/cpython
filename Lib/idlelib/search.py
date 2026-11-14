@@ -62,10 +62,9 @@ def find_selection(text):
 class SearchDialog(SearchDialogBase):
     "Dialog for finding a pattern in text."
 
-    def create_widgets(self):
-        "Create the base search dialog and add a button for Find Next."
-        SearchDialogBase.create_widgets(self)
-        # TODO - why is this here and not in a create_command_buttons?
+    def create_command_buttons(self):
+        "Create the command frame and add a button for Find Next."
+        SearchDialogBase.create_command_buttons(self)
         self.make_button("Find Next", self.default_command, isdef=True)
 
     def default_command(self, event=None):

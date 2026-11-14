@@ -78,7 +78,7 @@ def findfiles(folder, pattern, recursive):
 class GrepDialog(SearchDialogBase):
     "Dialog for searching multiple files."
 
-    title = "Find in Files Dialog"
+    title = "Find in Files"
     icon = "Grep"
     needwrapbutton = 0
 
@@ -132,9 +132,9 @@ class GrepDialog(SearchDialogBase):
         btn.pack(side="top", fill="both")
 
     def create_command_buttons(self):
-        "Create base command buttons and add button for Search Files."
+        "Create base command buttons and add button for Search."
         SearchDialogBase.create_command_buttons(self)
-        self.make_button("Search Files", self.default_command, isdef=True)
+        self.make_button("Search", self.default_command, isdef=True)
 
     def default_command(self, event=None):
         """Grep for search pattern in file path. The default command is bound
