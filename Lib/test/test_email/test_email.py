@@ -916,6 +916,20 @@ class TestEncoders(unittest.TestCase):
         msg = MIMEText('hello \xf8 world', _charset='iso-8859-1')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
+    def test_encode_replaces_existing_cte(self):
+        # gh-43702: re-encoding must replace the old Content-Transfer-Encoding
+        # header, not add a second one.
+        for charset, encoder, cte in (
+                ('iso-8859-1', encoders.encode_base64, 'base64'),
+                ('utf-8', encoders.encode_quopri, 'quoted-printable')):
+            with self.subTest(cte=cte):
+                msg = MIMEText('h\xe9llo', _charset=charset)
+                encoder(msg)
+                self.assertEqual(msg.get_all('content-transfer-encoding'),
+                                 [cte])
+                self.assertEqual(msg.get_payload(decode=True),
+                                 'h\xe9llo'.encode(charset))
+
     def test_encode7or8bit(self):
         # Make sure a charset whose input character set is 8bit but
         # whose output character set is 7bit gets a transfer-encoding
