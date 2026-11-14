@@ -466,6 +466,39 @@ class DestroyTests(TestBase):
                 _interpreters.destroy(interp)
             self.assertTrue(_interpreters.is_running(interp))
 
+    def test_concurrent_run_and_destroy(self):
+        # gh-127041: An interpreter could start running during destroy().
+        for _ in range(50):
+            interp = _interpreters.create()
+            barrier = threading.Barrier(2)
+
+            def runner():
+                barrier.wait()
+                try:
+                    _interpreters.run_string(interp, "x = 1")
+                except _interpreters.InterpreterError:
+                    pass
+
+            def destroyer():
+                barrier.wait()
+                try:
+                    _interpreters.destroy(interp)
+                except _interpreters.InterpreterError:
+                    pass
+
+            threads = [
+                threading.Thread(target=runner),
+                threading.Thread(target=destroyer),
+            ]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            try:
+                _interpreters.destroy(interp)
+            except _interpreters.InterpreterError:
+                pass
+
 
 class CommonTests(TestBase):
     def setUp(self):
