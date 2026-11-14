@@ -16,7 +16,7 @@ import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
 import marshal  # for loads
-import time  # for mktime
+lazy import time  # for mktime
 
 __all__ = ['ZipImportError', 'zipimporter']
 

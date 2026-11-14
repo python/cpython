@@ -1252,6 +1252,12 @@ class BadFileZipImportTestCase(unittest.TestCase):
             zipimport._zip_directory_cache.clear()
 
 
+class LazyImportTest(unittest.TestCase):
+    @support.cpython_only
+    def test_time_is_lazily_imported(self):
+        import_helper.ensure_lazy_imports('zipimport', {'time'})
+
+
 def tearDownModule():
     os_helper.unlink(TESTMOD)
 
