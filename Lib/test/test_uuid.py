@@ -311,6 +311,34 @@ class BaseTestUUID:
 
         self.assertEqual(repr(CustomUUID(int=1)), "CustomUUID('custom uuid')")
 
+    def test_hash_subclass_and_reinit(self):
+        class CustomUUID(self.uuid.UUID):
+            pass
+
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            for value in (0, 1, 0x12345678123456781234567812345678):
+                with self.subTest(value=value):
+                    u = self.uuid.UUID(int=value)
+                    expected = hash(u)
+
+                    s = CustomUUID(int=value)
+                    self.assertEqual(hash(s), expected)
+                    self.assertIn(u, {s})
+
+                    s = CustomUUID.__new__(CustomUUID)
+                    s.__setstate__({'int': value})
+                    self.assertEqual(hash(s), expected)
+
+                    u = self.uuid.UUID(int=value + 1)
+                    hash(u)
+                    u.__init__(int=value)
+                    self.assertEqual(hash(u), expected)
+
+                    u = self.uuid.UUID(int=value + 1)
+                    hash(u)
+                    u.__setstate__({'int': value})
+                    self.assertEqual(hash(u), expected)
+
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)
