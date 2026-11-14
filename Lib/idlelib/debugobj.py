@@ -12,7 +12,7 @@
 # - for classes/modules, add "open source" to object browser
 from reprlib import Repr
 
-from idlelib.tree import TreeItem, TreeNode, ScrolledCanvas
+from idlelib.tree import TreeItem, TreeWidget
 
 myrepr = Repr()
 myrepr.maxstring = 100
@@ -27,9 +27,6 @@ class ObjectTreeItem(TreeItem):
         return self.labeltext
     def GetText(self):
         return myrepr.repr(self.object)
-    def GetIconName(self):
-        if not self.IsExpandable():
-            return "python"
     def IsEditable(self):
         return self.setfunction is not None
     def SetText(self, text):
@@ -51,7 +48,7 @@ class ObjectTreeItem(TreeItem):
             except AttributeError:
                 continue
             item = make_objecttreeitem(
-                str(key) + " =",
+                str(key),
                 value,
                 lambda value, key=key, object_=self.object:
                     setattr(object_, key, value))
@@ -64,10 +61,10 @@ class ClassTreeItem(ObjectTreeItem):
     def GetSubList(self):
         sublist = ObjectTreeItem.GetSubList(self)
         if len(self.object.__bases__) == 1:
-            item = make_objecttreeitem("__bases__[0] =",
+            item = make_objecttreeitem("__bases__[0]",
                 self.object.__bases__[0])
         else:
-            item = make_objecttreeitem("__bases__ =", self.object.__bases__)
+            item = make_objecttreeitem("__bases__", self.object.__bases__)
         sublist.insert(0, item)
         return sublist
 
@@ -89,7 +86,7 @@ class SequenceTreeItem(ObjectTreeItem):
                 continue
             def setfunction(value, key=key, object_=self.object):
                 object_[key] = value
-            item = make_objecttreeitem(f"{key!r}:", value, setfunction)
+            item = make_objecttreeitem(repr(key), value, setfunction)
             sublist.append(item)
         return sublist
 
@@ -129,13 +126,11 @@ def _debug_object_browser(parent):  # htest #
     top.title("Test debug object browser")
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("+%d+%d" % (x + 100, y + 175))
-    top.configure(bd=0, bg="yellow")
     top.focus_set()
-    sc = ScrolledCanvas(top, bg="white", highlightthickness=0, takefocus=1)
-    sc.frame.pack(expand=1, fill="both")
-    item = make_objecttreeitem("sys", sys)
-    node = TreeNode(sc.canvas, None, item)
-    node.update()
+    tree = TreeWidget(top, make_objecttreeitem("sys", sys),
+                      columns=("value",), headings=("Name", "Value"))
+    tree.pack(expand=True, fill="both")
+    tree.expand()
 
 
 if __name__ == '__main__':
