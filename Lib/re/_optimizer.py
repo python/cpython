@@ -33,7 +33,7 @@ def _compile_charset(charset, flags, code):
     emit = code.append
     for op, av in charset:
         emit(op)
-        if op is NEGATE:
+        if op in (NEGATE, INVERT):
             pass
         elif op is LITERAL:
             emit(av)
@@ -58,31 +58,40 @@ def _compile_charset(charset, flags, code):
 def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # internal: optimize character set.
     #
-    # The engine's charset() walk toggles polarity on every NEGATE (see
-    # Modules/_sre/sre_lib.h), so NEGATE markers split the set into
-    # alternating-polarity segments: a leading NEGATE is a complemented class
-    # [^...], an interior one is set difference (RL1.3).  Each segment is a
-    # plain union, optimized on its own with the NEGATE boundaries kept in place.
-    negates = [i for i, (op, _av) in enumerate(charset) if op is NEGATE]
-    if not negates or negates == [0]:
+    # The engine's charset() walk toggles its return polarity on every NEGATE
+    # and its membership-test direction on every INVERT (see sre_lib.h) --
+    # together they express complement, difference and intersection (RL1.3).
+    # Each toggle-delimited segment is optimized on its own.
+    bounds = [i for i, (op, _av) in enumerate(charset)
+              if op in (NEGATE, INVERT)]
+    if not bounds or (bounds == [0] and charset[0][0] is NEGATE):
         # Fast path: a plain union, optionally complemented as a whole -- every
         # charset the parser produces today, optimized as before.
         return _optimize_charset_segment(charset, iscased, fixup, fixes)
 
-    # Optimize each NEGATE-delimited run on its own.  _allow_anyall is off: the
+    # Optimize each toggle-delimited run on its own.  _allow_anyall is off: the
     # [\s\S] -> ANY_ALL / [^\s\S] -> empty shortcuts rewrite a whole set and
-    # would inject or drop a NEGATE mid-segment.
+    # would inject or drop a toggle mid-segment.
     out = []
     hascased = False
     start = 0
-    for i in negates + [len(charset)]:
+    inv = False
+    for i in bounds + [len(charset)]:
         if i > start:                  # skip an empty run (e.g. a leading NEGATE)
-            opt, cased = _optimize_charset_segment(
-                charset[start:i], iscased, fixup, fixes, _allow_anyall=False)
-            out.extend(opt)
-            hascased |= cased
+            if inv:
+                # An INVERT run intersects its members: re-emit them as
+                # they are (already optimized, see _single_member).
+                out.extend(charset[start:i])
+            else:
+                opt, cased = _optimize_charset_segment(
+                    charset[start:i], iscased, fixup, fixes, _allow_anyall=False)
+                out.extend(opt)
+                hascased |= cased
         if i < len(charset):
-            out.append((NEGATE, None))
+            tok = charset[i]
+            out.append(tok)            # re-emit the toggle in place
+            if tok[0] is INVERT:
+                inv = not inv
         start = i + 1
     return out, hascased
 
@@ -467,43 +476,75 @@ def _fuse_branch(av):
             items += cs
     return items if tail is None else items + tail
 
-def _fuse_difference(data):
-    # Replace  <flat charset A> (?<![B1]) (?<![B2]) ...  with the single charset
-    # [NEGATE] B1 B2 ... [NEGATE] A.  Each negative lookbehind over a flat
-    # charset subtracts its set from the character A matches.
+def _single_member(operand):
+    # Reduce a flat-charset operand to one member opcode (a lone bitmap,
+    # range or category), or None.  An intersection operand must be a single
+    # member, because each member under INVERT is a separate test.
+    items = _parser._flat_items(operand)
+    if items is None:
+        return None
+    opt, _hascased = _optimize_charset(items)
+    return opt if len(opt) == 1 else None
+
+def _fuse_setops(data, flags):
+    # Fuse  <flat charset A> (?<![B]) (?<=[C]) ...  -- a left-associative
+    # chain of set difference ([A--B]) and intersection ([A&&C]) -- into the
+    # single charset  [NEGATE] <fail items> [NEGATE] [INVERT] A.  The chain
+    # is a pure conjunction, so each lookbehind appends one fail item:
+    # "ch in B" for a difference, "ch not in C" (under INVERT) for an
+    # intersection.  Not fused under IGNORECASE, where case folding could
+    # split a single-member intersection operand (see _single_member).
     out = []
-    head = None        # _flat_items(A) for the fused difference now at out[-1]
-    subtrahend = None  # its accumulated B items, or None when not fusing
+    head = None    # _flat_items(A) for the fused set operation now at out[-1]
+    fails = None   # its accumulated fail items, or None when not fusing
+    inv = 0        # the INVERT state at the end of fails
     for op, av in data:
-        if op is ASSERT_NOT and av[0] < 0:          # a negative lookbehind
-            b = _parser._flat_items(av[1].data)
+        if op in (ASSERT, ASSERT_NOT) and av[0] < 0:    # a lookbehind
+            if op is ASSERT_NOT:                        # -- difference
+                b = _parser._flat_items(av[1].data)
+                tinv = 0
+            elif not flags & SRE_FLAG_IGNORECASE:       # && intersection
+                b = _single_member(av[1].data)
+                tinv = 1
+            else:
+                b = None
             if b is not None:
-                if subtrahend is None and out:
+                if fails is None and out:
                     # the first lookbehind of a run: only now is it worth
                     # checking whether the preceding item A is a flat charset.
                     head = _parser._flat_items([out[-1]])
                     if head is not None:
-                        subtrahend = []
-                if subtrahend is not None:
-                    subtrahend += b
-                    out[-1] = (IN, [(NEGATE, None)] + subtrahend
-                                   + [(NEGATE, None)] + head)
+                        fails = []
+                        inv = 0
+                if fails is not None:
+                    if inv != tinv:
+                        fails.append((INVERT, None))
+                        inv ^= 1
+                    fails += b
+                    tail = [(NEGATE, None)]
+                    if inv:
+                        tail.append((INVERT, None))
+                    out[-1] = (IN, [(NEGATE, None)] + fails + tail + head)
                     continue
-        head = subtrahend = None
+        head = fails = None
         out.append((op, av))
     data[:] = out
 
-def _walk(seq):
+def _walk(seq, flags):
     for i, (op, av) in enumerate(seq):
-        for sub in _subpatterns(op, av):
-            _walk(sub.data)
+        if op is SUBPATTERN:
+            # A group can change the flag context, e.g. (?i:...).
+            _walk(av[3].data, _combine_flags(flags, av[1], av[2]))
+        else:
+            for sub in _subpatterns(op, av):
+                _walk(sub.data, flags)
         if op is BRANCH:
             items = _fuse_branch(av)
             if items is not None:
                 seq[i] = (IN, items)
-    _fuse_difference(seq)
+    _fuse_setops(seq, flags)
 
-def optimize(pattern):
+def optimize(pattern, flags):
     """Rewrite a parsed pattern in place and return it."""
-    _walk(pattern.data)
+    _walk(pattern.data, flags)
     return pattern
