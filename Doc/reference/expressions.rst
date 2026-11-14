@@ -1079,7 +1079,7 @@ Yield expressions
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_from: "yield" "from" `expression`
-   yield_expression: "yield" `yield_list` | `yield_from`
+   yield_expression: "yield" [`yield_list` | `yield_from`]
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
