@@ -502,6 +502,7 @@ aliases = {
 
     # mac_cyrillic codec
     'maccyrillic'        : 'mac_cyrillic',
+    'x_mac_cyrillic'     : 'mac_cyrillic',
 
     # mac_greek codec
     'macgreek'           : 'mac_greek',

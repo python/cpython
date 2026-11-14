@@ -1,0 +1,1 @@
+Add ``x-mac-cyrillic`` as an alias for the ``mac_cyrillic`` codec.
