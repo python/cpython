@@ -4069,6 +4069,19 @@ class ElementFindTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
             e.findall('/tag')
 
+    def test_find_invalid_path(self):
+        e = ET.XML(SAMPLE_XML)
+        paths = ('@', './x=y', './(', './)', './]', './!=', './::',
+                 './()', "./'tag'", './"tag"', 'tag/@')
+        for obj in (e, ET.ElementTree(e)):
+            for method in ('find', 'findall', 'findtext', 'iterfind'):
+                for path in paths:
+                    with self.subTest(type=type(obj).__name__,
+                                      method=method, path=path):
+                        self.assertRaisesRegex(
+                            SyntaxError, '^invalid path$',
+                            getattr(obj, method), path)
+
     def test_find_through_ElementTree(self):
         e = ET.XML(SAMPLE_XML)
         self.assertEqual(ET.ElementTree(e).find('tag').tag, 'tag')
