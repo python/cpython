@@ -12,3 +12,6 @@ paths:
      ignore:
      - 1st argument of function call is not assignable
      - SC2(015|038|086|091|097|098|129|155)
+     # Pending release of actionlint > 1.7.12 for `$/` self-repository syntax:
+     # https://github.com/rhysd/actionlint/issues/711
+     - reusable workflow call "\$/[^"]+" at "uses" is not following the format

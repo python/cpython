@@ -267,7 +267,7 @@ _zstd
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
-    version 2.2.4, and should be minimally updated as needed to adapt
+    version 2.2.5, and should be minimally updated as needed to adapt
     to changes in their source layout. The zbuild.h, zconf.h and
     zconf-ng.h file in the PC directory were likewise generated and
     vendored.

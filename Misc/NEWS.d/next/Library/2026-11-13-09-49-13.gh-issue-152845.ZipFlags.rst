@@ -1,0 +1,3 @@
+Fix :mod:`zipfile` dropping the UTF-8 (EFS) flag for existing entries
+when rewriting an archive in append mode, and honor an explicitly set
+flag on new entries. Patch by Kasra Ghodsi.
