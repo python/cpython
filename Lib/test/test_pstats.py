@@ -45,6 +45,18 @@ class StatsTestCase(unittest.TestCase):
         stats = pstats.Stats(stream=stream)
         stats.add(self.stats, self.stats)
 
+    def test_empty_stats(self):
+        # gh-109500: Empty profiling data must not prevent loading or
+        # combining statistics.
+        stats_file = support.findfile('pstats.pck')
+        profile = cProfile.Profile()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, 'empty.prof')
+            profile.dump_stats(filename)
+            self.assertEqual(pstats.Stats(profile, filename).stats, {})
+            stats = pstats.Stats(filename, stats_file)
+            self.assertEqual(stats.stats, self.stats.stats)
+
     def test_dump_and_load_works_correctly(self):
         temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
         try:
