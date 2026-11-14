@@ -1341,6 +1341,38 @@ class PathTest(PurePathTest):
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
+    @unittest.skipUnless(hasattr(os, 'copy_file_range') and
+                         hasattr(os, 'sendfile'),
+                         'requires copy_file_range and sendfile')
+    def test_copy_file_fastcopy_false_eof(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        with (mock.patch('pathlib._os._ficlone', None),
+              mock.patch('pathlib._os._fcopyfile', None),
+              mock.patch('pathlib._os.os.copy_file_range', return_value=0),
+              mock.patch('pathlib._os.os.sendfile', return_value=0)):
+            source.copy(target)
+        self.assertEqual(source.read_bytes(), target.read_bytes())
+
+    @unittest.skipUnless(hasattr(os, 'copy_file_range') and
+                         hasattr(os, 'sendfile'),
+                         'requires copy_file_range and sendfile')
+    def test_move_file_fastcopy_false_eof(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        expected = source.read_bytes()
+        with (mock.patch('pathlib.os.replace',
+                         side_effect=OSError(errno.EXDEV, 'Cross-device link')),
+              mock.patch('pathlib._os._ficlone', None),
+              mock.patch('pathlib._os._fcopyfile', None),
+              mock.patch('pathlib._os.os.copy_file_range', return_value=0),
+              mock.patch('pathlib._os.os.sendfile', return_value=0)):
+            source.move(target)
+        self.assertFalse(source.exists())
+        self.assertEqual(target.read_bytes(), expected)
+
     @needs_symlinks
     def test_copy_file_to_existing_symlink(self):
         base = self.cls(self.base)
