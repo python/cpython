@@ -1,3 +1,4 @@
+import itertools
 import sys
 import threading
 import unittest
@@ -168,6 +169,31 @@ class ContendedSeqIterExhaustionTest(unittest.TestCase):
         # A double-DECREF of the sequence does not always crash; it
         # reliably shows up as a sagging reference count.
         self.assertEqual(sys.getrefcount(seq), refcount_before)
+
+
+class ContendedCallIterExhaustionTest(unittest.TestCase):
+    """Test exhausting a shared iter(callable, sentinel) iterator.
+
+    The values seen by each thread are unspecified, but exhausting the
+    iterator from several threads at once must not crash.
+    """
+
+    def test_shared_iterator_exhaustion(self):
+        niters = 2000 if support.check_sanitizer(thread=True) else 20000
+
+        def make_iter():
+            counter = itertools.count().__next__
+            return iter(lambda: counter(), 3)
+
+        shared = [make_iter()]
+
+        def worker():
+            for _ in range(niters):
+                it = shared[0]
+                if next(it, None) is None:
+                    shared[0] = make_iter()
+
+        threading_helper.run_concurrently(worker, nthreads=NUMTHREADS)
 
 
 class ContendedRangeIterationTest(ContendedTupleIterationTest):
