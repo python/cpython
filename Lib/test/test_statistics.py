@@ -2000,6 +2000,17 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
+    def test_gh_140938(self):
+        # Data containing inf or nan must raise a ValueError rather than
+        # return a non-finite (and possibly negative) result.
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, -math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
+
+
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2106,13 +2117,6 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         data = (3, 6, 7, 10)
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
-
-    def test_gh_140938(self):
-        # Inputs with inf/nan should raise a ValueError
-        with self.assertRaises(ValueError):
-            self.func([1.0, math.inf])
-        with self.assertRaises(ValueError):
-            self.func([1.0, math.nan])
 
 
 class TestSqrtHelpers(unittest.TestCase):
