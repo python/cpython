@@ -1100,6 +1100,45 @@ Uuid_get_int(PyObject *op, void *Py_UNUSED(closure))
     return get_int(uuidobject_CAST(op));
 }
 
+static int
+Uuid_set_int(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete UUID.int");
+        return -1;
+    }
+    uuid_state *state = get_uuid_state_by_cls(Py_TYPE(op));
+    if (validate_int(state, value) < 0) {
+        return -1;
+    }
+    // Convert before updating the object: conversion errors must leave it intact.
+    uint8_t bytes[UUID_SIZE];
+    if (_PyLong_AsByteArray((PyLongObject *)value, bytes, sizeof(bytes),
+                            0, 0, 1) < 0) {
+        return -1;
+    }
+    uuidobject *self = uuidobject_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    memcpy(self->bytes, bytes, sizeof(bytes));
+    self->cached_hash = -1;
+    Py_END_CRITICAL_SECTION();
+    return 0;
+}
+
+static int
+Uuid_set_is_safe(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete UUID.is_safe");
+        return -1;
+    }
+    uuidobject *self = uuidobject_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(op);
+    Py_XSETREF(self->is_safe, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
+    return 0;
+}
+
 static PyObject *
 Uuid_get_is_safe(PyObject *op, void *Py_UNUSED(closure))
 {
@@ -1568,8 +1607,8 @@ _uuid_UUID__from_int_impl(PyTypeObject *type, PyObject *value)
 }
 
 static PyGetSetDef Uuid_getset[] = {
-    {"int", Uuid_get_int, NULL, "UUID as a 128-bit integer", NULL},
-    {"is_safe", Uuid_get_is_safe, NULL, "UUID safety status", NULL},
+    {"int", Uuid_get_int, Uuid_set_int, "UUID as a 128-bit integer", NULL},
+    {"is_safe", Uuid_get_is_safe, Uuid_set_is_safe, "UUID safety status", NULL},
     {"fields", Uuid_get_fields, NULL, "UUID as a 6-tuple", NULL},
     {"hex", Uuid_get_hex, NULL, "UUID as a 32-character hex string", NULL},
     {"urn", Uuid_get_urn, NULL, "UUID as a URN", NULL},
