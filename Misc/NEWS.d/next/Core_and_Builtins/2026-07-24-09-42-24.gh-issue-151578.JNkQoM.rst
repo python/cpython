@@ -1,0 +1,2 @@
+Fix potential use-after-free and reference leaks in cross-interpreter
+``NotShareableError`` error handling.
