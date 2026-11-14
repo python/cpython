@@ -1,0 +1,5 @@
+Fix a :mod:`multiprocessing` receiver on Windows, such as a
+:class:`~multiprocessing.pool.Pool` worker, failing with
+:exc:`AssertionError` when the other end tries to send a message too large
+for a pipe (over 4,294,967,247 bytes). Sending such a message now raises
+:exc:`ValueError` instead of :exc:`OSError`.
