@@ -30,8 +30,13 @@ from . import keymap
 from .console import Event
 from .trace import trace
 
+PASTE_KEYCODES = {
+    b'\033[200~': 'bracketed paste',
+}
+
 class BaseEventQueue:
     def __init__(self, encoding: str, keymap_dict: dict[bytes, str]) -> None:
+        keymap_dict.update(PASTE_KEYCODES)
         self.compiled_keymap = keymap.compile_keymap(keymap_dict)
         self.keymap = self.compiled_keymap
         trace("keymap {k!r}", k=self.keymap)
