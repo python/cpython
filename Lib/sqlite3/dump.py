@@ -77,6 +77,8 @@ def _iterdump(connection, *, filter=None):
                       _quote_value(table_name),
                       _quote_value(sql),
                   ))
+            # Rows live in the shadow tables, dumped separately.
+            continue
         else:
             yield('{0};'.format(sql))
 
