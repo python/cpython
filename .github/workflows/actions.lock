@@ -23,10 +23,6 @@ workflows:
     '.github/workflows/reusable-check-c-api-docs.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-python@v7.0.0'
-    '.github/workflows/reusable-cifuzz.yml':
-        - 'actions/upload-artifact@v7.0.1'
-        - 'github/codeql-action@v4.38.2'
-        - 'google/oss-fuzz@ed23f8af80ff82b25ca67cd9b101e690b8897b3f'
     '.github/workflows/reusable-context.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-python@v7.0.0'
@@ -103,16 +99,6 @@ dependencies:
         commit: 'sha1-9152e710e9f7182e4c29ad218e4f335a7b203613'
         owner_id: 54038801
         repo_id: 697422232
-    'github/codeql-action@v4.38.2':
-        ref: 'v4.38.2'
-        commit: 'sha1-2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2'
-        owner_id: 9919
-        repo_id: 259445878
-    'google/oss-fuzz@ed23f8af80ff82b25ca67cd9b101e690b8897b3f':
-        ref: 'master'
-        commit: 'sha1-ed23f8af80ff82b25ca67cd9b101e690b8897b3f'
-        owner_id: 1342004
-        repo_id: 63809205
     'j178/prek-action@v3.0.0':
         ref: 'v3.0.0'
         commit: 'sha1-4e14d07f9231acabce116ccfca13b13dd9755ece'
