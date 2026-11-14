@@ -1773,6 +1773,7 @@ _PySignal_Fini(void)
 int
 PyErr_CheckSignals(void)
 {
+    assert(!PyErr_Occurred());
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* Opportunistically check if the GC is scheduled to run and run it
