@@ -2278,11 +2278,18 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         return NULL;
     }
 
-    PyObject *parts = PyList_New(0);
+    if (objects_length > PY_SSIZE_T_MAX / 2) {
+        Py_DECREF(file);
+        return PyErr_NoMemory();
+    }
+    /* Reserve space for the arguments, separators, and terminator. */
+    PyObject *parts = PyList_New(Py_MAX(1, objects_length * 2));
     if (parts == NULL) {
         Py_DECREF(file);
         return NULL;
     }
+    /* Keep only accumulated parts visible when a conversion fails. */
+    Py_SET_SIZE(parts, 0);
     PyObject *exception, *saved_exception, *line;
     for (Py_ssize_t i = 0; i < objects_length; i++) {
         if (i > 0 && PyList_Append(parts, sep) < 0) {

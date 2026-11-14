@@ -138,6 +138,8 @@ class TestPrint(unittest.TestCase):
             (('a', 1, None), {}, 'a 1 None\n'),
             (('a', 'b'), {'sep': None, 'end': None}, 'a b\n'),
             (('a', 'b'), {'sep': '', 'end': ''}, 'ab'),
+            (tuple(range(100)), {'sep': '|', 'end': '!'},
+             '|'.join(map(str, range(100))) + '!'),
             (('a\0', '\u20ac', '\U0001f40d'),
              {'sep': '\u3000', 'end': '!'}, 'a\0\u3000\u20ac\u3000\U0001f40d!'),
         ]
