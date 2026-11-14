@@ -1,0 +1,4 @@
+Fix a thread that waits for the :term:`GIL` being kept waiting much longer
+than the :func:`switch interval <sys.setswitchinterval>` when the thread
+that holds the GIL releases it briefly and often, for example in
+:func:`zlib.crc32` on large inputs. Patch by Tomek Paczkowski.

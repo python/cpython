@@ -7,6 +7,7 @@
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_time.h"          // _PyTime_FromMicrosecondsClamp()
 
 
 /*
@@ -20,8 +21,9 @@
    - In the GIL-holding thread, the main loop (PyEval_EvalFrameEx) must be
      able to release the GIL on demand by another thread. A volatile boolean
      variable (gil_drop_request) is used for that purpose, which is checked
-     at every turn of the eval loop. That variable is set after a wait of
-     `interval` microseconds on `gil_cond` has timed out.
+     at every turn of the eval loop. That variable is set after a thread has
+     waited on `gil_cond` for `interval` microseconds in total, with no
+     switch to another thread in the meantime.
 
       [Actually, another volatile boolean variable (eval_breaker) is used
        which ORs several conditions into one. Volatile booleans are
@@ -324,22 +326,47 @@ take_gil(PyThreadState *tstate)
     tstate->gil_requested = 1;
 
     int drop_requested = 0;
+    /* The switch interval runs from the start of the wait, from the last
+       switch to another thread, or from the last drop request. A wake-up
+       caused by the holder releasing the GIL and taking it back before this
+       thread runs does not restart it. */
+    int restart_interval = 1;
+    unsigned long saved_switchnum = 0;
+    PyTime_t interval_start = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
-        unsigned long saved_switchnum = gil->switch_number;
+        PyTime_t now;
+        (void)PyTime_MonotonicRaw(&now);
+        if (restart_interval || gil->switch_number != saved_switchnum) {
+            restart_interval = 0;
+            saved_switchnum = gil->switch_number;
+            interval_start = now;
+        }
 
         unsigned long interval = _Py_atomic_load_ulong_relaxed(&gil->interval);
         if (interval < 1) {
             interval = 1;
         }
+        PyTime_t deadline = _PyTime_Add(
+            interval_start, _PyTime_FromMicrosecondsClamp(interval));
+        long long remaining_us = _PyTime_AsMicroseconds(
+            deadline - now, _PyTime_ROUND_CEILING);
+        if (remaining_us < 1) {
+            remaining_us = 1;
+        }
         int timed_out = 0;
-        COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
+        COND_TIMED_WAIT(gil->cond, gil->mutex, remaining_us, timed_out);
+        /* Use the clock to decide: the wait can end early, and a timeout
+           reported by the wait does not prove that the deadline passed. */
+        (void)PyTime_MonotonicRaw(&now);
+        timed_out = (now >= deadline);
 
-        /* If we timed out and no switch occurred in the meantime, it is time
-           to ask the GIL-holding thread to drop it. */
+        /* If the interval has passed and no switch occurred in the meantime,
+           it is time to ask the GIL-holding thread to drop it. */
         if (timed_out &&
             _Py_atomic_load_int_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
+            restart_interval = 1;
             PyThreadState *holder_tstate =
                 (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
             if (_PyThreadState_MustExit(tstate)) {

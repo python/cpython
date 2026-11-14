@@ -592,6 +592,49 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
+    @requires_gil_enabled()
+    def test_switch_interval_with_frequent_gil_releases(self):
+        # gh-161868: A thread that releases the GIL briefly and often must
+        # not keep a waiting thread off the GIL for much longer than the
+        # switch interval.
+        zlib = import_module("zlib")
+        # zlib.crc32() releases the GIL for inputs over 5 KiB.
+        data = b"x" * 6000
+        self.addCleanup(sys.setswitchinterval, sys.getswitchinterval())
+        support.setswitchinterval(0.005)
+
+        stop = False
+        timed_out = False
+        releases = 0
+
+        def worker():
+            nonlocal timed_out, releases
+            # Stop if the main thread cannot take the GIL back.
+            deadline = time.monotonic() + support.SHORT_TIMEOUT
+            while not stop:
+                if time.monotonic() > deadline:
+                    timed_out = True
+                    break
+                end = time.perf_counter() + 0.001
+                while time.perf_counter() < end:
+                    pass
+                zlib.crc32(data)
+                releases += 1
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        try:
+            # Each round takes the GIL back from the busy worker. This should
+            # take about one switch interval.
+            for _ in range(20):
+                previous = releases
+                while releases == previous and thread.is_alive():
+                    time.sleep(0.001)
+        finally:
+            stop = True
+            thread.join()
+        self.assertFalse(timed_out, "the main thread could not take the GIL")
+
     @support.bigmemtest(size=20, memuse=72*2**20, dry_run=False)
     def test_join_from_multiple_threads(self, size):
         # Thread.join() should be thread-safe
