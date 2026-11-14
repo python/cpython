@@ -1408,17 +1408,21 @@ class Path(PurePath):
         return self.move(target)
 
     if hasattr(os, "symlink"):
-        def symlink_to(self, target, target_is_directory=False):
+        def symlink_to(self, target, target_is_directory=False, overwrite=False):
             """
             Make this path a symlink pointing to the target path.
             Note the order of arguments (link, target) is the reverse of os.symlink.
+            Raise an error if this path already exists and *overwrite* is False.
             """
+            if overwrite and self.exists(follow_symlinks=False):
+                self.unlink()
             os.symlink(target, self, target_is_directory)
     else:
-        def symlink_to(self, target, target_is_directory=False):
+        def symlink_to(self, target, target_is_directory=False, overwrite=False):
             """
             Make this path a symlink pointing to the target path.
             Note the order of arguments (link, target) is the reverse of os.symlink.
+            Raise an error if this path already exists and *overwrite* is False.
             """
             f = f"{type(self).__name__}.symlink_to()"
             raise UnsupportedOperation(f"{f} is unsupported on this system")
