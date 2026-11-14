@@ -1,0 +1,4 @@
+:class:`logging.handlers.DatagramHandler` now supports IPv6:
+it creates an IPv6 socket if the host has no IPv4 address.
+Previously it always created an IPv4 socket,
+so the log records were silently lost.
