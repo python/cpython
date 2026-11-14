@@ -6427,18 +6427,6 @@ _ctypes_add_objects(PyObject *mod)
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
-    // See https://github.com/python/cpython/issues/128485
-    // This allocates some memory and then frees it to ensure that the
-    // the dlmalloc allocator initializes itself to avoid data races
-    // in free-threading.
-    void *codeloc = NULL;
-    void *ptr = Py_ffi_closure_alloc(sizeof(void *), &codeloc);
-    if (ptr == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    Py_ffi_closure_free(ptr);
-
     _ctypes_init_fielddesc();
 
     ctypes_state *st = get_module_state(mod);
