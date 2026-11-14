@@ -5721,6 +5721,10 @@ load_int(PickleState *state, UnpicklerObject *self)
         return -1;
     if (len < 2)
         return bad_readline(state);
+    if (strlen(s) != (size_t)len) {
+        PyErr_SetString(PyExc_ValueError, "null byte in numeric argument");
+        return -1;
+    }
 
     errno = 0;
     /* XXX(avassalotti): Should this uses PyOS_strtol()? */
@@ -5873,6 +5877,10 @@ load_long(PickleState *state, UnpicklerObject *self)
         return -1;
     if (len < 2)
         return bad_readline(state);
+    if (strlen(s) != (size_t)len) {
+        PyErr_SetString(PyExc_ValueError, "null byte in numeric argument");
+        return -1;
+    }
 
     /* s[len-2] will usually be 'L' (and s[len-1] is '\n'); we need to remove
        the 'L' before calling PyLong_FromString.  In order to maintain
@@ -5937,6 +5945,10 @@ load_float(PickleState *state, UnpicklerObject *self)
         return -1;
     if (len < 2)
         return bad_readline(state);
+    if (strlen(s) != (size_t)len) {
+        PyErr_SetString(PyExc_ValueError, "null byte in numeric argument");
+        return -1;
+    }
 
     errno = 0;
     d = PyOS_string_to_double(s, &endptr, PyExc_OverflowError);
@@ -6739,6 +6751,10 @@ load_get(PickleState *st, UnpicklerObject *self)
         return -1;
     if (len < 2)
         return bad_readline(st);
+    if (strlen(s) != (size_t)len) {
+        PyErr_SetString(PyExc_ValueError, "null byte in numeric argument");
+        return -1;
+    }
 
     key = PyLong_FromString(s, NULL, 10);
     if (key == NULL)
@@ -6901,6 +6917,10 @@ load_put(PickleState *state, UnpicklerObject *self)
         return -1;
     if (len < 2)
         return bad_readline(state);
+    if (strlen(s) != (size_t)len) {
+        PyErr_SetString(PyExc_ValueError, "null byte in numeric argument");
+        return -1;
+    }
     if (Py_SIZE(self->stack) <= self->stack->fence)
         return Pdata_stack_underflow(state, self->stack);
     value = self->stack->data[Py_SIZE(self->stack) - 1];

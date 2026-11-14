@@ -1,0 +1,4 @@
+The C :mod:`pickle` unpickler now rejects embedded null bytes in the
+textual arguments of the INT, LONG, FLOAT, GET and PUT opcodes instead of
+silently ignoring the remainder of the argument. This matches the Python
+implementation.
