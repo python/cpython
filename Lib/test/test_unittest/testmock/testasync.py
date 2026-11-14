@@ -450,7 +450,7 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         async def addition(self, var): pass
 
         mock = AsyncMock(addition, return_value=10)
-        output = await mock(5)
+        output = await mock(self, 5)
 
         self.assertEqual(output, 10)
 
