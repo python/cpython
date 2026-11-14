@@ -1,0 +1,5 @@
+Fix a crash and reading of uninitialized memory in :func:`pickle.load` and
+:class:`pickle.Unpickler` when reading a large amount of data from a file
+object without the ``readinto()`` method,
+if its ``read()`` method returns an instance of a :class:`bytes` subclass
+or less data than requested.
