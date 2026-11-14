@@ -1,0 +1,3 @@
+Fix unsafe access to cached slot names during default object state collection
+in free-threaded builds when another thread resizes the list or replaces a
+slot name.
