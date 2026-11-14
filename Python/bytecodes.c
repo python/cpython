@@ -4548,7 +4548,11 @@ dummy_func(
         }
 
         op(_CHECK_PEP_523, (--)) {
-            DEOPT_IF(IS_PEP523_HOOKED(tstate));
+            bool hooked = IS_PEP523_HOOKED(tstate);
+            #if TIER_ONE
+            hooked = hooked && !tstate->interp->eval_frame_is_perf;
+            #endif
+            DEOPT_IF(hooked);
         }
 
         op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -4584,11 +4588,17 @@ dummy_func(
         }
 
         op(_PUSH_FRAME, (new_frame -- )) {
-            assert(!IS_PEP523_HOOKED(tstate));
             _PyInterpreterFrame *temp = PyStackRef_Unwrap(new_frame);
             DEAD(new_frame);
             SAVE_STACK();
             assert(temp->previous == frame || temp->previous->previous == frame);
+            #if TIER_ONE
+            if (IS_PEP523_HOOKED(tstate)) {
+                frame = temp;
+                goto eval_frame_with_hook;
+            }
+            #endif
+            assert(!IS_PEP523_HOOKED(tstate));
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
@@ -4716,6 +4726,8 @@ dummy_func(
             _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+            // The initializer cleanup shim requires inlined frame entry.
+            EXIT_IF(IS_PEP523_HOOKED(tstate));
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             EXIT_IF(!PyStackRef_IsNull(self_or_null));
             EXIT_IF(!PyType_Check(callable_o));
@@ -6424,6 +6436,35 @@ dummy_func(
             goto error;
         }
 
+        spilled label(eval_frame_with_hook) {
+            _PyInterpreterFrame *callee = frame;
+            frame = tstate->current_frame;
+            assert(callee->previous == frame);
+            size_t return_offset = frame->return_offset;
+            bool is_generator = callee->owner == FRAME_OWNED_BY_GENERATOR;
+            callee->previous = NULL;
+            EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
+            PyObject *result = tstate->interp->eval_frame(tstate, callee, 0);
+            // The evaluator can clear the callee. Read the return kind before
+            // another call can change it.
+            bool yielded = is_generator &&
+                ((_PyThreadStateImpl *)tstate)->generator_return_kind == GENERATOR_YIELD;
+            if (result == NULL) {
+                RELOAD_STACK();
+                goto error;
+            }
+            assert(tstate->current_frame == frame);
+            _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(result));
+            RELOAD_STACK();
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            LOAD_IP(yielded ? 1 + INLINE_CACHE_ENTRIES_SEND : return_offset);
+            LLTRACE_RESUME_FRAME();
+#if _Py_TAIL_CALL_INTERP
+            int opcode;
+#endif
+            DISPATCH();
+        }
+
         label(error) {
             _PyFrame_StackAssertInvalid(frame);
             /* Double-check exception status. */
@@ -6647,6 +6688,7 @@ dummy_func(
 
     }
  dispatch_opcode:
+ eval_frame_with_hook:
  error:
  exception_unwind:
  exit_unwind:

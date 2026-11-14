@@ -133,6 +133,7 @@ any DWARF information available for them).
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
+#include "pycore_pystate.h"       // _PyEval_StopTheWorld()
 #include "pycore_runtime.h"       // _PyRuntime
 
 
@@ -434,6 +435,19 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
+// Keep the address-taken local out of the evaluator so it can tail-call the
+// trampoline without retaining another native frame.
+static Py_NO_INLINE py_trampoline
+get_trampoline(PyCodeObject *co)
+{
+    py_trampoline trampoline = NULL;
+    if (_PyCode_GetExtra((PyObject *)co, extra_code_index,
+                         (void **)&trampoline) != 0) {
+        return NULL;
+    }
+    return trampoline;
+}
+
 // gh-161288: the trampoline has no -fsanitize=function type signature
 static PyObject * _Py_NO_SANITIZE_FUNCTION
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
@@ -444,10 +458,9 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         goto default_eval;
     }
     PyCodeObject *co = _PyFrame_GetCode(frame);
-    py_trampoline f = NULL;
     assert(extra_code_index != -1);
-    int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
-    if (ret != 0 || f == NULL) {
+    py_trampoline f = get_trampoline(co);
+    if (f == NULL) {
         // This is the first time we see this code object so we need
         // to compile a trampoline for it.
         py_trampoline new_trampoline = compile_trampoline();
@@ -569,6 +582,10 @@ _PyPerfTrampoline_Init(int activate)
         }
         trampoline_refcount = 1;  // Base refcount held by the system
         perf_status = PERF_STATUS_OK;
+        _PyEval_StopTheWorld(tstate->interp);
+        tstate->interp->eval_frame_is_perf =
+            prev_eval_frame == _PyEval_EvalFrameDefault;
+        _PyEval_StartTheWorld(tstate->interp);
     }
 #endif
     return 0;
