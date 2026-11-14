@@ -1,0 +1,1 @@
+Fix email.mime.image.MIMEImage to respect policy.max_line_length (bpo-133311).
