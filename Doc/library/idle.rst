@@ -125,9 +125,11 @@ Select All
 
 Cut
    Copy selection into the system-wide clipboard; then delete the selection.
+   If there is no selection, cut the current line instead.
 
 Copy
    Copy selection into the system-wide clipboard.
+   If there is no selection, copy the current line instead.
 
 Paste
    Insert contents of the system-wide clipboard into the current window.
@@ -371,9 +373,11 @@ Context menus have the standard clipboard functions also on the Edit menu.
 
 Cut
    Copy selection into the system-wide clipboard; then delete the selection.
+   If there is no selection, cut the current line instead.
 
 Copy
    Copy selection into the system-wide clipboard.
+   If there is no selection, copy the current line instead.
 
 Paste
    Insert contents of the system-wide clipboard into the current window.
