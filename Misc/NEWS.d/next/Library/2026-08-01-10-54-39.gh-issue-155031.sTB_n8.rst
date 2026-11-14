@@ -1,0 +1,2 @@
+Propagate to user any permission errors from subprocess attach commands in
+Tachyon
