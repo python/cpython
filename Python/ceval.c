@@ -176,18 +176,33 @@ tstate_set_stack(PyThreadState *tstate,
 }
 
 
-void
-_Py_InitializeRecursionLimits(PyThreadState *tstate)
+static void
+set_recursion_limits(PyThreadState *tstate, uintptr_t min_size)
 {
     uintptr_t base, top;
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     hardware_stack_limits(&base, &top, here_addr);
     assert(top != 0);
+    if (top - base < min_size) {
+        return;
+    }
 
     tstate_set_stack(tstate, base, top);
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
     ts->c_stack_init_base = base;
     ts->c_stack_init_top = top;
+}
+
+void
+_Py_InitializeRecursionLimits(PyThreadState *tstate)
+{
+    set_recursion_limits(tstate, 0);
+}
+
+void
+_Py_UpdateRecursionLimits(PyThreadState *tstate)
+{
+    set_recursion_limits(tstate, _PyOS_MIN_STACK_SIZE);
 }
 
 

@@ -1,0 +1,2 @@
+Fix a crash on deep recursion after :func:`resource.setrlimit` or
+:func:`resource.prlimit` lowers :data:`~resource.RLIMIT_STACK`.
