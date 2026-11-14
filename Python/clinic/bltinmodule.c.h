@@ -122,8 +122,8 @@ PyDoc_STRVAR(builtin___lazy_import____doc__,
 "\n"
 "Lazily imports a module.\n"
 "\n"
-"Returns either the module to be imported or a imp.lazy_module object\n"
-"which indicates the module to be lazily imported.");
+"Returns either the eagerly imported module (of type types.ModuleType)\n"
+"or lazily imported module (of type types.LazyImportType).");
 
 #define BUILTIN___LAZY_IMPORT___METHODDEF    \
     {"__lazy_import__", _PyCFunction_CAST(builtin___lazy_import__), METH_FASTCALL|METH_KEYWORDS, builtin___lazy_import____doc__},
@@ -1661,4 +1661,4 @@ zip_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=a67fa5cf74c85d07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=622b4c9e7e16a178 input=a9049054013a1b77]*/
