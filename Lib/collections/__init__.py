@@ -1611,12 +1611,12 @@ class UserString(_collections_abc.Sequence):
     def partition(self, sep):
         return self.data.partition(sep)
 
-    def replace(self, old, new, maxsplit=-1):
+    def replace(self, old, new, count=-1):
         if isinstance(old, UserString):
             old = old.data
         if isinstance(new, UserString):
             new = new.data
-        return self.__class__(self.data.replace(old, new, maxsplit))
+        return self.__class__(self.data.replace(old, new, count))
 
     def rfind(self, sub, start=0, end=_sys.maxsize):
         if isinstance(sub, UserString):

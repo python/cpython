@@ -194,10 +194,11 @@ class BaseTest:
                     self.assertEqual(r1, r2, '%s != %s for %s' % (r1, r2, i))
 
     def test_count_keyword(self):
-        self.assertEqual('aa'.replace('a', 'b', 0), 'aa'.replace('a', 'b', count=0))
-        self.assertEqual('aa'.replace('a', 'b', 1), 'aa'.replace('a', 'b', count=1))
-        self.assertEqual('aa'.replace('a', 'b', 2), 'aa'.replace('a', 'b', count=2))
-        self.assertEqual('aa'.replace('a', 'b', 3), 'aa'.replace('a', 'b', count=3))
+        self.checkequal('aa', 'aa', 'replace', 'a', 'b', count=0)
+        self.checkequal('ba', 'aa', 'replace', 'a', 'b', count=1)
+        self.checkequal('bb', 'aa', 'replace', 'a', 'b', count=2)
+        self.checkequal('bb', 'aa', 'replace', 'a', 'b', count=3)
+        self.checkequal('bb', 'aa', 'replace', 'a', 'b', count=-1)
 
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')

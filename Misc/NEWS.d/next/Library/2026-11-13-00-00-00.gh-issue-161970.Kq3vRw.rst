@@ -1,0 +1,2 @@
+Rename the *maxsplit* parameter of :meth:`!collections.UserString.replace` to
+*count*, matching :meth:`str.replace`, so that it can be passed as a keyword.
