@@ -267,6 +267,12 @@ Expected:     '%s'
 Got:          '%s'
 """ % (arg, expect, result))
 
+    @support.requires_resource('cpu')
+    def test_split_header_words_large(self):
+        n = 10**6
+        result = split_header_words(['a=1; b="2", ' * n])
+        self.assertEqual(result, [[('a', '1'), ('b', '2')]] * n)
+
     @support.subTests('arg,expect', [
             ("foo", "foo"),
             ("foo=bar", "foo=bar"),
