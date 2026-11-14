@@ -124,6 +124,10 @@ BUILTIN_SIMPLE = [
     -1.0,
     0.12345678,
     -0.12345678,
+    # complex
+    0j,
+    1+2j,
+    -1-2j,
 ]
 TUPLE_EXCEPTION = (0, 1.0, EXCEPTION)
 TUPLE_OBJECT = (0, 1.0, OBJECT)
@@ -1325,6 +1329,9 @@ class ShareableTypeTests(_GetXIDataTests):
             0.12345678,
             -0.12345678,
         ])
+
+    def test_complex(self):
+        self.assert_roundtrip_equal([0j, 1+2j, -1-2j, 1.5+2.5j])
 
     def test_tuple(self):
         self.assert_roundtrip_equal([
