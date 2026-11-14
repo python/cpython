@@ -949,13 +949,18 @@ class TestInterpreterExec(TestBase):
 
     def test_failure_with_broken_exception_str(self):
         interp = interpreters.create()
-        with self.assertRaises(interpreters.InterpreterError):
-            interp.exec(dedent("""
-                class BrokenError(Exception):
-                    def __str__(self):
-                        raise ValueError
-                raise BrokenError
-                """))
+        for raised, expected in [
+            ('ValueError', interpreters.InterpreterError),
+            ('MemoryError', MemoryError),
+        ]:
+            with self.subTest(raised=raised):
+                with self.assertRaises(expected):
+                    interp.exec(dedent(f"""
+                        class BrokenError(Exception):
+                            def __str__(self):
+                                raise {raised}
+                        raise BrokenError
+                        """))
 
     @force_not_colorized
     def test_display_preserved_exception(self):
