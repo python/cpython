@@ -1870,20 +1870,17 @@ static PyObject *
 make_freplacement(PyObject *object)
 {
     char freplacement[64];
-    int len;
     if (PyTime_Check(object)) {
-        len = PyOS_snprintf(freplacement, sizeof(freplacement),
-                            "%06d", TIME_GET_MICROSECOND(object));
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", TIME_GET_MICROSECOND(object));
     }
     else if (PyDateTime_Check(object)) {
-        len = PyOS_snprintf(freplacement, sizeof(freplacement),
-                            "%06d", DATE_GET_MICROSECOND(object));
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", DATE_GET_MICROSECOND(object));
     }
     else {
-        len = PyOS_snprintf(freplacement, sizeof(freplacement), "%06d", 0);
+        PyOS_snprintf(freplacement, sizeof(freplacement), "%06d", 0);
     }
-    assert(len >= 6);
-    assert(len < (Py_ssize_t)sizeof(freplacement));
 
     return PyUnicode_FromString(freplacement);
 }
