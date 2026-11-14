@@ -1,0 +1,1 @@
+Improve the condition of showing [Previous line repeated %d more time(s)]. Now repeated frames must have the same error locations (indicated by caret (^) and/or tilde (~) characters).
