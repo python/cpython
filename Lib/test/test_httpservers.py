@@ -1053,6 +1053,24 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertIsNotNone(match)
 
     @force_not_colorized
+    def test_request_without_stderr(self):
+        self.handler.client_address = ('127.0.0.1', 1337)
+        log_message = BaseHTTPRequestHandler.log_message.__get__(self.handler)
+        with mock.patch.object(self.handler, 'log_message', log_message):
+            for method, status in ((b'GET', b'200 OK'),
+                                   (b'UNKNOWN', b'501 Unsupported method')):
+                with self.subTest(method=method):
+                    with mock.patch.object(sys, 'stderr', None):
+                        result = self.send_typical_request(
+                            method + b' / HTTP/1.1\r\n\r\n')
+                    self.assertIn(status, result[0])
+                    self.assertIsNone(self.handler._log_request_info)
+                    self.assertFalse(getattr(self.handler, '_log_is_error', False))
+                    with support.captured_stderr() as stderr:
+                        self.handler.log_message('logging restored')
+                    self.assertEndsWith(stderr.getvalue(), 'logging restored\n')
+
+    @force_not_colorized
     def test_unprintable_not_logged(self):
         # We call the method from the class directly as our Socketless
         # Handler subclass overrode it... nice for everything BUT this test.
