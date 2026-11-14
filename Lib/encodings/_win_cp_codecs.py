@@ -22,7 +22,7 @@ def create_win32_code_page_codec(cp):
             return code_page_encode(cp, input, errors)
 
     class StreamReader(codecs.StreamReader):
-        def decode(self, input, errors, final):
+        def decode(self, input, errors, final=False):
             return code_page_decode(cp, input, errors, final)
 
     return codecs.CodecInfo(
