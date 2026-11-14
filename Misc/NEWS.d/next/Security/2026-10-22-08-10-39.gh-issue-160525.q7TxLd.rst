@@ -1,0 +1,4 @@
+Fix quadratic complexity in :func:`xml.dom.minidom.parse` and
+:func:`xml.dom.minidom.parseString` when the text of an element is
+delivered by the parser in many pieces, for example when it is interrupted by
+empty CDATA sections or references to external entities.
