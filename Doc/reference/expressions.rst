@@ -2174,9 +2174,9 @@ built-in types.
     shorter collection is ordered first (for example, ``[1,2] < [1,2,3]`` is
     true).
 
-* Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal ``(key, value)`` pairs. Equality comparison of the keys and values
-  enforces reflexivity.
+* Mappings (instances of :class:`dict` or :class:`frozendict`) compare equal
+  if and only if they have equal ``(key, value)`` pairs. Equality comparison of
+  the keys and values enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
 
@@ -2255,8 +2255,8 @@ s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
 ``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
 set types support this as well as dictionary, for which :keyword:`!in` tests
 whether the dictionary has a given key. For container types such as list, tuple,
-set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
-to ``any(x is e or x == e for e in y)``.
+set, frozenset, dict, frozendict, or collections.deque, the expression
+``x in y`` is equivalent to ``any(x is e or x == e for e in y)``.
 
 For the string and bytes types, ``x in y`` is ``True`` if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
@@ -2326,9 +2326,9 @@ Boolean operations
 In the context of Boolean operations, and also when expressions are used by
 control flow statements, the following values are interpreted as false:
 ``False``, ``None``, zero of any numeric type, and empty strings and containers
-(including strings, tuples, lists, dictionaries, sets and frozensets).  All
-other values are interpreted as true.  User-defined objects can customize their
-truth value by providing a :meth:`~object.__bool__` method.
+(including strings, tuples, lists, dictionaries, frozendicts, sets and
+frozensets).  All other values are interpreted as true.  User-defined objects
+can customize their truth value by providing a :meth:`~object.__bool__` method.
 
 .. index:: pair: operator; not
 
