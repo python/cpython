@@ -1480,6 +1480,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     GCState *gcstate = &tstate->interp->gc;
+    Py_ssize_t result = 0;
 
     // gc_collect_main() must not be called before _PyGC_Init
     // or after _PyGC_Fini()
@@ -1498,9 +1499,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // objects from that generation and all generations younger than it.
         generation = gc_select_generation(gcstate);
         if (generation < 0) {
-            // No generation needs to be collected.
-            _Py_atomic_store_int(&gcstate->collecting, 0);
-            return 0;
+            goto exit;
         }
     }
 
@@ -1704,10 +1703,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "stop", generation, &stats);
     }
 
+    result = stats.uncollectable + stats.collected;
+
+exit:
     assert(!_PyErr_Occurred(tstate));
     gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
-    return stats.uncollectable + stats.collected;
+    return result;
 }
 
 static int
