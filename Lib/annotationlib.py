@@ -122,13 +122,19 @@ class ForwardRef:
                 is_forwardref_format = True
             case _:
                 raise NotImplementedError(format)
-        if isinstance(self.__cell__, types.CellType):
+        if owner is None:
+            owner = self.__owner__
+        # A name defined in the owner class shadows a nonlocal of the same name,
+        # as it does on the dict-of-cells path below.
+        if isinstance(self.__cell__, types.CellType) and not (
+            locals is None
+            and isinstance(owner, type)
+            and self.__forward_arg__ in vars(owner)
+        ):
             try:
                 return self.__cell__.cell_contents
             except ValueError:
                 pass
-        if owner is None:
-            owner = self.__owner__
 
         if globals is None and self.__forward_module__ is not None:
             globals = getattr(
