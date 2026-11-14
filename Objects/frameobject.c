@@ -1840,7 +1840,9 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
     int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(self->f_frame)];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
-    for (int i = 0; i < len; i++) {
+    /* The instructions before _co_firsttraceable set up a generator
+     * frame and must not run again once the frame belongs to one. */
+    for (int i = code->_co_firsttraceable; i < len; i++) {
         if (lines[i] == new_lineno) {
             int64_t target_stack = stacks[i];
             if (compatible_stack(start_stack, target_stack)) {

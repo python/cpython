@@ -1630,8 +1630,15 @@ class TestSpecializer(TestBase):
                 except StopIteration:
                     break
 
+        @types.coroutine
+        def suspend():
+            yield
+
         class CM:
             async def __aenter__(self):
+                # ASYNC_CALL_* starts the coroutine in place of the SEND
+                # in send_with(), which is only executed to resume it.
+                await suspend()
                 return self
 
             async def __aexit__(self, *exc):
@@ -1692,6 +1699,156 @@ class TestSpecializer(TestBase):
                 pass
         self.assert_specialized(send_for, "SEND_ASYNC_GEN")
         self.assert_no_opcode(send_for, "SEND")
+
+    @cpython_only
+    @requires_specialization
+    def test_async_call(self):
+        def run_async(coro):
+            try:
+                coro.send(None)
+            except StopIteration as ex:
+                return ex.value
+            self.fail("coroutine did not finish")
+
+        async def coro(a, b=1):
+            return a + b
+
+        class C:
+            async def method(self, a, b=1):
+                return a + b
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                pass
+
+        def function(a):
+            return coro(a)
+
+        obj = C()
+
+        async def py_exact_args():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await coro(i, 2), i + 2)
+                self.assertEqual(await obj.method(i, 2), i + 2)
+
+        run_async(py_exact_args())
+        self.assert_specialized(py_exact_args, "ASYNC_CALL_PY_EXACT_ARGS")
+        self.assert_no_opcode(py_exact_args, "CALL_PY_EXACT_ARGS")
+
+        async def py_general():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await coro(i), i + 1)
+
+        run_async(py_general())
+        self.assert_specialized(py_general, "ASYNC_CALL_PY_GENERAL")
+
+        async def bound_method_exact_args():
+            bound = obj.method
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await bound(i, 2), i + 2)
+
+        run_async(bound_method_exact_args())
+        self.assert_specialized(bound_method_exact_args,
+                                "ASYNC_CALL_BOUND_METHOD_EXACT_ARGS")
+        self.assert_no_opcode(bound_method_exact_args,
+                              "CALL_BOUND_METHOD_EXACT_ARGS")
+
+        async def bound_method_general():
+            bound = obj.method
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await bound(i), i + 1)
+
+        run_async(bound_method_general())
+        self.assert_specialized(bound_method_general,
+                                "ASYNC_CALL_BOUND_METHOD_GENERAL")
+
+        async def kw_py():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await coro(i, b=2), i + 2)
+                self.assertEqual(await obj.method(i, b=2), i + 2)
+
+        run_async(kw_py())
+        self.assert_specialized(kw_py, "ASYNC_CALL_KW_PY")
+        self.assert_no_opcode(kw_py, "CALL_KW_PY")
+
+        async def kw_bound_method():
+            bound = obj.method
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await bound(i, b=2), i + 2)
+
+        run_async(kw_bound_method())
+        self.assert_specialized(kw_bound_method, "ASYNC_CALL_KW_BOUND_METHOD")
+        self.assert_no_opcode(kw_bound_method, "CALL_KW_BOUND_METHOD")
+        self.assert_no_opcode(bound_method_general,
+                              "CALL_BOUND_METHOD_GENERAL")
+
+        async def async_with():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                async with obj as value:
+                    self.assertIs(value, obj)
+
+        run_async(async_with())
+        self.assert_specialized(async_with, "ASYNC_CALL_PY_EXACT_ARGS")
+        self.assert_specialized(async_with, "ASYNC_CALL_PY_GENERAL")
+
+        async def not_a_coroutine_function():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                self.assertEqual(await function(i), i + 1)
+
+        run_async(not_a_coroutine_function())
+        self.assert_specialized(not_a_coroutine_function, "CALL_PY_EXACT_ARGS")
+        self.assert_no_opcode(not_a_coroutine_function,
+                              "ASYNC_CALL_PY_EXACT_ARGS")
+
+        async def not_awaited():
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                c = coro(i)
+                self.assertEqual(await c, i + 1)
+
+        run_async(not_awaited())
+        self.assert_specialized(not_awaited, "CALL_PY_GENERAL")
+        self.assert_no_opcode(not_awaited, "ASYNC_CALL_PY_GENERAL")
+        self.assert_specialized(not_awaited, "SEND_GEN")
+
+    @cpython_only
+    @requires_specialization
+    def test_async_call_deopt(self):
+        def run_async(coro):
+            try:
+                coro.send(None)
+            except StopIteration as ex:
+                return ex.value
+            self.fail("coroutine did not finish")
+
+        async def coro(a):
+            return a + 1
+
+        async def other(a):
+            return a + 2
+
+        def function(a):
+            return coro(a + 2)
+
+        async def caller(func, n):
+            return [await func(i) for i in range(n)]
+
+        n = _testinternalcapi.SPECIALIZATION_THRESHOLD
+        self.assertEqual(run_async(caller(coro, n)), list(range(1, n + 1)))
+        self.assert_specialized(caller, "ASYNC_CALL_PY_EXACT_ARGS")
+
+        n = _testinternalcapi.SPECIALIZATION_COOLDOWN
+        self.assertEqual(run_async(caller(function, n)), list(range(3, n + 3)))
+        self.assert_no_opcode(caller, "ASYNC_CALL_PY_EXACT_ARGS")
+
+        self.assertEqual(run_async(caller(other, n)), list(range(2, n + 2)))
+        self.assert_specialized(caller, "ASYNC_CALL_PY_EXACT_ARGS")
+
+        # Changing the code of the function invalidates the specialization.
+        other.__code__ = (lambda a: a).__code__
+        with self.assertRaisesRegex(TypeError, "can't be awaited"):
+            run_async(caller(other, n))
 
     @cpython_only
     @requires_specialization

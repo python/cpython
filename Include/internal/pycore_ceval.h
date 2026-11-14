@@ -267,6 +267,7 @@ extern int _PyEval_EnsureBuiltinsWithModule(
     PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *)_Py_MakeCoroWithFrame(PyFunctionObject *func, _PyInterpreterFrame *frame);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

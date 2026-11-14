@@ -1128,7 +1128,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
 }
 
 PyObject *
-_Py_MakeCoro(PyFunctionObject *func)
+_Py_MakeCoroWithFrame(PyFunctionObject *func, _PyInterpreterFrame *frame)
 {
     int coro_flags = ((PyCodeObject *)func->func_code)->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
@@ -1160,7 +1160,6 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        _PyInterpreterFrame *frame = tstate->current_frame;
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
         frame = _PyFrame_GetFirstComplete(frame->previous);
@@ -1172,6 +1171,12 @@ _Py_MakeCoro(PyFunctionObject *func)
         }
     }
     return coro;
+}
+
+PyObject *
+_Py_MakeCoro(PyFunctionObject *func)
+{
+    return _Py_MakeCoroWithFrame(func, _PyThreadState_GET()->current_frame);
 }
 
 static PyObject *

@@ -744,7 +744,11 @@ _PyJit_translate_single_bytecode_to_trace(
         assert(!OPCODE_HAS_DEOPT(opcode));
     }
 
-    bool needs_guard_ip = OPCODE_HAS_NEEDS_GUARD_IP(opcode);
+    // RETURN_GENERATOR in a coroutine that ASYNC_CALL_* already started
+    // stays in its frame: it only pushes None (see _ASYNC_CALL_GEN_FRAME).
+    bool coro_running = opcode == RETURN_GENERATOR &&
+        frame == tracer->prev_state.instr_frame;
+    bool needs_guard_ip = OPCODE_HAS_NEEDS_GUARD_IP(opcode) && !coro_running;
     if (has_dynamic_jump_taken && !needs_guard_ip) {
         DPRINTF(2, "Unsupported: dynamic jump taken %s\n", _PyOpcode_OpName[opcode]);
         goto unsupported;
@@ -908,6 +912,12 @@ _PyJit_translate_single_bytecode_to_trace(
              *  start with RESUME_CHECK */
             ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
             break;
+        case RETURN_GENERATOR:
+            if (coro_running) {
+                ADD_TO_TRACE(_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_None, target);
+                break;
+            }
+            _Py_FALLTHROUGH;
         default:
         {
             const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];

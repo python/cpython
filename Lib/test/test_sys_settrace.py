@@ -2994,6 +2994,27 @@ output.append(4)
         output.append(1)
         _ = output.append(2) and "Spam"
         output.append(3)
+    def test_no_jump_to_first_line_of_generator(self):
+        # The "def" line only owns the prologue of a generator frame
+        # (RETURN_GENERATOR), which must not run again.
+        def gen():
+            output.append(1)
+            yield 1
+
+        output = []
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_code is gen.__code__:
+                frame.f_lineno = gen.__code__.co_firstlineno
+            return trace
+
+        sys.settrace(trace)
+        try:
+            with self.assertRaisesRegex(ValueError, "cannot find bytecode"):
+                list(gen())
+        finally:
+            sys.settrace(None)
+        self.assertEqual(output, [])
+
 
 
 class TestExtendedArgs(unittest.TestCase):

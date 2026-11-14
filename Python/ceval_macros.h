@@ -594,6 +594,32 @@ gen_try_set_executing(PyGenObject *gen)
     return false;
 }
 
+// Move the frame of a call to a generator function into the generator
+// and pop it from the thread's data stack. `prev` is the frame that
+// takes its place.
+static inline void
+gen_take_frame(PyThreadState *tstate, PyGenObject *gen,
+               _PyInterpreterFrame *frame, _PyInterpreterFrame *prev)
+{
+    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+    _PyFrame_Copy(frame, gen_frame);
+    assert(frame->frame_obj == NULL);
+    gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+    _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
+    _PyThreadState_PopFrame(tstate, frame);
+}
+
+// Link the frame of a generator to the frame that is about to enter it.
+static inline void
+gen_link_frame(PyThreadState *tstate, PyGenObject *gen,
+               _PyInterpreterFrame *frame, uint16_t return_offset)
+{
+    gen->gi_exc_state.previous_item = tstate->exc_info;
+    tstate->exc_info = &gen->gi_exc_state;
+    gen->gi_iframe.previous = frame;
+    frame->return_offset = return_offset;
+}
+
 // Macro for inplace float binary ops (tier 2 only).
 // Mutates the uniquely-referenced TARGET operand in place.
 // TARGET must be either left or right.

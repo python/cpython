@@ -352,6 +352,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_METHOD_DESCRIPTOR_FAST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_METHOD_DESCRIPTOR_FAST_INLINE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_ASYNC_CALL_TAIL] = HAS_DEOPT_FLAG,
+    [_ASYNC_CALL_GEN_FRAME] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
     [_MAYBE_EXPAND_METHOD_KW] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_PY_FRAME_KW] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG,
     [_CHECK_FUNCTION_VERSION_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
@@ -1645,11 +1647,11 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_SEND_GEN_FRAME] = {
-        .best = { 3, 3, 3, 3 },
+        .best = { 0, 1, 2, 3 },
         .entries = {
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 3, 0, _SEND_GEN_FRAME_r03 },
+            { 3, 1, _SEND_GEN_FRAME_r13 },
+            { 3, 2, _SEND_GEN_FRAME_r23 },
             { 3, 3, _SEND_GEN_FRAME_r33 },
         },
     },
@@ -3300,6 +3302,24 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_GUARD_ASYNC_CALL_TAIL] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_ASYNC_CALL_TAIL_r00 },
+            { 1, 1, _GUARD_ASYNC_CALL_TAIL_r11 },
+            { 2, 2, _GUARD_ASYNC_CALL_TAIL_r22 },
+            { 3, 3, _GUARD_ASYNC_CALL_TAIL_r33 },
+        },
+    },
+    [_ASYNC_CALL_GEN_FRAME] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 3, 3, _ASYNC_CALL_GEN_FRAME_r13 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
     [_MAYBE_EXPAND_METHOD_KW] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
@@ -4285,6 +4305,9 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r12] = _GET_ANEXT,
     [_GET_AWAITABLE_r11] = _GET_AWAITABLE,
+    [_SEND_GEN_FRAME_r03] = _SEND_GEN_FRAME,
+    [_SEND_GEN_FRAME_r13] = _SEND_GEN_FRAME,
+    [_SEND_GEN_FRAME_r23] = _SEND_GEN_FRAME,
     [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
     [_GUARD_TOS_IS_NONE_r01] = _GUARD_TOS_IS_NONE,
     [_GUARD_TOS_IS_NONE_r11] = _GUARD_TOS_IS_NONE,
@@ -4642,6 +4665,11 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST_r00] = _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST,
     [_CALL_METHOD_DESCRIPTOR_FAST_r00] = _CALL_METHOD_DESCRIPTOR_FAST,
     [_CALL_METHOD_DESCRIPTOR_FAST_INLINE_r00] = _CALL_METHOD_DESCRIPTOR_FAST_INLINE,
+    [_GUARD_ASYNC_CALL_TAIL_r00] = _GUARD_ASYNC_CALL_TAIL,
+    [_GUARD_ASYNC_CALL_TAIL_r11] = _GUARD_ASYNC_CALL_TAIL,
+    [_GUARD_ASYNC_CALL_TAIL_r22] = _GUARD_ASYNC_CALL_TAIL,
+    [_GUARD_ASYNC_CALL_TAIL_r33] = _GUARD_ASYNC_CALL_TAIL,
+    [_ASYNC_CALL_GEN_FRAME_r13] = _ASYNC_CALL_GEN_FRAME,
     [_MAYBE_EXPAND_METHOD_KW_r11] = _MAYBE_EXPAND_METHOD_KW,
     [_PY_FRAME_KW_r11] = _PY_FRAME_KW,
     [_CHECK_FUNCTION_VERSION_KW_r11] = _CHECK_FUNCTION_VERSION_KW,
@@ -4867,6 +4895,8 @@ const uint16_t _PyUop_SpillsAndReloads[4][4] = {
 const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_ALLOCATE_OBJECT] = "_ALLOCATE_OBJECT",
     [_ALLOCATE_OBJECT_r00] = "_ALLOCATE_OBJECT_r00",
+    [_ASYNC_CALL_GEN_FRAME] = "_ASYNC_CALL_GEN_FRAME",
+    [_ASYNC_CALL_GEN_FRAME_r13] = "_ASYNC_CALL_GEN_FRAME_r13",
     [_BINARY_OP] = "_BINARY_OP",
     [_BINARY_OP_r23] = "_BINARY_OP_r23",
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
@@ -5250,6 +5280,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_3OS_ASYNC_GEN_ASEND_r13] = "_GUARD_3OS_ASYNC_GEN_ASEND_r13",
     [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = "_GUARD_3OS_ASYNC_GEN_ASEND_r23",
     [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = "_GUARD_3OS_ASYNC_GEN_ASEND_r33",
+    [_GUARD_ASYNC_CALL_TAIL] = "_GUARD_ASYNC_CALL_TAIL",
+    [_GUARD_ASYNC_CALL_TAIL_r00] = "_GUARD_ASYNC_CALL_TAIL_r00",
+    [_GUARD_ASYNC_CALL_TAIL_r11] = "_GUARD_ASYNC_CALL_TAIL_r11",
+    [_GUARD_ASYNC_CALL_TAIL_r22] = "_GUARD_ASYNC_CALL_TAIL_r22",
+    [_GUARD_ASYNC_CALL_TAIL_r33] = "_GUARD_ASYNC_CALL_TAIL_r33",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_BINARY_OP_EXTEND_r22] = "_GUARD_BINARY_OP_EXTEND_r22",
     [_GUARD_BINARY_OP_EXTEND_LHS] = "_GUARD_BINARY_OP_EXTEND_LHS",
@@ -6011,6 +6046,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_SEND_ASYNC_GEN_TIER_TWO] = "_SEND_ASYNC_GEN_TIER_TWO",
     [_SEND_ASYNC_GEN_TIER_TWO_r33] = "_SEND_ASYNC_GEN_TIER_TWO_r33",
     [_SEND_GEN_FRAME] = "_SEND_GEN_FRAME",
+    [_SEND_GEN_FRAME_r03] = "_SEND_GEN_FRAME_r03",
+    [_SEND_GEN_FRAME_r13] = "_SEND_GEN_FRAME_r13",
+    [_SEND_GEN_FRAME_r23] = "_SEND_GEN_FRAME_r23",
     [_SEND_GEN_FRAME_r33] = "_SEND_GEN_FRAME_r33",
     [_SEND_VIRTUAL_TIER_TWO] = "_SEND_VIRTUAL_TIER_TWO",
     [_SEND_VIRTUAL_TIER_TWO_r03] = "_SEND_VIRTUAL_TIER_TWO_r03",
@@ -6832,6 +6870,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_METHOD_DESCRIPTOR_FAST_INLINE:
             return 0;
+        case _GUARD_ASYNC_CALL_TAIL:
+            return 0;
+        case _ASYNC_CALL_GEN_FRAME:
+            return 1;
         case _MAYBE_EXPAND_METHOD_KW:
             return 0;
         case _PY_FRAME_KW:

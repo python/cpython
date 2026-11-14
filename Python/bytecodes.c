@@ -1730,11 +1730,8 @@ dummy_func(
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
             _PyFrame_StackPush(pushed_frame, PyStackRef_MakeHeapSafe(v));
             DEAD(v);
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
             assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
-            pushed_frame->previous = frame;
+            gen_link_frame(tstate, gen, frame, (uint16_t)(INSTRUCTION_SIZE + oparg));
             gen_frame = PyStackRef_Wrap(pushed_frame);
         }
 
@@ -4078,11 +4075,8 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
             _PyFrame_StackPush(pushed_frame, PyStackRef_None);
-            gen->gi_exc_state.previous_item = tstate->exc_info;
-            tstate->exc_info = &gen->gi_exc_state;
-            pushed_frame->previous = frame;
             // oparg is the return offset from the next instruction.
-            frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
+            gen_link_frame(tstate, gen, frame, (uint16_t)(INSTRUCTION_SIZE + oparg));
             gen_frame = PyStackRef_Wrap(pushed_frame);
         }
 
@@ -4314,6 +4308,10 @@ dummy_func(
             CALL_PY_GENERAL,
             CALL_BOUND_METHOD_GENERAL,
             CALL_NON_PY_GENERAL,
+            ASYNC_CALL_PY_EXACT_ARGS,
+            ASYNC_CALL_BOUND_METHOD_EXACT_ARGS,
+            ASYNC_CALL_PY_GENERAL,
+            ASYNC_CALL_BOUND_METHOD_GENERAL,
         };
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -5345,11 +5343,125 @@ dummy_func(
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
+        // The ASYNC_CALL_* instructions are specializations of CALL and
+        // CALL_KW for
+        // calls to coroutine functions that are awaited at once, as in
+        // `await f(...)`. They are superinstructions: they merge the CALL
+        // with the first execution of the instructions that follow it,
+        //     GET_AWAITABLE; PUSH_NULL; LOAD_COMMON_CONSTANT None; SEND
+        // and start the new coroutine without returning it to the caller
+        // first. They are built from the uops of the matching CALL_*
+        // specialization, with _ASYNC_CALL_GEN_FRAME in place of
+        // _SAVE_RETURN_OFFSET.
+
+        // ASYNC_CALL_* skip the instructions up to and including SEND, so
+        // none of them may be instrumented. Only the first and the last of
+        // them can start a line.
+        // Executors are invalidated when the code is instrumented.
+        op(_GUARD_ASYNC_CALL_TAIL, (--)) {
+            #if TIER_ONE
+            DEOPT_IF(next_instr[0].op.code >= MIN_INSTRUMENTED_OPCODE);
+            DEOPT_IF(next_instr[3].op.code >= MIN_INSTRUMENTED_OPCODE);
+            assert(_PyCode_AwaitedCallSend(next_instr) != NULL);
+            #endif
+        }
+
+        // Turns the frame of a call to a coroutine function into a running
+        // coroutine: the equivalent of executing RETURN_GENERATOR in that
+        // frame, followed by GET_AWAITABLE, PUSH_NULL, LOAD_COMMON_CONSTANT
+        // None and SEND_GEN in this one.
+        op(_ASYNC_CALL_GEN_FRAME, (new_frame -- coro, null, gen_frame)) {
+            _PyInterpreterFrame *callee = PyStackRef_Unwrap(new_frame);
+            DEAD(new_frame);
+            SYNC_SP();
+            assert(PyStackRef_FunctionCheck(callee->f_funcobj));
+            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(callee->f_funcobj);
+            PyGenObject *gen = (PyGenObject *)_Py_MakeCoroWithFrame(func, callee);
+            if (gen == NULL) {
+                _PyEval_FrameClearAndPop(tstate, callee);
+                ERROR_NO_POP();
+            }
+            assert(Py_TYPE(gen) == &PyCoro_Type);
+            if (callee->instr_ptr->op.code == RETURN_GENERATOR) {
+                assert(callee->instr_ptr[1].op.code == POP_TOP);
+                callee->instr_ptr += 2;
+            }
+            // Otherwise RETURN_GENERATOR is preceded by COPY_FREE_VARS or
+            // MAKE_CELL. They run in the frame of the coroutine, where
+            // RETURN_GENERATOR only pushes the None that POP_TOP discards.
+            gen_take_frame(tstate, gen, callee, frame);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            // The coroutine yields and returns to the SEND of the await.
+            _Py_CODEUNIT *send = _PyCode_AwaitedCallSend(frame->instr_ptr + INSTRUCTION_SIZE);
+            assert(send != NULL);
+            frame->instr_ptr = send;
+            gen_link_frame(tstate, gen, frame,
+                (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + send->op.arg));
+            coro = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+            null = PyStackRef_NULL;
+            gen_frame = PyStackRef_Wrap(&gen->gi_iframe);
+        }
+
+        macro(ASYNC_CALL_PY_EXACT_ARGS) =
+            _RECORD_CALLABLE +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
+            _INIT_CALL_PY_EXACT_ARGS +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_BOUND_METHOD_EXACT_ARGS) =
+            _RECORD_BOUND_METHOD +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
+            _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            flush + // In case the following deopt
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
+            _INIT_CALL_PY_EXACT_ARGS +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_PY_GENERAL) =
+            _RECORD_CALLABLE +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_GENERAL +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_BOUND_METHOD_GENERAL) =
+            _RECORD_BOUND_METHOD +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_METHOD_VERSION +
+            _EXPAND_METHOD +
+            flush + // so that self is in the argument array
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_GENERAL +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
         // Cache layout: counter/1, func_version/2
         family(CALL_KW, INLINE_CACHE_ENTRIES_CALL_KW) = {
             CALL_KW_BOUND_METHOD,
             CALL_KW_PY,
             CALL_KW_NON_PY,
+            ASYNC_CALL_KW_BOUND_METHOD,
+            ASYNC_CALL_KW_PY,
         };
 
         op(_MONITOR_CALL_KW, (callable, self_or_null, args[oparg], unused -- callable, self_or_null, args[oparg], unused)) {
@@ -5515,6 +5627,29 @@ dummy_func(
             flush + // so that self is in the argument array
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_KW_PY) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_KW +
+            _ASYNC_CALL_GEN_FRAME +
+            _PUSH_FRAME;
+
+        macro(ASYNC_CALL_KW_BOUND_METHOD) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _GUARD_ASYNC_CALL_TAIL +
+            _CHECK_METHOD_VERSION_KW +
+            _EXPAND_METHOD_KW +
+            flush + // so that self is in the argument array
+            _PY_FRAME_KW +
+            _ASYNC_CALL_GEN_FRAME +
             _PUSH_FRAME;
 
         specializing op(_SPECIALIZE_CALL_KW, (counter/1, callable, self_or_null, unused[oparg], unused -- callable, self_or_null, unused[oparg], unused)) {
@@ -5804,27 +5939,28 @@ dummy_func(
         }
 
         inst(RETURN_GENERATOR, (-- res)) {
-            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
-            ERROR_IF(gen == NULL);
-            assert(STACK_LEVEL() <= 2);
-            SAVE_STACK();
-            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-            frame->instr_ptr++;
-            _PyFrame_Copy(frame, gen_frame);
-            assert(frame->frame_obj == NULL);
-            gen->gi_frame_state = FRAME_CREATED;
-            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *prev = frame->previous;
-            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
-            _PyThreadState_PopFrame(tstate, frame);
-            frame = tstate->current_frame = prev;
-            LOAD_IP(frame->return_offset);
-            RELOAD_STACK();
-            res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
-            LLTRACE_RESUME_FRAME();
+            if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+                // Handled by ASYNC_CALL_* already.
+                res = PyStackRef_None;
+            }
+            else {
+                assert(PyStackRef_FunctionCheck(frame->f_funcobj));
+                PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                ERROR_IF(gen == NULL);
+                assert(STACK_LEVEL() <= 2);
+                SAVE_STACK();
+                frame->instr_ptr++;
+                _PyInterpreterFrame *prev = frame->previous;
+                gen_take_frame(tstate, gen, frame, prev);
+                gen->gi_frame_state = FRAME_CREATED;
+                _Py_LeaveRecursiveCallPy(tstate);
+                frame = tstate->current_frame = prev;
+                LOAD_IP(frame->return_offset);
+                RELOAD_STACK();
+                res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+                LLTRACE_RESUME_FRAME();
+            }
         }
 
         inst(BUILD_SLICE, (args[oparg] -- slice)) {

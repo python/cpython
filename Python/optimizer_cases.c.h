@@ -5062,6 +5062,29 @@
             break;
         }
 
+        case _GUARD_ASYNC_CALL_TAIL: {
+            ADD_OP(_NOP, 0, 0);
+            break;
+        }
+
+        case _ASYNC_CALL_GEN_FRAME: {
+            JitOptRef new_frame;
+            JitOptRef coro;
+            JitOptRef null;
+            JitOptRef gen_frame;
+            new_frame = stack_pointer[-1];
+            coro = sym_new_type(ctx, &PyCoro_Type);
+            null = sym_new_null(ctx);
+            gen_frame = new_frame;
+            CHECK_STACK_BOUNDS(2);
+            stack_pointer[-1] = coro;
+            stack_pointer[0] = null;
+            stack_pointer[1] = gen_frame;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {

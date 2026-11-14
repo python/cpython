@@ -104,3 +104,18 @@ so this data flow works along the chain (see `gen_send_ex2()` in
 Recall that a generator's `__next__` function simply calls `self.send(None)`,
 so all this works the same in generators and coroutines, but only coroutines
 use the value of the argument to `send`.
+
+An `await` expression is compiled like `yield from`, with
+[`GET_AWAITABLE`](https://docs.python.org/dev/library/dis.html#opcode-GET_AWAITABLE)
+in place of `GET_ITER`. When the awaited object is the result of a call to
+a coroutine function, as in `await f()`, the `CALL` (or `CALL_KW`) is
+[`specialized`](interpreter.md) to one of the `ASYNC_CALL_*` instructions,
+such as `ASYNC_CALL_PY_EXACT_ARGS`. These are superinstructions: they merge
+the call with the first execution of the `GET_AWAITABLE`, `PUSH_NULL`,
+`LOAD_COMMON_CONSTANT` and `SEND` instructions that follow it.
+
+`ASYNC_CALL_*` create the frame with the micro-ops of the matching `CALL_*`
+or `CALL_KW_*` specialization. They then turn it into the frame of a new coroutine and push
+it at once, as `RETURN_GENERATOR` and `SEND_GEN` would do. The coroutine is
+not returned to the caller first and the frame of the caller is left as if
+it were executing the `SEND`.

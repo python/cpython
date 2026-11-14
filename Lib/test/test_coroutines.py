@@ -2397,6 +2397,360 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(yielded, [])
         self.assertEqual(result, 42)
 
+class AwaitCallTest(unittest.TestCase):
+    # Run each call often enough to exercise the specialized forms too.
+    N = 100
+
+    def test_function(self):
+        async def add(a, b=10):
+            return a + b
+
+        async def caller():
+            total = 0
+            for i in range(self.N):
+                total += await add(i, 1)
+                total += await add(i)
+            return total
+
+        expected = sum(i + 1 + i + 10 for i in range(self.N))
+        self.assertEqual(run_async(caller()), ([], expected))
+
+    def test_method(self):
+        class A:
+            async def add(self, a, b=10):
+                return a + b
+
+        async def caller():
+            obj = A()
+            bound = obj.add
+            total = 0
+            for i in range(self.N):
+                total += await obj.add(i, 1)
+                total += await obj.add(i)
+                total += await bound(i, 1)
+                total += await bound(i)
+            return total
+
+        expected = sum(2 * (i + 1 + i + 10) for i in range(self.N))
+        self.assertEqual(run_async(caller()), ([], expected))
+
+    def test_keyword_arguments(self):
+        async def add(a, b=10):
+            return a + b
+
+        class A:
+            async def add(self, a, b=10):
+                return a + b
+
+        async def caller():
+            obj = A()
+            bound = obj.add
+            total = 0
+            for i in range(self.N):
+                total += await add(i, b=1)
+                total += await add(a=i)
+                total += await obj.add(i, b=1)
+                total += await bound(b=1, a=i)
+            return total
+
+        expected = sum(i + 1 + i + 10 + 2 * (i + 1) for i in range(self.N))
+        self.assertEqual(run_async(caller()), ([], expected))
+
+    def test_closure(self):
+        # COPY_FREE_VARS and MAKE_CELL precede RETURN_GENERATOR
+        def outer(free):
+            async def inner(arg):
+                cell = arg
+                return (lambda: (cell, free, __class__))()
+            return inner
+
+        async def caller():
+            inner = outer("free")
+            for i in range(self.N):
+                self.assertEqual(await inner(i), (i, "free", AwaitCallTest))
+
+        self.assertEqual(run_async(caller()), ([], None))
+
+    def test_suspend(self):
+        class Suspend:
+            def __init__(self, value):
+                self.value = value
+
+            def __await__(self):
+                return (yield self.value)
+
+        async def inner(i):
+            sent = await Suspend(i)
+            return sent * 2
+
+        async def middle(i):
+            return await inner(i) + 1
+
+        async def outer():
+            return [await middle(i) for i in range(self.N)]
+
+        coro = outer()
+        value = coro.send(None)
+        for i in range(self.N):
+            self.assertEqual(value, i)
+            self.assertEqual(inspect.getcoroutinestate(coro), "CORO_SUSPENDED")
+            # outer() -> middle() -> inner() -> Suspend().__await__()
+            self.assertEqual(coro.cr_await.cr_await.cr_code, inner.__code__)
+            try:
+                value = coro.send(i + 100)
+            except StopIteration as ex:
+                self.assertEqual(i, self.N - 1)
+                result = ex.value
+        self.assertEqual(result, [(i + 100) * 2 + 1 for i in range(self.N)])
+
+    def test_async_with(self):
+        class CM:
+            async def __aenter__(self):
+                return "entered"
+
+            async def __aexit__(self, *exc_info):
+                return exc_info[0] is ZeroDivisionError
+
+        async def caller():
+            cm = CM()
+            for i in range(self.N):
+                async with cm as value:
+                    self.assertEqual(value, "entered")
+                    1 / 0
+
+        self.assertEqual(run_async(caller()), ([], None))
+
+    def test_generator_based_coroutine(self):
+        @types.coroutine
+        def gen_coro(value):
+            sent = yield value
+            return sent + 1
+
+        async def caller():
+            return [await gen_coro(i) for i in range(self.N)]
+
+        coro = caller()
+        value = coro.send(None)
+        for i in range(self.N):
+            self.assertEqual(value, i)
+            self.assertIs(coro.cr_await.gi_code, gen_coro.__code__)
+            try:
+                value = coro.send(i * 2)
+            except StopIteration as ex:
+                self.assertEqual(i, self.N - 1)
+                result = ex.value
+        self.assertEqual(result, [i * 2 + 1 for i in range(self.N)])
+
+    def test_throw_and_close(self):
+        async def inner(log):
+            try:
+                await AsyncYield("suspended")
+            except ZeroDivisionError:
+                log.append("caught")
+                return "handled"
+            finally:
+                log.append("finally")
+
+        async def outer(log):
+            return await inner(log)
+
+        for _ in range(self.N):
+            log = []
+            coro = outer(log)
+            self.assertEqual(coro.send(None), "suspended")
+            with self.assertRaises(StopIteration) as cm:
+                coro.throw(ZeroDivisionError)
+            self.assertEqual(cm.exception.value, "handled")
+            self.assertEqual(log, ["caught", "finally"])
+
+            log = []
+            coro = outer(log)
+            self.assertEqual(coro.send(None), "suspended")
+            coro.close()
+            self.assertEqual(log, ["finally"])
+
+    def test_exception(self):
+        async def fail(i):
+            raise ZeroDivisionError(i)
+
+        async def caller():
+            for i in range(self.N):
+                try:
+                    await fail(i)
+                except ZeroDivisionError as ex:
+                    self.assertEqual(ex.args, (i,))
+                    tb = traceback.extract_tb(ex.__traceback__)
+                    self.assertEqual([entry.name for entry in tb],
+                                     ["caller", "fail"])
+                    self.assertEqual(tb[0].line, "await fail(i)")
+                else:
+                    self.fail("ZeroDivisionError not raised")
+
+        self.assertEqual(run_async(caller()), ([], None))
+
+    def test_wrong_arguments(self):
+        async def func(a, b=1):
+            return a
+
+        async def caller():
+            for i in range(self.N):
+                try:
+                    await func()
+                except TypeError as ex:
+                    self.assertIn("missing 1 required positional", str(ex))
+                else:
+                    self.fail("TypeError not raised")
+
+        self.assertEqual(run_async(caller()), ([], None))
+
+    def test_not_a_coroutine_function(self):
+        async def coro(i):
+            return i
+
+        def function(i):
+            return coro(i)
+
+        class Awaitable:
+            def __init__(self, i):
+                self.i = i
+
+            def __await__(self):
+                return self.i
+                yield
+
+        @types.coroutine
+        def gen_coro(i):
+            return i
+            yield
+
+        def gen(i):
+            yield
+
+        async def agen(i):
+            yield
+
+        async def caller():
+            for i in range(self.N):
+                self.assertEqual(await function(i), i)
+                self.assertEqual(await Awaitable(i), i)
+                self.assertEqual(await gen_coro(i), i)
+                for func in int, gen, agen:
+                    with self.assertRaisesRegex(TypeError, "can't be awaited"):
+                        await func(i)
+
+        self.assertEqual(run_async(caller()), ([], None))
+
+    def test_change_callable(self):
+        class Awaitable:
+            def __await__(self):
+                return 5
+                yield
+
+        async def coro(a=1):
+            return a
+
+        async def coro2(a):
+            return a + 1
+
+        def function(a):
+            return coro(a + 2)
+
+        class A:
+            async def method(self, a):
+                return a + 3
+
+        async def caller(func, expected):
+            self.assertEqual(await func(1), expected)
+
+        obj = A()
+        callables = [(coro, 1), (coro2, 2), (function, 3), (obj.method, 4),
+                     (lambda a: Awaitable(), 5)]
+        for _ in range(self.N):
+            for func, expected in callables:
+                with self.subTest(func=func):
+                    self.assertEqual(run_async(caller(func, expected)),
+                                     ([], None))
+
+    def test_already_awaited(self):
+        async def inner():
+            await AsyncYield(None)
+
+        async def outer(coro):
+            await coro
+
+        async def caller(coro):
+            return await outer(coro)
+
+        for _ in range(self.N):
+            awaited = inner()
+            first = caller(awaited)
+            first.send(None)
+            second = caller(awaited)
+            with self.assertRaisesRegex(RuntimeError, "already"):
+                second.send(None)
+            first.close()
+
+    def test_recursion(self):
+        async def recurse(n):
+            if n:
+                return await recurse(n - 1) + 1
+            return 0
+
+        self.assertEqual(run_async(recurse(self.N)), ([], self.N))
+
+        async def infinite():
+            await infinite()
+
+        with support.infinite_recursion(), self.assertRaises(RecursionError):
+            run_async(infinite())
+
+    def test_origin_tracking(self):
+        async def get_origin():
+            coro = sys._getframe().f_generator
+            return coro.cr_origin
+
+        async def caller():
+            origins = set()
+            for _ in range(self.N):
+                origins.add(await get_origin())
+            return origins
+
+        orig_depth = sys.get_coroutine_origin_tracking_depth()
+        self.addCleanup(sys.set_coroutine_origin_tracking_depth, orig_depth)
+        sys.set_coroutine_origin_tracking_depth(1)
+        lineno = caller.__code__.co_firstlineno + 3
+        self.assertEqual(run_async(caller()),
+                         ([], {((__file__, lineno, "caller"),)}))
+        sys.set_coroutine_origin_tracking_depth(0)
+        self.assertEqual(run_async(caller()), ([], {None}))
+
+    def test_line_events(self):
+        # The GET_AWAITABLE that follows the CALL starts a new line here,
+        # so it must not be skipped when tracing lines.
+        async def inner():
+            pass
+
+        async def caller():
+            for _ in range(self.N):
+                await (
+                    inner()
+                )
+
+        def trace(frame, event, arg):
+            if frame.f_code is caller.__code__ and event == "line":
+                lines.append(frame.f_lineno - first)
+            return trace
+
+        first = caller.__code__.co_firstlineno
+        run_async(caller())
+        lines = []
+        self.addCleanup(sys.settrace, sys.gettrace())
+        sys.settrace(trace)
+        run_async(caller())
+        sys.settrace(None)
+        self.assertEqual(lines, [1] + [3, 2, 1] * self.N)
+
+
 @unittest.skipIf(
     support.is_emscripten or support.is_wasi,
     "asyncio does not work under Emscripten/WASI yet."
