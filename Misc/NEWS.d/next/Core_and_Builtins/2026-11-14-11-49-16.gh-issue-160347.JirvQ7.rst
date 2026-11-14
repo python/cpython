@@ -1,0 +1,4 @@
+Fix state corruption caused by concurrent or reentrant calls on the same async
+generator awaitable (``asend()``, ``athrow()``, or ``aclose()``). This could
+prevent an ``aclose()`` operation from closing the generator or make an active
+awaitable unusable.

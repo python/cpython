@@ -1612,9 +1612,10 @@ PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 typedef enum {
-    AWAITABLE_STATE_INIT,   /* new awaitable, has not yet been iterated */
-    AWAITABLE_STATE_ITER,   /* being iterated */
-    AWAITABLE_STATE_CLOSED, /* closed */
+    AWAITABLE_STATE_INIT,      /* new awaitable, has not yet been iterated */
+    AWAITABLE_STATE_ITER,      /* suspended mid-iteration */
+    AWAITABLE_STATE_EXECUTING, /* currently executing a step */
+    AWAITABLE_STATE_CLOSED,    /* closed */
 } AwaitableState;
 
 #ifdef Py_GIL_DISABLED
@@ -1653,6 +1654,31 @@ async_gen_try_claim_running(PyAsyncGenObject *agen)
     agen->ag_running_async = 1;
     return true;
 #endif
+}
+
+// Try to transition an async generator awaitable from INIT or ITER to
+// EXECUTING. Returns the previous state on success, or -1 with an exception
+// set. Callers must transition the state back to AWAITABLE_STATE_ITER on
+// yield, or to AWAITABLE_STATE_CLOSED (and release ag_running_async if
+// claimed) on exit.
+static int
+async_gen_awaitable_try_enter(int8_t *state_ptr, PyAsyncGenObject *gen,
+                              const char *closed_msg)
+{
+    int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(*state_ptr);
+    do {
+        if (state == AWAITABLE_STATE_CLOSED) {
+            PyErr_SetString(PyExc_RuntimeError, closed_msg);
+            return -1;
+        }
+        if (state == AWAITABLE_STATE_EXECUTING) {
+            gen_raise_already_executing_error((PyGenObject *)gen);
+            return -1;
+        }
+        assert(state == AWAITABLE_STATE_INIT || state == AWAITABLE_STATE_ITER);
+    } while (!_Py_ASYNC_GEN_TRY_SET_STATE(*state_ptr, state,
+                                          AWAITABLE_STATE_EXECUTING));
+    return state;
 }
 
 
@@ -2050,43 +2076,37 @@ _PyAsyncGenASend_Send(PyObject *self, PyObject *arg, PyObject **presult)
     PyAsyncGenASend *o = _PyAsyncGenASend_CAST(self);
 
     *presult = NULL;
-    int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(o->ags_state);
-    do {
-        if (state == AWAITABLE_STATE_CLOSED) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited __anext__()/asend()");
-            return PYGEN_ERROR;
-        }
-        if (state == AWAITABLE_STATE_ITER) {
-            goto do_send;
-        }
-        assert(state == AWAITABLE_STATE_INIT);
-    } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->ags_state, state,
-                                          AWAITABLE_STATE_ITER));
-
-    // The transition above only guards this object, the generator may
-    // still be running through another asend()/athrow() object so
-    // try to claim it before running.
-    if (!async_gen_try_claim_running(o->ags_gen)) {
-        FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
-        PyErr_SetString(
-            PyExc_RuntimeError,
-            "anext(): asynchronous generator is already running");
+    int prev_state = async_gen_awaitable_try_enter(
+        &o->ags_state, o->ags_gen,
+        "cannot reuse already awaited __anext__()/asend()");
+    if (prev_state < 0) {
         return PYGEN_ERROR;
     }
 
-    if (arg == NULL || arg == Py_None) {
-        arg = o->ags_sendval;
+    if (prev_state == AWAITABLE_STATE_INIT) {
+        // The transition above only guards this object, the generator may
+        // still be running through another asend()/athrow() object so
+        // try to claim it before running.
+        if (!async_gen_try_claim_running(o->ags_gen)) {
+            FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return PYGEN_ERROR;
+        }
+
+        if (arg == NULL || arg == Py_None) {
+            arg = o->ags_sendval;
+        }
     }
 
-    PyObject *result;
-    PySendResult res;
-do_send:
-    result = gen_send((PyObject*)o->ags_gen, arg);
-    res = async_gen_unwrap_send(o->ags_gen, result, presult);
+    PyObject *result = gen_send((PyObject*)o->ags_gen, arg);
+    PySendResult res = async_gen_unwrap_send(o->ags_gen, result, presult);
 
-    if (res != PYGEN_NEXT) {
+    if (res == PYGEN_NEXT) {
+        FT_ATOMIC_STORE_INT8_RELEASE(o->ags_state, AWAITABLE_STATE_ITER);
+    }
+    else {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
         FT_ATOMIC_STORE_INT8_RELEASE(o->ags_gen->ag_running_async, 0);
     }
@@ -2119,38 +2139,33 @@ async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyAsyncGenASend *o = _PyAsyncGenASend_CAST(self);
 
-    int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(o->ags_state);
-    do {
-        if (state == AWAITABLE_STATE_CLOSED) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited __anext__()/asend()");
-            return NULL;
-        }
-        if (state == AWAITABLE_STATE_ITER) {
-            goto do_throw;
-        }
-        assert(state == AWAITABLE_STATE_INIT);
-    } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->ags_state, state,
-                                          AWAITABLE_STATE_ITER));
-
-    // The transition above only guards this object, the generator may
-    // still be running through another asend()/athrow() object so
-    // try to claim it before running.
-    if (!async_gen_try_claim_running(o->ags_gen)) {
-        FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
-        PyErr_SetString(
-            PyExc_RuntimeError,
-            "anext(): asynchronous generator is already running");
+    int prev_state = async_gen_awaitable_try_enter(
+        &o->ags_state, o->ags_gen,
+        "cannot reuse already awaited __anext__()/asend()");
+    if (prev_state < 0) {
         return NULL;
     }
 
-    PyObject *result;
-do_throw:
-    result = gen_throw((PyObject*)o->ags_gen, args, nargs);
+    if (prev_state == AWAITABLE_STATE_INIT) {
+        // The transition above only guards this object, the generator may
+        // still be running through another asend()/athrow() object so
+        // try to claim it before running.
+        if (!async_gen_try_claim_running(o->ags_gen)) {
+            FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return NULL;
+        }
+    }
+
+    PyObject *result = gen_throw((PyObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
-    if (result == NULL) {
+    if (result != NULL) {
+        FT_ATOMIC_STORE_INT8_RELEASE(o->ags_state, AWAITABLE_STATE_ITER);
+    }
+    else {
         FT_ATOMIC_STORE_INT8_RELAXED(o->ags_state, AWAITABLE_STATE_CLOSED);
         FT_ATOMIC_STORE_INT8_RELEASE(o->ags_gen->ag_running_async, 0);
     }
@@ -2398,146 +2413,119 @@ async_gen_athrow_traverse(PyObject *self, visitproc visit, void *arg)
 
 
 static PyObject *
-async_gen_athrow_send(PyObject *self, PyObject *arg)
+async_gen_athrow_finish(PyAsyncGenAThrow *o, PyObject *retval)
 {
-    PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
-    PyGenObject *gen = _PyGen_CAST(o->agt_gen);
-    PyObject *retval;
-
-    int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(o->agt_state);
-    if (state == AWAITABLE_STATE_CLOSED) {
-        PyErr_SetString(
-            PyExc_RuntimeError,
-            "cannot reuse already awaited aclose()/athrow()");
-        return NULL;
-    }
-
-    if (FRAME_STATE_FINISHED(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state))) {
-        // Close the awaitable, unless another thread transitioned it
-        // to a different state in the meantime.
-        (void)_Py_ASYNC_GEN_TRY_SET_STATE(o->agt_state, state,
-                                          AWAITABLE_STATE_CLOSED);
-        PyErr_SetNone(PyExc_StopIteration);
-        return NULL;
-    }
-
-    do {
-        if (state == AWAITABLE_STATE_CLOSED) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited aclose()/athrow()");
-            return NULL;
-        }
-        if (state == AWAITABLE_STATE_ITER) {
-            goto do_send;
-        }
-        assert(state == AWAITABLE_STATE_INIT);
-        if (arg != Py_None) {
-            PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
-            return NULL;
-        }
-    } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->agt_state, state,
-                                          AWAITABLE_STATE_ITER));
-
-    // The transition above only guards this object, the generator may
-    // still be running through another asend()/athrow() object so
-    // try to claim it before running.
-    if (!async_gen_try_claim_running(o->agt_gen)) {
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-        if (o->agt_typ == NULL) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "aclose(): asynchronous generator is already running");
-        }
-        else {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "athrow(): asynchronous generator is already running");
-        }
-        return NULL;
-    }
-
-    if (FT_ATOMIC_LOAD_INT8_RELAXED(o->agt_gen->ag_closed)) {
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-        FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
-        PyErr_SetNone(PyExc_StopAsyncIteration);
-        return NULL;
-    }
-
-    if (o->agt_typ == NULL) {
-        /* aclose() mode */
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_closed, 1);
-
-        retval = _gen_throw((PyGenObject *)gen,
-                            0,  /* Do not close generator when
-                                   PyExc_GeneratorExit is passed */
-                            PyExc_GeneratorExit, NULL, NULL);
-
-        if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
-            Py_DECREF(retval);
-            goto yield_close;
-        }
-    } else {
-        retval = _gen_throw((PyGenObject *)gen,
-                            0,  /* Do not close generator when
-                                   PyExc_GeneratorExit is passed */
-                            o->agt_typ, o->agt_val, o->agt_tb);
-        retval = async_gen_unwrap_value(o->agt_gen, retval);
-    }
-    if (retval == NULL) {
-        goto check_error;
-    }
-    return retval;
-
-do_send:
-    retval = gen_send((PyObject *)gen, arg);
     if (o->agt_typ) {
         retval = async_gen_unwrap_value(o->agt_gen, retval);
-        if (retval == NULL) {
+        if (retval != NULL) {
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_state, AWAITABLE_STATE_ITER);
+        }
+        else {
             FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
             FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
         }
         return retval;
-    } else {
-        /* aclose() mode */
-        if (retval) {
-            if (_PyAsyncGenWrappedValue_CheckExact(retval)) {
-                Py_DECREF(retval);
-                goto yield_close;
-            }
-            else {
-                return retval;
-            }
-        }
-        else {
-            goto check_error;
-        }
     }
 
-yield_close:
-    FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-    FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
-    PyErr_SetString(
-        PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
-    return NULL;
+    /* aclose() mode */
+    if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
+        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+        FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
+        Py_DECREF(retval);
+        PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
+        return NULL;
+    }
+    if (retval != NULL) {
+        FT_ATOMIC_STORE_INT8_RELEASE(o->agt_state, AWAITABLE_STATE_ITER);
+        return retval;
+    }
 
-check_error:
     FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
     FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
     if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
-            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        PyErr_ExceptionMatches(PyExc_GeneratorExit))
     {
-        if (o->agt_typ == NULL) {
-            /* when aclose() is called we don't want to propagate
-               StopAsyncIteration or GeneratorExit; just raise
-               StopIteration, signalling that this 'aclose()' await
-               is done.
-            */
-            PyErr_Clear();
-            PyErr_SetNone(PyExc_StopIteration);
-        }
+        /* when aclose() is called we don't want to propagate
+           StopAsyncIteration or GeneratorExit; just raise
+           StopIteration, signalling that this 'aclose()' await
+           is done.
+        */
+        PyErr_Clear();
+        PyErr_SetNone(PyExc_StopIteration);
     }
     return NULL;
+}
+
+static PyObject *
+async_gen_athrow_send(PyObject *self, PyObject *arg)
+{
+    PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
+    PyGenObject *gen = _PyGen_CAST(o->agt_gen);
+
+    int prev_state = async_gen_awaitable_try_enter(
+        &o->agt_state, o->agt_gen,
+        "cannot reuse already awaited aclose()/athrow()");
+    if (prev_state < 0) {
+        return NULL;
+    }
+
+    PyObject *retval;
+    if (prev_state == AWAITABLE_STATE_INIT) {
+        if (FRAME_STATE_FINISHED(
+                FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state)))
+        {
+            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+            PyErr_SetNone(PyExc_StopIteration);
+            return NULL;
+        }
+
+        if (arg != Py_None) {
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_state, AWAITABLE_STATE_INIT);
+            PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
+            return NULL;
+        }
+
+        // The transition above only guards this object, the generator may
+        // still be running through another asend()/athrow() object so
+        // try to claim it before running.
+        if (!async_gen_try_claim_running(o->agt_gen)) {
+            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                o->agt_typ == NULL
+                    ? "aclose(): asynchronous generator is already running"
+                    : "athrow(): asynchronous generator is already running");
+            return NULL;
+        }
+
+        if (FT_ATOMIC_LOAD_INT8_RELAXED(o->agt_gen->ag_closed)) {
+            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
+            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
+            PyErr_SetNone(PyExc_StopAsyncIteration);
+            return NULL;
+        }
+
+        if (o->agt_typ == NULL) {
+            /* aclose() mode */
+            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_gen->ag_closed, 1);
+
+            retval = _gen_throw((PyGenObject *)gen,
+                                0,  /* Do not close generator when
+                                       PyExc_GeneratorExit is passed */
+                                PyExc_GeneratorExit, NULL, NULL);
+        }
+        else {
+            retval = _gen_throw((PyGenObject *)gen,
+                                0,  /* Do not close generator when
+                                       PyExc_GeneratorExit is passed */
+                                o->agt_typ, o->agt_val, o->agt_tb);
+        }
+    }
+    else {
+        retval = gen_send((PyObject *)gen, arg);
+    }
+
+    return async_gen_athrow_finish(o, retval);
 }
 
 
@@ -2546,76 +2534,30 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
 
-    int8_t state = FT_ATOMIC_LOAD_INT8_RELAXED(o->agt_state);
-    do {
-        if (state == AWAITABLE_STATE_CLOSED) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited aclose()/athrow()");
-            return NULL;
-        }
-        if (state == AWAITABLE_STATE_ITER) {
-            goto do_throw;
-        }
-        assert(state == AWAITABLE_STATE_INIT);
-    } while (!_Py_ASYNC_GEN_TRY_SET_STATE(o->agt_state, state,
-                                          AWAITABLE_STATE_ITER));
-
-    // The transition above only guards this object, the generator may
-    // still be running through another asend()/athrow() object so
-    // try to claim it before running.
-    if (!async_gen_try_claim_running(o->agt_gen)) {
-        FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-        if (o->agt_typ == NULL) {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "aclose(): asynchronous generator is already running");
-        }
-        else {
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "athrow(): asynchronous generator is already running");
-        }
+    int prev_state = async_gen_awaitable_try_enter(
+        &o->agt_state, o->agt_gen,
+        "cannot reuse already awaited aclose()/athrow()");
+    if (prev_state < 0) {
         return NULL;
     }
 
-    PyObject *retval;
-do_throw:
-    retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
-    if (o->agt_typ) {
-        retval = async_gen_unwrap_value(o->agt_gen, retval);
-        if (retval == NULL) {
+    if (prev_state == AWAITABLE_STATE_INIT) {
+        // The transition above only guards this object, the generator may
+        // still be running through another asend()/athrow() object so
+        // try to claim it before running.
+        if (!async_gen_try_claim_running(o->agt_gen)) {
             FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
-        }
-        return retval;
-    }
-    else {
-        /* aclose() mode */
-        if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
-            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
-            Py_DECREF(retval);
-            PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                o->agt_typ == NULL
+                    ? "aclose(): asynchronous generator is already running"
+                    : "athrow(): asynchronous generator is already running");
             return NULL;
         }
-        if (retval == NULL) {
-            FT_ATOMIC_STORE_INT8_RELAXED(o->agt_state, AWAITABLE_STATE_CLOSED);
-            FT_ATOMIC_STORE_INT8_RELEASE(o->agt_gen->ag_running_async, 0);
-        }
-        if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
-            PyErr_ExceptionMatches(PyExc_GeneratorExit))
-        {
-            /* when aclose() is called we don't want to propagate
-               StopAsyncIteration or GeneratorExit; just raise
-               StopIteration, signalling that this 'aclose()' await
-               is done.
-            */
-            PyErr_Clear();
-            PyErr_SetNone(PyExc_StopIteration);
-        }
-        return retval;
     }
+
+    PyObject *retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
+    return async_gen_athrow_finish(o, retval);
 }
 
 
