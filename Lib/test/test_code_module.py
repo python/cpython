@@ -1,4 +1,5 @@
 "Test InteractiveConsole and InteractiveInterpreter from code module"
+import os
 import sys
 import traceback
 import unittest
@@ -49,7 +50,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             "code.sys.ps1",
             EOFError('Finished')
         ]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('>>> ', output)
         self.assertNotHasAttr(self.sysmod, 'ps1')
@@ -60,7 +61,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             EOFError('Finished')
         ]
         self.sysmod.ps1 = 'custom1> '
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('custom1> ', output)
         self.assertEqual(self.sysmod.ps1, 'custom1> ')
@@ -71,7 +72,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             "code.sys.ps2",
             EOFError('Finished')
         ]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('... ', output)
         self.assertNotHasAttr(self.sysmod, 'ps2')
@@ -82,14 +83,14 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             EOFError('Finished')
         ]
         self.sysmod.ps2 = 'custom2> '
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('custom2> ', output)
         self.assertEqual(self.sysmod.ps2, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         for call in list(self.stdout.method_calls):
             if 'antioch' in ''.join(call[1]):
                 break
@@ -101,7 +102,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
                                    "    x = ?",
                                    "",
                                     EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[:output.index('\nnow exiting')]
@@ -118,7 +119,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
 
     def test_indentation_error(self):
         self.infunc.side_effect = ["  1", EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[:output.index('\nnow exiting')]
@@ -134,7 +135,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
 
     def test_unicode_error(self):
         self.infunc.side_effect = ["'\ud800'", EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[output.index('\n') + 1:]
@@ -164,7 +165,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
                                     EOFError('Finished')]
         hook = mock.Mock()
         self.sysmod.excepthook = hook
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         hook.assert_called()
         hook.assert_called_with(self.sysmod.last_type,
                                 self.sysmod.last_value,
@@ -186,7 +187,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
                                     EOFError('Finished')]
         hook = mock.Mock()
         self.sysmod.excepthook = hook
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         hook.assert_called()
         hook.assert_called_with(self.sysmod.last_type,
                                 self.sysmod.last_value,
@@ -206,7 +207,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.infunc.side_effect = ["  1", EOFError('Finished')]
         hook = mock.Mock()
         self.sysmod.excepthook = hook
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         hook.assert_called()
         hook.assert_called_with(self.sysmod.last_type,
                                 self.sysmod.last_value,
@@ -224,7 +225,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
     def test_sysexcepthook_crashing_doesnt_close_repl(self):
         self.infunc.side_effect = ["1/0", "a = 123", "print(a)", EOFError('Finished')]
         self.sysmod.excepthook = 1
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
         error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
         self.assertIn("Error in sys.excepthook:", error)
@@ -238,7 +239,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         def raise_base(*args, **kwargs):
             raise BaseException(s)
         self.sysmod.excepthook = raise_base
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         self.assertEqual(['write', ('123', ), {}], self.stdout.method_calls[0])
         error = "".join(call.args[0] for call in self.stderr.method_calls if call[0] == 'write')
         self.assertIn("Error in sys.excepthook:", error)
@@ -252,12 +253,12 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             raise SystemExit
         self.sysmod.excepthook = raise_base
         with self.assertRaises(SystemExit):
-            self.console.interact()
+            self.console.interact(use_pyrepl=False)
 
     def test_banner(self):
         # with banner
         self.infunc.side_effect = EOFError('Finished')
-        self.console.interact(banner='Foo')
+        self.console.interact(banner='Foo', use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 3)
         banner_call = self.stderr.method_calls[0]
         self.assertEqual(banner_call, ['write', ('Foo\n',), {}])
@@ -265,13 +266,13 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         # no banner
         self.stderr.reset_mock()
         self.infunc.side_effect = EOFError('Finished')
-        self.console.interact(banner='')
+        self.console.interact(banner='', use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 2)
 
     def test_exit_msg(self):
         # default exit message
         self.infunc.side_effect = EOFError('Finished')
-        self.console.interact(banner='')
+        self.console.interact(banner='', use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 2)
         err_msg = self.stderr.method_calls[1]
         expected = 'now exiting InteractiveConsole...\n'
@@ -280,7 +281,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         # no exit message
         self.stderr.reset_mock()
         self.infunc.side_effect = EOFError('Finished')
-        self.console.interact(banner='', exitmsg='')
+        self.console.interact(banner='', exitmsg='', use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 1)
 
         # custom exit message
@@ -289,7 +290,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
             'bye! \N{GREEK SMALL LETTER ZETA}\N{CYRILLIC SMALL LETTER ZHE}'
             )
         self.infunc.side_effect = EOFError('Finished')
-        self.console.interact(banner='', exitmsg=message)
+        self.console.interact(banner='', exitmsg=message, use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 2)
         err_msg = self.stderr.method_calls[1]
         expected = message + '\n'
@@ -299,7 +300,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
     def test_cause_tb(self):
         self.infunc.side_effect = ["raise ValueError('') from AttributeError",
                                     EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         expected = dedent("""
         AttributeError
@@ -320,7 +321,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
     def test_context_tb(self):
         self.infunc.side_effect = ["try: ham\nexcept: eggs\n",
                                     EOFError('Finished')]
-        self.console.interact()
+        self.console.interact(use_pyrepl=False)
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         expected = dedent("""
         Traceback (most recent call last):
@@ -351,11 +352,59 @@ class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
     def test_exit(self):
         # default exit message
         self.infunc.side_effect = ["exit()"]
-        self.console.interact(banner='')
+        self.console.interact(banner='', use_pyrepl=False)
         self.assertEqual(len(self.stderr.method_calls), 2)
         err_msg = self.stderr.method_calls[1]
         expected = 'now exiting InteractiveConsole...\n'
         self.assertEqual(err_msg, ['write', (expected,), {}])
+
+
+class TestInteractiveConsoleUsePyrepl(unittest.TestCase, MockSys):
+    """Tests for the use_pyrepl parameter of InteractiveConsole.interact()."""
+
+    def setUp(self):
+        self.console = code.InteractiveConsole()
+        self.mock_sys()
+
+    def test_use_pyrepl_false_uses_basic_repl(self):
+        """When use_pyrepl=False, the basic REPL should be used."""
+        self.infunc.side_effect = ["'test'", EOFError('Finished')]
+        self.console.interact(banner='', use_pyrepl=False)
+        # Should have used code.input (the basic REPL)
+        self.infunc.assert_called()
+
+    @mock.patch.object(os, 'getenv', return_value='1')
+    def test_python_basic_repl_env_uses_basic_repl(self, mock_getenv):
+        """When PYTHON_BASIC_REPL is set, the basic REPL should be used."""
+        self.infunc.side_effect = ["'test'", EOFError('Finished')]
+        self.console.interact(banner='')
+        # Should have used code.input (the basic REPL)
+        self.infunc.assert_called()
+
+    def test_use_pyrepl_false_with_input(self):
+        """Test that use_pyrepl=False correctly processes input."""
+        self.infunc.side_effect = [
+            "x = 1",
+            "x",
+            EOFError('Finished')
+        ]
+        self.console.interact(banner='', use_pyrepl=False)
+        output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
+        self.assertIn('1', output)
+
+
+class TestInteractFunctionUsePyrepl(unittest.TestCase, MockSys):
+    """Tests for the use_pyrepl parameter of the top-level interact() function."""
+
+    def setUp(self):
+        self.mock_sys()
+
+    def test_interact_use_pyrepl_false(self):
+        """When use_pyrepl=False, the basic REPL should be used."""
+        self.infunc.side_effect = ["'test'", EOFError('Finished')]
+        with mock.patch('code.input', create=True, side_effect=self.infunc):
+            code.interact(banner='', use_pyrepl=False)
+        self.infunc.assert_called()
 
 
 if __name__ == "__main__":
