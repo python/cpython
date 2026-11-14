@@ -1941,20 +1941,37 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PI2PcP'
+        fmt = (
+            'P'    # tp_name
+            '2n'   # tp_basicsize, tp_itemsize
+            'P'    # tp_dealloc
+            'n'    # tp_vectorcall_offset
+            '13P'  # tp_getattr .. tp_as_buffer
+            'Q'    # tp_flags (uint64_t)
+            '4P'   # tp_doc .. tp_richcompare
+            'n'    # tp_weaklistoffset
+            '9P'   # tp_iter .. tp_descr_set
+            'n'    # tp_dictoffset
+            '11P'  # tp_init .. tp_del
+            'I'    # tp_version_tag
+            '2P'   # tp_finalize, tp_vectorcall
+            'B'    # tp_watched
+            'H'    # tp_versions_used (uint16_t)
+            '2P'   # _tp_iteritem, _tp_cache
+        )
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
-        # class
-        s = vsize(fmt +                 # PyTypeObject
-                  '4P'                  # PyAsyncMethods
-                  '36P'                 # PyNumberMethods
-                  '3P'                  # PyMappingMethods
-                  '10P'                 # PySequenceMethods
-                  '2P'                  # PyBufferProcs
-                  '7P'
-                  '1PIP'                # Specializer cache
-                  + typeid              # heap type id (free-threaded only)
+        # class (PyHeapTypeObject)
+        s = vsize(fmt +                 # ht_type: PyTypeObject
+                  '4P'                  # as_async: PyAsyncMethods
+                  '36P'                 # as_number: PyNumberMethods
+                  '3P'                  # as_mapping: PyMappingMethods
+                  '10P'                 # as_sequence: PySequenceMethods
+                  '2P'                  # as_buffer: PyBufferProcs
+                  '7P'                  # ht_name .. ht_token
+                  'PIP'                 # _spec_cache: struct _specialization_cache
+                  + typeid              # unique_id (free-threaded only)
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries

@@ -393,28 +393,28 @@ _PyStaticType_GetBuiltins(void)
 /* end static builtin helpers */
 
 static void
-type_set_flags(PyTypeObject *tp, unsigned long flags)
+type_set_flags(PyTypeObject *tp, uint64_t flags)
 {
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
     tp->tp_flags = flags;
 }
 
 static void
-type_set_flags_with_mask(PyTypeObject *tp, unsigned long mask, unsigned long flags)
+type_set_flags_with_mask(PyTypeObject *tp, uint64_t mask, uint64_t flags)
 {
     ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
-    unsigned long new_flags = (tp->tp_flags & ~mask) | flags;
+    uint64_t new_flags = (tp->tp_flags & ~mask) | flags;
     type_set_flags(tp, new_flags);
 }
 
 static void
-type_add_flags(PyTypeObject *tp, unsigned long flag)
+type_add_flags(PyTypeObject *tp, uint64_t flag)
 {
     type_set_flags(tp, tp->tp_flags | flag);
 }
 
 static void
-type_clear_flags(PyTypeObject *tp, unsigned long flag)
+type_clear_flags(PyTypeObject *tp, uint64_t flag)
 {
     type_set_flags(tp, tp->tp_flags & ~flag);
 }
@@ -1406,7 +1406,6 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 static PyMemberDef type_members[] = {
     {"__basicsize__", Py_T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),Py_READONLY},
     {"__itemsize__", Py_T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), Py_READONLY},
-    {"__flags__", Py_T_ULONG, offsetof(PyTypeObject, tp_flags), Py_READONLY},
     /* Note that this value is misleading for static builtin types,
        since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", Py_T_PYSSIZET,
@@ -2366,6 +2365,14 @@ type_set_type_params(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 }
 
 
+static PyObject *
+type_get_flags(PyObject *tp, void *Py_UNUSED(closure))
+{
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    return PyLong_FromUInt64(type->tp_flags);
+}
+
+
 /*[clinic input]
 type.__instancecheck__ -> bool
 
@@ -2413,6 +2420,7 @@ static PyGetSetDef type_getsets[] = {
     {"__annotations__", type_get_annotations, type_set_annotations, NULL},
     {"__annotate__", type_get_annotate, type_set_annotate, NULL},
     {"__type_params__", type_get_type_params, type_set_type_params, NULL},
+    {"__flags__", type_get_flags, NULL, NULL},
     {0}
 };
 
@@ -4081,10 +4089,19 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 }
 
 
+uint64_t
+PyType_GetFlags64(PyTypeObject *type)
+{
+    return type->tp_flags;
+}
+
+
 unsigned long
 PyType_GetFlags(PyTypeObject *type)
 {
-    return type->tp_flags;
+    // On Windows and on 32-bit platforms,
+    // truncate tp_flags (uint64_t) to 32 bits
+    return (unsigned long)type->tp_flags;
 }
 
 
@@ -6401,9 +6418,9 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
 }
 
 void
-_PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
+_PyType_SetFlags(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
-    unsigned long new_flags = (self->tp_flags & ~mask) | flags;
+    uint64_t new_flags = (self->tp_flags & ~mask) | flags;
     if (new_flags != self->tp_flags) {
         types_stop_world();
         // can't use new_flags here since they could be out-of-date
@@ -6431,7 +6448,7 @@ _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_
 }
 
 static void
-set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+set_flags_recursive(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
     if (PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) ||
         (self->tp_flags & mask) == flags)
@@ -6454,7 +6471,7 @@ set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 }
 
 void
-_PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
+_PyType_SetFlagsRecursive(PyTypeObject *self, uint64_t mask, uint64_t flags)
 {
     BEGIN_TYPE_LOCK();
     // Immutable/static-builtin types are skipped because
@@ -7582,7 +7599,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsigned long flags)
+compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, uint64_t flags)
 {
     /* For __class__ assignment, the flags should be the same.
        For __bases__ assignment, the new base flags can only be set
@@ -8756,7 +8773,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 
     /* Setup fast subclass flags */
     PyObject *mro = lookup_tp_mro(base);
-    unsigned long flags = 0;
+    uint64_t flags = 0;
     if (is_subtype_with_mro(mro, base, (PyTypeObject*)PyExc_BaseException)) {
         flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
     }

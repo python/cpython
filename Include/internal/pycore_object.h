@@ -278,7 +278,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 // Fast inlined version of PyType_HasFeature()
 static inline int
-_PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
+_PyType_HasFeature(PyTypeObject *type, uint64_t feature) {
     return ((type->tp_flags) & feature) != 0;
 }
 

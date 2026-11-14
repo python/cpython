@@ -1567,6 +1567,9 @@ New features
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
 
+* Add :c:func:`PyType_GetFlags64` function to get type flags as ``uint64_t``.
+  (Contributed by Victor Stinner in :gh:`161562`.)
+
 * Add the :ref:`PyUnicodeWriter API <pyunicodewriter>` to the limited C API.
   (Contributed by Victor Stinner in :gh:`161172`.)
 
@@ -1618,6 +1621,10 @@ Deprecated C APIs
 * :c:func:`PyModule_GetFilename` is no longer deprecated, but using
   :c:func:`PyModule_GetFilenameObject` instead is still recommended.
   (Contributed by Victor Stinner in :gh:`154757`.)
+
+* Soft deprecate :c:func:`PyType_GetFlags`: use :c:func:`PyType_GetFlags64`
+  instead to get all type flags.
+  (Contributed by Victor Stinner in :gh:`161562`.)
 
 * Soft deprecate functions modifying Unicode strings:
   :c:func:`PyUnicode_New`, :c:func:`PyUnicode_CopyCharacters`,

@@ -1,0 +1,3 @@
+Change :c:member:`PyTypeObject.tp_flags` type and :c:func:`PyType_GetFlags`
+return type from ``unsigned long`` to ``uint64_t`` to get 32
+additional type flags. Patch by Victor Stinner.

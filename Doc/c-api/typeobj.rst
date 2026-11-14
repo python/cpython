@@ -1139,7 +1139,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    but the contained fields are inherited individually.
 
 
-.. c:member:: unsigned long PyTypeObject.tp_flags
+.. c:member:: uint64_t PyTypeObject.tp_flags
 
    See :c:macro:`Py_tp_flags` for the corresponding
    :c:member:`Slot ID <PySlot.sl_id>`.
@@ -1151,6 +1151,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_as_buffer`) that were historically not always present are valid; if
    such a flag bit is clear, the type fields it guards must not be accessed and
    must be considered to have a zero or ``NULL`` value instead.
+
+   .. versionchanged:: next
+      The :c:member:`~PyTypeObject.tp_flags` type is now ``uint64_t`` rather
+      than ``unsigned long``.
 
    **Inheritance:**
 

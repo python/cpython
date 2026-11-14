@@ -760,6 +760,7 @@ SYMBOL_NAMES = (
     "PyType_GetBaseByToken",
     "PyType_GetBaseByToken_DuringGC",
     "PyType_GetFlags",
+    "PyType_GetFlags64",
     "PyType_GetFullyQualifiedName",
     "PyType_GetModule",
     "PyType_GetModuleByDef",

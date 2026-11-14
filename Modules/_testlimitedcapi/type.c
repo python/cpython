@@ -2,10 +2,10 @@
 // Do no check PyType_Check() so Python tests can pass arbitrary objects,
 // even if it's likely to crash.
 
-// Need limited C API version 3.14 for PyType_Freeze()
+// Need limited C API version 3.16 for PyType_GetFlags64()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-#  define Py_LIMITED_API 0x030e0000
+#  define Py_LIMITED_API 0x03100000
 #endif
 
 #include "parts.h"
@@ -144,6 +144,19 @@ type_getflags(PyObject *module, PyObject *arg)
 }
 
 
+// Test PyType_GetFlags64()
+static PyObject *
+type_getflags64(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    PyTypeObject *type = (PyTypeObject*)arg;
+
+    uint64_t flags = PyType_GetFlags64(type);
+    assert(!PyErr_Occurred());
+    return PyLong_FromUInt64(flags);
+}
+
+
 // Test PyType_IsSubtype()
 static PyObject *
 type_issubtype(PyObject *module, PyObject *args)
@@ -171,6 +184,7 @@ static PyMethodDef test_methods[] = {
     {"type_freeze", type_freeze, METH_O},
     {"type_clearcache", type_clearcache, METH_NOARGS},
     {"type_getflags", type_getflags, METH_O},
+    {"type_getflags64", type_getflags64, METH_O},
     {"type_issubtype", type_issubtype, METH_VARARGS},
     {NULL},
 };
