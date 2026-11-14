@@ -34,6 +34,10 @@ module:
    may be useful in certain cases, such as constructing a distributed system that
    uses a consistent domain name across multiple hosts.
 
+   Note that some email clients might not correctly display emails containing
+   resources with long :mailheader:`Message-ID`, which usually happens due to
+   the long domain part, causing the field to be split across multiple lines.
+
    .. versionchanged:: 3.2
       Added the *domain* keyword.
 
