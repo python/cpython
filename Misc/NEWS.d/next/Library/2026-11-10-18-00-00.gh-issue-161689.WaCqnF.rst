@@ -1,0 +1,4 @@
+Fix the C implementation of :class:`xml.etree.ElementTree.Element` for
+assignment to a slice whose start is after its stop, such as
+``elem[5:2] = [child]``. It duplicated one child and overwrote another,
+which could crash. It now inserts at the start, as a :class:`list` does.

@@ -4668,6 +4668,16 @@ class ElementSlicingTest(unittest.TestCase):
         e[1:3] = [ET.Element('b%s' % i) for i in range(3)]
         self.assertEqual(self._subelem_tags(e), ['a0', 'b0', 'b1', 'b2', 'a3'])
 
+    def test_setslice_backward_range(self):
+        # gh-161689: like a list, insert at start when start > stop.
+        for start, stop in [(5, 2), (3, 1), (7, 3), (-1, 0)]:
+            with self.subTest(start=start, stop=stop):
+                e = self._make_elem_with_children(7)
+                expected = self._subelem_tags(e)
+                expected[start:stop] = ['b0', 'b1']
+                e[start:stop] = [ET.Element('b0'), ET.Element('b1')]
+                self.assertEqual(self._subelem_tags(e), expected)
+
     def test_setslice_steps(self):
         e = self._make_elem_with_children(6)
         e[1:5:2] = [ET.Element('b%s' % i) for i in range(2)]
