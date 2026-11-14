@@ -1194,6 +1194,11 @@ The :mod:`!socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 4-byte swap operation.
 
+   .. versionchanged:: 3.14
+      Negative *x* now raises :exc:`ValueError` instead of
+      :exc:`OverflowError`. Values too large to fit in a 32-bit unsigned
+      integer still raise :exc:`OverflowError`.
+
 
 .. function:: ntohs(x)
 
@@ -1205,12 +1210,21 @@ The :mod:`!socket` module also offers various network-related services:
       Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
       integer.
 
+   .. versionchanged:: 3.14
+      Negative *x* now raises :exc:`ValueError` instead of
+      :exc:`OverflowError`.
+
 
 .. function:: htonl(x)
 
    Convert 32-bit positive integers from host to network byte order.  On machines
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 4-byte swap operation.
+
+   .. versionchanged:: 3.14
+      Negative *x* now raises :exc:`ValueError` instead of
+      :exc:`OverflowError`. Values too large to fit in a 32-bit unsigned
+      integer still raise :exc:`OverflowError`.
 
 
 .. function:: htons(x)
@@ -1222,6 +1236,10 @@ The :mod:`!socket` module also offers various network-related services:
    .. versionchanged:: 3.10
       Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
       integer.
+
+   .. versionchanged:: 3.14
+      Negative *x* now raises :exc:`ValueError` instead of
+      :exc:`OverflowError`.
 
 
 .. function:: inet_aton(ip_string)
