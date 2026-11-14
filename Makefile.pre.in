@@ -1284,7 +1284,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
 		$(srcdir)/Python/remote_debug.h \
-		$(srcdir)/Python/remote_debug_macho.h \
 		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \

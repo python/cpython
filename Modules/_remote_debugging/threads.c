@@ -158,11 +158,10 @@ find_running_frame(
  * THREAD STATUS FUNCTIONS
  * ============================================================================ */
 
-int
-get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid) {
+static int
+get_thread_status(RemoteUnwinderObject *unwinder, unsigned long tid) {
 #if defined(__APPLE__) && TARGET_OS_OSX
     struct proc_threadinfo thread;
-    /* This flavor accepts the native ID from pthread_threadid_np(). */
     int size = proc_pidinfo(unwinder->handle.pid, PROC_PIDTHREADID64INFO,
                            tid, &thread, sizeof(thread));
     if (size != sizeof(thread)) {
@@ -174,7 +173,7 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid) {
     char stat_path[256];
     char buffer[2048] = "";
 
-    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%" PRIu64 "/stat", unwinder->handle.pid, tid);
+    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%lu/stat", unwinder->handle.pid, tid);
 
     int fd = open(stat_path, O_RDONLY);
     if (fd == -1) {
@@ -210,15 +209,11 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid) {
             return THREAD_STATE_UNKNOWN;
     }
 #elif defined(MS_WINDOWS)
-    if (tid > MAXDWORD) {
-        return THREAD_STATE_UNKNOWN;
-    }
     HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)tid);
     if (thread == NULL) {
         return THREAD_STATE_UNKNOWN;
     }
-    /* ThreadSystemThreadInformation is available since Windows 10, but the
-     * Windows SDK does not name this THREADINFOCLASS value. */
+    /* ThreadSystemThreadInformation is not named in the Windows SDK. */
     const THREADINFOCLASS system_thread_information = (THREADINFOCLASS)40;
     SYSTEM_THREAD_INFORMATION info;
     ULONG size = 0;
@@ -453,8 +448,6 @@ unwind_stack_for_thread(
         status_flags |= THREAD_STATUS_HAS_EXCEPTION;
     }
 
-    // Check CPU status
-    // Optimization: only check CPU status if needed by mode because it's expensive
     int cpu_status = THREAD_STATE_UNKNOWN;
     if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
         cpu_status = get_thread_status(unwinder, tid);

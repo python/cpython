@@ -661,8 +661,6 @@ extern int find_running_frame(
     uintptr_t *frame
 );
 
-extern int get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid);
-
 extern PyObject* unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
