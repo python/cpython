@@ -1,0 +1,2 @@
+Remove unstarted threads from the threading registry when an audit hook aborts
+native thread creation with :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
