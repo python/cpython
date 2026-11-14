@@ -5803,44 +5803,46 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_tparm__doc__,
-"tparm($module, str, i1=0, i2=0, i3=0, i4=0, i5=0, i6=0, i7=0, i8=0,\n"
-"      i9=0, /)\n"
+"tparm($module, str, /, *params)\n"
 "--\n"
 "\n"
 "Instantiate the specified byte string with the supplied parameters.\n"
 "\n"
 "  str\n"
-"    Parameterized byte string obtained from the terminfo database.");
+"    Parameterized byte string obtained from the terminfo database.\n"
+"  params\n"
+"    Up to nine parameters.\n"
+"\n"
+"The parameters are integers, except in a few cases where they must be\n"
+"bytes objects.");
 
 #define _CURSES_TPARM_METHODDEF    \
     {"tparm", _PyCFunction_CAST(_curses_tparm), METH_FASTCALL, _curses_tparm__doc__},
 
 static PyObject *
-_curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
-                   int i4, int i5, int i6, int i7, int i8, int i9);
+_curses_tparm_impl(PyObject *module, PyObject *string, PyObject *params);
 
 static PyObject *
 _curses_tparm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const char *str;
-    int i1 = 0;
-    int i2 = 0;
-    int i3 = 0;
-    int i4 = 0;
-    int i5 = 0;
-    int i6 = 0;
-    int i7 = 0;
-    int i8 = 0;
-    int i9 = 0;
+    PyObject *string;
+    PyObject *params = NULL;
 
-    if (!PyArg_ParseArray(args, nargs, "y|iiiiiiiii:tparm",
-        &str, &i1, &i2, &i3, &i4, &i5, &i6, &i7, &i8, &i9)) {
+    if (!_PyArg_CheckPositional("tparm", nargs, 1, PY_SSIZE_T_MAX)) {
         goto exit;
     }
-    return_value = _curses_tparm_impl(module, str, i1, i2, i3, i4, i5, i6, i7, i8, i9);
+    string = args[0];
+    params = PyTuple_FromArray(args + 1, nargs - 1);
+    if (params == NULL) {
+        goto exit;
+    }
+    return_value = _curses_tparm_impl(module, string, params);
 
 exit:
+    /* Cleanup for params */
+    Py_XDECREF(params);
+
     return return_value;
 }
 
@@ -6715,4 +6717,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=422461e62cb86010 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24a81904cd00aacf input=a9049054013a1b77]*/
