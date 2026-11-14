@@ -279,6 +279,17 @@ class TextWrapper:
             # Maximum width for this line.
             width = self.width - len(indent)
 
+            # This and all following lines have the same width, so split a
+            # long word for all of them at once.  Breaking off one line at a
+            # time would copy the rest of the word each time.
+            word = chunks[-1]
+            if (lines and self.break_long_words and 0 < width < len(word) and
+                not (self.break_on_hyphens and '-' in word) and
+                word.split(None, 1) == [word]):
+                del chunks[-1]
+                chunks.extend(word[i:i + width]
+                              for i in reversed(range(0, len(word), width)))
+
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
             if self.drop_whitespace and chunks[-1].strip() == '' and lines:

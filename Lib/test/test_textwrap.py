@@ -615,6 +615,32 @@ How *do* you spell that odd word, anyways?
                          'word,',
                          'anyways?'])
 
+    def test_break_very_long_word(self):
+        # A word much longer than the width is broken into many lines.
+        text = ''.join(map(str, range(1000)))
+        lines = wrap(text, 7)
+        self.assertEqual(''.join(lines), text)
+        self.assertEqual([len(line) for line in lines],
+                         [7] * (len(text) // 7) + [len(text) % 7])
+
+        # The first line can be narrower than the following ones, and the
+        # last piece of the word shares its line with the next words.
+        self.check_wrap('a' * 25 + ' b c', 10,
+                        ['* aaaaaaaa', '  aaaaaaaa', '  aaaaaaaa', '  a b c'],
+                        initial_indent='* ', subsequent_indent='  ')
+        self.check_wrap('x ' + 'a' * 25, 10,
+                        ['x aaaaaaaa', '  aaaaaaaa', '  aaaaaaaa', '  a'],
+                        subsequent_indent='  ')
+
+        # Each piece is broken after its last hyphen.
+        self.check_wrap('12345-67890-12345-67890-12345', 10,
+                        ['12345-', '67890-', '12345-', '67890-', '12345'])
+        self.check_wrap('abc-1234567890123-4567890123456', 10,
+                        ['abc-', '1234567890', '123-', '4567890123', '456'])
+        self.check_wrap('abc-1234567890123-4567890123456', 10,
+                        ['abc-123456', '7890123-45', '6789012345', '6'],
+                        break_on_hyphens=False)
+
     def test_nobreak_long(self):
         # Test with break_long_words disabled
         self.wrapper.break_long_words = 0
