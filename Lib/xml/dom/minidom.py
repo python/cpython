@@ -449,7 +449,8 @@ def _fixup_namespaces(element, nsmap):
     elif nsmap.get(None) and ':' not in element.tagName:
         # The element is in no namespace, undeclare the default one.
         nsmap = _bind_namespace(nsmap, inherited, None, None)
-        declarations.append(("xmlns", ""))
+        if not element.hasAttribute("xmlns"):
+            declarations.append(("xmlns", ""))
 
     items = []
     prefixes = None  # namespace URI -> prefix, built only when needed
