@@ -68,6 +68,12 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     rc = sqlite3_prepare_v2(db, sql_cstr, (int)size + 1, &stmt, &tail);
     Py_END_ALLOW_THREADS
 
+    if (PyErr_Occurred()) {
+        /* A callback left an exception set. For example, the query planner
+         * can call a collation. */
+        (void)sqlite3_finalize(stmt);
+        return NULL;
+    }
     if (rc != SQLITE_OK) {
         set_error_from_db(state, db);
         return NULL;

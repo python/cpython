@@ -1,0 +1,7 @@
+Fix a :exc:`SystemError` and crashes in :mod:`sqlite3` when a collation
+callback raises an exception. Now the exception from the collation
+propagates. Before, :meth:`~sqlite3.Cursor.execute` raised
+:exc:`~sqlite3.OperationalError` instead if the same step also failed. While
+the exception is set, the module no longer calls user-defined functions, the
+authorizer, the progress handler or the trace callback. It calls only the
+``finalize()`` method of an aggregate, to release the aggregate.

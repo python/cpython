@@ -541,6 +541,10 @@ get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
     return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
 }
 
+/* A callback can leave an exception set until sqlite3_step() returns. For
+ * example, a collation callback cannot report an error to SQLite, so SQLite
+ * continues the step with a wrong result of the comparison. Thus, after a
+ * step, check PyErr_Occurred() first, and propagate that exception. */
 static inline int
 stmt_step(sqlite3_stmt *statement)
 {
@@ -910,15 +914,11 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         rc = stmt_step(self->statement->st);
+        if (PyErr_Occurred()) {
+            /* A callback left an exception set. */
+            goto error;
+        }
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
-            if (PyErr_Occurred()) {
-                /* there was an error that occurred in a user-defined callback */
-                if (state->enable_callback_tracebacks) {
-                    PyErr_Print();
-                } else {
-                    PyErr_Clear();
-                }
-            }
             set_error_from_db(state, self->connection->db);
             goto error;
         }
@@ -1125,6 +1125,10 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
         }
         Py_END_ALLOW_THREADS
 
+        if (PyErr_Occurred()) {
+            /* A callback left an exception set. */
+            return NULL;
+        }
         if (rc != SQLITE_OK) {
             goto error;
         }
@@ -1166,6 +1170,13 @@ pysqlite_cursor_iternext(PyObject *op)
         return NULL;
     }
     int rc = stmt_step(stmt);
+    if (PyErr_Occurred()) {
+        /* A callback left an exception set. */
+        (void)stmt_reset(self->statement);
+        Py_CLEAR(self->statement);
+        Py_DECREF(row);
+        return NULL;
+    }
     if (rc == SQLITE_DONE) {
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
