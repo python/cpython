@@ -1,0 +1,3 @@
+:meth:`unittest.TestLoader.discover` can now discover tests inside an
+archive on :data:`sys.path`, such as a zip file, by listing it through the
+archive's path entry finder.

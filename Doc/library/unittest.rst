@@ -2027,6 +2027,10 @@ Loading and running tests
       .. versionchanged:: 3.14
          *start_dir* can once again be a :term:`namespace package`.
 
+      .. versionchanged:: next
+         *start_dir* can be inside an archive on :data:`sys.path`, such as
+         a zip file, whose path entry finder lists its contents.
+
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
 
