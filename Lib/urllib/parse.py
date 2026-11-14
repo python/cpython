@@ -861,7 +861,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
     sequences into Unicode characters, as accepted by the bytes.decode()
     method.
     By default, percent-encoded sequences are decoded with UTF-8, and invalid
-    sequences are replaced by a placeholder character.
+    sequences are replaced by U+FFFD (REPLACEMENT CHARACTER).
 
     unquote('abc%20def') -> 'abc def'.
     """

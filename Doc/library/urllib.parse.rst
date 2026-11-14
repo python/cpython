@@ -748,7 +748,7 @@ task isn't already covered by the URL parsing functions above.
 
    *encoding* defaults to ``'utf-8'``.
    *errors* defaults to ``'replace'``, meaning invalid sequences are replaced
-   by a placeholder character.
+   by ``�`` (U+FFFD, the official REPLACEMENT CHARACTER).
 
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
