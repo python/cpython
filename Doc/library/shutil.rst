@@ -482,10 +482,6 @@ Directory and files operations
 
    Return the path to an executable which would be run if the given *cmd* was
    called.  If no *cmd* would be called, return ``None``.
-   *cmd* may be a string, bytes, or a :term:`path-like object`.
-   If *cmd* is a path-like object and an executable is found, the result has
-   the same type as the value returned by its :meth:`~os.PathLike.__fspath__`
-   method.
 
    *mode* is a permission mask passed to :func:`os.access`, by default
    determining if the file exists and is executable.
