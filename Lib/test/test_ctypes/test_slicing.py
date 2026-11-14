@@ -63,6 +63,35 @@ class SlicesTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             a[:5] = range(32)
 
+    def test_setslice_len_error(self):
+        # gh-161840: exceptions from PySequence_Length() must propagate
+        # instead of being replaced with ValueError.
+        class CustomError(Exception):
+            pass
+
+        class BadLen:
+            def __len__(self):
+                raise CustomError("boom")
+
+        class BadValueErrorLen:
+            def __len__(self):
+                raise ValueError("custom value error")
+
+        a = (c_int * 3)(1, 2, 3)
+        with self.assertRaisesRegex(CustomError, "boom"):
+            a[0:1] = BadLen()
+        with self.assertRaisesRegex(CustomError, "boom"):
+            a[0:0] = BadLen()
+        with self.assertRaisesRegex(CustomError, "boom"):
+            a[::2] = BadLen()
+        with self.assertRaisesRegex(ValueError, "custom value error"):
+            a[0:1] = BadValueErrorLen()
+        with self.assertRaisesRegex(TypeError, "object of type 'int' has no len"):
+            a[0:1] = 42
+        with self.assertRaisesRegex(TypeError, "dict is not a sequence"):
+            a[0:1] = {"x": 1}
+        self.assertEqual(a[:], [1, 2, 3])
+
     def test_char_ptr(self):
         s = b"abcdefghijklmnopqrstuvwxyz"
 
