@@ -11,6 +11,8 @@ from . import _common, _tzpath
 EPOCH = datetime(1970, 1, 1)
 EPOCHORDINAL = datetime(1970, 1, 1).toordinal()
 
+_SECONDS_PER_DAY = 24 * 60 * 60
+
 # It is relatively expensive to construct new timedelta objects, and in most
 # cases we're looking at the same deltas, like integer numbers of hours, etc.
 # To improve speed and memory use, we'll keep a dictionary with references
@@ -462,9 +464,44 @@ class _TZStr:
         end = self.end.year_to_epoch(year)
         return start, end
 
+    def _dst_period(self, year):
+        start, end = self.transitions(year)
+        start -= self.std.utcoff.total_seconds()
+        end -= self.dst.utcoff.total_seconds()
+        if end <= start:
+            end = self.end.year_to_epoch(year + 1)
+            end -= self.dst.utcoff.total_seconds()
+        return start, end
+
     def _get_trans_info(self, ts, year, fold):
         """Get the information about the current transition - tti"""
-        start, end = self.transitions(year)
+
+        year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
+        # RFC 9636, section 3.3.2 specifies transition hours from -167 to 167
+        # for TZif v3+; _parse_transition_time enforces this limit.
+        # https://www.rfc-editor.org/rfc/rfc9636.html#section-3.3.2
+        # _parse_tz_delta caps offset hours at 24 (the POSIX TZ limit),
+        # with one extra hour possible for default DST.
+        # Including minute/second fields and the offset difference across a
+        # fold, the displacement is less than 11 days. Use a common year's
+        # length here, leaving an extra day of margin in leap years.
+        if (year_start + 11 * _SECONDS_PER_DAY <= ts
+                < year_start + (365 - 11) * _SECONDS_PER_DAY):
+            start, end = self.transitions(year)
+            # An M rule selects a weekday within a week: its date can vary
+            # by six days, plus one day-of-year for leap years. Allow seven
+            # days for each rule. Nearby rules can reverse order, allowing
+            # a previous southern season to overlap this northern one.
+            if abs(end - start - self.dst_diff) > 2 * 7 * _SECONDS_PER_DAY:
+                if fold == (self.dst_diff >= 0):
+                    end -= self.dst_diff
+                else:
+                    start += self.dst_diff
+                if start < end:
+                    isdst = start <= ts < end
+                else:
+                    isdst = not (end <= ts < start)
+                return self.dst if isdst else self.std
 
         # With fold = 0, the period (denominated in local time) with the
         # smaller offset starts at the end of the gap and ends at the end of
@@ -475,38 +512,62 @@ class _TZStr:
         # the fold and whether DST is positive or negative (rare), and it
         # turns out that this boils down to fold XOR is_positive.
         if fold == (self.dst_diff >= 0):
-            end -= self.dst_diff
+            ts -= self.std.utcoff.total_seconds()
         else:
-            start += self.dst_diff
+            ts -= self.dst.utcoff.total_seconds()
 
-        if start < end:
-            isdst = start <= ts < end
-        else:
-            isdst = not (end <= ts < start)
-
-        return self.dst if isdst else self.std
+        # Transition times and UTC offsets can move a rule into an adjacent
+        # year. Taking the union also joins the touching periods used to
+        # represent permanent DST, without introducing a gap or fold.
+        # A southern season with a start shifted into the following January
+        # can still be active two rule years after its start year.
+        for rule_year in (year, year - 1, year + 1, year - 2):
+            start, end = self._dst_period(rule_year)
+            if start <= ts < end:
+                return self.dst
+        return self.std
 
     def _get_trans_info_fromutc(self, ts, year):
-        start, end = self.transitions(year)
-        start -= self.std.utcoff.total_seconds()
-        end -= self.dst.utcoff.total_seconds()
+        year_start = (_post_epoch_days_before_year(year) + 1) * _SECONDS_PER_DAY
+        # As in _get_trans_info, the parser limits and fold lookback fit
+        # within 11 days. Using 365 leaves an extra margin in leap years.
+        if (year_start + 11 * _SECONDS_PER_DAY <= ts
+                < year_start + (365 - 11) * _SECONDS_PER_DAY):
+            start, end = self.transitions(year)
+            start -= self.std.utcoff.total_seconds()
+            end -= self.dst.utcoff.total_seconds()
+            # Each M rule can move six calendar days plus a leap day;
+            # allow seven days for each rule to keep their order stable.
+            if abs(end - start) > 2 * 7 * _SECONDS_PER_DAY:
+                before = ts - abs(self.dst_diff)
+                if start < end:
+                    isdst = start <= ts < end
+                    wasdst = start <= before < end
+                else:
+                    isdst = not (end <= ts < start)
+                    wasdst = not (end <= before < start)
+                if self.dst_diff > 0:
+                    fold = wasdst and not isdst
+                else:
+                    fold = isdst and not wasdst
+                return self.dst if isdst else self.std, fold
 
-        if start < end:
-            isdst = start <= ts < end
-        else:
-            isdst = not (end <= ts < start)
+        isdst = False
+        wasdst = False
+        before = ts - abs(self.dst_diff)
+        for rule_year in (year, year - 1, year + 1, year - 2):
+            start, end = self._dst_period(rule_year)
+            isdst |= start <= ts < end
+            wasdst |= start <= before < end
+            if isdst and wasdst:
+                break
 
-        # For positive DST, the ambiguous period is one dst_diff after the end
-        # of DST; for negative DST, the ambiguous period is one dst_diff before
-        # the start of DST.
+        # A fold requires an actual decrease in offset. A nominal transition
+        # at the join between permanent-DST periods does not create one.
         if self.dst_diff > 0:
-            ambig_start = end
-            ambig_end = end + self.dst_diff
+            fold = wasdst and not isdst
         else:
-            ambig_start = start
-            ambig_end = start - self.dst_diff
-
-        fold = ambig_start <= ts < ambig_end
+            fold = isdst and not wasdst
 
         return (self.dst if isdst else self.std, fold)
 
