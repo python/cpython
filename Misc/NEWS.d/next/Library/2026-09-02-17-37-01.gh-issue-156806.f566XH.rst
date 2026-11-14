@@ -1,0 +1,3 @@
+Fix a crash when deleting :attr:`decimal.Context.rounding` and other
+:class:`decimal.Context` attributes through the descriptor. Now
+:exc:`AttributeError` is raised.
