@@ -1,0 +1,2 @@
+Speed up :func:`ast.parse` by pausing the garbage collector while the AST is
+converted to Python objects.
