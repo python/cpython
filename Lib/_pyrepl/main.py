@@ -9,7 +9,14 @@ FAIL_REASON: str
 try:
     if sys.platform == "win32" and sys.getwindowsversion().build < 10586:
         raise RuntimeError("Windows 10 TH2 or later required")
-    if not os.isatty(sys.stdin.fileno()):
+    stdin_fd = sys.stdin.fileno()
+    if (
+        not os.isatty(stdin_fd)
+        or (
+            sys.platform == "win32"
+            and os.device_encoding(stdin_fd) is None
+        )
+    ):
         raise OSError(errno.ENOTTY, "tty required", "stdin")
     from .simple_interact import check
     if err := check():
