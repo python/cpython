@@ -1,0 +1,2 @@
+Fix quadratic time complexity in :func:`textwrap.wrap` and
+:func:`textwrap.fill` when breaking a long word into many lines.
