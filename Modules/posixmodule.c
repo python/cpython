@@ -716,7 +716,9 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
-    _PyWarnings_BeforeFork(interp);
+    for (PyInterpreterState *i = PyInterpreterState_Head(); i != NULL; i = i->next) {
+        _PyWarnings_BeforeFork(i);
+    }
 }
 
 void
@@ -746,6 +748,78 @@ reset_asyncio_state(_PyThreadStateImpl *tstate)
     tstate->asyncio_running_task = NULL;
 }
 
+static PyStatus
+clear_threads_after_fork(PyThreadState *tstate)
+{
+    struct after_fork_state {
+        PyThreadState *tstate;
+        PyThreadState *deleted;
+        PyThreadState *running_main;
+    };
+
+    size_t count = 0;
+    for (PyInterpreterState *interp = PyInterpreterState_Head(); interp != NULL;
+         interp = interp->next) {
+        count++;
+    }
+    struct after_fork_state *states = PyMem_RawCalloc(count, sizeof(*states));
+    if (states == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    // Unlink all vanished threads before running any finalizers. Keep the
+    // subinterpreters busy until their dead thread states have been cleared.
+    size_t next = 1;
+    for (PyInterpreterState *interp = PyInterpreterState_Head(); interp != NULL;
+         interp = interp->next) {
+        size_t index = (interp == tstate->interp) ? 0 : next++;
+        struct after_fork_state *state = &states[index];
+        state->running_main = interp->threads.main;
+        if (state->running_main != NULL
+            && state->running_main->thread_id != tstate->thread_id) {
+            state->running_main = NULL;
+        }
+        state->tstate = (index == 0) ? tstate : PyThreadState_New(interp);
+        if (state->tstate == NULL) {
+            PyMem_RawFree(states);
+            return _PyStatus_NO_MEMORY();
+        }
+        state->deleted = _PyThreadState_RemoveExcept(state->tstate,
+                                                     /*is_after_fork=*/1);
+        if (index != 0) {
+            _Py_atomic_store_ptr(&interp->threads.main, state->tstate);
+        }
+        Py_ssize_t thread_count = 0;
+        _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+            p->native_thread_id = tstate->native_thread_id;
+#endif
+            if (p->_whence == _PyThreadState_WHENCE_THREADING
+                || p->_whence == _PyThreadState_WHENCE_THREADING_DAEMON) {
+                thread_count++;
+            }
+        }
+        _Py_atomic_store_ssize(&interp->threads.count, thread_count);
+    }
+
+    // Clearing thread states can call destructors, so resume before doing so.
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    _PyThreadState_DeleteList(states[0].deleted, /*is_after_fork=*/1);
+    for (size_t i = 1; i < count; i++) {
+        struct after_fork_state *state = &states[i];
+        PyInterpreterState *interp = state->tstate->interp;
+        PyThreadState_Swap(state->tstate);
+        _PyThreadState_DeleteList(state->deleted, /*is_after_fork=*/1);
+        run_at_forkers(interp->after_forkers_child, 0);
+        _Py_atomic_store_ptr(&interp->threads.main, state->running_main);
+        PyThreadState_Clear(state->tstate);
+        PyThreadState_Swap(tstate);
+        PyThreadState_Delete(state->tstate);
+    }
+    PyMem_RawFree(states);
+    return _PyStatus_OK();
+}
+
 
 void
 PyOS_AfterFork_Child(void)
@@ -767,11 +841,6 @@ PyOS_AfterFork_Child(void)
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-#ifdef Py_GIL_DISABLED
-    _Py_brc_after_fork(tstate->interp);
-    _Py_qsbr_after_fork((_PyThreadStateImpl *)tstate);
-#endif
-
     // Ideally we could guarantee tstate is running main.
     _PyInterpreterState_ReinitRunningMain(tstate);
 
@@ -787,31 +856,19 @@ PyOS_AfterFork_Child(void)
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
 
-    // Thread-state cleanup can run finalizers that issue warnings.
-    _PyWarnings_AfterFork(tstate->interp);
-
     reset_remotedebug_data(tstate);
 
     reset_asyncio_state((_PyThreadStateImpl *)tstate);
 
-    // Remove the dead thread states. We "start the world" once we are the only
-    // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
-    // That needs to happen before `_PyThreadState_DeleteList`, because that
-    // may call destructors.
-    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
-    _PyEval_StartTheWorldAll(&_PyRuntime);
-    _PyThreadState_DeleteList(list, /*is_after_fork=*/1);
+    status = clear_threads_after_fork(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
 
     _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
-
-    status = _PyInterpreterState_DeleteExceptMain(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
-    assert(_PyThreadState_GET() == tstate);
 
     status = _PyPerfTrampoline_AfterFork_Child();
     if (_PyStatus_EXCEPTION(status)) {

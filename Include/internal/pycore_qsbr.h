@@ -180,7 +180,7 @@ extern void
 _Py_qsbr_fini(PyInterpreterState *interp);
 
 extern void
-_Py_qsbr_after_fork(struct _PyThreadStateImpl *tstate);
+_Py_qsbr_after_fork(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }
