@@ -198,6 +198,8 @@ PyAPI_FUNC(void) _PyErr_FormatNote(const char *format, ...);
 
 Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
+extern void _PyErr_ReplaceTypeError(PyObject *exc, const char *format, ...);
+
 // implementation detail for the codeop module.
 // Exported for test.test_peg_generator.test_c_parser
 PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;

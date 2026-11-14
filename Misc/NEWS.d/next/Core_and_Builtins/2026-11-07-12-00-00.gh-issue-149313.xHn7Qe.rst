@@ -1,0 +1,5 @@
+Preserve the traceback, cause and notes of the original :exc:`TypeError` when
+reporting an unhashable :class:`dict` key or :class:`set` element.  The original
+exception is chained as the :attr:`~BaseException.__cause__` if it has a
+traceback or a cause; otherwise, only its notes are copied.
+Patch by WakaTaira.
