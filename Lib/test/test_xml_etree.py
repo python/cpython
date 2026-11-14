@@ -4140,6 +4140,55 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(''.join(pi.itertext()), '')
         self.assertEqual(list(pi.iter()), [pi])
 
+    def test_itertext_qname_tag(self):
+        # gh-161809: elements with a QName tag are not comments or
+        # processing instructions, so their text must not be skipped.
+        ns = 'http://example.com/ns'
+        root = ET.Element(ET.QName(ns, 'doc'))
+        root.text = 'hello '
+        b = ET.SubElement(root, 'b')
+        b.text = 'world'
+        b.tail = '!'
+        i = ET.SubElement(root, ET.QName(ns, 'i'))
+        i.text = 'QTEXT'
+        i.tail = '?'
+        self.assertEqual(list(root.itertext()),
+                         ['hello ', 'world', '!', 'QTEXT', '?'])
+        self.assertEqual(list(i.itertext()), ['QTEXT'])
+        self.assertEqual(ET.tostring(root, encoding='unicode', method='text'),
+                         'hello world!QTEXT?')
+
+        # Comments and processing instructions are still skipped.
+        root.append(ET.Comment('comment'))
+        root.append(ET.PI('target', 'data'))
+        self.assertEqual(list(root.itertext()),
+                         ['hello ', 'world', '!', 'QTEXT', '?'])
+
+    def test_itertext_custom_factories(self):
+        # Elements made by custom comment/PI factories use a callable tag
+        # and must be skipped like regular comments and PIs.
+        def my_comment(text):
+            e = ET.Element(my_comment)
+            e.text = text
+            return e
+
+        def my_pi(target, text=None):
+            e = ET.Element(my_pi)
+            e.text = target
+            return e
+
+        tb = ET.TreeBuilder(insert_comments=True, insert_pis=True,
+                            comment_factory=my_comment, pi_factory=my_pi)
+        tb.start('a', {})
+        tb.data('x')
+        tb.comment('c')
+        tb.data('y')
+        tb.pi('target', 'data')
+        tb.data('z')
+        tb.end('a')
+        root = tb.close()
+        self.assertEqual(list(root.itertext()), ['x', 'y', 'z'])
+
     def test_corners(self):
         # single root, no subelements
         a = ET.Element('a')
