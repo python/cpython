@@ -141,6 +141,11 @@ class Queue(object):
         if close:
             self._close = None
             close()
+        else:
+            if not self._reader.closed:
+                self._reader.close()
+            if not self._writer.closed:
+                self._writer.close()
 
     def join_thread(self):
         debug('Queue.join_thread()')
