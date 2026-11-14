@@ -1,0 +1,2 @@
+Fix :func:`subprocess.run` leaving its child process unreaped after a
+:exc:`KeyboardInterrupt`, which made it emit a :exc:`ResourceWarning`.
