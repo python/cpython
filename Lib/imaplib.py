@@ -953,6 +953,12 @@ class IMAP4:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
+            if any(self._readbuf):
+                raise self.abort('unexpected data after STARTTLS response')
+            # Discard received state before TLS was established
+            # since data could have been injected by a MITM.
+            self._readbuf = []
+            self.untagged_responses = {}
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
             self._file = self.sock.makefile('rb')
