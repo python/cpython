@@ -1,0 +1,3 @@
+When the :c:func:`_PyBytes_Resize` function is called with a subclass of
+:py:class:`bytes`, it now skips optimization (which could lead to crashes),
+and returns a new bytes object.
