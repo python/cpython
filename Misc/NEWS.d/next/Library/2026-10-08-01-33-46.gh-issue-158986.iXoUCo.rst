@@ -1,0 +1,4 @@
+Fix :mod:`profiling.sampling` reporting modules in a ``site-packages``
+directory located inside the standard library directory as standard library
+modules. The heatmap now lists them under "Site Packages" and flamegraph
+labels no longer start with ``site-packages.``.
