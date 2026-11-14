@@ -1310,10 +1310,11 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse(req.full_url).netloc
-        retry = self.http_error_auth_reqed('www-authenticate',
-                                           host, req, headers)
-        self.reset_retry_count()
-        return retry
+        try:
+            return self.http_error_auth_reqed('www-authenticate',
+                                              host, req, headers)
+        finally:
+            self.reset_retry_count()
 
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
@@ -1326,10 +1327,11 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
         if not req.has_proxy() and not req._tunnel_host:
             return None
         host = req.host
-        retry = self.http_error_auth_reqed('proxy-authenticate',
-                                           host, req, headers)
-        self.reset_retry_count()
-        return retry
+        try:
+            return self.http_error_auth_reqed('proxy-authenticate',
+                                              host, req, headers)
+        finally:
+            self.reset_retry_count()
 
 class _ProxyTunnelResponse(io.BytesIO):
     """The proxy's error response to CONNECT, as an empty-bodied response."""
