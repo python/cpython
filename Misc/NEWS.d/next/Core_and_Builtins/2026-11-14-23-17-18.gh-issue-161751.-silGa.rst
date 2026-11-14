@@ -1,0 +1,2 @@
+Fix race in mimalloc abandoned segment visit in free-threaded GC. Patch by
+Donghee Na.
