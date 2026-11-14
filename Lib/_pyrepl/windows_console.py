@@ -629,7 +629,8 @@ class WindowsConsole(Console):
         """
         Push a character to the console event queue.
         """
-        raise NotImplementedError("push_char not supported on Windows")
+        trace("push char {char!r}", char=char)
+        self.event_queue.push(char)
 
     def beep(self) -> None:
         self.__write("\x07")
@@ -673,7 +674,9 @@ class WindowsConsole(Console):
             e2 = self.event_queue.get()
             if e2:
                 e.data += e2.data
+                e.raw += e2.raw
 
+        text = ""
         recs, rec_count = self._read_input_bulk(1024)
         for i in range(rec_count):
             rec = recs[i]
@@ -690,7 +693,13 @@ class WindowsConsole(Console):
                     continue
                 if ch == "\r":
                     ch = "\n"
-                e.data += ch
+                text += ch
+        # Each record on Windows holds a UTF-16 code unit.
+        # A surrogate pair must be joined before encoding,
+        # an unpaired half becomes U+FFFD.
+        text = text.encode("utf-16-le", "surrogatepass").decode("utf-16-le", "replace")
+        e.data += text
+        e.raw += text.encode(self.event_queue.encoding, "replace")
         return e
 
     def wait_for_event(self, timeout: float | None) -> bool:
