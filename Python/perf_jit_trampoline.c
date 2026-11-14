@@ -517,7 +517,7 @@ static void* perf_map_jit_init(void) {
     size_t eh_frame_size = _PyJitUnwind_EhFrameSize(0);
     size_t unwind_data_size = sizeof(EhFrameHeader) + eh_frame_size;
     trampoline_api.code_padding = _Py_SIZE_ROUND_UP(unwind_data_size, 16);
-    trampoline_api.code_alignment = 32;
+    trampoline_api.code_alignment = 4;
 
     PyMutex_Unlock(&perf_jit_map_state.map_lock);
     return &perf_jit_map_state;
