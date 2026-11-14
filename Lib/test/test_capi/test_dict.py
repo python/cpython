@@ -640,6 +640,7 @@ class CAPITest(unittest.TestCase):
         a = A()
         a.x = 1
         f = as_frozendict(a.__dict__)
+        self.assertEqual(vars(a), {})
         a.x = 2
         self.assertEqual(f, frozendict(x=1))
         self.assertEqual(vars(a), {'x': 2})

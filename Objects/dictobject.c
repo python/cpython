@@ -8696,9 +8696,11 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
         clear_common(old);
         set_keys(old, Py_EMPTY_KEYS);
         set_values(old, NULL);
-        ASSERT_CONSISTENT(old);
     }
+    ASSERT_CONSISTENT(old);
 
+    // Only transfer keys and values to the new dict
+    // once the old dict is cleared
     new->ma_used = used;
     new->ma_keys = keys;
     new->ma_values = values;
