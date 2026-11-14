@@ -474,18 +474,35 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual(strp_output.tm_isdst, 0)
         strp_output = _strptime._strptime_time("GMT", "%Z")
         self.assertEqual(strp_output.tm_isdst, 0)
-        time_tuple = time.localtime()
-        strf_output = time.strftime("%Z")  #UTC does not have a timezone
-        strp_output = _strptime._strptime_time(strf_output, "%Z")
-        locale_time = _strptime.LocaleTime()
-        if time.tzname[0] != time.tzname[1] or not time.daylight:
-            self.assertTrue(strp_output[8] == time_tuple[8],
-                            "timezone check failed; '%s' -> %s != %s" %
-                             (strf_output, strp_output[8], time_tuple[8]))
-        else:
-            self.assertTrue(strp_output[8] == -1,
-                            "LocaleTime().timezone has duplicate values and "
-                             "time.daylight but timezone value not set to -1")
+        # %Z recognizes the module's timezone names.  UTC and GMT are always
+        # parsed as standard time, even in zones such as Europe/Dublin where
+        # libc reports GMT as (negative) DST.
+        for isdst, name in enumerate(time.tzname):
+            if not name or (isdst and not time.daylight):
+                continue
+            with self.subTest(name=name, isdst=isdst):
+                if name.lower() in ('utc', 'gmt'):
+                    expected = 0
+                elif time.daylight and time.tzname[0] == time.tzname[1]:
+                    expected = -1
+                else:
+                    expected = isdst
+                parsed = _strptime._strptime_time(name, '%Z')
+                self.assertEqual(parsed.tm_isdst, expected)
+
+    @support.run_with_tz('EST5EDT,M3.2.0,M11.1.0')
+    @skip_if_buggy_ucrt_strfptime
+    def test_timezone_roundtrip(self):
+        # Use stable, explicit rules when comparing strftime(), strptime(),
+        # and localtime(), including both standard time and DST.
+        for month, isdst in ((1, 0), (7, 1)):
+            with self.subTest(month=month):
+                t = time.mktime((2000, month, 1, 12, 0, 0, 0, 0, -1))
+                local = time.localtime(t)
+                self.assertEqual(local.tm_isdst, isdst)
+                name = time.strftime('%Z', local)
+                parsed = _strptime._strptime_time(name, '%Z')
+                self.assertEqual(parsed.tm_isdst, isdst)
 
     @unittest.skipUnless(
         hasattr(time, "tzset"), "time module has no attribute tzset"

@@ -27181,6 +27181,49 @@ printf "%s\n" "#define HAVE_ALTZONE 1" >>confdefs.h
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for time.h that defines timezone, daylight and tzname variables" >&5
+printf %s "checking for time.h that defines timezone, daylight and tzname variables... " >&6; }
+if test ${ac_cv_header_time_tz_globals+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <time.h>
+int
+main (void)
+{
+
+    long tz = timezone;
+    int dl = daylight;
+    char *name = tzname[0];
+    return (int)tz + dl + (name != 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_header_time_tz_globals=yes
+else case e in #(
+  e) ac_cv_header_time_tz_globals=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_time_tz_globals" >&5
+printf "%s\n" "$ac_cv_header_time_tz_globals" >&6; }
+if test $ac_cv_header_time_tz_globals = yes; then
+
+printf "%s\n" "#define _Py_HAVE_TIMEZONE_GLOBALS 1" >>confdefs.h
+
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for addrinfo" >&5
 printf %s "checking for addrinfo... " >&6; }
 if test ${ac_cv_struct_addrinfo+y}

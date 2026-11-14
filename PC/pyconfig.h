@@ -429,9 +429,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define to 1 if you have the <direct.h> header file. */
 #define HAVE_DIRECT_H 1
 
-/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
-   */
-#define HAVE_DECL_TZNAME 1
+/* Define if time.h declares the timezone, daylight and tzname variables. */
+#define _Py_HAVE_TIMEZONE_GLOBALS 1
 
 /* Define if you have dirent.h.  */
 /* #define DIRENT 1 */

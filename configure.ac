@@ -6511,6 +6511,22 @@ if test $ac_cv_header_time_altzone = yes; then
     [Define this if your time.h defines altzone.])
 fi
 
+AC_CACHE_CHECK([for time.h that defines timezone, daylight and tzname variables],
+  [ac_cv_header_time_tz_globals], [
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[
+    long tz = timezone;
+    int dl = daylight;
+    char *name = tzname[0];
+    return (int)tz + dl + (name != 0);
+  ]])],
+    [ac_cv_header_time_tz_globals=yes],
+    [ac_cv_header_time_tz_globals=no])
+  ])
+if test $ac_cv_header_time_tz_globals = yes; then
+  AC_DEFINE([_Py_HAVE_TIMEZONE_GLOBALS], [1],
+    [Define if time.h declares the timezone, daylight and tzname variables.])
+fi
+
 AC_CACHE_CHECK([for addrinfo], [ac_cv_struct_addrinfo],
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <netdb.h>]], [[struct addrinfo a]])],
   [ac_cv_struct_addrinfo=yes],
