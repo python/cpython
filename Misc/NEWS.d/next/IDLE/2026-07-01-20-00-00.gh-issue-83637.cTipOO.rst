@@ -1,0 +1,2 @@
+Make IDLE tests pass when running with ``-O`` or ``-OO`` or without
+docstrings.
