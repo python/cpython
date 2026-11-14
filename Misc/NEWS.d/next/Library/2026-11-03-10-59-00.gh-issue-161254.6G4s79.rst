@@ -1,0 +1,2 @@
+Fix a crash when suspending (:kbd:`Ctrl-Z`) and resuming (:kbd:`fg`) an
+embedded :func:`code.interact` session after enabling interactive mode.
