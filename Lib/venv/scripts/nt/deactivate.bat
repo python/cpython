@@ -8,11 +8,11 @@
     @set _OLD_VIRTUAL_PYTHONHOME=
 )
 
-@if defined _OLD_VIRTUAL_PATH (
-    @set "PATH=%_OLD_VIRTUAL_PATH%"
+@if defined _OLD_VIRTUAL_PATH_BAT (
+    @set "PATH=%_OLD_VIRTUAL_PATH_BAT%"
 )
 
-@set _OLD_VIRTUAL_PATH=
+@set _OLD_VIRTUAL_PATH_BAT=
 
 @set VIRTUAL_ENV=
 @set VIRTUAL_ENV_PROMPT=
