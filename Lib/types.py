@@ -84,7 +84,26 @@ except ImportError:
 
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
-    """Create a class object dynamically using the appropriate metaclass."""
+    """Create a class object dynamically using the appropriate metaclass.
+
+    *name*, *bases*, and *kwds* are the class name, the base classes,
+    and the keywords of the equivalent class definition (such as
+    'metaclass').  *kwds* is not a namespace like the third argument
+    of type().  For example:
+
+        new_class('Test', (A, B), {'metaclass': Meta, 'foo': 42})
+
+    is equivalent to:
+
+        class Test(A, B, metaclass=Meta, foo=42):
+            pass
+
+    To populate the namespace, pass *exec_body*, a callable that takes
+    the newly created dictionary and populates it.  For example:
+
+        new_class('C', (MyABC,), {},
+                  exec_body=lambda ns: ns.update(namespace))
+    """
     resolved_bases = resolve_bases(bases)
     meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
@@ -123,7 +142,8 @@ def prepare_class(name, bases=(), kwds=None):
     *namespace* is the prepared class namespace
     *kwds* is an updated copy of the passed in kwds argument with any
     'metaclass' entry removed. If no kwds argument is passed in, this will
-    be an empty dict.
+    be an empty dict. Passed in keywords are those of the class definition
+    (such as 'metaclass'), not a class namespace.
     """
     if kwds is None:
         kwds = {}
