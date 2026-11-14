@@ -1,0 +1,1 @@
+:class:`email.policy.Policy` objects now support :func:`copy.replace`.
