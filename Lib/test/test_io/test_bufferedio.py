@@ -313,6 +313,14 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
 
+    def test_readinto_with_remaining_buffered_data(self):
+        bufio = self.tp(self.BytesIO(b"abcd"), buffer_size=2)
+        self.assertEqual(bufio.read(1), b"a")
+        b = bytearray(2)
+        self.assertEqual(bufio.readinto(b), 2)
+        self.assertEqual(b, b"bc")
+        self.assertEqual(bufio.read(), b"d")
+
     def test_readinto1(self):
         buffer_size = 10
         rawio = self.MockRawIO((b"abc", b"de", b"fgh", b"jkl"))
