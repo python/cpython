@@ -127,7 +127,7 @@ def copyfileobj(source_f, target_f):
                     _ficlone(source_fd, target_fd)
                     return
                 except OSError as err:
-                    if err.errno not in (EBADF, EOPNOTSUPP, ETXTBSY, EXDEV):
+                    if err.errno not in (EBADF, EOPNOTSUPP, EPERM, ETXTBSY, EXDEV):
                         raise err
 
             # Use OS copy where available.
