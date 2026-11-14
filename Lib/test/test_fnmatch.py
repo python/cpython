@@ -1,10 +1,12 @@
 """Test cases for the fnmatch module."""
 
 import os
+import posixpath
 import string
 import unittest
 import warnings
 from fnmatch import fnmatch, fnmatchcase, translate, filter, filterfalse
+from unittest.mock import patch
 
 
 IGNORECASE = os.path.normcase('P') == os.path.normcase('p')
@@ -340,6 +342,11 @@ class FilterTestCase(unittest.TestCase):
         self.assertEqual(filter(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
                          ['usr/bin', 'usr\\lib'] if NORMSEP else ['usr\\lib'])
 
+    def test_posixpath(self):
+        with patch('fnmatch.os.path', posixpath):
+            self.assertEqual(filter(['file.txt', 'FILE.TXT'], '*.txt'), ['file.txt'])
+            self.assertEqual(filter([b'file.txt', b'FILE.TXT'], b'*.txt'), [b'file.txt'])
+
 
 class FilterFalseTestCase(unittest.TestCase):
 
@@ -364,6 +371,11 @@ class FilterFalseTestCase(unittest.TestCase):
                          ['usr'] if NORMSEP else ['usr', 'usr\\lib'])
         self.assertEqual(filterfalse(['usr/bin', 'usr', 'usr\\lib'], 'usr\\*'),
                          ['usr'] if NORMSEP else ['usr/bin', 'usr'])
+
+    def test_posixpath(self):
+        with patch('fnmatch.os.path', posixpath):
+            self.assertEqual(filterfalse(['file.txt', 'FILE.TXT'], '*.txt'), ['FILE.TXT'])
+            self.assertEqual(filterfalse([b'file.txt', b'FILE.TXT'], b'*.txt'), [b'FILE.TXT'])
 
 
 if __name__ == "__main__":
