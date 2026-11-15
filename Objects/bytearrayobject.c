@@ -2469,18 +2469,11 @@ bytearray_strip_impl_helper(PyByteArrayObject* self, PyObject* bytes, int stript
         right++;
     }
 
-    char *temp_ptr = PyMem_Malloc(mysize+1);
 
-    if(temp_ptr == NULL) {
-        return PyErr_NoMemory();
-    }
-
-    strncpy(temp_ptr,myptr, mysize);
+    PyObject *res = PyByteArray_FromStringAndSize(myptr + left, right - left);
 
     if (bytes != Py_None)
         PyBuffer_Release(&vbytes);
-    PyObject *res = PyByteArray_FromStringAndSize(temp_ptr + left, right - left);
-    PyMem_Free(temp_ptr);
     return res;
 }
 
