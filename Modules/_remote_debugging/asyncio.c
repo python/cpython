@@ -22,7 +22,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio",
                                              NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
@@ -33,23 +33,16 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     address = search_linux_map_for_section(handle, "AsyncioDebug", "python",
                                            NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
         }
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
-    // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "libpython",
-                                     NULL);
-    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
-        PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "python",
-                                         NULL);
-    }
+    address = search_loaded_images_for_section(handle, "AsyncioDebug", NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
@@ -99,12 +92,22 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
         return -1;
     }
     if (result < 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
-            PyErr_Clear();
-            PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
-            set_exception_cause(unwinder, PyExc_RuntimeError,
-                "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        if (_Py_RemoteDebug_IsFatalReadError()) {
+            return -1;
         }
+        PyErr_Clear();
+        /* Image discovery can fail without reporting that the target exited.
+           Read a known runtime address before reporting unavailable asyncio. */
+        char runtime_byte;
+        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle,
+                unwinder->runtime_start_address, sizeof(runtime_byte),
+                &runtime_byte) < 0)
+        {
+            return -1;
+        }
+        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
         return -1;
     }
 
