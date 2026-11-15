@@ -447,9 +447,9 @@ unwind_stack_for_thread(
             unwinder->debug_offsets.thread_state.current_exception +
             sizeof(uintptr_t));
         uintptr_t exc_state_addr =
-            *current_tstate + unwinder->debug_offsets.thread_state.exc_state;
+            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.exc_state;
         uintptr_t exc_value_offset =
-            unwinder->debug_offsets.err_stackitem.exc_value;
+            (uintptr_t)unwinder->debug_offsets.err_stackitem.exc_value;
         uintptr_t previous_item_offset =
             exc_value_offset + sizeof(uintptr_t);
 

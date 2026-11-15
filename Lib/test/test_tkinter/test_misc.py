@@ -1160,6 +1160,8 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         w.wm_attributes(alpha=1.0)
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
+        with self.assertRaisesRegex(TypeError, r'^wm_attributes\(\) options'):
+            w.wm_attributes('alpha', alpha=0.5)
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)

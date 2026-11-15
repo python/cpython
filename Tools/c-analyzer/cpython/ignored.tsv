@@ -26,6 +26,7 @@ Modules/posixmodule.c	os_pipe_impl	pipe2_works_atomic	-
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 Modules/_struct.c	-	endian_tables_init_once	-
+Modules/_ctypes/callbacks.c	-	closure_alloc_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -56,6 +57,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 
 ## thread-safe hashtable (internal locks)
 Python/parking_lot.c	-	buckets	-
+Python/pystate.c	-	state_freelists	-
 
 ## shared empty sentinel for the per-type method cache
 Python/typecache.c	-	empty_cache	-
@@ -525,6 +527,7 @@ Modules/_testcapimodule.c	-	MethodDescriptor2_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapimodule.c	-	MyListDictSubclass_Type	-
 Modules/_testcapimodule.c	-	MyList_Type	-
 Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapimodule.c	-	TestError	-
