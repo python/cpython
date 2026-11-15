@@ -1,0 +1,2 @@
+Fix stale awaited-by edges left by :func:`asyncio.as_completed` after its
+consumer exits early.

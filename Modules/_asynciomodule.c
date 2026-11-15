@@ -1331,6 +1331,19 @@ future_is_done(PyObject *future)
     return is_done;
 }
 
+static int
+future_awaited_by_add_if_pending(PyObject *set, PyObject *waiter)
+{
+    int is_done = future_is_done(waiter);
+    if (is_done < 0) {
+        return -1;
+    }
+    if (is_done) {
+        return 0;
+    }
+    return PySet_Add(set, waiter);
+}
+
 /*[clinic input]
 @critical_section
 @getter
@@ -1351,32 +1364,30 @@ _asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
     }
     if (self->fut_awaited_by_is_set) {
         assert(PySet_CheckExact(self->fut_awaited_by));
-        Py_ssize_t pos = 0;
+        PyObject *iterator = PyObject_GetIter(self->fut_awaited_by);
+        if (iterator == NULL) {
+            Py_DECREF(set);
+            return NULL;
+        }
         PyObject *waiter;
-        Py_hash_t hash;
-        while (PySet_Next(self->fut_awaited_by, &pos, &waiter, &hash)) {
-            int is_done = future_is_done(waiter);
-            if (is_done < 0) {
+        while ((waiter = PyIter_Next(iterator)) != NULL) {
+            int res = future_awaited_by_add_if_pending(set, waiter);
+            Py_DECREF(waiter);
+            if (res < 0) {
+                Py_DECREF(iterator);
                 Py_DECREF(set);
                 return NULL;
             }
-            if (is_done) {
-                continue;
-            }
-            if (PySet_Add(set, waiter) < 0) {
-                Py_DECREF(set);
-                return NULL;
-            }
+        }
+        Py_DECREF(iterator);
+        if (PyErr_Occurred()) {
+            Py_DECREF(set);
+            return NULL;
         }
     }
     else {
         PyObject *waiter = self->fut_awaited_by;
-        int is_done = future_is_done(waiter);
-        if (is_done < 0) {
-            Py_DECREF(set);
-            return NULL;
-        }
-        if (!is_done && PySet_Add(set, waiter) < 0) {
+        if (future_awaited_by_add_if_pending(set, waiter) < 0) {
             Py_DECREF(set);
             return NULL;
         }
