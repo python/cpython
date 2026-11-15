@@ -1633,7 +1633,6 @@ _Py_RemoteDebug_ReadDebugOffsets(
                 "Failed to locate PyRuntime address for PID %d",
                 handle->pid);
         }
-        _set_debug_exception_cause(PyExc_RuntimeError, "PyRuntime address lookup failed during debug offsets initialization");
         return -1;
     }
     size_t size = sizeof(struct _Py_DebugOffsets);
