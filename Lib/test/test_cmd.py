@@ -333,6 +333,7 @@ class CmdTestCase(unittest.TestCase):
         def do_exit(self, arg):
             """"""
             return True
+
         def do_EOF(self, arg):
             return True
 
@@ -344,16 +345,18 @@ class CmdTestCase(unittest.TestCase):
 
     def test_parseline(self):
         self.assertEqual(self.cmd.parseline('!'), (None, None, '!'))
-        self.assertEqual(self.cmd.parseline('!command'), (None, None, '!command'))
+        self.assertEqual(
+            self.cmd.parseline('!command'), (None, None, '!command')
+        )
 
-    def test_empty_list(self):
+    def test_completedefault_empty_list(self):
         self.assertEqual(self.cmd.completedefault("test", "test", 5, 5), [])
 
-    def test_cmdloop_settings(self):
+    def test_cmdloop_completekey(self):
         self.exitcmd.use_rawinput = True
         test_data = (
-            ("editline", "tab", "bind ^I rl_complete"), 
-            ("editline", "test", "bind test rl_complete"), 
+            ("editline", "tab", "bind ^I rl_complete"),
+            ("editline", "test", "bind test rl_complete"),
             ("readline", "tab", "tab: complete")
         )
         for backend, completekey, expected in test_data:
@@ -361,7 +364,9 @@ class CmdTestCase(unittest.TestCase):
             mock_readline.backend = backend
             self.exitcmd.completekey = completekey
             self.exitcmd.cmdqueue = ['exit']
-            with unittest.mock.patch.dict(sys.modules, {'readline': mock_readline}):
+            with unittest.mock.patch.dict(
+                sys.modules, {'readline': mock_readline}
+            ):
                 self.exitcmd.cmdloop()
             mock_readline.parse_and_bind.assert_called_once_with(expected)
 
@@ -379,15 +384,19 @@ class CmdTestCase(unittest.TestCase):
         self.exitcmd.use_rawinput = True
         self.exitcmd.completekey = None
 
-        with unittest.mock.patch('builtins.input', return_value='exit') as mock_input:
+        with unittest.mock.patch(
+            'builtins.input', return_value='exit'
+        ) as mock_input:
             self.exitcmd.cmdloop()
         mock_input.assert_called_once_with(self.exitcmd.prompt)
 
-        with unittest.mock.patch('builtins.input', side_effect=EOFError) as mock_input:
+        with unittest.mock.patch(
+            'builtins.input', side_effect=EOFError
+        ) as mock_input:
             self.exitcmd.cmdloop()
         mock_input.assert_called_once_with(self.exitcmd.prompt)
 
-    def test_onecmd_emptycmd(self):
+    def test_onecmd_default(self):
         self.cmd.onecmd('!')
         self.assertEqual(self.stdout.getvalue(), '*** Unknown syntax: !\n')
 
@@ -405,8 +414,12 @@ class CmdTestCase(unittest.TestCase):
             ("he", 0, 2, "he", 1, None),
             ("! text", 2, 6, "text", 0, None)
         )
-        with unittest.mock.patch.dict(sys.modules, {'readline': mock_readline}):
-            for line_buffer, begidx, endidx, text, state, expected in test_data:
+        with unittest.mock.patch.dict(
+            sys.modules, {'readline': mock_readline}
+        ):
+            for (
+                line_buffer, begidx, endidx, text, state, expected
+            ) in test_data:
                 with self.subTest(line_buffer=line_buffer, state=state):
                     mock_readline.get_line_buffer.return_value = line_buffer
                     mock_readline.get_begidx.return_value = begidx
@@ -418,7 +431,8 @@ class CmdTestCase(unittest.TestCase):
         self.exitcmd.do_help("exit")
         self.assertEqual(
             self.stdout.getvalue(),
-            'List available commands with "help" or detailed help with "help cmd".\n'
+            'List available commands with "help" '
+            'or detailed help with "help cmd".\n'
             '*** No help on exit\n'
         )
 
