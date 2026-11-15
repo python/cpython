@@ -1,3 +1,5 @@
+:orphan:
+
 :mod:`!this` --- The Zen of Python
 ==================================
 
@@ -24,3 +26,11 @@
     | Namespaces are one honking great idea -\- let's do more of those!
 
 `In Memoriam: Tim Peters 1952-2026 <https://discuss.python.org/t/in-memoriam-tim-peters-1952-2026/110028>`__
+
+
+Usage
+-----
+
+.. code-block:: shell-session
+
+   $ python3 -m this
