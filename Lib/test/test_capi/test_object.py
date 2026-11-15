@@ -406,9 +406,9 @@ class CAPITest(unittest.TestCase):
     @threading_helper.requires_working_threading()
     @support.nomemtest
     def test_object_clear_managed_dict_ft_memory_error(self):
-        # PyObject_ClearManagedDict, gh-152254
+        # gh-152254: Test PyObject_ClearManagedDict() error.
         # The setup must contain: object owned by another thread
-        # and the attempt to clear the managed dict with no memory left
+        # and the attempt to clear the managed dict with no memory left.
         clear_managed_dict = _testcapi.pyobject_clear_managed_dict
         ManagedDictType = _testcapi.ManagedDictType
 
@@ -419,7 +419,7 @@ class CAPITest(unittest.TestCase):
         def worker():
             # This needs to be in a separate thread for the crash to happen:
             with support.catch_unraisable_exception() as ex:
-                # `clear_managed_dict` used to crash:
+                # `PyObject_ClearManagedDict()` used to crash:
                 _testcapi.call_with_nomemory(0, 1, clear_managed_dict, obj)
                 self.assertIsNotNone(ex.unraisable)
                 self.assertIs(ex.unraisable.exc_type, MemoryError)
