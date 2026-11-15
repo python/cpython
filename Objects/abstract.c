@@ -1343,7 +1343,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
             if (f != NULL)
                 return sequence_repeat(f, v, w);
         }
-        else if (mw != NULL) {
+        if (mw != NULL) {
             /* Note that the right hand operand should not be
              * mutated in this case so sq_inplace_repeat is not
              * used. */

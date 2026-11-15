@@ -1129,6 +1129,12 @@ class ElementTreeTest(unittest.TestCase):
         xml = "<?xml version='1.0' encoding='ISO-8859-1'?><xml>%s</xml>" % body
         self.assertEqual(ET.parse(io.StringIO(xml)).getroot().text, body)
 
+    def test_parse_error_msg_is_string(self):
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML("<")
+        self.assertIsInstance(cm.exception.msg, str)
+        self.assertEqual(cm.exception.msg, "unclosed token: line 1, column 0")
+
     def test_methods(self):
         # Test serialization methods.
 

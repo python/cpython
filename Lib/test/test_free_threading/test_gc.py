@@ -119,6 +119,19 @@ class TestGC(TestCase):
             b.wait()
             time.sleep(0.2)
 
+    def test_running_method_not_collected(self):
+        class C:
+            def m(self):
+                wr = weakref.ref(C.__dict__["m"])
+                del C.m
+                gc.collect()
+                return wr() is not None
+
+            def run(self):
+                return self.m()
+
+        self.assertTrue(C().run())
+
     def test_debug_collectable_python_stderr(self):
         # The DEBUG_COLLECTABLE output is written with sys.stderr.write(),
         # which may run Python code or wait for another thread (e.g. for the

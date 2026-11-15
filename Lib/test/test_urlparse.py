@@ -917,8 +917,9 @@ class UrlParseTestCase(unittest.TestCase):
 
         # Verify an illegal port raises ValueError
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
+        p = urllib.parse.urlsplit(url)
         with self.assertRaisesRegex(ValueError, "out of range"):
-            urllib.parse.urlsplit(url)
+            p.port
 
     def test_urlsplit_remove_unsafe_bytes(self):
         # Remove ASCII tabs and newlines from input
@@ -1028,8 +1029,10 @@ class UrlParseTestCase(unittest.TestCase):
                 self.skipTest('non-ASCII bytes')
             netloc = str_encode(netloc)
             url = str_encode(url)
+        p = parse(url)
+        self.assertEqual(p.netloc, netloc)
         with self.assertRaises(ValueError):
-            parse(url)
+            p.port
 
     @support.subTests('bytes', (False, True))
     @support.subTests('parse', (urllib.parse.urlsplit, urllib.parse.urlparse))
@@ -1667,11 +1670,13 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_port_casting_failure_message(self):
         message = "Port could not be cast to integer value as 'oracle'"
+        p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
         with self.assertRaisesRegex(ValueError, message):
-            urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
+            p1.port
 
+        p2 = urllib.parse.urlsplit('http://Server=sde; Service=sde:oracle')
         with self.assertRaisesRegex(ValueError, message):
-            urllib.parse.urlsplit('http://Server=sde; Service=sde:oracle')
+            p2.port
 
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
