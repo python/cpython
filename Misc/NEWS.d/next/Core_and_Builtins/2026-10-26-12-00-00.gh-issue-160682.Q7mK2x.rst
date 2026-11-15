@@ -1,0 +1,2 @@
+Fix a bug in the :term:`free-threaded build` where garbage collection could
+prematurely collect the function object of a running method.
