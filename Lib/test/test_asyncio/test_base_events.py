@@ -1412,6 +1412,33 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             with self.assertRaisesRegex(TimeoutError, "create_connection failed"):
                 self.loop.run_until_complete(coro)
 
+    def test_create_connection_happy_eyeballs_cancelled_closes_winner(self):
+        # A socket that wins the race must not leak if create_connection()
+        # is cancelled before the race returns it.
+        sock = mock.Mock()
+        connected = False
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('192.0.2.1', 80))]
+
+        async def connect_sock(exceptions, addr_info, local_addr_infos=None):
+            nonlocal connected
+            connected = True
+            return sock
+
+        self.loop.getaddrinfo = getaddrinfo
+        self.loop._connect_sock = connect_sock
+
+        task = self.loop.create_task(self.loop.create_connection(
+            MyProto, 'example.com', 80, happy_eyeballs_delay=0.1))
+        while not connected:
+            test_utils.run_once(self.loop)
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(task)
+
+        sock.close.assert_called_once_with()
+
     def test_create_connection_host_port_sock(self):
         coro = self.loop.create_connection(
             MyProto, 'example.com', 80, sock=object())

@@ -1,0 +1,3 @@
+Fix a socket leak in :meth:`asyncio.loop.create_connection` with
+*happy_eyeballs_delay*: if the call is cancelled after an attempt connects but
+before the race returns, the connected socket is now closed.

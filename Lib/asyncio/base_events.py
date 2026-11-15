@@ -1157,18 +1157,33 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError:
                         continue
             else:  # using happy eyeballs
-                sock = (await staggered.staggered_race(
-                    (
-                        # can't use functools.partial as it keeps a reference
-                        # to exceptions
-                        lambda addrinfo=addrinfo: self._connect_sock(
-                            exceptions, addrinfo, laddr_infos
-                        )
-                        for addrinfo in infos
-                    ),
-                    happy_eyeballs_delay,
-                    loop=self,
-                ))[0]  # can't use sock, _, _ as it keeks a reference to exceptions
+                # Sockets connected by the attempts, so that the winner is
+                # closed if the race is cancelled before it returns.
+                connected = []
+
+                async def connect_sock(addrinfo):
+                    sock = await self._connect_sock(
+                        exceptions, addrinfo, laddr_infos)
+                    connected.append(sock)
+                    return sock
+
+                try:
+                    sock = (await staggered.staggered_race(
+                        (
+                            # can't use functools.partial as it keeps a
+                            # reference to exceptions
+                            lambda addrinfo=addrinfo: connect_sock(addrinfo)
+                            for addrinfo in infos
+                        ),
+                        happy_eyeballs_delay,
+                        loop=self,
+                    ))[0]  # can't use sock, _, _ as it keeks a reference to exceptions
+                except BaseException:
+                    for connected_sock in connected:
+                        connected_sock.close()
+                    raise
+                finally:
+                    connected = None
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
