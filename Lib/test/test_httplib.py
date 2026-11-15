@@ -1126,6 +1126,36 @@ class BasicTest(TestCase):
         cookies = r.getheader("Set-Cookie")
         self.assertEqual(cookies, hdr)
 
+    def test_bare_cr_in_header_value(self):
+        # gh-114782: a bare CR is not a line terminator, so it must not
+        # split one field line into two.
+        for bare_cr in ('\r', '\r\r', '\r \r'):
+            with self.subTest(bare_cr=bare_cr):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\n'
+                    f'Visible: a{bare_cr}Smuggled: b\r\n'
+                    'Content-Length: 0\r\n'
+                    '\r\n'
+                )
+                resp = client.HTTPResponse(sock)
+                resp.begin()
+                self.assertIsNone(resp.getheader('Smuggled'))
+                self.assertEqual(
+                    resp.getheader('Visible'),
+                    'a' + bare_cr.replace('\r', ' ') + 'Smuggled: b',
+                )
+                self.assertEqual(resp.getheader('Content-Length'), '0')
+
+    def test_bare_cr_in_parse_headers(self):
+        headers = client.parse_headers(io.BytesIO(
+            b'Visible: a\rSmuggled: b\r\n'
+            b'Folded: c\r\n'
+            b' d\r\n'
+            b'\r\n'
+        ))
+        self.assertEqual(headers.keys(), ['Visible', 'Folded'])
+        self.assertEqual(headers['Visible'], 'a Smuggled: b')
+
     def test_read_head(self):
         # Test that the library doesn't attempt to read any data
         # from a HEAD request.  (Tickles SF bug #622042.)

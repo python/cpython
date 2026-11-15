@@ -162,6 +162,10 @@ _MIN_READ_BUF_SIZE = 1 << 20
 _is_legal_header_name = re.compile(rb'[^:\s][^:\r\n]*').fullmatch
 _is_illegal_header_value = re.compile(rb'\n(?![ \t])|\r(?![ \t\n])').search
 
+# A CR that is not part of a CRLF line terminator.  RFC 9112 section 2.2 tells
+# a recipient to either reject it or replace it with SP before processing.
+_bare_cr_re = re.compile(rb'\r(?!\n)')
+
 # These characters are not allowed within HTTP URL paths.
 #  See https://tools.ietf.org/html/rfc3986#section-3.3 and the
 #  https://tools.ietf.org/html/rfc3986#appendix-A pchar definition.
@@ -252,6 +256,10 @@ def _read_headers(fp, max_headers):
             raise LineTooLong("header line")
         if line in (b'\r\n', b'\n', b''):
             break
+        if b'\r' in line:
+            # The email parser treats a bare CR as a line terminator, which
+            # would split one field line into several (gh-114782).
+            line = _bare_cr_re.sub(b' ', line)
         headers.append(line)
         if len(headers) > max_headers:
             raise HTTPException(f"got more than {max_headers} headers")
