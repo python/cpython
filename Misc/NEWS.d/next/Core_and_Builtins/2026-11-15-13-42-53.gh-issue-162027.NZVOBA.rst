@@ -1,0 +1,1 @@
+Fix wrong branch monitoring events and assertions for async comprehensions and multiple consecutive ``async for`` loops.

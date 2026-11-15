@@ -444,7 +444,10 @@ codegen_addop_j(instr_sequence *seq, location loc,
     RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), true))
 
 #define ADD_YIELD_FROM(C, LOC, await) \
-    RETURN_IF_ERROR(codegen_add_yield_from((C), (LOC), (await)))
+    RETURN_IF_ERROR(codegen_add_yield_from((C), (LOC), (await), NULL))
+
+#define ADD_YIELD_FROM_WITH_EXIT(C, LOC, await, P_EXIT) \
+    RETURN_IF_ERROR(codegen_add_yield_from((C), (LOC), (await), (P_EXIT)))
 
 #define POP_EXCEPT_AND_RERAISE(C, LOC) \
     RETURN_IF_ERROR(codegen_pop_except_and_reraise((C), (LOC)))
@@ -497,11 +500,14 @@ codegen_call_exit_with_nones(compiler *c, location loc)
 }
 
 static int
-codegen_add_yield_from(compiler *c, location loc, int await)
+codegen_add_yield_from(compiler *c, location loc, int await, jump_target_label *p_exit)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, fail);
     NEW_JUMP_TARGET_LABEL(c, exit);
+    if (p_exit != NULL) {
+        *p_exit = exit;
+    }
 
     USE_LABEL(c, send);
     ADDOP_JUMP(c, loc, SEND, exit);
@@ -2212,7 +2218,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     location loc = LOC(s);
 
     NEW_JUMP_TARGET_LABEL(c, start);
-    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, end_send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
@@ -2227,8 +2233,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, loc, GET_ANEXT);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    USE_LABEL(c, send);
-    ADD_YIELD_FROM(c, loc, 1);
+    ADD_YIELD_FROM_WITH_EXIT(c, loc, 1, &end_send);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
     ADDOP(c, loc, NOT_TAKEN);
 
@@ -2246,7 +2251,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
     loc = LOC(s->v.AsyncFor.iter);
-    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, end_send);
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
@@ -4814,7 +4819,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       IterStackPosition iter_pos, bool avoid_creation)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
-    NEW_JUMP_TARGET_LABEL(c, send);
+    NEW_JUMP_TARGET_LABEL(c, end_send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
@@ -4845,9 +4850,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     ADDOP(c, loc, GET_ANEXT);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    USE_LABEL(c, send);
-    ADD_YIELD_FROM(c, loc, 1);
+    ADD_YIELD_FROM_WITH_EXIT(c, loc, 1, &end_send);
     ADDOP(c, loc, POP_BLOCK);
+    ADDOP(c, loc, NOT_TAKEN);
     VISIT(c, expr, gen->target);
 
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
@@ -4886,7 +4891,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     USE_LABEL(c, except);
 
-    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, end_send);
 
     return SUCCESS;
 }

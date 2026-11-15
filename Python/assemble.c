@@ -719,9 +719,6 @@ error:
 }
 
 
-// The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
-#define END_SEND_OFFSET 6
-
 static int
 resolve_jump_offsets(instr_sequence *instrs)
 {
@@ -761,9 +758,9 @@ resolve_jump_offsets(instr_sequence *instrs)
                 instruction *target = &instrs->s_instrs[instr->i_target];
                 instr->i_oparg = target->i_offset;
                 if (instr->i_opcode == END_ASYNC_FOR) {
-                    // sys.monitoring needs to be able to find the matching END_SEND
-                    // but the target is the SEND, so we adjust it here.
-                    instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
+                    // sys.monitoring needs to be able to find the matching END_SEND.
+                    assert(instr->i_oparg < offset);
+                    instr->i_oparg = offset - instr->i_oparg;
                 }
                 else if (instr->i_oparg < offset) {
                     assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));

@@ -2089,6 +2089,56 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'foo', 1, 3),
             ('branch left', 'func', 12, 12)])
 
+    def test_async_comprehension(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                return [x async for x in gen()]
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 1),
+            ('branch left', 'func', 10, 10)])
+
+    def test_multiple_async_for(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                async for y in gen():
+                    2
+                pass # line 3
+                async for y in gen():
+                    4
+                pass # line 5
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 3),
+            ('branch left', 'foo', 4, 4),
+            ('branch left', 'foo', 4, 4),
+            ('branch right', 'foo', 4, 6),
+            ('branch left', 'func', 15, 15)])
+
 
     def test_match(self):
 
@@ -2233,6 +2283,41 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
             async for y in gen():
                 2
             pass # line 3
+
+        def func():
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_branches(func, foo)
+
+    def test_async_comprehension(self):
+
+        async def gen():
+            yield 2
+            yield 3
+
+        async def foo():
+            return [x async for x in gen()]
+
+        def func():
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_branches(func, foo)
+
+    def test_multiple_async_for(self):
+
+        async def gen():
+            yield 2
+            yield 3
+
+        async def foo():
+            async for x in gen(): pass
+            async for x in gen(): pass
 
         def func():
             try:
