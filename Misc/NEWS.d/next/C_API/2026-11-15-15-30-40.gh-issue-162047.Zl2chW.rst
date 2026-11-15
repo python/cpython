@@ -1,0 +1,9 @@
+Add :pep:`814` :class:`frozendict` functions to the limited C API:
+
+* :c:func:`PyAnyDict_CheckExact`
+* :c:func:`PyAnyDict_Check`
+* :c:func:`PyFrozenDict_CheckExact`
+* :c:func:`PyFrozenDict_Check`
+* :c:func:`PyFrozenDict_New`
+
+Patch by Victor Stinner.

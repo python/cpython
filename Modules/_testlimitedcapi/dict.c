@@ -1,3 +1,6 @@
+// Need limited C API version 3.16 for PyFrozenDict_New()
+#define Py_LIMITED_API 0x03100000
+
 #include "parts.h"
 #include "util.h"
 
@@ -255,6 +258,43 @@ dict_mergefromseq2(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+frozendict_check(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyFrozenDict_Check(obj));
+}
+
+static PyObject *
+frozendict_checkexact(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyFrozenDict_CheckExact(obj));
+}
+
+static PyObject *
+anydict_check(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyAnyDict_Check(obj));
+}
+
+static PyObject *
+anydict_checkexact(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyAnyDict_CheckExact(obj));
+}
+
+
+static PyObject *
+frozendict_new(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyFrozenDict_New(obj);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_check", dict_check, METH_O},
     {"dict_checkexact", dict_checkexact, METH_O},
@@ -278,6 +318,11 @@ static PyMethodDef test_methods[] = {
     {"dict_merge", dict_merge, METH_VARARGS},
     {"dict_update", dict_update, METH_VARARGS},
     {"dict_mergefromseq2", dict_mergefromseq2, METH_VARARGS},
+    {"frozendict_check", frozendict_check, METH_O},
+    {"frozendict_checkexact", frozendict_checkexact, METH_O},
+    {"anydict_check", anydict_check, METH_O},
+    {"anydict_checkexact", anydict_checkexact, METH_O},
+    {"frozendict_new", frozendict_new, METH_O},
     {NULL},
 };
 

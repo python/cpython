@@ -107,6 +107,22 @@ PyAPI_DATA(PyTypeObject) PyDictRevIterKey_Type;
 PyAPI_DATA(PyTypeObject) PyDictRevIterItem_Type;
 PyAPI_DATA(PyTypeObject) PyDictRevIterValue_Type;
 
+/* Frozendict */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
+#define PyFrozenDict_Check(op) PyObject_TypeCheck((op), &PyFrozenDict_Type)
+#define PyFrozenDict_CheckExact(op) Py_IS_TYPE((op), &PyFrozenDict_Type)
+
+#define PyAnyDict_CheckExact(ob) \
+    (PyDict_CheckExact(ob) || PyFrozenDict_CheckExact(ob))
+#define PyAnyDict_Check(ob) \
+    (PyDict_Check(ob) || PyFrozenDict_Check(ob))
+
+// Create a frozendict. Create an empty dictionary if iterable is NULL.
+PyAPI_FUNC(PyObject*) PyFrozenDict_New(PyObject *iterable);
+#endif  // Py_LIMITED_API
+
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_DICTOBJECT_H

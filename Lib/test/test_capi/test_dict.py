@@ -642,7 +642,7 @@ class CAPITest(unittest.TestCase):
 
     def test_frozendict_check(self):
         # Test PyFrozenDict_Check()
-        check = _testcapi.frozendict_check
+        check = _testlimitedcapi.frozendict_check
         for dict_type in FROZENDICT_TYPES:
             self.assertTrue(check(dict_type(x=1)))
         for dict_type in NOT_FROZENDICT_TYPES + OTHER_TYPES:
@@ -651,7 +651,7 @@ class CAPITest(unittest.TestCase):
 
     def test_frozendict_checkexact(self):
         # Test PyFrozenDict_CheckExact()
-        check = _testcapi.frozendict_checkexact
+        check = _testlimitedcapi.frozendict_checkexact
         for dict_type in FROZENDICT_TYPES:
             self.assertEqual(check(dict_type(x=1)), dict_type == frozendict)
         for dict_type in NOT_FROZENDICT_TYPES + OTHER_TYPES:
@@ -660,7 +660,7 @@ class CAPITest(unittest.TestCase):
 
     def test_anydict_check(self):
         # Test PyAnyDict_Check()
-        check = _testcapi.anydict_check
+        check = _testlimitedcapi.anydict_check
         for dict_type in ANYDICT_TYPES:
             self.assertTrue(check(dict_type({1: 2})))
         for test_type in NOT_ANYDICT_TYPES + OTHER_TYPES:
@@ -669,7 +669,7 @@ class CAPITest(unittest.TestCase):
 
     def test_anydict_checkexact(self):
         # Test PyAnyDict_CheckExact()
-        check = _testcapi.anydict_checkexact
+        check = _testlimitedcapi.anydict_checkexact
         for dict_type in ANYDICT_TYPES:
             self.assertEqual(check(dict_type(x=1)),
                              dict_type in (dict, frozendict))
@@ -679,7 +679,7 @@ class CAPITest(unittest.TestCase):
 
     def test_frozendict_new(self):
         # Test PyFrozenDict_New()
-        frozendict_new = _testcapi.frozendict_new
+        frozendict_new = _testlimitedcapi.frozendict_new
 
         for dict_type in ANYDICT_TYPES:
             dct = frozendict_new(dict_type({'x': 1}))

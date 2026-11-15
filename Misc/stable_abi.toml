@@ -2941,3 +2941,13 @@
     added = '3.16'
 [function.PyUnicodeWriter_DecodeUTF8Stateful]
     added = '3.16'
+[macro.PyFrozenDict_Check]
+    added = '3.16'
+[macro.PyFrozenDict_CheckExact]
+    added = '3.16'
+[macro.PyAnyDict_CheckExact]
+    added = '3.16'
+[macro.PyAnyDict_Check]
+    added = '3.16'
+[function.PyFrozenDict_New]
+    added = '3.16'
