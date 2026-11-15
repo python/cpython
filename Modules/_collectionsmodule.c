@@ -2106,12 +2106,14 @@ static PyType_Spec dequeiter_spec = {
  * functions below instead copy up to DEQUE_EXTEND_CHUNK items per critical
  * section on (list, deque).
  *
- * Copying in bounded chunks, rather than all at once, keeps the time the
- * deque's lock is held independent of the deque's length, so threads waiting
- * for it (for example a writer while other threads keep copying the deque)
- * are not starved.  Between chunks the copy behaves exactly like iteration:
- * the deque's state is checked again and a mutation raises RuntimeError, as
- * next() would.  No user code runs during either form of iteration.
+ * Bounded chunks amortize the per-element locking cost while releasing the
+ * critical section between groups of items.  This bounds element transfer,
+ * not total lock duration: initial list capacity reservation can still do
+ * work proportional to the remaining size while holding both locks.
+ * Between chunks, iterator-invalidating changes to deque->state raise
+ * RuntimeError using the same check as next().  State-preserving mutations
+ * are not rejected, and no atomic snapshot or starvation guarantee is made.
+ * The element-copy loop does not call Python iteration methods.
  */
 #define DEQUE_EXTEND_CHUNK BLOCKLEN
 

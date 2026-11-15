@@ -1,3 +1,4 @@
 Speed up :func:`list`, :meth:`list.extend`, :meth:`str.join` and unpacking of
-a :class:`collections.deque` by copying its items under a single lock in the
-:term:`free-threaded build`.
+a :class:`collections.deque` by copying up to 64 items per critical section
+in the :term:`free-threaded build`. Release the locks between chunks and
+check for iterator-invalidating mutations before each chunk.
