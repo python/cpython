@@ -3590,25 +3590,33 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
-    def test_communicate_timeout_stdin_spuriously_writable(self):
-        # gh-162016: poll() can report a pipe as writable when it has no
-        # free space.  communicate() must not then block in write() past
-        # its timeout.
+    def _spuriously_writable_selector(self):
+        # A selector that reports stdin as writable whenever it is
+        # registered.  poll() on macOS and FreeBSD can do this for a full
+        # pipe when many pipes are in use system-wide (gh-162016).
         class AlwaysWritableSelector(subprocess._PopenSelector):
+            spurious_events = 0
+
             def select(self, timeout=None):
-                ready = super().select(0.01)
-                fds = {key.fd for key, _ in ready}
+                ready = super().select(0)
+                writable = {key.fd for key, events in ready
+                            if events & selectors.EVENT_WRITE}
                 for key in self.get_map().values():
                     if (key.events & selectors.EVENT_WRITE
-                            and key.fd not in fds):
+                            and key.fd not in writable):
                         ready.append((key, selectors.EVENT_WRITE))
-                return ready
+                        type(self).spurious_events += 1
+                return ready or super().select(timeout)
 
-        # The child does not read stdin, so the pipe fills up.  A blocking
-        # write() would not return until the child exits.
+        return AlwaysWritableSelector
+
+    def test_communicate_timeout_stdin_spuriously_writable(self):
+        # The child never reads stdin, so the pipe fills up.  communicate()
+        # must neither block in write() past its timeout nor spin on a pipe
+        # that keeps being reported as writable.
+        selector = self._spuriously_writable_selector()
         sleep = support.SHORT_TIMEOUT
-        with mock.patch.object(subprocess, '_PopenSelector',
-                               AlwaysWritableSelector), \
+        with mock.patch.object(subprocess, '_PopenSelector', selector), \
                 subprocess.Popen([sys.executable, '-c',
                                   f'import time; time.sleep({sleep})'],
                                  stdin=subprocess.PIPE,
@@ -3617,9 +3625,36 @@ class POSIXProcessTestCase(BaseTestCase):
                 start = time.monotonic()
                 with self.assertRaises(subprocess.TimeoutExpired):
                     proc.communicate(b'x' * support.PIPE_MAX_SIZE,
-                                     timeout=0.1)
+                                     timeout=0.5)
                 self.assertLess(time.monotonic() - start, sleep)
+                # communicate() must wait between attempts to write to a
+                # full pipe.  Retrying in a busy loop would produce many
+                # thousands of these events within the timeout.
+                self.assertLess(selector.spurious_events, 100)
                 self.assertTrue(os.get_blocking(proc.stdin.fileno()))
+            finally:
+                proc.kill()
+
+    def test_communicate_stdin_spuriously_writable_last_pipe(self):
+        # All input must still arrive when stdin is full, is reported as
+        # writable, and is the only pipe communicate() has left to service.
+        selector = self._spuriously_writable_selector()
+        data = bytes(range(256)) * (support.PIPE_MAX_SIZE // 256)
+        code = textwrap.dedent(f"""
+            import os, sys, time
+            os.close(1)
+            time.sleep(0.1)  # Let the parent fill the stdin pipe.
+            data = bytes(range(256)) * {len(data) // 256}
+            sys.exit(sys.stdin.buffer.read() != data)
+        """)
+        with mock.patch.object(subprocess, '_PopenSelector', selector), \
+                subprocess.Popen([sys.executable, '-c', code],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE) as proc:
+            try:
+                proc.communicate(data, timeout=support.SHORT_TIMEOUT)
+                self.assertEqual(proc.returncode, 0)
+                self.assertGreater(selector.spurious_events, 0)
             finally:
                 proc.kill()
 
