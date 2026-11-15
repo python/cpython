@@ -678,6 +678,30 @@ class CallStackTestBase:
             ]
         ])
 
+    async def test_stack_as_completed_early_exit(self):
+        # gh-161766: a finished consumer must not remain in the await graph.
+        async def slow():
+            await asyncio.sleep(0.01)
+
+        async def fails():
+            await asyncio.sleep(0)
+            raise OSError("boom")
+
+        async def fetch_first(tasks):
+            for f in asyncio.as_completed(tasks):
+                try:
+                    return await f
+                except OSError:
+                    break
+
+        good = asyncio.create_task(slow())
+        bad = asyncio.create_task(fails())
+        waiter = asyncio.create_task(fetch_first([good, bad]))
+        await waiter
+        self.assertNotIn(waiter, good._asyncio_awaited_by)
+        self.assertNotIn("fetch_first", asyncio.format_call_graph(good))
+        await good
+
     async def test_stack_as_completed_timeout(self):
         # gh-156523: the awaiting task must be dropped when as_completed() times out
         stack_for_inner = None

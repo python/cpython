@@ -592,6 +592,8 @@ class _AsCompletedIterator:
         for f in todo:
             f.add_done_callback(self._handle_completion)
             futures.future_add_to_awaited_by(f, self._cur_task)
+        if todo and self._cur_task is not None:
+            self._cur_task.add_done_callback(self._handle_task_completion)
         if todo and timeout is not None:
             self._timeout_handle = (
                 loop.call_later(timeout, self._handle_timeout)
@@ -634,6 +636,11 @@ class _AsCompletedIterator:
         self._done.put_nowait(f)
         if not self._todo and self._timeout_handle is not None:
             self._timeout_handle.cancel()
+
+    def _handle_task_completion(self, task):
+        for f in self._todo:
+            futures.future_discard_from_awaited_by(f, task)
+        self._cur_task = None
 
     async def _wait_for_one(self, resolve=False):
         # Wait for the next future to be done and return it unless resolve is
