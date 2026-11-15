@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
-#include "pycore_long.h"          // _PyLong_FromUnsignedChar()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_unicodeobject.h" // _Py_MAX_UNICODE
@@ -3306,8 +3305,7 @@ _Py_IsValidFD(int fd)
 
 
 static PyObject *
-decode_strerror(int code)
-/*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
+_Py_strerror_uncached(int code)
 {
     const char *errors = "surrogateescape";
 
@@ -3394,49 +3392,59 @@ decode_strerror(int code)
 }
 
 
-// Return a strong reference to the tuple (codeset, LC_MESSAGES name,
+// Return a strong reference to the tuple (codeset, LC_MESSAGES, LANGUAGE,
 // {code: message}) of the current locale, replacing it if the locale changed.
 static PyObject *
 strerror_ensure_cache(struct _Py_exc_state *state)
 {
-    // C code can change the locale without locale.setlocale(). Messages depend
-    // on LC_MESSAGES (language) and the LC_CTYPE codeset (decoding). Windows
-    // has neither, and its messages are ASCII.
-#if defined(HAVE_LANGINFO_H) && defined(CODESET)
-    const char *codeset = nl_langinfo(CODESET);
-    const char *messages = setlocale(LC_MESSAGES, NULL);
-#else
+    // C code can change the locale without calling Python locale.setlocale().
+    // Messages depend on LC_MESSAGES (language), the LC_CTYPE codeset
+    // (decoding) and, for glibc's gettext, the LANGUAGE priority list unless
+    // LC_MESSAGES is "C". Windows has none, and _Py_FORCE_UTF8_LOCALE ignores
+    // the codeset, see _Py_GetLocaleEncoding().
+#if defined(_Py_FORCE_UTF8_LOCALE) || defined(MS_WINDOWS)
     const char *codeset = "";
     const char *messages = "";
+    const char *language = "";
+#else
+    const char *codeset = nl_langinfo(CODESET);
+    const char *messages = setlocale(LC_MESSAGES, NULL);
+    const char *language = getenv("LANGUAGE");
+    if (codeset == NULL) {
+        codeset = "";
+    }
+    if (messages == NULL) {
+        messages = "";
+    }
+    if (language == NULL) {
+        language = "";
+    }
 #endif
     // Py_SETREF() isn't atomic.
     PyObject *cache;
     Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->strerror_lock);
-    cache = state->strerror_cache;
-    Py_IncRef(cache);
+    cache = Py_NewRef(state->strerror_cache);
     Py_END_CRITICAL_SECTION();
     if (cache != Py_None
-        && PyUnicode_CompareWithASCIIString(
-               PyTuple_GET_ITEM(cache, 0), codeset) == 0
-        && PyUnicode_CompareWithASCIIString(
-               PyTuple_GET_ITEM(cache, 1), messages) == 0)
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 0)), codeset) == 0
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 1)), messages) == 0
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 2)), language) == 0)
     {
         return cache;
     }
     Py_DECREF(cache);
-    cache = PyTuple_New(3);
+    cache = PyTuple_New(4);
     if (cache == NULL) {
         return NULL;
     }
-    // Latin-1, which is how the comparison above reads a non-ASCII name.
-    PyTuple_SET_ITEM(cache, 0,
-                     PyUnicode_DecodeLatin1(codeset, strlen(codeset), NULL));
-    PyTuple_SET_ITEM(cache, 1,
-                     PyUnicode_DecodeLatin1(messages, strlen(messages), NULL));
-    PyTuple_SET_ITEM(cache, 2, PyDict_New());
+    PyTuple_SET_ITEM(cache, 0, PyBytes_FromString(codeset));
+    PyTuple_SET_ITEM(cache, 1, PyBytes_FromString(messages));
+    PyTuple_SET_ITEM(cache, 2, PyBytes_FromString(language));
+    PyTuple_SET_ITEM(cache, 3, PyDict_New());
     if (PyTuple_GET_ITEM(cache, 0) == NULL
         || PyTuple_GET_ITEM(cache, 1) == NULL
-        || PyTuple_GET_ITEM(cache, 2) == NULL)
+        || PyTuple_GET_ITEM(cache, 2) == NULL
+        || PyTuple_GET_ITEM(cache, 3) == NULL)
     {
         Py_DECREF(cache);
         return NULL;
@@ -3447,33 +3455,41 @@ strerror_ensure_cache(struct _Py_exc_state *state)
     return cache;
 }
 
+// os.strerror() takes any int, lets not cache INT_MAX.
+#define STRERROR_CACHE_MAX 5000
+
 // Call strerror_r(code) if available, or use strerror() otherwise. Decode the
-// result from the locale encoding using surrogateescape error handler.
-// Messages of codes 0-255 are cached per locale: decoding is a large part of
-// the cost of raising OSError.
+// result from the locale encoding using surrogateescape error handler. Cache
+// the messages per locale: decoding is a large part of the cost of raising
+// OSError.
 //
 // On success, return a Unicode string. On error, set an exception and return
 // NULL.
 PyObject*
 _Py_strerror(int code)
 {
-    if (code < 0 || code >= 256) {
-        return decode_strerror(code);
-    }
     struct _Py_exc_state *state = &_PyInterpreterState_GET()->exc_state;
     PyObject *cache = strerror_ensure_cache(state);
     if (cache == NULL) {
         return NULL;
     }
-    PyObject *dict = PyTuple_GET_ITEM(cache, 2);
-    PyObject *key = _PyLong_FromUnsignedChar((unsigned char)code);
+    PyObject *dict = PyTuple_GET_ITEM(cache, 3);
+    PyObject *key = PyLong_FromLong(code);
+    if (key == NULL) {
+        Py_DECREF(cache);
+        return NULL;
+    }
     PyObject *message;
     if (PyDict_GetItemRef(dict, key, &message) == 0) {
-        message = decode_strerror(code);
-        if (message != NULL && PyDict_SetItem(dict, key, message) < 0) {
+        message = _Py_strerror_uncached(code);
+        if (message != NULL
+            && PyDict_GET_SIZE(dict) < STRERROR_CACHE_MAX
+            && PyDict_SetItem(dict, key, message) < 0)
+        {
             Py_CLEAR(message);
         }
     }
+    Py_DECREF(key);
     Py_DECREF(cache);
     return message;
 }

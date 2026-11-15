@@ -22,8 +22,9 @@ extern void _PyExc_Fini(PyInterpreterState *);
 struct _Py_exc_state {
     // The dict mapping from errno codes to OSError subclasses
     PyObject *errnomap;
-    // Tuple of the locale's identity and its _Py_strerror() messages, or None
-    // if not built yet, see strerror_ensure_cache()
+    // _Py_strerror() messages of the current locale as the tuple
+    // (codeset, LC_MESSAGES, LANGUAGE, {code: message}), or None if not
+    // built yet, see strerror_ensure_cache()
     PyObject *strerror_cache;
     PyMutex strerror_lock;
     PyBaseExceptionObject *memerrors_freelist;
