@@ -2474,7 +2474,7 @@ class Popen:
                         close_on_eof=True)
                 finally:
                     # Leave stdin as the user expects it after a timeout.
-                    if stdin_to_write and not stdin_to_write.closed:
+                    if stdin_to_write is not None and not stdin_to_write.closed:
                         os.set_blocking(stdin_to_write.fileno(), True)
                 # Persist the returned offset on self so a subsequent
                 # communicate() after a TimeoutExpired resumes mid-input

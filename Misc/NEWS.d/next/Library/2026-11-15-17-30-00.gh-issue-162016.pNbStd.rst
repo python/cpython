@@ -1,4 +1,8 @@
-Fix :meth:`subprocess.Popen.communicate` on POSIX blocking past its
-*timeout* when :func:`select.poll` reports the child's stdin pipe as
-writable while the pipe is full, as seen on some macOS versions. Stdin is
-now non-blocking while :meth:`!communicate` writes to it.
+Work around a macOS and FreeBSD kernel bug that could make
+:meth:`subprocess.Popen.communicate` hang or block past its *timeout*.
+When the operating system is under system-wide pipe buffer memory pressure,
+:func:`select.poll` and :func:`select.select` can report the child's stdin
+pipe as writable when a write to it would block. This was most likely to be
+seen on loaded hosts with many pipes in use at once. :meth:`!communicate`
+now keeps stdin non-blocking while it writes to it and retries after a short
+delay when the pipe turns out to be full.
