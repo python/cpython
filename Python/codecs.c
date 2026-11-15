@@ -139,7 +139,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->codecs.initialized);
+    if (!interp->codecs.initialized) {
+        PyErr_SetString(PyExc_SystemError, "Codecs are not initialized");
+        return NULL;
+    }
 
     /* Convert the encoding to a normalized Python string: all
        ASCII letters are converted to lower case, spaces are
