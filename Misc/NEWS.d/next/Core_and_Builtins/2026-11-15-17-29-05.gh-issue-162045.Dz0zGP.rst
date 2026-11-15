@@ -1,0 +1,2 @@
+Improves :exc:`SyntaxError` message when using patterns like ``**_`` in
+mapping pattern matching.

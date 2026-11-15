@@ -374,7 +374,37 @@ SyntaxError: invalid syntax
 ...     case {**_}:
 ...        ...
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
+
+>>> match ...:
+...     case {'a': a, **_}:
+...        ...
+Traceback (most recent call last):
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
+
+>>> match ...:
+...     case {'a': a, **_,}:
+...        ...
+Traceback (most recent call last):
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
+
+>>> match ...:
+...   case {**_, "spam": "eggs"}:
+...     ...
+Traceback (most recent call last):
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
+
+>>> match ...:
+...   case {"a": a, **_, "spam": "eggs"}:
+...     ...
+Traceback (most recent call last):
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
+
+>>> match ...:
+...   case {"a": a, **_, "spam": "eggs",}:
+...     ...
+Traceback (most recent call last):
+SyntaxError: double star pattern can't be named '_' in the mapping pattern
 
 # Check incorrect "case" placement with specialized error messages
 
