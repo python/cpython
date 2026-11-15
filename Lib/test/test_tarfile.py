@@ -1732,6 +1732,56 @@ class PaxReadTest(LongnameTest, ReadTest, unittest.TestCase):
                 with self.assertRaisesRegex(tarfile.ReadError, r"method tar: ReadError\('invalid header'\)"):
                     tarfile.open(tmpname, encoding="iso8859-1")
 
+    def test_pax_header_too_many_records(self):
+        # gh-161955: A crafted PAX header with an excessive number of records
+        # must raise InvalidHeaderError to prevent memory exhaustion (DoS).
+        record = b"5 a=\n"
+        num_records = tarfile._MAX_PAX_RECORDS + 1
+        payload = record * num_records
+        tarinfo = tarfile.TarInfo("././@PaxHeader")
+        tarinfo.type = tarfile.XHDTYPE
+        tarinfo.size = len(payload)
+        buf = tarinfo.tobuf(format=tarfile.GNU_FORMAT)
+        buf += payload + b"\0" * (-len(payload) % tarfile.BLOCKSIZE)
+        buf += tarfile.TarInfo("test.txt").tobuf(format=tarfile.GNU_FORMAT)
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with self.assertRaisesRegex(tarfile.ReadError, "too many pax records"):
+            with tarfile.open(fileobj=io.BytesIO(buf), mode="r:") as tar:
+                tar.getmembers()
+
+    def test_pax_header_record_limit_boundary(self):
+        # Test boundary behavior using a small patched _MAX_PAX_RECORDS
+        record = b"5 a=\n"
+        with unittest.mock.patch.object(tarfile, "_MAX_PAX_RECORDS", 5):
+            # Exactly 5 records should succeed
+            payload = record * 5
+            tarinfo = tarfile.TarInfo("././@PaxHeader")
+            tarinfo.type = tarfile.XHDTYPE
+            tarinfo.size = len(payload)
+            buf = tarinfo.tobuf(format=tarfile.GNU_FORMAT)
+            buf += payload + b"\0" * (-len(payload) % tarfile.BLOCKSIZE)
+            normal = tarfile.TarInfo("test.txt")
+            buf += normal.tobuf(format=tarfile.GNU_FORMAT)
+            buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+            with tarfile.open(fileobj=io.BytesIO(buf), mode="r:") as tar:
+                members = tar.getmembers()
+                self.assertEqual(len(members), 1)
+                self.assertEqual(members[0].name, "test.txt")
+
+            # 6 records should exceed limit and raise ReadError
+            payload = record * 6
+            tarinfo.size = len(payload)
+            buf = tarinfo.tobuf(format=tarfile.GNU_FORMAT)
+            buf += payload + b"\0" * (-len(payload) % tarfile.BLOCKSIZE)
+            buf += normal.tobuf(format=tarfile.GNU_FORMAT)
+            buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+            with self.assertRaisesRegex(tarfile.ReadError, "too many pax records"):
+                with tarfile.open(fileobj=io.BytesIO(buf), mode="r:") as tar:
+                    tar.getmembers()
+
 
 class WriteTestBase(TarTest):
     # Put all write tests in here that are supposed to be tested

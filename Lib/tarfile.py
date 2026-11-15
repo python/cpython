@@ -265,6 +265,11 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
 # (gh-151497).
 _EXTHEADER_READ_CHUNK = 1024 * 1024  # 1 MiB
 
+# Maximum number of records parsed from a single pax extended header.
+# A crafted header containing millions of minimal records (e.g. "5 a=\n")
+# can cause excessive memory allocation and Denial of Service (gh-161955).
+_MAX_PAX_RECORDS = 10_000
+
 def _safe_read(fileobj, size):
     """Read up to *size* bytes from *fileobj* in bounded chunks.
 
@@ -1553,6 +1558,8 @@ class TarInfo(object):
         encoding = None
         raw_headers = []
         while len(buf) > pos and buf[pos] != 0x00:
+            if len(raw_headers) >= _MAX_PAX_RECORDS:
+                raise InvalidHeaderError("too many pax records")
             if not (match := _header_length_prefix_re.match(buf, pos)):
                 raise InvalidHeaderError("invalid header")
             try:
