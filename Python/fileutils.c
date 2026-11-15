@@ -3304,6 +3304,11 @@ _Py_IsValidFD(int fd)
 }
 
 
+// Call strerror_r(code) if available, or use strerror() otherwise. Decode the
+// result from the locale encoding using surrogateescape error handler.
+//
+// On success, return a Unicode string. On error, set an exception and return
+// NULL.
 static PyObject *
 _Py_strerror_uncached(int code)
 {
@@ -3458,13 +3463,8 @@ strerror_ensure_cache(struct _Py_exc_state *state)
 // os.strerror() takes any int, lets not cache INT_MAX.
 #define STRERROR_CACHE_MAX 5000
 
-// Call strerror_r(code) if available, or use strerror() otherwise. Decode the
-// result from the locale encoding using surrogateescape error handler. Cache
-// the messages per locale: decoding is a large part of the cost of raising
-// OSError.
-//
-// On success, return a Unicode string. On error, set an exception and return
-// NULL.
+// _Py_strerror_uncached() with the messages cached per locale: decoding is a
+// large part of the cost of raising OSError.
 PyObject*
 _Py_strerror(int code)
 {
