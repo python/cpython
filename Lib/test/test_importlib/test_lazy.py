@@ -114,9 +114,23 @@ class LazyLoaderTests(unittest.TestCase):
     def test_mutated_preexisting_attr(self):
         # Changing an attribute that already existed on the module --
         # e.g. __name__ -- should persist.
-        module = self.new_module()
+        loader = TestingImporter()
+        module = self.new_module(loader=loader)
         module.__name__ = 'bogus'
         self.assertEqual('bogus', module.__name__)
+        self.assertIsNone(loader.loaded)
+        self.assertEqual(module.attr, 42)
+        self.assertEqual('bogus', module.__name__)
+
+    def test_mutated_file_survives_loading(self):
+        loader = TestingImporter()
+        module = self.new_module(
+            source_code="attr = 42; __file__ = 'changed.py'", loader=loader)
+        module.__file__ = 'bogus.py'
+        self.assertEqual('bogus.py', module.__file__)
+        self.assertIsNone(loader.loaded)
+        self.assertEqual(module.attr, 42)
+        self.assertEqual('bogus.py', module.__file__)
 
     def test_mutated_attr(self):
         # Changing an attribute that comes into existence after an import

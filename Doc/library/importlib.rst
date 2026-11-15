@@ -1381,8 +1381,9 @@ an :term:`importer`.
       the module is loaded they act as aliases for the
       :attr:`~importlib.machinery.ModuleSpec.name` and
       :attr:`~importlib.machinery.ModuleSpec.origin` of its
-      :attr:`~module.__spec__`, and assigning to them updates the spec
-      instead. This avoids the unintentional loading caused by
+      :attr:`~module.__spec__`, and assigning to them also updates the spec.
+      These assignments are preserved when the module is loaded.
+      This avoids the unintentional loading caused by
       introspection tools like :func:`inspect.getframeinfo` (:gh:`139669`).
 
    .. classmethod:: factory(loader)

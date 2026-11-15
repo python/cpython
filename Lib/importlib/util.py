@@ -241,8 +241,8 @@ class _LazyModule(types.ModuleType):
             __spec__.name = value
         elif attr == "__file__":
             __spec__.origin = value
-        else:
-            object.__setattr__(self, attr, value)
+        # Record the assignment so it can be restored after loading.
+        object.__setattr__(self, attr, value)
 
     def __delattr__(self, attr):
         """Trigger the load and then perform the deletion."""
