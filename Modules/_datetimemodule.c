@@ -491,14 +491,9 @@ ord_to_ymd(int ordinal, int *year, int *month, int *day)
     const uint32_t m = (5 * day_of_year + 461) / 153;
     const uint32_t d = (5 * day_of_year + 461) % 153 / 5 + 1;
     const uint32_t y = 100 * century + year_of_century;
-    if (m > 12) {  /* January or February */
-        *year = (int)(y + 1);
-        *month = (int)(m - 12);
-    }
-    else {
-        *year = (int)y;
-        *month = (int)m;
-    }
+    const uint32_t jan_or_feb = m > 12;
+    *year = (int) (jan_or_feb ? y + 1 : y);
+    *month = (int) (jan_or_feb ? m - 12 : m);
     *day = (int)d;
 }
 

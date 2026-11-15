@@ -1,14 +1,7 @@
 import os
-import warnings
 
 try:
-    with warnings.catch_warnings():
-        # Hypothesis imports typing.AnyStr, which is deprecated.  Silence the
-        # warning so that test.test___all__ can import test modules that use
-        # Hypothesis.
-        warnings.filterwarnings("ignore", "'typing.AnyStr' is deprecated",
-                                DeprecationWarning)
-        import hypothesis
+    import hypothesis
 except ImportError:
     from . import _hypothesis_stubs as hypothesis
 else:
