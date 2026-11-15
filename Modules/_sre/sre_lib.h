@@ -466,7 +466,7 @@ do { \
 #define DATA_STACK_LOOKUP_AT(state, type, ptr, pos) \
 do { \
     TRACE(("looking up %s at %zd\n", Py_STRINGIFY(type), pos)); \
-    ptr = (type*)(state->data_stack+pos); \
+    ptr = (pos) == -1 ? &initial_ctx : (type*)(state->data_stack+pos); \
 } while (0)
 
 #define DATA_STACK_PUSH(state, data, size) \
@@ -667,17 +667,18 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     int jump;
     unsigned int sigcount = state->sigcount;
 
-    SRE(match_context)* ctx;
+    /* Keep the initial context on the C stack.  Only nested contexts and
+       saved marks need the resizable data stack. */
+    SRE(match_context) initial_ctx;
+    SRE(match_context)* ctx = &initial_ctx;
     SRE(match_context)* nextctx;
     INIT_TRACE(state);
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
-    DATA_ALLOC(SRE(match_context), ctx);
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
     ctx->toplevel = toplevel;
-    ctx_pos = alloc_pos;
 
 #if USE_COMPUTED_GOTOS
 #include "sre_targets.h"
@@ -1678,13 +1679,13 @@ dispatch:
     }
 
 exit:
-    ctx_pos = ctx->last_ctx_pos;
-    jump = ctx->jump;
-    DATA_POP_DISCARD(ctx);
     if (ctx_pos == -1) {
         state->sigcount = sigcount;
         return ret;
     }
+    ctx_pos = ctx->last_ctx_pos;
+    jump = ctx->jump;
+    DATA_POP_DISCARD(ctx);
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1933,3 +1934,4 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
 /* vim:ts=4:sw=4:et
 */
+
