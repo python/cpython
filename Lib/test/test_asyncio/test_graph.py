@@ -698,7 +698,7 @@ class CallStackTestBase:
         bad = asyncio.create_task(fails())
         waiter = asyncio.create_task(fetch_first([good, bad]))
         await waiter
-        self.assertNotIn(waiter, good._asyncio_awaited_by)
+        self.assertFalse(good._asyncio_awaited_by)
         self.assertNotIn("fetch_first", asyncio.format_call_graph(good))
         await good
 
