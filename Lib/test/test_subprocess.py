@@ -3590,6 +3590,39 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.communicate(timeout=999)
             mock_proc_stdin.close.assert_called_once_with()
 
+    def test_communicate_timeout_stdin_spuriously_writable(self):
+        # gh-162016: poll() can report a pipe as writable when it has no
+        # free space.  communicate() must not then block in write() past
+        # its timeout.
+        class AlwaysWritableSelector(subprocess._PopenSelector):
+            def select(self, timeout=None):
+                ready = super().select(0.01)
+                fds = {key.fd for key, _ in ready}
+                for key in self.get_map().values():
+                    if (key.events & selectors.EVENT_WRITE
+                            and key.fd not in fds):
+                        ready.append((key, selectors.EVENT_WRITE))
+                return ready
+
+        # The child does not read stdin, so the pipe fills up.  Without the
+        # fix, write() blocks until the child exits.
+        sleep = support.SHORT_TIMEOUT
+        with mock.patch.object(subprocess, '_PopenSelector',
+                               AlwaysWritableSelector), \
+                subprocess.Popen([sys.executable, '-c',
+                                  f'import time; time.sleep({sleep})'],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE) as proc:
+            try:
+                start = time.monotonic()
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    proc.communicate(b'x' * support.PIPE_MAX_SIZE,
+                                     timeout=0.1)
+                self.assertLess(time.monotonic() - start, sleep)
+                self.assertTrue(os.get_blocking(proc.stdin.fileno()))
+            finally:
+                proc.kill()
+
     @unittest.skipUnless(_testcapi is not None
                          and hasattr(_testcapi, 'W_STOPCODE'),
                          'need _testcapi.W_STOPCODE')

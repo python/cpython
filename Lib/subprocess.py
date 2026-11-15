@@ -237,9 +237,9 @@ if _mswindows:
 
         __del__ = Close
 else:
-    # When select or poll has indicated that the file is writable,
-    # we can write up to _PIPE_BUF bytes without risk of blocking.
-    # POSIX defines PIPE_BUF as >= 512.
+    # Write at most _PIPE_BUF bytes per writable event.  POSIX defines
+    # PIPE_BUF as >= 512.  Some platforms report a full pipe as writable,
+    # so communicate() keeps stdin non-blocking while it writes.
     _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
 
     # poll/select have the advantage of not requiring any extra file
@@ -299,6 +299,8 @@ else:
                     chunk = input_view[input_offset:input_offset + _PIPE_BUF]
                     try:
                         input_offset += os.write(key.fd, chunk)
+                    except BlockingIOError:
+                        pass  # Spurious readiness: wait for the next select.
                     except BrokenPipeError:
                         selector.unregister(key.fd)
                         try:
@@ -2430,17 +2432,27 @@ class Popen:
 
                 stdin_to_write = (self.stdin if self.stdin and self._input
                                   and not self.stdin.closed else None)
+                if stdin_to_write is not None:
+                    # poll() and select() can report a pipe as writable
+                    # when it has no free space (gh-162016).  A blocking
+                    # write() would then hang past the timeout.
+                    os.set_blocking(stdin_to_write.fileno(), False)
+                try:
+                    new_offset, completed = _communicate_io_posix(
+                        selector,
+                        stdin_to_write,
+                        input_view,
+                        input_offset,
+                        self._fileobj2output,
+                        endtime,
+                        close_on_eof=True)
+                finally:
+                    # Leave stdin as the user expects it after a timeout.
+                    if stdin_to_write and not stdin_to_write.closed:
+                        os.set_blocking(stdin_to_write.fileno(), True)
                 # Persist the returned offset on self so a subsequent
                 # communicate() after a TimeoutExpired resumes mid-input
                 # rather than re-sending bytes the child already consumed.
-                new_offset, completed = _communicate_io_posix(
-                    selector,
-                    stdin_to_write,
-                    input_view,
-                    input_offset,
-                    self._fileobj2output,
-                    endtime,
-                    close_on_eof=True)
                 if self._input:
                     self._input_offset = new_offset
 
