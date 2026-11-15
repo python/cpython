@@ -218,6 +218,11 @@ class UserStringTest(
             s.replace('a', 'b', 1, maxsplit=2)
         with self.assertRaisesRegex(TypeError, msg):
             s.replace('a', 'b', count=1, maxsplit=2)
+        # An explicit count equal to the default still conflicts.
+        with self.assertRaisesRegex(TypeError, msg):
+            s.replace('a', 'b', -1, maxsplit=2)
+        with self.assertRaisesRegex(TypeError, msg):
+            s.replace('a', 'b', count=-1, maxsplit=2)
 
 
 if __name__ == "__main__":
