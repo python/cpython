@@ -2551,7 +2551,6 @@ struct xi_session {
     // PEP 788 finalization guard to prevent the interpreter from being
     // destroyed/finalized while this session is active.
     PyInterpreterGuard guard;
-    int has_guard;
 };
 
 _PyXI_session *
@@ -2613,7 +2612,6 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
         .prev_tstate = prev,
         .own_init_tstate = !same_interp,
         .guard = session->guard,
-        .has_guard = session->has_guard,
     };
 }
 
@@ -2650,9 +2648,9 @@ _exit_session(_PyXI_session *session)
     }
 
     // Release PEP 788 finalization guard after thread state cleanup & swap back.
-    if (session->has_guard) {
+    if (session->guard.interp != NULL) {
         _PyInterpreterGuard_Release(&session->guard);
-        session->has_guard = 0;
+        session->guard.interp = NULL;
     }
 
     *session = (_PyXI_session){0};
@@ -2737,7 +2735,6 @@ _PyXI_Enter(_PyXI_session *session,
         PyErr_SetString(PyExc_InterpreterError, "interpreter is being destroyed");
         return -1;
     }
-    session->has_guard = 1;
 
     // Switch to the requested interpreter (if necessary).
     _enter_session(session, interp);
