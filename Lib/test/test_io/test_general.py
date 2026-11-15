@@ -713,15 +713,18 @@ class IOTest:
     def test_buffered_readinto_mixin(self):
         # Test the implementation provided by BufferedIOBase
         class Stream(self.BufferedIOBase):
+            def __init__(self, data):
+                self.data = data
             def read(self, size):
-                return b"12345"
+                return self.data
             read1 = read
-        stream = Stream()
         for method in ("readinto", "readinto1"):
             with self.subTest(method):
                 buffer = byteslike(5)
-                self.assertEqual(getattr(stream, method)(buffer), 5)
+                self.assertEqual(getattr(Stream(b"12345"), method)(buffer), 5)
                 self.assertEqual(bytes(buffer), b"12345")
+                # Non-blocking stream with no data
+                self.assertIsNone(getattr(Stream(None), method)(buffer))
 
     def test_fspath_support(self):
         def check_path_succeeds(path):

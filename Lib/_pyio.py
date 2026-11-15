@@ -733,6 +733,8 @@ class BufferedIOBase(IOBase):
             data = self.read1(len(b))
         else:
             data = self.read(len(b))
+        if data is None:
+            return None
         n = len(data)
 
         b[:n] = data
@@ -1222,14 +1224,22 @@ class BufferedReader(_BufferedIOMixin):
                 if len(buf) - written > self.buffer_size:
                     n = self.raw.readinto(buf[written:])
                     if not n:
+                        if n is None and not written:
+                            return None # would block
                         break # eof
                     written += n
 
                 # Otherwise refill internal buffer - unless we're
                 # in read1 mode and already got some data
                 elif not (read1 and written):
-                    if not self._peek_unlocked(1):
+                    # The internal buffer is empty here.
+                    chunk = self.raw.read(self.buffer_size)
+                    if not chunk:
+                        if chunk is None and not written:
+                            return None # would block
                         break # eof
+                    self._read_buf = chunk
+                    self._read_pos = 0
 
                 # In readinto1 mode, return as soon as we have some data
                 if read1 and written:
