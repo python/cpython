@@ -5,11 +5,12 @@ Original by Michael Schneider
 
 
 import cmd
-import sys
 import doctest
-import unittest
 import io
+import sys
 import textwrap
+import unittest
+import unittest.mock
 from test import support
 from test.support.import_helper import ensure_lazy_imports, import_module
 from test.support.pty_helper import run_pty
@@ -325,6 +326,119 @@ class CmdTestReadline(unittest.TestCase):
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
+
+class CmdTestCase(unittest.TestCase):
+    class ExitCmd(cmd.Cmd):
+        # empty docstring to test do_help
+        def do_exit(self, arg):
+            """"""
+            return True
+        def do_EOF(self, arg):
+            return True
+
+    def setUp(self):
+        self.stdin = io.StringIO()
+        self.stdout = io.StringIO()
+        self.cmd = cmd.Cmd(stdin=self.stdin, stdout=self.stdout)
+        self.exitcmd = self.ExitCmd(stdin=self.stdin, stdout=self.stdout)
+
+    def test_parseline(self):
+        self.assertEqual(self.cmd.parseline('!'), (None, None, '!'))
+        self.assertEqual(self.cmd.parseline('!command'), (None, None, '!command'))
+
+    def test_empty_list(self):
+        self.assertEqual(self.cmd.completedefault("test", "test", 5, 5), [])
+
+    def test_cmdloop_settings(self):
+        self.exitcmd.use_rawinput = True
+        test_data = (
+            ("editline", "tab", "bind ^I rl_complete"), 
+            ("editline", "test", "bind test rl_complete"), 
+            ("readline", "tab", "tab: complete")
+        )
+        for backend, completekey, expected in test_data:
+            mock_readline = unittest.mock.MagicMock()
+            mock_readline.backend = backend
+            self.exitcmd.completekey = completekey
+            self.exitcmd.cmdqueue = ['exit']
+            with unittest.mock.patch.dict(sys.modules, {'readline': mock_readline}):
+                self.exitcmd.cmdloop()
+            mock_readline.parse_and_bind.assert_called_once_with(expected)
+
+        self.exitcmd.cmdqueue = ['exit']
+        with unittest.mock.patch.dict(sys.modules, {'readline': None}):
+            self.exitcmd.cmdloop()
+
+    def test_cmdloop_intro(self):
+        self.exitcmd.cmdqueue = ['exit']
+        self.exitcmd.cmdloop(intro="test_intro")
+        self.assertEqual(self.exitcmd.intro, "test_intro")
+        self.assertEqual(self.stdout.getvalue(), "test_intro\n")
+
+    def test_cmdloop_rawinput(self):
+        self.exitcmd.use_rawinput = True
+        self.exitcmd.completekey = None
+
+        with unittest.mock.patch('builtins.input', return_value='exit') as mock_input:
+            self.exitcmd.cmdloop()
+        mock_input.assert_called_once_with(self.exitcmd.prompt)
+
+        with unittest.mock.patch('builtins.input', side_effect=EOFError) as mock_input:
+            self.exitcmd.cmdloop()
+        mock_input.assert_called_once_with(self.exitcmd.prompt)
+
+    def test_onecmd_emptycmd(self):
+        self.cmd.onecmd('!')
+        self.assertEqual(self.stdout.getvalue(), '*** Unknown syntax: !\n')
+
+        self.cmd.onecmd('@test')
+        self.assertEqual(
+            self.stdout.getvalue(),
+            '*** Unknown syntax: !\n*** Unknown syntax: @test\n'
+        )
+
+    def test_complete_states(self):
+        mock_readline = unittest.mock.MagicMock()
+        test_data = (
+            ("text", 1, 4, "text", 0, None),
+            ("he", 0, 2, "he", 0, "help"),
+            ("he", 0, 2, "he", 1, None),
+            ("! text", 2, 6, "text", 0, None)
+        )
+        with unittest.mock.patch.dict(sys.modules, {'readline': mock_readline}):
+            for line_buffer, begidx, endidx, text, state, expected in test_data:
+                with self.subTest(line_buffer=line_buffer, state=state):
+                    mock_readline.get_line_buffer.return_value = line_buffer
+                    mock_readline.get_begidx.return_value = begidx
+                    mock_readline.get_endidx.return_value = endidx
+                    self.assertEqual(self.cmd.complete(text, state), expected)
+
+    def test_do_help_cleandoc(self):
+        self.cmd.do_help("help")
+        self.exitcmd.do_help("exit")
+        self.assertEqual(
+            self.stdout.getvalue(),
+            'List available commands with "help" or detailed help with "help cmd".\n'
+            '*** No help on exit\n'
+        )
+
+    def test_do_help_duplicate_names(self):
+        with unittest.mock.patch.object(
+            self.exitcmd, 'get_names', return_value=['do_exit', 'do_exit']
+        ):
+            self.exitcmd.do_help('')
+        self.assertEqual(self.stdout.getvalue().count('exit'), 1)
+
+    def test_print_topics_empty_ruler(self):
+        self.cmd.ruler = ''
+        self.cmd.print_topics("test", ['t'], 5, 5)
+
+    def test_columnize_empty_list(self):
+        self.cmd.columnize([])
+        self.assertEqual(self.stdout.getvalue(), '<empty>\n')
+
+        with self.assertRaises(TypeError):
+            self.cmd.columnize([123])
 
 
 if __name__ == "__main__":
