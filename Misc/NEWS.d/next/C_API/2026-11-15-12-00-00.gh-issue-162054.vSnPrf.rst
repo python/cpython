@@ -1,0 +1,4 @@
+:c:func:`PyOS_vsnprintf` now calls :c:func:`!vsnprintf` on Windows, instead of
+the non-standard :c:func:`!_vsnprintf`. When the output is truncated, it now
+returns the number of characters that would have been written, as on other
+platforms, instead of a negative value.
