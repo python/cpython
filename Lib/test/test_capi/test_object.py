@@ -273,6 +273,7 @@ class CAPITest(unittest.TestCase):
         for i in [0, 1, 2]:
             self.assertFalse(_testcapi.pyobject_is_unique_temporary_new_object())
 
+
 class RefTracerTest(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.skip_emscripten_stack_overflow()
