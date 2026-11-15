@@ -242,6 +242,12 @@ else:
     # so communicate() keeps stdin non-blocking while it writes.
     _PIPE_BUF = getattr(select, 'PIPE_BUF', 512)
 
+    # A full pipe that is reported as writable gives no event to wait for,
+    # so communicate() retries the write after a delay that doubles from
+    # _STDIN_BACKOFF_MIN to _STDIN_BACKOFF_MAX seconds.
+    _STDIN_BACKOFF_MIN = 0.001
+    _STDIN_BACKOFF_MAX = 0.05
+
     # poll/select have the advantage of not requiring any extra file
     # descriptor, contrarily to epoll/kqueue (also, they require a single
     # syscall).
@@ -282,17 +288,31 @@ else:
             - Appends to output_buffers lists in place
         """
         stdin_fd = stdin.fileno() if stdin else None
+        # Seconds to keep stdin out of the selector after a write that
+        # would have blocked; 0 when stdin is registered or finished.
+        stdin_backoff = 0
+        stdin_paused_for = _STDIN_BACKOFF_MIN / 2
 
-        while selector.get_map():
+        while selector.get_map() or stdin_backoff:
             remaining = _deadline_remaining(endtime)
             if remaining is not None and remaining <= 0:
                 return (input_offset, False)  # Timed out
 
-            ready = selector.select(remaining)
+            if stdin_backoff and (remaining is None
+                                  or stdin_backoff < remaining):
+                ready = selector.select(stdin_backoff)
+            else:
+                ready = selector.select(remaining)
 
             # Check timeout after select (may have woken spuriously)
             if endtime is not None and _time() > endtime:
                 return (input_offset, False)  # Timed out
+
+            if stdin_backoff:
+                # The wait is over or the child made progress on another
+                # pipe.  Either way, ask about stdin again.
+                selector.register(stdin, selectors.EVENT_WRITE)
+                stdin_paused_for, stdin_backoff = stdin_backoff, 0
 
             for key, events in ready:
                 if key.fd == stdin_fd:
@@ -300,7 +320,12 @@ else:
                     try:
                         input_offset += os.write(key.fd, chunk)
                     except BlockingIOError:
-                        pass  # Spurious readiness: wait for the next select.
+                        # The pipe was reported writable but is full, and
+                        # will be reported writable again right away.  Stop
+                        # asking for a while instead of spinning.
+                        selector.unregister(key.fd)
+                        stdin_backoff = min(stdin_paused_for * 2,
+                                            _STDIN_BACKOFF_MAX)
                     except BrokenPipeError:
                         selector.unregister(key.fd)
                         try:
@@ -308,6 +333,7 @@ else:
                         except BrokenPipeError:
                             pass
                     else:
+                        stdin_paused_for = _STDIN_BACKOFF_MIN / 2
                         if input_offset >= len(input_view):
                             selector.unregister(key.fd)
                             try:
