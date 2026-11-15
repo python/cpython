@@ -1759,6 +1759,7 @@ textiowrapper_write_bytes(textio *self, PyObject *b,
 {
     Py_ssize_t bytes_len;
     if (PyUnicode_Check(b)) {
+        assert(PyUnicode_IS_ASCII(b));
         bytes_len = PyUnicode_GET_LENGTH(b);
     }
     else {
