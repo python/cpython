@@ -4687,6 +4687,28 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
             else:
                 self.fail("ProcessLookupError never raised for dead process")
 
+    def test_dead_process_before_first_async_read(self):
+        script_body = """\
+            import asyncio
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            unwinders = [
+                RemoteUnwinder(p.pid, debug=debug)
+                for debug in (False, True)
+            ]
+
+            p.kill()
+            p.wait()
+
+            for debug, unwinder in zip((False, True), unwinders):
+                for method in ("get_async_stack_trace", "get_all_awaited_by"):
+                    with self.subTest(debug=debug, method=method):
+                        with self.assertRaises(ProcessLookupError):
+                            getattr(unwinder, method)()
+
 
 @requires_remote_subprocess_debugging()
 class TestFrameChainLimits(RemoteInspectionTestBase):
