@@ -1,0 +1,4 @@
+:func:`os.path.realpath` on Windows now raises :exc:`NotADirectoryError`
+in :data:`os.path.ALLOW_MISSING` mode if a non-final component of the path
+is an existing file, as it does on POSIX, instead of returning the path
+as if that component were missing.
