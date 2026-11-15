@@ -7530,6 +7530,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 Py_BEGIN_CRITICAL_SECTION(dict);
                 PyInterpreterState *interp = _PyInterpreterState_GET();
                 PyDictKeysObject *oldkeys = dict->ma_keys;
+                ensure_shared_on_resize(dict);
                 set_keys(dict, Py_EMPTY_KEYS);
                 dict->ma_values = NULL;
                 dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));

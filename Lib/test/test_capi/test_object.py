@@ -273,6 +273,83 @@ class CAPITest(unittest.TestCase):
         for i in [0, 1, 2]:
             self.assertFalse(_testcapi.pyobject_is_unique_temporary_new_object())
 
+    def test_object_clear_managed_dict(self):
+        # PyObject_ClearManagedDict
+        clear_managed_dict = _testcapi.pyobject_clear_managed_dict
+        ManagedDictType = _testcapi.ManagedDictType
+
+        obj = ManagedDictType()
+        obj.value = 'first'
+        # asserting `__dict__` is a must to materialize the value before clean:
+        self.assertEqual(obj.__dict__, {'value': 'first'})
+        self.assertIs(type(obj.__dict__), dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # big object:
+        obj = ManagedDictType()
+        existing_dict = {f'attr_{x}': x for x in range(100)}
+        obj.__dict__ = existing_dict
+        self.assertIs(obj.__dict__, existing_dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # empty dict:
+        obj = ManagedDictType()
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # double clear:
+        obj = ManagedDictType()
+        obj.value = 'first'
+        self.assertEqual(obj.__dict__, {'value': 'first'})
+        clear_managed_dict(obj)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # unmaterialized:
+        obj = ManagedDictType()
+        obj.value = 'first'
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # CRASHES: clear_managed_dict(NULL)
+
+    @threading_helper.requires_working_threading()
+    @support.nomemtest
+    def test_object_clear_managed_dict_ft_memory_error(self):
+        # gh-152254: Test PyObject_ClearManagedDict() error.
+        # The setup must contain: object owned by another thread
+        # and the attempt to clear the managed dict with no memory left.
+        clear_managed_dict = _testcapi.pyobject_clear_managed_dict
+        ManagedDictType = _testcapi.ManagedDictType
+
+        obj = ManagedDictType()
+        obj.value = 'first'
+        self.assertEqual(len(obj.__dict__), 1)
+
+        def worker():
+            # This needs to be in a separate thread for the crash to happen:
+            with support.catch_unraisable_exception() as ex:
+                # `PyObject_ClearManagedDict()` used to crash:
+                _testcapi.call_with_nomemory(0, 1, clear_managed_dict, obj)
+                self.assertIsNotNone(ex.unraisable)
+                self.assertIs(ex.unraisable.exc_type, MemoryError)
+                self.assertIn('managed dict', ex.unraisable.err_msg)
+            self.assertEqual(obj.__dict__, {})
+            self.assertIs(type(obj.__dict__), dict)
+
+        threading_helper.run_concurrently([worker])
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
 
 class RefTracerTest(unittest.TestCase):
     @support.requires_resource('cpu')
