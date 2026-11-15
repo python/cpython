@@ -70,6 +70,17 @@ The module defines the following exception and functions:
    position *offset*.  Note that *offset* is a required argument.
    A negative *offset* counts from the end of *buffer*.
 
+   .. note::
+
+      ``pack_into()`` specifies the packed bytes written to the buffer, but
+      does not guarantee the number, width, or ordering of the underlying
+      native memory accesses used to perform the write.  In particular,
+      writable buffers backed by memory-mapped I/O (MMIO) should not be
+      treated as exact-width register access interfaces.  Code that depends
+      on exact MMIO access semantics should use an interface designed for
+      that purpose and verify its behavior for the target implementation
+      and platform.
+
 
 .. function:: unpack(format, buffer)
 
