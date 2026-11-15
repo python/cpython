@@ -9,7 +9,8 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
-sentinel_new_impl(PyTypeObject *type, PyObject *name, PyObject *repr);
+sentinel_new_impl(PyTypeObject *type, PyObject *name, PyObject *repr,
+                  PyObject *doc);
 
 static PyObject *
 sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -17,7 +18,7 @@ sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -26,7 +27,7 @@ sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(repr), },
+        .ob_item = { &_Py_ID(repr), &_Py_ID(doc), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -35,19 +36,20 @@ sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "repr", NULL};
+    static const char * const _keywords[] = {"", "repr", "doc", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "sentinel",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *name;
     PyObject *repr = Py_None;
+    PyObject *doc = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -62,11 +64,17 @@ sentinel_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    repr = fastargs[1];
+    if (fastargs[1]) {
+        repr = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    doc = fastargs[2];
 skip_optional_kwonly:
-    return_value = sentinel_new_impl(type, name, repr);
+    return_value = sentinel_new_impl(type, name, repr, doc);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=958842ece254c82f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f402633e7dd3f52 input=a9049054013a1b77]*/

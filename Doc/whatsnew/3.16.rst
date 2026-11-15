@@ -139,6 +139,12 @@ Other language changes
   :func:`asyncio.print_call_graph` can see through them into the awaited code.
   (Contributed by Kumar Aditya in :gh:`157361`.)
 
+* :class:`sentinel` now accepts an optional *doc* parameter for giving a
+  sentinel object a docstring.  The ``__doc__`` attribute of a sentinel
+  object is now ``None`` by default, instead of the docstring of the
+  :class:`!sentinel` class.
+  (Contributed by Thomas M Kehrenberg in :gh:`162069`.)
+
 
 Default interactive shell
 =========================

@@ -2013,6 +2013,23 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "repr.*str or None"):
             sentinel("BAD_REPR", repr=42)
 
+    def test_sentinel_doc(self):
+        with_doc = sentinel("WITH_DOC", doc="A documented sentinel.")
+        without_doc = sentinel("WITHOUT_DOC")
+        explicit_none = sentinel("EXPLICIT_NONE", doc=None)
+        self.assertEqual(with_doc.__doc__, "A documented sentinel.")
+        self.assertIsNone(without_doc.__doc__)
+        self.assertIsNone(explicit_none.__doc__)
+        # The docstring of the class is not affected.
+        self.assertIsInstance(sentinel.__doc__, str)
+        self.assertNotEqual(sentinel.__doc__, with_doc.__doc__)
+
+        with self.assertRaises(AttributeError):
+            with_doc.__doc__ = "changed"
+        with self.assertRaises(AttributeError):
+            del with_doc.__doc__
+        self.assertEqual(with_doc.__doc__, "A documented sentinel.")
+
     def test_sentinel_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(protocol=proto):
