@@ -629,8 +629,11 @@ For example::
 
 Instead of a key-value pair, a dict item may be an expression prefixed by
 a double asterisk ``**``. This denotes :dfn:`dictionary unpacking`.
-At runtime, the expression must evaluate to a :term:`mapping`;
-each item of the mapping is added to the new dictionary.
+At runtime, the expression must evaluate to an object that defines a
+``keys()`` method; the new dictionary is created by calling
+:meth:`~object.__getitem__` on that object with each key returned by
+``keys()``.  A :term:`mapping` satisfies this, but any object with those
+two methods does.
 As with key-value pairs, later values replace values already set by
 earlier items and unpackings.
 This may be used to override a set of defaults::
@@ -1647,14 +1650,16 @@ used in the same call, so in practice this confusion does not often arise.
    single: **; in function calls
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
-evaluate to a :term:`mapping`, the contents of which are treated as
-additional keyword arguments. If a parameter matching a key has already been
-given a value (by an explicit keyword argument, or from another unpacking),
+evaluate to an object that defines a ``keys()`` method; its contents are
+treated as additional keyword arguments, with each value obtained by
+calling ``__getitem__()`` with each key returned by ``keys()``.  If a
+parameter matching a key has already been given a value (by an explicit
+keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
 
-When ``**expression`` is used, each key in this mapping must be
+When ``**expression`` is used, each key returned by ``keys()`` must be
 a string.
-Each value from the mapping is assigned to the first formal parameter
+Each value from the object is assigned to the first formal parameter
 eligible for keyword assignment whose name is equal to the key.
 A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
 although it will not match any formal parameter that could be declared).
