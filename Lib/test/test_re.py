@@ -65,6 +65,33 @@ class ReTests(unittest.TestCase):
             if pos is not None:
                 self.assertEqual(err.pos, pos)
 
+    def test_repeated_ignorecase_set_context(self):
+        # Case-insensitive sets use the recursive count fallback. Exercise
+        # its return to the initial context and to nested contexts after the
+        # data stack has grown, with greedy, lazy and possessive repeats.
+        for suffix in ('', '?', '+'):
+            for tail in ('c', '\u0100', '\U00010000'):
+                source = '(?i:[ab])+' + suffix + tail
+                unit = 'aB' + tail
+                nested_source = '(' + source + ')+d'
+                text = unit * 100 + 'd'
+                for isbytes in (False, True):
+                    with self.subTest(suffix=suffix, tail=tail, isbytes=isbytes):
+                        if isbytes:
+                            p, s = source.encode(), unit.encode()
+                            nested, long_s = nested_source.encode(), text.encode()
+                        else:
+                            p, s = source, unit
+                            nested, long_s = nested_source, text
+                        self.assertEqual(re.fullmatch(p, s).group(), s)
+                        m = re.fullmatch(nested, long_s)
+                        self.assertEqual(m.group(1), s)
+                        self.assertEqual(m.span(1), (99 * len(s), 100 * len(s)))
+                        scanner = re.compile(p).scanner(s * 2)
+                        self.assertEqual(scanner.search().span(), (0, len(s)))
+                        self.assertEqual(scanner.search().span(), (len(s), 2 * len(s)))
+                        self.assertIsNone(scanner.search())
+
     def test_error_is_PatternError_alias(self):
         assert re.error is re.PatternError
 
@@ -3428,3 +3455,4 @@ class TestModule(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
