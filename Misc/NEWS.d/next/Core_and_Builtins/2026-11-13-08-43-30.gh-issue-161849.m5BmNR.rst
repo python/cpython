@@ -1,0 +1,4 @@
+Fix a crash and a :exc:`SystemError` when compiling a class whose body binds
+``__classdict__`` (for example ``__classdict__ = 1`` or ``global
+__classdict__``) and also contains an annotated function, a generic class or
+function, or a generic type alias.
