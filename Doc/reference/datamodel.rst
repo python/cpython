@@ -2258,11 +2258,12 @@ Basic customization
 
    If a class does not define an :meth:`__eq__` method it should not define a
    :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
-   :meth:`__hash__`, its instances will not be usable as items in hashable
-   collections.  If a class defines mutable objects and implements an
-   :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
-   implementation of :term:`hashable` collections requires that a key's hash value is
-   immutable (if the object's hash value changes, it will be in the wrong hash
+   :meth:`__hash__`, its instances will not be usable as items in collections
+   of :term:`hashable` objects.  If a class defines mutable objects and
+   implements an :meth:`__eq__` method, it should not implement
+   :meth:`__hash__`, since the implementation of collections of
+   :term:`hashable` objects requires that a key's hash value is immutable
+   (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
    User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
