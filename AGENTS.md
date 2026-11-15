@@ -17,22 +17,13 @@ When acting on this repository, apply the policy's core principles:
 
 ## Opening issues
 
-Do not auto-generate issues with AI tools. Write up the report yourself,
-in your own words, after you have understood and verified the problem.
+Do not auto-generate issues with AI tools.
 
-Before opening an issue, search for existing reports, including closed ones:
+Search GitHub for duplicate issues before opening a new issue. Avoid opening
+duplicates.
 
 ```bash
 gh search issues --repo python/cpython "<symptom keywords>"
 gh search issues --repo python/cpython "<function, module or option name>"
 gh issue list --repo python/cpython --state all --label "<topic label>" --search "<short area keywords>"
 ```
-
-- If an existing issue covers the same root cause, do not open another.
-  Add new information (a reproducer, measurements, an affected version)
-  as a comment there.
-- A different trigger for the same underlying behavior is still a duplicate.
-- If you believe your report is distinct, link the related issues and
-  explain the difference in the first paragraph.
-- Check whether a closed issue was fixed on `main` and test against it
-  before reporting a regression.
