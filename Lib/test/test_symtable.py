@@ -447,7 +447,6 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(repr(class_A.lookup('x')),
                          "<symbol 'x': LOCAL, DEF_LOCAL|DEF_FREE_CLASS>")
 
-    @support.requires_subprocess()
     def test_symbol_repr_lazy_imports(self):
         # See https://github.com/python/cpython/issues/160810.
         code = ("import symtable\n"
