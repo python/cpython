@@ -291,6 +291,8 @@ else:
         # Seconds to keep stdin out of the selector after a write that
         # would have blocked; 0 when stdin is registered or finished.
         stdin_backoff = 0
+        # The previous such delay, which the next one doubles.  A
+        # successful write resets it.
         stdin_paused_for = _STDIN_BACKOFF_MIN / 2
 
         while selector.get_map() or stdin_backoff:
@@ -2473,7 +2475,8 @@ class Popen:
                         endtime,
                         close_on_eof=True)
                 finally:
-                    # Leave stdin as the user expects it after a timeout.
+                    # Code that uses self.stdin after communicate() returns
+                    # or times out expects writes to it to block.
                     if stdin_to_write is not None and not stdin_to_write.closed:
                         os.set_blocking(stdin_to_write.fileno(), True)
                 # Persist the returned offset on self so a subsequent

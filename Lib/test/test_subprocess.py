@@ -3604,8 +3604,8 @@ class POSIXProcessTestCase(BaseTestCase):
                         ready.append((key, selectors.EVENT_WRITE))
                 return ready
 
-        # The child does not read stdin, so the pipe fills up.  Without the
-        # fix, write() blocks until the child exits.
+        # The child does not read stdin, so the pipe fills up.  A blocking
+        # write() would not return until the child exits.
         sleep = support.SHORT_TIMEOUT
         with mock.patch.object(subprocess, '_PopenSelector',
                                AlwaysWritableSelector), \
