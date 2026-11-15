@@ -1934,4 +1934,3 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
 /* vim:ts=4:sw=4:et
 */
-
