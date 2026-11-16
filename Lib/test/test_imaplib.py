@@ -537,6 +537,67 @@ class NewIMAPTestsMixin():
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
 
+    def test_command_control_characters(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        with mock.patch.object(client, 'send') as send:
+            for char in '\0\r\n':
+                for arg in (f'a{char}b', f'a{char}b'.encode('ascii')):
+                    with self.subTest(arg=arg):
+                        with self.assertRaisesRegex(ValueError,
+                                'NUL, CR and LF not allowed in commands'):
+                            client._command('LOGIN', arg, 'password')
+            send.assert_not_called()
+
+    def test_quoted_control_characters(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        for char in support.control_characters_c0():
+            if char in '\0\r\n':
+                continue
+            with self.subTest(char=char):
+                arg = f'"a{char}b"'
+                with mock.patch.object(client, 'send') as send:
+                    tag = client._command('LOGIN', 'user', arg)
+                send.assert_called_once_with(
+                    tag + b' LOGIN user ' + arg.encode('ascii') + b'\r\n')
+
+    def test_rejected_append_clears_literal(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for char in '\0\r\n':
+            for mailbox in (f'a{char}b', f'a{char}b'.encode('ascii')):
+                with self.subTest(mailbox=mailbox):
+                    with self.assertRaises(ValueError):
+                        client.append(mailbox, None, None, b'message')
+                    self.assertIsNone(client.literal)
+                    typ, _ = client.select('INBOX')
+                    self.assertEqual(typ, 'OK')
+        with self.subTest(case='flags'):
+            with self.assertRaises(ValueError):
+                client.append('INBOX', '(\\Flag\n)', None, b'message')
+            self.assertIsNone(client.literal)
+            typ, _ = client.select('INBOX')
+            self.assertEqual(typ, 'OK')
+        client.logout()
+        with self.subTest(case='illegal_state'):
+            with self.assertRaises(imaplib.IMAP4.error):
+                client.append('INBOX', None, None, b'message')
+            self.assertIsNone(client.literal)
+
+    def test_append_literal_crlf(self):
+        class AppendServer(SimpleIMAPHandler):
+            def cmd_APPEND(self, tag, args):
+                size = int(args[-1].strip('{}'))
+                self._send_textline('+')
+                self.server.response = self.rfile.read(size + 2)
+                self._send_tagged(tag, 'OK', 'APPEND completed')
+
+        client, server = self._setup(AppendServer)
+        client.login('user', 'pass')
+        message = b'Subject: test\r\n\r\nbody\tend'
+        typ, _ = client.append('INBOX', None, None, message)
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(server.response, message + b'\r\n')
+
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
