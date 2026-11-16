@@ -894,11 +894,11 @@ append_awaited_by_for_thread(
     return 0;
 }
 
-int
-append_awaited_by(
+static int
+append_awaited_info(
     RemoteUnwinderObject *unwinder,
     unsigned long tid,
-    uintptr_t head_addr,
+    PyObject *task_list,
     PyObject *result)
 {
     PyObject *tid_py = PyLong_FromUnsignedLong(tid);
@@ -907,24 +907,16 @@ append_awaited_by(
         return -1;
     }
 
-    PyObject* awaited_by_for_thread = PyList_New(0);
-    if (awaited_by_for_thread == NULL) {
-        Py_DECREF(tid_py);
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by thread list");
-        return -1;
-    }
-
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
     PyObject *result_item = PyStructSequence_New(state->AwaitedInfo_Type);
     if (result_item == NULL) {
         Py_DECREF(tid_py);
-        Py_DECREF(awaited_by_for_thread);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create AwaitedInfo");
         return -1;
     }
 
     PyStructSequence_SetItem(result_item, 0, tid_py);  // steals ref
-    PyStructSequence_SetItem(result_item, 1, awaited_by_for_thread);  // steals ref
+    PyStructSequence_SetItem(result_item, 1, Py_NewRef(task_list));
     if (PyList_Append(result, result_item)) {
         Py_DECREF(result_item);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by result item");
@@ -932,8 +924,30 @@ append_awaited_by(
     }
     Py_DECREF(result_item);
 
-    if (append_awaited_by_for_thread(unwinder, head_addr, awaited_by_for_thread))
-    {
+    return 0;
+}
+
+int
+append_awaited_by(
+    RemoteUnwinderObject *unwinder,
+    unsigned long tid,
+    uintptr_t head_addr,
+    PyObject *result)
+{
+    PyObject *task_list = PyList_New(0);
+    if (task_list == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by thread list");
+        return -1;
+    }
+
+    if (append_awaited_info(unwinder, tid, task_list, result) < 0) {
+        Py_DECREF(task_list);
+        return -1;
+    }
+
+    int err = append_awaited_by_for_thread(unwinder, head_addr, task_list);
+    Py_DECREF(task_list);
+    if (err < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by for thread");
         return -1;
     }
@@ -1038,32 +1052,9 @@ process_thread_for_async_stack_trace(
             return -1;
         }
 
-        // Create AwaitedInfo structure for this thread
-        PyObject *tid_py = PyLong_FromUnsignedLong(tid);
-        if (tid_py == NULL) {
-            Py_DECREF(task_list);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
-            return -1;
-        }
-
-        RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
-        PyObject *awaited_info = PyStructSequence_New(state->AwaitedInfo_Type);
-        if (awaited_info == NULL) {
-            Py_DECREF(tid_py);
-            Py_DECREF(task_list);
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create AwaitedInfo");
-            return -1;
-        }
-
-        PyStructSequence_SetItem(awaited_info, 0, tid_py);  // steals ref
-        PyStructSequence_SetItem(awaited_info, 1, task_list);  // steals ref
-
-        if (PyList_Append(result, awaited_info)) {
-            Py_DECREF(awaited_info);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append AwaitedInfo to result");
-            return -1;
-        }
-        Py_DECREF(awaited_info);
+        int err = append_awaited_info(unwinder, tid, task_list, result);
+        Py_DECREF(task_list);
+        return err;
     }
 
     return 0;
