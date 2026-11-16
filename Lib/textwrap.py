@@ -283,7 +283,8 @@ class TextWrapper:
             # long word for all of them at once.  Breaking off one line at a
             # time would copy the rest of the word each time.
             word = chunks[-1]
-            if (lines and self.break_long_words and 0 < width < len(word) and
+            if (lines and self.max_lines is None and self.break_long_words and
+                0 < width < len(word) and
                 not (self.break_on_hyphens and '-' in word) and
                 word.split(None, 1) == [word]):
                 del chunks[-1]
