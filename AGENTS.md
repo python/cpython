@@ -19,7 +19,7 @@ When acting on this repository, apply the policy's core principles:
 
 Do not auto-generate issues with AI tools.
 
-Search GitHub for duplicate issues before opening a new issue. Avoid opening
+Search GitHub for duplicate issues before opening a new issue. Do not open
 duplicates.
 
 ```bash
