@@ -1494,10 +1494,14 @@ class NulledModules:
 class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
-    def do_create(self, dir=None, pre="", suf="", recurse=1, dirs=1, files=1,
+    def do_create(self, dir=None, pre=None, suf=None, recurse=1, dirs=1, files=1,
                   ignore_cleanup_errors=False):
         if dir is None:
             dir = tempfile.gettempdir()
+        if pre is None:
+            pre = type(dir)()
+        if suf is None:
+            suf = type(dir)()
         tmp = tempfile.TemporaryDirectory(
             dir=dir, prefix=pre, suffix=suf,
             ignore_cleanup_errors=ignore_cleanup_errors)
@@ -1507,13 +1511,17 @@ class TestTemporaryDirectory(BaseTestCase):
 
     def do_create2(self, path, recurse=1, dirs=1, files=1):
         # Create subdirectories and some files
+        def join(name):
+            if isinstance(path, bytes):
+                name = os.fsencode(name)
+            return os.path.join(path, name)
         if recurse:
             for i in range(dirs):
-                name = os.path.join(path, "dir%d" % i)
+                name = join("dir%d" % i)
                 os.mkdir(name)
                 self.do_create2(name, recurse-1, dirs, files)
         for i in range(files):
-            with open(os.path.join(path, "test%d.txt" % i), "wb") as f:
+            with open(join("test%d.txt" % i), "wb") as f:
                 f.write(b"Hello world!")
 
     def test_mkdtemp_failure(self):
@@ -1538,6 +1546,15 @@ class TestTemporaryDirectory(BaseTestCase):
                         "TemporaryDirectory %s exists after cleanup" % d.name)
         finally:
             os.rmdir(dir)
+
+    def test_explicit_cleanup_bytes(self):
+        # A TemporaryDirectory with a bytes name is deleted when cleaned up
+        with tempfile.TemporaryDirectory() as working_dir:
+            d = self.do_create(dir=os.fsencode(working_dir), recurse=2)
+            self.assertIsInstance(d.name, bytes)
+            self.assertTrue(os.path.exists(d.name))
+            d.cleanup()
+            self.assertFalse(os.path.exists(d.name))
 
     def test_explict_cleanup_ignore_errors(self):
         """Test that cleanup doesn't return an error when ignoring them."""
@@ -1990,11 +2007,17 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(name, d.name)
         self.assertFalse(os.path.exists(name))
 
-    def test_modes(self):
+    @support.subTests('bytes_name', (False, True))
+    def test_modes(self, bytes_name):
         for mode in range(8):
             mode <<= 6
             with self.subTest(mode=format(mode, '03o')):
-                d = self.do_create(recurse=3, dirs=2, files=2)
+                if bytes_name:
+                    d = self.do_create(recurse=3, dirs=2, files=2,
+                                       dir=tempfile.gettempdirb())
+                else:
+                    d = self.do_create(recurse=3, dirs=2, files=2)
+                self.assertIsInstance(d.name, bytes if bytes_name else str)
                 with d:
                     # Change files and directories mode recursively.
                     for root, dirs, files in os.walk(d.name, topdown=False):
@@ -2005,13 +2028,17 @@ class TestTemporaryDirectory(BaseTestCase):
                 self.assertFalse(os.path.exists(d.name))
 
     @support.subTests('ignore_errors', (True, False))
-    def test_parent_mode_preserved(self, ignore_errors):
+    @support.subTests('bytes_name', (False, True))
+    def test_parent_mode_preserved(self, ignore_errors, bytes_name):
         # Test that cleanup does not touch the parent directory,
         # even if that prevents removal.
         for mode in range(8):
             mode <<= 6
             with self.subTest(mode=format(mode, '03o')):
-                outer = self.do_create()
+                if bytes_name:
+                    outer = self.do_create(dir=tempfile.gettempdirb())
+                else:
+                    outer = self.do_create()
                 with outer:
                     d = self.do_create(dir=outer.name, dirs=2, files=2,
                                        ignore_cleanup_errors=ignore_errors)
