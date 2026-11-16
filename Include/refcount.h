@@ -256,7 +256,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
     || defined(_Py_OPAQUE_PYOBJECT)
-    // Since Python 3.16, the atable ABI implements Py_INCREF() as a function
+    // Since Python 3.16, the stable ABI implements Py_INCREF() as a function
     // call on all limited C API versions. _Py_IncRef() was added to Python
     // 3.10.0a7, use Py_IncRef() on older versions. Py_IncRef() accepts NULL,
     // whereas _Py_IncRef() doesn't.
