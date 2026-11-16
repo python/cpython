@@ -1,2 +1,0 @@
-Fix incorrect executable linking on macOS with ``--with-lto`` caused by
-premature expansion of Make's ``$@`` target variable.

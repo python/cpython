@@ -1,1 +1,0 @@
-Fix slow ``dict.copy()`` for dicts with many deleted entries in the free-threaded build.

@@ -498,6 +498,11 @@ Lib/_markupbase.py                  @ezio-melotti
 Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
 
+# HTTP
+Doc/library/http*             @orsenthil
+Lib/http/                     @orsenthil
+Lib/test/test_http*.py        @orsenthil
+
 # IDLE
 Doc/library/idle.rst          @terryjreedy
 Lib/idlelib/                  @terryjreedy
@@ -632,6 +637,11 @@ Modules/_typesmodule.c        @AA-Turner
 # Unittest
 Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
+
+# Urllib
+Doc/library/urllib*           @orsenthil
+Lib/urllib/                   @orsenthil
+Lib/test/test_urllib*.py      @orsenthil
 
 # Venv
 **/*venv*                     @vsajip @FFY00

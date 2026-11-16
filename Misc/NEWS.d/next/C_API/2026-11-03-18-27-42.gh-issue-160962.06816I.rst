@@ -1,2 +1,0 @@
-Fix :c:func:`PyInitConfig_SetStr` when setting an optional string option to
-``NULL``. Previously, the function crashed. Patch by Victor Stinner.

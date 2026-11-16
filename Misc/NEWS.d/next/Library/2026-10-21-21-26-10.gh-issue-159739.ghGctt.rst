@@ -1,1 +1,0 @@
-Fix :class:`contextvars.ContextVar` returning a stale value after a reentrant finalizer changes it during :meth:`~contextvars.ContextVar.reset`.

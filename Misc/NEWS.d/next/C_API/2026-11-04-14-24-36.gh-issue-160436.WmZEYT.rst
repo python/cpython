@@ -1,0 +1,4 @@
+Fix a spurious ``-Wdeprecated-declarations`` warning when a
+:c:type:`PyStatus` is copied in C++ with clang 21 and older:
+:c:member:`PyStatus.exitcode` is no longer marked as deprecated for C++ on
+those compilers.
