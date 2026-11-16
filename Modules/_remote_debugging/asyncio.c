@@ -422,13 +422,12 @@ parse_coro_chain(
 static PyObject*
 create_task_result(
     RemoteUnwinderObject *unwinder,
-    uintptr_t task_address
+    uintptr_t task_address,
+    char is_task
 ) {
     PyObject* result = NULL;
     PyObject *call_stack = NULL;
     PyObject *tn = NULL;
-    char task_obj[SIZEOF_TASK_OBJ];
-    uintptr_t coro_addr;
 
     // Create call_stack first since it's the first tuple element
     call_stack = PyList_New(0);
@@ -444,25 +443,27 @@ create_task_result(
         goto error;
     }
 
-    // Parse coroutine chain
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
-                                              (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
-                                              task_obj) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object for coro chain");
-        goto error;
-    }
-
-    coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
-
-    if ((void*)coro_addr != NULL) {
-        if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
+    if (is_task) {
+        char task_obj[SIZEOF_TASK_OBJ];
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
+                                                  (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
+                                                  task_obj) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object for coro chain");
             goto error;
         }
 
-        if (PyList_Reverse(call_stack)) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse call stack");
-            goto error;
+        uintptr_t coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
+
+        if ((void*)coro_addr != NULL) {
+            if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
+                goto error;
+            }
+
+            if (PyList_Reverse(call_stack)) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse call stack");
+                goto error;
+            }
         }
     }
 
@@ -506,33 +507,10 @@ parse_task(
         goto error;
     }
 
-    if (is_task) {
-        result = create_task_result(unwinder, task_address);
-        if (!result) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task result");
-            goto error;
-        }
-    } else {
-        // Create an empty CoroInfo for non-task objects
-        RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
-        result = PyStructSequence_New(state->CoroInfo_Type);
-        if (result == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty CoroInfo");
-            goto error;
-        }
-        PyObject *empty_list = PyList_New(0);
-        if (empty_list == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty list");
-            goto error;
-        }
-        PyObject *task_name = PyLong_FromUnsignedLongLong(task_address);
-        if (task_name == NULL) {
-            Py_DECREF(empty_list);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task name");
-            goto error;
-        }
-        PyStructSequence_SetItem(result, 0, empty_list);  // This steals the reference
-        PyStructSequence_SetItem(result, 1, task_name);  // This steals the reference
+    result = create_task_result(unwinder, task_address, is_task);
+    if (result == NULL) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task result");
+        goto error;
     }
     if (PyList_Append(render_to, result)) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append task result to render list");
