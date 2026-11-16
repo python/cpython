@@ -1,2 +1,0 @@
-Remove the backquote from the symbols listed by :func:`help`, asking for help on it reported that no
-documentation was found.

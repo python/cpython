@@ -2838,7 +2838,7 @@ features:
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Accepts file descriptors pointing to symbolic links as *path* on
       Linux, Android, macOS and iOS.
 

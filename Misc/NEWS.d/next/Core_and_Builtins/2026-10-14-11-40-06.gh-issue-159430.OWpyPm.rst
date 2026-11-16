@@ -1,2 +1,0 @@
-Report the correct exception if looking up :meth:`~object.__bytes__` raises
-an exception while performing %-formatting of :class:`bytes`.

@@ -1,1 +1,0 @@
-Optimize division and remainder operations on large :class:`int` values.
