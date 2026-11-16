@@ -34930,6 +34930,7 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
+  LIBS=""
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing shm_open" >&5
 printf %s "checking for library containing shm_open... " >&6; }
 if test ${ac_cv_search_shm_open+y}

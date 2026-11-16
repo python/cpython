@@ -8106,6 +8106,7 @@ AS_VAR_IF([ac_cv_func_getrandom], [yes], [
 # shm_* may only be available if linking against librt
 POSIXSHMEM_CFLAGS='-I$(srcdir)/Modules/_multiprocessing'
 WITH_SAVE_ENV([
+  LIBS=""
   AC_SEARCH_LIBS([shm_open], [rt])
   AS_VAR_IF([ac_cv_search_shm_open], [-lrt], [POSIXSHMEM_LIBS="-lrt"])
 

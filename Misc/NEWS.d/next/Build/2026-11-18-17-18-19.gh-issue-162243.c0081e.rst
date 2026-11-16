@@ -1,0 +1,2 @@
+Fix building Python's POSIX shared-memory module when ``LIBS`` contains
+``-lrt`` on systems that require ``librt`` for shared-memory functions.
