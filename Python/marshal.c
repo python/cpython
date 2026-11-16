@@ -914,7 +914,9 @@ w_set_items(PyObject *v, Py_ssize_t n, WFILE *p)
             else {
                 w_same_set_items(items + start, stop - start, p);
             }
-            _PyErr_FormatNote("when marshalling %T element", v);
+            if (p->error) {
+                _PyErr_FormatNote("when marshalling %T element", v);
+            }
             start = stop;
         }
     }
