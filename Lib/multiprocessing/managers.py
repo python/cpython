@@ -20,6 +20,7 @@ import signal
 import array
 import collections.abc
 import queue
+import weakref
 import time
 import types
 import os
@@ -144,6 +145,8 @@ class Server(object):
     '''
     Server class which runs in a process controlled by a manager object
     '''
+    _local_servers = weakref.WeakValueDictionary()
+
     public = ['shutdown', 'create', 'accept_connection', 'get_methods',
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
@@ -175,6 +178,7 @@ class Server(object):
         '''
         self.stop_event = threading.Event()
         process.current_process()._manager_server = self
+        self._local_servers[self.address] = self
         try:
             accepter = threading.Thread(target=self.accepter)
             accepter.daemon = True
@@ -192,6 +196,8 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
+            if self._local_servers.get(self.address) is self:
+                self._local_servers.pop(self.address, None)
             if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
@@ -895,10 +901,8 @@ class BaseProxy(object):
             # tell manager this process no longer cares about referent
             try:
                 util.debug('DECREF %r', token.id)
-                server = getattr(process.current_process(),
-                                 '_manager_server', None)
-                if (server is not None and server.address == token.address
-                        and server._server_pid == os.getpid()):
+                server = Server._local_servers.get(token.address)
+                if (server is not None and server._server_pid == os.getpid()):
                     # A finalizer may run on this server's accepter thread.
                     # Do not wait for that same thread to serve an RPC.
                     server._local_decrefs.put(token.id)

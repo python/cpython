@@ -3757,8 +3757,10 @@ class _TestMyManager(BaseTestCase):
         code = r'''
 import gc
 import os
+import sys
 import threading
 import time
+from multiprocessing import process
 from multiprocessing.managers import BaseManager
 
 class Manager(BaseManager):
@@ -3771,6 +3773,17 @@ class Value:
 Manager.register('Value', Value)
 server = Manager(address=('127.0.0.1', 0), authkey=b'secret').get_server()
 threading.Thread(target=server.serve_forever, daemon=True).start()
+if sys.argv[1] == 'multiple':
+    deadline = time.monotonic() + 3
+    while getattr(process.current_process(), '_manager_server', None) is not server:
+        assert time.monotonic() < deadline
+        time.sleep(.001)
+    second_server = Manager(address=('127.0.0.1', 0), authkey=b'secret').get_server()
+    threading.Thread(target=second_server.serve_forever, daemon=True).start()
+    deadline = time.monotonic() + 3
+    while getattr(process.current_process(), '_manager_server', None) is not second_server:
+        assert time.monotonic() < deadline
+        time.sleep(.001)
 manager = Manager(address=server.address, authkey=b'secret')
 manager.connect()
 
@@ -3812,7 +3825,8 @@ while server.id_to_refcount and time.monotonic() < deadline:
     time.sleep(0.01)
 assert not server.id_to_refcount, server.id_to_refcount
 '''
-        test.support.script_helper.assert_python_ok('-c', code)
+        for variant in ('single', 'multiple'):
+            test.support.script_helper.assert_python_ok('-c', code, variant)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
