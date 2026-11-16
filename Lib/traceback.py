@@ -469,10 +469,9 @@ def _walk_tb_with_full_positions(tb):
 
 
 def _get_code_position(code, instruction_index):
+    # Keep this in sync with inspect._get_code_position.
     if instruction_index < 0:
         return (None, None, None, None)
-    # Byte offset. See inspect._get_code_position. Objects that only
-    # implement co_positions() keep the iterator path.
     if isinstance(code, types.CodeType):
         return code._co_position_at(instruction_index)
     positions_gen = code.co_positions()

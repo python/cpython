@@ -1513,19 +1513,19 @@ code_co_position_at(PyObject *self, PyObject *indexobj)
 {
     PyCodeObject *code = (PyCodeObject *)self;
     int start_line, end_line, start_column, end_column;
-    long addrq;
+    int addrq;
     Py_ssize_t nbytes;
 
-    addrq = PyLong_AsLong(indexobj);
+    addrq = PyLong_AsInt(indexobj);
     if (addrq == -1 && PyErr_Occurred()) {
         return NULL;
     }
     nbytes = _PyCode_NBYTES(code);
-    if (addrq < 0 || addrq >= nbytes || addrq > INT_MAX) {
+    if (addrq < 0 || addrq >= nbytes) {
         PyErr_SetString(PyExc_ValueError, "bytecode offset out of range");
         return NULL;
     }
-    if (!PyCode_Addr2Location(code, (int)addrq, &start_line, &start_column,
+    if (!PyCode_Addr2Location(code, addrq, &start_line, &start_column,
                               &end_line, &end_column)) {
         PyErr_SetString(PyExc_SystemError, "PyCode_Addr2Location failed");
         return NULL;

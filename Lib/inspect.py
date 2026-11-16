@@ -1610,12 +1610,11 @@ def _get_code_position_from_tb(tb):
     return _get_code_position(code, instruction_index)
 
 def _get_code_position(code, instruction_index):
+    # Keep this in sync with traceback._get_code_position.
+    # The offset is a byte offset. Real code objects look it up directly.
+    # Duck-typed code objects only implement co_positions().
     if instruction_index < 0:
         return (None, None, None, None)
-    # Byte offset, the same value traceback.c passes to PyCode_Addr2Location.
-    # co_positions() builds a tuple per earlier instruction. Real code objects
-    # can look the one offset up directly. Duck-typed code objects only
-    # implement co_positions().
     if isinstance(code, types.CodeType):
         return code._co_position_at(instruction_index)
     positions_gen = code.co_positions()
