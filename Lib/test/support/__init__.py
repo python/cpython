@@ -2603,3 +2603,13 @@ def control_characters_c0() -> list[str]:
 _ROOT_IN_POSIX = hasattr(os, 'geteuid') and os.geteuid() == 0
 requires_root_user = unittest.skipUnless(_ROOT_IN_POSIX, "test needs root privilege")
 requires_non_root_user = unittest.skipIf(_ROOT_IN_POSIX, "test needs non-root account")
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
