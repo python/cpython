@@ -1,3 +1,0 @@
-Fix Denial of Service (DoS) and memory exhaustion (OOM) vulnerability in
-:mod:`tarfile` by adding a limit (:data:`!_MAX_PAX_RECORDS`) to the number of
-records parsed from a single PAX extended header.
