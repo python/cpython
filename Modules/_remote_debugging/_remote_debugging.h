@@ -121,7 +121,6 @@ typedef struct {
 #define SIZEOF_GEN_OBJ sizeof(PyGenObject)
 #define SIZEOF_INTERP_FRAME sizeof(_PyInterpreterFrame)
 #define SIZEOF_LLIST_NODE sizeof(struct llist_node)
-#define SIZEOF_PAGE_CACHE_ENTRY sizeof(page_cache_entry_t)
 #define SIZEOF_PYOBJECT sizeof(PyObject)
 #define SIZEOF_SET_OBJ sizeof(PySetObject)
 #define SIZEOF_TASK_OBJ 4096
@@ -575,7 +574,6 @@ extern int parse_frame_object(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
     uintptr_t address,
-    uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 );
 
@@ -584,7 +582,6 @@ extern int parse_frame_from_chunks(
     PyObject **result,
     uintptr_t address,
     uintptr_t *previous_frame,
-    uintptr_t *stackpointer,
     StackChunkList *chunks
 );
 
