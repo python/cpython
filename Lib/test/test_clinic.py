@@ -1711,6 +1711,17 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=3)
 
+    def test_param_optional_str_length_without_c_default(self):
+        err = (
+            "str_converter: cannot compute the default value for 'a_length'"
+        )
+        block = """
+            module os
+            os.access
+                a: str(accept={str, robuffer}, zeroes=True, c_default="some_global") = unknown
+        """
+        self.expect_failure(block, err, lineno=2)
+
     def disabled_test_converter_arguments(self):
         function = self.parse_function("""
             module os
@@ -4909,6 +4920,8 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.str_converter('a', 'b', 'c')
         with self.assertRaises(ValueError):
             ac_tester.str_converter('a', b'b\0b', 'c')
+        self.assertEqual(ac_tester.str_converter(), ('a', 'b', 'c'))
+        self.assertEqual(ac_tester.str_converter('a', b'b'), ('a', 'b', 'c'))
         self.assertEqual(ac_tester.str_converter('a', b'b', 'c'), ('a', 'b', 'c'))
         self.assertEqual(ac_tester.str_converter('a', b'b', b'c'), ('a', 'b', 'c'))
         self.assertEqual(ac_tester.str_converter('a', b'b', 'c\0c'), ('a', 'b', 'c\0c'))

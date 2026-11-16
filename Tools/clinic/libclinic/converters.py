@@ -828,6 +828,18 @@ class str_converter(CConverter):
         if self.default is None:
             self.c_default = "NULL"
 
+    def length_c_default(self) -> str | None:
+        # The byte length of the default value; the parser only writes
+        # it when the argument is passed.
+        default = self.default
+        if default is NULL or default is None:
+            return "0"
+        elif isinstance(default, str):
+            return str(len(default.encode('utf-8')))
+        elif isinstance(default, bytes):
+            return str(len(default))
+        return None
+
     def post_parsing(self) -> str:
         if self.encoding:
             name = self.name
@@ -1064,6 +1076,10 @@ class Py_UNICODE_converter(CConverter):
             else:
                 fail(f"Py_UNICODE_converter: illegal 'accept' argument {accept!r}")
         self.c_default = "NULL"
+
+    def length_c_default(self) -> str | None:
+        # The C default value is always NULL.
+        return "0"
 
     def cleanup(self) -> str:
         if self.length:

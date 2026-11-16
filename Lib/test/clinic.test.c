@@ -2043,11 +2043,11 @@ test_str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *d = "cef";
     const char *e = "gh";
     const char *f = "ij";
-    Py_ssize_t f_length;
+    Py_ssize_t f_length = 2;
     const char *g = "kl";
-    Py_ssize_t g_length;
+    Py_ssize_t g_length = 2;
     const char *h = "mn";
-    Py_ssize_t h_length;
+    Py_ssize_t h_length = 2;
 
     if (!PyArg_ParseArray(args, nargs, "|sssyzy#s#z#:test_str_converter",
         &a, &b, &c, &d, &e, &f, &f_length, &g, &g_length, &h, &h_length)) {
@@ -2065,7 +2065,7 @@ test_str_converter_impl(PyObject *module, const char *a, const char *b,
                         const char *f, Py_ssize_t f_length, const char *g,
                         Py_ssize_t g_length, const char *h,
                         Py_ssize_t h_length)
-/*[clinic end generated code: output=58dc0fad26cd4c5d input=8afe9da8185cd38c]*/
+/*[clinic end generated code: output=e251efc38d275ad6 input=8afe9da8185cd38c]*/
 
 
 /*[clinic input]
