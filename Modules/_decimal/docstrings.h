@@ -586,7 +586,13 @@ Return the sum of x and y.\n\
 
 PyDoc_STRVAR(doc_ctx_canonical,
 "canonical($self, x, /)\n--\n\n\
-Return a new instance of x.\n\
+Returns the same Decimal object.\n\
+\n\
+As we do not have different encodings for the same number, the\n\
+received object already is in its canonical form.\n\
+\n\
+>>> ExtendedContext.canonical(Decimal('2.50'))\n\
+Decimal('2.50')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_compare,
@@ -867,7 +873,7 @@ the context to the result.\n\
 PyDoc_STRVAR(doc_ctx_power,
 "power($self, /, a, b, modulo=None)\n--\n\n\
 Compute a**b. If 'a' is negative, then 'b' must be integral. The result\n\
-will be inexact unless 'a' is integral and the result is finite and can\n\
+will be inexact unless 'b' is integral and the result is finite and can\n\
 be expressed exactly in 'precision' digits.  In the Python version the\n\
 result is always correctly rounded, in the C version the result is almost\n\
 always correctly rounded.\n\

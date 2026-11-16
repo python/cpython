@@ -1829,7 +1829,9 @@ class CAPITest(unittest.TestCase):
 
         def fresh_string(text):
             # Create a new string object by decoding a bytes string.
-            return text.encode().decode()
+            # Add a suffix to make sure that it's not interned, even if
+            # the string is interned in the PYC file (Free Threading).
+            return (text + ' suffix').encode().decode()
 
         s = fresh_string('hello')
         self.assertEqual(check_interned(s), SSTATE_NOT_INTERNED)

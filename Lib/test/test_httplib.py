@@ -405,6 +405,11 @@ class HeaderTests(TestCase):
             'invalid.host\r\n',
             'invalid.host\x00',
             'invalid host',
+            # The IDNA codec normalizes these to an ASCII space
+            'invalid\xa0host',
+            'invalid\u3000host',
+            # ... and this one to a space and a combining character
+            'invalid\xa8host',
         )
         for tunnel_host in cases:
             with self.subTest(tunnel_host):
