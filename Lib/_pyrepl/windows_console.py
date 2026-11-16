@@ -677,23 +677,27 @@ class WindowsConsole(Console):
                 e.raw += e2.raw
 
         text = ""
-        recs, rec_count = self._read_input_bulk(1024)
-        for i in range(rec_count):
-            rec = recs[i]
-            # In case of a legacy console, we do not only receive a keydown
-            # event, but also a keyup event - and for uppercase letters
-            # an additional SHIFT_PRESSED event.
-            if rec and rec.EventType == KEY_EVENT:
-                key_event = rec.Event.KeyEvent
-                if not key_event.bKeyDown:
-                    continue
-                ch = key_event.uChar.UnicodeChar
-                if ch == "\x00":
-                    # ignore SHIFT_PRESSED and special keys
-                    continue
-                if ch == "\r":
-                    ch = "\n"
-                text += ch
+        while True:
+            recs, rec_count = self._read_input_bulk(1024)
+            for i in range(rec_count):
+                rec = recs[i]
+                # In case of a legacy console, we do not only receive a keydown
+                # event, but also a keyup event - and for uppercase letters
+                # an additional SHIFT_PRESSED event.
+                if rec and rec.EventType == KEY_EVENT:
+                    key_event = rec.Event.KeyEvent
+                    if not key_event.bKeyDown:
+                        continue
+                    ch = key_event.uChar.UnicodeChar
+                    if ch == "\x00":
+                        # ignore SHIFT_PRESSED and special keys
+                        continue
+                    if ch == "\r":
+                        ch = "\n"
+                    text += ch
+            # Read again while the text ends with a high surrogate.
+            if not "\ud800" <= text[-1:] <= "\udbff":
+                break
         # Each record on Windows holds a UTF-16 code unit.
         # A surrogate pair must be joined before encoding,
         # an unpaired half becomes U+FFFD.

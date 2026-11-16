@@ -436,10 +436,13 @@ class WindowsConsoleGetEventTests(TestCase):
         event = self.console.get_event(block=False)
         return event
 
-    def get_pending(self, input_records) -> Event:
+    def get_pending(self, *reads) -> Event:
         self.console = WindowsConsole(encoding='utf-8')
-        recs = (len(input_records) * wc.INPUT_RECORD)(*input_records)
-        self.mock = MagicMock(return_value=(recs, len(input_records)))
+        recs = []
+        for read in reads:
+            rec = (len(read) * wc.INPUT_RECORD)(*read)
+            recs.append((rec, len(rec)))
+        self.mock = MagicMock(side_effect=recs)
         self.console._read_input_bulk = self.mock
         event = self.console.getpending()
         return event
@@ -666,6 +669,20 @@ class WindowsConsoleGetEventTests(TestCase):
         event = self.get_pending(ir_list)
         self.assertEqual(event.data, "a😀\n")
         self.assertEqual(event.raw, b"a\xf0\x9f\x98\x80\n")
+
+    def test_getpending_split_surrogate_pair(self):
+        ir_list_one = [
+            self.get_input_record("a"),
+            self.get_input_record("\ud83d"),
+        ]
+        ir_list_two = [
+            self.get_input_record("\ude00"),
+            self.get_input_record("\r")
+        ]
+        event = self.get_pending(ir_list_one, ir_list_two)
+        self.assertEqual(event.data, "a😀\n")
+        self.assertEqual(event.raw, b"a\xf0\x9f\x98\x80\n")
+        self.assertEqual(self.mock.call_count, 2)
 
     def test_push_char(self):
         self.console = WindowsConsole(encoding='utf-8')
