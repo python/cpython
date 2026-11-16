@@ -1614,13 +1614,13 @@ class UserString(_collections_abc.Sequence):
     def partition(self, sep):
         return self.data.partition(sep)
 
-    # The 'maxsplit' keyword parameter can be removed in Python 3.18.
+    # The 'maxsplit' keyword parameter can be removed in Python 3.21.
     def replace(self, old, new, count=_MISSING, *, maxsplit=_MISSING):
         if maxsplit is not _MISSING:
             if count is not _MISSING:
                 raise TypeError("'count' and 'maxsplit' are mutually exclusive "
                                 "and support for 'maxsplit' keyword parameter "
-                                "is slated for removal in Python 3.18")
+                                "is slated for removal in Python 3.21")
             import warnings
             warnings._deprecated(
                 "maxsplit",
@@ -1628,7 +1628,7 @@ class UserString(_collections_abc.Sequence):
                         "Python 3.16 and slated for removal in Python {remove}; "
                         "use the 'count' keyword parameter or pass the count "
                         "as a positional argument instead",
-                remove=(3, 18))
+                remove=(3, 21))
             count = maxsplit
         elif count is _MISSING:
             count = -1

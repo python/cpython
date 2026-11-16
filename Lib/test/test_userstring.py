@@ -11,7 +11,7 @@ from collections import UserString
 
 DEPRECATED_MAXSPLIT_PARAMETER = re.escape(
     "the 'maxsplit' keyword parameter is deprecated since "
-    "Python 3.16 and slated for removal in Python 3.18; "
+    "Python 3.16 and slated for removal in Python 3.21; "
     "use the 'count' keyword parameter or pass the count "
     "as a positional argument instead"
 )
