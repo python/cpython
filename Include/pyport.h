@@ -11,7 +11,7 @@
 // _Py_STDC_VERSION: the version of the C standard.
 // gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
 // arbitrary value, which means we can't use __STDC_VERSION__ on C++.
-#if !defined(__cplusplus) && defined(__STDC_VERSION__)
+#if defined(__STDC_VERSION__) && !defined(__cplusplus)
 #  define _Py_STDC_VERSION __STDC_VERSION__
 #endif
 
