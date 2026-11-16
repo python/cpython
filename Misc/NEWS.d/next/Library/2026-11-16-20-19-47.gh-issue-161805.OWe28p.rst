@@ -1,0 +1,2 @@
+Fix :func:`sysconfig.get_config_vars` so that it adjusts ``-arch`` options
+on macOS even when they appear at the very end of ``CFLAGS`` et al.
