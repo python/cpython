@@ -142,7 +142,7 @@ Other language changes
 * :class:`sentinel` now accepts an optional *doc* parameter for giving a
   sentinel object a docstring.  The ``__doc__`` attribute of a sentinel
   object is now ``None`` by default, instead of the docstring of the
-  :class:`!sentinel` class.
+  :class:`sentinel` class.
   (Contributed by Thomas M Kehrenberg in :gh:`162069`.)
 
 

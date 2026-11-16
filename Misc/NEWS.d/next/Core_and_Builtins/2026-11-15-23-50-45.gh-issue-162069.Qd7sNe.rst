@@ -1,3 +1,3 @@
 Add an optional *doc* parameter to :class:`sentinel` for giving a sentinel
 object a docstring.  The ``__doc__`` attribute of a sentinel object is now
-``None`` by default, instead of the docstring of the :class:`!sentinel` class.
+``None`` by default, instead of the docstring of the :class:`sentinel` class.
