@@ -1,0 +1,3 @@
+Reject NUL, CR and LF in IMAP command arguments (CVE-2025-15366).
+Other control characters in quoted strings and literal data remain allowed.
+Discard pending message literals when a command is rejected.
