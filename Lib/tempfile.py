@@ -44,7 +44,6 @@ import shutil as _shutil
 import stat as _stat
 import errno as _errno
 from random import Random as _Random
-import stat as _stat
 import sys as _sys
 import types as _types
 import weakref as _weakref
