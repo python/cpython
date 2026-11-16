@@ -6,8 +6,6 @@
 Python support for the ``perf map`` compatible profilers
 ========================================================
 
-:author: Pablo Galindo
-
 `The Linux perf profiler <https://perf.wiki.kernel.org>`_ and
 `samply <https://github.com/mstange/samply>`_ are powerful tools that allow you to
 profile and obtain information about the performance of your application.
@@ -217,8 +215,9 @@ Example, using the :mod:`sys` APIs in file :file:`example.py`:
 How to obtain the best results
 ------------------------------
 
-For best results, Python should be compiled with
-``CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"`` as this allows
+For best results, keep frame pointers enabled. On supported GCC-compatible
+toolchains, CPython builds itself with ``-fno-omit-frame-pointer`` and similar
+flags (see :option:`--without-frame-pointers` for details). These flags allow
 profilers to unwind using only the frame pointer and not on DWARF debug
 information. This is because as the code that is interposed to allow ``perf``
 support is dynamically generated it doesn't have any DWARF debugging information
@@ -274,7 +273,7 @@ or using the environment variable::
 
 ``perf inject --jit`` command will read ``perf.data``,
 automatically pick up the perf dump file that Python creates (in
-``/tmp/perf-$PID.dump``), and then create ``perf.jit.data`` which merges all the
+``/tmp/jit-$PID.dump``), and then create ``perf.jit.data`` which merges all the
 JIT information together. It should also create a lot of ``jitted-XXXX-N.so``
 files in the current directory which are ELF images for all the JIT trampolines
 that were created by Python.

@@ -4,9 +4,10 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "clear_memo($self, /)\n"
@@ -48,25 +49,12 @@ static PyObject *
 _pickle_Pickler_dump(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "dump",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *obj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("dump", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("dump", nargs, 1, 1)) {
         goto exit;
     }
     obj = args[0];
@@ -286,25 +274,12 @@ static PyObject *
 _pickle_Unpickler_persistent_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "persistent_load",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
     PyObject *pid;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("persistent_load", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("persistent_load", nargs, 1, 1)) {
         goto exit;
     }
     pid = args[0];
@@ -365,26 +340,13 @@ static PyObject *
 _pickle_Unpickler_find_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", "", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "find_class",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
     PyObject *module_name;
     PyObject *global_name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_NoKwnames("find_class", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("find_class", nargs, 2, 2)) {
         goto exit;
     }
     module_name = args[0];
@@ -518,13 +480,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(fastargs[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -536,13 +493,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(fastargs[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -931,13 +883,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -949,13 +896,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1060,13 +1002,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1078,13 +1015,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = _PyUnicode_AsUTF8NoNUL(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1098,4 +1030,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6331c72b3c427f63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df810fb55415996f input=a9049054013a1b77]*/

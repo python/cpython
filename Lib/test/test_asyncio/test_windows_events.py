@@ -1,10 +1,12 @@
 import os
 import signal
 import socket
+import struct
 import sys
 import time
 import threading
 import unittest
+import warnings
 from unittest import mock
 
 if sys.platform != 'win32':
@@ -15,11 +17,15 @@ import _winapi
 
 import asyncio
 from asyncio import windows_events
+from asyncio import windows_utils
+from test import support
+from test.support import os_helper
+from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -110,6 +116,38 @@ class ProactorTests(WindowsEventsTestCase):
         self.loop.run_until_complete(f)
         self.assertEqual(f.result(), b'')
         b.close()
+
+    def test_accept_connection_reset(self):
+        # gh-93821: a connection reset while it waits in the listen queue
+        # makes AcceptEx fail with ERROR_NETNAME_DELETED.  The server must
+        # keep accepting.
+        async def handle(reader, writer):
+            writer.close()
+
+        async def main():
+            server = await asyncio.start_server(handle, socket_helper.HOSTv4, 0)
+            port = server.sockets[0].getsockname()[1]
+            # Both connects complete while the loop is blocked here: the
+            # first is taken by the pending AcceptEx, the second waits in
+            # the listen queue and is reset there.
+            first = socket.create_connection((socket_helper.HOSTv4, port))
+            second = socket.create_connection((socket_helper.HOSTv4, port))
+            second.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                              struct.pack('HH', 1, 0))
+            second.close()
+            try:
+                await asyncio.sleep(0.5)
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(socket_helper.HOSTv4, port),
+                    support.SHORT_TIMEOUT)
+                writer.close()
+                await writer.wait_closed()
+            finally:
+                first.close()
+                server.close()
+                await server.wait_closed()
+
+        self.loop.run_until_complete(main())
 
     def test_double_bind(self):
         ADDRESS = r'\\.\pipe\test_double_bind-%s' % os.getpid()
@@ -323,40 +361,132 @@ class ProactorTests(WindowsEventsTestCase):
         stop.set()
         thr.join()
 
+    def test_custom_poll_integration(self):
+        # gh-154971: a caller can wait on the completion port and process statuses itself
+        proactor = self.loop._proactor
 
-class WinPolicyTests(WindowsEventsTestCase):
+        a, b = socket.socketpair()
+        self.addCleanup(a.close)
+        self.addCleanup(b.close)
 
-    def test_selector_win_policy(self):
-        async def main():
-            self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+        fut = proactor.recv(a, 100)
+        self.assertFalse(fut.done())
 
-        old_policy = asyncio.events._get_event_loop_policy()
-        try:
-            with self.assertWarnsRegex(
-                DeprecationWarning,
-                "'asyncio.WindowsSelectorEventLoopPolicy' is deprecated",
-            ):
-                asyncio.events._set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            asyncio.run(main())
-        finally:
-            asyncio.events._set_event_loop_policy(old_policy)
+        b.send(b'data')
 
-    def test_proactor_win_policy(self):
-        async def main():
-            self.assertIsInstance(
-                asyncio.get_running_loop(),
-                asyncio.ProactorEventLoop)
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+        while not fut.done() and time.monotonic() < deadline:
+            status = _overlapped.GetQueuedCompletionStatus(proactor._iocp, 100)
+            if status is not None:
+                proactor._process_completion_status(status)
 
-        old_policy = asyncio.events._get_event_loop_policy()
-        try:
-            with self.assertWarnsRegex(
-                DeprecationWarning,
-                "'asyncio.WindowsProactorEventLoopPolicy' is deprecated",
-            ):
-                asyncio.events._set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-            asyncio.run(main())
-        finally:
-            asyncio.events._set_event_loop_policy(old_policy)
+        self.assertTrue(fut.done())
+        self.assertEqual(fut.result(), b'data')
+
+
+class ProactorPipeObjectSupportTests(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.ProactorEventLoop()
+        self.addCleanup(self.loop.close)
+        self.errors = []
+        self.loop.set_exception_handler(
+            lambda loop, context: self.errors.append(context))
+
+    def check_read_rejected(self, pipe):
+        self.addCleanup(pipe.close)
+        lost = self.loop.create_future()
+
+        class Proto(asyncio.Protocol):
+            def connection_lost(self, exc):
+                if not lost.done():
+                    lost.set_result(exc)
+
+        async def run():
+            transport, _ = await self.loop.connect_read_pipe(Proto, pipe)
+            exc = await lost
+            transport.close()
+            return exc
+
+        exc = self.loop.run_until_complete(run())
+        self.assertIsInstance(exc, OSError)
+
+    def check_write_rejected(self, pipe):
+        self.addCleanup(pipe.close)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', ResourceWarning)
+            with self.assertRaises(OSError):
+                self.loop.run_until_complete(
+                    self.loop.connect_write_pipe(asyncio.BaseProtocol, pipe))
+            support.gc_collect()
+
+    def check_accepted(self, rpipe, wpipe):
+        self.addCleanup(rpipe.close)
+        self.addCleanup(wpipe.close)
+
+        chunks = []
+        lost = self.loop.create_future()
+
+        class ReadProto(asyncio.Protocol):
+            def data_received(self, data):
+                chunks.append(data)
+
+            def connection_lost(self, exc):
+                if not lost.done():
+                    lost.set_result(exc)
+
+        async def run():
+            rtransport, _ = await self.loop.connect_read_pipe(ReadProto, rpipe)
+            wtransport, _ = await self.loop.connect_write_pipe(
+                asyncio.BaseProtocol, wpipe)
+            wtransport.write(b'spam')
+            wtransport.close()
+            await lost
+            rtransport.close()
+
+        self.loop.run_until_complete(run())
+        self.assertEqual(b''.join(chunks), b'spam')
+        self.assertFalse(self.errors)
+
+    def test_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(duplex=True, overlapped=(True, True))
+        self.check_accepted(windows_utils.PipeHandle(rhandle),
+                            windows_utils.PipeHandle(whandle))
+
+    def test_socketpair(self):
+        rsock, wsock = socket.socketpair()
+        self.check_accepted(rsock, wsock)
+
+    def test_read_non_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(overlapped=(False, False))
+        self.addCleanup(windows_utils.PipeHandle(whandle).close)
+        self.check_read_rejected(windows_utils.PipeHandle(rhandle))
+
+    def test_write_non_overlapped_pipe(self):
+        rhandle, whandle = windows_utils.pipe(overlapped=(False, False))
+        self.addCleanup(windows_utils.PipeHandle(rhandle).close)
+        self.check_write_rejected(windows_utils.PipeHandle(whandle))
+
+    def test_read_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as f:
+            f.write(b'spam')
+        self.check_read_rejected(open(os_helper.TESTFN, 'rb', 0))
+
+    def test_write_regular_file(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        self.check_write_rejected(open(os_helper.TESTFN, 'wb', 0))
+
+    def test_read_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, wfd)
+        self.check_read_rejected(open(rfd, 'rb', 0))
+
+    def test_write_os_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.check_write_rejected(open(wfd, 'wb', 0))
 
 
 if __name__ == '__main__':

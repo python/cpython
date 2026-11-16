@@ -280,7 +280,7 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
                                            int flags);
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
-    char code;
+    const char *code;
     ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
@@ -289,7 +289,8 @@ struct fielddesc {
 };
 
 // Get all single-character type codes (for use in error messages)
-extern char *_ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_simple_type_chars(void);
+extern const char* _ctypes_get_complex_type_formats(void);
 
 typedef struct CFieldObject {
     PyObject_HEAD
@@ -493,7 +494,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 struct tagPyCArgObject {
     PyObject_HEAD
     ffi_type *pffi_type;
-    char tag;
+    const char *tag;
     union {
         char c;
         char b;
@@ -510,7 +511,7 @@ struct tagPyCArgObject {
         long double G[2];
     } value;
     PyObject *obj;
-    Py_ssize_t size; /* for the 'V' tag */
+    Py_ssize_t size; /* for the "V" tag */
 };
 
 #define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))

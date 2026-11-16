@@ -1,7 +1,9 @@
 import sys
 import unittest
 from test.support import import_helper
+
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 
 SIZEOF_VOID_P = _testcapi.SIZEOF_VOID_P
@@ -79,7 +81,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(hash_pointer(VOID_P_MAX), -2)
 
     def test_hash_buffer(self):
-        hash_buffer = _testcapi.hash_buffer
+        # Test Py_HashBuffer()
+        hash_buffer = _testlimitedcapi.hash_buffer
 
         def check(data):
             self.assertEqual(hash_buffer(data), hash(data))

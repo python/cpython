@@ -12,7 +12,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestCM:
@@ -480,7 +480,7 @@ class TestAsyncCase(unittest.TestCase):
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
-                asyncio.events._get_event_loop_policy().get_event_loop()
+                asyncio.get_event_loop()
 
             async def test_demo1(self):
                 pass
@@ -490,7 +490,7 @@ class TestAsyncCase(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
 
     def test_loop_factory(self):
-        asyncio.events._set_event_loop_policy(None)
+        asyncio.set_event_loop(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             loop_factory = asyncio.EventLoop
@@ -501,7 +501,7 @@ class TestAsyncCase(unittest.TestCase):
         test = TestCase1('test_demo1')
         result = test.run()
         self.assertTrue(result.wasSuccessful())
-        self.assertIsNone(support.maybe_get_event_loop_policy())
+        self.assertIsNone(support.maybe_get_event_loop())
 
 if __name__ == "__main__":
     unittest.main()

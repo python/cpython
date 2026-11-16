@@ -130,13 +130,13 @@ getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
         /* what we should do? */
     } else if (flags & NI_NUMERICSERV) {
         sprintf(numserv, "%d", ntohs(port));
-        if (strlen(numserv) > servlen)
+        if (strlen(numserv) >= servlen)
             return ENI_MEMORY;
         strcpy(serv, numserv);
     } else {
         sp = getservbyport(port, (flags & NI_DGRAM) ? "udp" : "tcp");
         if (sp) {
-            if (strlen(sp->s_name) > servlen)
+            if (strlen(sp->s_name) >= servlen)
                 return ENI_MEMORY;
             strcpy(serv, sp->s_name);
         } else
@@ -166,7 +166,7 @@ getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
         if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
             == NULL)
             return ENI_SYSTEM;
-        if (strlen(numaddr) > hostlen)
+        if (strlen(numaddr) >= hostlen)
             return ENI_MEMORY;
         strcpy(host, numaddr);
     } else {
@@ -181,7 +181,7 @@ getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
                 p = strchr(hp->h_name, '.');
                 if (p) *p = '\0';
             }
-            if (strlen(hp->h_name) > hostlen) {
+            if (strlen(hp->h_name) >= hostlen) {
 #ifdef ENABLE_IPV6
                 freehostent(hp);
 #endif
@@ -197,7 +197,7 @@ getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
             if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
                 == NULL)
                 return ENI_NOHOSTNAME;
-            if (strlen(numaddr) > hostlen)
+            if (strlen(numaddr) >= hostlen)
                 return ENI_MEMORY;
             strcpy(host, numaddr);
         }

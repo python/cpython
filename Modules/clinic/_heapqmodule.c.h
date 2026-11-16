@@ -326,8 +326,8 @@ PyDoc_STRVAR(_heapq_heappushpop_max__doc__,
 "\n"
 "Maxheap variant of heappushpop.\n"
 "\n"
-"The combined action runs more efficiently than heappush_max() followed by\n"
-"a separate call to heappop_max().");
+"The combined action runs more efficiently than heappush_max()\n"
+"followed by a separate call to heappop_max().");
 
 #define _HEAPQ_HEAPPUSHPOP_MAX_METHODDEF    \
     {"heappushpop_max", _PyCFunction_CAST(_heapq_heappushpop_max), METH_FASTCALL, _heapq_heappushpop_max__doc__},
@@ -358,4 +358,4 @@ _heapq_heappushpop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e83d50002c29a96d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21e4f248ef6e83d6 input=a9049054013a1b77]*/

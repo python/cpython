@@ -170,14 +170,18 @@ if "%do_pgo%"=="true" (
     del /s "%dir%\*.pgc"
     del /s "%dir%\..\Lib\*.pyc"
     set conf=PGUpdate
-    if "%clean%"=="false" (
-        echo on
-        call "%dir%\..\python.bat" %pgo_job%
-        @echo off
-        call :Kill
-        set target=Build
-    )
+    if "%clean%"=="false" goto :RunPgoJob
 )
+goto :Build
+
+:RunPgoJob
+echo on
+call "%dir%\..\python.bat" %pgo_job%
+@echo off
+set pgo_errorlevel=%ERRORLEVEL%
+call :Kill
+if %pgo_errorlevel% NEQ 0 exit /B %pgo_errorlevel%
+set target=Build
 goto :Build
 
 :Kill

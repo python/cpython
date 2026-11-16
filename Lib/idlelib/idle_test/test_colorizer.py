@@ -52,6 +52,8 @@ source = textwrap.dedent("""\
     '''
     case _:'''
     "match x:"
+    type Point = tuple[float, float]
+    type = type(1)
     """)
 
 
@@ -260,7 +262,7 @@ class ColorDelegatorTest(unittest.TestCase):
 
         # Colorizing already scheduled.
         save_id = color.after_id
-        eq(self.root.tk.call('after', 'info', save_id)[1], 'timer')
+        eq(self.root.after_info(save_id)[1], 'timer')
         self.assertFalse(color.colorizing)
         self.assertFalse(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
@@ -277,7 +279,7 @@ class ColorDelegatorTest(unittest.TestCase):
         color.notify_range('1.0', '1.0+3c')
         self.assertTrue(color.stop_colorizing)
         self.assertIsNotNone(color.after_id)
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
         # New event scheduled.
         self.assertNotEqual(color.after_id, save_id)
 
@@ -297,7 +299,7 @@ class ColorDelegatorTest(unittest.TestCase):
         self.assertFalse(color.colorizing)
         self.assertFalse(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
 
         # Toggle colorizing off.
         color.toggle_colorize_event()
@@ -324,7 +326,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # Toggle on while colorizing not in progress.
         color.colorizing = False
         color.toggle_colorize_event()
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
         self.assertFalse(color.colorizing)
         self.assertTrue(color.stop_colorizing)
         self.assertTrue(color.allow_colorizing)
@@ -363,7 +365,7 @@ class ColorDelegatorTest(unittest.TestCase):
         mock_recmain.assert_called()
         eq(mock_recmain.call_count, 1)
         # Rescheduled when TODO tag still exists.
-        eq(self.root.tk.call('after', 'info', color.after_id)[1], 'timer')
+        eq(self.root.after_info(color.after_id)[1], 'timer')
 
         # No changes to text, so no scheduling added.
         text.tag_remove('TODO', '1.0', 'end')
@@ -404,6 +406,8 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('28.25', ('STRING',)), ('28.38', ('STRING',)),
                     ('30.0', ('STRING',)),
                     ('31.1', ('STRING',)),
+                    ('32.0', ('KEYWORD',)),
+                    ('33.0', ('BUILTIN',)), ('33.1', ('BUILTIN',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -434,7 +438,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '33.0'))
+        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '32.0'))
 
     def _assert_highlighting(self, source, tag_ranges):
         """Check highlighting of a given piece of code.
@@ -542,7 +546,7 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
                                                           ('1.5', '1.6')]})
 
-    def test_lazy_soft_keyword(self):
+    def test_lazy_soft_keyword(self):  # lazy new in 3.15.
         # lazy followed by import
         self._assert_highlighting('lazy import foo',
                                   {'KEYWORD': [('1.0', '1.4'),
@@ -569,6 +573,18 @@ class ColorDelegatorTest(unittest.TestCase):
             e"""
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
+        source = '"""a\nb""" + str\n'
+        self._assert_highlighting(source, {'STRING': [('1.0', '2.4')],
+                                           'BUILTIN': [('2.7', '2.10')]})
+
+    def test_long_line(self):
+        # gh-103089: only the first MAX_COLORIZED_LINE characters of a line
+        # are colorized.
+        n = colorizer.MAX_COLORIZED_LINE
+        source = f"pass\n{'x' * (n - 3)}'a', 'b'\n'c'\n"
+        self._assert_highlighting(source, {'KEYWORD': [('1.0', '1.4')],
+                                           'STRING': [(f'2.{n-3}', f'2.{n}'),
+                                                      ('3.0', '3.3')]})
 
     @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):

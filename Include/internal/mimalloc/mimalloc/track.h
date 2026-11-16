@@ -82,11 +82,10 @@ defined, undefined, or not accessible at all:
 #define MI_TRACK_HEAP_DESTROY 1
 #define MI_TRACK_TOOL         "ETW"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "../src/prim/windows/etw.h"
 
-#define mi_track_init()                           EventRegistermicrosoft_windows_mimalloc();
+#define mi_track_init()                           EventRegistermicrosoft_windows_mimalloc()
+#define mi_track_done()                           EventUnregistermicrosoft_windows_mimalloc()
 #define mi_track_malloc_size(p,reqsize,size,zero) EventWriteETW_MI_ALLOC((UINT64)(p), size)
 #define mi_track_free_size(p,size)                EventWriteETW_MI_FREE((UINT64)(p), size)
 
@@ -106,7 +105,7 @@ defined, undefined, or not accessible at all:
 // Utility definitions
 
 #ifndef mi_track_resize
-#define mi_track_resize(p,oldsize,newsize)      mi_track_free_size(p,oldsize); mi_track_malloc(p,newsize,false)
+#define mi_track_resize(p,oldsize,newsize)      do{ mi_track_free_size(p,oldsize); mi_track_malloc(p,newsize,false); } while(0)
 #endif
 
 #ifndef mi_track_align
@@ -115,6 +114,10 @@ defined, undefined, or not accessible at all:
 
 #ifndef mi_track_init
 #define mi_track_init()
+#endif
+
+#ifndef mi_track_done
+#define mi_track_done()
 #endif
 
 #ifndef mi_track_mem_defined

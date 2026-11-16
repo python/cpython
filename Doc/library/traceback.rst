@@ -44,10 +44,6 @@ The module's API can be divided into two parts:
   necessary for later formatting without holding references to actual exception
   and traceback objects.
 
-.. versionadded:: 3.13
-   Output is colorized by default and can be
-   :ref:`controlled using environment variables <using-on-controlling-color>`.
-
 
 Module-Level Functions
 ----------------------
@@ -147,9 +143,7 @@ Module-Level Functions
    :ref:`traceback object <traceback-objects>` *tb*.  It is useful
    for alternate formatting of stack traces.  The optional *limit* argument has
    the same meaning as for :func:`print_tb`.  A "pre-processed" stack trace
-   entry is a :class:`FrameSummary` object containing attributes
-   :attr:`~FrameSummary.filename`, :attr:`~FrameSummary.lineno`,
-   :attr:`~FrameSummary.name`, and :attr:`~FrameSummary.line` representing the
+   entry is a :class:`FrameSummary` object with attributes representing the
    information that is usually printed for a stack trace.
 
 
@@ -163,16 +157,19 @@ Module-Level Functions
 
 .. function:: print_list(extracted_list, file=None)
 
-   Print the list of tuples as returned by :func:`extract_tb` or
-   :func:`extract_stack` as a formatted stack trace to the given file.
+   Print a list of :class:`FrameSummary` objects as returned by
+   :func:`extract_tb` or :func:`extract_stack`, or a list of old-style tuples
+   (see :meth:`StackSummary.from_list`), as a formatted stack trace to the
+   given file.
    If *file* is ``None``, the output is written to :data:`sys.stderr`.
 
 
 .. function:: format_list(extracted_list)
 
-   Given a list of tuples or :class:`FrameSummary` objects as returned by
-   :func:`extract_tb` or :func:`extract_stack`, return a list of strings ready
-   for printing.  Each string in the resulting list corresponds to the item with
+   Given a list of :class:`FrameSummary` objects as returned by
+   :func:`extract_tb` or :func:`extract_stack`, or a list of old-style tuples
+   (see :meth:`StackSummary.from_list`), return a list of strings ready for
+   printing.  Each string in the resulting list corresponds to the item with
    the same index in the argument list.  Each string ends in a newline; the
    strings may contain internal newlines as well, for those items whose source
    text line is not ``None``.
@@ -181,7 +178,7 @@ Module-Level Functions
 .. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
-   given by :data:`sys.last_value`.  The return value is a list of strings, each
+   given by :data:`sys.last_exc`.  The return value is a list of strings, each
    ending in a newline.  The list contains the exception's message, which is
    normally a single string; however, for :exc:`SyntaxError` exceptions, it
    contains several lines that (when printed) display detailed information
@@ -347,7 +344,7 @@ the module-level functions described above.
 
    .. attribute:: exc_type
 
-      The class of the original traceback.
+      The class of the original exception.
 
       .. deprecated:: 3.13
 
@@ -391,7 +388,7 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
@@ -542,8 +539,8 @@ in a :ref:`traceback <traceback-objects>`.
 
    .. attribute:: FrameSummary.line
 
-      A string representing the source code for this frame, with leading and
-      trailing whitespace stripped.
+      The source line at :attr:`~FrameSummary.lineno`,
+      with leading and trailing whitespace stripped.
       If the source is not available, it is ``None``.
 
    .. attribute:: FrameSummary.end_lineno

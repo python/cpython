@@ -836,7 +836,11 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                try:
+                    y += _floor(_log2(random()) / c) + 1
+                except ValueError:
+                    # Reject case where random() returned 0.0
+                    continue
                 if y > n:
                     return x
                 x += 1
@@ -857,7 +861,11 @@ class Random(_random.Random):
             u = random()
             u -= 0.5
             us = 0.5 - _fabs(u)
-            k = _floor((2.0 * a / us + b) * u + c)
+            try:
+                k = _floor((2.0 * a / us + b) * u + c)
+            except ZeroDivisionError:
+                # Reject case where random() returned 0.0
+                continue
             if k < 0 or k > n:
                 continue
             v = random()
@@ -1012,39 +1020,45 @@ if hasattr(_os, "fork"):
 def _parse_args(arg_list: list[str] | None):
     import argparse
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, color=True)
+        formatter_class=argparse.RawTextHelpFormatter)
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-c", "--choice", nargs="+",
         help="print a random choice")
     group.add_argument(
         "-i", "--integer", type=int, metavar="N",
-        help="print a random integer between 1 and N inclusive")
+        help="print a random integer between 1 and `N` inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating-point number between 0 and N inclusive")
+        help="print a random floating-point number between 0 and `N` inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)
     parser.add_argument("input", nargs="*",
                         help="""\
 if no options given, output depends on the input
-    string or multiple: same as --choice
-    integer: same as --integer
-    float: same as --float""")
+    string or multiple: same as `--choice`
+    integer: same as `--integer`
+    float: same as `--float`""")
     args = parser.parse_args(arg_list)
-    return args, parser.format_help()
+    return args, parser
+
+
+def _randint_cli(parser, n: int) -> int:
+    if n < 1:
+        parser.error(f"integer must be 1 or greater, got {n}")
+    return randint(1, n)
 
 
 def main(arg_list: list[str] | None = None) -> int | str:
-    args, help_text = _parse_args(arg_list)
+    args, parser = _parse_args(arg_list)
 
     # Explicit arguments
     if args.choice:
         return choice(args.choice)
 
     if args.integer is not None:
-        return randint(1, args.integer)
+        return _randint_cli(parser, args.integer)
 
     if args.float is not None:
         return uniform(0, args.float)
@@ -1059,20 +1073,22 @@ def main(arg_list: list[str] | None = None) -> int | str:
         try:
             # Is it an integer?
             val = int(val)
-            return randint(1, val)
         except ValueError:
             try:
                 # Is it a float?
                 val = float(val)
-                return uniform(0, val)
             except ValueError:
                 # Split in case of space-separated string: "a b c"
                 return choice(val.split())
+            else:
+                return uniform(0, val)
+        else:
+            return _randint_cli(parser, val)
 
     if len(args.input) >= 2:
         return choice(args.input)
 
-    return help_text
+    return parser.format_help()
 
 
 if __name__ == '__main__':

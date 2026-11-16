@@ -24,7 +24,6 @@ Usage:
 
 import argparse
 import gc
-import io
 import json
 import os
 import pickle
@@ -32,11 +31,10 @@ import statistics
 import struct
 import subprocess
 import sys
-import tempfile
 import tracemalloc
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple
 
 
 # Configuration

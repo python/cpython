@@ -1101,6 +1101,7 @@ queue_create(_queues *queues, Py_ssize_t maxsize,
     }
     int64_t qid = _queues_add(queues, queue);
     if (qid < 0) {
+        queue->alive = 0;
         _queue_clear(queue);
         GLOBAL_FREE(queue);
     }
@@ -1363,6 +1364,7 @@ _queueobj_from_xid(_PyXIData_t *data)
     if (mod == NULL) {
         mod = PyImport_ImportModule(MODULE_NAME_STR);
         if (mod == NULL) {
+            Py_DECREF(qidobj);
             return NULL;
         }
     }
@@ -1552,12 +1554,13 @@ _interpqueues.destroy
 
 Clear and destroy the queue.
 
-Afterward attempts to use the queue will behave as though it never existed.
+Afterward attempts to use the queue will behave as though it never
+existed.
 [clinic start generated code]*/
 
 static PyObject *
 _interpqueues_destroy_impl(PyObject *module, int64_t qid)
-/*[clinic end generated code: output=46b35623f080cbff input=8632bba87f81e3e9]*/
+/*[clinic end generated code: output=46b35623f080cbff input=75136ad807e28677]*/
 {
     int err = queue_destroy(&_globals.queues, qid);
     if (handle_queue_error(err, module, qid)) {

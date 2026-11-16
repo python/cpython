@@ -2,11 +2,17 @@
 
 #include "Python.h"
 #include "pycore_long.h"          // FALSE_TAG TRUE_TAG
-#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <stddef.h>
+
+/*[clinic input]
+class bool "PyObject *" "&PyBool_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee492546880a882f]*/
+
+#include "clinic/boolobject.c.h"
 
 /* We define bool_repr to return "False" or "True" */
 
@@ -23,44 +29,27 @@ PyObject *PyBool_FromLong(long ok)
     return ok ? Py_True : Py_False;
 }
 
-/* We define bool_new to always return either Py_True or Py_False */
+/*[clinic input]
+@vectorcall
+@classmethod
+bool.__new__ as bool_new
+    object as x: object = False
+    /
+
+Returns True when the argument is true, False otherwise.
+
+The builtins True and False are the only two instances of the class
+bool.  The class bool is a subclass of the class int, and cannot be
+subclassed.
+[clinic start generated code]*/
 
 static PyObject *
-bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+bool_new_impl(PyTypeObject *type, PyObject *x)
+/*[clinic end generated code: output=ec434408d43a3773 input=d96e25fce5a04f73]*/
 {
-    PyObject *x = Py_False;
-    long ok;
-
-    if (!_PyArg_NoKeywords("bool", kwds))
+    int ok = PyObject_IsTrue(x);
+    if (ok < 0) {
         return NULL;
-    if (!PyArg_UnpackTuple(args, "bool", 0, 1, &x))
-        return NULL;
-    ok = PyObject_IsTrue(x);
-    if (ok < 0)
-        return NULL;
-    return PyBool_FromLong(ok);
-}
-
-static PyObject *
-bool_vectorcall(PyObject *type, PyObject * const*args,
-                size_t nargsf, PyObject *kwnames)
-{
-    long ok = 0;
-    if (!_PyArg_NoKwnames("bool", kwnames)) {
-        return NULL;
-    }
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("bool", nargs, 0, 1)) {
-        return NULL;
-    }
-
-    assert(PyType_Check(type));
-    if (nargs) {
-        ok = PyObject_IsTrue(args[0]);
-        if (ok < 0) {
-            return NULL;
-        }
     }
     return PyBool_FromLong(ok);
 }
@@ -106,16 +95,6 @@ bool_xor(PyObject *a, PyObject *b)
         return PyLong_Type.tp_as_number->nb_xor(a, b);
     return PyBool_FromLong((a == Py_True) ^ (b == Py_True));
 }
-
-/* Doc string */
-
-PyDoc_STRVAR(bool_doc,
-"bool(object=False, /)\n\
---\n\
-\n\
-Returns True when the argument is true, False otherwise.\n\
-The builtins True and False are the only two instances of the class bool.\n\
-The class bool is a subclass of the class int, and cannot be subclassed.");
 
 /* Arithmetic methods -- only so we can override &, |, ^. */
 
@@ -189,7 +168,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    bool_doc,                                   /* tp_doc */
+    bool_new__doc__,                            /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */

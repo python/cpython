@@ -257,7 +257,7 @@ class TestTracebackType(unittest.TestCase):
         self.assertIs(tb.tb_next.tb_next, None)
 
         # Invalid assignments
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             del tb.tb_next
 
         with self.assertRaises(TypeError):

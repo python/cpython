@@ -77,6 +77,29 @@ class TestDump:
         d[1337] = "true.dat"
         self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
 
+    # gh-145244: UAF on borrowed key when default callback mutates dict
+    def test_default_clears_dict_key_uaf(self):
+        class Evil:
+            pass
+
+        class AlsoEvil:
+            pass
+
+        # Use a non-interned string key so it can actually be freed
+        key = "A" * 100
+        target = {key: Evil()}
+        del key
+
+        def evil_default(obj):
+            if isinstance(obj, Evil):
+                target.clear()
+                return AlsoEvil()
+            raise TypeError("not serializable")
+
+        with self.assertRaises(TypeError):
+            self.json.dumps(target, default=evil_default,
+                            check_circular=False)
+
     def test_dumps_str_subclass(self):
         # Don't call obj.__str__() on str subclasses
 

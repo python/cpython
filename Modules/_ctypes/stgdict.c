@@ -28,6 +28,10 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     ctype_free_stginfo_members(dst_info);
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
+    /* Owned buffers must not be shared if a subsequent allocation fails. */
+    dst_info->format = NULL;
+    dst_info->shape = NULL;
+    dst_info->ffi_type_pointer.elements = NULL;
 #ifdef Py_GIL_DISABLED
     dst_info->mutex = (PyMutex){0};
 #endif
@@ -679,10 +683,22 @@ _replace_array_elements(ctypes_state *st, PyObject *layout_fields,
             structs[struct_index].type = FFI_TYPE_STRUCT;
             structs[struct_index].elements = &dummy_types[dummy_index];
             ++struct_index;
+            ffi_type *etype = &einfo->ffi_type_pointer;
+#if defined(__sparc__) && defined(__arch64__) && !defined(__sun)
+            /* On Linux, GCC and clang pass arrays of floating-point type
+               in a structure in integer registers; only Solaris follows
+               the vendor ABI here (GCC PR target/114416). */
+            if (etype->type == FFI_TYPE_FLOAT) {
+                etype = &ffi_type_uint32;
+            }
+            else if (etype->type == FFI_TYPE_DOUBLE) {
+                etype = &ffi_type_uint64;
+            }
+#endif
             /* Copy over the element's type, length times. */
             while (length > 0) {
                 assert(dummy_index < (num_ffi_type_pointers));
-                dummy_types[dummy_index++] = &einfo->ffi_type_pointer;
+                dummy_types[dummy_index++] = etype;
                 length--;
             }
             assert(dummy_index < (num_ffi_type_pointers));

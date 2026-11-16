@@ -73,7 +73,7 @@ class TestFcntl(unittest.TestCase):
                                    fcntl.F_WRLCK, 0)
         elif sys.platform.startswith('gnukfreebsd'):
             lockdata = struct.pack('qqihhi', 0, 0, 0, fcntl.F_WRLCK, 0, 0)
-        elif sys.platform in ['hp-uxB', 'unixware7']:
+        elif sys.platform == 'hp-uxB':
             lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
         else:
             lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
@@ -151,6 +151,7 @@ class TestFcntl(unittest.TestCase):
             except OSError as exc:
                 if exc.errno == errno.EINVAL:
                     self.skipTest("F_NOTIFY not available by this environment")
+                raise
             fcntl.fcntl(fd, cmd, flags)
         finally:
             os.close(fd)
