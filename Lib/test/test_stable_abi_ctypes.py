@@ -337,6 +337,7 @@ SYMBOL_NAMES = (
     "PyFloat_Type",
     "PyFrame_GetCode",
     "PyFrame_GetLineNumber",
+    "PyFrozenDict_New",
     "PyFrozenSet_New",
     "PyFrozenSet_Type",
     "PyGC_Collect",
