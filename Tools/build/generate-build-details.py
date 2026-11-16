@@ -216,10 +216,20 @@ def main() -> None:
         default=None,
         help='If specified, ``base_prefix`` will be set as a relative path to the given config file path.',
     )
+    parser.add_argument(
+        '--installed-location',
+        action='store_true',
+        help='Use the path the file is installed to as ``--config-file-path``.',
+    )
 
     args = parser.parse_args()
 
     data = generate_data(args.schema_version)
+    if args.installed_location:
+        # Not taken from the Makefile: `make install prefix=...` changes
+        # LIBDEST, but not the prefix that sysconfig reports.
+        args.config_file_path = os.path.join(
+            sysconfig.get_path('stdlib'), 'build-details.json')
     if args.relative_paths:
         make_paths_relative(data, args.config_file_path)
 

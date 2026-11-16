@@ -1034,7 +1034,7 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 
 $(BUILD_DETAILS): pybuilddir.txt
 	$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py \
-		--relative-paths --config-file-path "$(LIBDEST)/$(BUILD_DETAILS)" \
+		--relative-paths --installed-location \
 		`cat pybuilddir.txt`/$(BUILD_DETAILS)
 
 # Build static library
