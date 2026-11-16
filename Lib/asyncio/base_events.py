@@ -1020,8 +1020,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 "offset must be a non-negative integer (got {!r})".format(
                     offset))
 
-    async def _connect_sock(self, exceptions, addr_info, local_addr_infos=None):
-        """Create, bind and connect one socket."""
+    async def _connect_sock(self, exceptions, addr_info, local_addr_infos=None,
+                            connected_sockets=None):
+        """Create, bind and connect one socket.
+
+        If *connected_sockets* is a list, the connected socket is appended to it.
+        """
         my_exceptions = []
         exceptions.append(my_exceptions)
         family, type_, proto, _, address = addr_info
@@ -1051,6 +1055,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                         else:
                             raise OSError(f"no matching local address with {family=} found")
                 await self.sock_connect(sock, address)
+                if connected_sockets is not None:
+                    connected_sockets.append(sock)
                 return sock
             except OSError as exc:
                 my_exceptions.append(exc)
@@ -1160,19 +1166,14 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # Sockets connected by the attempts, so that the winner is
                 # closed if the race is cancelled before it returns.
                 connected = []
-
-                async def connect_sock(addrinfo):
-                    sock = await self._connect_sock(
-                        exceptions, addrinfo, laddr_infos)
-                    connected.append(sock)
-                    return sock
-
                 try:
                     sock = (await staggered.staggered_race(
                         (
                             # can't use functools.partial as it keeps a
                             # reference to exceptions
-                            lambda addrinfo=addrinfo: connect_sock(addrinfo)
+                            lambda addrinfo=addrinfo: self._connect_sock(
+                                exceptions, addrinfo, laddr_infos, connected
+                            )
                             for addrinfo in infos
                         ),
                         happy_eyeballs_delay,

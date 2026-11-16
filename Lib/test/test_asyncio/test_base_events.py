@@ -1421,9 +1421,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         async def getaddrinfo(*args, **kw):
             return [(socket.AF_INET, socket.SOCK_STREAM, 0, '', ('192.0.2.1', 80))]
 
-        async def connect_sock(exceptions, addr_info, local_addr_infos=None):
+        async def connect_sock(exceptions, addr_info, local_addr_infos=None,
+                               connected_sockets=None):
             nonlocal connected
             connected = True
+            connected_sockets.append(sock)
             return sock
 
         self.loop.getaddrinfo = getaddrinfo
