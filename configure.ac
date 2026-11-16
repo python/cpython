@@ -5766,7 +5766,7 @@ PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
 # Detect musl's behaviour of reporting the current allocated stack size for
 # the main thread, rather than the max size, in pthread_getattr_np.
 AS_IF([test "$ac_cv_func_pthread_getattr_np" = yes],
-  [AC_CACHE_CHECK([whether pthread_getattr_np reports the main thread stack reliably],
+  [AC_CACHE_CHECK([whether pthread_getattr_np reports the main thread stack unreliably],
     [ac_cv_unreliable_pthread_getattr_np],
     [# Run the test with a finite stack limit (1 MiB),
      # so the result does not depend on the limit configure runs under.

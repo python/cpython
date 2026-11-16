@@ -22018,8 +22018,8 @@ fi
 # the main thread, rather than the max size, in pthread_getattr_np.
 if test "$ac_cv_func_pthread_getattr_np" = yes
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether pthread_getattr_np reports the main thread stack reliably" >&5
-printf %s "checking whether pthread_getattr_np reports the main thread stack reliably... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether pthread_getattr_np reports the main thread stack unreliably" >&5
+printf %s "checking whether pthread_getattr_np reports the main thread stack unreliably... " >&6; }
 if test ${ac_cv_unreliable_pthread_getattr_np+y}
 then :
   printf %s "(cached) " >&6
