@@ -684,7 +684,7 @@ Constants
    Selects SSL version 3 as the channel encryption protocol.
 
    This protocol is not available if OpenSSL is compiled with the
-   ``no-ssl3`` option.
+   ``no-ssl3`` option, or if Python is built with OpenSSL 4.0 or later.
 
    .. warning::
 
@@ -702,31 +702,47 @@ Constants
 
    Selects TLS version 1.0 as the channel encryption protocol.
 
+   This constant is not available if Python is built with
+   OpenSSL 4.0 or later.
+
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols.
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol :data:`PROTOCOL_TLS_SERVER` or :data:`PROTOCOL_TLS_CLIENT`
+      with :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
 
 .. data:: PROTOCOL_TLSv1_1
 
    Selects TLS version 1.1 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
+
+   This constant is not available if Python is built with
+   OpenSSL 4.0 or later.
 
    .. versionadded:: 3.4
 
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols.
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol :data:`PROTOCOL_TLS_SERVER` or :data:`PROTOCOL_TLS_CLIENT`
+      with :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
 
 .. data:: PROTOCOL_TLSv1_2
 
    Selects TLS version 1.2 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
+
+   This constant is not available if Python is built with
+   OpenSSL 4.0 or later.
 
    .. versionadded:: 3.4
 
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols.
+      OpenSSL has deprecated all version specific protocols. Use the default
+      protocol :data:`PROTOCOL_TLS_SERVER` or :data:`PROTOCOL_TLS_CLIENT`
+      with :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
 
 .. data:: OP_ALL
 
@@ -2365,7 +2381,7 @@ to speed up repeated connections from the same clients.
 
       import socket, ssl
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
