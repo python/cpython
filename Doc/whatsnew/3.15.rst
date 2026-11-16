@@ -2526,6 +2526,17 @@ New features
 
   (Contributed by Victor Stinner in :gh:`141510`.)
 
+* Add the :pep:`757` export/import functions to the limited C API:
+
+  * :c:func:`PyLong_GetNativeLayout`
+  * :c:func:`PyLong_Export`
+  * :c:func:`PyLong_FreeExport`
+  * :c:func:`PyLongWriter_Create`
+  * :c:func:`PyLongWriter_Finish`
+  * :c:func:`PyLongWriter_Discard`
+
+  (Contributed by Sergey B Kirpichev in :gh:`143869`.)
+
 * Add :c:func:`PyObject_CallFinalizerFromDealloc` function to the limited C
   API.
   (Contributed by Victor Stinner in :gh:`146063`.)
