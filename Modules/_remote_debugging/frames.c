@@ -193,11 +193,8 @@ parse_frame_buffer(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
     const char *frame,
-    uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 ) {
-    *address_of_code_object = 0;
-
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
     int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
@@ -215,8 +212,6 @@ parse_frame_buffer(
     }
 #endif
 
-    *address_of_code_object = code_object;
-
     CodeObjectContext code_ctx = {
         .code_addr = code_object,
         .instruction_pointer = instruction_pointer,
@@ -230,7 +225,6 @@ parse_frame_object(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
     uintptr_t address,
-    uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 ) {
     char frame[SIZEOF_INTERP_FRAME];
@@ -247,7 +241,7 @@ parse_frame_object(
     STATS_INC(unwinder, memory_reads);
     STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
 
-    return parse_frame_buffer(unwinder, result, frame, address_of_code_object, previous_frame);
+    return parse_frame_buffer(unwinder, result, frame, previous_frame);
 }
 
 int
@@ -256,41 +250,16 @@ parse_frame_from_chunks(
     PyObject **result,
     uintptr_t address,
     uintptr_t *previous_frame,
-    uintptr_t *stackpointer,
     StackChunkList *chunks
 ) {
-    void *frame_ptr = find_frame_in_chunks(chunks, address);
-    if (!frame_ptr) {
+    const char *frame = find_frame_in_chunks(chunks, address);
+    if (!frame) {
         PyErr_Format(PyExc_RuntimeError, "Frame at address 0x%lx not found in stack chunks", address);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Frame not found in stack chunks");
         return -1;
     }
 
-    char *frame = (char *)frame_ptr;
-    *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
-    *stackpointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.stackpointer);
-    uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
-    int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
-    if (frame_valid != 1) {
-        return frame_valid;
-    }
-
-    uintptr_t instruction_pointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.instr_ptr);
-
-    // Get tlbc_index for free threading builds
-    int32_t tlbc_index = 0;
-#ifdef Py_GIL_DISABLED
-    if (unwinder->debug_offsets.interpreter_frame.tlbc_index != 0) {
-        tlbc_index = GET_MEMBER(int32_t, frame, unwinder->debug_offsets.interpreter_frame.tlbc_index);
-    }
-#endif
-
-    CodeObjectContext code_ctx = {
-        .code_addr = code_object,
-        .instruction_pointer = instruction_pointer,
-        .tlbc_index = tlbc_index,
-    };
-    return parse_code_object(unwinder, result, &code_ctx);
+    return parse_frame_buffer(unwinder, result, frame, previous_frame);
 }
 
 /* ============================================================================
@@ -313,7 +282,6 @@ process_frame_chain(
     while ((void*)frame_addr != NULL) {
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
-        uintptr_t stackpointer = 0;
         last_frame_addr = frame_addr;
 
         if (++frame_count > MAX_FRAME_CHAIN_DEPTH) {
@@ -324,28 +292,25 @@ process_frame_chain(
         assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
 
         if (ctx->chunks && ctx->chunks->count > 0) {
-            if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) == 0) {
+            int parse_result = parse_frame_from_chunks(
+                unwinder, &frame, frame_addr, &next_frame_addr, ctx->chunks);
+            if (parse_result == 0) {
                 goto parsed_frame;
             }
             PyErr_Clear();
         }
-        {
-            uintptr_t address_of_code_object = 0;
-            int parse_result;
-            if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
-                parse_result = parse_frame_buffer(
-                    unwinder, &frame, ctx->prefetch.frame,
-                    &address_of_code_object, &next_frame_addr);
-            }
-            else {
-                parse_result = parse_frame_object(
-                    unwinder, &frame, frame_addr,
-                    &address_of_code_object, &next_frame_addr);
-            }
-            if (parse_result < 0) {
-                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
-                return -1;
-            }
+        int parse_result;
+        if (ctx->prefetch.frame && ctx->prefetch.frame_addr == frame_addr) {
+            parse_result = parse_frame_buffer(
+                unwinder, &frame, ctx->prefetch.frame, &next_frame_addr);
+        }
+        else {
+            parse_result = parse_frame_object(
+                unwinder, &frame, frame_addr, &next_frame_addr);
+        }
+        if (parse_result < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
+            return -1;
         }
 
 parsed_frame:
@@ -539,17 +504,16 @@ try_full_cache_hit(
     }
 
     PyObject *current_frame = NULL;
-    uintptr_t code_object_addr = 0;
     uintptr_t previous_frame = 0;
     int parse_result;
     if (ctx->prefetch.frame && ctx->prefetch.frame_addr == ctx->frame_addr) {
         parse_result = parse_frame_buffer(unwinder, &current_frame,
                                           ctx->prefetch.frame,
-                                          &code_object_addr, &previous_frame);
+                                          &previous_frame);
     }
     else {
         parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
-                                          &code_object_addr, &previous_frame);
+                                          &previous_frame);
     }
     if (parse_result < 0) {
         return -1;
