@@ -574,7 +574,6 @@ extern int parse_frame_object(
     RemoteUnwinderObject *unwinder,
     PyObject** result,
     uintptr_t address,
-    uintptr_t* address_of_code_object,
     uintptr_t* previous_frame
 );
 
@@ -583,7 +582,6 @@ extern int parse_frame_from_chunks(
     PyObject **result,
     uintptr_t address,
     uintptr_t *previous_frame,
-    uintptr_t *stackpointer,
     StackChunkList *chunks
 );
 
