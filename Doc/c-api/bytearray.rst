@@ -58,6 +58,7 @@ Direct API functions
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
    Create a new bytearray object from *string* and its length, *len*.
+   If *string* is ``NULL``, the contents of the bytearray object are uninitialized.
 
    On failure, return ``NULL`` with an exception set.
 
