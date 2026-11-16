@@ -521,6 +521,22 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
 
     @skip_if_not_supported
+    def test_future_waiter_has_empty_stack(self):
+        async def main():
+            task = asyncio.current_task()
+            future = asyncio.get_running_loop().create_future()
+            asyncio.future_add_to_awaited_by(task, future)
+            try:
+                trace = RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                task_info = self._get_task_id_map(trace)[id(task)]
+                self.assertEqual(task_info.awaited_by, [([], id(future))])
+                self.assertTrue(task_info.coroutine_stack[0].call_stack)
+            finally:
+                asyncio.future_discard_from_awaited_by(task, future)
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     def test_async_generator_stack_is_not_truncated(self):
         # gh-159620
         async def agen():
