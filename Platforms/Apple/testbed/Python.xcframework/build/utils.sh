@@ -14,7 +14,7 @@
 # * There is an `app_packages` folder that contains installed Python packages.
 # -----
 #   set -e
-#   source $PROJECT_DIR/Python.xcframework/build/build_utils.sh
+#   source "$PROJECT_DIR/Python.xcframework/build/utils.sh"
 #   install_python Python.xcframework app app_packages
 # -----
 
