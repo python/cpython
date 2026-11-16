@@ -638,13 +638,15 @@ def _rmtree_unsafe(path, onerror):
         onerror(os.rmdir, path, sys.exc_info())
 
 # Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(topfd, path, onerror):
+def _rmtree_safe_fd(topfd, path, onerror, parent_fd=None, orig_entry=None):
+    # parent_fd: the parent of topfd (None for top-level)
+    # orig_entry: the DirEntry of topfd (None for top-level)
     try:
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
     except OSError as err:
         err.filename = path
-        onerror(os.scandir, path, sys.exc_info(), dir_fd=topfd)
+        onerror(os.scandir, path, sys.exc_info(), direntry=orig_entry, dir_fd=parent_fd)
         return
     for entry in entries:
         fullname = os.path.join(path, entry.name)
@@ -669,7 +671,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
             else:
                 try:
                     if os.path.samestat(orig_st, os.fstat(dirfd)):
-                        _rmtree_safe_fd(dirfd, fullname, onerror)
+                        _rmtree_safe_fd(dirfd, fullname, onerror, parent_fd=topfd, orig_entry=entry)
                         try:
                             os.close(dirfd)
                         except OSError:
@@ -754,7 +756,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None,
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
-                _rmtree_safe_fd(fd, path, onerror)
+                _rmtree_safe_fd(fd, path, onerror, parent_fd=dir_fd)
                 try:
                     os.close(fd)
                 except OSError:
