@@ -42,6 +42,10 @@ struct _signals_runtime_state {
         int tripped;
         PyObject* func;
     } handlers[Py_NSIG];
+#ifdef Py_GIL_DISABLED
+    // Serializes taking a reference to handlers[i].func with replacing it.
+    PyMutex handlers_mutex;
+#endif
 
     volatile struct {
 #ifdef MS_WINDOWS
