@@ -151,6 +151,8 @@ RESOURCES_XML_TEMPLATE = r"""<?xml version="1.0" encoding="UTF-8" standalone="ye
 </resources>"""
 
 
+# This file is no longer included in our repo, but we keep the logic here for
+# building with older releases. We always .is_file() before using it.
 SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
 SPECIAL_LOOKUP = object()

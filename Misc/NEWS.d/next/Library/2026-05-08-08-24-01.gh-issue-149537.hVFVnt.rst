@@ -1,2 +1,0 @@
-Remove kw parameters from python version of :func:`functools.reduce`
-function.

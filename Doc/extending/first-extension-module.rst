@@ -164,7 +164,7 @@ Then, create ``meson.build`` containing the following:
 
 .. note::
 
-   See `meson-python documentation <meson-python>`_ for details on
+   See the `meson-python documentation <meson-python_>`_ for details on
    configuration.
 
 Now, build install the *project in the current directory* (``.``) via ``pip``:
@@ -378,7 +378,7 @@ Add this array just below the ``spam_system`` function:
 As with module slots, a zero-filled sentinel marks the end of the array.
 
 Next, we'll add the method to the module.
-Add a :c:data:`Py_mod_methods` slot to your :c:type:`PyMethodDef` array:
+Add a :c:data:`Py_mod_methods` slot to your :c:type:`PySlot` array:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module slot table
@@ -518,7 +518,7 @@ Add an ``if`` block for this:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8AndSize(arg);
+      const char *command = PyUnicode_AsUTF8AndSize(arg, NULL);
       if (command == NULL) {
          return NULL;
       }
@@ -548,7 +548,7 @@ the ``char *`` buffer, and using its result instead of the ``3``:
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
    {
-      const char *command = PyUnicode_AsUTF8AndSize(arg);
+      const char *command = PyUnicode_AsUTF8AndSize(arg, NULL);
       if (command == NULL) {
          return NULL;
       }

@@ -178,10 +178,16 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
     @support.requires_resource("cpu")
     def test_enable_deferred_refcount(self):
         from threading import Thread
+        import gc
 
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount("not tracked"), 0)
         foo = []
         self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(foo), int(support.Py_GIL_DISABLED))
+
+        # The object must be tracked by the GC
+        not_gc_tracked = tuple([1, 2])
+        self.assertFalse(gc.is_tracked(not_gc_tracked))
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(not_gc_tracked), 0)
 
         # Make sure reference counting works on foo now
         self.assertEqual(foo, [])
@@ -269,6 +275,19 @@ class CAPITest(unittest.TestCase):
             obj = MyObj()
             _testinternalcapi.incref_decref_delayed(obj)
 
+    def test_decref_delayed_immortal(self):
+        # _PyObject_XDecRefDelayed() must handle immortal objects, including
+        # objects that become immortal after they were queued.  The GC
+        # processes the queue with the world stopped.
+        import gc
+        _testinternalcapi.incref_decref_delayed(None)
+        gc.collect()
+
+        s = ''.join(['decref', '_delayed', '_immortal'])
+        _testinternalcapi.incref_decref_delayed(s)
+        s = sys.intern(s)
+        gc.collect()
+
     def test_is_unique_temporary(self):
         self.assertTrue(_testcapi.pyobject_is_unique_temporary(object()))
         obj = object()
@@ -334,6 +353,98 @@ class CAPITest(unittest.TestCase):
         # test NULL object
         output = self.pyobject_dump(NULL)
         self.assertRegex(output, r'<object at .* is freed>')
+
+    def test_object_clear_managed_dict(self):
+        # PyObject_ClearManagedDict
+        clear_managed_dict = _testcapi.pyobject_clear_managed_dict
+        ManagedDictType = _testcapi.ManagedDictType
+
+        obj = ManagedDictType()
+        obj.value = 'first'
+        # asserting `__dict__` is a must to materialize the value before clean:
+        self.assertEqual(obj.__dict__, {'value': 'first'})
+        self.assertIs(type(obj.__dict__), dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # big object:
+        obj = ManagedDictType()
+        existing_dict = {f'attr_{x}': x for x in range(100)}
+        obj.__dict__ = existing_dict
+        self.assertIs(obj.__dict__, existing_dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # empty dict:
+        obj = ManagedDictType()
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # double clear:
+        obj = ManagedDictType()
+        obj.value = 'first'
+        self.assertEqual(obj.__dict__, {'value': 'first'})
+        clear_managed_dict(obj)
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # unmaterialized:
+        obj = ManagedDictType()
+        obj.value = 'first'
+        clear_managed_dict(obj)
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+        # CRASHES: clear_managed_dict(NULL)
+
+    @threading_helper.requires_working_threading()
+    @support.nomemtest
+    def test_object_clear_managed_dict_ft_memory_error(self):
+        # gh-152254: Test PyObject_ClearManagedDict() error.
+        # The setup must contain: object owned by another thread
+        # and the attempt to clear the managed dict with no memory left.
+        clear_managed_dict = _testcapi.pyobject_clear_managed_dict
+        ManagedDictType = _testcapi.ManagedDictType
+
+        obj = ManagedDictType()
+        obj.value = 'first'
+        self.assertEqual(len(obj.__dict__), 1)
+
+        def worker():
+            # This needs to be in a separate thread for the crash to happen:
+            with support.catch_unraisable_exception() as ex:
+                # `PyObject_ClearManagedDict()` used to crash:
+                _testcapi.call_with_nomemory(0, 1, clear_managed_dict, obj)
+                self.assertIsNotNone(ex.unraisable)
+                self.assertIs(ex.unraisable.exc_type, MemoryError)
+                self.assertIn('managed dict', ex.unraisable.err_msg)
+            self.assertEqual(obj.__dict__, {})
+            self.assertIs(type(obj.__dict__), dict)
+
+        threading_helper.run_concurrently([worker])
+        self.assertEqual(obj.__dict__, {})
+        self.assertIs(type(obj.__dict__), dict)
+
+
+class RefTracerTest(unittest.TestCase):
+    @support.requires_resource('cpu')
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
+    def test_destroy_traced_for_trashcan_deferred_objects(self):
+        depth = 200_000
+        chain = None
+        for _ in range(depth):
+            chain = [chain]
+        _testcapi.start_counting_list_destroys()
+        del chain
+        destroys = _testcapi.stop_counting_list_destroys()
+        self.assertEqual(destroys, depth)
 
 
 if __name__ == "__main__":

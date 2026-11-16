@@ -1,5 +1,5 @@
 import os
-from pickle import dump
+from pickle import dump, load
 import sys
 from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
@@ -560,6 +560,28 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
         self.assertIn(f'6   100.0%   {modulename}   ({filename})', stdout)
+
+    def test_count_no_report_accumulates_counts(self):
+        # --no-report must still save the --file counts so they accumulate.
+        filename = f'{TESTFN}.py'
+        countsfile = f'{TESTFN}.counts'
+        with open(filename, 'w', encoding='utf-8') as fd:
+            self.addCleanup(unlink, filename)
+            self.addCleanup(unlink, countsfile)
+            fd.write('for i in range(3):\n    pass\n')
+        argv = ('-m', 'trace', '--count', '--no-report',
+                '--file', countsfile, filename)
+        assert_python_ok(*argv, PYTHONIOENCODING='utf-8')
+        self.assertTrue(os.path.exists(countsfile))
+        with open(countsfile, 'rb') as fd:
+            counts = load(fd)[0]
+        self.assertTrue(counts)
+        # A second run accumulates into the same file.
+        assert_python_ok(*argv, PYTHONIOENCODING='utf-8')
+        with open(countsfile, 'rb') as fd:
+            accumulated = load(fd)[0]
+        self.assertEqual(accumulated,
+                         {key: 2 * value for key, value in counts.items()})
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')

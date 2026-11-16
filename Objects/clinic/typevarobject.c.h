@@ -727,7 +727,7 @@ typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
-"typealias(name, value, *, type_params=<unrepresentable>, qualname=None)\n"
+"typealias(name, value, *, type_params=(), qualname=None)\n"
 "--\n"
 "\n"
 "Create a TypeAliasType.");
@@ -803,4 +803,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e7dd170924d92e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=310ab79d0f3a4b5c input=a9049054013a1b77]*/

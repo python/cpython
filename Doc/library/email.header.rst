@@ -49,7 +49,7 @@ For example::
 
 Notice here how we wanted the :mailheader:`Subject` field to contain a non-ASCII
 character?  We did this by creating a :class:`Header` instance and passing in
-the character set that the byte string was encoded in.  When the subsequent
+the character set to use when encoding it.  When the subsequent
 :class:`~email.message.Message` instance was flattened, the :mailheader:`Subject`
 field was properly :rfc:`2047` encoded.  MIME-aware mail readers would show this
 header using the embedded ISO-8859-1 character.
@@ -150,7 +150,7 @@ Here is the :class:`Header` class description:
    .. method:: __str__()
 
       Returns an approximation of the :class:`Header` as a string, using an
-      unlimited line length.  All pieces are converted to unicode using the
+      unlimited line length.  All pieces are decoded using the
       specified encoding and joined together appropriately.  Any pieces with a
       charset of ``'unknown-8bit'`` are decoded as ASCII using the ``'replace'``
       error handler.

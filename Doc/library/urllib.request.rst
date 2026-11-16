@@ -68,6 +68,16 @@ The :mod:`!urllib.request` module defines the following functions:
 
    Raises :exc:`~urllib.error.URLError` on protocol errors.
 
+   Exceptions raised while reading or parsing an HTTP response are not
+   wrapped in :exc:`~urllib.error.URLError` and propagate unchanged.
+   These include subclasses of :exc:`http.client.HTTPException`, such as
+   :exc:`~http.client.BadStatusLine` for a malformed status line, and
+   subclasses of :exc:`OSError`, such as :exc:`TimeoutError` if the server
+   does not respond within *timeout* seconds, or
+   :exc:`~http.client.RemoteDisconnected` if the server closes the
+   connection without sending a response.  :exc:`ValueError` is raised if
+   *url* is not a valid URL.
+
    Note that ``None`` may be returned if no handler handles the request (though
    the default installed global :class:`OpenerDirector` uses
    :class:`UnknownHandler` to ensure this never happens).
@@ -368,6 +378,11 @@ The following classes are provided:
       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
       see the documentation on :func:`~urllib.request.getproxies`.
 
+   Because *proxies* holds at most one proxy for each protocol, it cannot
+   use a proxy auto-config (PAC) file, which selects a proxy for each
+   URL.  See :ref:`this example <urllib-request-pac>` for one way to use a
+   PAC file.
+
 
 .. class:: HTTPPasswordMgr()
 
@@ -430,6 +445,10 @@ The following classes are provided:
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
 
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
+
 
 .. class:: AbstractDigestAuthHandler(password_mgr=None)
 
@@ -466,6 +485,10 @@ The following classes are provided:
    something that is compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
 
 
 .. class:: HTTPHandler()
@@ -987,8 +1010,14 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
    *uri* can be either a single URI, or a sequence of URIs. *realm*, *user* and
    *passwd* must be strings. This causes ``(user, passwd)`` to be used as
-   authentication tokens when authentication for *realm* and a super-URI of any of
-   the given URIs is given.
+   authentication tokens when authentication for *realm* and a super-URI of any
+   of the given URIs is given. If a URI includes a scheme, its credentials only
+   match authentication URIs with the same scheme or no scheme. A URI without a
+   scheme matches authentication URIs with any scheme.
+
+   .. versionchanged:: 3.16
+      Authentication credentials for URIs with a scheme are now scoped by
+      that scheme.
 
 
 .. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
@@ -1050,8 +1079,12 @@ AbstractBasicAuthHandler Objects
    authenticate for, *req* should be the (failed) :class:`Request` object, and
    *headers* should be the error headers.
 
+   *headers* must be a mapping-like object with case-insensitive lookup
+   that implements the ``get_all()`` method,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
+
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
-   authority component (e.g. ``"http://python.org/"``). In either case, the
+   authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
    ``"python.org:80"`` are fine, ``"joe:password@python.org"`` is not).
 
@@ -1077,6 +1110,14 @@ ProxyBasicAuthHandler Objects
 
    Retry the request with authentication information, if available.
 
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
+
 
 .. _abstract-digest-auth-handler:
 
@@ -1090,6 +1131,9 @@ AbstractDigestAuthHandler Objects
    is included in the request, *host* should be the host to authenticate to, *req*
    should be the (failed) :class:`Request` object, and *headers* should be the
    error headers.
+
+   *headers* must be a mapping-like object with case-insensitive lookup,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
 
 
 .. _http-digest-auth-handler:
@@ -1112,6 +1156,14 @@ ProxyDigestAuthHandler Objects
 .. method:: ProxyDigestAuthHandler.http_error_407(req, fp, code,  msg, hdrs)
 
    Retry the request with authentication information, if available.
+
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
 
 
 .. _http-handler-objects:
@@ -1247,10 +1299,14 @@ This example gets the python.org main page and displays the first 300 bytes of
 it::
 
    >>> import urllib.request
-   >>> with urllib.request.urlopen('http://www.python.org/') as f:
-   ...     print(f.read(300))
-   ...
-   b'<!doctype html>\n<!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->\n<!--[if IE 7]>      <html class="no-js ie7 lt-ie8 lt-ie9">          <![endif]-->\n<!--[if IE 8]>      <html class="no-js ie8 lt-ie9">
+   >>> with urllib.request.urlopen('https://www.python.org/') as f:
+   ...     # The response may be compressed (for example, 'gzip').
+   ...     print(f.headers.get('Content-Encoding'))
+   ...     data = f.read()
+   ...     if f.headers.get('Content-Encoding') == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:300].decode('utf-8', errors='replace'))
 
 Note that urlopen returns a bytes object.  This is because there is no way
 for urlopen to automatically determine the encoding of the byte stream
@@ -1267,26 +1323,30 @@ For additional information, see the W3C document: https://www.w3.org/Internation
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
 will use the same for decoding the bytes object::
 
-   >>> with urllib.request.urlopen('http://www.python.org/') as f:
-   ...     print(f.read(100).decode('utf-8'))
+   >>> with urllib.request.urlopen('https://www.python.org/') as f:
+   ...     # Check for compression and decode appropriately.
+   ...     enc = f.headers.get('Content-Encoding')
+   ...     data = f.read()
+   ...     if enc == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:100].decode('utf-8', errors='replace'))
    ...
-   <!doctype html>
-   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
-   <!-
 
 It is also possible to achieve the same result without using the
 :term:`context manager` approach::
 
    >>> import urllib.request
-   >>> f = urllib.request.urlopen('http://www.python.org/')
+   >>> f = urllib.request.urlopen('https://www.python.org/')
    >>> try:
-   ...     print(f.read(100).decode('utf-8'))
+   ...     enc = f.headers.get('Content-Encoding')
+   ...     data = f.read()
+   ...     if enc == 'gzip':
+   ...         import gzip
+   ...         data = gzip.decompress(data)
+   ...     print(data[:100].decode('utf-8', errors='replace'))
    ... finally:
    ...     f.close()
-   ...
-   <!doctype html>
-   <!--[if lt IE 7]>   <html class="no-js ie6 lt-ie7 lt-ie8 lt-ie9">   <![endif]-->
-   <!--
 
 In the following example, we are sending a data-stream to the stdin of a CGI
 and reading the data it returns to us. Note that this example will only work
@@ -1351,13 +1411,58 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
    with opener.open('http://www.example.com/login.html') as f:
       print(f.read().decode('utf-8'))
 
+.. _urllib-request-pac:
+
+Proxy auto-config (PAC) files select a proxy for each URL, so they cannot be
+described by the *proxies* mapping that :class:`ProxyHandler` expects.  The
+:pypi:`pypac` package finds and evaluates PAC files; its ``ProxyResolver``
+can be used to write a handler that consults the PAC file once per request::
+
+   import urllib.error
+   import urllib.request
+   from pypac import get_pac
+   from pypac.resolver import ProxyResolver
+
+   class PACProxyHandler(urllib.request.ProxyHandler):
+
+       def __init__(self, resolver):
+           self.resolver = resolver
+           # An empty mapping suppresses the <protocol>_open methods that
+           # ProxyHandler would make from a static proxies mapping.
+           super().__init__({})
+
+       def _pac_open(self, req, protocol):
+           proxy = self.resolver.get_proxy(req.full_url)
+           if proxy is None:
+               raise urllib.error.URLError('no proxy available')
+           if proxy == 'DIRECT':
+               return None  # continue with the remaining handlers
+           if proxy.startswith('socks'):
+               raise urllib.error.URLError('SOCKS proxies are not supported')
+           return self.proxy_open(req, proxy, protocol)
+
+       def http_open(self, req):
+           return self._pac_open(req, 'http')
+
+       def https_open(self, req):
+           return self._pac_open(req, 'https')
+
+   opener = urllib.request.build_opener(PACProxyHandler(ProxyResolver(get_pac())))
+   with opener.open('http://www.example.com/') as f:
+       print(f.read().decode('utf-8'))
+
+Note that a PAC file may also select a SOCKS proxy, which :mod:`urllib.request`
+cannot use, and that the :envvar:`no_proxy` environment variable and the
+operating system's proxy bypass list still apply to requests the PAC file
+assigned to a proxy.
+
 Adding HTTP headers:
 
 Use the *headers* argument to the :class:`Request` constructor, or::
 
    import urllib.request
    req = urllib.request.Request('http://www.example.com/')
-   req.add_header('Referer', 'http://www.python.org/')
+   req.add_header('Referer', 'https://www.python.org/')
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
    with urllib.request.urlopen(req) as f:
@@ -1386,7 +1491,7 @@ containing parameters::
    >>> import urllib.request
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
-   >>> url = "http://www.musi-cal.com/cgi-bin/query?%s" % params
+   >>> url = "https://www.python.org/?%s" % params
    >>> with urllib.request.urlopen(url) as f:
    ...     print(f.read().decode('utf-8'))
    ...
@@ -1398,7 +1503,7 @@ from urlencode is encoded to bytes before it is sent to urlopen as data::
    >>> import urllib.parse
    >>> data = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> data = data.encode('ascii')
-   >>> with urllib.request.urlopen("http://requestb.in/xrbl82xr", data) as f:
+   >>> with urllib.request.urlopen("https://httpbin.org/post", data) as f:
    ...     print(f.read().decode('utf-8'))
    ...
 
@@ -1408,15 +1513,15 @@ environment settings::
    >>> import urllib.request
    >>> proxies = {'http': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
-   >>> with opener.open("http://www.python.org") as f:
+   >>> with opener.open("https://www.python.org") as f:
    ...     f.read().decode('utf-8')
    ...
 
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
-   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}}))
-   >>> with opener.open("http://www.python.org/") as f:
+   >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+   >>> with opener.open("https://www.python.org/") as f:
    ...     f.read().decode('utf-8')
    ...
 
@@ -1449,7 +1554,7 @@ some point in the future.
    The following example illustrates the most common usage scenario::
 
       >>> import urllib.request
-      >>> local_filename, headers = urllib.request.urlretrieve('http://python.org/')
+      >>> local_filename, headers = urllib.request.urlretrieve('https://python.org/')
       >>> html = open(local_filename)
       >>> html.close()
 
@@ -1478,7 +1583,8 @@ some point in the future.
 .. function:: urlcleanup()
 
    Cleans up temporary files that may have been left behind by previous
-   calls to :func:`urlretrieve`.
+   calls to :func:`urlretrieve`.  It also resets the default global opener
+   installed by :func:`install_opener`.
 
 
 :mod:`!urllib.request` Restrictions

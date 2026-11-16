@@ -256,7 +256,7 @@ Ensuring unique enumeration values
 ----------------------------------
 
 By default, enumerations allow multiple names as aliases for the same value.
-When this behavior isn't desired, you can use the :func:`unique` decorator::
+When this behavior isn't desired, you can use the :deco:`unique` decorator::
 
     >>> from enum import Enum, unique
     >>> @unique
@@ -509,7 +509,7 @@ to use the standard :func:`repr`.
 
 .. note::
 
-   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
+   Adding :deco:`~dataclasses.dataclass` decorator to :class:`Enum`
    and its subclasses is not supported. It will not raise any errors,
    but it will produce very strange results at runtime, such as members
    being equal to each other::
@@ -913,7 +913,7 @@ Some rules:
    :class:`~dataclasses.dataclass`
 6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`~object.__str__` and :meth:`~object.__repr__` respectively; other codes (such as
-   ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
+   ``%i`` or ``%x`` for IntEnum) treat the enum member as its mixed-in type.
 7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the enum's :meth:`~object.__str__` method.
 

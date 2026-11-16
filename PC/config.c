@@ -140,7 +140,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"itertools", PyInit_itertools},
     {"_collections", PyInit__collections},
     {"_symtable", PyInit__symtable},
-#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_APP)
     {"mmap", PyInit_mmap},
 #endif
     {"_csv", PyInit__csv},

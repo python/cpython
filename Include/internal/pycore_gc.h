@@ -80,10 +80,26 @@ static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
 }
 #define _PyObject_GC_IS_TRACKED(op) _PyObject_GC_IS_TRACKED(_Py_CAST(PyObject*, op))
 
+// Fast inlined version of PyType_IS_GC()
+static inline int
+_PyType_IS_GC(PyTypeObject *type)
+{
+    return (type->tp_flags & Py_TPFLAGS_HAVE_GC) != 0;
+}
+
+// Fast inlined version of PyObject_IS_GC()
+static inline int
+_PyObject_IS_GC(PyObject *obj)
+{
+    PyTypeObject *type = Py_TYPE(obj);
+    return (_PyType_IS_GC(type)
+            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
+}
+
 /* True if the object may be tracked by the GC in the future, or already is.
    This can be useful to implement some optimizations. */
 static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
-    if (!PyObject_IS_GC(obj)) {
+    if (!_PyObject_IS_GC(obj)) {
         return 0;
     }
     if (PyTuple_CheckExact(obj)) {
@@ -335,8 +351,9 @@ extern void _Py_RunGC(PyThreadState *tstate);
 union _PyStackRef;
 
 // GC visit callback for tracked interpreter frames
-extern int _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
-extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
+// GH-150766: exported for greenlet
+PyAPI_FUNC(int) _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
+PyAPI_FUNC(int) _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
 
 #ifdef Py_GIL_DISABLED
 extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,

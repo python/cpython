@@ -1,14 +1,21 @@
-#!/usr/bin/env python3
-
-__lazy_modules__ = ["_build"]
+__lazy_modules__ = [
+    "argparse",
+    "os",
+    "pathlib",
+    "_build",
+    "_package",
+    "_shared",
+    "_test",
+]
 
 import argparse
 import os
 import pathlib
 
 import _build
-
-HERE = pathlib.Path(__file__).parent
+import _package
+import _shared
+import _test
 
 
 def main():
@@ -18,6 +25,8 @@ def main():
         "--argv0 {ARGV0} "
         # Map the checkout to / to load the stdlib from /Lib.
         "--dir {CHECKOUT}::/ "
+        # For various I/O-related tests.
+        "--dir /dev "
         # Flags involving --optimize, --codegen, --debug, --wasm, and --wasi can be kept
         # in a config file.
         # We are using such a file to act as defaults in case a user wants to override
@@ -27,6 +36,7 @@ def main():
         # may want to use them.
         "--config {WASMTIME_CONFIG_PATH}"
     )
+    context = _shared.Context()
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -39,6 +49,9 @@ def main():
     )
     build_python = subcommands.add_parser(
         "build-python", help="Build the build Python"
+    )
+    pythoninfo_build = subcommands.add_parser(
+        "pythoninfo-build", help="Display build info of the build Python"
     )
     configure_host = subcommands.add_parser(
         "configure-host",
@@ -53,6 +66,52 @@ def main():
     build_host = subcommands.add_parser(
         "build-host", help="Build the host/WASI Python"
     )
+    pythoninfo_host = subcommands.add_parser(
+        "pythoninfo-host", help="Display build info of the host/WASI Python"
+    )
+    package = subcommands.add_parser(
+        "package", help="Package the host/WASI Python into an archive"
+    )
+    gather = subcommands.add_parser(
+        "gather", help="Gather all the files for distribution"
+    )
+    release = subcommands.add_parser(
+        "release", help="Build and package for a release"
+    )
+    test = subcommands.add_parser("test", help="Run the tests")
+    ci_mode = test.add_mutually_exclusive_group()
+    ci_mode.add_argument(
+        "--fast-ci",
+        action="store_const",
+        dest="ci_mode",
+        const="fast",
+        default="fast",
+        help="Run `make test` (the default)",
+    )
+    ci_mode.add_argument(
+        "--slow-ci",
+        action="store_const",
+        dest="ci_mode",
+        const="slow",
+        help="Run `make buildbottest`",
+    )
+    test.add_argument(
+        "--target",
+        choices={"build", "dist", "archive"},
+        default="build",
+        help="Test the build (the default), gathered distribution, or release archive; "
+        "'archive' replaces the distribution directory with the archive's contents",
+    )
+    path = subcommands.add_parser(
+        "path", help="Print the path to a build or distribution directory"
+    )
+    path.add_argument(
+        "location",
+        nargs="?",
+        choices=("build-python", "wasi", "dist"),
+        default="wasi",
+        help="Directory whose path to print",
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -61,9 +120,13 @@ def main():
         configure_build,
         make_build,
         build_python,
+        pythoninfo_build,
         configure_host,
         make_host,
+        pythoninfo_host,
         build_host,
+        release,
+        test,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -76,6 +139,8 @@ def main():
             "--logdir",
             type=pathlib.Path,
             default=None,
+            dest="_log_path",
+            metavar="LOG-DIR",
             help="Directory to store log files",
         )
     for subcommand in (
@@ -91,6 +156,13 @@ def main():
             dest="clean",
             help="Delete any relevant directories before building",
         )
+    for subcommand in build, configure_build, configure_host:
+        subcommand.add_argument(
+            "--release",
+            help="Configure build for release mode",
+            action="store_true",
+            default=False,
+        )
     for subcommand in (
         build,
         configure_build,
@@ -99,14 +171,15 @@ def main():
         build_host,
     ):
         subcommand.add_argument(
-            "args", nargs="*", help="Extra arguments to pass to `configure`"
+            "_args", nargs="*", help="Extra arguments to pass to `configure`"
         )
-    for subcommand in build, configure_host, build_host:
+    for subcommand in build, configure_host, build_host, release:
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
-            dest="wasi_sdk_path",
+            dest="_wasi_sdk_path",
             default=None,
+            metavar="WASI-SDK-PATH",
             help="Path to the WASI SDK; defaults to WASI_SDK_PATH environment variable "
             "or the appropriate version found in /opt",
         )
@@ -118,16 +191,29 @@ def main():
             help="Command template for running the WASI host; defaults to "
             f"`{default_host_runner}`",
         )
-    for subcommand in build, configure_host, make_host, build_host:
+    for subcommand in (
+        build,
+        configure_host,
+        make_host,
+        build_host,
+        pythoninfo_host,
+        gather,
+        package,
+        path,
+        release,
+        test,
+    ):
         subcommand.add_argument(
             "--host-triple",
             action="store",
             default=None,
+            dest="_host_triple",
+            metavar="WASI-TRIPLE",
             help="The target triple for the WASI host build; "
-            f"defaults to the value found in {os.fsdecode(HERE / 'config.toml')}",
+            f"defaults to the value found in {os.fsdecode(context.here / 'config.toml')}",
         )
 
-    context = parser.parse_args()
+    parser.parse_args(namespace=context)
 
     match context.subcommand:
         case "configure-build-python":
@@ -137,6 +223,8 @@ def main():
         case "build-python":
             _build.configure_build_python(context)
             _build.make_build_python(context)
+        case "pythoninfo-build":
+            _build.pythoninfo_build_python(context)
         case "configure-host":
             _build.configure_wasi_python(context)
         case "make-host":
@@ -144,13 +232,47 @@ def main():
         case "build-host":
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
+        case "pythoninfo-host":
+            _build.pythoninfo_wasi_python(context)
         case "build":
+            # Configure and build the build Python
+            _build.configure_build_python(context)
+            _build.make_build_python(context)
+            if not context.quiet:
+                _build.pythoninfo_build_python(context)
+
+            # Configure and build the host/WASI Python
+            _build.configure_wasi_python(context)
+            _build.make_wasi_python(context)
+            if not context.quiet:
+                _build.pythoninfo_wasi_python(context)
+        case "clean":
+            _build.clean_contents(context)
+        case "gather":
+            _package.gather(context)
+        case "package":
+            _package.gather(context)
+            _package.archive(context)
+        case "release":
+            context.release = True
+            _build.clean_contents(context)
             _build.configure_build_python(context)
             _build.make_build_python(context)
             _build.configure_wasi_python(context)
             _build.make_wasi_python(context)
-        case "clean":
-            _build.clean_contents(context)
+            _package.gather(context)
+            _package.archive(context)
+        case "test":
+            _test.test(context)
+        case "path":
+            paths = {
+                "build-python": "build_python_path",
+                "wasi": "wasi_build_path",
+                "dist": "archive_dir",
+            }
+            print(getattr(context, paths[context.location]))
+        case None:
+            parser.print_help()
         case _:
             raise ValueError(f"Unknown subcommand {context.subcommand!r}")
 

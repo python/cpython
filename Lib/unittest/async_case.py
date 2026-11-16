@@ -25,13 +25,11 @@ class IsolatedAsyncioTestCase(TestCase):
     # To share contextvars between setUp(), test and tearDown() we need to execute
     # them inside the same task.
 
-    # Note: the test case modifies event loop policy if the policy was not instantiated
-    # yet, unless loop_factory=asyncio.EventLoop is set.
-    # asyncio.get_event_loop_policy() creates a default policy on demand but never
-    # returns None
+    # Note: the test case sets the per-thread event loop unless
+    # loop_factory=asyncio.EventLoop is set.
     # I believe this is not an issue in user level tests but python itself for testing
-    # should reset a policy in every test module
-    # by calling asyncio.set_event_loop_policy(None) in tearDownModule()
+    # should reset the event loop in every test module
+    # by calling asyncio.set_event_loop(None) in tearDownModule()
     # or set loop_factory=asyncio.EventLoop
 
     loop_factory = None
