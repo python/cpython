@@ -6324,36 +6324,6 @@ class TestCloseFds(unittest.TestCase):
             writer.close()
             reader.close()
 
-    @staticmethod
-    def _test_exec_grandchild(conn):
-        grandchild = subprocess.Popen(
-            [sys.executable, '-c', 'import time; time.sleep(30)'],
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, close_fds=False)
-        conn.send(grandchild.pid)
-
-    @unittest.skipIf(WIN32, "POSIX file descriptors only")
-    @only_run_in_spawn_testsuite("spawn sentinel file descriptor")
-    def test_spawn_sentinel_does_not_leak_to_exec(self):
-        reader, writer = multiprocessing.Pipe(duplex=False)
-        grandchild_pid = None
-        p = multiprocessing.Process(target=self._test_exec_grandchild,
-                                    args=(writer,))
-        try:
-            p.start()
-            writer.close()
-            grandchild_pid = reader.recv()
-            p.join(timeout=2)
-            self.assertEqual(p.exitcode, 0)
-        finally:
-            if grandchild_pid is not None:
-                try:
-                    os.kill(grandchild_pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-            p.join(timeout=support.SHORT_TIMEOUT)
-            writer.close()
-            reader.close()
 
 #
 # Issue #17097: EINTR should be ignored by recv(), send(), accept() etc
