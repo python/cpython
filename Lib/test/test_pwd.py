@@ -50,7 +50,7 @@ class PwdTest(unittest.TestCase):
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
-            if not e[0] or e[0] == '+':
+            if not e.pw_name or e.pw_name == '+':
                 continue # skip NIS entries etc.
             self.assertIn(pwd.getpwnam(e.pw_name), entriesbyname[e.pw_name])
             self.assertIn(pwd.getpwuid(e.pw_uid), entriesbyuid[e.pw_uid])
@@ -61,8 +61,8 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(TypeError, pwd.getpwuid, 0.0)
         self.assertRaises(TypeError, pwd.getpwuid, 0, 0)
         # should be out of uid_t range
-        self.assertRaises(KeyError, pwd.getpwuid, 2**128)
-        self.assertRaises(KeyError, pwd.getpwuid, -2**128)
+        self.assertRaises(OverflowError, pwd.getpwuid, 2**128)
+        self.assertRaises(OverflowError, pwd.getpwuid, -2**128)
         self.assertRaises(TypeError, pwd.getpwnam)
         self.assertRaises(TypeError, pwd.getpwnam, 42)
         self.assertRaises(TypeError, pwd.getpwnam, b'root')

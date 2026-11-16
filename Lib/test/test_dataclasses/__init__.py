@@ -4525,6 +4525,11 @@ class TestStringAnnotations(unittest.TestCase):
                     # won't exist on the instance.
                     self.assertNotIn('not_iv4', c.__dict__)
 
+    def test_lazy_import_annotations(self):
+        from test.test_dataclasses import dataclass_lazy_str as m
+        self.assertEqual([f.name for f in fields(m.C)], ['x', 'y'])
+        self.assertNotIsInstance(vars(m)['t'], types.LazyImportType)
+
     def test_text_annotations(self):
         from test.test_dataclasses import dataclass_textanno
 

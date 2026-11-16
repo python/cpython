@@ -452,4 +452,19 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=89f7e92de998f9a4 input=a9049054013a1b77]*/
+
+static PyObject *
+odictiter_iternext_impl(PyObject *self);
+
+static PyObject *
+odictiter_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = odictiter_iternext_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=b729b3f1d40afcd9 input=a9049054013a1b77]*/

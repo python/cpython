@@ -52,7 +52,7 @@ _testcapi_py_fopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *mode;
     Py_ssize_t mode_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "Oz#:py_fopen",
+    if (!PyArg_ParseArray(args, nargs, "Oz#:py_fopen",
         &path, &mode, &mode_length)) {
         goto exit;
     }
@@ -95,4 +95,4 @@ _testcapi_py_universalnewlinefgets(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a5ed111054e3a0bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8079c9d50d559d71 input=a9049054013a1b77]*/

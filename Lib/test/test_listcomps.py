@@ -4,6 +4,7 @@ import traceback
 import types
 import unittest
 
+from test import support
 from test.support import BrokenIter
 
 
@@ -165,6 +166,30 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, outputs={"res": [super]})
 
+    def test_zero_arg_super_in_inlined_comprehension(self):
+        class A:
+            def f(self):
+                return 42
+
+        class B(A):
+            def f(self):
+                return [super().f() for _ in (0,)]
+
+            def nested(self):
+                return [[super().f() for _ in (0,)] for _ in (0,)]
+
+            def setcomp(self):
+                return [{super().f() for _ in (0,)}]
+
+            def dictcomp(self):
+                return {0: {1: super().f() for _ in (0,)} for _ in (0,)}
+
+        b = B()
+        self.assertEqual(b.f(), [42])
+        self.assertEqual(b.nested(), [[42]])
+        self.assertEqual(b.setcomp(), [{42}])
+        self.assertEqual(b.dictcomp(), {0: {1: 42}})
+
     def test_references___class__(self):
         code = """
             res = [__class__ for x in [1]]
@@ -276,6 +301,20 @@ class ListComprehensionTest(unittest.TestCase):
         """
         outputs = {"y": [1]}
         self._check_in_scopes(code, outputs, scopes=["module", "function"])
+
+    def test_inlined_comp_cell_with_enclosing_free(self):
+        # The listcomp cell and the enclosing free must not share an index.
+        code = """
+            def outer(y):
+                def inner():
+                    return [lambda: x for x in (1, 2)], y
+                return inner()
+            funcs, val = outer(99)
+            z = [f() for f in funcs]
+            w = val
+        """
+        outputs = {"z": [2, 2], "w": 99}
+        self._check_in_scopes(code, outputs)
 
     def test_free_inner_cell_outer(self):
         code = """
@@ -406,6 +445,175 @@ class ListComprehensionTest(unittest.TestCase):
         """
         outputs = {"y": [[0, 1], [0, 1, 4]]}
         self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter(self):
+        # Inner comprehension reads the outer iteration variable. In a class
+        # this must not be treated as a class-level name of the same name.
+        code = """
+            x = 99
+            y = [[x for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_mixed_comprehensions_use_outer_iter(self):
+        cases = [
+            ("""
+            x = 99
+            y = [{x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42}]}),
+            ("""
+            x = 99
+            y = [{x: x for _ in (0,)} for x in (42,)]
+            """, {"y": [{42: 42}]}),
+            ("""
+            x = 99
+            y = {[x for _ in (0,)][0] for x in (42,)}
+            """, {"y": {42}}),
+            ("""
+            x = 99
+            y = {x: [x for _ in (0,)] for x in (42,)}
+            """, {"y": {42: [42]}}),
+        ]
+        for code, outputs in cases:
+            with self.subTest(code=code):
+                self._check_in_scopes(code, outputs)
+
+    def test_nested_triple_inner_uses_outer_iter(self):
+        code = """
+            x = 99
+            y = [[[x for _ in (0,)] for _ in (0,)] for x in (42,)]
+        """
+        outputs = {"y": [[[42]]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_iter(self):
+        code = """
+            x = 99
+            y = [[_ for _ in (x,)] for x in (42,)]
+        """
+        outputs = {"y": [[42]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inner_uses_outer_iter_in_if(self):
+        code = """
+            x = 99
+            y = [[1 for _ in (0,) if x] for x in (42,)]
+        """
+        outputs = {"y": [[1]]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_sibling_inners_use_outer_iter(self):
+        code = """
+            x = 99
+            y = [([x for _ in (0,)], [x for _ in (1,)]) for x in (42,)]
+        """
+        outputs = {"y": [([42], [42])]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_lambda_captures_outer_iter(self):
+        code = """
+            x = 99
+            y = [[lambda: x for _ in (0,)] for x in (42,)]
+            z = y[0][0]()
+        """
+        outputs = {"z": 42}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_inlined_comp_iter_var_is_fast_local(self):
+        def f(n):
+            return [[x for _ in range(2)] for x in range(n)]
+        self.assertEqual(f.__code__.co_cellvars, ())
+        self.assertEqual(f(2), [[0, 0], [1, 1]])
+
+        def g(n):
+            return [[(lambda: x) for _ in range(2)] for x in range(n)]
+        self.assertEqual(g.__code__.co_cellvars, ("x",))
+        self.assertEqual([fn() for fn in g(2)[1]], [1, 1])
+
+    @support.requires_working_socket()
+    def test_nested_inlined_async_comp_iter_var_is_fast_local(self):
+        import asyncio
+
+        async def agen(n):
+            for i in range(n):
+                yield i
+
+        async def f(n):
+            return [[x async for _ in agen(2)] async for x in agen(n)]
+
+        self.assertEqual(f.__code__.co_cellvars, ())
+        self.assertEqual(asyncio.run(f(2)), [[0, 0], [1, 1]])
+
+        async def g(n):
+            return [[(lambda: x) async for _ in agen(2)] async for x in agen(n)]
+
+        self.assertEqual(g.__code__.co_cellvars, ("x",))
+        out = asyncio.run(g(2))
+        self.assertEqual([fn() for fn in out[1]], [1, 1])
+
+    def test_inlined_comprehension_name_mangling_in_method_scope(self):
+        class C:
+            def f(self):
+                __x = 42
+                return [__x for _ in (0,)]
+
+        self.assertEqual(C().f(), [42])
+
+    def test_nested_references___class__(self):
+        code = """
+            res = [[__class__ for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_nested_references___class___via_lambda(self):
+        class _C:
+            res = [[lambda: __class__ for _ in (0,)] for _ in (1,)]
+        self.assertIs(_C.res[0][0](), _C)
+
+    def test_nested_references_super(self):
+        code = """
+            res = [[super for _ in (0,)] for _ in (1,)]
+        """
+        self._check_in_scopes(code, outputs={"res": [[super]]})
+
+    def test_nested_inlined_super_does_not_require_class_cell(self):
+        # Nested inlined comps compile super/__class__ as global lookups.
+        # They must not inject __classcell__ the way a nested function would.
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns.pop('__classcell__', None)
+                return type.__new__(mcls, name, bases, ns)
+
+        cases = [
+            ("[[super for _ in (0,)] for _ in (0,)]", [[super]]),
+            ("[{super for _ in (0,)} for _ in (0,)]", [{super}]),
+            ("{0: {1: super for _ in (0,)} for _ in (0,)}", {0: {1: super}}),
+        ]
+        for expr, expected in cases:
+            with self.subTest(expr=expr):
+                ns = {"Meta": Meta}
+                exec(f"class C(metaclass=Meta):\n    result = {expr}", ns)
+                self.assertEqual(ns["C"].result, expected)
+
+    def test_nested_inlined_lambda_class_ref_requires_class_cell(self):
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns.pop('__classcell__', None)
+                return type.__new__(mcls, name, bases, ns)
+
+        exprs = [
+            "[[lambda: __class__ for _ in (0,)] for _ in (0,)]",
+            "[{lambda: __class__ for _ in (0,)} for _ in (0,)]",
+            "{0: {1: (lambda: __class__) for _ in (0,)} for _ in (0,)}",
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertRaisesRegex(
+                        RuntimeError,
+                        r"__class__ not set.*__classcell__ propagated"):
+                    exec(f"class C(metaclass=Meta):\n    result = {expr}",
+                         {"Meta": Meta})
 
     def test_nested_2(self):
         code = """
@@ -702,6 +910,79 @@ class ListComprehensionTest(unittest.TestCase):
             val = [sys._getframe().f_locals["a"] for a in [0]][0]
         """
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
+    def test_frame_locals_comp_cell_and_enclosing_free(self):
+        # The inlined listcomp cell and the enclosing free share a name.
+        # f_locals keys must still be unique so dict(**f_locals) works.
+        # keys(), values(), items(), and len() must agree (first slot wins).
+        code = """
+            def outer(x):
+                def inner():
+                    return [(lambda: x,
+                             dict(**sys._getframe().f_locals),
+                             len(sys._getframe().f_locals),
+                             list(sys._getframe().f_locals.keys()),
+                             list(sys._getframe().f_locals.values()),
+                             list(sys._getframe().f_locals.items()),
+                             dict(sys._getframe().f_locals.items()))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for _, d, *_ in result]
+            vals = [fn() for fn, *_ in result]
+            consistent = []
+            for _, d, n, ks, vs, it, d_items in result:
+                consistent.append(
+                    n == len(ks) == len(vs) == len(it)
+                    and ks.count('x') == 1
+                    and d == d_items == dict(zip(ks, vs))
+                )
+        """
+        import sys
+        self._check_in_scopes(
+            code,
+            {"snaps": [1, 2], "vals": [2, 2], "consistent": [True, True]},
+            ns={"sys": sys}, scopes=["module", "function"])
+
+    def test_frame_locals_nested_comp_cell_and_enclosing_free(self):
+        # Stress a nested inlined shape where a comp cell and enclosing free
+        # share a name; all f_locals views must stay consistent.
+        code = """
+            def outer(x):
+                def inner():
+                    return [(
+                             lambda: x,
+                             [[x for _ in (0,)] for _ in (0,)][0][0],
+                             dict(**sys._getframe().f_locals),
+                             len(sys._getframe().f_locals),
+                             list(sys._getframe().f_locals.keys()),
+                             list(sys._getframe().f_locals.values()),
+                             list(sys._getframe().f_locals.items()),
+                             dict(sys._getframe().f_locals.items()))
+                            for x in x]
+                return inner()
+            result = outer([1, 2])
+            snaps = [d['x'] for _, _, d, *_ in result]
+            vals = [fn() for fn, *_ in result]
+            nested_vals = [nested for _, nested, *_ in result]
+            consistent = []
+            for _, _, d, n, ks, vs, it, d_items in result:
+                consistent.append(
+                    n == len(ks) == len(vs) == len(it)
+                    and ks.count('x') == 1
+                    and d == d_items == dict(zip(ks, vs))
+                )
+        """
+        import sys
+        self._check_in_scopes(
+            code,
+            {
+                "snaps": [1, 2],
+                "vals": [2, 2],
+                "nested_vals": [1, 2],
+                "consistent": [True, True],
+            },
+            ns={"sys": sys}, scopes=["module", "function"])
 
     def _recursive_replace(self, maybe_code):
         if not isinstance(maybe_code, types.CodeType):

@@ -31,6 +31,7 @@ class DumbDBMTestCase(unittest.TestCase):
              b'd': b'way',
              b'f': b'Guido',
              b'g': b'intended',
+             b'h': bytearray(b'bytearray_value'),
              '\u00fc'.encode('utf-8') : b'!',
              }
 
@@ -113,6 +114,16 @@ class DumbDBMTestCase(unittest.TestCase):
             f[b'1'] = b'hello2'
         with contextlib.closing(dumbdbm.open(_fname)) as f:
             self.assertEqual(f[b'1'], b'hello2')
+
+    def test_reorganize_persists_changed_offsets(self):
+        with dumbdbm.open(_fname, 'n') as f:
+            f[b'deleted'] = b'x'
+            f[b'retained'] = b'value'
+            del f[b'deleted']
+            f.reorganize()
+
+        with dumbdbm.open(_fname, 'r') as f:
+            self.assertEqual(f[b'retained'], b'value')
 
     def test_str_read(self):
         self.init_db()
@@ -367,6 +378,14 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(list(db.keys()), [b'key'])
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
+
+    def test_bytearray(self):
+        self.init_db()
+        with contextlib.closing(dumbdbm.open(_fname, 'r')) as f:
+            self.assertEqual(f[b'h'], b'bytearray_value')
+        with contextlib.closing(dumbdbm.open(_fname)) as f:
+            with self.assertRaises(TypeError):
+                f[bytearray(b'bytearray_key')] = b'value'
 
     def test_open_with_pathlib_path(self):
         dumbdbm.open(os_helper.FakePath(_fname), "c").close()

@@ -1119,46 +1119,82 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
+    def _network_by_offset(self, prefix, offset):
+        """Get the network offset from this network.
+
+        Args:
+            prefix: Target prefix length.
+            offset: Number of networks to move (+1 or -1).
+
+        Returns:
+            An IPv(4|6) Network object.
+
+        """
+        if prefix < 1 or prefix > self.max_prefixlen:
+            raise ValueError(
+                f"prefix must be between 1 and {self.max_prefixlen}"
+            )
+        new_netmask, _ = self._make_netmask(prefix)
+        error = f"out of address space, cannot make another /{prefix} network"
+
+        if prefix > self.prefixlen:
+            if offset < 0:
+                new_ip = self.network_address._ip - 1
+            else:
+                new_ip = self.broadcast_address._ip + 1
+            if new_ip < 0 or new_ip > self._ALL_ONES:
+                raise ValueError(error)
+
+            new_ip &= new_netmask._ip
+        else:
+            bit_shift = self.max_prefixlen - prefix
+            new_ip = (
+                ((new_netmask._ip & self.network_address._ip) >> bit_shift)
+                + offset
+            ) << bit_shift
+            if not 0 <= new_ip <= self._ALL_ONES:
+                raise ValueError(error)
+
+        return self.__class__(
+            f"{self._string_from_ip_int(new_ip)}/{prefix}"
+        )
+
     def next_network(self, next_prefix=None):
         """Get the next closest network with a specific prefix.
 
         Args:
             next_prefix: The desired next prefix length, if not specified the
-            same self.prefixlen will be used
+            same self.prefixlen will be used.
 
         Returns:
             An IPv(4|6) Network object of the next closest network.
 
+        Raises:
+            ValueError: If next_prefix is outside the range of valid prefix
+            lengths, or if no further network of that size exists.
+
         """
         if next_prefix is None:
             next_prefix = self.prefixlen
-            new_netmask = self.netmask
-        else:
-            if next_prefix < 1 or next_prefix > self.max_prefixlen:
-                raise ValueError(
-                    f"next prefix must be between 1 and {self.max_prefixlen}"
-                )
-            new_netmask, _ = self._make_netmask(next_prefix)
 
-        bit_shift = (
-            self.max_prefixlen - next_prefix
-            if next_prefix <= self.prefixlen
-            else self.max_prefixlen - self.prefixlen
-        )
+        return self._network_by_offset(next_prefix, 1)
 
-        next_ip = (
-            ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
-        ) << bit_shift
 
-        try:
-            return self.__class__(
-                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
-            )
-        except OverflowError:
-            raise ValueError(
-                f"out of address space, cannot make another /{next_prefix} "
-                "network"
-            ) from None
+    def prev_network(self, prev_prefix=None):
+        """Get the previous closest network with a specific prefix.
+
+        Args:
+            prev_prefix: The desired previous prefix length, if not specified the
+            same self.prefixlen will be used
+
+        Returns:
+            An IPv(4|6) Network object of the previous closest network.
+
+        """
+        if prev_prefix is None:
+            prev_prefix = self.prefixlen
+
+        return self._network_by_offset(prev_prefix, -1)
 
 
 class _BaseConstants:
@@ -1565,6 +1601,17 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               IPv4Interface(int(IPv4Interface('192.0.2.1'))) ==
                 IPv4Interface('192.0.2.1')
 
+              The address can also be a two-tuple of an address description
+              and a netmask, where the address description is either a
+              string, a 32-bit integer, a 4-byte packed integer, or an
+              existing IPv4Address object; and the netmask is either an
+              integer representing the prefix length (e.g. 24) or a string
+              representing the prefix mask (e.g. '255.255.255.0').
+
+            strict: A boolean. If true, ensure that we have been passed
+              a true network address, for example, 192.0.2.0/24 and not an
+              IP address on a network, for example, 192.0.2.1/24.
+
         Raises:
             AddressValueError: If ipaddress isn't a valid IPv4 address.
             NetmaskValueError: If the netmask isn't valid for
@@ -1911,14 +1958,18 @@ class _BaseV6:
         elif isinstance(self, IPv6Interface):
             ip_str = str(self.ip)
         else:
-            ip_str = str(self)
+            ip_str = self._string_from_ip_int(self._ip)
 
         ip_int = self._ip_int_from_string(ip_str)
         hex_str = '%032x' % ip_int
-        parts = [hex_str[x:x+4] for x in range(0, 32, 4)]
-        if isinstance(self, (_BaseNetwork, IPv6Interface)):
-            return '%s/%d' % (':'.join(parts), self._prefixlen)
-        return ':'.join(parts)
+        exploded = ':'.join([hex_str[x:x+4] for x in range(0, 32, 4)])
+        if isinstance(self, _BaseNetwork):
+            return '%s/%d' % (exploded, self._prefixlen)
+        if self._scope_id:
+            exploded = '%s%%%s' % (exploded, self._scope_id)
+        if isinstance(self, IPv6Interface):
+            return '%s/%d' % (exploded, self._prefixlen)
+        return exploded
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv6 address.
@@ -2309,7 +2360,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_unspecified(self):
-        return self._ip == 0 and self.network.is_unspecified
+        return super().is_unspecified and self.network.is_unspecified
 
     @property
     def is_loopback(self):
@@ -2352,9 +2403,15 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               IPv6Network(int(IPv6Network('2001:db8::'))) ==
                 IPv6Network('2001:db8::')
 
+              The address can also be a two-tuple of an address description and
+              a netmask, where the address description is either a string, a
+              128-bit integer, a 16-byte packed integer, or an existing
+              IPv6Address object; and the netmask is an integer representing
+              the prefix length.
+
             strict: A boolean. If true, ensure that we have been passed
-              A true network address, eg, 2001:db8::1000/124 and not an
-              IP address on a network, eg, 2001:db8::1/124.
+              a true network address, for example, 2001:db8::1000/124 and not an
+              IP address on a network, for example, 2001:db8::1/124.
 
         Raises:
             AddressValueError: If address isn't a valid IPv6 address.
@@ -2435,6 +2492,8 @@ class _IPv6Constants:
     _private_networks_exceptions = [
         IPv6Network('2001:1::1/128'),
         IPv6Network('2001:1::2/128'),
+        # RFC 9665: https://www.rfc-editor.org/rfc/rfc9665.html
+        IPv6Network('2001:1::3/128'),
         IPv6Network('2001:3::/32'),
         IPv6Network('2001:4:112::/48'),
         IPv6Network('2001:20::/28'),

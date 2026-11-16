@@ -53,6 +53,10 @@
 #  include <pthread.h>
 #endif
 
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // pidfd_send_signal()
+#endif
+
 #ifndef SIG_ERR
 #  define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
@@ -1300,15 +1304,16 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 
 
 // This system call always crashes on older Android versions.
-#if defined(__linux__) && defined(__NR_pidfd_send_signal) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 31)
+#if defined(HAVE_PIDFD_SEND_SIGNAL) \
+    || (defined(__linux__) && defined(__NR_pidfd_send_signal) \
+        && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
 signal.pidfd_send_signal
 
     pidfd: int
     signalnum: int
     siginfo: object = None
-    flags: int = 0
+    flags: unsigned_int(bitwise=True) = 0
     /
 
 Send a signal to a process referred to by a pid file descriptor.
@@ -1316,15 +1321,20 @@ Send a signal to a process referred to by a pid file descriptor.
 
 static PyObject *
 signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
-                              PyObject *siginfo, int flags)
-/*[clinic end generated code: output=2d59f04a75d9cbdf input=2a6543a1f4ac2000]*/
+                              PyObject *siginfo, unsigned int flags)
+/*[clinic end generated code: output=1804b5a19d269104 input=a6e82a3c264fa19d]*/
 
 {
     if (siginfo != Py_None) {
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
-    if (syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags) < 0) {
+#ifdef HAVE_PIDFD_SEND_SIGNAL
+    int res = pidfd_send_signal(pidfd, signalnum, NULL, flags);
+#else
+    int res = syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags);
+#endif
+    if (res < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1786,25 +1796,18 @@ PyErr_CheckSignals(void)
     _PyRunRemoteDebugger(tstate);
 #endif
 
-    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
-        if (_PyErr_CheckSignalsTstate(tstate) < 0) {
-            return -1;
-        }
+    if (_PyErr_CheckSignalsTstate(tstate) < 0) {
+        return -1;
     }
 
     return 0;
 }
 
 
-/* Declared in cpython/pyerrors.h */
-int
-_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+// Out of line, to keep the common case of _PyErr_CheckSignalsTstate() cheap.
+Py_NO_INLINE static int
+run_tripped_handlers(PyThreadState *tstate)
 {
-    _Py_CHECK_EMSCRIPTEN_SIGNALS();
-    if (!_Py_atomic_load_int(&is_tripped)) {
-        return 0;
-    }
-
     /*
      * The is_tripped variable is meant to speed up the calls to
      * PyErr_CheckSignals (both directly or via pending calls) when no
@@ -1884,6 +1887,20 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     return 0;
 }
 
+
+/* Declared in pycore_pyerrors.h */
+int
+_PyErr_CheckSignalsTstate(PyThreadState *tstate)
+{
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
+    if (!_Py_atomic_load_int(&is_tripped)) {
+        return 0;
+    }
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
+        return 0;
+    }
+    return run_tripped_handlers(tstate);
+}
 
 
 int

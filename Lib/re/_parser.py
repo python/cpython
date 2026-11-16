@@ -606,7 +606,7 @@ def _parse_operand(source, state, nested, here, allow_nested):
     if allow_nested and sourcematch("["):
         # A nested set after an operator is the whole operand, used as-is (not
         # wrapped in a group); it cannot be combined with loose members.
-        compound = _parse_charset(source, state, nested + 1)
+        compound = _parse_charset(source, state, nested + 2)
     while True:
         this = sourceget()
         if this is None:

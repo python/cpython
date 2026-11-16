@@ -306,6 +306,11 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. image:: kde_example.png
       :alt: Scatter plot of the estimated probability density function.
 
+   Because the returned ``f_hat`` function is typically called many times,
+   it caches the *data* for performance. To support dynamic datasets, this
+   cache automatically refreshes whenever the length of the *data* changes.
+   This allows new samples to be added as they become available.
+
    .. versionadded:: 3.13
 
 

@@ -2,8 +2,42 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
+
+static PyObject *
+BaseException_str_impl(PyBaseExceptionObject *self);
+
+static PyObject *
+BaseException_str(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = BaseException_str_impl((PyBaseExceptionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+BaseException_repr_impl(PyBaseExceptionObject *self);
+
+static PyObject *
+BaseException_repr(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = BaseException_repr_impl((PyBaseExceptionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(BaseException___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -106,16 +140,6 @@ exit:
     return return_value;
 }
 
-#if !defined(BaseException_args_DOCSTR)
-#  define BaseException_args_DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION_ARGS_GETSETDEF)
-#  undef BASEEXCEPTION_ARGS_GETSETDEF
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, BaseException_args_DOCSTR},
-#else
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, NULL, BaseException_args_DOCSTR},
-#endif
-
 static PyObject *
 BaseException_args_get_impl(PyBaseExceptionObject *self);
 
@@ -131,40 +155,28 @@ BaseException_args_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException_args_DOCSTR)
-#  define BaseException_args_DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION_ARGS_GETSETDEF)
-#  undef BASEEXCEPTION_ARGS_GETSETDEF
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, BaseException_args_DOCSTR},
-#else
-#  define BASEEXCEPTION_ARGS_GETSETDEF {"args", NULL, (setter)BaseException_args_set, NULL},
-#endif
-
 static int
 BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value);
 
 static int
-BaseException_args_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException_args_set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute 'args' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException_args_set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___traceback___DOCSTR)
-#  define BaseException___traceback___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___TRACEBACK___GETSETDEF)
-#  undef BASEEXCEPTION___TRACEBACK___GETSETDEF
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, BaseException___traceback___DOCSTR},
-#else
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, NULL, BaseException___traceback___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___traceback___get_impl(PyBaseExceptionObject *self);
@@ -181,41 +193,29 @@ BaseException___traceback___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___traceback___DOCSTR)
-#  define BaseException___traceback___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___TRACEBACK___GETSETDEF)
-#  undef BASEEXCEPTION___TRACEBACK___GETSETDEF
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, BaseException___traceback___DOCSTR},
-#else
-#  define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", NULL, (setter)BaseException___traceback___set, NULL},
-#endif
-
 static int
 BaseException___traceback___set_impl(PyBaseExceptionObject *self,
                                      PyObject *value);
 
 static int
-BaseException___traceback___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___traceback___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__traceback__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___traceback___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___context___DOCSTR)
-#  define BaseException___context___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CONTEXT___GETSETDEF)
-#  undef BASEEXCEPTION___CONTEXT___GETSETDEF
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, BaseException___context___DOCSTR},
-#else
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, NULL, BaseException___context___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___context___get_impl(PyBaseExceptionObject *self);
@@ -232,41 +232,29 @@ BaseException___context___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___context___DOCSTR)
-#  define BaseException___context___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CONTEXT___GETSETDEF)
-#  undef BASEEXCEPTION___CONTEXT___GETSETDEF
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, BaseException___context___DOCSTR},
-#else
-#  define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", NULL, (setter)BaseException___context___set, NULL},
-#endif
-
 static int
 BaseException___context___set_impl(PyBaseExceptionObject *self,
                                    PyObject *value);
 
 static int
-BaseException___context___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___context___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__context__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___context___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-
-#if !defined(BaseException___cause___DOCSTR)
-#  define BaseException___cause___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CAUSE___GETSETDEF)
-#  undef BASEEXCEPTION___CAUSE___GETSETDEF
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, BaseException___cause___DOCSTR},
-#else
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, NULL, BaseException___cause___DOCSTR},
-#endif
 
 static PyObject *
 BaseException___cause___get_impl(PyBaseExceptionObject *self);
@@ -283,25 +271,23 @@ BaseException___cause___get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if !defined(BaseException___cause___DOCSTR)
-#  define BaseException___cause___DOCSTR NULL
-#endif
-#if defined(BASEEXCEPTION___CAUSE___GETSETDEF)
-#  undef BASEEXCEPTION___CAUSE___GETSETDEF
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, BaseException___cause___DOCSTR},
-#else
-#  define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", NULL, (setter)BaseException___cause___set, NULL},
-#endif
-
 static int
 BaseException___cause___set_impl(PyBaseExceptionObject *self,
                                  PyObject *value);
 
 static int
-BaseException___cause___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+BaseException___cause___set(PyObject *self, PyObject *arg, void *Py_UNUSED(context))
 {
-    int return_value;
+    int return_value = -1;
+    PyObject *value;
 
+    if (arg == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "attribute '__cause__' of '%.100s' objects cannot be deleted",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    value = arg;
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = BaseException___cause___set_impl((PyBaseExceptionObject *)self, value);
     Py_END_CRITICAL_SECTION();
@@ -380,4 +366,335 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 
     return return_value;
 }
-/*[clinic end generated code: output=e63b88d0443b4f92 input=a9049054013a1b77]*/
+
+static int
+ImportError_init_impl(PyImportErrorObject *self, PyObject *args,
+                      PyObject *name, PyObject *path, PyObject *name_from);
+
+static int
+ImportError_init_helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(name), &_Py_ID(path), &_Py_ID(name_from), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "path", "name_from", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ImportError",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *name = NULL;
+    PyObject *path = NULL;
+    PyObject *name_from = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[0]) {
+        name = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[1]) {
+        path = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    name_from = fastargs[2];
+skip_optional_kwonly:
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = ImportError_init_impl((PyImportErrorObject *)self, __clinic_args, name, path, name_from);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static int
+ImportError_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return ImportError_init_helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+ImportError_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == ImportError_init);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    _result = ImportError_init_helper(self, args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+    if (_result != 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return self;
+}
+
+static int
+NameError_init_impl(PyNameErrorObject *self, PyObject *args, PyObject *name);
+
+static int
+NameError_init_helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "NameError",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *name = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    name = fastargs[0];
+skip_optional_kwonly:
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = NameError_init_impl((PyNameErrorObject *)self, __clinic_args, name);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static int
+NameError_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return NameError_init_helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+NameError_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == NameError_init);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    _result = NameError_init_helper(self, args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+    if (_result != 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return self;
+}
+
+static int
+AttributeError_init_impl(PyAttributeErrorObject *self, PyObject *args,
+                         PyObject *name, PyObject *obj);
+
+static int
+AttributeError_init_helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(name), &_Py_ID(obj), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "obj", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "AttributeError",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *name = NULL;
+    PyObject *obj = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[0]) {
+        name = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    obj = fastargs[1];
+skip_optional_kwonly:
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = AttributeError_init_impl((PyAttributeErrorObject *)self, __clinic_args, name, obj);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static int
+AttributeError_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return AttributeError_init_helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+AttributeError_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == AttributeError_init);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    _result = AttributeError_init_helper(self, args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+    if (_result != 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return self;
+}
+#define BASEEXCEPTION_ARGS_GETSETDEF {"args", (getter)BaseException_args_get, (setter)BaseException_args_set, NULL},
+
+#define BASEEXCEPTION___TRACEBACK___GETSETDEF {"__traceback__", (getter)BaseException___traceback___get, (setter)BaseException___traceback___set, NULL},
+
+#define BASEEXCEPTION___CONTEXT___GETSETDEF {"__context__", (getter)BaseException___context___get, (setter)BaseException___context___set, NULL},
+
+#define BASEEXCEPTION___CAUSE___GETSETDEF {"__cause__", (getter)BaseException___cause___get, (setter)BaseException___cause___set, NULL},
+
+/*[clinic end generated code: output=c8eaffee13bc041d input=a9049054013a1b77]*/
