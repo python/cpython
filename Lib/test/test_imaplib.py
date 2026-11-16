@@ -560,6 +560,29 @@ class NewIMAPTestsMixin():
                 send.assert_called_once_with(
                     tag + b' LOGIN user ' + arg.encode('ascii') + b'\r\n')
 
+    def test_rejected_append_clears_literal(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        client.login('user', 'pass')
+        for char in '\0\r\n':
+            for mailbox in (f'a{char}b', f'a{char}b'.encode('ascii')):
+                with self.subTest(mailbox=mailbox):
+                    with self.assertRaises(ValueError):
+                        client.append(mailbox, None, None, b'message')
+                    self.assertIsNone(client.literal)
+                    typ, _ = client.select('INBOX')
+                    self.assertEqual(typ, 'OK')
+        with self.subTest(case='flags'):
+            with self.assertRaises(ValueError):
+                client.append('INBOX', '(\\Flag\n)', None, b'message')
+            self.assertIsNone(client.literal)
+            typ, _ = client.select('INBOX')
+            self.assertEqual(typ, 'OK')
+        client.logout()
+        with self.subTest(case='illegal_state'):
+            with self.assertRaises(imaplib.IMAP4.error):
+                client.append('INBOX', None, None, b'message')
+            self.assertIsNone(client.literal)
+
     def test_append_literal_crlf(self):
         class AppendServer(SimpleIMAPHandler):
             def cmd_APPEND(self, tag, args):

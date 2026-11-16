@@ -973,8 +973,11 @@ class IMAP4:
 
     def _command(self, name, *args):
 
-        if self.state not in Commands[name]:
+        literal = self.literal
+        if literal is not None:
             self.literal = None
+
+        if self.state not in Commands[name]:
             raise self.error("command %s illegal in state %s, "
                              "only allowed in states %s" %
                              (name, self.state,
@@ -999,9 +1002,7 @@ class IMAP4:
                 raise ValueError("NUL, CR and LF not allowed in commands")
             data = data + b' ' + arg
 
-        literal = self.literal
         if literal is not None:
-            self.literal = None
             if type(literal) is type(self._command):
                 literator = literal
             else:
