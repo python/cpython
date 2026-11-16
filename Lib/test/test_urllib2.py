@@ -1846,6 +1846,37 @@ class HandlerTests(unittest.TestCase):
         self.assertIn('uri="/"', auth)
         self.assertIn('response="%s"' % respdig, auth)
 
+    def test_proxy_auth_ignores_direct_407(self):
+        # gh-158907: a direct HTTP origin that returns 407 must not receive
+        # credentials registered for the same authority over HTTPS.
+        realm = "test-realm"
+        cases = [
+            (urllib.request.ProxyBasicAuthHandler,
+             'Basic realm="%s"' % realm),
+            (urllib.request.ProxyDigestAuthHandler,
+             'Digest realm="%s", nonce="abc", qop="auth"' % realm),
+        ]
+        for handler_class, challenge in cases:
+            with self.subTest(handler=handler_class.__name__):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.ProxyHandler({}))
+                password_manager = urllib.request.HTTPPasswordMgr()
+                auth_handler = handler_class(password_manager)
+                http_handler = MockHTTPHandlerRedirect(
+                    407, 'Proxy-Authenticate: %s\r\n\r\n' % challenge)
+                opener.add_handler(auth_handler)
+                opener.add_handler(http_handler)
+
+                password_manager.add_password(
+                    realm, "https://example.com/",
+                    "victim-user", "victim-secret")
+                opener.open("http://example.com/resource")
+
+                self.assertEqual(len(http_handler.requests), 1)
+                self.assertFalse(
+                    http_handler.requests[0].has_header(
+                        "Proxy-authorization"))
+
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
         # response (https://bugs.python.org/issue1479302), where it should instead
