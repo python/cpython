@@ -931,10 +931,13 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False, repeated=False, dir_fd=None,
                 fullname=None):
-        if fullname is None:
-            fullname = name
+
+        # work with str paths throughout
+        name = _os.fsdecode(name)
+        fullname = name if fullname is None else _os.fsdecode(fullname)
 
         def onerror(func, path, exc_info, direntry=None, dir_fd=None):
+            path = _os.fsdecode(path)
             if issubclass(exc_info[0], PermissionError):
                 if repeated and path == name:
                     if ignore_errors:
