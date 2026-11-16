@@ -566,6 +566,69 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertTrue(onexc_called)
         self.assertFalse(onerror_called)
 
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based implementation of rmtree()')
+    def test_onexc_kwargs_dir_fd(self):
+        os.mkdir(TESTFN)
+        self.addCleanup(os_helper.rmtree, TESTFN)
+        top_name = os.path.join(TESTFN, 'top')
+        child_name = os.path.join(TESTFN, 'top', 'child')
+        os.mkdir(top_name)
+        os.mkdir(child_name)
+        parent_fd = os.open(TESTFN, os.O_RDONLY)
+        self.addCleanup(os.close, parent_fd)
+
+        errors = []
+        def onexc(func, path, err, direntry=None, dir_fd=None):
+            errors.append((func, path.replace(os.path.sep, '/')))
+            name = path if direntry is None else direntry.name
+            self.assertEqual(name, os.path.basename(path))
+            self.assertTrue(os.path.samestat(
+                os.stat(os.path.join(TESTFN, path)),
+                os.stat(name, dir_fd=dir_fd)))
+
+        def rmtree():
+            errors.clear()
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+            return errors
+
+        def failing_rmdir(path, *, dir_fd=None):
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.rmdir', failing_rmdir):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(
+            errors,
+            [(failing_rmdir, 'top/child'), (failing_rmdir, 'top')])
+
+        child_stat = os.stat(child_name)
+        scandir = os.scandir
+
+        # Fail for the top-level directory
+        errors.clear()
+        def failing_scandir(fd):
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.scandir', failing_scandir):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(
+            errors,
+            [(failing_scandir, 'top'), (os.rmdir, 'top')])
+        self.assertTrue(os.path.exists(top_name))
+
+        # Fail for the child (which is empty, so the rmdir succeeds)
+        errors.clear()
+        def failing_scandir_2(fd):
+            if not os.path.samestat(os.fstat(fd), child_stat):
+                return scandir(fd)
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.scandir', failing_scandir_2):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(errors, [(failing_scandir_2, 'top/child')])
+        self.assertFalse(os.path.exists(top_name))
+
     def test_rmtree_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
