@@ -256,11 +256,11 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
     || defined(_Py_OPAQUE_PYOBJECT)
-    // Stable ABI implements Py_INCREF() as a function call on limited C API
-    // version 3.12 and newer, abi3t, and on Python built in debug mode.
-    // _Py_IncRef() was added to Python 3.10.0a7, use Py_IncRef() on older versions.
-    // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+    // Since Python 3.16, the atable ABI implements Py_INCREF() as a function
+    // call on all limited C API versions. _Py_IncRef() was added to Python
+    // 3.10.0a7, use Py_IncRef() on older versions. Py_IncRef() accepts NULL,
+    // whereas _Py_IncRef() doesn't.
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_IncRef(op);
 #  else
     Py_IncRef(op);
@@ -324,14 +324,13 @@ PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
-#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
-    || defined(_Py_OPAQUE_PYOBJECT)
-// Stable ABI implements Py_DECREF() as a function call on limited C API
-// version 3.12 and newer, abi3t, and on Python built in debug mode.
-// _Py_DecRef() was added to Python 3.10.0a7, use Py_DecRef() on older versions.
-// Py_DecRef() accepts NULL whereas _Py_DecRef() doesn't.
+#if defined(Py_LIMITED_API) || defined(_Py_OPAQUE_PYOBJECT)
+// Since Python 3.16, the stable ABI implements Py_DECREF() as a function call
+// on all limited C API version. _Py_DecRef() was added to Python 3.10.0a7,
+// use Py_DecRef() on older versions. Py_DecRef() accepts NULL, whereas
+// _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_DecRef(op);
 #  else
     Py_DecRef(op);
