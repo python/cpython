@@ -648,6 +648,17 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(stacks["consumer"], ["consumer"])
 
     @skip_if_not_supported
+    def test_self_trace_with_empty_linetable(self):
+        def sample():
+            return RemoteUnwinder(os.getpid()).get_stack_trace()
+
+        sample.__code__ = sample.__code__.replace(co_linetable=b"")
+        frame = self._find_frame_in_trace(
+            sample(), lambda f: f.funcname == sample.__qualname__
+        )
+        self.assertEqual(frame.location, (-1, -1, -1, -1))
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
