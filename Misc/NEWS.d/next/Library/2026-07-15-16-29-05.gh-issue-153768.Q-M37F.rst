@@ -1,1 +1,1 @@
-Fix sqlite3 CLI completion for attached database names containing quotes.
+Fix :mod:`sqlite3` CLI completion for attached database names containing quotes.
