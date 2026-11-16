@@ -1,0 +1,3 @@
+Fix a crash in :func:`signal.getsignal` on the :term:`free-threaded build`
+when another thread replaces the handler.  A signal handler that replaces
+itself now stays alive until it returns.
