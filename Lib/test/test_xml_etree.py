@@ -4339,6 +4339,53 @@ class TreeBuilderTest(unittest.TestCase):
         e = parser.close()
         self._check_sample1_element(e)
 
+    def test_start_copies_attrs(self):
+        class DictSubclass(dict):
+            pass
+
+        for dict_type in (dict, DictSubclass):
+            for initial in ({}, {'key': 'value'}):
+                for factory in (None, ET.Element):
+                    with self.subTest(dict_type=dict_type, initial=initial,
+                                      factory=factory):
+                        attrs = dict_type(initial)
+                        tb = ET.TreeBuilder(element_factory=factory)
+                        elem = tb.start('root', attrs)
+                        tb.end('root')
+                        self.assertIs(tb.close(), elem)
+                        attrs.clear()
+                        attrs['caller'] = 'changed'
+                        self.assertEqual(elem.attrib, initial)
+                        elem.set('element', 'changed')
+                        self.assertEqual(attrs, {'caller': 'changed'})
+
+    def test_start_reuses_attrs(self):
+        tb = ET.TreeBuilder()
+        root = tb.start('root', {})
+        attrs = {'id': 'first'}
+        tb.start('child', attrs)
+        tb.end('child')
+        attrs['id'] = 'second'
+        tb.start('child', attrs)
+        tb.end('child')
+        tb.end('root')
+        self.assertIs(tb.close(), root)
+        self.assertEqual([child.get('id') for child in root],
+                         ['first', 'second'])
+
+    def test_start_element_factory_attrs(self):
+        attrs = {'key': 'value'}
+
+        def factory(tag, attrib):
+            self.assertIs(attrib, attrs)
+            return ET.Element(tag, attrib)
+
+        tb = ET.TreeBuilder(element_factory=factory)
+        elem = tb.start('root', attrs)
+        tb.end('root')
+        self.assertIs(tb.close(), elem)
+        self.assertEqual(elem.attrib, attrs)
+
     def test_subclass(self):
         class MyTreeBuilder(ET.TreeBuilder):
             def foobar(self, x):

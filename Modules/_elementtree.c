@@ -3116,6 +3116,15 @@ _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
                                     PyObject *attrs)
 /*[clinic end generated code: output=e7e9dc2861349411 input=26cccb49c3b8b12f]*/
 {
+    if (!self->element_factory) {
+        attrs = PyDict_Copy(attrs);
+        if (attrs == NULL) {
+            return NULL;
+        }
+        PyObject *node = treebuilder_handle_start(self, tag, attrs);
+        Py_DECREF(attrs);
+        return node;
+    }
     return treebuilder_handle_start(self, tag, attrs);
 }
 
