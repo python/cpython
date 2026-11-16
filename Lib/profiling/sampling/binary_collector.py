@@ -1,5 +1,6 @@
 """Thin Python wrapper around C binary writer for profiling data."""
 
+import sys
 import time
 
 import _remote_debugging
@@ -9,6 +10,23 @@ from .collector import Collector
 # Compression type constants (must match binary_io.h)
 COMPRESSION_NONE = 0
 COMPRESSION_ZSTD = 1
+
+CAPTURE_FEATURES = {
+    "all_threads": 1 << 0,
+    "native": 1 << 1,
+    "gc": 1 << 2,
+    "opcodes": 1 << 3,
+    "blocking": 1 << 4,
+}
+
+
+def encode_capture_config(capture_config):
+    if capture_config is None:
+        return -1
+    return sum(
+        bit for name, bit in CAPTURE_FEATURES.items()
+        if capture_config.get(name, False)
+    )
 
 
 def _resolve_compression(compression):
@@ -49,7 +67,7 @@ class BinaryCollector(Collector):
     """
 
     def __init__(self, filename, sample_interval_usec, *, skip_idle=False,
-                 compression='auto'):
+                 compression='auto', mode=None, capture_config=None):
         """Create a new binary collector.
 
         Args:
@@ -57,15 +75,22 @@ class BinaryCollector(Collector):
             sample_interval_usec: Sampling interval in microseconds
             skip_idle: If True, skip idle threads (not used in binary format)
             compression: 'auto', 'zstd', 'none', or int (0=none, 1=zstd)
+            mode: Profiling mode, or None if unknown
+            capture_config: Mapping of capture feature names to booleans, or
+                None if the capture configuration is unknown
         """
         self.filename = filename
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
+        self.running = True
 
         compression_type = _resolve_compression(compression)
         start_time_us = int(time.monotonic() * 1_000_000)
         self._writer = _remote_debugging.BinaryWriter(
-            filename, sample_interval_usec, start_time_us, compression=compression_type
+            filename, sample_interval_usec, start_time_us,
+            compression=compression_type,
+            mode=-1 if mode is None else mode,
+            capture_features=encode_capture_config(capture_config),
         )
 
     def collect(self, stack_frames, timestamp_us=None):
@@ -79,13 +104,30 @@ class BinaryCollector(Collector):
             timestamp_us: Optional timestamp in microseconds. If not provided,
                           uses time.monotonic() to generate one.
         """
+        if not self.running:
+            return
         if timestamp_us is None:
             timestamp_us = int(time.monotonic() * 1_000_000)
-        self._writer.write_sample(stack_frames, timestamp_us)
+        try:
+            self._writer.write_sample(stack_frames, timestamp_us)
+        except OverflowError as e:
+            if not self._writer.limit_reached:
+                raise
+            self.running = False
+            print(f"Warning: {e}; stopping early and keeping the data "
+                  "collected so far.",
+                  file=sys.stderr)
 
     def collect_failed_sample(self):
         """Record a failed sample attempt (no-op for binary format)."""
         pass
+
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
+                  error_rate=None, missed_samples=None, **kwargs):
+        """Persist measured statistics for later replay."""
+        self._writer.set_stats(
+            duration_sec, sample_rate, error_rate, missed_samples
+        )
 
     def export(self, filename=None):
         """Finalize and close the binary file.
@@ -113,9 +155,5 @@ class BinaryCollector(Collector):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit - finalize unless there was an error."""
-        if exc_type is None:
-            self._writer.finalize()
-        else:
-            self._writer.close()
-        return False
+        """Finalize if the writer can still produce a valid file."""
+        return self._writer.__exit__(exc_type, exc_val, exc_tb)

@@ -411,6 +411,57 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             self.loop.run_until_complete(coro)
         self.assertTrue(sock.close.called)
 
+    @socket_helper.skip_unless_bind_unix_socket
+    def test_create_unix_server_mode(self):
+        # Two distinct modes: whatever the umask, at most one of them
+        # can coincide with the default permissions, so a no-op chmod
+        # cannot pass both subtests.
+        for mode in (0o600, 0o644):
+            with self.subTest(mode=mode):
+                with test_utils.unix_socket_path() as path:
+                    srv = self.loop.run_until_complete(
+                        self.loop.create_unix_server(
+                            lambda: None, path, mode=mode))
+                    try:
+                        self.assertEqual(
+                            stat.S_IMODE(os.stat(path).st_mode), mode)
+                    finally:
+                        srv.close()
+                        self.loop.run_until_complete(srv.wait_closed())
+
+    def test_create_unix_server_mode_sock(self):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        with sock:
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock, mode=0o600)
+            with self.assertRaisesRegex(ValueError,
+                                        'mode is only meaningful with path'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_mode_abstract(self):
+        # The check is a pure string test, so it runs on all platforms.
+        for path in ('\x00spam', b'\x00spam'):
+            with self.subTest(path=path):
+                coro = self.loop.create_unix_server(lambda: None, path,
+                                                    mode=0o600)
+                with self.assertRaisesRegex(
+                        ValueError, 'mode is not supported for abstract'):
+                    self.loop.run_until_complete(coro)
+
+    @mock.patch('asyncio.unix_events.socket')
+    def test_create_unix_server_chmod_error(self, m_socket):
+        # Ensure that the socket is closed when os.chmod() fails
+        sock = mock.Mock()
+        m_socket.socket.return_value = sock
+
+        with mock.patch('asyncio.unix_events.os.chmod',
+                        side_effect=PermissionError):
+            coro = self.loop.create_unix_server(lambda: None, path='/test',
+                                                mode=0o600)
+            with self.assertRaises(PermissionError):
+                self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
     def test_create_unix_connection_path_sock(self):
         coro = self.loop.create_unix_connection(
             lambda: None, os.devnull, sock=object())

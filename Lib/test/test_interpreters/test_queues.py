@@ -1,8 +1,9 @@
-import importlib
 import pickle
 import threading
 from textwrap import dedent
+import time
 import unittest
+from unittest import mock
 
 from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
@@ -39,7 +40,12 @@ class LowLevelTests(TestBase):
 
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
-        importlib.reload(queues)
+        interp = interpreters.create()
+        interp.exec(dedent(f"""
+            import importlib
+            from concurrent.interpreters import _queues as queues
+            importlib.reload(queues)
+            """));
 
     def test_create_destroy(self):
         qid = _queues.create(2, REPLACE, -1)
@@ -353,6 +359,19 @@ class TestQueueOps(TestBase):
             queue.get(timeout=0.1)
         with self.assertRaises(queues.QueueEmpty):
             queue.get(HUGE_TIMEOUT, 0.1)
+
+    def test_timeout_uses_monotonic_clock(self):
+        # gh-153005: the deadline must be computed from the monotonic clock,
+        # since the wall clock can be adjusted while the call is blocked.
+        queue = queues.create(1)
+        with mock.patch.object(queues, 'time', wraps=time) as fake_time:
+            with self.assertRaises(queues.QueueEmpty):
+                queue.get(timeout=0)
+            queue.put(None)
+            with self.assertRaises(queues.QueueFull):
+                queue.put(None, timeout=0)
+        fake_time.monotonic.assert_called()
+        fake_time.time.assert_not_called()
 
     def test_get_nowait(self):
         queue = queues.create()

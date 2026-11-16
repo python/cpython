@@ -56,7 +56,7 @@ def _complete(con, text, state):
                     f"""\
                     SELECT pti.name || ' ' FROM {_quote_identifier(schema)}.sqlite_master AS sm
                     JOIN pragma_table_xinfo(sm.name,{_quote_string_literal(schema)}) AS pti
-                    WHERE sm.type='table' AND
+                    WHERE sm.type IN ('table', 'view') AND
                     pti.name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'"""
                     for schema in schemata
                 )

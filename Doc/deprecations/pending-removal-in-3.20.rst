@@ -39,6 +39,27 @@ Pending removal in Python 3.20
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
 
+* The ``__author__``, ``__credits__``, ``__copyright__`` and ``__date__``
+  attributes have been deprecated in these standard library modules and will
+  be removed in Python 3.20. Attribution is preserved in the source code
+  and the version control history.
+
+  - :mod:`bz2`
+  - :mod:`concurrent.futures`
+  - :mod:`inspect`
+  - :mod:`io`
+  - :mod:`json`
+  - :mod:`logging`
+  - :mod:`optparse`
+  - :mod:`platform`
+  - :mod:`pydoc`
+  - :mod:`tarfile`
+  - :mod:`tkinter.ttk`
+  - :mod:`tokenize`
+  - :mod:`uuid`
+
+  (Contributed by Stan Ulbrych in :gh:`159240`.)
+
 * Deprecations defined by :pep:`829`:
 
   * Warnings are produced for ``import`` lines found in :file:`{name}.pth`
@@ -53,3 +74,12 @@ Pending removal in Python 3.20
 
   * Creating instances of abstract AST nodes (such as :class:`ast.AST`
     or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+
+* :mod:`typing`:
+
+  * It is deprecated to call :func:`isinstance` and :func:`issubclass` checks on
+    protocol classes that were not explicitly decorated with :func:`!runtime_checkable`
+    but that inherit from a runtime-checkable protocol class.
+    This will raise a :exc:`TypeError` in Python 3.20.
+
+    (Contributed by Bartosz Sławecki in :gh:`132604`.)

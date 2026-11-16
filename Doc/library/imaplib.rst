@@ -188,9 +188,10 @@ enclosed with either parentheses or double quotes) each string is quoted.
 However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
-In general, pass arguments unquoted and let the module quote them as needed.
-An argument that is already enclosed in double quotes is left unchanged,
-so that code which quotes arguments itself keeps working.
+Or you can quote the string yourself;
+an argument that is already enclosed in double quotes is left unchanged.
+In general, however, it is better to pass arguments unquoted
+and let the module quote them as needed.
 
 Mailbox names are encoded as modified UTF-7 (:rfc:`3501`, section 5.1.3),
 so a mailbox name containing non-ASCII characters can be passed as an
@@ -202,7 +203,7 @@ encoding.
 When ``UTF8=ACCEPT`` is enabled (see :meth:`~IMAP4.enable`), mailbox names
 are sent as UTF-8 instead.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Non-ASCII mailbox names are automatically encoded as modified UTF-7.
 
 Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
@@ -211,11 +212,70 @@ or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 
-The *message_set* options to commands below is a string specifying one or more
-messages to be acted upon.  It may be a simple message number (``'1'``), a range
-of message numbers (``'2:4'``), or a group of non-contiguous ranges separated by
-commas (``'1:3,6:9'``).  A range can contain an asterisk to indicate an infinite
-upper bound (``'3:*'``).
+The *message_set* options to the commands below can be a string specifying
+one or more messages to be acted upon.
+It may be a simple message number (``'1'``),
+a range of message numbers (``'2:4'``),
+or a group of non-contiguous ranges separated by commas (``'1:3,6:9'``).
+A range can contain an asterisk
+to indicate an infinite upper bound (``'3:*'``).
+
+Alternatively it can be specified using integers and :class:`range` objects.
+It may be a single message number or a sequence.
+The sequence items may be integers, ``(start, stop)`` tuples
+(where ``None`` or ``'*'`` stands for the last message),
+or :class:`range` objects.
+For example, ``[1, (3, 5), 8]`` and ``[range(1, 6), 8]``
+are both equivalent to ``'1,3:5,8'``.
+
+.. versionchanged:: 3.16
+   Added support for the structured *message_set*.
+
+Command arguments that are parenthesized lists of atoms ---
+such as the *flag_list* argument of :meth:`~IMAP4.store` and the *flags*
+argument of :meth:`~IMAP4.append`,
+the *names* argument of :meth:`~IMAP4.status`,
+the *sort_criteria* argument of :meth:`~IMAP4.sort`,
+or the *message_parts* argument of :meth:`~IMAP4.fetch` ---
+can be passed as a sequence of strings instead of a single preformatted string.
+For example, ``[r'\Seen', r'\Answered']``
+is equivalent to ``(\Seen \Answered)``.
+
+.. versionchanged:: 3.16
+   Added support for passing these arguments as a sequence.
+
+.. _imap4-params:
+
+The value-bearing arguments of the search and fetch commands
+can be quoted by hand, but this is error prone.
+Instead, they may contain ``?`` placeholders that are substituted, and quoted
+as required, from a *params* keyword argument,
+in the manner of :mod:`sqlite3` parameter substitution::
+
+   # SEARCH FROM me@example.com SUBJECT "trip report"
+   M.search(None, 'FROM ? SUBJECT ?', params=['me@example.com', 'trip report'])
+
+   # FETCH 1:5 (FLAGS BODY[HEADER.FIELDS (DATE FROM)])
+   M.fetch('1:5', 'FLAGS BODY[HEADER.FIELDS ?]', params=[['DATE', 'FROM']])
+
+The placeholders are:
+
+* ``?`` --- an ``astring``: a string (which will be quoted if necessary),
+  an integer, or a list of integers and/or strings
+  (which will be sent as a parenthesized list);
+* ``?f`` --- a flag or a list of flags, sent verbatim without quoting;
+* ``?s`` --- a *message_set* in the structured form described above.
+
+``??`` stands for a literal ``?``.
+
+Substitution is only performed when *params* is given;
+if no *params* are given, an argument containing a literal ``?`` is unchanged.
+The *params* keyword is accepted by :meth:`~IMAP4.search`,
+:meth:`~IMAP4.fetch`, :meth:`~IMAP4.sort`, :meth:`~IMAP4.thread` and
+:meth:`~IMAP4.uid`.
+
+.. versionadded:: 3.16
+   The *params* keyword argument.
 
 An :class:`IMAP4` instance has the following methods:
 
@@ -237,7 +297,7 @@ An :class:`IMAP4` instance has the following methods:
    by :rfc:`3501`; for example, serialize :mod:`email` messages using
    :class:`email.policy.SMTP`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *translate_line_endings* parameter.
 
 
@@ -280,7 +340,7 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, *message_set* is a set of UIDs and the ``UID COPY``
    command is used instead of ``COPY``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *uid* parameter.
 
 
@@ -320,11 +380,11 @@ An :class:`IMAP4` instance has the following methods:
    *message_set*.  *message_set* is required in this case, and must be omitted
    otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *message_set* and *uid* parameters.
 
 
-.. method:: IMAP4.fetch(message_set, message_parts, *, uid=False)
+.. method:: IMAP4.fetch(message_set, message_parts, *, uid=False, params=None)
 
    Fetch (parts of) messages.  *message_parts* should be a string of message part
    names enclosed within parentheses, eg: ``"(UID BODY[TEXT])"``.  Returned data
@@ -333,8 +393,11 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, *message_set* is a set of UIDs and the message numbers in
    the response are UIDs (``UID FETCH``).
 
-   .. versionchanged:: next
-      Added the *uid* parameter.
+   If *params* is given, ``?`` placeholders in *message_parts* are substituted
+   with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
+   .. versionchanged:: 3.16
+      Added the *params* and *uid* parameters.
 
 
 .. method:: IMAP4.getacl(mailbox)
@@ -371,7 +434,7 @@ An :class:`IMAP4` instance has the following methods:
    a value can be ``None``.
    The server must support the ``ID`` capability.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.idle(duration=None)
@@ -497,7 +560,7 @@ An :class:`IMAP4` instance has the following methods:
    which it need not advertise as ``AUTH=PLAIN`` in its ``CAPABILITY``
    response.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.logout()
@@ -524,7 +587,7 @@ An :class:`IMAP4` instance has the following methods:
    If *uid* is true, *message_set* is a set of UIDs and the ``UID MOVE``
    command is used instead of ``MOVE``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: IMAP4.myrights(mailbox)
@@ -598,7 +661,7 @@ An :class:`IMAP4` instance has the following methods:
    code, instead of the usual type.
 
 
-.. method:: IMAP4.search(charset, criterion[, ...], *, uid=False)
+.. method:: IMAP4.search(charset, criterion[, ...], *, uid=False, params=None)
 
    Search mailbox for matching messages.  *charset* may be ``None``, in which case
    no ``CHARSET`` will be specified in the request to the server.  The IMAP
@@ -617,18 +680,22 @@ An :class:`IMAP4` instance has the following methods:
    When *charset* is ``None`` (as it must be under ``UTF8=ACCEPT``),
    the criterion is sent using the connection's encoding instead.
 
+   If *params* is given, ``?`` placeholders in the criteria are substituted
+   with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    Example::
 
       # M is a connected IMAP4 instance...
-      typ, msgnums = M.search(None, 'FROM', '"LDJ"')
+      typ, msgnums = M.search(None, 'FROM', '"John Smith"')
 
       # or:
-      typ, msgnums = M.search(None, '(FROM "LDJ")')
+      typ, msgnums = M.search(None, '(FROM "John Smith")')
 
-   .. versionchanged:: next
-      Added the *uid* parameter.
+      # or, letting the module quote the value (this is recommended):
+      typ, msgnums = M.search(None, 'FROM ?', params=['John Smith'])
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
+      Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
 
@@ -675,7 +742,7 @@ An :class:`IMAP4` instance has the following methods:
    Returns socket instance used to connect to server.
 
 
-.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...], *, uid=False)
+.. method:: IMAP4.sort(sort_criteria, charset, search_criterion[, ...], *, uid=False, params=None)
 
    The ``sort`` command is a variant of ``search`` with sorting semantics for the
    results.  Returned data contains a space separated list of matching message
@@ -696,12 +763,13 @@ An :class:`IMAP4` instance has the following methods:
    a *search_criterion* passed as :class:`str` is encoded to *charset*;
    pass :class:`bytes` to send one already encoded.
 
+   If *params* is given, ``?`` placeholders in the search criteria are
+   substituted with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    This is an ``IMAP4rev1`` extension command.
 
-   .. versionchanged:: next
-      Added the *uid* parameter.
-
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
+      Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
 
@@ -745,7 +813,7 @@ An :class:`IMAP4` instance has the following methods:
 
       typ, data = M.search(None, 'ALL')
       for num in data[0].split():
-         M.store(num, '+FLAGS', '\\Deleted')
+         M.store(num, '+FLAGS', r'\Deleted')
       M.expunge()
 
    .. note::
@@ -760,7 +828,7 @@ An :class:`IMAP4` instance has the following methods:
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *uid* parameter.
 
 .. method:: IMAP4.subscribe(mailbox)
@@ -768,7 +836,7 @@ An :class:`IMAP4` instance has the following methods:
    Subscribe to new mailbox.
 
 
-.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...], *, uid=False)
+.. method:: IMAP4.thread(threading_algorithm, charset, search_criterion[, ...], *, uid=False, params=None)
 
    The ``thread`` command is a variant of ``search`` with threading semantics for
    the results.  Returned data contains a space separated list of thread members.
@@ -793,21 +861,29 @@ An :class:`IMAP4` instance has the following methods:
    a *search_criterion* passed as :class:`str` is encoded to *charset*;
    pass :class:`bytes` to send one already encoded.
 
+   If *params* is given, ``?`` placeholders in the search criteria are
+   substituted with the quoted parameters (see :ref:`the placeholders <imap4-params>`).
+
    This is an ``IMAP4rev1`` extension command.
 
-   .. versionchanged:: next
-      Added the *uid* parameter.
-
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
+      Added the *params* and *uid* parameters.
       ``str`` search criteria are encoded to *charset*.
 
 
-.. method:: IMAP4.uid(command, arg[, ...])
+.. method:: IMAP4.uid(command, arg[, ...], *, params=None)
 
    Execute command args with messages identified by UID, rather than message
    number.  Returns response appropriate to command.  At least one argument must be
    supplied; if none are provided, the server will return an error and an exception
    will be raised.
+
+   If *params* is given, ``?`` placeholders in the ``SEARCH``, ``SORT`` and
+   ``THREAD`` criteria or in the ``FETCH`` parts are substituted with the quoted
+   parameters (see :ref:`the placeholders <imap4-params>`).
+
+   .. versionchanged:: 3.16
+      Added the *params* parameter.
 
 
 .. method:: IMAP4.unsubscribe(mailbox)
@@ -830,6 +906,20 @@ An :class:`IMAP4` instance has the following methods:
 
 
 The following attributes are defined on instances of :class:`IMAP4`:
+
+.. attribute:: IMAP4.capabilities
+
+   A tuple of the capabilities advertised by the server, in upper case.
+
+   It is set when the connection is established,
+   and refreshed after a successful :meth:`~IMAP4.login`,
+   :meth:`~IMAP4.authenticate` or :meth:`~IMAP4.starttls`,
+   because the server can advertise different capabilities
+   in different connection states.
+
+   .. versionchanged:: 3.14.7
+      Refreshed after :meth:`~IMAP4.login` and :meth:`~IMAP4.authenticate`.
+
 
 .. attribute:: IMAP4.PROTOCOL_VERSION
 

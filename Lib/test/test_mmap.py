@@ -59,6 +59,7 @@ class MmapTests(unittest.TestCase):
             f.flush()
             m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
             self.addCleanup(m.close)
+            self.assertEqual(f.tell(), 2 * PAGESIZE)
         finally:
             f.close()
 
@@ -74,7 +75,7 @@ class MmapTests(unittest.TestCase):
 
         # Shouldn't crash on boundary (Issue #5292)
         self.assertRaises(IndexError, m.__getitem__, len(m))
-        self.assertRaises(IndexError, m.__setitem__, len(m), b'\0')
+        self.assertRaises(IndexError, m.__setitem__, len(m), 0)
 
         # Modify the file's content
         m[0] = b'3'[0]
@@ -907,9 +908,10 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size) as m:
             m[:] = data
-            if sys.platform.startswith(('linux', 'android')):
-                # Can't expand a shared anonymous mapping on Linux.
-                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+            if sys.platform.startswith(('linux', 'android', 'netbsd')):
+                # Can't expand a shared anonymous mapping on Linux
+                # (see https://bugzilla.kernel.org/show_bug.cgi?id=8691)
+                # or NetBSD.
                 with self.assertRaises(ValueError):
                     m.resize(new_size)
             else:
@@ -950,6 +952,49 @@ class MmapTests(unittest.TestCase):
                 # Can't expand to its original size.
                 with self.assertRaises(ValueError):
                     m.resize(start_size)
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
+    def test_setitem_resize_reentrancy(self):
+        """Resizing the mmap from inside __index__ while assigning to a
+        single item must not access memory past the new bounds (gh-157335).
+        """
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnIndex:
+            def __init__(self, m):
+                self.m = m
+            def __index__(self):
+                self.m.resize(new_size)
+                return 0
+
+        with mmap.mmap(-1, size) as m:
+            with self.assertRaises(IndexError):
+                m[size - 1] = ResizeOnIndex(m)
+            self.assertEqual(len(m), new_size)
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
+    def test_setitem_slice_resize_reentrancy(self):
+        """Resizing the mmap from inside a value's buffer-protocol
+        callback while assigning to a slice must not access memory past
+        the new bounds (gh-157335).
+        """
+        size = 2 * PAGESIZE
+        new_size = PAGESIZE
+
+        class ResizeOnBuffer:
+            def __init__(self, m, data):
+                self.m = m
+                self.data = data
+            def __buffer__(self, flags):
+                self.m.resize(new_size)
+                return memoryview(self.data)
+
+        with mmap.mmap(-1, size) as m:
+            value = ResizeOnBuffer(m, bytes(size))
+            with self.assertRaises(IndexError):
+                m[0:size] = value
+            self.assertEqual(len(m), new_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
@@ -1175,8 +1220,8 @@ class MmapTests(unittest.TestCase):
             if hasattr(mmap, 'MS_INVALIDATE'):
                 m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
             if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
-                if sys.platform == 'freebsd':
-                    # FreeBSD doesn't support this combination
+                if sys.platform.startswith(('freebsd', 'dragonfly')):
+                    # FreeBSD and DragonFly don't support this combination
                     with self.assertRaises(OSError) as cm:
                         m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
                     self.assertEqual(cm.exception.errno, errno.EINVAL)

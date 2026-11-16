@@ -1905,15 +1905,15 @@ static digit
 v_lshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    twodigits carry = 0;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=0; i < m; i++) {
         twodigits acc = (twodigits)a[i] << d | carry;
         z[i] = (digit)acc & PyLong_MASK;
-        carry = (digit)(acc >> PyLong_SHIFT);
+        carry = acc >> PyLong_SHIFT;
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Shift digit vector a[0:m] d bits right, with 0 <= d < PyLong_SHIFT.  Put
@@ -1923,16 +1923,16 @@ static digit
 v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
-    digit mask = ((digit)1 << d) - 1U;
+    twodigits carry = 0;
+    twodigits mask = ((twodigits)1 << d) - 1U;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=m; i-- > 0;) {
-        twodigits acc = (twodigits)carry << PyLong_SHIFT | a[i];
-        carry = (digit)acc & mask;
+        twodigits acc = carry << PyLong_SHIFT | a[i];
+        carry = acc & mask;
         z[i] = (digit)(acc >> d);
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
@@ -2045,10 +2045,6 @@ pylong_int_to_decimal_string(PyObject *aa,
         goto error;
     }
     if (writer) {
-        Py_ssize_t size = PyUnicode_GET_LENGTH(s);
-        if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
-            goto error;
-        }
         if (_PyUnicodeWriter_WriteStr(writer, s) < 0) {
             goto error;
         }
@@ -2216,10 +2212,11 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, strlen, '9') == -1) {
+        if (_PyUnicodeWriter_Prepare(writer, strlen, 127) == -1) {
             Py_DECREF(scratch);
             return -1;
         }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, strlen,
@@ -2230,7 +2227,7 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     else {
-        str = PyUnicode_New(strlen, '9');
+        str = PyUnicode_New(strlen, 127);
         if (str == NULL) {
             Py_DECREF(scratch);
             return -1;
@@ -2388,10 +2385,13 @@ long_format_binary(PyObject *aa, int base, int alternate,
         /* 2 characters for prefix  */
         sz += 2;
     }
+    assert(sz >= 1);
 
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1)
+        if (_PyUnicodeWriter_Prepare(writer, sz, 127) == -1) {
             return -1;
+        }
+        assert(_PyUnicodeWriter_CanWrite(writer));
     }
     else if (bytes_writer) {
         *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, sz,
@@ -3325,8 +3325,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
     int d;
     digit wm1, wm2, carry, q, r, vtop, *v0, *vk, *w0, *ak;
     twodigits vv;
-    sdigit zhi;
-    stwodigits z;
+    stwodigits z, zhi;
 
     /* We follow Knuth [The Art of Computer Programming, Vol. 2 (3rd
        edn.), section 4.3.1, Algorithm D], except that we don't explicitly
@@ -3416,16 +3415,15 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         for (i = 0; i < size_w; ++i) {
             /* invariants: -PyLong_BASE <= -q <= zhi <= 0;
                -PyLong_BASE * q <= z < PyLong_BASE */
-            z = (sdigit)vk[i] + zhi -
+            z = (stwodigits)vk[i] + zhi -
                 (stwodigits)q * (stwodigits)w0[i];
             vk[i] = (digit)z & PyLong_MASK;
-            zhi = (sdigit)Py_ARITHMETIC_RIGHT_SHIFT(stwodigits,
-                                                    z, PyLong_SHIFT);
+            zhi = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, z, PyLong_SHIFT);
         }
 
         /* add w back if q was too large (this branch taken rarely) */
-        assert((sdigit)vtop + zhi == -1 || (sdigit)vtop + zhi == 0);
-        if ((sdigit)vtop + zhi < 0) {
+        assert((stwodigits)vtop + zhi == -1 || (stwodigits)vtop + zhi == 0);
+        if ((stwodigits)vtop + zhi < 0) {
             carry = 0;
             for (i = 0; i < size_w; ++i) {
                 carry += vk[i] + w0[i];
@@ -4564,6 +4562,14 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         *pmod = (PyLongObject *)fast_mod(v, w);
         return -(*pmod == NULL);
     }
+#if WITH_PYLONG_MODULE
+    Py_ssize_t size_v = _PyLong_DigitCount(v); /* digits in numerator */
+    Py_ssize_t size_w = _PyLong_DigitCount(w); /* digits in denominator */
+    if (size_w > 300 && (size_v - size_w) > 150) {
+        /* Switch to _pylong.int_divmod(). See comments in l_divmod(). */
+        return pylong_int_divmod(v, w, NULL, pmod);
+    }
+#endif
     if (long_rem(v, w, &mod) < 0)
         return -1;
     if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||
@@ -5527,7 +5533,9 @@ long_lshift_int64(PyLongObject *a, int64_t shiftby)
         return PyLong_FromLong(0);
     }
 #if PY_SSIZE_T_MAX <= INT64_MAX / PyLong_SHIFT
-    if (shiftby > (int64_t)PY_SSIZE_T_MAX * PyLong_SHIFT) {
+    /* Keep wordshift <= MAX_LONG_DIGITS, so that oldsize + wordshift
+       cannot overflow Py_ssize_t in long_lshift1(). */
+    if (shiftby > (int64_t)MAX_LONG_DIGITS * PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
                         "too many digits in integer");
         return NULL;
@@ -5552,14 +5560,20 @@ _PyLong_Lshift(PyObject *a, int64_t shiftby)
 static void
 v_complement(digit *z, digit *a, Py_ssize_t m)
 {
-    Py_ssize_t i;
-    digit carry = 1;
-    for (i = 0; i < m; ++i) {
-        carry += a[i] ^ PyLong_MASK;
-        z[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
+    Py_ssize_t i = 0;
+
+    /* -a is ~a + 1, and the +1 only carries through the trailing zero
+       digits: they stay zero, the first nonzero digit is negated, and the
+       digits above it are just inverted.  No carry is passed between
+       iterations of the last loop, so it can be vectorized. */
+    while (i < m && a[i] == 0) {
+        z[i++] = 0;
     }
-    assert(carry == 0);
+    assert(i < m);
+    z[i] = (0U - a[i]) & PyLong_MASK;
+    for (++i; i < m; ++i) {
+        z[i] = a[i] ^ PyLong_MASK;
+    }
 }
 
 /* Bitwise and/xor/or operations */
@@ -6269,9 +6283,10 @@ static Py_ssize_t
 int___sizeof___impl(PyObject *self)
 /*[clinic end generated code: output=3303f008eaa6a0a5 input=9b51620c76fc4507]*/
 {
+    Py_ssize_t ndigits = _PyLong_DigitCount((PyLongObject *)self);
     /* using Py_MAX(..., 1) because we always allocate space for at least
        one digit, even though the integer zero has a digit count of 0 */
-    Py_ssize_t ndigits = Py_MAX(_PyLong_DigitCount((PyLongObject *)self), 1);
+    ndigits = Py_MAX(ndigits, 1);
     return Py_TYPE(self)->tp_basicsize + Py_TYPE(self)->tp_itemsize * ndigits;
 }
 
@@ -6800,58 +6815,62 @@ PyObject* PyLong_FromUInt64(uint64_t value)
     PYLONG_FROM_UINT(uint64_t, value);
 }
 
-#define LONG_TO_INT(obj, value, type_name) \
+#define LONG_TO_INT(type, obj, result) \
     do { \
+        type value; \
         int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
                      | Py_ASNATIVEBYTES_ALLOW_INDEX); \
-        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags); \
         if (bytes < 0) { \
             return -1; \
         } \
-        if ((size_t)bytes > sizeof(*value)) { \
+        if ((size_t)bytes > sizeof(value)) { \
             PyErr_SetString(PyExc_OverflowError, \
-                            "Python int too large to convert to " type_name); \
+                            "Python int too large to convert to C " #type); \
             return -1; \
         } \
+        *result = value; \
         return 0; \
     } while (0)
 
-int PyLong_AsInt32(PyObject *obj, int32_t *value)
+int PyLong_AsInt32(PyObject *obj, int32_t *result)
 {
-    LONG_TO_INT(obj, value, "C int32_t");
+    LONG_TO_INT(int32_t, obj, result);
 }
 
-int PyLong_AsInt64(PyObject *obj, int64_t *value)
+int PyLong_AsInt64(PyObject *obj, int64_t *result)
 {
-    LONG_TO_INT(obj, value, "C int64_t");
+    LONG_TO_INT(int64_t, obj, result);
 }
 
-#define LONG_TO_UINT(obj, value, type_name) \
+#define LONG_TO_UINT(type, obj, result) \
     do { \
+        type value; \
         int flags = (Py_ASNATIVEBYTES_NATIVE_ENDIAN \
                      | Py_ASNATIVEBYTES_UNSIGNED_BUFFER \
                      | Py_ASNATIVEBYTES_REJECT_NEGATIVE \
                      | Py_ASNATIVEBYTES_ALLOW_INDEX); \
-        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, value, sizeof(*value), flags); \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(obj, &value, sizeof(value), flags); \
         if (bytes < 0) { \
             return -1; \
         } \
-        if ((size_t)bytes > sizeof(*value)) { \
+        if ((size_t)bytes > sizeof(value)) { \
             PyErr_SetString(PyExc_OverflowError, \
-                            "Python int too large to convert to " type_name); \
+                            "Python int too large to convert to C " #type); \
             return -1; \
         } \
+        *result = value; \
         return 0; \
     } while (0)
 
-int PyLong_AsUInt32(PyObject *obj, uint32_t *value)
+int PyLong_AsUInt32(PyObject *obj, uint32_t *result)
 {
-    LONG_TO_UINT(obj, value, "C uint32_t");
+    LONG_TO_UINT(uint32_t, obj, result);
 }
 
-int PyLong_AsUInt64(PyObject *obj, uint64_t *value)
+int PyLong_AsUInt64(PyObject *obj, uint64_t *result)
 {
-    LONG_TO_UINT(obj, value, "C uint64_t");
+    LONG_TO_UINT(uint64_t, obj, result);
 }
 
 
