@@ -915,7 +915,7 @@ append_awaited_info(
         return -1;
     }
 
-    PyStructSequence_SetItem(result_item, 0, tid_py);  // steals ref
+    PyStructSequence_SetItem(result_item, 0, tid_py);
     PyStructSequence_SetItem(result_item, 1, Py_NewRef(task_list));
     if (PyList_Append(result, result_item)) {
         Py_DECREF(result_item);
