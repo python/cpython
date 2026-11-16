@@ -544,9 +544,66 @@ class NewIMAPTestsMixin():
         self.assertEqual(client.state, 'AUTH')
 
 
+class StartTLSHandler(SimpleIMAPHandler):
+    capabilities = 'STARTTLS'
+
+    def cmd_STARTTLS(self, tag, args):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(CERTFILE)
+        self._send_tagged(tag, 'OK', 'Begin TLS')
+        self.connection = context.wrap_socket(self.connection,
+                                              server_side=True)
+        self.rfile.close()
+        self.wfile.close()
+        self.rfile = self.connection.makefile('rb')
+        self.wfile = self.connection.makefile('wb', buffering=0)
+        self.capabilities = 'AUTH=PLAIN'
+
+    def finish(self):
+        try:
+            super().finish()
+        finally:
+            self.connection.close()
+
+
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
     server_class = socketserver.TCPServer
+
+    @unittest.skipUnless(ssl, "SSL not available")
+    def test_starttls(self):
+        _, server = self._setup(StartTLSHandler, connect=False)
+        self.client = client = self.imap_class(
+            'localhost', server.server_address[1],
+            timeout=support.LOOPBACK_TIMEOUT)
+        context = ssl.create_default_context(cafile=CAFILE)
+        self.assertEqual(client.capabilities, ('IMAP4REV1', 'STARTTLS'))
+        self.assertEqual(client.starttls(context), ('OK', [None]))
+        self.assertIsInstance(client.sock, ssl.SSLSocket)
+        self.assertEqual(client.capabilities, ('IMAP4REV1', 'AUTH=PLAIN'))
+        client.logout()
+
+    @unittest.skipUnless(ssl, "SSL not available")
+    def test_starttls_discards_untagged_responses(self):
+        # Untagged responses received before STARTTLS could have been
+        # injected by a MITM, so they must not survive the switch to TLS.
+        class InjectingStartTLSHandler(StartTLSHandler):
+            def cmd_STARTTLS(self, tag, args):
+                self._send_textline('* 3 EXISTS')
+                self._send_textline(r'* FLAGS (\Injected)')
+                super().cmd_STARTTLS(tag, args)
+
+        _, server = self._setup(InjectingStartTLSHandler, connect=False)
+        self.client = client = self.imap_class(
+            'localhost', server.server_address[1],
+            timeout=support.LOOPBACK_TIMEOUT)
+        context = ssl.create_default_context(cafile=CAFILE)
+        self.assertEqual(client.starttls(context), ('OK', [None]))
+        self.assertIsInstance(client.sock, ssl.SSLSocket)
+        self.assertEqual(client.untagged_responses, {})
+        self.assertEqual(client.response('EXISTS'), ('EXISTS', [None]))
+        self.assertEqual(client.response('FLAGS'), ('FLAGS', [None]))
+        client.logout()
 
 
 @unittest.skipUnless(ssl, "SSL not available")
