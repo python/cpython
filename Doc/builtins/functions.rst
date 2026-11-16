@@ -1736,7 +1736,8 @@ are always available.  They are listed here in alphabetical order.
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
    Output buffering is usually determined by *file*.
-   However, if *flush* is true, the stream is forcibly flushed.
+   However, if *flush* is true, the stream is forcibly flushed after the *objects*
+   have been printed.
 
 
    .. versionchanged:: 3.3
