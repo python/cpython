@@ -2426,6 +2426,9 @@ PyType_GenericNew:PyObject*:type:0:
 PyType_GenericNew:PyObject*:args:0:
 PyType_GenericNew:PyObject*:kwds:0:
 
+PyType_GetDict:PyObject*::+1:
+PyType_GetDict:PyTypeObject*:type:0:
+
 PyType_GetFlags:unsigned long:::
 PyType_GetFlags:PyTypeObject*:type:0:
 
