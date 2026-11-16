@@ -1751,6 +1751,87 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertTrue(os.path.exists(target_file))
             self.assertEqual(os.stat(target_file).st_mode, target_mode)
 
+    def _make_unopenable_subdir(self):
+        # Create the fullowing structure:
+        # work/          - top-level
+        #   <d>/         - tempdir to clean up (random name)
+        #     sub/       - an unopenable dir
+        #        subsub/
+        #          file
+        # Return:
+        # - `work` name (str)
+        # - `d` (TemporaryDirectory)
+        # - `subsub` stat result
+        work = self.enterContext(os_helper.temp_dir())
+        d = tempfile.TemporaryDirectory(dir=work)
+        sub = os.path.join(d.name, 'sub')
+        subsub = os.path.join(sub, 'subsub')
+        os.mkdir(sub)
+        os.mkdir(subsub)
+        subsub_stat = os.lstat(subsub)
+        with open(os.path.join(subsub, 'file'), 'w') as f:
+            f.write("rm me pls")
+        os.chmod(sub, 0)
+        # If the test fails, make sure everything can still be removed.
+        self.addCleanup(d.cleanup)
+        @self.addCleanup
+        def _clean():
+            if os.path.isdir(sub):
+                os.chmod(sub, 0o700)
+        return work, d, subsub_stat
+
+    @os_helper.skip_unless_working_chmod
+    @support.requires_non_root_user
+    @unittest.skipUnless(tempfile._rmtree_use_dir_fd
+                         and shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based cleanup')
+    def test_cleanup_nested_toplevel_error(self):
+        # rmtree() reports errors relative to the correct parent directory
+        work, d, subsub_stat = self._make_unopenable_subdir()
+        # An unrelated directory with the same name; should not be touched
+        unrelated = os.path.join(work, 'sub')
+        os.mkdir(unrelated)
+
+        rmdir = os.rmdir
+        failed_path = None
+        def failing_rmdir(path, *, dir_fd=None):
+            nonlocal failed_path
+            if path == 'sub' and dir_fd is not None and failed_path is None:
+                failed_path = path
+                raise PermissionError(errno.EPERM, 'simulated', path)
+            return rmdir(path, dir_fd=dir_fd)
+        with os_helper.change_cwd(work), mock.patch('os.rmdir', failing_rmdir):
+            d.cleanup()
+        self.assertEqual(failed_path, 'sub')
+        self.assertFalse(os.path.exists(d.name))
+        self.assertTrue(os.path.exists(unrelated))
+
+    @os_helper.skip_unless_working_chmod
+    @support.requires_non_root_user
+    @unittest.skipUnless(tempfile._rmtree_use_dir_fd
+                         and shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based cleanup')
+    def test_cleanup_nested_scandir_error(self):
+        # A scandir() error is reported relative to the parent directory.
+        work, d, subsub_stat = self._make_unopenable_subdir()
+
+        scandir = os.scandir
+        failed = False
+        def failing_scandir(path='.'):
+            nonlocal failed
+            if (
+                not failed
+                and isinstance(path, int)
+                and os.path.samestat(os.fstat(path), subsub_stat)
+            ):
+                failed = True
+                raise PermissionError(errno.EACCES, 'simulated')
+            return scandir(path)
+        with os_helper.change_cwd(work), mock.patch('os.scandir', failing_scandir):
+            d.cleanup()
+        self.assertTrue(failed)
+        self.assertFalse(os.path.exists(d.name))
+
     @support.cpython_only
     def test_del_on_collection(self):
         # A TemporaryDirectory is deleted when garbage collected
