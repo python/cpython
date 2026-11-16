@@ -67,6 +67,10 @@ _PyCriticalSection2_BeginSlow(PyThreadState *tstate, PyCriticalSection2 *c, PyMu
 {
 #ifdef Py_GIL_DISABLED
     if (tstate->interp->stoptheworld.world_stopped) {
+        if (is_m1_locked) {
+            // The inline fast path locked m1 for this section, which we skip.
+            PyMutex_Unlock(m1);
+        }
         c->_cs_base._cs_mutex = NULL;
         c->_cs_mutex2 = NULL;
         c->_cs_base._cs_prev = 0;

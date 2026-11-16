@@ -1,0 +1,4 @@
+Fix a lock that could stay locked in the :term:`free-threaded build`: when a
+critical section on two objects began during a stop-the-world pause and the
+second object's lock was busy, the first object's lock was not released at the
+end of the section.
