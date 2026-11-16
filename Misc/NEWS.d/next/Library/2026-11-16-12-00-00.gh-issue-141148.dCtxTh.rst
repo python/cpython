@@ -1,0 +1,5 @@
+When :data:`sys.flags.thread_inherit_context` is true, a thread started with
+:meth:`threading.Thread.start` now gets its own copy of the :mod:`decimal`
+context of the caller instead of sharing the same context object.  Previously,
+changes made with :func:`decimal.getcontext` in one thread were seen by the
+other threads.

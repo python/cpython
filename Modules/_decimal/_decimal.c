@@ -8077,6 +8077,10 @@ _decimal_exec(PyObject *m)
 #else
     ASSIGN_PTR(state->current_context_var, PyContextVar_New("decimal_context", NULL));
     CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_True));
+    /* Private, used by threading.Thread.start() to give a thread that
+       inherits the context of its caller a separate decimal context. */
+    CHECK_INT(PyModule_AddObjectRef(m, "_current_context_var",
+                                    state->current_context_var));
 #endif
     CHECK_INT(PyModule_AddObjectRef(m, "HAVE_THREADS", Py_True));
 

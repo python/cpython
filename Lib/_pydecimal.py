@@ -349,6 +349,8 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 
 import contextvars
 
+# Also used by threading.Thread.start() to give a thread that inherits the
+# context of its caller a separate decimal context.
 _current_context_var = contextvars.ContextVar('decimal_context')
 
 _context_attributes = frozenset(

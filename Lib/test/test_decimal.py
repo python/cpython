@@ -41,9 +41,11 @@ from test.support import (TestFailed,
                           run_with_locale, cpython_only,
                           darwin_malloc_err_warning)
 from test.support.import_helper import import_fresh_module
+from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
 from test.support import warnings_helper
 import random
+import textwrap
 import inspect
 import threading
 import contextvars
@@ -1771,6 +1773,59 @@ class ThreadingTest:
         DefaultContext.prec = save_prec
         DefaultContext.Emax = save_emax
         DefaultContext.Emin = save_emin
+
+    def test_thread_inherit_context(self):
+        # gh-141148: a thread that inherits the context of the caller of
+        # Thread.start() must get its own copy of the decimal context.
+        code = textwrap.dedent("""
+            import sys
+            import threading
+            if sys.argv[1] == 'P':
+                sys.modules['_decimal'] = None
+            import decimal
+            from decimal import getcontext, Decimal, Inexact
+
+            assert sys.flags.thread_inherit_context
+
+            def child():
+                ctx = getcontext()
+                result.append((ctx is parent, ctx.prec, ctx.Emax,
+                               ctx.traps[Inexact], ctx.flags[Inexact]))
+                ctx.prec = 5
+                ctx.traps[Inexact] = False
+                Decimal(1) / Decimal(3)
+                result.append(ctx.flags[Inexact])
+
+            def run_thread():
+                t = threading.Thread(target=child)
+                t.start()
+                t.join()
+
+            # The caller has no decimal context yet.
+            result = []
+            parent = None
+            run_thread()
+            assert result == [(False, 28, 999999, False, False), True], result
+
+            parent = getcontext()
+            parent.prec = 40
+            parent.Emax = 1000
+            Decimal(1) / Decimal(3)
+            parent.traps[Inexact] = True
+            assert parent.flags[Inexact]
+            parent.clear_flags()
+            parent.flags[Inexact] = True
+
+            result = []
+            run_thread()
+            assert result == [(False, 40, 1000, True, False), True], result
+
+            assert getcontext() is parent
+            assert parent.prec == 40
+            assert parent.traps[Inexact]
+            """)
+        which = 'C' if self.decimal == C else 'P'
+        assert_python_ok('-X', 'thread_inherit_context=1', '-c', code, which)
 
 
 @requires_cdecimal

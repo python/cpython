@@ -986,6 +986,23 @@ class _concurrent_tee:
 ############################################################
 
 
+def _copy_decimal_context(context):
+    # Copying a contextvars.Context is shallow, so a thread that inherits the
+    # context of its caller would share the caller's mutable decimal.Context
+    # object.  Give the new thread its own copy, so that changes it makes
+    # with decimal.getcontext() are not seen by other threads.  If the caller
+    # has no decimal context yet, there is nothing to share.
+    for name in ('_decimal', '_pydecimal'):
+        var = getattr(_sys.modules.get(name), '_current_context_var', None)
+        if var is None:
+            continue
+        decimal_context = context.get(var)
+        if decimal_context is not None:
+            decimal_context = decimal_context.copy()
+            decimal_context.clear_flags()
+            context.run(var.set, decimal_context)
+
+
 # Helper to generate new thread names
 _counter = _count(1).__next__
 def _newname(name_template):
@@ -1125,17 +1142,18 @@ class Thread:
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
 
-        with _active_limbo_lock:
-            _limbo[self] = self
-
         if self._context is None:
             # No context provided
             if _sys.flags.thread_inherit_context:
                 # start with a copy of the context of the caller
                 self._context = _contextvars.copy_context()
+                _copy_decimal_context(self._context)
             else:
                 # start with an empty context
                 self._context = _contextvars.Context()
+
+        with _active_limbo_lock:
+            _limbo[self] = self
 
         try:
             # Start joinable thread

@@ -1986,7 +1986,9 @@ new threads.  If the flag is false, new threads will start with an empty
 context.  In this case, :func:`getcontext` will create a new context object
 when called and use the default values from *DefaultContext*.  If the flag
 is true, new threads will start with a copy of context from the caller of
-:meth:`threading.Thread.start`.
+:meth:`threading.Thread.start`.  The copy has the same settings as the
+context of the caller but its flags are cleared, and changes made to it are
+not seen by other threads.
 
 To control the defaults so that each thread will use the same values throughout
 the application, directly modify the *DefaultContext* object. This should be
