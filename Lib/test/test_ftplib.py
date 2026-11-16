@@ -1190,6 +1190,18 @@ class MiscTestCase(TestCase):
             'ftpcp', 'test'}
         support.check__all__(self, ftplib, not_exported=not_exported)
 
+    def test_parse229(self):
+        peer = ('127.0.0.1', 21)
+        self.assertEqual(
+            ftplib.parse229('229 Entering Extended Passive Mode (|||6400|)', peer),
+            ('127.0.0.1', 6400)
+        )
+        # Non-numeric or empty port must raise error_proto
+        with self.assertRaises(ftplib.error_proto):
+            ftplib.parse229('229 Entering Extended Passive Mode (|||invalid|)', peer)
+        with self.assertRaises(ftplib.error_proto):
+            ftplib.parse229('229 Entering Extended Passive Mode (||||)', peer)
+
 
 class CommandLineTest(TestCase):
     """Tests for the ftplib command-line interface."""

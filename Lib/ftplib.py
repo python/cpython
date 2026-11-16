@@ -845,7 +845,10 @@ def parse229(resp, peer):
     if len(parts) != 5:
         raise error_proto(resp)
     host = peer[0]
-    port = int(parts[3])
+    try:
+        port = int(parts[3])
+    except ValueError:
+        raise error_proto(resp) from None
     return host, port
 
 
