@@ -531,7 +531,7 @@ def _build_client(args, ssl_context=None):
 
 
 def _run_main(pop3, args):
-    print(pop3.getwelcome())  # this line prints bytes, but kept for compat
+    print(pop3.getwelcome().decode(pop3.encoding))
     pop3.user(args.user)
     pop3.pass_(args.password)
     pop3.list()

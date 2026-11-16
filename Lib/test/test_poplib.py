@@ -633,7 +633,7 @@ class TestPOP3CommandLine(POP3Server, TestCase):
             poplib._run_main(client, args)
 
         output_text = output.getvalue()
-        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertTrue(output_text.startswith('+OK'))
         self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
         self.assertEqual(output_text.count('Subject: Dummy'), 10)
 
@@ -650,7 +650,7 @@ class TestPOP3CommandLine(POP3Server, TestCase):
             poplib._run_main(client, args)
 
         output_text = output.getvalue()
-        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertTrue(output_text.startswith('+OK'))
         self.assertEqual(output_text.count('From: postmaster@python.org'), 20)
         self.assertEqual(output_text.count('Subject: Dummy'), 20)
         self.assertIn('*stat*', output_text)
@@ -670,7 +670,7 @@ class TestPOP3CommandLine(POP3Server, TestCase):
             poplib._run_main(client, args)
 
         output_text = output.getvalue()
-        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertTrue(output_text.startswith('+OK'))
         self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
         self.assertEqual(output_text.count('Subject: Dummy'), 10)
 
@@ -733,7 +733,7 @@ class TestPOP3CommandLineSSL(POP3Server, TestCase):
             poplib._run_main(client, args)
 
         output_text = output.getvalue()
-        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertTrue(output_text.startswith('+OK'))
         self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
         self.assertEqual(output_text.count('Subject: Dummy'), 10)
 
