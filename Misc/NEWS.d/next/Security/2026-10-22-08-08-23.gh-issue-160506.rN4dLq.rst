@@ -1,0 +1,4 @@
+Fix :func:`os.path.realpath` on Windows returning the wrong path for a broken
+relative symbolic link reached through a symbolic link to a directory. This
+allowed :mod:`tarfile` extraction with the ``'data'`` or ``'tar'`` filter to
+create a file outside the destination directory.
