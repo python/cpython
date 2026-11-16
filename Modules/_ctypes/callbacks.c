@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_runtime.h"       // _Py_ID()
 
 #ifdef MS_WIN32
@@ -388,6 +389,27 @@ static CThunkObject* CThunkObject_new(ctypes_state *st, Py_ssize_t nargs)
     return p;
 }
 
+static _PyOnceFlag closure_alloc_init_once = {0};
+
+// This is done lazily with a once flag rather than in the module exec function,
+// because allocating a closure can have some side effects that affect the whole
+// process (gh-135893).
+static int
+closure_alloc_init(void *Py_UNUSED(arg))
+{
+    // See https://github.com/python/cpython/issues/128485
+    // This allocates some memory and then frees it to ensure that libffi's
+    // dlmalloc allocator initializes itself exactly once, avoiding data races
+    // between threads that don't share a GIL.
+    void *codeloc = NULL;
+    void *ptr = Py_ffi_closure_alloc(sizeof(void *), &codeloc);
+    if (ptr == NULL) {
+        return -1;
+    }
+    Py_ffi_closure_free(ptr);
+    return 0;
+}
+
 CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
                                     PyObject *callable,
                                     PyObject *converters,
@@ -406,6 +428,12 @@ CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
         return NULL;
 
     assert(CThunk_CheckExact(st, (PyObject *)p));
+
+    if (_PyOnceFlag_CallOnce(&closure_alloc_init_once,
+                             closure_alloc_init, NULL) < 0) {
+        PyErr_NoMemory();
+        goto error;
+    }
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
