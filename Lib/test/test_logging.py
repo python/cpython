@@ -3839,6 +3839,16 @@ class ConfigDictTest(BaseTest):
             ('ERROR', '2'),
         ], pat=r"^[\w.]+ -> (\w+): (\d+)$")
 
+    def test_listen_disconnect(self):
+        listener = logging.config.listen(0)
+        handler = listener.hdlr.__new__(listener.hdlr)
+        handler.connection = Mock(recv=Mock(side_effect=(
+            struct.pack('>L', 100), b'abc', b'')))
+
+        handler.handle()
+
+        self.assertEqual(handler.connection.recv.call_count, 3)
+
     @support.requires_working_socket()
     def test_listen_server_error(self):
         # The "ready" event should be set even if the server fails to start.

@@ -1,0 +1,2 @@
+Fix an infinite loop in :func:`logging.config.listen` when a client
+disconnects before sending the complete configuration payload.
