@@ -51,6 +51,16 @@ def get_files(test):
         yield f
         test.assertFalse(f.closed)
 
+
+@contextlib.contextmanager
+def save_restore_sys_path():
+    old_path = sys.path.copy()
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
+
+
 class AbstractTestsWithSourceFile:
     @classmethod
     def setUpClass(cls):
@@ -4017,17 +4027,18 @@ class EncodedMetadataTests(unittest.TestCase):
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
-        with captured_stdout() as stdout:
-            with captured_stderr() as stderr:
+        with (captured_stdout() as stdout,
+              captured_stderr() as stderr,
+              save_restore_sys_path()):
                 self.assertRaises(SystemExit, zipfile.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
@@ -4046,7 +4057,9 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!r}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        with save_restore_sys_path():
+            zipfile.main(["--metadata-encoding=shift_jis", "-e",
+                          TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)
