@@ -55,7 +55,7 @@ PROCESS_VM_READV_SUPPORTED = False
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     from _remote_debugging import RemoteUnwinder
-    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo
+    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo, AwaitedInfo
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -486,6 +486,23 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             for info in trace
             for task in info.awaited_by
         }
+
+    @skip_if_not_supported
+    def test_async_awaited_info(self):
+        async def main():
+            task = asyncio.current_task()
+            unwinder = RemoteUnwinder(os.getpid())
+            for method in (unwinder.get_async_stack_trace,
+                           unwinder.get_all_awaited_by):
+                with self.subTest(method=method.__name__):
+                    info, = (info for info in method()
+                             if info.thread_id == threading.get_native_id())
+                    self.assertIsInstance(info, AwaitedInfo)
+                    task_info, = info.awaited_by
+                    self.assertEqual(task_info.task_id, id(task))
+                    self.assertEqual(task_info.task_name, task.get_name())
+
+        asyncio.run(main())
 
     @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
