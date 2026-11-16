@@ -611,19 +611,17 @@ def pop3_client(text_args, ssl_context=None):
     output = io.StringIO()
 
     args = poplib._parse_args(text_args)
-    client = poplib._build_client(args, ssl_context)
+    with contextlib.redirect_stdout(output):
+        client = poplib._build_client(args, ssl_context)
 
-    try:
-        with contextlib.redirect_stdout(output):
+        try:
             yield client, args, output
-    finally:
-        client.quit()
+        finally:
+            client.quit()
 
 
 class TestPOP3CommandLine(POP3Server, TestCase):
     def test_regular_usage(self):
-        output = io.StringIO()
-
         with pop3_client(
             (
                 self.server.host,
@@ -640,8 +638,6 @@ class TestPOP3CommandLine(POP3Server, TestCase):
         self.assertEqual(output_text.count('Subject: Dummy'), 10)
 
     def test_verbose_usage(self):
-        output = io.StringIO()
-
         with pop3_client(
             (
                 self.server.host,
@@ -696,7 +692,7 @@ class TestPOP3CommandLine(POP3Server, TestCase):
 
     @test_support.force_not_colorized
     @test_support.requires_subprocess()
-    def test_missing_params(self):
+    def test_wrong_params(self):
         return_code, output = invoke_command_line(
             'host', 'user', 'passd', '--missing',
         )
