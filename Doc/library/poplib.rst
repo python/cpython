@@ -277,7 +277,7 @@ The :mod:`!poplib` module can be executed from the command line.
 
 .. code-block:: sh
 
-   python -m poplib [-h] host user password [--port P] [--ssl | --tls] [--timeout T] [-v | -vv]
+   python -m poplib [-h] [--port PORT] [--timeout TIMEOUT] [-v] [--ssl | --tls] host user password
 
 The following options are accepted:
 
@@ -301,13 +301,13 @@ The following options are accepted:
 
    POP3 :meth:`password <POP3.pass_>`.
 
-.. option:: --port <P>
+.. option:: --port PORT
 
    POP3 port.
 
    .. versionadded:: next
 
-.. option:: --timeout <T>
+.. option:: --timeout TIMEOUT
 
    Connection timeout.
 

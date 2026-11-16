@@ -681,7 +681,9 @@ class TestPOP3CommandLine(POP3Server, TestCase):
             with self.subTest(help_opt=help_opt):
                 return_code, output = invoke_command_line(help_opt)
                 self.assertEqual(return_code, 0)
-                self.assertIn('usage: python.exe -m poplib', output)
+                self.assertIn('usage:', output)
+                self.assertIn('positional arguments:', output)
+                self.assertIn('options:', output)
 
     @test_support.force_not_colorized
     @test_support.requires_subprocess()
