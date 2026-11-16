@@ -744,13 +744,13 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None,
         try:
             orig_st = os.lstat(path, dir_fd=dir_fd)
         except Exception:
-            onerror(os.lstat, path, sys.exc_info())
+            onerror(os.lstat, path, sys.exc_info(), dir_fd=dir_fd)
             return
         try:
             fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
             fd_closed = False
         except Exception:
-            onerror(os.open, path, sys.exc_info())
+            onerror(os.open, path, sys.exc_info(), dir_fd=dir_fd)
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
@@ -760,24 +760,24 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None,
                 except OSError:
                     # close() should not be retried after an error.
                     fd_closed = True
-                    onerror(os.close, path, sys.exc_info())
+                    onerror(os.close, path, sys.exc_info(), dir_fd=dir_fd)
                 fd_closed = True
                 try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError:
-                    onerror(os.rmdir, path, sys.exc_info())
+                    onerror(os.rmdir, path, sys.exc_info(), dir_fd=dir_fd)
             else:
                 try:
                     # symlinks to directories are forbidden, see bug #1669
                     raise OSError("Cannot call rmtree on a symbolic link")
                 except OSError:
-                    onerror(os.path.islink, path, sys.exc_info())
+                    onerror(os.path.islink, path, sys.exc_info(), dir_fd=dir_fd)
         finally:
             if not fd_closed:
                 try:
                     os.close(fd)
                 except OSError:
-                    onerror(os.close, path, sys.exc_info())
+                    onerror(os.close, path, sys.exc_info(), dir_fd=dir_fd)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
