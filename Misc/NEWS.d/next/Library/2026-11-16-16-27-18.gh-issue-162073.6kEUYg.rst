@@ -1,0 +1,3 @@
+Improve and fix CLI for :mod:`poplib`. Now it support ``--help``,
+``--port``, ``--timeout``, ``--ssl``, ``--tls``, ``-v`` as options.
+Now it also handles missing / incorrect arguments properly.

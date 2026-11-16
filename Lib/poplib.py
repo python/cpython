@@ -463,17 +463,96 @@ if HAVE_SSL:
 
     __all__.append("POP3_SSL")
 
-if __name__ == "__main__":
-    a = POP3(sys.argv[1])
-    print(a.getwelcome())
-    a.user(sys.argv[2])
-    a.pass_(sys.argv[3])
-    a.list()
-    (numMsgs, totalSize) = a.stat()
-    for i in range(1, numMsgs + 1):
-        (header, msg, octets) = a.retr(i)
-        print("Message %d:" % i)
+
+# CLI
+
+def _parse_args(argv=None):
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    # Params kept like this for the backward compatibility:
+    parser.add_argument('host', help='POP3 host')
+    parser.add_argument('user', help='POP3 user')
+    parser.add_argument('password', help='POP3 password')
+    # New ones:
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=None,
+        help='port to be used for the connection',
+    )
+    parser.add_argument(
+        '--timeout',
+        type=int,
+        default=None,
+        help='timeout to be used for the connection',
+    )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help='flag to show the verbose debug output, can be: 0 (default), 1, 2',
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '--ssl',
+        action='store_true',
+        help='should SSL be used (when SSL is not available, it is a no-op)',
+    )
+    group.add_argument(
+        '--tls',
+        action='store_true',
+        help='should TLS be used (when SSL is not available, it is a no-op)',
+    )
+
+    return parser.parse_args(argv)
+
+
+def _build_client(args, ssl_context=None):
+    kwargs = {}
+    if args.port is not None:
+        kwargs['port'] = args.port
+    if args.timeout is not None:
+        kwargs['timeout'] = args.timeout
+    if ssl_context is not None:
+        kwargs['context'] = ssl_context
+
+    if HAVE_SSL and args.ssl:
+        assert not args.tls  # mutually exclusive
+        pop3 = POP3_SSL(args.host, **kwargs)
+    else:
+        pop3 = POP3(args.host, **kwargs)
+    pop3.set_debuglevel(args.verbose)
+    if HAVE_SSL and args.tls:
+        assert not args.ssl  # mutually exclusive
+        pop3.stls()
+    return pop3
+
+
+def _run_main(pop3, args):
+    print(pop3.getwelcome())  # this line prints bytes, but kept for compat
+    pop3.user(args.user)
+    pop3.pass_(args.password)
+    pop3.list()
+
+    num_msgs, _total_size = pop3.stat()
+    for i in range(1, num_msgs + 1):
+        _header, msg, _octets = pop3.retr(i)
+        print(f"Message {i}:")
         for line in msg:
-            print('   ' + line)
+            print('  ', line.decode(pop3.encoding))
         print('-----------------------')
-    a.quit()
+
+
+def _main(argv=None):
+    args = _parse_args(argv)
+    pop3 = _build_client(args)
+    try:
+        _run_main(pop3, args)
+    finally:
+        pop3.quit()
+
+
+if __name__ == "__main__":
+    _main()

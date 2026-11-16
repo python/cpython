@@ -8,12 +8,17 @@ import socket
 import os
 import errno
 import threading
+import contextlib
+import textwrap
+import io
 
 import unittest
 from unittest import TestCase, skipUnless
 from test import support as test_support
 from test.support import hashlib_helper
 from test.support import socket_helper
+from test.support import os_helper
+from test.support import script_helper
 from test.support import threading_helper
 from test.support import asynchat
 from test.support import asyncore
@@ -257,21 +262,36 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         raise
 
 
-class TestPOP3Class(TestCase):
+class POP3Server:
+    server_handler = None
+    valid_user = 'guido'
+    valid_pass = 'python'
+
     def assertOK(self, resp):
         self.assertStartsWith(resp, b"+OK")
 
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
+        # Use default one if not specified:
+        if self.server_handler is not None:
+            self.server.handler = self.server_handler
         self.server.start()
+
+    def tearDown(self):
+        self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
+
+
+class TestPOP3Class(POP3Server, TestCase):
+    def setUp(self):
+        super().setUp()
         self.client = poplib.POP3(self.server.host, self.server.port,
                                   timeout=test_support.LOOPBACK_TIMEOUT)
 
     def tearDown(self):
         self.client.close()
-        self.server.stop()
-        # Explicitly clear the attribute to prevent dangling thread
-        self.server = None
+        super().tearDown()
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -451,9 +471,8 @@ class TestPOP3_SSLClass(TestPOP3Class):
     # repeat previous tests by using poplib.POP3_SSL
 
     def setUp(self):
-        self.server = DummyPOP3Server((HOST, PORT))
-        self.server.handler = DummyPOP3_SSLHandler
-        self.server.start()
+        self.server_handler = DummyPOP3_SSLHandler
+        POP3Server.setUp(self)
         self.client = poplib.POP3_SSL(self.server.host, self.server.port)
 
     def test__all__(self):
@@ -469,7 +488,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
                                         context=ctx)
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         self.assertIs(self.client.sock.context, ctx)
-        self.assertStartsWith(self.client.noop(), b'+OK')
+        self.assertOK(self.client.noop())
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
@@ -478,7 +497,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
 
     def test_stls_capa(self):
         capa = self.client.capa()
-        self.assertFalse('STLS' in capa.keys())
+        self.assertNotIn('STLS', capa.keys())
 
 
 @requires_ssl
@@ -486,8 +505,7 @@ class TestPOP3_TLSClass(TestPOP3Class):
     # repeat previous tests by using poplib.POP3.stls()
 
     def setUp(self):
-        self.server = DummyPOP3Server((HOST, PORT))
-        self.server.start()
+        POP3Server.setUp(self)
         self.client = poplib.POP3(self.server.host, self.server.port,
                                   timeout=test_support.LOOPBACK_TIMEOUT)
         self.client.stls()
@@ -512,7 +530,7 @@ class TestPOP3_TLSClass(TestPOP3Class):
 
     def test_stls_capa(self):
         capa = self.client.capa()
-        self.assertFalse(b'STLS' in capa.keys())
+        self.assertNotIn(b'STLS', capa.keys())
 
 
 class TestTimeouts(TestCase):
@@ -570,6 +588,158 @@ class TestTimeouts(TestCase):
         pop.close()
         with self.assertRaises(ValueError):
             poplib.POP3(HOST, self.port, timeout=0)
+
+
+def invoke_command_line(*args):
+    cmd_args = ["-m", "poplib", *args]
+
+    with os_helper.EnvironmentVarGuard() as env:
+        env["PYTHONUTF8"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
+        proc = script_helper.spawn_python(
+            *cmd_args, text=True, env=env,
+            encoding='utf-8', errors='replace',
+        )
+
+    output = script_helper.kill_python(proc)
+    return_code = proc.returncode
+    return return_code, os.path.normpath(textwrap.dedent(output).strip())
+
+
+@contextlib.contextmanager
+def pop3_client(text_args, ssl_context=None):
+    output = io.StringIO()
+
+    args = poplib._parse_args(text_args)
+    client = poplib._build_client(args, ssl_context)
+
+    try:
+        with contextlib.redirect_stdout(output):
+            yield client, args, output
+    finally:
+        client.quit()
+
+
+class TestPOP3CommandLine(POP3Server, TestCase):
+    def test_regular_usage(self):
+        output = io.StringIO()
+
+        with pop3_client(
+            (
+                self.server.host,
+                self.valid_user,
+                self.valid_pass,
+                f'--port={self.server.port}',
+            ),
+        ) as (client, args, output):
+            poplib._run_main(client, args)
+
+        output_text = output.getvalue()
+        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
+        self.assertEqual(output_text.count('Subject: Dummy'), 10)
+
+    def test_verbose_usage(self):
+        output = io.StringIO()
+
+        with pop3_client(
+            (
+                self.server.host,
+                self.valid_user,
+                self.valid_pass,
+                f'--port={self.server.port}',
+                '-vv',
+            ),
+        ) as (client, args, output):
+            poplib._run_main(client, args)
+
+        output_text = output.getvalue()
+        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertEqual(output_text.count('From: postmaster@python.org'), 20)
+        self.assertEqual(output_text.count('Subject: Dummy'), 20)
+        self.assertIn('*stat*', output_text)
+
+    @requires_ssl
+    def test_regular_tls(self):
+        with pop3_client(
+            (
+                self.server.host,
+                self.valid_user,
+                self.valid_pass,
+                f'--port={self.server.port}',
+                f'--timeout={int(test_support.LOOPBACK_TIMEOUT)}',
+                '--tls',
+            ),
+        ) as (client, args, output):
+            poplib._run_main(client, args)
+
+        output_text = output.getvalue()
+        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
+        self.assertEqual(output_text.count('Subject: Dummy'), 10)
+
+    @test_support.force_not_colorized
+    @test_support.requires_subprocess()
+    def test_help(self):
+        for help_opt in ['-h', '--help']:
+            with self.subTest(help_opt=help_opt):
+                return_code, output = invoke_command_line(help_opt)
+                self.assertEqual(return_code, 0)
+                self.assertIn('usage: python.exe -m poplib', output)
+
+    @test_support.force_not_colorized
+    @test_support.requires_subprocess()
+    def test_missing_params(self):
+        return_code, output = invoke_command_line()
+        self.assertEqual(return_code, 2)
+        self.assertIn('required: host, user, password', output)
+
+    @test_support.force_not_colorized
+    @test_support.requires_subprocess()
+    def test_missing_params(self):
+        return_code, output = invoke_command_line(
+            'host', 'user', 'passd', '--missing',
+        )
+        self.assertEqual(return_code, 2)
+        self.assertIn('unrecognized arguments: --missing', output)
+
+    @test_support.force_not_colorized
+    @test_support.requires_subprocess()
+    def test_ssl_and_tls(self):
+        return_code, output = invoke_command_line(
+            'host', 'user', 'passd', '--ssl', '--tls',
+        )
+        self.assertEqual(return_code, 2)
+        self.assertIn('argument --tls: not allowed with argument --ssl', output)
+
+
+class TestPOP3CommandLineSSL(POP3Server, TestCase):
+    if SUPPORTS_SSL:
+        server_handler = DummyPOP3_SSLHandler
+
+    @requires_ssl
+    def test_regular_ssl(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        with pop3_client(
+            (
+                self.server.host,
+                self.valid_user,
+                self.valid_pass,
+                f'--port={self.server.port}',
+                f'--timeout={int(test_support.LOOPBACK_TIMEOUT)}',
+                '--ssl',
+            ),
+            ssl_context=ctx,
+        ) as (client, args, output):
+            poplib._run_main(client, args)
+
+        output_text = output.getvalue()
+        self.assertTrue(output_text.startswith("b'+OK"))
+        self.assertEqual(output_text.count('From: postmaster@python.org'), 10)
+        self.assertEqual(output_text.count('Subject: Dummy'), 10)
 
 
 def setUpModule():

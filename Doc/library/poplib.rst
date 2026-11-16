@@ -266,3 +266,75 @@ retrieves and prints all messages::
 
 At the end of the module, there is a test section that contains a more extensive
 example of usage.
+
+
+.. _poplib-cli:
+
+Command-line usage
+------------------
+
+The :mod:`!poplib` module can be executed from the command line.
+
+.. code-block:: sh
+
+   python -m poplib [-h] host user password [--port P] [--ssl | --tls] [--timeout T] [-v | -vv]
+
+The following options are accepted:
+
+.. program:: poplib
+
+.. option:: -h, --help
+
+   Show the help message and exit.
+
+   .. versionadded:: next
+
+.. option:: host
+
+   POP3 host.
+
+.. option:: user
+
+   POP3 :meth:`user <POP3.user>`.
+
+.. option:: password
+
+   POP3 :meth:`password <POP3.pass_>`.
+
+.. option:: --port <P>
+
+   POP3 port.
+
+   .. versionadded:: next
+
+.. option:: --timeout <T>
+
+   Connection timeout.
+
+   .. versionadded:: next
+
+.. option:: --ssl
+
+   Use :class:`POP3_SSL` if it is available.
+   If not, this is a no-op.
+   Mutually exclusive with :option:`--tls`.
+
+   .. versionadded:: next
+
+.. option:: --tls
+
+   Use :meth:`~POP3.stls` if it is available.
+   If not, this is a no-op.
+   Mutually exclusive with :option:`--ssl`.
+
+   .. versionadded:: next
+
+.. option:: -v
+            --verbose
+
+   Set the output :meth:`verbosity <POP3.set_debuglevel>`.
+   Useful for debug purposes.
+   This option can be passed multiple times like:
+   ``-vv`` or ``--vebose --verbose``.
+
+   .. versionadded:: next
