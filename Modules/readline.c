@@ -1508,10 +1508,19 @@ flex_complete(const char *text, int start, int end)
 
 done:
     if (state) {
-        Py_XDECREF(state->begidx);
-        Py_XDECREF(state->endidx);
-        state->begidx = PyLong_FromLong((long) start);
-        state->endidx = PyLong_FromLong((long) end);
+        PyObject *begidx = PyLong_FromLong((long) start);
+        PyObject *endidx = PyLong_FromLong((long) end);
+        if (begidx == NULL || endidx == NULL) {
+            Py_XDECREF(begidx);
+            Py_XDECREF(endidx);
+            PyErr_FormatUnraisable("Exception ignored while preparing "
+                                   "readline completion");
+            rl_attempted_completion_over = 1;
+            PyGILState_Release(gilstate);
+            return NULL;
+        }
+        Py_XSETREF(state->begidx, begidx);
+        Py_XSETREF(state->endidx, endidx);
     }
     result = completion_matches((char *)text, *on_completion);
     PyGILState_Release(gilstate);

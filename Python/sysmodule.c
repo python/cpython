@@ -448,7 +448,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
     runtime->audit_hooks.head = NULL;
     while (e) {
         n = e->next;
-        PyMem_RawFree(e);
+        free(e);
         e = n;
     }
 }
@@ -496,7 +496,11 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
         }
     }
 
-    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+    /* Use malloc(), not PyMem_RawMalloc(): a hook can be added before
+       Py_Initialize(), and the entry is freed during finalization, after
+       PYTHONMALLOC may have changed the raw allocator (and, in debug builds,
+       the allocator under the debug hooks). */
+    _Py_AuditHookEntry *e = (_Py_AuditHookEntry*)malloc(
             sizeof(_Py_AuditHookEntry));
     if (!e) {
         if (tstate != NULL) {
@@ -4157,6 +4161,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("path_importer_cache", PyDict_New());
     SET_SYS("path_hooks", PyList_New(0));
 
+    SET_SYS("_path0", Py_None);
+
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
@@ -4379,6 +4385,13 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(sysmod, Py_MOD_GIL_NOT_USED);
 #endif
+
+    if (PyModule_AddIntMacro(sysmod, EXIT_SUCCESS) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(sysmod, EXIT_FAILURE) < 0) {
+        goto error;
+    }
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {

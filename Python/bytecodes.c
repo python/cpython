@@ -2888,7 +2888,7 @@ dummy_func(
 
         op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            EXIT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
+            EXIT_IF(!PyModule_CheckExact(owner_o));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
@@ -5038,7 +5038,10 @@ dummy_func(
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
             if (err) {
-                ERROR_NO_POP();
+                // arg is consumed even on failure: close the other inputs
+                // and pop them all, so that arg is not closed a second time.
+                DECREF_INPUTS();
+                ERROR_IF(true);
             }
             c = callable;
             s = self;

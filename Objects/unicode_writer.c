@@ -320,6 +320,10 @@ PyUnicodeWriter_WriteRepr(PyUnicodeWriter *pub_writer, PyObject *obj)
     if (Py_TYPE(obj) == &PyLong_Type) {
         return _PyLong_FormatWriter(writer, obj, 10, 0);
     }
+    // Fast path for None; see gh-159813 for the rationale.
+    if (obj == Py_None) {
+        return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
+    }
 
     PyObject *repr = PyObject_Repr(obj);
     if (repr == NULL) {

@@ -7,6 +7,14 @@
 #include "pycore_pystate.h"
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+/*[clinic input]
+module weakref
+class weakref.ReferenceType "PyWeakReference *" "&_PyWeakref_RefType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=25211e4a7d687f3f]*/
+
+#include "clinic/weakrefobject.c.h"
+
 #ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
@@ -84,9 +92,9 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
             /* If 'self' is the end of the list (and thus self->wr_next ==
                NULL) then the weakref list itself (and thus the value of *list)
                will end up being set to NULL. */
-            FT_ATOMIC_STORE_PTR(*list, self->wr_next);
+            FT_ATOMIC_STORE_PTR_RELEASE(*list, self->wr_next);
         }
-        FT_ATOMIC_STORE_PTR(self->wr_object, Py_None);
+        FT_ATOMIC_STORE_PTR_RELEASE(self->wr_object, Py_None);
         if (self->wr_prev != NULL) {
             self->wr_prev->wr_next = self->wr_next;
         }
@@ -186,8 +194,14 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
     return obj;
 }
 
+/*[clinic input]
+@critical_section
+weakref.ReferenceType.__hash__ as weakref_hash
+[clinic start generated code]*/
+
 static Py_hash_t
-weakref_hash_lock_held(PyWeakReference *self)
+weakref_hash_impl(PyWeakReference *self)
+/*[clinic end generated code: output=4904eacaabf902c9 input=f248ec0b25c064e0]*/
 {
     if (self->hash != -1)
         return self->hash;
@@ -199,17 +213,6 @@ weakref_hash_lock_held(PyWeakReference *self)
     self->hash = PyObject_Hash(obj);
     Py_DECREF(obj);
     return self->hash;
-}
-
-static Py_hash_t
-weakref_hash(PyObject *op)
-{
-    PyWeakReference *self = _PyWeakref_CAST(op);
-    Py_hash_t hash;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    hash = weakref_hash_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return hash;
 }
 
 static PyObject *
@@ -463,35 +466,45 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
     }
 }
 
-static int
-parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
-                        PyObject **obp, PyObject **callbackp)
-{
-    return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
-}
+/*[clinic input]
+@classmethod
+@vectorcall
+weakref.ReferenceType.__new__ as weakref_ref_new
+
+    object: object
+    callback: object(c_default="NULL") = None
+    /
+
+Create a weak reference to object.
+
+Calling the reference returns object, or None once it has been garbage
+collected.  If callback is given, it is called with the reference as
+its only argument when object is about to be finalized.
+[clinic start generated code]*/
 
 static PyObject *
-weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+weakref_ref_new_impl(PyTypeObject *type, PyObject *object,
+                     PyObject *callback)
+/*[clinic end generated code: output=0b84aee8668f4c2f input=0cd09b468ebb6371]*/
 {
-    PyObject *ob, *callback = NULL;
-    if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        return (PyObject *)get_or_create_weakref(type, ob, callback);
-    }
-    return NULL;
+    return (PyObject *)get_or_create_weakref(type, object, callback);
 }
 
+/*[clinic input]
+weakref.ReferenceType.__init__ as weakref_ref_init
+
+    object: object
+    callback: object = None
+    /
+[clinic start generated code]*/
+
 static int
-weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+weakref_ref_init_impl(PyWeakReference *self, PyObject *object,
+                      PyObject *callback)
+/*[clinic end generated code: output=d36cfa9ccd36856e input=373a3e3f2841a4fa]*/
 {
-    PyObject *tmp;
-
-    if (!_PyArg_NoKeywords("ref", kwargs))
-        return -1;
-
-    if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
-        return 0;
-    else
-        return -1;
+    /* The arguments were already used by __new__; only validate them. */
+    return 0;
 }
 
 
@@ -512,6 +525,7 @@ _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "weakref.ReferenceType",
     .tp_basicsize = sizeof(PyWeakReference),
+    .tp_doc = weakref_ref_new__doc__,
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
     .tp_call = PyVectorcall_Call,
@@ -524,10 +538,11 @@ _PyWeakref_RefType = {
     .tp_richcompare = weakref_richcompare,
     .tp_methods = weakref_methods,
     .tp_members = weakref_members,
-    .tp_init = weakref___init__,
+    .tp_init = weakref_ref_init,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = weakref___new__,
+    .tp_new = weakref_ref_new,
     .tp_free = PyObject_GC_Del,
+    .tp_vectorcall = weakref_ref_vectorcall,
 };
 
 
@@ -543,19 +558,26 @@ proxy_check_ref(PyObject *obj)
 }
 
 
-/* If a parameter is a proxy, check that it is still "live" and wrap it,
- * replacing the original value with the raw object.  Raises ReferenceError
- * if the param is a dead proxy.
+/* Return a new reference to a live proxy's referent, or to the object itself
+ * if it is not a proxy. Raise ReferenceError for a dead proxy.
  */
+static PyObject *
+proxy_unwrap(PyObject *obj)
+{
+    if (PyWeakref_CheckProxy(obj)) {
+        PyObject *referent = _PyWeakref_GET_REF(obj);
+        if (!proxy_check_ref(referent)) {
+            return NULL;
+        }
+        return referent;
+    }
+    return Py_NewRef(obj);
+}
+
 #define UNWRAP(o) \
-        if (PyWeakref_CheckProxy(o)) { \
-            o = _PyWeakref_GET_REF(o); \
-            if (!proxy_check_ref(o)) { \
-                return NULL; \
-            } \
-        } \
-        else { \
-            Py_INCREF(o); \
+        o = proxy_unwrap(o); \
+        if (o == NULL) { \
+            return NULL; \
         }
 
 #define WRAP_UNARY(method, generic) \
@@ -571,7 +593,11 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *x, PyObject *y) { \
         UNWRAP(x); \
-        UNWRAP(y); \
+        y = proxy_unwrap(y); \
+        if (y == NULL) { \
+            Py_DECREF(x); \
+            return NULL; \
+        } \
         PyObject* res = generic(x, y); \
         Py_DECREF(x); \
         Py_DECREF(y); \
@@ -585,9 +611,18 @@ proxy_check_ref(PyObject *obj)
     static PyObject * \
     method(PyObject *proxy, PyObject *v, PyObject *w) { \
         UNWRAP(proxy); \
-        UNWRAP(v); \
+        v = proxy_unwrap(v); \
+        if (v == NULL) { \
+            Py_DECREF(proxy); \
+            return NULL; \
+        } \
         if (w != NULL) { \
-            UNWRAP(w); \
+            w = proxy_unwrap(w); \
+            if (w == NULL) { \
+                Py_DECREF(proxy); \
+                Py_DECREF(v); \
+                return NULL; \
+            } \
         } \
         PyObject* res = generic(proxy, v, w); \
         Py_DECREF(proxy); \
@@ -648,7 +683,11 @@ static PyObject *
 proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 {
     UNWRAP(proxy);
-    UNWRAP(v);
+    v = proxy_unwrap(v);
+    if (v == NULL) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
     PyObject* res = PyObject_RichCompare(proxy, v, op);
     Py_DECREF(proxy);
     Py_DECREF(v);

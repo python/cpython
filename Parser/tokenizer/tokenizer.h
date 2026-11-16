@@ -24,7 +24,8 @@ enum {
 struct token {
     int type;
     int level;
-    int is_raw;
+    unsigned char is_raw;
+    unsigned char is_incomplete;
     _PyTok_Span span;
     _PyTok_Loc start_loc;
     _PyTok_Loc end_loc;
@@ -69,8 +70,9 @@ typedef struct {
 
 /* Get replaces the initialized token, releasing its previous metadata.
    Errors are returned as ERRORTOKEN, with or without a Python exception.
-   In incomplete-input mode, an unfinished string retains its token type
-   with an absent span and E_INCOMPLETE status. No Python exception is set. */
+   In incomplete-input mode, an unfinished string retains its token type,
+   sets is_incomplete and has E_INCOMPLETE status. Only f-string and t-string
+   middle tokens retain their text span. No Python exception is set. */
 void _PyTokenizer_Get(struct tok_state *, struct token *);
 void _PyTokenizer_Free(struct tok_state *);
 int _PyTokenizer_Traverse(struct tok_state *, visitproc, void *);
