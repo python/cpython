@@ -395,6 +395,14 @@ class TestPOP3Class(TestCase):
         self.assertIsNone(self.client.sock)
         self.assertIsNone(self.client.file)
 
+    def test_control_characters(self):
+        for char in test_support.control_characters_c0():
+            with self.subTest(char=char):
+                with self.assertRaises(ValueError):
+                    self.client.user(f'user{char}')
+                with self.assertRaises(ValueError):
+                    self.client.pass_(f'{char}pass')
+
     @requires_ssl
     def test_stls_capa(self):
         capa = self.client.capa()
