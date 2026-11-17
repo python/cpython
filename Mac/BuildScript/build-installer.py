@@ -112,7 +112,7 @@ def getFullVersion():
 
 def get_openssl_version():
     # Shared with CI and build scripts for other platforms
-    return (Path(SRCDIR) / "Tools/ssl/openssl-version.txt").read_text().strip()
+    return Path(SRCDIR, "Tools/ssl/openssl-version.txt").read_text().strip()
 
 
 FW_PREFIX = ["Library", "Frameworks", "Python.framework"]
