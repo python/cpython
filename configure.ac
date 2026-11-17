@@ -7762,6 +7762,8 @@ CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env
 
+AC_CHECK_DECLS([tzname], [], [], [[@%:@include <time.h>]])
+
 AC_MSG_NOTICE([checking for device files])
 
 dnl NOTE: Inform user how to proceed with files when cross compiling.
