@@ -560,7 +560,7 @@ start with a character in the "letter-like" set ``xid_start``,
 and the remaining characters must be in the "letter- and digit-like" set
 ``xid_continue``.
 
-These sets based on the *XID_Start* and *XID_Continue* sets as defined by the
+These sets are based on the *XID_Start* and *XID_Continue* sets as defined by the
 Unicode standard annex `UAX-31`_.
 Python's ``xid_start`` additionally includes the underscore (``_``).
 Note that Python does not necessarily conform to `UAX-31`_.
@@ -602,8 +602,8 @@ Unicode categories use the version of the Unicode Character Database as
 included in the :mod:`unicodedata` module.
 
 .. _UAX-31: https://www.unicode.org/reports/tr31/
-.. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
-.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
+.. _PropList.txt: https://www.unicode.org/Public/18.0.0/ucd/PropList.txt
+.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/18.0.0/ucd/DerivedCoreProperties.txt
 .. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
 
 .. seealso::
@@ -916,7 +916,7 @@ with the given *name*::
 This sequence cannot appear in :ref:`bytes literals <bytes-literal>`.
 
 .. versionchanged:: 3.3
-   Support for `name aliases <https://www.unicode.org/Public/17.0.0/ucd/NameAliases.txt>`__
+   Support for `name aliases <https://www.unicode.org/Public/18.0.0/ucd/NameAliases.txt>`__
    has been added.
 
 .. _string-escape-long-hex:

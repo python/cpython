@@ -15,7 +15,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class TestFreeThreading:
@@ -116,6 +116,59 @@ class TestFreeThreading:
         support.gc_collect()
         self.assertIsNone(wr())
 
+    def test_unregister_lingering_tasks_of_exited_thread(self) -> None:
+        # gh-159449: a new thread can get the same OS thread id as
+        # an exited thread whose tasks linger on the interpreter's list.
+        class InertLoop:
+            def get_debug(self):
+                return False
+
+            def is_running(self):
+                return False
+
+            def call_soon(self, *args, **kwargs):
+                pass
+
+        loop = InertLoop()
+        done = threading.Event()
+
+        async def coro():
+            pass
+
+        def worker(handoff):
+            while handoff:
+                for task in handoff.pop():
+                    # complete the task right away, unlike Task.cancel()
+                    asyncio.Future.cancel(task)
+            tasks = []
+            for _ in range(32):
+                c = coro()
+                task = self.factory(loop, c)
+                c.close()
+                task._log_destroy_pending = False
+                tasks.append(task)
+            handoff.append(tasks)
+
+        def spawner():
+            handoff = []
+            for _ in range(100):
+                thread = Thread(target=worker, args=(handoff,))
+                thread.start()
+                thread.join()
+
+        def inspector():
+            while not done.is_set():
+                asyncio.all_tasks(loop)
+
+        inspectors = [Thread(target=inspector) for _ in range(2)]
+        with threading_helper.start_threads(inspectors):
+            try:
+                spawners = [Thread(target=spawner) for _ in range(4)]
+                with threading_helper.start_threads(spawners):
+                    pass
+            finally:
+                done.set()
+
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
 
@@ -164,6 +217,45 @@ class TestFreeThreading:
             loop = r.get_loop()
             loop.set_task_factory(self.factory)
             r.run(main())
+
+    def test_all_tasks_from_other_thread_includes_eager_tasks(self):
+        # gh-152020: all_tasks() called from another thread used to drop
+        # eager-started tasks on free-threaded builds.
+        loop = asyncio.new_event_loop()
+
+        async def wait_forever():
+            await asyncio.Event().wait()
+
+        def eager_factory(loop, coro, **kwargs):
+            return self.factory(loop, coro, eager_start=True, **kwargs)
+
+        async def setup():
+            loop.set_task_factory(eager_factory)
+            eager = loop.create_task(wait_forever(), name="EAGER")
+            loop.set_task_factory(None)
+            normal = loop.create_task(wait_forever(), name="NORMAL")
+            return eager, normal
+
+        async def teardown():
+            tasks = [t for t in asyncio.all_tasks()
+                     if t is not asyncio.current_task()]
+            for t in tasks:
+                t.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        thread = threading.Thread(target=loop.run_forever)
+        thread.start()
+        try:
+            held = asyncio.run_coroutine_threadsafe(setup(), loop).result()
+            names = {t.get_name() for t in asyncio.all_tasks(loop)}
+            self.assertIn("NORMAL", names)
+            self.assertIn("EAGER", names)
+            del held
+        finally:
+            asyncio.run_coroutine_threadsafe(teardown(), loop).result()
+            loop.call_soon_threadsafe(loop.stop)
+            thread.join()
+            loop.close()
 
 
 class TestPyFreeThreading(TestFreeThreading, TestCase):

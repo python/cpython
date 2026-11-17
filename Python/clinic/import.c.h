@@ -34,8 +34,9 @@ PyDoc_STRVAR(_imp_acquire_lock__doc__,
 "\n"
 "Acquires the interpreter\'s import lock for the current thread.\n"
 "\n"
-"This lock should be used by import hooks to ensure thread-safety when importing\n"
-"modules. On platforms without threads, this function does nothing.");
+"This lock should be used by import hooks to ensure thread-safety when\n"
+"importing modules.  On platforms without threads, this function does\n"
+"nothing.");
 
 #define _IMP_ACQUIRE_LOCK_METHODDEF    \
     {"acquire_lock", (PyCFunction)_imp_acquire_lock, METH_NOARGS, _imp_acquire_lock__doc__},
@@ -626,7 +627,7 @@ PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
 "_set_lazy_attributes($module, modobj, name, /)\n"
 "--\n"
 "\n"
-"Sets attributes to lazy submodules on the module, as side effects.");
+"Remove the resolved module name from sys.lazy_modules.");
 
 #define _IMP__SET_LAZY_ATTRIBUTES_METHODDEF    \
     {"_set_lazy_attributes", _PyCFunction_CAST(_imp__set_lazy_attributes), METH_FASTCALL, _imp__set_lazy_attributes__doc__},
@@ -664,4 +665,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=5fa42f580441b3fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae9cf67e39955555 input=a9049054013a1b77]*/

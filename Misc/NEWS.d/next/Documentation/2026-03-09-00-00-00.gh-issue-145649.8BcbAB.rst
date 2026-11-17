@@ -1,2 +1,0 @@
-Fix text wrapping and formatting of ``-X`` option descriptions in the
-:manpage:`python(1)` man page by using proper roff markup.

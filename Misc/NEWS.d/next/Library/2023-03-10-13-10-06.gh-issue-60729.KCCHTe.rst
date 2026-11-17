@@ -1,1 +1,0 @@
-Add support for floating point audio wave files in :mod:`wave`.

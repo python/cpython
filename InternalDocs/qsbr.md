@@ -101,15 +101,39 @@ Periodically, a polling mechanism processes this deferred-free list:
 
 To reduce memory contention from frequent updates to the global `wr_seq`, its
 advancement is sometimes deferred. Instead of incrementing `wr_seq` on every
-reclamation request, each thread tracks its number of deferrals locally. Once
-the deferral count reaches a limit (QSBR_DEFERRED_LIMIT, currently 10), the
-thread advances the global `wr_seq` and resets its local count.
+reclamation request, the object's qsbr_goal is set to `wr_seq` + 2 (the value
+the counter *would* take on its next advance) without actually advancing the
+global counter. This is safe because the goal still corresponds to a future
+sequence value that no thread has yet observed as quiescent.
 
-When an object is added to the deferred-free list, its qsbr_goal is set to
-`wr_seq` + 2. By setting the goal to the next sequence value, we ensure it's safe
-to defer the global counter advancement. This optimization improves runtime
-speed but may increase peak memory usage by slightly delaying when memory can
-be reclaimed.
+Whether to actually advance `wr_seq` is decided per request, based on how
+much memory and how many items the calling thread has already deferred since
+its last advance:
+
+* For deferred object frees (`_PyMem_FreeDelayed`), the thread tracks both a
+  count (`deferred_count`) and an estimate of the held memory
+  (`deferred_memory`). The global `wr_seq` is advanced when the freed block
+  is larger than `QSBR_FREE_MEM_LIMIT` (1 MiB), when the accumulated deferred
+  memory exceeds that limit, or when the count exceeds `QSBR_DEFERRED_LIMIT`
+  (127, sized so a chunk of work items is processed before it overflows).
+  Crossing any of these thresholds also sets a per-thread `should_process`
+  flag, signalling that the deferred-free list should be drained.
+
+* For mimalloc pages held by QSBR, the thread tracks `deferred_page_memory`
+  and advances `wr_seq` when either the individual page or the accumulated
+  page memory exceeds `QSBR_PAGE_MEM_LIMIT` (4096 * 20 bytes). Advancing
+  promptly here matters because a held page cannot be reused for a different
+  size class or by a different thread.
+
+Processing of the deferred-free list normally happens from the eval breaker
+(rather than from inside `_PyMem_FreeDelayed`), which gives the global
+`rd_seq` a better chance to have advanced far enough that items can actually
+be freed. `_PyMem_ProcessDelayed` is still called from the free path as a
+safety valve when a work-item chunk fills up.
+
+This optimization improves runtime speed but may increase peak memory usage
+by slightly delaying when memory can be reclaimed; the size-based thresholds
+above bound that extra memory.
 
 
 ## Limitations

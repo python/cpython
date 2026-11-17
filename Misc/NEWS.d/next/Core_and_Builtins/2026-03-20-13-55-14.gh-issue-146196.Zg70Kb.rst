@@ -1,2 +1,0 @@
-Fix potential Undefined Behavior in :c:func:`PyUnicodeWriter_WriteASCII` by
-adding a zero-length check. Patch by Shamil Abdulaev.

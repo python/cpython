@@ -31,17 +31,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define ENOMEM 12
 #endif
 
-
-mi_decl_nodiscard size_t mi_malloc_size(const void* p) mi_attr_noexcept {
-  // if (!mi_is_in_heap_region(p)) return 0;
-  return mi_usable_size(p);
-}
-
-mi_decl_nodiscard size_t mi_malloc_usable_size(const void *p) mi_attr_noexcept {
-  // if (!mi_is_in_heap_region(p)) return 0;
-  return mi_usable_size(p);
-}
-
 mi_decl_nodiscard size_t mi_malloc_good_size(size_t size) mi_attr_noexcept {
   return mi_good_size(size);
 }
@@ -52,23 +41,22 @@ void mi_cfree(void* p) mi_attr_noexcept {
   }
 }
 
-int mi_posix_memalign(void** p, size_t alignment, size_t size) mi_attr_noexcept {
+int mi_posix_memalign(void** p, size_t alignment, size_t size) {  // mi_attr_noexcept (issue #794)
   // Note: The spec dictates we should not modify `*p` on an error. (issue#27)
   // <http://man7.org/linux/man-pages/man3/posix_memalign.3.html>
   if (p == NULL) return EINVAL;
-  if ((alignment % sizeof(void*)) != 0) return EINVAL;                 // natural alignment
-  // it is also required that alignment is a power of 2 and > 0; this is checked in `mi_malloc_aligned`
-  if (alignment==0 || !_mi_is_power_of_two(alignment)) return EINVAL;  // not a power of 2
+  // it is required that alignment is a power of 2 and a multiple of sizeof(void*)
+  if (alignment<sizeof(void*) || !_mi_is_power_of_two(alignment)) return EINVAL;  // not a power of 2
   void* q = mi_malloc_aligned(size, alignment);
   if (q==NULL && size != 0) return ENOMEM;
-  mi_assert_internal(((uintptr_t)q % alignment) == 0);
+  mi_assert_internal(_mi_is_aligned(q,alignment));
   *p = q;
   return 0;
 }
 
 mi_decl_nodiscard mi_decl_restrict void* mi_memalign(size_t alignment, size_t size) mi_attr_noexcept {
   void* p = mi_malloc_aligned(size, alignment);
-  mi_assert_internal(((uintptr_t)p % alignment) == 0);
+  mi_assert_internal(_mi_is_aligned(p,alignment));
   return p;
 }
 
@@ -95,27 +83,43 @@ mi_decl_nodiscard mi_decl_restrict void* mi_aligned_alloc(size_t alignment, size
   */
   // C11 also requires alignment to be a power-of-two (and > 0) which is checked in mi_malloc_aligned
   void* p = mi_malloc_aligned(size, alignment);
-  mi_assert_internal(((uintptr_t)p % alignment) == 0);
+  mi_assert_internal(_mi_is_aligned(p,alignment));
   return p;
 }
 
-mi_decl_nodiscard void* mi_reallocarray( void* p, size_t count, size_t size ) mi_attr_noexcept {  // BSD
-  void* newp = mi_reallocn(p,count,size);
+mi_decl_nodiscard void* mi_reallocarray( void* p, size_t count, size_t size ) mi_attr_noexcept {  // BSD <https://man.freebsd.org/cgi/man.cgi?query=reallocarray>
+  size_t total;
+  if mi_unlikely(mi_count_size_overflow(count, size, &total)) {
+    errno = EOVERFLOW;
+    return NULL;
+  }
+  void* newp = mi_realloc(p,total);
   if (newp==NULL) { errno = ENOMEM; }
   return newp;
 }
 
-mi_decl_nodiscard int mi_reallocarr( void* p, size_t count, size_t size ) mi_attr_noexcept { // NetBSD
-  mi_assert(p != NULL);
-  if (p == NULL) {
-    errno = EINVAL;
-    return EINVAL;
+mi_decl_nodiscard int mi_reallocarr( void* ptrp, size_t count, size_t size ) mi_attr_noexcept { // NetBSD <https://man.netbsd.org/reallocarr.3>
+  mi_assert(size != 0);
+  mi_assert(ptrp != NULL);
+  if (ptrp == NULL || size == 0) {
+    return (errno = EINVAL);
   }
-  void** op = (void**)p;
-  void* newp = mi_reallocarray(*op, count, size);
-  if mi_unlikely(newp == NULL) { return errno; }
-  *op = newp;
-  return 0;
+  size_t total;
+  if mi_unlikely(mi_count_size_overflow(count, size, &total)) {
+    return (errno = EOVERFLOW);
+  }
+  void** op = (void**)ptrp;
+  if (total == 0) {
+    mi_free(*op);
+    *op = NULL;
+    return 0;
+  }
+  else {
+    void* newp = mi_realloc(*op,total);
+    if (newp == NULL) { return (errno = ENOMEM); }
+    *op = newp;
+    return 0;
+  }
 }
 
 void* mi__expand(void* p, size_t newsize) mi_attr_noexcept {  // Microsoft
@@ -124,12 +128,13 @@ void* mi__expand(void* p, size_t newsize) mi_attr_noexcept {  // Microsoft
   return res;
 }
 
-mi_decl_nodiscard mi_decl_restrict unsigned short* mi_wcsdup(const unsigned short* s) mi_attr_noexcept {
+mi_decl_nodiscard mi_decl_restrict wchar_t* mi_wcsdup(const wchar_t* s) mi_attr_noexcept {
   if (s==NULL) return NULL;
-  size_t len;
-  for(len = 0; s[len] != 0; len++) { }
-  size_t size = (len+1)*sizeof(unsigned short);
-  unsigned short* p = (unsigned short*)mi_malloc(size);
+  size_t wlen;
+  for(wlen = 0; s[wlen] != 0 && wlen < PTRDIFF_MAX; wlen++) { }  // prevent overflow on wlen+1
+  size_t size;
+  if (mi_mul_overflow(wlen+1, sizeof(wchar_t), &size) || size > PTRDIFF_MAX) return NULL;
+  wchar_t* p = (wchar_t*)mi_malloc(size);
   if (p != NULL) {
     _mi_memcpy(p,s,size);
   }
@@ -141,36 +146,36 @@ mi_decl_nodiscard mi_decl_restrict unsigned char* mi_mbsdup(const unsigned char*
 }
 
 int mi_dupenv_s(char** buf, size_t* size, const char* name) mi_attr_noexcept {
-  if (buf==NULL || name==NULL) return EINVAL;
   if (size != NULL) *size = 0;
-  char* p = getenv(name);        // mscver warning 4996
+  if (buf==NULL || name==NULL) return EINVAL;
+  char* p = getenv(name);
   if (p==NULL) {
     *buf = NULL;
   }
   else {
     *buf = mi_strdup(p);
     if (*buf==NULL) return ENOMEM;
-    if (size != NULL) *size = _mi_strlen(p);
+    if (size != NULL) { *size = _mi_strlen(p) + 1; }    // cannot overflow as mi_strdup is limited to PTRDIFF_MAX
   }
   return 0;
 }
 
-int mi_wdupenv_s(unsigned short** buf, size_t* size, const unsigned short* name) mi_attr_noexcept {
-  if (buf==NULL || name==NULL) return EINVAL;
+int mi_wdupenv_s(wchar_t** buf, size_t* size, const wchar_t* name) mi_attr_noexcept {
   if (size != NULL) *size = 0;
+  if (buf==NULL || name==NULL) return EINVAL;
 #if !defined(_WIN32) || (defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP))
   // not supported
   *buf = NULL;
   return EINVAL;
 #else
-  unsigned short* p = (unsigned short*)_wgetenv((const wchar_t*)name);  // msvc warning 4996
+  wchar_t* p = (wchar_t*)_wgetenv(name);
   if (p==NULL) {
     *buf = NULL;
   }
   else {
     *buf = mi_wcsdup(p);
     if (*buf==NULL) return ENOMEM;
-    if (size != NULL) *size = wcslen((const wchar_t*)p);
+    if (size != NULL) { *size = wcslen(p) + 1; }  // cannot overflow as wcsdup is limited to PTRDIFF_MAX
   }
   return 0;
 #endif

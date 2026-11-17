@@ -90,23 +90,10 @@ Notes for type implementers
 
 Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
-extensions of the real numbers. For example, :class:`fractions.Fraction`
-implements :func:`hash` as follows::
-
-    def __hash__(self):
-        if self.denominator == 1:
-            # Get integers right.
-            return hash(self.numerator)
-        # Expensive check, but definitely correct.
-        if self == float(self):
-            return hash(float(self))
-        else:
-            # Use tuple's hash to avoid a high collision rate on
-            # simple fractions.
-            return hash((self.numerator, self.denominator))
+extensions of the real numbers. See also :ref:`numeric-hash`.
 
 
-Adding More Numeric ABCs
+Adding more numeric ABCs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are, of course, more possible ABCs for numbers, and this would
@@ -156,11 +143,12 @@ defined as::
 
 
 There are 5 different cases for a mixed-type operation on subclasses
-of :class:`Complex`. I'll refer to all of the above code that doesn't
-refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as
-"boilerplate". ``a`` will be an instance of ``A``, which is a subtype
-of :class:`Complex` (``a : A <: Complex``), and ``b : B <:
-Complex``. I'll consider ``a + b``:
+of :class:`Complex`. All of the above code that doesn't refer to
+``MyIntegral`` and ``OtherTypeIKnowAbout`` is referred to as "boilerplate".
+
+In this description, ``a`` is an instance of ``A`` and ``b`` is an
+instance of ``B``, where ``A`` and ``B`` are both subtypes of :class:`Complex`.
+Consider ``a + b``:
 
 1. If ``A`` defines an :meth:`~object.__add__` which accepts ``b``, all is
    well.
@@ -175,13 +163,14 @@ Complex``. I'll consider ``a + b``:
 4. If it falls back to the boilerplate, there are no more possible
    methods to try, so this is where the default implementation
    should live.
-5. If ``B <: A``, Python tries ``B.__radd__`` before
+5. If ``B`` is a subtype of ``A``, Python tries ``B.__radd__`` before
    ``A.__add__``. This is ok, because it was implemented with
    knowledge of ``A``, so it can handle those instances before
    delegating to :class:`Complex`.
 
-If ``A <: Complex`` and ``B <: Real`` without sharing any other knowledge,
-then the appropriate shared operation is the one involving the built
+If ``A`` is a subtype of :class:`Complex` and ``B`` is a subtype of
+:class:`Real` without sharing any other knowledge, then the appropriate
+shared operation is the one involving the built
 in :class:`complex`, and both :meth:`~object.__radd__` s land there, so ``a+b
 == b+a``.
 

@@ -8,6 +8,7 @@ import socket
 import io
 import errno
 import os
+import sys
 import threading
 import time
 import unittest
@@ -16,7 +17,7 @@ try:
 except ImportError:
     ssl = None
 
-from unittest import TestCase, skipUnless
+from unittest import mock, TestCase, skipUnless
 from test import support
 from test.support import requires_subprocess
 from test.support import threading_helper
@@ -590,6 +591,8 @@ class TestFTPClass(TestCase):
         # Ensure the connection gets closed; sock attribute should be None
         self.assertEqual(self.client.sock, None)
 
+    @unittest.skipIf(sys.platform == 'cygwin',
+                     "MSG_OOB doesn't work properly on Cygwin")
     def test_abort(self):
         self.client.abort()
 
@@ -1145,6 +1148,40 @@ class TestTimeouts(TestCase):
         ftp.close()
 
 
+class TestFtpcpSecurity(TestCase):
+    """ftpcp() must not trust the host a source server advertises in PASV.
+
+    A malicious source server can otherwise redirect the target server's
+    data connection to an arbitrary host:port (SSRF), so ftpcp() uses the
+    source server's actual peer address instead, the same as FTP.makepasv().
+    """
+
+    def _make_pair(self, *, advertised_host, real_host, trust=False):
+        source = mock.Mock(spec=ftplib.FTP)
+        source.trust_server_pasv_ipv4_address = trust
+        source.sock.getpeername.return_value = (real_host, 21)
+        # PASV replies give the host as comma-separated octets, not dotted.
+        advertised = advertised_host.replace('.', ',')
+        source.sendcmd.side_effect = lambda cmd: (
+            f'227 Entering Passive Mode ({advertised},1,2).'
+            if cmd == 'PASV' else '150 ok')
+        target = mock.Mock(spec=ftplib.FTP)
+        target.sendcmd.return_value = '150 ok'
+        return source, target
+
+    def test_ftpcp_ignores_untrusted_pasv_host(self):
+        source, target = self._make_pair(advertised_host='10.0.0.5',
+                                         real_host='198.51.100.7')
+        ftplib.ftpcp(source, 'a', target, 'b')
+        target.sendport.assert_called_once_with('198.51.100.7', 258)
+
+    def test_ftpcp_trust_server_pasv_ipv4_address(self):
+        source, target = self._make_pair(advertised_host='10.0.0.5',
+                                         real_host='198.51.100.7', trust=True)
+        ftplib.ftpcp(source, 'a', target, 'b')
+        target.sendport.assert_called_once_with('10.0.0.5', 258)
+
+
 class MiscTestCase(TestCase):
     def test__all__(self):
         not_exported = {
@@ -1152,6 +1189,77 @@ class MiscTestCase(TestCase):
             'parse150', 'parse227', 'parse229', 'parse257', 'print_line',
             'ftpcp', 'test'}
         support.check__all__(self, ftplib, not_exported=not_exported)
+
+
+class CommandLineTest(TestCase):
+    """Tests for the ftplib command-line interface."""
+
+    def test_main_no_arguments_prints_usage(self):
+        with mock.patch('sys.argv', ['ftplib']), \
+             support.captured_stdout() as stdout:
+            with self.assertRaises(SystemExit) as cm:
+                ftplib.test()
+            self.assertEqual(cm.exception.code, 0)
+        output = stdout.getvalue()
+        self.assertIn('Usage:', output)
+        self.assertIn('Options:', output)
+        self.assertIn('Commands:', output)
+
+    @requires_subprocess()
+    def test_subprocess_invocation_no_args(self):
+        from test.support.script_helper import assert_python_ok
+        rc, out, err = assert_python_ok('-m', 'ftplib')
+        self.assertEqual(rc, 0)
+        self.assertIn(b'Usage:', out)
+        self.assertIn(b'Options:', out)
+        self.assertIn(b'Commands:', out)
+        self.assertEqual(err, b'')
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_host_and_debugging(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', '-d', '-d', 'example.com']):
+            ftplib.test()
+        mock_ftp_cls.assert_called_once_with('example.com')
+        mock_ftp.set_debuglevel.assert_called_once_with(2)
+        mock_ftp.login.assert_called_once_with('', '', '')
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_commands(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', 'example.com', '-l/pub', '-d/incoming', '-p']):
+            ftplib.test()
+        mock_ftp_cls.assert_called_once_with('example.com')
+        mock_ftp.dir.assert_called_once_with('/pub')
+        mock_ftp.sendcmd.assert_called_once_with('CWD /incoming')
+        mock_ftp.set_pasv.assert_called_once()
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_retrieve_file(self, mock_netrc, mock_ftp_cls):
+        mock_ftp = mock_ftp_cls.return_value
+        with mock.patch('sys.argv', ['ftplib', 'example.com', 'testfile.txt']), \
+             mock.patch('sys.stdout') as mock_stdout:
+            ftplib.test()
+        mock_ftp.retrbinary.assert_called_once_with(
+            'RETR testfile.txt', mock_stdout.buffer.write, 1024
+        )
+        mock_stdout.buffer.flush.assert_called_once()
+        mock_stdout.flush.assert_called_once()
+        mock_ftp.quit.assert_called_once()
+
+    @mock.patch('ftplib.FTP')
+    @mock.patch('netrc.netrc', side_effect=OSError)
+    def test_cli_custom_rcfile_error(self, mock_netrc, mock_ftp_cls):
+        with mock.patch('sys.argv', ['ftplib', '-rnonexistent.netrc', 'example.com']), \
+             support.captured_stderr() as stderr:
+            ftplib.test()
+        self.assertIn("Could not open account file -- using anonymous login.",
+                      stderr.getvalue())
 
 
 def setUpModule():

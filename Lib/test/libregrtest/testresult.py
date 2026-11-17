@@ -9,14 +9,16 @@ import time
 import traceback
 import unittest
 from test import support
+from test.libregrtest.reporter import Reporter
 from test.libregrtest.utils import sanitize_xml
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
+    reporter = Reporter()
 
     def __init__(self, stream, descriptions, verbosity):
         super().__init__(stream=stream, descriptions=descriptions,
-                         verbosity=2 if verbosity else 0)
+                         verbosity=verbosity)
         self.buffer = True
         if self.USE_XML:
             from xml.etree import ElementTree as ET
@@ -130,6 +132,14 @@ class RegressionTestResult(unittest.TextTestResult):
         self._add_result(test, outcome='UNEXPECTED_SUCCESS')
         super().addUnexpectedSuccess(test)
 
+    def printErrorList(self, flavour, errors):
+        for test, err in errors:
+            super().printErrorList(flavour, [(test, err)])
+            self.report_failure(test, err)
+
+    def report_failure(self, test, err):
+        self.reporter.test_case_failed(str(test), err, self.stream)
+
     def get_xml_element(self):
         if not self.USE_XML:
             raise ValueError("USE_XML is false")
@@ -146,14 +156,19 @@ class QuietRegressionTestRunner:
 
     def run(self, test):
         test(self.result)
+        # Failures are not printed in quiet mode
+        for test, err in self.result.errors + self.result.failures:
+            self.result.report_failure(test, err)
         return self.result
 
 def get_test_runner_class(verbosity, buffer=False):
     if verbosity:
+        # The verbosity of regrtest is one less than the verbosity of
+        # unittest: -v reports the test names, -vv also the doctest examples.
         return functools.partial(unittest.TextTestRunner,
                                  resultclass=RegressionTestResult,
                                  buffer=buffer,
-                                 verbosity=verbosity)
+                                 verbosity=verbosity + 1)
     return functools.partial(QuietRegressionTestRunner, buffer=buffer)
 
 def get_test_runner(stream, verbosity, capture_output=False):

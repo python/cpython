@@ -77,6 +77,7 @@ _OTHER_SUPPORTED_TYPES = {
     'PyStructSequence_Field[]',
     'PyStructSequence_Desc',
     'PyABIInfo',
+    'PySlot[]',
 }
 
 # XXX We should normalize all cases to a single name,

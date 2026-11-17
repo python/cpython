@@ -50,8 +50,8 @@ additional methods of invocation:
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
   newlines.
-* When called with ``-m module-name``, the given module is located on the
-  Python module path and executed as a script.
+* When called with ``-m module-name``, the given module is located using the standard
+  import mechanism and executed as a script.
 
 In non-interactive mode, the entire input is parsed before it is executed.
 
@@ -78,8 +78,8 @@ source.
 
 .. option:: -m <module-name>
 
-   Search :data:`sys.path` for the named module and execute its contents as
-   the :mod:`__main__` module.
+   Locate the module using the standard import mechanism and execute its contents
+   as the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
    (``.py``).  The module name should be a valid absolute Python module name, but
@@ -322,10 +322,12 @@ Miscellaneous options
    Run Python in isolated mode. This also implies :option:`-E`, :option:`-P`
    and :option:`-s` options.
 
-   In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All ``PYTHON*`` environment
-   variables are ignored, too. Further restrictions may be imposed to prevent
-   the user from injecting malicious code.
+   In isolated mode, Python does not prepend the potentially unsafe path
+   :data:`sys._path0` to :data:`sys.path`, and ignores all ``PYTHON*``
+   environment variables, e.g.  :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`,
+   that might be set.
+   Further restrictions may be imposed to prevent the user from injecting
+   malicious code.
 
    .. versionadded:: 3.4
 
@@ -353,14 +355,8 @@ Miscellaneous options
 
 .. option:: -P
 
-   Don't prepend a potentially unsafe path to :data:`sys.path`:
-
-   * ``python -m module`` command line: Don't prepend the current working
-     directory.
-   * ``python script.py`` command line: Don't prepend the script's directory.
-     If it's a symbolic link, resolve symbolic links.
-   * ``python -c code`` and ``python`` (REPL) command lines: Don't prepend an
-     empty string, which means the current working directory.
+   Don't prepend the potentially unsafe path :data:`sys._path0` to
+   :data:`sys.path`.
 
    See also the :envvar:`PYTHONSAFEPATH` environment variable, and :option:`-E`
    and :option:`-I` (isolated) options.
@@ -519,7 +515,25 @@ Miscellaneous options
 .. option:: -x
 
    Skip the first line of the source, allowing use of non-Unix forms of
-   ``#!cmd``.  This is intended for a DOS specific hack only.
+   ``#!cmd``.
+
+   This can be used to turn a Python script into a Windows batch file.
+   Similarly to adding a shebang line and setting the executable bit on Unix,
+   the extension of the Python script can be changed to ``.bat`` and the
+   following line can be added at the start of the script:
+
+   .. code-block:: batch
+
+      @py -x "%~f0" %* & exit /b
+
+   Or, to specify the path to the Python interpreter explicitly:
+
+   .. code-block:: batch
+
+      @"C:\Path\to\python.exe" -x "%~f0" %* & exit /b
+
+   Unlike a shebang line which is a Python comment, this line is not valid
+   Python syntax, and the :option:`-x` option is needed to skip it.
 
 
 .. option:: -X
@@ -634,7 +648,7 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * ``-X disable_remote_debug`` disables the remote debugging support as described
+   * ``-X disable-remote-debug`` disables the remote debugging support as described
      in :pep:`768`.  This includes both the functionality to schedule code for
      execution in another process and the functionality to receive code for
      execution in the current process.
@@ -654,12 +668,16 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
-   * :samp:`-X presite={package.module}` specifies a module that should be
-     imported before the :mod:`site` module is executed and before the
+   * :samp:`-X presite={module}` or :samp:`-X presite={module:func}` specifies
+     an entry point that should be executed before the :mod:`site` module is
+     executed and before the
      :mod:`__main__` module exists.  Therefore, the imported module isn't
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+
+     .. versionchanged:: 3.15
+        Accept also ``module:func`` entry point format.
 
      .. versionadded:: 3.13
 
@@ -701,10 +719,9 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
-   * :samp:`-X lazy_imports={all,none,normal}` controls lazy import behavior.
-     ``all`` makes all imports lazy by default, ``none`` disables lazy imports
-     entirely (even explicit ``lazy`` statements become eager), and ``normal``
-     (the default) respects the ``lazy`` keyword in source code.
+   * :samp:`-X lazy_imports={all,normal}` controls lazy import behavior.
+     ``all`` makes all imports lazy by default, and ``normal`` (the default)
+     respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
      .. versionadded:: 3.15
@@ -799,7 +816,9 @@ conflict.
 .. envvar:: PYTHONSAFEPATH
 
    If this is set to a non-empty string, don't prepend a potentially unsafe
-   path to :data:`sys.path`: see the :option:`-P` option for details.
+   path :data:`sys._path0` to :data:`sys.path`.
+
+   See also the :option:`-P` option.
 
    .. versionadded:: 3.11
 
@@ -1150,9 +1169,6 @@ conflict.
    'replace', respectively.  Otherwise, the new defaults 'utf-8' and
    'surrogatepass' are used.
 
-   This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding`.
-
    .. availability:: Windows.
 
    .. versionadded:: 3.6
@@ -1295,7 +1311,7 @@ conflict.
    to schedule code for execution in another process and the functionality to
    receive code for execution in the current process.
 
-   See also the :option:`-X disable_remote_debug` command-line option.
+   See also the :option:`-X disable-remote-debug` command-line option.
 
    .. versionadded:: 3.14
 
@@ -1337,6 +1353,13 @@ conflict.
    instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_BASIC_COMPLETER
+
+   If this variable is set to any value, PyREPL will use :mod:`rlcompleter` to
+   implement tab completion, instead of the default one which uses colors.
+
+   .. versionadded:: 3.15
 
 .. envvar:: PYTHON_HISTORY
 
@@ -1405,10 +1428,9 @@ conflict.
 
 .. envvar:: PYTHON_LAZY_IMPORTS
 
-   Controls lazy import behavior. Accepts three values: ``all`` makes all
-   imports lazy by default, ``none`` disables lazy imports entirely (even
-   explicit ``lazy`` statements become eager), and ``normal`` (the default)
-   respects the ``lazy`` keyword in source code.
+   Controls lazy import behavior. Accepts two values: ``all`` makes all
+   imports lazy by default, and ``normal`` (the default) respects the
+   ``lazy`` keyword in source code.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
@@ -1450,5 +1472,8 @@ Debug-mode variables
    which takes precedence over this variable.
 
    Needs Python configured with the :option:`--with-pydebug` build option.
+
+   .. versionchanged:: 3.15
+      Accept also ``module:func`` entry point format.
 
    .. versionadded:: 3.13

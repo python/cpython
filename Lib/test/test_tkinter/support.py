@@ -1,4 +1,5 @@
 import functools
+import time
 import tkinter
 import unittest
 from test import support
@@ -45,6 +46,30 @@ class AbstractTkTest:
             w.destroy()
         self.root.withdraw()
 
+    def require_mapped(self, widget, timeout=None):
+        """Realize *widget*, or skip the test if the window manager will
+        not map it (e.g. a tiling WM or a headless/contended display).
+
+        Use this instead of a bare update() before querying realized
+        geometry (winfo_width(), identify(), coords(), place_info(), ...).
+        See gh-69134, gh-74941 and bpo-40722.
+        """
+        if timeout is None:
+            timeout = support.LOOPBACK_TIMEOUT
+        if not wait_until_mapped(widget, timeout):
+            self.skipTest('widget was not mapped by the window manager '
+                          f'(timed out after {timeout:g}s)')
+
+
+class AbstractDialogTest(AbstractTkTest):
+    # Tk delivers generated keyboard events to the focused window.  Hide the
+    # root window, otherwise the window manager can take the focus back from
+    # the dialog (gh-154357).
+
+    def setUp(self):
+        super().setUp()
+        self.root.withdraw()
+
 
 class AbstractDefaultRootTest:
 
@@ -77,6 +102,47 @@ def destroy_default_root():
         tkinter._default_root.update_idletasks()
         tkinter._default_root.destroy()
         tkinter._default_root = None
+
+def wait_until_mapped(widget, timeout=None, *, full_size=False):
+    """Wait until *widget* is actually mapped and laid out by the window
+    manager, so that realized-geometry queries (winfo_width(), identify(),
+    coords(), ...) return meaningful values.
+
+    Return True once the widget is mapped with a non-trivial size, or False
+    if that has not happened within *timeout* seconds (default:
+    ``support.LOOPBACK_TIMEOUT``).  Unlike Misc.wait_visibility(), this
+    never blocks indefinitely, so it is safe under a window manager that
+    never maps the window (see gh-69134, gh-74941, bpo-40722).
+
+    If *full_size* is true, also wait until the realized size reaches the
+    requested size, so that per-pixel queries near an edge (e.g. identify())
+    are reliable even under load.
+    """
+    if timeout is None:
+        timeout = support.LOOPBACK_TIMEOUT
+    deadline = time.monotonic() + timeout
+    widget.update_idletasks()
+    reset = False
+    while True:
+        widget.update()  # drain pending Map/Configure events
+        if widget.winfo_ismapped():
+            if full_size:
+                w_ok = widget.winfo_width() >= widget.winfo_reqwidth() > 1
+                h_ok = widget.winfo_height() >= widget.winfo_reqheight() > 1
+            else:
+                w_ok = widget.winfo_width() > 1
+                h_ok = widget.winfo_height() > 1
+            if w_ok and h_ok:
+                return True
+            if full_size and not reset:
+                # Tk no longer resizes the toplevel to fit its content if
+                # the window manager has resized it.  Undo this.
+                widget.winfo_toplevel().wm_geometry('')
+                reset = True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.01)
+
 
 def simulate_mouse_click(widget, x, y):
     """Generate proper events to click at the x, y position (tries to act

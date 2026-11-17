@@ -1,3 +1,0 @@
-Fix free-threading scaling bottleneck in :func:`sys.intern` and
-:c:func:`PyObject_SetAttr` by avoiding the interpreter-wide lock when the string
-is already interned and immortalized.

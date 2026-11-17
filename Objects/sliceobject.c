@@ -21,6 +21,13 @@ this type and there is exactly one in existence.
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 
+#include "clinic/sliceobject.c.h"
+
+/*[clinic input]
+class slice "PySliceObject *" "&PySlice_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=857b514967456ef4]*/
+
 
 #define _PySlice_CAST(op) _Py_CAST(PySliceObject*, (op))
 
@@ -117,8 +124,8 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
    index is present.
 */
 
-static PySliceObject *
-_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
+PyObject *
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj = _Py_FREELIST_POP(PySliceObject, slices);
@@ -131,13 +138,14 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 
     obj->start = start;
     obj->stop = stop;
-    obj->step = Py_NewRef(step);
+    obj->step = step;
 
     _PyObject_GC_TRACK(obj);
-    return obj;
+    return (PyObject *)obj;
 error:
     Py_DECREF(start);
     Py_DECREF(stop);
+    Py_DECREF(step);
     return NULL;
 }
 
@@ -153,15 +161,8 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-    return (PyObject *)_PyBuildSlice_Consume2(Py_NewRef(start),
-                                              Py_NewRef(stop), step);
-}
-
-PyObject *
-_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
-{
-    assert(start != NULL && stop != NULL);
-    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
+    return _PyBuildSlice_ConsumeRefs(Py_NewRef(start),
+                                              Py_NewRef(stop), Py_NewRef(step));
 }
 
 PyObject *
@@ -177,9 +178,7 @@ _PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
         return NULL;
     }
 
-    slice = PySlice_New(start, end, NULL);
-    Py_DECREF(start);
-    Py_DECREF(end);
+    slice = _PyBuildSlice_ConsumeRefs(start, end, Py_None);
     return slice;
 }
 
@@ -316,19 +315,22 @@ PySlice_GetIndicesEx(PyObject *_r, Py_ssize_t length,
     return 0;
 }
 
+/*[clinic input]
+@classmethod
+@vectorcall
+slice.__new__ as slice_new
+
+    start: object
+    stop: object(c_default="NULL") = None
+    step: object(c_default="NULL") = None
+    /
+[clinic start generated code]*/
+
 static PyObject *
-slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+slice_new_impl(PyTypeObject *type, PyObject *start, PyObject *stop,
+               PyObject *step)
+/*[clinic end generated code: output=35a6e86397efb677 input=cf5c572a0d2caa22]*/
 {
-    PyObject *start, *stop, *step;
-
-    start = stop = step = NULL;
-
-    if (!_PyArg_NoKeywords("slice", kw))
-        return NULL;
-
-    if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
-        return NULL;
-
     /* This swapping of stop and start is to maintain similarity with
        range(). */
     if (stop == NULL) {
@@ -342,7 +344,9 @@ PyDoc_STRVAR(slice_doc,
 "slice(stop)\n\
 slice(start, stop[, step])\n\
 \n\
-Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
+Create a slice object.\n\
+\n\
+This is used for extended slicing (e.g. a[0:10:2]).");
 
 static void
 slice_dealloc(PyObject *op)
@@ -570,7 +574,8 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyMethodDef slice_methods[] = {
     {"indices", slice_indices, METH_O, slice_indices_doc},
     {"__reduce__", slice_reduce, METH_NOARGS, reduce_doc},
-    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
+     "slices are generic over the types of their start, end, and step values"},
     {NULL, NULL}
 };
 
@@ -707,4 +712,5 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     slice_new,                                  /* tp_new */
+    .tp_vectorcall = slice_vectorcall,
 };

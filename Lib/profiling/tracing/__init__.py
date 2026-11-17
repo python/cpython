@@ -197,7 +197,9 @@ def main():
             # in the module's namespace.
             globs = module.__dict__
             globs.update({
-                '__spec__': spec,
+                # Set __spec__ to None so the profiled program behaves like a
+                # script run directly (gh-140729).
+                '__spec__': None,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,

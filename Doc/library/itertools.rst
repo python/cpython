@@ -158,7 +158,7 @@ loops that truncate the stream.
    Loops over the input iterable and accumulates data into tuples up to
    size *n*.  The input is consumed lazily, just enough to fill a batch.
    The result is yielded as soon as the batch is full or when the input
-   iterable is exhausted:
+   iterable is :term:`exhausted`:
 
    .. doctest::
 
@@ -188,7 +188,7 @@ loops that truncate the stream.
 .. function:: chain(*iterables)
 
    Make an iterator that returns elements from the first iterable until
-   it is exhausted, then proceeds to the next iterable, until all of the
+   it is :term:`exhausted`, then proceeds to the next iterable, until all of the
    iterables are exhausted.  This combines multiple data sources into a
    single iterator.  Roughly equivalent to::
 
@@ -196,6 +196,10 @@ loops that truncate the stream.
           # chain('ABC', 'DEF') → A B C D E F
           for iterable in iterables:
               yield from iterable
+
+   Note that :ref:`unpacking in comprehensions <unpacking-comprehensions>`
+   provides similar functionality so that ``list(chain(p, q))`` could be
+   written as ``[*s for s in (p, q)]``.
 
 
 .. classmethod:: chain.from_iterable(iterable)
@@ -207,6 +211,10 @@ loops that truncate the stream.
           # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
           for iterable in iterables:
               yield from iterable
+
+   Note that :ref:`unpacking in comprehensions <unpacking-comprehensions>`
+   provides similar functionality so that ``list(chain.from_iterable(iterables))``
+   could be written as ``[*s for s in iterables]``.
 
 
 .. function:: combinations(iterable, r)
@@ -297,7 +305,7 @@ loops that truncate the stream.
 
    Make an iterator that returns elements from *data* where the
    corresponding element in *selectors* is true.  Stops when either the
-   *data* or *selectors* iterables have been exhausted.  Roughly
+   *data* or *selectors* iterables have been :term:`exhausted`.  Roughly
    equivalent to::
 
        def compress(data, selectors):
@@ -333,7 +341,7 @@ loops that truncate the stream.
 .. function:: cycle(iterable)
 
    Make an iterator returning elements from the *iterable* and saving a
-   copy of each.  When the iterable is exhausted, return elements from
+   copy of each.  When the iterable is :term:`exhausted`, return elements from
    the saved copy.  Repeats indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
@@ -464,7 +472,7 @@ loops that truncate the stream.
    elements from the iterable are skipped until *start* is reached.
 
    If *stop* is ``None``, iteration continues until the input is
-   exhausted, if at all.  Otherwise, it stops at the specified position.
+   :term:`exhausted`, if at all.  Otherwise, it stops at the specified position.
 
    If *step* is ``None``, the step defaults to one.  Elements are returned
    consecutively unless *step* is set higher than one which results in
@@ -669,9 +677,9 @@ loops that truncate the stream.
    Note, the element that first fails the predicate condition is
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
-   input iterator after *takewhile* has been run to exhaustion.  To work
-   around this problem, consider using `more-itertools before_and_after()
-   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
+   input iterator after *takewhile* has been run to :term:`exhaustion <exhausted>`.
+   To work around this problem, consider using `more-itertools before_and_after()
+   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`__
    instead.
 
 
@@ -758,7 +766,7 @@ loops that truncate the stream.
    If the iterables are of uneven length, missing values are filled-in
    with *fillvalue*.  If not specified, *fillvalue* defaults to ``None``.
 
-   Iteration continues until the longest iterable is exhausted.
+   Iteration continues until the longest iterable is :term:`exhausted`.
 
    Roughly equivalent to::
 
@@ -833,6 +841,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
    from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
+   from heapq import heappush, heappushpop, heappush_max, heappushpop_max
    from math import comb, isqrt, prod, sumprod
    from operator import getitem, is_not, itemgetter, mul, neg, truediv
 
@@ -847,11 +856,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
        "Prepend a single value in front of an iterable."
        # prepend(1, [2, 3, 4]) → 1 2 3 4
        return chain([value], iterable)
-
-   def running_mean(iterable):
-       "Yield the average of all values seen so far."
-       # running_mean([8.5, 9.5, 7.5, 6.5]) -> 8.5 9.0 8.5 8.0
-       return map(truediv, accumulate(iterable), count(1))
 
    def repeatfunc(function, times=None, *args):
        "Repeat calls to a function with specified arguments."
@@ -932,10 +936,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
                    yield element
 
    def unique(iterable, key=None, reverse=False):
-      "Yield unique elements in sorted order. Supports unhashable inputs."
-      # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
-      sequenced = sorted(iterable, key=key, reverse=reverse)
-      return unique_justseen(sequenced, key=key)
+       "Yield unique elements in sorted order. Supports unhashable inputs."
+       # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
+       sequenced = sorted(iterable, key=key, reverse=reverse)
+       return unique_justseen(sequenced, key=key)
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
@@ -1150,6 +1154,49 @@ and :term:`generators <generator>` which incur interpreter overhead.
        return n
 
 
+   # ==== Running statistics ====
+
+   def running_mean(iterable):
+       "Average of values seen so far."
+       # running_mean([37, 33, 38, 28]) → 37 35 36 34
+       return map(truediv, accumulate(iterable), count(1))
+
+   def running_min(iterable):
+       "Smallest of values seen so far."
+       # running_min([37, 33, 38, 28]) → 37 33 33 28
+       return accumulate(iterable, func=min)
+
+   def running_max(iterable):
+       "Largest of values seen so far."
+       # running_max([37, 33, 38, 28]) → 37 37 38 38
+       return accumulate(iterable, func=max)
+
+   def running_median(iterable):
+       "Median of values seen so far."
+       # running_median([37, 33, 38, 28]) → 37 35 37 35
+       read = iter(iterable).__next__
+       lo = []  # max-heap
+       hi = []  # min-heap the same size as or one smaller than lo
+       with suppress(StopIteration):
+           while True:
+               heappush_max(lo, heappushpop(hi, read()))
+               yield lo[0]
+               heappush(hi, heappushpop_max(lo, read()))
+               yield (lo[0] + hi[0]) / 2
+
+   def running_statistics(iterable):
+       "Aggregate statistics for values seen so far."
+       # Generate tuples:  (size, minimum, median, maximum, mean)
+       t0, t1, t2, t3 = tee(iterable, 4)
+       return zip(
+           count(1),
+           running_min(t0),
+           running_median(t1),
+           running_max(t2),
+           running_mean(t3),
+       )
+
+
 .. doctest::
     :hide:
 
@@ -1224,10 +1271,6 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
     >>> list(enumerate('abc'))
     [(0, 'a'), (1, 'b'), (2, 'c')]
-
-
-    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
-    [8.5, 9.0, 8.5, 8.0]
 
 
     >>> for _ in loops(5):
@@ -1787,6 +1830,28 @@ and :term:`generators <generator>` which incur interpreter overhead.
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
     True
+
+
+    >>> list(running_mean([8.5, 9.5, 7.5, 6.5]))
+    [8.5, 9.0, 8.5, 8.0]
+    >>> list(running_mean([37, 33, 38, 28]))
+    [37.0, 35.0, 36.0, 34.0]
+
+
+    >>> list(running_min([37, 33, 38, 28]))
+    [37, 33, 33, 28]
+
+
+    >>> list(running_max([37, 33, 38, 28]))
+    [37, 37, 38, 38]
+
+
+    >>> list(running_median([37, 33, 38, 28]))
+    [37, 35.0, 37, 35.0]
+
+
+    >>> list(running_statistics([37, 33, 38, 28]))
+    [(1, 37, 37, 37, 37.0), (2, 33, 35.0, 37, 35.0), (3, 33, 37, 38, 36.0), (4, 28, 35.0, 38, 34.0)]
 
 
 .. testcode::

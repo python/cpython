@@ -236,8 +236,8 @@ underlying :class:`Popen` interface can be used directly.
 
     .. attribute:: returncode
 
-        Exit status of the child process.  If the process exited due to a
-        signal, this will be the negative signal number.
+        Exit status of the child process, an integer.  If the process
+        exited due to a signal, this will be the negative signal number.
 
     .. attribute:: cmd
 
@@ -626,6 +626,12 @@ functions.
    value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
+
+   .. note::
+
+      Specifying *user* will not drop existing supplementary group memberships!
+      The caller must also pass ``extra_groups=()`` to reduce the group membership
+      of the child process for security purposes.
 
    .. availability:: POSIX
    .. versionadded:: 3.9

@@ -173,8 +173,8 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "\n"
 "Values are unpacked according to the struct format string.  The\n"
 "buffer\'s size in bytes, starting at position offset, must be at\n"
-"least the struct size.  See help(struct) for more on format\n"
-"strings.");
+"least the struct size.  A negative offset counts from the end of\n"
+"the buffer.  See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
     {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
@@ -319,8 +319,9 @@ PyDoc_STRVAR(Struct_pack_into__doc__,
 "\n"
 "Pack the provided values according to the struct format string\n"
 "and write the packed bytes into the writable buffer starting at\n"
-"offset.  Note that the offset is a required argument.  See\n"
-"help(struct) for more on format strings.");
+"offset.  Note that the offset is a required argument.  A negative\n"
+"offset counts from the end of the buffer.  See help(struct) for\n"
+"more on format strings.");
 
 #define STRUCT_PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(Struct_pack_into), METH_FASTCALL, Struct_pack_into__doc__},
@@ -490,8 +491,8 @@ PyDoc_STRVAR(pack_into__doc__,
 "\n"
 "Pack the provided values according to the format string and write the\n"
 "packed bytes into the writable buffer starting at offset.  Note that the\n"
-"offset is a required argument.  See help(struct) for more on format\n"
-"strings.");
+"offset is a required argument.  A negative offset counts from the end of\n"
+"the buffer.  See help(struct) for more on format strings.");
 
 #define PACK_INTO_METHODDEF    \
     {"pack_into", _PyCFunction_CAST(pack_into), METH_FASTCALL, pack_into__doc__},
@@ -598,7 +599,8 @@ PyDoc_STRVAR(unpack_from__doc__,
 "\n"
 "Return a tuple containing values unpacked according to the format string.\n"
 "\n"
-"The buffer\'s size, minus offset, must be at least calcsize(format).  See\n"
+"The buffer must contain at least calcsize(format) bytes starting at\n"
+"offset.  A negative offset counts from the end of the buffer.  See\n"
 "help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
@@ -724,4 +726,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=0f417d43a2a387c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=021b89d2d3c3c225 input=a9049054013a1b77]*/

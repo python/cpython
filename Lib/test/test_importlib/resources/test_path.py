@@ -1,8 +1,8 @@
+import importlib.resources as resources
 import io
 import pathlib
 import unittest
 
-from importlib import resources
 from . import util
 
 
@@ -19,9 +19,9 @@ class PathTests:
         """
         target = resources.files(self.data) / 'utf-8.file'
         with resources.as_file(target) as path:
-            self.assertIsInstance(path, pathlib.Path)
-            self.assertEndsWith(path.name, "utf-8.file")
-            self.assertEqual('Hello, UTF-8 world!\n', path.read_text(encoding='utf-8'))
+            assert isinstance(path, pathlib.Path)
+            assert path.name.endswith("utf-8.file"), repr(path)
+            assert 'Hello, UTF-8 world!\n' == path.read_text(encoding='utf-8')
 
 
 class PathDiskTests(PathTests, util.DiskSetup, unittest.TestCase):

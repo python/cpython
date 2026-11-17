@@ -421,7 +421,7 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
                         state = ModuleState.BUILTIN
                     case ["*disabled*"]:
                         state = ModuleState.DISABLED
-                    case ["*noconfig*"]:
+                    case ["*noconfig*"] | ["*bootstrap*"]:
                         continue
                     case [*items]:
                         if state == ModuleState.DISABLED:
@@ -463,7 +463,7 @@ _MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
     def _check_file(self, modinfo: ModuleInfo, spec: ModuleSpec) -> None:
         """Check that the module file is present and not empty"""
         if spec.loader is BuiltinImporter:  # type: ignore[comparison-overlap]
-            return
+            return  # type: ignore[unreachable]
         try:
             assert spec.origin is not None
             st = os.stat(spec.origin)

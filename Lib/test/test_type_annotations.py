@@ -1,5 +1,6 @@
 import annotationlib
 import inspect
+import itertools
 import textwrap
 import types
 import unittest
@@ -327,6 +328,18 @@ class AnnotateTests(unittest.TestCase):
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
 
+    def test_annotate_sets_annotations(self):
+        # If __annotate__ sets the function's annotations while it runs,
+        # those are kept instead of the result of the call.
+        def f():
+            pass
+        def annotate(format):
+            f.__annotations__ = {"x": int}
+            return {"y": str}
+        f.__annotate__ = annotate
+        self.assertEqual(f.__annotations__, {"x": int})
+        self.assertIs(f.__annotate__, None)
+
     def test_user_defined_annotate(self):
         class X:
             a: int
@@ -484,6 +497,39 @@ class DeferredEvaluationTests(unittest.TestCase):
         # This crashed in an earlier version of the code
         ns = run_code("x: [y for y in range(10)]")
         self.assertEqual(ns["__annotate__"](1), {"x": list(range(10))})
+
+    def test_class_annotation_dunder_classdict(self):
+        ns = run_code("""
+            class C:
+                __classdict__: int
+        """)
+        self.assertEqual(ns["C"].__annotations__, {"__classdict__": int})
+
+    def test_class_binds_dunder_classdict(self):
+        # The class body binding __classdict__ must not hide the cell that
+        # annotation and type parameter scopes use to see the class namespace.
+        for binding in (
+            "__classdict__ = 1",
+            "__classdict__: str = 1",
+            "for __classdict__ in (1,): pass",
+            "global __classdict__",
+        ):
+            with self.subTest(binding=binding):
+                ns = run_code(f"""
+                    class C:
+                        {binding}
+                        y = int
+                        def f(x: y): pass
+                        class D[T: y]: pass
+                        class E[T]: pass
+                        type A[T: y] = y
+                """)
+                C = ns["C"]
+                self.assertEqual(C.f.__annotations__, {"x": int})
+                self.assertIs(C.D.__type_params__[0].__bound__, int)
+                self.assertEqual(C.E.__type_params__[0].__name__, "T")
+                self.assertIs(C.A.__type_params__[0].__bound__, int)
+                self.assertIs(C.A.__value__, int)
 
     def test_future_annotations(self):
         code = """
@@ -836,6 +882,23 @@ class RegressionTests(unittest.TestCase):
         lamb = list(genexp)[0]
         self.assertEqual(lamb(), 42)
 
+    def test_annotate_qualname(self):
+        code = """
+        def f() -> None:
+            def nested() -> None: pass
+            return nested
+        class Outer:
+            x: int
+            def method(self, x: int):
+                pass
+        """
+        ns = run_code(code)
+        method = ns["Outer"].method
+        self.assertEqual(method.__annotate__.__qualname__, "Outer.method.__annotate__")
+        self.assertEqual(ns["f"].__annotate__.__qualname__, "f.__annotate__")
+        self.assertEqual(ns["f"]().__annotate__.__qualname__, "f.<locals>.nested.__annotate__")
+        self.assertEqual(ns["Outer"].__annotate__.__qualname__, "Outer.__annotate__")
+
     # gh-138349
     def test_module_level_annotation_plus_listcomp(self):
         cases = [
@@ -872,3 +935,18 @@ class RegressionTests(unittest.TestCase):
                 mod = build_module(code)
                 annos = mod.__annotations__
                 self.assertEqual(annos, {"annotated_name": 0})
+
+    # gh-154902
+    def test_conditional_annotations_rebound(self):
+        # user code can rebind __conditional_annotations__ to any object
+        lefts = ("__conditional_annotations__",
+                 'globals()["__conditional_annotations__"]')
+        values = ("0", "{}", "[]", "''", "object()", "frozenset()")
+        for left, value in itertools.product(lefts, values):
+            with self.subTest(left=left, value=value):
+                code = f"""
+                    {left} = {value}
+                    x: int
+                """
+                with self.assertRaises(TypeError):
+                    run_code(code)

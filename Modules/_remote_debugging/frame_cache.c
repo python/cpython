@@ -30,6 +30,7 @@ frame_cache_cleanup(RemoteUnwinderObject *unwinder)
         return;
     }
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
         Py_CLEAR(unwinder->frame_cache[i].frame_list);
     }
     PyMem_Free(unwinder->frame_cache);
@@ -46,6 +47,21 @@ frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id)
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
         assert(i >= 0 && i < FRAME_CACHE_MAX_THREADS);
         if (unwinder->frame_cache[i].thread_id == thread_id) {
+            assert(unwinder->frame_cache[i].num_addrs <= FRAME_CACHE_MAX_FRAMES);
+            return &unwinder->frame_cache[i];
+        }
+    }
+    return NULL;
+}
+
+FrameCacheEntry *
+frame_cache_find_by_tstate(RemoteUnwinderObject *unwinder, uintptr_t tstate_addr)
+{
+    if (!unwinder->frame_cache || tstate_addr == 0) {
+        return NULL;
+    }
+    for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        if (unwinder->frame_cache[i].thread_state_addr == tstate_addr) {
             assert(unwinder->frame_cache[i].num_addrs <= FRAME_CACHE_MAX_FRAMES);
             return &unwinder->frame_cache[i];
         }
@@ -127,12 +143,75 @@ frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result)
         }
         if (!found) {
             // Clear this entry
+            Py_CLEAR(unwinder->frame_cache[i].thread_id_obj);
             Py_CLEAR(unwinder->frame_cache[i].frame_list);
             unwinder->frame_cache[i].thread_id = 0;
+            unwinder->frame_cache[i].thread_state_addr = 0;
+            unwinder->frame_cache[i].last_profiled_frame_seq = 0;
             unwinder->frame_cache[i].num_addrs = 0;
             STATS_INC(unwinder, stale_cache_invalidations);
         }
     }
+}
+
+static int
+read_last_profiled_anchor(RemoteUnwinderObject *unwinder,
+                          uintptr_t thread_state_addr,
+                          FrameCacheAnchor *anchor)
+{
+    uintptr_t frame_offset = (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+    uintptr_t seq_offset = (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame_seq;
+
+    // These fields are adjacent in PyThreadState. Read them together when the
+    // layout allows it so validation uses a pointer and sequence from the same
+    // remote-memory read.
+    if (seq_offset == frame_offset + sizeof(uintptr_t)) {
+        uintptr_t live_anchor[2];
+        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle,
+                                             thread_state_addr + frame_offset,
+                                             sizeof(live_anchor),
+                                             live_anchor) < 0) {
+            return -1;
+        }
+        anchor->frame = live_anchor[0];
+        anchor->seq = live_anchor[1];
+        return 0;
+    }
+
+    if (read_ptr(unwinder, thread_state_addr + frame_offset, &anchor->frame) < 0) {
+        return -1;
+    }
+    return read_ptr(unwinder, thread_state_addr + seq_offset, &anchor->seq);
+}
+
+static Py_ssize_t
+find_cached_frame_addr(const FrameCacheEntry *entry, uintptr_t frame_addr,
+                       uintptr_t *real_pops)
+{
+    *real_pops = 0;
+    for (Py_ssize_t i = 0; i < entry->num_addrs; i++) {
+        if (entry->addrs[i] == frame_addr) {
+            return i;
+        }
+        if (entry->addrs[i] != 0) {
+            (*real_pops)++;
+        }
+    }
+    return -1;
+}
+
+int
+frame_cache_anchor_matches(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor)
+{
+    FrameCacheAnchor live_anchor = {0, 0};
+    if (read_last_profiled_anchor(unwinder, thread_state_addr, &live_anchor) < 0) {
+        PyErr_Clear();
+        return 0;
+    }
+    return live_anchor.frame == anchor.frame && live_anchor.seq == anchor.seq;
 }
 
 // Find last_profiled_frame in cache and extend frame_info with cached continuation
@@ -141,13 +220,14 @@ int
 frame_cache_lookup_and_extend(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,
-    uintptr_t last_profiled_frame,
+    uintptr_t thread_state_addr,
+    FrameCacheAnchor anchor,
     PyObject *frame_info,
     uintptr_t *frame_addrs,
     Py_ssize_t *num_addrs,
     Py_ssize_t max_addrs)
 {
-    if (!unwinder->frame_cache || last_profiled_frame == 0) {
+    if (!unwinder->frame_cache || anchor.frame == 0) {
         return 0;
     }
 
@@ -155,24 +235,31 @@ frame_cache_lookup_and_extend(
     if (!entry || !entry->frame_list) {
         return 0;
     }
+    if (entry->thread_state_addr != thread_state_addr) {
+        return 0;
+    }
 
     assert(entry->num_addrs >= 0 && entry->num_addrs <= FRAME_CACHE_MAX_FRAMES);
 
-    // Find the index where last_profiled_frame matches
-    Py_ssize_t start_idx = -1;
-    for (Py_ssize_t i = 0; i < entry->num_addrs; i++) {
-        if (entry->addrs[i] == last_profiled_frame) {
-            start_idx = i;
-            break;
-        }
-    }
-
+    uintptr_t real_pops = 0;
+    Py_ssize_t start_idx = find_cached_frame_addr(entry, anchor.frame, &real_pops);
     if (start_idx < 0) {
         return 0;  // Not found
     }
     assert(start_idx < entry->num_addrs);
 
+    // Synthetic marker frames (<native>/<GC>) are stored as addr-0 entries but
+    // never increment last_profiled_frame_seq in the target (only real frame
+    // pops do). Count the real frames before start_idx so the sequence check is
+    // not thrown off by markers sitting between the leaf and the anchor.
+    if (entry->last_profiled_frame_seq + real_pops != anchor.seq) {
+        return 0;
+    }
+
     Py_ssize_t num_frames = PyList_GET_SIZE(entry->frame_list);
+    if (start_idx >= num_frames) {
+        return 0;
+    }
 
     // Extend frame_info with frames ABOVE start_idx (not including it).
     // The frame at start_idx (last_profiled_frame) was the executing frame
@@ -181,6 +268,9 @@ frame_cache_lookup_and_extend(
     Py_ssize_t cache_start = start_idx + 1;
     if (cache_start >= num_frames) {
         return 0;  // Nothing above last_profiled_frame to extend with
+    }
+    if (!frame_cache_anchor_matches(unwinder, thread_state_addr, anchor)) {
+        return 0;
     }
 
     PyObject *slice = PyList_GetSlice(entry->frame_list, cache_start, num_frames);
@@ -216,6 +306,8 @@ frame_cache_store(
     PyObject *frame_list,
     const uintptr_t *addrs,
     Py_ssize_t num_addrs,
+    uintptr_t thread_state_addr,
+    uintptr_t last_profiled_frame_seq,
     uintptr_t base_frame_addr,
     uintptr_t last_frame_visited)
 {
@@ -257,6 +349,14 @@ frame_cache_store(
         return -1;
     }
     entry->thread_id = thread_id;
+    entry->thread_state_addr = thread_state_addr;
+    entry->last_profiled_frame_seq = last_profiled_frame_seq;
+    if (entry->thread_id_obj == NULL) {
+        entry->thread_id_obj = PyLong_FromUnsignedLongLong(thread_id);
+        if (entry->thread_id_obj == NULL) {
+            return -1;
+        }
+    }
     memcpy(entry->addrs, addrs, num_addrs * sizeof(uintptr_t));
     entry->num_addrs = num_addrs;
     assert(entry->num_addrs == num_addrs);

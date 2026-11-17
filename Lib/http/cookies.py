@@ -132,6 +132,7 @@ Finis.
 import re
 import string
 import types
+lazy import warnings
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -299,20 +300,31 @@ class Morsel(dict):
     def coded_value(self):
         return self._coded_value
 
+    def _check_attribute(self, key, val):
+        """Normalize and validate an attribute name and value
+
+        Raise `CookieError` if the key is not a recognized attribute name or
+        value contains illegal characters. Otherwise return the canonicalized
+        key.
+        """
+        key = key.lower()
+        val_str = str(val)
+        if key not in self._reserved:
+            raise CookieError(f"Invalid attribute {key!r}")
+        if _has_control_character(key, val_str):
+            raise CookieError(f"Control characters are not allowed in cookies {key!r} {val!r}")
+        # Comment is quoted like a cookie value so semicolons can be escaped.
+        # No other attribute expects `;` in the value, so refuse it.
+        if key != 'comment' and ';' in val_str:
+            raise CookieError(f"Reserved character ';' is not allowed in cookie attribute value {key!r} {val!r}")
+        return key
+
     def __setitem__(self, K, V):
-        K = K.lower()
-        if not K in self._reserved:
-            raise CookieError("Invalid attribute %r" % (K,))
-        if _has_control_character(K, V):
-            raise CookieError(f"Control characters are not allowed in cookies {K!r} {V!r}")
+        K = self._check_attribute(K, V)
         dict.__setitem__(self, K, V)
 
     def setdefault(self, key, val=None):
-        key = key.lower()
-        if key not in self._reserved:
-            raise CookieError("Invalid attribute %r" % (key,))
-        if _has_control_character(key, val):
-            raise CookieError("Control characters are not allowed in cookies %r %r" % (key, val,))
+        key = self._check_attribute(key, val)
         return dict.setdefault(self, key, val)
 
     def __eq__(self, morsel):
@@ -334,12 +346,7 @@ class Morsel(dict):
     def update(self, values):
         data = {}
         for key, val in dict(values).items():
-            key = key.lower()
-            if key not in self._reserved:
-                raise CookieError("Invalid attribute %r" % (key,))
-            if _has_control_character(key, val):
-                raise CookieError("Control characters are not allowed in "
-                                  f"cookies {key!r} {val!r}")
+            key = self._check_attribute(key, val)
             data[key] = val
         dict.update(self, data)
 
@@ -390,18 +397,31 @@ class Morsel(dict):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.OutputString())
 
-    def js_output(self, attrs=None):
+    def _js_output(self, attrs=None):
+        """Internal implementation without deprecation warning."""
+        import urllib.parse
         # Print javascript
         output_string = self.OutputString(attrs)
         if _has_control_character(output_string):
             raise CookieError("Control characters are not allowed in cookies")
+        # Base64-encode value to avoid template
+        # injection in cookie values.
+        output_encoded = urllib.parse.quote(output_string, safe='', encoding='utf-8')
         return """
         <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = \"%s\";
+        document.cookie = decodeURIComponent(\"%s\");
         // end hiding -->
         </script>
-        """ % (output_string.replace('"', r'\"'))
+        """ % (output_encoded,)
+
+    def js_output(self, attrs=None):
+        warnings._deprecated(
+            "http.cookies.Morsel.js_output",
+            message=warnings._DEPRECATED_MSG + "; use output() instead",
+            remove=(3, 19),
+        )
+        return self._js_output(attrs)
 
     def OutputString(self, attrs=None):
         # Build up our result
@@ -458,7 +478,7 @@ _CookiePattern = re.compile(r"""
     (                              # Optional group: there may not be a value.
     \s*=\s*                          # Equal Sign
     (?P<val>                         # Start of group 'val'
-    "(?:\\"|.)*?"                    # Any double-quoted string
+    "(?:[^\\"]|\\.)*"                  # Any double-quoted string
     |                                  # or
     # Special case for "expires" attr
     (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
@@ -537,10 +557,15 @@ class BaseCookie(dict):
 
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
+        warnings._deprecated(
+            "http.cookies.BaseCookie.js_output",
+            message=warnings._DEPRECATED_MSG + "; use output() instead",
+            remove=(3, 19),
+        )
         result = []
         items = sorted(self.items())
         for key, value in items:
-            result.append(value.js_output(attrs))
+            result.append(value._js_output(attrs))
         return _nulljoin(result)
 
     def load(self, rawdata):
