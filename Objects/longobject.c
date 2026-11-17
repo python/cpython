@@ -160,12 +160,12 @@ long_normalize(PyLongObject *v)
 #define MAX_DIGITS_FOR_FREELIST \
     ((Py_ssize_t)((sizeof(PyLongObject) - \
                    offsetof(PyLongObject, long_value.ob_digit)) / sizeof(digit)))
-static_assert(MAX_DIGITS_FOR_FREELIST >= 1,
-              "int freelist blocks must hold at least one digit");
 
 static PyLongObject *
 long_alloc(Py_ssize_t size)
 {
+    static_assert(MAX_DIGITS_FOR_FREELIST >= 1,
+                  "int freelist blocks must hold at least one digit");
     assert(size >= 0);
     PyLongObject *result = NULL;
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
