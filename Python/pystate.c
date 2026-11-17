@@ -161,11 +161,27 @@ static void unbind_gilstate_tstate(PyThreadState *);
 static void tstate_mimalloc_bind(PyThreadState *);
 static void add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
                             PyThreadState *next);
+static void unlink_threadstate(PyThreadState **head, PyThreadState *tstate);
 
-static void
+// Bind the thread state to the current OS thread and publish it to the
+// interpreter's thread list.  Returns 0 without binding if the interpreter
+// started finalizing before the thread state could be bound.
+static int
 bind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    // Finalization marks the pending thread states as shutting down with
+    // the lock held, see _PyThreadState_RemoveExcept().  Hold the lock until
+    // the thread state is published so that the interpreter cannot be
+    // finalized (and freed) while it is still being used here.
+    // Don't use tstate->interp before the check: it may be already freed.
+    HEAD_LOCK(&_PyRuntime);
+    int state = _Py_atomic_load_int_relaxed(&tstate->state);
+    if (state == _Py_THREAD_SHUTTING_DOWN) {
+        HEAD_UNLOCK(&_PyRuntime);
+        return 0;
+    }
+
     assert(tstate_is_alive(tstate) && !tstate->_status.bound);
     assert(!tstate->_status.unbound);  // just in case
     assert(!tstate->_status.bound_gilstate);
@@ -197,13 +213,14 @@ bind_tstate(PyThreadState *tstate)
     // that it is fully initialized, so that readers of the list never see
     // a partially initialized thread state.
     PyInterpreterState *interp = tstate->interp;
-    HEAD_LOCK(interp->runtime);
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
     }
+    unlink_threadstate(&interp->threads.pending, tstate);
     add_threadstate(interp, tstate, interp->threads.head);
-    HEAD_UNLOCK(interp->runtime);
+    HEAD_UNLOCK(&_PyRuntime);
+    return 1;
 }
 
 static void
@@ -1073,7 +1090,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
             break;
         }
     }
-    if (interp->threads.head != NULL) {
+    if (interp->threads.head != NULL || interp->threads.pending != NULL) {
         Py_FatalError("remaining threads");
     }
     *p = interp->next;
@@ -1690,6 +1707,40 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
     interp->threads.head = tstate;
 }
 
+// Add a new, not yet bound, thread state to the interpreter's list of
+// pending thread states.  bind_tstate() moves it to the thread list.
+static void
+
+add_pending_threadstate(PyInterpreterState *interp, PyThreadState *tstate)
+{
+    assert(tstate->prev == NULL && tstate->next == NULL);
+    PyThreadState *next = interp->threads.pending;
+    if (next != NULL) {
+        assert(next->prev == NULL);
+        next->prev = tstate;
+    }
+    tstate->next = next;
+    interp->threads.pending = tstate;
+}
+
+// Remove the thread state from the list starting at `*head`, which is
+// either the interpreter's thread list or its list of pending thread states.
+static void
+unlink_threadstate(PyThreadState **head, PyThreadState *tstate)
+{
+    if (tstate->prev) {
+        tstate->prev->next = tstate->next;
+    }
+    else {
+        assert(*head == tstate);
+        *head = tstate->next;
+    }
+    if (tstate->next) {
+        tstate->next->prev = tstate->prev;
+    }
+    tstate->prev = tstate->next = NULL;
+}
+
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int whence)
 {
@@ -1729,6 +1780,10 @@ new_threadstate(PyInterpreterState *interp, int whence)
     uint64_t id = interp->threads.next_unique_id;
     init_threadstate(tstate, interp, id, whence);
 
+    // Track the new thread state so that finalization can find it.  It is
+    // only added to the interpreter's thread list once it is bound.
+    add_pending_threadstate(interp, (PyThreadState *)tstate);
+
     HEAD_UNLOCK(interp->runtime);
 
 #ifdef Py_GIL_DISABLED
@@ -1751,10 +1806,9 @@ _PyThreadState_NewBound(PyInterpreterState *interp, int whence)
 {
     PyThreadState *tstate = new_threadstate(interp, whence);
     if (tstate) {
-        bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
         // as soon as possible.
-        if (gilstate_get() == NULL) {
+        if (bind_tstate(tstate) && gilstate_get() == NULL) {
             bind_gilstate_tstate(tstate);
         }
     }
@@ -1972,15 +2026,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
 
     HEAD_LOCK(runtime);
     if (tstate->_status.bound) {
-        if (tstate->prev) {
-            tstate->prev->next = tstate->next;
-        }
-        else {
-            interp->threads.head = tstate->next;
-        }
-        if (tstate->next) {
-            tstate->next->prev = tstate->prev;
-        }
+        unlink_threadstate(&interp->threads.head, tstate);
         int state = _Py_atomic_load_int_relaxed(&tstate->state);
         if (state != _Py_THREAD_SUSPENDED &&
             state != _Py_THREAD_SUSPENDED_WAITING)
@@ -1996,11 +2042,10 @@ tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
         }
     }
     else {
-        // The thread state was never bound, so it was never added to the
-        // interpreter's thread list and no stop-the-world request is
-        // waiting on it.
-        assert(tstate->prev == NULL && tstate->next == NULL);
-        assert(interp->threads.head != tstate);
+        // The thread state was never bound, so it is still on the list of
+        // pending thread states and no stop-the-world request is waiting
+        // on it.
+        unlink_threadstate(&interp->threads.pending, tstate);
     }
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
@@ -2049,7 +2094,9 @@ zapthreads(PyInterpreterState *interp)
        Cannot use _Py_FOR_EACH_TSTATE_UNLOCKED because we are freeing
        the thread states here.
     */
-    while ((tstate = interp->threads.head) != NULL) {
+    while ((tstate = interp->threads.head) != NULL ||
+           (tstate = interp->threads.pending) != NULL)
+    {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate, /*release_gil=*/0, /*is_unlinked=*/0);
         free_threadstate((_PyThreadStateImpl *)tstate);
@@ -2125,6 +2172,26 @@ _PyThreadState_RemoveExcept(PyThreadState *tstate)
     }
     tstate->prev = tstate->next = NULL;
     interp->threads.head = tstate;
+
+    /* Also remove the thread states which are not bound yet.  Mark them as
+       shutting down while holding the lock, so that bind_tstate() does not
+       bind them to an interpreter which is being finalized. */
+    PyThreadState *pending = interp->threads.pending;
+    interp->threads.pending = NULL;
+    for (PyThreadState *p = pending; p != NULL; p = p->next) {
+        _Py_atomic_store_int(&p->state, _Py_THREAD_SHUTTING_DOWN);
+    }
+    if (list == NULL) {
+        list = pending;
+    }
+    else if (pending != NULL) {
+        PyThreadState *tail = list;
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next = pending;
+        pending->prev = tail;
+    }
     HEAD_UNLOCK(runtime);
 
     return list;
@@ -2774,7 +2841,11 @@ _PyThreadState_Bind(PyThreadState *tstate)
     // was called, tstate becomes a dangling pointer.
     assert(_PyThreadState_CheckConsistency(tstate));
 
-    bind_tstate(tstate);
+    // If the interpreter is already finalizing, the thread state is left
+    // unbound and the thread hangs once it tries to attach.
+    if (!bind_tstate(tstate)) {
+        return;
+    }
     // This makes sure there's a gilstate tstate bound
     // as soon as possible.
     if (gilstate_get() == NULL) {
