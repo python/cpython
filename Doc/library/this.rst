@@ -3,6 +3,12 @@
 :mod:`!this` --- The Zen of Python
 ==================================
 
+.. module:: this
+   :synopsis: The Zen of Python
+
+..
+   This easter egg module is deliberately missing from the table of contents.
+
 :pep:`20` -- The Zen of Python by Tim Peters (RIP).
 
     | Beautiful is better than ugly.
