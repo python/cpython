@@ -1,0 +1,3 @@
+Raise :exc:`ValueError` before writing a ZIP member whose
+:attr:`~zipfile.ZipInfo.comment` is too long for the ZIP format. This avoids
+an opaque :exc:`struct.error` while closing the archive.

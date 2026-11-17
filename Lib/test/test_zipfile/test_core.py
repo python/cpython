@@ -4498,6 +4498,28 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN,mode="r") as zipf:
             self.assertEqual(zipf.comment, b"shorter comment")
 
+    def test_member_comment_too_long(self):
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, mode="w") as zipf:
+            zinfo = zipfile.ZipInfo("accepted.txt")
+            zinfo.comment = b"x" * zipfile.ZIP_MAX_COMMENT
+            zipf.writestr(zinfo, b"content")
+
+            zinfo = zipfile.ZipInfo("rejected.txt")
+            zinfo.comment = b"x" * (zipfile.ZIP_MAX_COMMENT + 1)
+            with self.assertRaisesRegex(
+                ValueError,
+                r"ZipInfo\.comment exceeds the maximum length of 65535 bytes",
+            ):
+                zipf.writestr(zinfo, b"content")
+
+        with zipfile.ZipFile(stream) as zipf:
+            self.assertEqual(zipf.namelist(), ["accepted.txt"])
+            self.assertEqual(
+                zipf.getinfo("accepted.txt").comment,
+                b"x" * zipfile.ZIP_MAX_COMMENT,
+            )
+
     def test_unicode_comment(self):
         with zipfile.ZipFile(TESTFN, "w", zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")

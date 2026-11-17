@@ -2528,6 +2528,11 @@ class ZipFile:
 
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
+        if len(zinfo.comment) > ZIP_MAX_COMMENT:
+            raise ValueError(
+                f"ZipInfo.comment exceeds the maximum length of "
+                f"{ZIP_MAX_COMMENT} bytes"
+            )
         if zinfo.filename in self.NameToInfo:
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ('w', 'x', 'a'):
