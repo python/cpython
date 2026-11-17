@@ -1,0 +1,2 @@
+Improve :class:`int` performance on 64-bit builds by allowing up to 60-bit ints,
+which fit in existing spare space, to use the freelist.
