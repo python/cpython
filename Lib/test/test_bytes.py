@@ -2414,8 +2414,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
             self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
-    def test_strip_buffer_release_mutates_self(self):
-        ba = bytearray(b"x" * (1 << 22))
+    def check_strip_mutate(self, method, initial, expected):
+        ba = bytearray(initial)
 
         class S:
             def __buffer__(self, flags):
@@ -2424,7 +2424,19 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             def __release_buffer__(self, view):
                 ba.clear()
 
-        result = ba.strip(S())
+        meth = getattr(ba, method)
+        result = meth(S())
+        self.assertEqual(result, bytearray(expected))
+        self.assertEqual(ba, bytearray(b''))
+
+    def test_strip_mutate(self):
+        self.check_strip_mutate('strip', b'  abc  ', b'abc')
+
+    def test_lstrip_mutate(self):
+        self.check_strip_mutate('lstrip', b'  abc  ', b'abc  ')
+
+    def test_rstrip_mutate(self):
+        self.check_strip_mutate('rstrip', b'  abc  ', b'  abc')
 
     def test_search_methods_reentrancy_raises_buffererror(self):
         # gh-142560: Raise BufferError if buffer mutates during search arg conversion.
