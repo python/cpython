@@ -412,10 +412,14 @@ def unpack_deps(
     # push these tags yourself, please contact Malcolm Smith or Russell
     # Keith-Magee.
     deps_url = "https://github.com/beeware/cpython-apple-source-deps/releases/download"
+    # Shared with CI and build scripts for other platforms
+    openssl_ver = (
+        (PYTHON_DIR / "Tools/ssl/openssl-version.txt").read_text().strip()
+    )
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.5.9-1",
+        f"OpenSSL-{openssl_ver}-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",

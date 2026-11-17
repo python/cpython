@@ -388,7 +388,6 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.5.9
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -400,6 +399,8 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
+        OPENSSL_VER=$(cat Tools/ssl/openssl-version.txt)
+        echo "OPENSSL_VER=${OPENSSL_VER}" >> "$GITHUB_ENV"
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
         echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"

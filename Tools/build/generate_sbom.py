@@ -151,14 +151,21 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
 def get_externals() -> list[str]:
     """
     Parses 'PCbuild/get_externals.bat' for external libraries.
-    Returns a list of (git tag, name, version) tuples.
+    Returns a list of Git tags, for example: 'openssl-3.5.9'.
     """
     get_externals_bat_path = CPYTHON_ROOT_DIR / "PCbuild/get_externals.bat"
     externals = re.findall(
-        r"set\s+libraries\s*=\s*%libraries%\s+([a-zA-Z0-9.-]+)\s",
+        r"set\s+libraries\s*=\s*%libraries%\s+([a-zA-Z0-9.%_-]+)\s",
         get_externals_bat_path.read_text()
     )
-    return externals
+    # The batch file reads the OpenSSL version from the file shared with
+    # CI and the other platforms, so expand that reference the same way.
+    openssl_version_path = CPYTHON_ROOT_DIR / "Tools/ssl/openssl-version.txt"
+    openssl_version = openssl_version_path.read_text().strip()
+    return [
+        external.replace("%OPENSSL_VER%", openssl_version)
+        for external in externals
+    ]
 
 
 def download_with_retries(download_location: str,

@@ -37,6 +37,7 @@ TODO:
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, stat, time, pwd, grp
+from pathlib import Path
 try:
     import urllib2 as urllib_request
 except ImportError:
@@ -107,6 +108,12 @@ def getFullVersion():
             _cache_getFullVersion = ln.split()[-1][1:-1]
             return _cache_getFullVersion
     raise RuntimeError("Cannot find full version??")
+
+
+def get_openssl_version():
+    # Shared with CI and build scripts for other platforms
+    return (Path(SRCDIR) / "Tools/ssl/openssl-version.txt").read_text().strip()
+
 
 FW_PREFIX = ["Library", "Frameworks", "Python.framework"]
 FW_VERSION_PREFIX = "--undefined--" # initialized in parseOptions
@@ -244,10 +251,12 @@ def library_recipes():
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
+    openssl_ver = get_openssl_version()
     result.extend([
           dict(
-              name="OpenSSL 3.5.9",
-              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+              name=f"OpenSSL {openssl_ver}",
+              url=f"https://github.com/openssl/openssl/releases/download/openssl-{openssl_ver}/openssl-{openssl_ver}.tar.gz",
+              # SHA-256 of tarball, must be updated together with version file:
               checksum="603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
               buildrecipe=build_universal_openssl,
               configure=None,
