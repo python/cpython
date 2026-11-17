@@ -55,7 +55,7 @@ PROCESS_VM_READV_SUPPORTED = False
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     from _remote_debugging import RemoteUnwinder
-    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo
+    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo, AwaitedInfo
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -488,6 +488,23 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         }
 
     @skip_if_not_supported
+    def test_async_awaited_info(self):
+        async def main():
+            task = asyncio.current_task()
+            unwinder = RemoteUnwinder(os.getpid())
+            for method in (unwinder.get_async_stack_trace,
+                           unwinder.get_all_awaited_by):
+                with self.subTest(method=method.__name__):
+                    info, = (info for info in method()
+                             if info.thread_id == threading.get_native_id())
+                    self.assertIsInstance(info, AwaitedInfo)
+                    task_info, = info.awaited_by
+                    self.assertEqual(task_info.task_id, id(task))
+                    self.assertEqual(task_info.task_name, task.get_name())
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
         # gh-157788
         async def main():
@@ -519,6 +536,22 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             ]
 
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
+
+    @skip_if_not_supported
+    def test_future_waiter_has_empty_stack(self):
+        async def main():
+            task = asyncio.current_task()
+            future = asyncio.get_running_loop().create_future()
+            asyncio.future_add_to_awaited_by(task, future)
+            try:
+                trace = RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                task_info = self._get_task_id_map(trace)[id(task)]
+                self.assertEqual(task_info.awaited_by, [([], id(future))])
+                self.assertTrue(task_info.coroutine_stack[0].call_stack)
+            finally:
+                asyncio.future_discard_from_awaited_by(task, future)
+
+        asyncio.run(main())
 
     @skip_if_not_supported
     def test_async_generator_stack_is_not_truncated(self):
@@ -662,6 +695,17 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
 
         stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["consumer"], ["consumer"])
+
+    @skip_if_not_supported
+    def test_self_trace_with_empty_linetable(self):
+        def sample():
+            return RemoteUnwinder(os.getpid()).get_stack_trace()
+
+        sample.__code__ = sample.__code__.replace(co_linetable=b"")
+        frame = self._find_frame_in_trace(
+            sample(), lambda f: f.funcname == sample.__qualname__
+        )
+        self.assertEqual(frame.location, (-1, -1, -1, -1))
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -900,6 +944,35 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 f"{[(f.filename, f.funcname) for f in frames]}",
             )
             self.assertEqual(target.filename, script_name)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_remote_stack_trace_invalid_unicode_name(self):
+        import_module("_testinternalcapi")
+
+        script = textwrap.dedent("""\
+            import os
+            import _remote_debugging
+            import _testinternalcapi
+
+            def func():
+                return _remote_debugging.RemoteUnwinder(os.getpid()).get_stack_trace()
+
+            name = _testinternalcapi.new_invalid_str()
+            func.__code__ = func.__code__.replace(co_qualname=name)
+            print(func())
+            """)
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=SHORT_TIMEOUT,
+        )
+        self.assertEqual(result.returncode, 0, result)
+        self.assertIn("<unknown function>", result.stdout)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2012,6 +2085,14 @@ while True:
                 except RuntimeError:
                     continue
                 break
+            # The unwinder can attach before the main loop starts.
+            _get_stack_trace_with_retry(
+                unwinder,
+                condition=lambda trace: trace[0].threads and any(
+                    frame.funcname == "leaf"
+                    for frame in trace[0].threads[0].frame_info
+                ),
+            )
             samples = 0
             for _ in range(10_000):
                 try:
@@ -4575,6 +4656,19 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
         self.assertIsNotNone(frame)
         self.assertEqual(frame.funcname, "f" * 1024)
 
+    def test_long_qualname_truncated_to_narrower_kind(self):
+        name = "a" * 1024 + "\U00010300"
+        src = f"def {name}(sample):\n    return sample()\n"
+        ns = {}
+        exec(src, ns)
+
+        trace = ns[name](RemoteUnwinder(os.getpid()).get_stack_trace)
+        frame = self._find_frame_in_trace(
+            trace, lambda f: f.funcname.startswith("aaa")
+        )
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.funcname, "a" * 1024)
+
     def test_long_filename_truncated(self):
         """A filename longer than 1024 chars is truncated instead of
         failing the whole sample."""
@@ -4636,6 +4730,28 @@ class TestMetadataDegradation(RemoteInspectionTestBase):
                     continue
             else:
                 self.fail("ProcessLookupError never raised for dead process")
+
+    def test_dead_process_before_first_async_read(self):
+        script_body = """\
+            import asyncio
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+        with self._target_process(script_body) as (p, client_socket, _):
+            _wait_for_signal(client_socket, b"ready")
+            unwinders = [
+                RemoteUnwinder(p.pid, debug=debug)
+                for debug in (False, True)
+            ]
+
+            p.kill()
+            p.wait()
+
+            for debug, unwinder in zip((False, True), unwinders):
+                for method in ("get_async_stack_trace", "get_all_awaited_by"):
+                    with self.subTest(debug=debug, method=method):
+                        with self.assertRaises(ProcessLookupError):
+                            getattr(unwinder, method)()
 
 
 @requires_remote_subprocess_debugging()

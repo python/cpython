@@ -1661,6 +1661,10 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_resize_error(self):
         # gh-157242: If bytearray.resize() fails (MemoryError),
         # the bytearray must be left unchanged.
+        #
+        # gh-160303: If a slice is deleted or replaced by shorter data and
+        # shrinking the memory block fails (MemoryError), the bytearray
+        # must be modified anyway.
 
         offset = 3
         for logical_offset in (False, True):
@@ -1686,6 +1690,33 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 with inject_memory_error(self):
                     ba.resize(1)
                 self.assertEqual(ba, expected)
+
+                # shrink bytearray with a slice at the front, in the middle
+                # and at the end
+                data = b'0123456789'
+                if logical_offset:
+                    data = data[offset:]
+                for start, stop in ((0, -2), (1, -1), (2, len(data))):
+                    for replacement in (b'', b'.'):
+                        with self.subTest(start=start, stop=stop,
+                                          replacement=replacement):
+                            ba = bytearray(b'0123456789')
+                            if logical_offset:
+                                del ba[:offset]
+                            index = slice(start, stop)
+                            value = bytearray(replacement)
+                            expected = data[:start] + replacement + data[stop:]
+                            with inject_memory_error(self):
+                                if replacement:
+                                    ba[index] = value
+                                else:
+                                    del ba[index]
+                            self.assertEqual(ba, expected)
+                            # float() relies on the null byte after the data.
+                            self.assertEqual(float(ba), float(expected))
+                            ba.append(ord('5'))
+                            del ba[:1]
+                            self.assertEqual(ba, expected[1:] + b'5')
 
     def test_take_bytes(self):
         ba = bytearray(b'ab')
@@ -2097,6 +2128,22 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(b), 99)
         alloc = b.__alloc__()
         self.assertGreater(alloc, len(b))
+
+    def test_init_from_iterator_with_offset(self):
+        # gh-158928: Inserting from an iterator in __init__ needs to take into
+        # account if there is a start offset.
+        b = bytearray()
+        def iterator_which_resets():
+            # __init__ reset ob_start. Make it an offset inside by allocating
+            # then doing fast prefix delete.
+            nonlocal b
+            b.resize(200)
+            del b[:100]
+            # Fill remaining already allocated space
+            yield from b'A' * 100
+        # Fill to end. Used to land out of bounds and crash.
+        b.__init__(iterator_which_resets())
+        self.assertEqual(b, bytes(100) + b'A' * 100)
 
     def test_extend(self):
         orig = b'hello'

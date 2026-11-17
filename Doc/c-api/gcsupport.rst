@@ -42,7 +42,7 @@ rules:
    .. warning::
       If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
       a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
-      from its subclass or subclasses.
+      from a base class.
 
       When calling :c:func:`PyType_Ready` or some of the APIs that indirectly
       call it like :c:func:`PyType_FromSpecWithBases` or
@@ -127,7 +127,7 @@ rules:
 
 .. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
 
-   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Resize an object allocated by :c:macro:`PyObject_GC_NewVar`.
    Returns the resized object of type ``TYPE*`` (refers to any C type)
    or ``NULL`` on failure.
 

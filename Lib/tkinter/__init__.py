@@ -2355,7 +2355,7 @@ class Wm:
             # TODO: deprecate
             return self.tk.call('wm', 'attributes', self._w, *args)
         elif args:
-            raise TypeError('wm_attribute() options have been specified as '
+            raise TypeError('wm_attributes() options have been specified as '
                             'positional and keyword arguments')
         else:
             self.tk.call('wm', 'attributes', self._w, *self._options(kwargs))

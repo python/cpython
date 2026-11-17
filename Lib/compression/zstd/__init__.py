@@ -33,6 +33,7 @@ import enum
 from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdDict, ZstdError,
                    get_frame_size, zstd_version, ZSTD_VERSION,
                    zstd_version_info, ZSTD_VERSION_INFO)
+from compression._common import _streams
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
 
@@ -160,17 +161,9 @@ def decompress(data, zstd_dict=None, options=None):
 
     For incremental decompression, use a ZstdDecompressor instead.
     """
-    results = []
-    while True:
-        decomp = ZstdDecompressor(options=options, zstd_dict=zstd_dict)
-        results.append(decomp.decompress(data))
-        if not decomp.eof:
-            raise ZstdError('Compressed data ended before the '
-                            'end-of-stream marker was reached')
-        data = decomp.unused_data
-        if not data:
-            break
-    return b''.join(results)
+    return _streams._decompress_all(data, ZstdDecompressor,
+                                    truncated_error=ZstdError,
+                                    options=options, zstd_dict=zstd_dict)
 
 
 class CompressionParameter(enum.IntEnum):

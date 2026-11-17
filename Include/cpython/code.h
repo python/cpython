@@ -177,6 +177,11 @@ static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
     return op->co_nlocalsplus - op->co_nfreevars;
 }
 
+static inline PyObject *PyUnstable_Code_GetLocalPlusNames(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return Py_NewRef(op->co_localsplusnames);
+}
+
 Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     return PyUnstable_Code_GetFirstFree(op);
 }

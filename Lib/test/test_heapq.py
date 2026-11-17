@@ -39,7 +39,7 @@ def load_tests(loader, tests, ignore):
     class HeapqMergeDocTestFinder:
         def find(self, *args, **kwargs):
             dtf = doctest.DocTestFinder()
-            return dtf.find(py_heapq.merge)
+            return dtf.find(py_heapq.merge, globs=py_heapq.__dict__)
 
     tests.addTests(doctest.DocTestSuite(py_heapq,
                                         test_finder=HeapqMergeDocTestFinder()))

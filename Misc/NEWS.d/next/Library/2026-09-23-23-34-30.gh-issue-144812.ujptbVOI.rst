@@ -1,3 +1,0 @@
-Make :class:`argparse.ArgumentGroup` and
-:class:`argparse.MutuallyExclusiveGroup` public. The private
-``_ArgumentGroup`` and ``_MutuallyExclusiveGroup`` names remain as aliases.

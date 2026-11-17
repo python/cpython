@@ -1898,8 +1898,8 @@ If you don't know the class name of a widget, use the method
       Example::
 
          img1 = tkinter.PhotoImage(master=root, file='button.png')
-         img1 = tkinter.PhotoImage(master=root, file='button-pressed.png')
-         img1 = tkinter.PhotoImage(master=root, file='button-active.png')
+         img2 = tkinter.PhotoImage(master=root, file='button-pressed.png')
+         img3 = tkinter.PhotoImage(master=root, file='button-active.png')
          style = ttk.Style(root)
          style.element_create('Button.button', 'image',
                               img1, ('pressed', img2), ('active', img3),

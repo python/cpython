@@ -5220,6 +5220,7 @@ Test___init___impl(TestObj *self, PyObject *args)
 /*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
 
 /*[clinic input]
+@vectorcall
 @classmethod
 Test.__new__
     *args: tuple
@@ -5262,8 +5263,36 @@ exit:
 }
 
 static PyObject *
+Test_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *__clinic_args = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == Test);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("Test", kwnames)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_FromArray(args, nargs);
+    if (__clinic_args == NULL) {
+        goto exit;
+    }
+    return_value = Test_impl(_PyType_CAST(type), __clinic_args);
+
+exit:
+    /* Cleanup for args */
+    Py_XDECREF(__clinic_args);
+
+    return return_value;
+}
+
+static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=e6fba0c8951882fd input=8ce30adb836aeacb]*/
+/*[clinic end generated code: output=07f68e3971ed24cc input=1dc824fd6cec5f8e]*/
 
 
 /*[clinic input]

@@ -1805,8 +1805,8 @@ urllib
 * Remove the *cafile*, *capath*, and *cadefault* parameters of the
   :func:`urllib.request.urlopen` function, deprecated in Python 3.6.
   Use the *context* parameter instead with an :class:`~ssl.SSLContext` instance.
-  The :meth:`ssl.SSLContext.load_cert_chain` function
-  can be used to load specific certificates,
+  The :meth:`ssl.SSLContext.load_verify_locations` method
+  can be used to load specific CA certificates,
   or let :func:`ssl.create_default_context` select
   the operating system's trusted certificate authority (CA) certificates.
   (Contributed by Victor Stinner in :gh:`105382`.)
@@ -2434,7 +2434,7 @@ Removed C APIs
   * :c:func:`!PySys_AddXOption`:
     Use :c:member:`PyConfig.xoptions` instead.
   * :c:func:`!PySys_HasWarnOptions`:
-    Use :c:member:`PyConfig.xoptions` instead.
+    Use :c:member:`PyConfig.warnoptions` instead.
   * :c:func:`!PySys_SetPath`:
     Set :c:member:`PyConfig.module_search_paths` instead.
   * :c:func:`!Py_SetPath`:
@@ -2455,7 +2455,7 @@ Removed C APIs
   They can be replaced with:
 
   * :c:func:`PyEval_SaveThread` and :c:func:`PyEval_RestoreThread`;
-  * low-level :c:func:`PyEval_AcquireThread` and :c:func:`PyEval_RestoreThread`;
+  * low-level :c:func:`PyEval_AcquireThread` and :c:func:`PyEval_ReleaseThread`;
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
@@ -2773,8 +2773,7 @@ Changes in the C API
   * Calling :c:func:`PyFrame_GetLocals` in an :term:`optimized scope`
     now returns a write-through proxy rather than a snapshot
     that gets updated at ill-specified times.
-    If a snapshot is desired, it must be created explicitly
-    (e.g. with :c:func:`PyDict_Copy`),
+    If a snapshot is desired, it must be created explicitly,
     or by calling the new :c:func:`PyEval_GetFrameLocals` API.
 
   * :c:func:`!PyFrame_FastToLocals` and :c:func:`!PyFrame_FastToLocalsWithError`

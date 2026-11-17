@@ -127,7 +127,7 @@ section section {
     margin: 0.3em 0;
 }
 
-pre.topic, pre.keyword {
+pre.topic, pre.keyword, pre.symbol {
     background-color: var(--block-background-color);
     border: 1px solid var(--block-border-color);
     border-radius: 3px;

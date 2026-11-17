@@ -141,6 +141,12 @@ class EnvBuilder:
         """
 
         def create_if_needed(d):
+            path = env_dir
+            for part in os.path.relpath(d, env_dir).split(os.sep)[:-1]:
+                path = os.path.join(path, part)
+                if os.path.islink(path) or os.path.isjunction(path):
+                    raise ValueError(f'Refusing to create a venv in {env_dir} '
+                                     f'because {path} is a link.')
             if not os.path.exists(d):
                 os.makedirs(d)
             elif os.path.islink(d) or os.path.isfile(d):
@@ -521,6 +527,11 @@ class EnvBuilder:
         def quote_bat(s):
             return s
 
+        def quote_fish(s):
+            # gh-160782: fish reads \\ and \' as escapes inside single quotes
+            s = s.replace('\\', '\\\\').replace("'", "\\'")
+            return f"'{s}'"
+
         # gh-124651: need to quote the template strings properly
         quote = shlex.quote
         script_path = context.script_path
@@ -528,6 +539,8 @@ class EnvBuilder:
             quote = quote_ps1
         elif script_path.endswith('.bat'):
             quote = quote_bat
+        elif script_path.endswith('.fish'):
+            quote = quote_fish
         else:
             # fallbacks to POSIX shell compliant quote
             quote = shlex.quote
@@ -594,11 +607,10 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy(srcfile, dstfile)
+                    shutil.copyfile(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
-                    shutil.copymode(srcfile, dstfile)
 
     def upgrade_dependencies(self, context):
         logger.debug(

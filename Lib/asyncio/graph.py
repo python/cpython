@@ -2,6 +2,7 @@
 
 import dataclasses
 import io
+import operator
 import sys
 import types
 
@@ -70,6 +71,9 @@ def _build_graph_for_future(
             if coro.gi_frame is not None:
                 st.append(FrameCallGraphEntry(coro.gi_frame))
             coro = coro.gi_yieldfrom
+        elif hasattr(coro, 'aga_gen'):
+            # An asend()/athrow() awaitable: step over it to its generator
+            coro = coro.aga_gen
         else:
             break
 
@@ -157,7 +161,8 @@ def capture_call_graph(
 
     call_stack: list[FrameCallGraphEntry] = []
 
-    f = sys._getframe(depth) if limit != 0 else None
+    # gh-161124: find the task boundary before skipping frames
+    f = sys._getframe(0) if limit != 0 else None
     try:
         while f is not None:
             # gh-156988: sync gen should not clear the call chain
@@ -174,6 +179,8 @@ def capture_call_graph(
             f = f.f_back
     finally:
         del f
+
+    call_stack = call_stack[max(0, operator.index(depth)):]
 
     awaited_by = []
     if future._asyncio_awaited_by:
