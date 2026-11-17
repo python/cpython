@@ -140,11 +140,16 @@ Glossary
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    atomic operation
-      An operation that appears to execute as a single, indivisible step: no
-      other thread can observe it half-done, and its effects become visible all
-      at once.  Python does not guarantee that high-level statements are atomic
-      (for example, ``x += 1`` performs multiple bytecode operations and is not
-      atomic).  Atomicity is only guaranteed where explicitly documented.  See
+      An operation that takes effect as a single step with respect to other
+      atomic operations on the same object: each sees either all of its
+      effects or none of them.  For example, of several threads calling
+      ``d.pop(k)`` at once, exactly one gets the value.  Code that reads the
+      object without performing an atomic operation, such as iterating over
+      it, may still see intermediate states of an operation that changes
+      several elements.  Python does not guarantee that high-level statements
+      are atomic (for example, ``x += 1`` performs multiple bytecode
+      operations and is not atomic).  Atomicity is only guaranteed where
+      explicitly documented.  See :ref:`threadsafety-memory-ordering`, and
       also :term:`race condition` and :term:`data race`.
 
    attached thread state
@@ -743,6 +748,16 @@ Glossary
       between threads typically requires synchronization to avoid
       :term:`race conditions <race condition>` and
       :term:`data races <data race>`.
+
+   happens-before
+      An ordering relationship between memory actions that determines
+      which writes a thread is guaranteed to see.  It is built from
+      :term:`sequenced-before` (order within one thread) and
+      :term:`synchronizes-with` (edges between threads created by
+      synchronization), and is transitive.  If a write happens-before a read
+      of the same location, the read sees that write or a later one.
+      Running earlier in time does not by itself establish this
+      relationship between threads.  See :ref:`threadsafety-memory-ordering`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -1463,6 +1478,11 @@ Glossary
       methods generally, see
       :ref:`Common Sequence Operations <typesseq-common>`.
 
+   sequenced-before
+      The order of memory actions within a single thread, given by the
+      language's evaluation order and statement execution order.  See
+      :term:`happens-before`.
+
    set comprehension
       A compact way to process all or part of the elements in an iterable and
       return a set with the results. ``results = {c for c in 'abracadabra' if
@@ -1563,6 +1583,12 @@ Glossary
       that are especially useful in multithreaded programs. These
       primitives help prevent :term:`race conditions <race condition>` and
       coordinate thread execution.  See also :term:`lock`.
+
+   synchronizes-with
+      An ordering edge between a memory action in one thread and one in
+      another, such as releasing a lock and later acquiring it, or storing
+      an object reference and loading that reference.  See
+      :term:`happens-before` and :ref:`threadsafety-memory-ordering`.
 
    t-string
    t-strings
