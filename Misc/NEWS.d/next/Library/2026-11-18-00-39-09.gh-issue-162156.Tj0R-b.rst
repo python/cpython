@@ -1,0 +1,4 @@
+Fix an uncaught :exc:`MemoryError` in a subinterpreter being silently
+ignored by :meth:`concurrent.interpreters.Interpreter.exec` and
+:meth:`concurrent.interpreters.Interpreter.call`. It now raises
+:exc:`~concurrent.interpreters.ExecutionFailed` like other exceptions.
