@@ -647,6 +647,16 @@ except Exception:
                             f"{prefix[-1]}-string: expecting '}}' to close '{{' "
                             f"on line {lineno}")
 
+    def test_unclosed_replacement_field_after_nested_fstring(self):
+        # gh-162140: an inner f-string that ends with an unclosed '{' must
+        # not change which opening brace the diagnostic identifies.
+        import io, tokenize
+        source = 'f"{\n(\nf"{:\\\n""'
+        with self.assertRaises(tokenize.TokenError) as cm:
+            list(tokenize.generate_tokens(io.StringIO(source).readline))
+        self.assertEqual(cm.exception.args[0],
+                         "f-string: expecting '}' to close '{' on line 1")
+
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
