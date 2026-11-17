@@ -156,7 +156,7 @@ long_normalize(PyLongObject *v)
 #endif
 
 /* The freelist holds blocks of sizeof(PyLongObject) bytes: the padding
-   after ob_digit[0] can make room for more than one digit. */
+   after ob_digit[0] can have space for more than one digit. */
 #define MAX_DIGITS_FOR_FREELIST \
     ((Py_ssize_t)((sizeof(PyLongObject) - \
                    offsetof(PyLongObject, long_value.ob_digit)) / sizeof(digit)))
