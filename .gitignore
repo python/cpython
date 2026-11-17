@@ -20,6 +20,7 @@
 *.pyo
 *.rej
 *.swp
+*.pickle
 *~
 *.gc??
 *.profclang?
@@ -102,6 +103,7 @@ Modules/Setup.config
 Modules/Setup.local
 Modules/Setup.stdlib
 Modules/config.c
+Modules/config_bootstrap.c
 Modules/ld_so_aix
 Programs/_freeze_module
 Programs/_testembed

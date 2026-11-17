@@ -401,7 +401,7 @@ ACCESS_* constants
    :const:`ACCESS_READ` provides read-only access, :const:`ACCESS_WRITE`
    provides write-through access, and :const:`ACCESS_COPY` provides
    copy-on-write access. :const:`ACCESS_DEFAULT` defers to the *prot*
-   argument of :class:`mmap`.
+   argument of :class:`~mmap.mmap`.
 
 .. _page-size-constants:
 
@@ -413,7 +413,7 @@ Page size constants
 
    :const:`PAGESIZE` is the system memory page size in bytes.
    :const:`ALLOCATIONGRANULARITY` is the minimum alignment in bytes required
-   for the *offset* argument of :class:`mmap`. On Unix,
+   for the *offset* argument of :class:`~mmap.mmap`. On Unix,
    :const:`ALLOCATIONGRANULARITY` is equal to :const:`PAGESIZE`.
 
 .. _prot-constants:
@@ -425,11 +425,11 @@ PROT_* constants
           PROT_WRITE
           PROT_EXEC
 
-   Memory protection flags accepted by the *prot* argument of :class:`mmap`.
-   :const:`PROT_READ` allows pages to be read, :const:`PROT_WRITE` allows pages
-   to be written, and :const:`PROT_EXEC` allows pages to be executed. Values
-   can be combined using the bitwise OR operator. Not every option is present
-   on every system.
+   Memory protection flags accepted by the *prot* argument of
+   :class:`~mmap.mmap`. :const:`PROT_READ` allows pages to be read,
+   :const:`PROT_WRITE` allows pages to be written, and :const:`PROT_EXEC` allows
+   pages to be executed. Values can be combined using the bitwise OR operator.
+   Not every option is present on every system.
 
    .. availability:: Unix.
 

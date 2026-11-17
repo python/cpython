@@ -6,6 +6,7 @@ import functools
 import gc
 import io
 import os
+import stat
 import struct
 import sys
 import unittest
@@ -827,6 +828,50 @@ class TestGzip(BaseTest):
         compressed_data = gzip.compress(data1)
         self.assertRaises(EOFError, gzip.decompress, compressed_data[:-8])
 
+    def test_decompress_multi_member(self):
+        big = os.urandom(100_000)
+        members = [data1, b'', big, data2, big]
+        expected = b''.join(members)
+        for padding in b'', b'\0', b'\0' * 5000:
+            with self.subTest(padding=len(padding)):
+                datac = b''.join(gzip.compress(data) + padding
+                                 for data in members)
+                self.assertEqual(gzip.decompress(datac), expected)
+        datac = b''.join(map(gzip.compress, members))
+        self.assertEqual(gzip.decompress(bytearray(datac)), expected)
+        self.assertEqual(gzip.decompress(memoryview(datac)), expected)
+        self.assertRaises(EOFError, gzip.decompress, datac[:-4])
+        self.assertRaises(EOFError, gzip.decompress, datac[:-50_000])
+        self.assertRaises(gzip.BadGzipFile, gzip.decompress, datac + b'junk')
+        # Damage the CRC in the trailer of the third member.
+        parts = [gzip.compress(data) for data in members]
+        corrupted = bytearray(b''.join(parts))
+        corrupted[len(b''.join(parts[:3])) - 8] ^= 1
+        with self.assertRaisesRegex(gzip.BadGzipFile, 'CRC check failed'):
+            gzip.decompress(corrupted)
+
+    def test_decompress_many_members(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of members.
+        decompressobj = zlib.decompressobj
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = decompressobj(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        datac = gzip.compress(b'')
+        with mock.patch.object(zlib, 'decompressobj', Decompressor):
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 1000), b'')
+            fed1 = fed
+            fed = 0
+            self.assertEqual(gzip.decompress(datac * 2000), b'')
+        self.assertLess(fed, fed1 * 3)
+
     def test_truncated_header(self):
         truncated_headers = [
             b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00",             # Missing OS byte
@@ -1152,6 +1197,26 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    @os_helper.skip_unless_symlink
+    @create_and_remove_directory(TEMPDIR)
+    def test_decompress_does_not_follow_outfile_symlink(self):
+        gzipname = os.path.join(TEMPDIR, 'testgzip.gz')
+        outname = os.path.join(TEMPDIR, 'testgzip')
+        target = os.path.join(TEMPDIR, 'target')
+        with gzip.open(gzipname, mode='wb') as fp:
+            fp.write(self.data)
+        with open(target, 'wb') as fp:
+            fp.write(b'precious')
+        os.symlink(target, outname)
+
+        assert_python_ok('-m', 'gzip', '-d', gzipname)
+
+        self.assertFalse(os.path.islink(outname))
+        with open(outname, 'rb') as fp:
+            self.assertEqual(fp.read(), self.data)
+        with open(target, 'rb') as fp:
+            self.assertEqual(fp.read(), b'precious')
+
     def test_decompress_infile_outfile_error(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '-d', 'thisisatest.out')
         self.assertEqual(b"filename doesn't end in .gz: 'thisisatest.out'", err.strip())
@@ -1185,7 +1250,8 @@ class TestCommandLine(unittest.TestCase):
 
     @create_and_remove_directory(TEMPDIR)
     def test_compress_infile_outfile(self):
-        for compress_level in ('--fast', '--best'):
+        # The XFL header byte records the compression level used.
+        for compress_level, xfl in (('--fast', 4), ('--best', 2)):
             with self.subTest(compress_level=compress_level):
                 local_testgzip = os.path.join(TEMPDIR, 'testgzip')
                 gzipname = local_testgzip + '.gz'
@@ -1199,8 +1265,66 @@ class TestCommandLine(unittest.TestCase):
                 self.assertTrue(os.path.exists(gzipname))
                 self.assertEqual(out, b'')
                 self.assertEqual(err, b'')
+                with open(gzipname, 'rb') as fp:
+                    self.assertEqual(fp.read()[8], xfl)
                 os.remove(gzipname)
                 self.assertFalse(os.path.exists(gzipname))
+
+    @os_helper.skip_unless_symlink
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_does_not_follow_outfile_symlink(self):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+        target = os.path.join(TEMPDIR, 'target')
+        with open(local_testgzip, 'wb') as fp:
+            fp.write(self.data)
+        with open(target, 'wb') as fp:
+            fp.write(b'precious')
+        os.symlink(target, gzipname)
+
+        assert_python_ok('-m', 'gzip', local_testgzip)
+
+        self.assertFalse(os.path.islink(gzipname))
+        with gzip.open(gzipname, 'rb') as fp:
+            self.assertEqual(fp.read(), self.data)
+        with open(target, 'rb') as fp:
+            self.assertEqual(fp.read(), b'precious')
+
+    @unittest.skipUnless(os.name == 'posix', 'requires POSIX file permissions')
+    @os_helper.skip_unless_working_chmod
+    @create_and_remove_directory(TEMPDIR)
+    def test_infile_outfile_permissions(self):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+
+        def create_old_output(filename):
+            # An existing output file is replaced, it does not keep its mode.
+            os_helper.unlink(filename)
+            with open(filename, 'wb') as fp:
+                fp.write(b'old content' * 100)
+            os.chmod(filename, 0o644)
+
+        for mode in 0o400, 0o600, 0o640, 0o666:
+            expected = mode & ~0o022
+            with self.subTest(mode=oct(mode)), os_helper.temp_umask(0o022):
+                os_helper.unlink(local_testgzip)
+                with open(local_testgzip, 'wb') as fp:
+                    fp.write(self.data)
+                os.chmod(local_testgzip, mode)
+                create_old_output(gzipname)
+
+                assert_python_ok('-m', 'gzip', local_testgzip)
+                self.assertEqual(stat.S_IMODE(os.stat(gzipname).st_mode),
+                                 expected)
+                with gzip.open(gzipname) as fp:
+                    self.assertEqual(fp.read(), self.data)
+
+                create_old_output(local_testgzip)
+                assert_python_ok('-m', 'gzip', '-d', gzipname)
+                self.assertEqual(stat.S_IMODE(os.stat(local_testgzip).st_mode),
+                                 expected)
+                with open(local_testgzip, 'rb') as fp:
+                    self.assertEqual(fp.read(), self.data)
 
     def test_compress_fast_best_are_exclusive(self):
         rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '--best')

@@ -4372,10 +4372,15 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
     }
 
     wchar_t **member = raw_member;
-
-    wchar_t *wstr = utf8_to_wstr(config, value);
-    if (wstr == NULL) {
-        return -1;
+    wchar_t *wstr;
+    if (value != NULL) {
+        wstr = utf8_to_wstr(config, value);
+        if (wstr == NULL) {
+            return -1;
+        }
+    }
+    else {
+        wstr = NULL;
     }
     free(*member);
     *member = wstr;

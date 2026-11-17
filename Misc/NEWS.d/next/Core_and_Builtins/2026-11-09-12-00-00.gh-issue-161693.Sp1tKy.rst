@@ -1,0 +1,3 @@
+Fix a crash in :meth:`dict.setdefault` when called on an instance
+dictionary with a :class:`str` subclass key equal to an attribute name
+that is not set on that instance.

@@ -19,12 +19,8 @@
 test.test_inspect.test_inspect
 test___all__
 test__interpreters
-test_builtin
-test_clinic
 test_crossinterp
 test_datetime
-test_generated_cases
-test_heapq
 test_import
 test_importlib
 test_json
@@ -34,6 +30,5 @@ test_profiling
 test_pyrepl
 test_subprocess
 test_symtable
-test_tools
 test_type_annotations
 test_unittest

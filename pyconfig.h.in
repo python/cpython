@@ -1922,8 +1922,7 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define if you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
+/* Define if you can safely include both <sys/select.h> and <sys/time.h> */
 #undef SYS_SELECT_WITH_SYS_TIME
 
 /* Custom thread stack size depending on chosen sanitizer runtimes. */
@@ -2232,11 +2231,6 @@
 /* Define as 'int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-
-/* Define the macros needed if on a UnixWare 7.x system. */
-#if defined(__USLC__) && defined(__SCO_VERSION__)
-#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
-#endif
 
 #endif /*Py_PYCONFIG_H*/
 

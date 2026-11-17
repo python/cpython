@@ -406,6 +406,39 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(e3.__cause__)
         self.assertIs(e2.__context__, e3)
 
+    async def test_timeout_taskgroup_base_exception_group(self):
+        class MyBaseError(BaseException):
+            pass
+
+        async def task():
+            try:
+                await asyncio.sleep(2)  # Will be interrupted after 0.01 second
+            finally:
+                raise MyBaseError  # Crash in cleanup
+
+        with self.assertRaises(BaseExceptionGroup) as cm:
+            async with asyncio.timeout(0.01):
+                async with asyncio.TaskGroup() as tg:
+                    tg.create_task(task())
+                    await asyncio.sleep(1)
+        eg = cm.exception
+        self.assertNotIsInstance(eg, ExceptionGroup)
+        self.assertIsInstance(eg.__context__, TimeoutError)
+
+        self.assertEqual(len(eg.exceptions), 1, eg)
+        e1 = eg.exceptions[0]
+        # Expect MyBaseError raised during handling of TimeoutError
+        # caused by CancelledError.
+        self.assertIsInstance(e1, MyBaseError)
+        self.assertIsNone(e1.__cause__)
+        e2 = e1.__context__
+        self.assertIsInstance(e2, TimeoutError)
+        e3 = e2.__cause__
+        self.assertIsInstance(e3, asyncio.CancelledError)
+        self.assertIsNone(e3.__context__)
+        self.assertIsNone(e3.__cause__)
+        self.assertIs(e2.__context__, e3)
+
 
 if __name__ == '__main__':
     unittest.main()
