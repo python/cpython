@@ -15,7 +15,8 @@ import unittest
 import weakref
 from test import support
 from test.support import (
-    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
+    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper,
+    warnings_helper,
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
@@ -186,6 +187,7 @@ class PosixTests(unittest.TestCase):
 
     @support.requires_fork()
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_fork_with_handler_lock_held(self):
         # A thread holding the handler table lock when another thread forks,
         # such as one in a subinterpreter with its own GIL, does not exist in
