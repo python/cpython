@@ -193,19 +193,17 @@ class PosixTests(unittest.TestCase):
         _testinternalcapi.lock_signal_handlers()
         try:
             pid = os.fork()
-            # pid returned of 0 if child process
-            if pid > 0:
-                return
-
-            try:
-                signal.getsignal(signal.SIGINT)
-            except BaseException:
-                os._exit(1)
-            os._exit(0)
+            if pid == 0:
+                # In the child: hangs here if the lock was inherited held.
+                try:
+                    signal.getsignal(signal.SIGINT)
+                except BaseException:
+                    os._exit(1)
+                os._exit(0)
         finally:
             _testinternalcapi.unlock_signal_handlers()
 
-        # Failure case of lock being held is exposed via timeout
+        # A child stuck on the inherited lock never exits, so this times out.
         support.wait_process(pid, exitcode=0)
 
 
