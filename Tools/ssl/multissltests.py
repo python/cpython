@@ -21,6 +21,7 @@ Linux with GCC and clang.
 (c) 2013-2017 Christian Heimes <christian@python.org>
 """
 import argparse
+import datetime as dt
 import logging
 import os
 import re
@@ -28,7 +29,6 @@ import shutil
 import subprocess
 import sys
 import tarfile
-from datetime import datetime
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -529,7 +529,7 @@ def main():
         format="*** %(levelname)s %(message)s"
     )
 
-    start = datetime.now()
+    start = dt.datetime.now()
 
     if args.steps in {'modules', 'tests'}:
         for name in ['Makefile.pre.in', 'Modules/_ssl.c']:
@@ -571,7 +571,7 @@ def main():
                 print(f"{build} failed: {e}", file=sys.stderr)
                 sys.exit(2)
 
-    log.info(f"\n{args.steps.capitalize()} finished in {datetime.now() - start}")
+    log.info(f"\n{args.steps.capitalize()} finished in {dt.datetime.now() - start}")
     print('Python: ', sys.version)
     if args.steps == 'tests':
         if args.tests:
