@@ -8712,11 +8712,11 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
-    int trasfer;
+    int trasnfer;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    trasfer = transfer_keys_and_values_lock_held(res, dict);
+    trasnfer = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
-    if (trasfer < 0) {
+    if (trasnfer < 0) {
         return NULL;
     }
 
