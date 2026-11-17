@@ -154,15 +154,17 @@ def run_multiline_interactive_console(
             if maybe_run_command(statement):
                 continue
 
+            statement_with_final_indent = _strip_final_indent(statement)
+
             if statement_submitted_hook is not None:
                 try:
-                    statement_submitted_hook(_strip_final_indent(statement))
+                    statement_submitted_hook(statement_with_final_indent)
                 except Exception as exc:
                     console.write("Error in statement_submitted_hook:\n")
                     console._excepthook(type(exc), exc, exc.__traceback__)
 
             input_name = f"<python-input-{input_n}>"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            more = console.push(statement_with_final_indent, filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             try:
                 append_history_file()
