@@ -269,9 +269,7 @@ class AbstractBuilder:
 
     def _download_src(self):
         """Download sources"""
-        src_dir = os.path.dirname(self.src_file)
-        if not os.path.isdir(src_dir):
-            os.makedirs(src_dir)
+        os.makedirs(os.path.dirname(self.src_file), exist_ok=True)
         data = None
         for url_template in self.url_templates:
             url = url_template.format(v=self.version, s=self.short_version)
