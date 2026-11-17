@@ -113,6 +113,13 @@ class TestPublicC(BaseTests, unittest.TestCase):
     def test_build(self):
         self.check_build('_test_cext')
 
+    def test_build_no_typeof(self):
+        # gh-161185: Exercise the Py_CLEAR/Py_SETREF() memcpy implementation
+        # with strict aliasing enabled: undefine the _Py_TYPEOF macro.
+        self.check_build(
+            '_test_cext_no_typeof',
+            extra_cflags='-D_Py_TESTCEXT_NO_TYPEOF -O2 -fstrict-aliasing')
+
     @unittest.skipIf(MSVC, "MSVC doesn't support /std:c99")
     def test_build_c99(self):
         # In public docs, we say C API is compatible with C11. However,
@@ -145,6 +152,15 @@ class TestPublicCpp(BaseTests, unittest.TestCase):
         # in practice we do maintain C++03 compatibility in public headers.
         # Please ask the C API WG before adding a new C++11-only feature.
         self.check_build('_test_cppext_cpp03', std='c++03')
+
+    @unittest.skipIf(MSVC, "MSVC doesn't support /std:c++03")
+    def test_build_cpp03_no_typeof(self):
+        # gh-161185: Exercise the Py_CLEAR/Py_SETREF() memcpy implementation
+        # with strict aliasing enabled: undefine the _Py_TYPEOF macro.
+        self.check_build(
+            '_test_cppext_cpp03_no_typeof',
+            std='c++03',
+            extra_cflags='-D_Py_TESTCEXT_NO_TYPEOF -O2 -fstrict-aliasing')
 
     @unittest.skipIf(MSVC, "MSVC doesn't support /std:c++11")
     def test_build_cpp11(self):

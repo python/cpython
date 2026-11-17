@@ -39,11 +39,12 @@ typedef struct _memo {
 typedef struct {
     int type;
     // Text required by grammar actions or helpers; otherwise NULL.
-    // An unfinished string token also has NULL text. Its grammar action
-    // requests more input only if the token is valid at that position.
+    // Unfinished f-string and t-string middle tokens retain their text so
+    // their grammar action can check escapes before requesting more input.
     PyObject *bytes;
     int level;
-    int is_raw;
+    unsigned char is_raw;
+    unsigned char is_incomplete;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
     // Filter over the rule types present in `memo` (bit `type & 63` is set
@@ -195,6 +196,7 @@ Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 // Return -1 on failure, leaving the buffer and capacity unchanged.
 int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
+int _PyPegen_atom_fast_path(Parser *p, void *result);
 expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
@@ -212,6 +214,7 @@ typedef enum {
 
 // Error handling functions and APIs
 int _Pypegen_raise_decode_error(Parser *p);
+int _Pypegen_raise_decode_error_known_location(Parser *p, expr_ty a);
 int _Pypegen_tokenizer_error(Parser *p);
 void *_PyPegen_raise_incomplete_input(Parser *p);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);

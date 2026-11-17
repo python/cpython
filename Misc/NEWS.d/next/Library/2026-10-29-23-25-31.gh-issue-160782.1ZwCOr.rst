@@ -1,0 +1,2 @@
+:mod:`venv`: a backslash before a quote in the prompt or the path no longer
+breaks ``activate.fish``.

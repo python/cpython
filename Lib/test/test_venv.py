@@ -846,6 +846,18 @@ class BasicTest(BaseTest):
         self.assertNotIn('LEAK', text)
         self.assertIn('OLDSTATUS=7', text)
 
+    def test_fish_quoting(self):
+        """
+        Test that the template strings are quoted properly (fish)
+        """
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        context.script_path = 'activate.fish'
+        context.prompt = r"x\'$(echo PWNED)'\'"
+        self.assertEqual(
+            builder.replace_variables('__VENV_PROMPT__', context),
+            r"'x\\\'$(echo PWNED)\'\\\''")
+
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_special_chars_windows(self):
@@ -1330,7 +1342,13 @@ class EnsurePipTest(BaseTest):
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
+        os.mkdir(self.env_dir)
+        # Both ensurepip and its pip subprocess run with the venv as cwd.
+        for name in ('ensurepip.py', 'subprocess.py'):
+            pathlib.Path(self.env_dir, name).write_text(
+                'raise AssertionError(__file__)\n', encoding='utf-8')
         with EnvironmentVarGuard() as envvars:
+            envvars["PYTHONSAFEPATH"] = ""
             # pip's cross-version compatibility may trigger deprecation
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.

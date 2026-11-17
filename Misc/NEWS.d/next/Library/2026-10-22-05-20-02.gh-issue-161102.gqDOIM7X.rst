@@ -1,0 +1,4 @@
+Fix the incremental decoder of the :mod:`idna <encodings.idna>` codec
+decoding some dots twice when its input starts with empty labels, for example
+``b".example.com"``.  Reading a run of dots through :class:`io.TextIOWrapper`
+no longer produces quadratically more text than the input holds.

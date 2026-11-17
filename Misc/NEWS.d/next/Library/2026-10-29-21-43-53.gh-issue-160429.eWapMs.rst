@@ -1,0 +1,3 @@
+Fix :class:`asyncio.ProactorEventLoop` socket transports leaving the socket
+open, and :meth:`asyncio.Server.wait_closed` hanging, when the peer resets
+the connection while the transport is being closed.

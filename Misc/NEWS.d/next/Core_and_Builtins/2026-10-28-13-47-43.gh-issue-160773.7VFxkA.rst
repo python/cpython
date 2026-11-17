@@ -1,0 +1,2 @@
+Fix a crash in :func:`str` of an :exc:`OSError` when formatting one of its
+attributes modifies the others.

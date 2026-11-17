@@ -1,0 +1,3 @@
+Fix crashes in :mod:`sqlite3` when a row or text factory is replaced during a
+query, when cursor metadata is read during execution in a free-threaded build,
+or when allocating cursor metadata fails.

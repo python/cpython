@@ -1688,10 +1688,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # More than one part.
             # First is module, second is method/class
-            f = self.lookupmodule(parts[0])
+            f = self.lookupmodule('.'.join(parts[:-1]))
             if f:
                 fname = f
-                item = parts[1]
+                item = parts[-1]
             else:
                 return failed
         answer = find_function(item, self.canonic(fname))

@@ -1,0 +1,4 @@
+:meth:`datetime.date.fromisoformat` now rejects strings with trailing
+characters after a basic-format date, such as ``'2020010112'``. The pure-Python
+:meth:`datetime.datetime.fromisoformat` now rejects a date followed by a bare
+separator, such as ``'2020-01-01T'``, matching the C implementation.

@@ -8,9 +8,10 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /*[clinic input]
-class weakref "PyWeakReference *" "&_PyWeakref_RefType"
+module weakref
+class weakref.ReferenceType "PyWeakReference *" "&_PyWeakref_RefType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad66c8b0acee6ad9]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=25211e4a7d687f3f]*/
 
 #include "clinic/weakrefobject.c.h"
 
@@ -91,9 +92,9 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
             /* If 'self' is the end of the list (and thus self->wr_next ==
                NULL) then the weakref list itself (and thus the value of *list)
                will end up being set to NULL. */
-            FT_ATOMIC_STORE_PTR(*list, self->wr_next);
+            FT_ATOMIC_STORE_PTR_RELEASE(*list, self->wr_next);
         }
-        FT_ATOMIC_STORE_PTR(self->wr_object, Py_None);
+        FT_ATOMIC_STORE_PTR_RELEASE(self->wr_object, Py_None);
         if (self->wr_prev != NULL) {
             self->wr_prev->wr_next = self->wr_next;
         }
@@ -195,12 +196,12 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
 
 /*[clinic input]
 @critical_section
-weakref.__hash__
+weakref.ReferenceType.__hash__ as weakref_hash
 [clinic start generated code]*/
 
 static Py_hash_t
 weakref_hash_impl(PyWeakReference *self)
-/*[clinic end generated code: output=4904eacaabf902c9 input=703596f4b120e47c]*/
+/*[clinic end generated code: output=4904eacaabf902c9 input=f248ec0b25c064e0]*/
 {
     if (self->hash != -1)
         return self->hash;
@@ -465,35 +466,45 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
     }
 }
 
-static int
-parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
-                        PyObject **obp, PyObject **callbackp)
-{
-    return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
-}
+/*[clinic input]
+@classmethod
+@vectorcall
+weakref.ReferenceType.__new__ as weakref_ref_new
+
+    object: object
+    callback: object(c_default="NULL") = None
+    /
+
+Create a weak reference to object.
+
+Calling the reference returns object, or None once it has been garbage
+collected.  If callback is given, it is called with the reference as
+its only argument when object is about to be finalized.
+[clinic start generated code]*/
 
 static PyObject *
-weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+weakref_ref_new_impl(PyTypeObject *type, PyObject *object,
+                     PyObject *callback)
+/*[clinic end generated code: output=0b84aee8668f4c2f input=0cd09b468ebb6371]*/
 {
-    PyObject *ob, *callback = NULL;
-    if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        return (PyObject *)get_or_create_weakref(type, ob, callback);
-    }
-    return NULL;
+    return (PyObject *)get_or_create_weakref(type, object, callback);
 }
 
+/*[clinic input]
+weakref.ReferenceType.__init__ as weakref_ref_init
+
+    object: object
+    callback: object = None
+    /
+[clinic start generated code]*/
+
 static int
-weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+weakref_ref_init_impl(PyWeakReference *self, PyObject *object,
+                      PyObject *callback)
+/*[clinic end generated code: output=d36cfa9ccd36856e input=373a3e3f2841a4fa]*/
 {
-    PyObject *tmp;
-
-    if (!_PyArg_NoKeywords("ref", kwargs))
-        return -1;
-
-    if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
-        return 0;
-    else
-        return -1;
+    /* The arguments were already used by __new__; only validate them. */
+    return 0;
 }
 
 
@@ -514,6 +525,7 @@ _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "weakref.ReferenceType",
     .tp_basicsize = sizeof(PyWeakReference),
+    .tp_doc = weakref_ref_new__doc__,
     .tp_dealloc = weakref_dealloc,
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
     .tp_call = PyVectorcall_Call,
@@ -526,10 +538,11 @@ _PyWeakref_RefType = {
     .tp_richcompare = weakref_richcompare,
     .tp_methods = weakref_methods,
     .tp_members = weakref_members,
-    .tp_init = weakref___init__,
+    .tp_init = weakref_ref_init,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = weakref___new__,
+    .tp_new = weakref_ref_new,
     .tp_free = PyObject_GC_Del,
+    .tp_vectorcall = weakref_ref_vectorcall,
 };
 
 

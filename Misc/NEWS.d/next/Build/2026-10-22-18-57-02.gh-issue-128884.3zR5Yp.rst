@@ -1,0 +1,3 @@
+Report a configuration error when ``--enable-bolt`` is used with build flags
+that explicitly request the Cortex-A53 erratum 843419 workaround. Document how to
+disable the workaround for builds that will not run on affected processors.

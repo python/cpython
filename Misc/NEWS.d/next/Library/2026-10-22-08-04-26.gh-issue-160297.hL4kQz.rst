@@ -1,0 +1,4 @@
+Fix :meth:`tarfile.TarFile.extractall` and :meth:`tarfile.TarFile.extract`
+changing the mode, modification time and owner of a file outside the
+destination directory when a hard link member is extracted as a copy of a
+symbolic link member, for example with the ``'tar'`` filter.

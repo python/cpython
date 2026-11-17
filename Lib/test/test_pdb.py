@@ -514,6 +514,36 @@ def test_pdb_breakpoint_with_filename():
     (Pdb) continue
     """
 
+def test_pdb_breakpoint_in_package():
+    """Breakpoints for package.module.function should work even if the module is not yet imported.
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     import multiprocessing.util  # Now import the module
+    ...     multiprocessing.util.is_abstract_socket_namespace(None)  # We should break here
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    ...     'multiprocessing.util.is_abstract_socket_namespace',  # Make sure the module is not imported yet
+    ...     'break multiprocessing.util.is_abstract_socket_namespace',  # We can still set a bp on it
+    ...     'continue',  # will stop at the function call
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_in_package[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) multiprocessing.util.is_abstract_socket_namespace
+    *** NameError: name 'multiprocessing' is not defined. Did you forget to import 'multiprocessing'?
+    (Pdb) break multiprocessing.util.is_abstract_socket_namespace
+    Breakpoint 1 at ...util.py:...
+    (Pdb) continue
+    > ...util.py(...)is_abstract_socket_namespace()
+    -> if not address:
+    (Pdb) clear 1
+    Deleted breakpoint 1 at ...util.py:...
+    (Pdb) continue
+    """
+
 def test_pdb_breakpoint_on_disabled_line():
     """New breakpoint on once disabled line should work
 

@@ -314,6 +314,7 @@ Modules/cmathmodule.c	-	sinh_special_values	-
 Modules/cmathmodule.c	-	sqrt_special_values	-
 Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
+Modules/config_bootstrap.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
 Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
@@ -524,6 +525,7 @@ Modules/_testcapimodule.c	-	MethodDescriptor2_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapimodule.c	-	MyListDictSubclass_Type	-
 Modules/_testcapimodule.c	-	MyList_Type	-
 Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapimodule.c	-	TestError	-

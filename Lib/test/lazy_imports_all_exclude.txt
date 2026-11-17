@@ -24,7 +24,6 @@ test_clinic
 test_crossinterp
 test_datetime
 test_generated_cases
-test_heapq
 test_import
 test_importlib
 test_json

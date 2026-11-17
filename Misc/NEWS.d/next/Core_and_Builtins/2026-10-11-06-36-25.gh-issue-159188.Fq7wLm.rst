@@ -1,0 +1,5 @@
+In the :term:`free-threaded build`, :func:`compile` no longer immortalizes
+the constants of the code objects when it is given an AST object, as was
+already the case for a source string.  The output of :mod:`marshal` for
+such code no longer depends on the code objects which were created before
+in the process.

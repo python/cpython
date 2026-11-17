@@ -1,0 +1,4 @@
+Fix the incremental encoders and stream writers of the stateful CJK codecs
+(``iso2022_*`` and ``hz``) keeping a changed shift state after an
+:meth:`!encode` or :meth:`!write` call failed.  The next call could omit the
+escape sequence, writing multibyte characters in ASCII mode.

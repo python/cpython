@@ -712,6 +712,8 @@ _PyObject_ResurrectEnd(PyObject *op)
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 # ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 # endif
@@ -814,18 +816,6 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
             ((PyTypeObject *)op)->tp_flags & Py_TPFLAGS_HEAPTYPE);
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyWeakReference **)((char *)op + offset);
-}
-
-// Fast inlined version of PyType_IS_GC()
-#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
-
-// Fast inlined version of PyObject_IS_GC()
-static inline int
-_PyObject_IS_GC(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    return (_PyType_IS_GC(type)
-            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
 }
 
 // Fast inlined version of PyObject_Hash(). Dictionaries are very

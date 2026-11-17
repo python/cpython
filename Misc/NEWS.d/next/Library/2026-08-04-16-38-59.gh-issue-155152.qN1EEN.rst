@@ -1,0 +1,1 @@
+Improve performance of some :mod:`zipimport` archives that use Zstandard compression.

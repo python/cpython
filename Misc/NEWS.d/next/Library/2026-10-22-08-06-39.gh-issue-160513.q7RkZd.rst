@@ -1,0 +1,5 @@
+Fix :meth:`asyncio.loop.start_tls` and :meth:`asyncio.StreamWriter.start_tls`
+not calling the protocol's :meth:`~asyncio.BaseProtocol.connection_lost`
+when the connection is lost, the handshake times out or the call is
+cancelled during the TLS handshake. :meth:`asyncio.StreamWriter.wait_closed`
+no longer waits forever after such a failure.

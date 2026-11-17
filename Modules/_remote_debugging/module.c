@@ -1010,16 +1010,35 @@ For each thread with a running task, returns the running task plus
 all tasks that transitively depend on it (tasks waiting for the
 running task, tasks waiting for those tasks, etc.).
 
-Returns a list of per-thread results, where each thread result
-contains:
-- Thread ID
-- List of task information for the running task and all its waiters
+Returns:
+    A list of AwaitedInfo objects, where each object contains:
 
-Each task info contains:
-- Task ID (memory address)
-- Task name
-- Call stack frames: List of (func_name, filename, lineno)
-- List of tasks waiting for this task (recursive structure)
+    - thread_id (int): Identifier of the thread.
+    - awaited_by (list[TaskInfo]): The running task and all its
+      transitive waiters.
+
+Each TaskInfo contains:
+    - task_id (int): Identifier of the task.
+    - task_name (str): Name of the task.
+    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
+    - awaited_by (list[CoroInfo]): Coroutine information for
+      tasks or futures awaiting this task.
+
+Each CoroInfo contains:
+    - call_stack (list[FrameInfo]): Frames for the coroutine.
+    - task_name (int): Identifier of the task or future.
+
+Each FrameInfo contains:
+    - filename (str): Source code filename.
+    - location (LocationInfo | None): Source location, if available.
+    - funcname (str): Function name.
+    - opcode (int | None): Opcode, if available.
+
+Each LocationInfo contains:
+    - lineno (int): Starting line number.
+    - end_lineno (int): Ending line number.
+    - col_offset (int): Starting column offset.
+    - end_col_offset (int): Ending column offset.
 
 Raises:
     RuntimeError: If AsyncioDebug section is not available in the
@@ -1027,27 +1046,34 @@ Raises:
     MemoryError: If memory allocation fails
     OSError: If reading from the remote process fails
 
-Example output (similar structure to get_all_awaited_by but only for
-running tasks):
-[
-    # Thread 140234 results
-    (140234, [
-        # Running task and its complete waiter dependency graph
-        (4345585712, 'main_task',
-         [("run_server", "server.py", 127), ("main", "app.py", 23)],
-         [
-             # Tasks waiting for main_task
-             (4345585800, 'worker_1', [...], [...]),
-             (4345585900, 'worker_2', [...], [...])
-         ])
-    ])
-]
+Example output:
+
+    [
+        AwaitedInfo(thread_id=140234, awaited_by=[
+            TaskInfo(
+                task_id=1,
+                task_name="worker",
+                coroutine_stack=[
+                    CoroInfo(call_stack=[...], task_name=1)
+                ],
+                awaited_by=[CoroInfo(call_stack=[...], task_name=2)]
+            ),
+            TaskInfo(
+                task_id=2,
+                task_name="main",
+                coroutine_stack=[
+                    CoroInfo(call_stack=[...], task_name=2)
+                ],
+                awaited_by=[]
+            )
+        ])
+    ]
 
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=bc802e4221c99399]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=0532031a7c495491]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;

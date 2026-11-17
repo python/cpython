@@ -1,0 +1,2 @@
+Fix :mod:`ssl` reporting TLS 1.0, 1.1, and 1.2 as unavailable when built
+with OpenSSL 4.0, despite support for these protocol versions.

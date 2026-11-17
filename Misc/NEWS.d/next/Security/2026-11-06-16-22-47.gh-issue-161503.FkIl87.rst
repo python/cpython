@@ -1,0 +1,4 @@
+.. cve: CVE-2026-19552
+
+:func:`ssl.get_server_certificate` now verifies that the server hostname matches
+its certificate when the caller specifies *ca_certs*.

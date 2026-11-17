@@ -1,0 +1,3 @@
+Fix the location reported for invalid escape sequences in f-strings and
+t-strings. The :exc:`SyntaxError` now points at the literal part that
+contains the escape, instead of at the closing quote.

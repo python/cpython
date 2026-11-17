@@ -901,9 +901,8 @@ class NewIMAPTestsMixin:
                 SimpleIMAPHandler.handle(self)
 
         _, server = self._setup(TimeoutHandler)
-        addr = server.server_address[1]
         with self.assertRaises(TimeoutError):
-            client = self.imap_class("localhost", addr, timeout=0.001)
+            client = self.imap_class(*server.server_address, timeout=0.001)
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
@@ -2796,13 +2795,10 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(imaplib, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, imaplib, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

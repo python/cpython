@@ -3600,7 +3600,7 @@ static int
 list___init___impl(PyListObject *self, PyObject *iterable)
 /*[clinic end generated code: output=0f3c21379d01de48 input=b3f3fe7206af8f6b]*/
 {
-    /* Verify list invariants established by PyType_GenericAlloc() */
+    /* Verify list invariants */
     assert(0 <= Py_SIZE(self));
     assert(Py_SIZE(self) <= self->allocated || self->allocated == -1);
     assert(self->ob_item != NULL ||
@@ -3632,7 +3632,10 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *list = PyType_GenericAlloc(_PyType_CAST(type), 0);
+    /* use PyList_New() to make exact lists from the freelist. */
+    PyObject *list = (type == (PyObject *)&PyList_Type
+                      ? PyList_New(0)
+                      : PyType_GenericAlloc(_PyType_CAST(type), 0));
     if (list == NULL) {
         return NULL;
     }
@@ -3658,10 +3661,12 @@ list___sizeof___impl(PyListObject *self)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
 #ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    PyObject **ob_item = self->ob_item;
     if (ob_item != NULL) {
         res += list_capacity(ob_item) * sizeof(PyObject *);
     }
+    Py_END_CRITICAL_SECTION();
 #else
     res += (size_t)self->allocated * sizeof(PyObject *);
 #endif

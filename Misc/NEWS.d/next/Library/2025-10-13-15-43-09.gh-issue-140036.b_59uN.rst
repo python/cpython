@@ -1,0 +1,2 @@
+Avoid hanging in floor division of pure Python :class:`decimal.Decimal`
+instances when the context precision is very large. Patch by Bénédikt Tran.

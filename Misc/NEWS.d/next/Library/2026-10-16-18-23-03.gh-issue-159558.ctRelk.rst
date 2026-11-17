@@ -1,0 +1,4 @@
+Speed up assignment to the ``value`` attribute of simple :mod:`ctypes` types, to
+the ``contents`` attribute of :mod:`ctypes` pointers and to :mod:`ctypes`
+structure fields, array items and pointer items on the free-threaded build by
+not re-entering the critical section already held on the object.

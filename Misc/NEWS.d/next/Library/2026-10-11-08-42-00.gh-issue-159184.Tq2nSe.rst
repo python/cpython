@@ -1,0 +1,3 @@
+The output of :func:`marshal.dumps` no longer depends on the order of the
+elements of a set which have the same marshalled form, such as NaNs which
+are distinct objects.

@@ -1,0 +1,6 @@
+Fix the ``hz`` codec sometimes encoding ``~`` as a single ``~`` in text that
+mixes ASCII and Chinese characters, and the incremental ``iso2022_*`` codecs
+mishandling an escape sequence split across calls or keeping the previous
+character set after :meth:`!reset`.  Also fix possible crashes in the CJK
+incremental and stream codecs when their ``errors`` attribute or their class's
+``codec`` attribute is replaced while they are in use.

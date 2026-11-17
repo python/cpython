@@ -1,0 +1,2 @@
+Speed up parsing of simple expressions by recognizing single-token atoms
+without descending the full precedence rule chain.

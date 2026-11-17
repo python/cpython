@@ -1,3 +1,4 @@
+import contextlib
 import importlib.util
 import io
 import os
@@ -8,7 +9,11 @@ import tokenize
 from pathlib import Path, PurePath
 from typing import IO, Any, Final, cast
 
-from pegen.build import compile_c_extension
+from pegen.build import (
+    compile_c_extension,
+    included_output_files,
+    resolve_includes,
+)
 from pegen.c_generator import CParserGenerator
 from pegen.grammar import Grammar
 from pegen.grammar_parser import GeneratedParser as GrammarParser
@@ -46,13 +51,22 @@ def run_parser(file: IO[bytes], parser_class: type[Parser], *, verbose: bool = F
 
 
 def parse_string(
-    source: str, parser_class: type[Parser], *, dedent: bool = True, verbose: bool = False
+    source: str,
+    parser_class: type[Parser],
+    *,
+    dedent: bool = True,
+    verbose: bool = False,
+    base_dir: Path | None = None,
 ) -> Any:
-    # Run the parser on a string.
+    # Run the parser on a string. A grammar's @include paths are relative
+    # to *base_dir* (the current directory by default).
     if dedent:
         source = textwrap.dedent(source)
     file = io.StringIO(source)
-    return run_parser(file, parser_class, verbose=verbose)  # type: ignore[arg-type] # typeshed issue #3515
+    result = run_parser(file, parser_class, verbose=verbose)  # type: ignore[arg-type] # typeshed issue #3515
+    if isinstance(result, Grammar):
+        resolve_includes(result, (base_dir or Path.cwd()) / "<string>")
+    return result
 
 
 def make_parser(source: str) -> type[Parser]:
@@ -99,9 +113,23 @@ def generate_parser_c_extension(
     # context.
     assert not os.listdir(path)
     source = path / "parse.c"
-    with open(source, "w", encoding="utf-8") as file:
+    included_outputs = included_output_files(grammar, source)
+    with contextlib.ExitStack() as stack:
+        file = stack.enter_context(open(source, "w", encoding="utf-8"))
+        for output in included_outputs.values():
+            output.parent.mkdir(parents=True, exist_ok=True)
+        included_files: dict[Path, IO[str]] = {
+            include: stack.enter_context(open(output, "w", encoding="utf-8"))
+            for include, output in included_outputs.items()
+        }
         genr = CParserGenerator(
-            grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
+            grammar,
+            ALL_TOKENS,
+            EXACT_TOKENS,
+            NON_EXACT_TOKENS,
+            file,
+            debug=debug,
+            included_files=included_files,
         )
         genr.generate(PurePath("parse.c"))
     compile_c_extension(
@@ -110,6 +138,7 @@ def generate_parser_c_extension(
         # Significant test_peg_generator speedups
         disable_optimization=True,
         library_dir=library_dir,
+        extra_generated_sources=list(included_outputs.values()),
     )
 
 

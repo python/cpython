@@ -1,0 +1,4 @@
+Fix :meth:`zoneinfo.ZoneInfo.from_file` accepting TZif data with a negative or
+oversized abbreviation block, which could use hundreds of times the file size
+in memory; it now raises :exc:`ValueError`. Abbreviation indexes above 127 now
+also give the correct time zone abbreviation.

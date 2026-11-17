@@ -242,7 +242,7 @@ Directory and files operations
 
 .. function:: copytree(src, dst, symlinks=False, ignore=None, \
               copy_function=copy2, ignore_dangling_symlinks=False, \
-              dirs_exist_ok=False)
+              dirs_exist_ok=False, *, copy_dir_stat=True)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
    named *dst* and return the destination directory.  All intermediate
@@ -250,6 +250,12 @@ Directory and files operations
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
+
+   If *copy_dir_stat* is false, directory metadata is not copied with
+   :func:`copystat`, e.g. to copy a read-only tree into a writable one.
+   It defaults to true.  Note that file metadata is always handled by
+   *copy_function*: use e.g. ``copy_function=shutil.copyfile`` to skip
+   that as well.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -306,6 +312,9 @@ Directory and files operations
    .. versionchanged:: 3.8
       Added the *dirs_exist_ok* parameter.
 
+   .. versionchanged:: 3.16
+      Added the *copy_dir_stat* parameter.
+
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
    .. index:: single: directory; deleting
@@ -315,6 +324,12 @@ Directory and files operations
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onexc* or *onerror* or, if both
    are omitted, exceptions are propagated to the caller.
+
+   If *path* is a symbolic link to a directory followed by a trailing path
+   separator, such as ``'link/'``, the operating system resolves the link, so
+   :func:`!rmtree` deletes the contents of the directory it points to and then
+   fails to remove *path* itself.  :class:`pathlib.Path` strips trailing
+   separators, so ``rmtree(Path('link/'))`` refuses the link as usual.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -738,7 +753,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    unpacked. If not provided, the current working directory is used.
 
    *format* is the archive format: one of "zip", "tar", "gztar", "bztar",
-   "xztar", or "zstdtar".  Or any other format registered with
+   "xztar", "zstdtar", or "whl".  Or any other format registered with
    :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
@@ -770,6 +785,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    .. versionchanged:: 3.12
       Added the *filter* argument.
+
+   .. versionchanged:: next
+      Added the "whl" format.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
@@ -812,9 +830,15 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
    - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
      module is available).
+   - *whl*: `wheel file <https://packaging.python.org/en/latest/discussions/package-formats/#what-is-a-wheel>`__
+     (unpacking compressed files works only if the corresponding module is
+     available).
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
+
+   .. versionchanged:: next
+      Added the *whl* format.
 
 
 .. _shutil-archiving-example:

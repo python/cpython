@@ -1,0 +1,12 @@
+.. cve: CVE-2026-115557
+
+:mod:`ssl` now rejects TLS certificate chains that contain any of a set of
+compromised eMudhra intermediate CA keys.  This is an extraordinary measure and
+a last line of defense: removing trust is primarily the job of the platform root
+store, and the built-in denylist only blocks connections while that update has
+not yet reached the OS, a container image, or a bundled trust store in various
+Python packages.  Entries are added to the denylist only under a very high
+threshold.
+The denylist matches on the public key (the SHA-256 digest of the :rfc:`5280`
+``SubjectPublicKeyInfo``), so it also covers the cross-signed certificates that
+reuse one of the distrusted keys.

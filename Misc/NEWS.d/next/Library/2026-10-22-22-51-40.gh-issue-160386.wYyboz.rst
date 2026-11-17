@@ -1,0 +1,11 @@
+Applied changes to ``importlib.metadata`` from `importlib_metadata 9.1
+<https://importlib-metadata.readthedocs.io/en/latest/history.html#v9-1-0>`_:
+distribution discovery now prefers the greater of several metadata
+directories supplied by one path, so stale metadata left by an unclean
+upgrade no longer shadows the version in use; a missing required metadata
+field now raises a ``KeyError`` naming both the field and the distribution;
+``EntryPoint`` value validation is deferred until the value is used, so one
+malformed entry point no longer prevents others from being selected;
+``importlib.metadata.diagnose`` no longer crashes on a metadata directory
+with no metadata file or no declared name; and ``SimplePath.joinpath`` and
+``SimplePath.__truediv__`` take ``other`` positional-only.

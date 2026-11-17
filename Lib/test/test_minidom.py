@@ -2143,6 +2143,42 @@ class MinidomTest(unittest.TestCase):
         self.confirm(e.isSameNode(doc.getElementById("w"))
                 and a2.isId)
 
+    def check_duplicate_id(self, doc):
+        # The first element in document order is returned, and lookups
+        # of other IDs which continue the search do not change that.
+        for i in range(2):
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertEqual(doc.getElementById("y").getAttribute("n"), "0")
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertIsNone(doc.getElementById("missing"))
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertEqual(doc.getElementById("z").getAttribute("n"), "4")
+            # clear the cache and start the search again
+            doc.documentElement.setAttribute("a", str(i))
+
+    def testGetElementByIdDuplicate(self):
+        body = ("<doc>"
+                "<e id='y' n='0'/>"
+                "<f><e id='x' n='1'/></f>"
+                "<e id='x' n='2'><e id='x' n='3'/></e>"
+                "<e id='z' n='4'/>"
+                "</doc>")
+        with self.subTest("ATTLIST"):
+            doc = parseString("<!DOCTYPE doc [<!ATTLIST e id ID #IMPLIED>]>" +
+                              body)
+            self.check_duplicate_id(doc)
+        with self.subTest("setIdAttribute"):
+            doc = parseString(body)
+            for e in doc.getElementsByTagName("e"):
+                e.setIdAttribute("id")
+            self.check_duplicate_id(doc)
+        with self.subTest("ATTLIST and setIdAttribute"):
+            doc = parseString("<!DOCTYPE doc [<!ATTLIST e n CDATA #IMPLIED>]>" +
+                              body)
+            for e in doc.getElementsByTagName("e"):
+                e.setIdAttribute("id")
+            self.check_duplicate_id(doc)
+
     def assert_recursive_equal(self, doc, doc2):
         stack = [(doc, doc2)]
         while stack:

@@ -1,0 +1,2 @@
+Fix the :mod:`gzip` command-line interface ignoring :option:`gzip --fast`
+and :option:`gzip --best` when compressing files given as arguments.

@@ -106,27 +106,20 @@ PyFile_GetLine(PyObject *f, int n)
 int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
-    PyObject *writer, *value, *result;
-
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = PyObject_GetAttr(f, &_Py_ID(write));
-    if (writer == NULL)
-        return -1;
-    if (flags & Py_PRINT_RAW) {
-        value = PyObject_Str(v);
-    }
-    else
-        value = PyObject_Repr(v);
+
+    Py_INCREF(f);
+    PyObject *value = (flags & Py_PRINT_RAW) ? PyObject_Str(v) : PyObject_Repr(v);
     if (value == NULL) {
-        Py_DECREF(writer);
+        Py_DECREF(f);
         return -1;
     }
-    result = PyObject_CallOneArg(writer, value);
+    PyObject *result = PyObject_CallMethodOneArg(f, &_Py_ID(write), value);
     Py_DECREF(value);
-    Py_DECREF(writer);
+    Py_DECREF(f);
     if (result == NULL)
         return -1;
     Py_DECREF(result);

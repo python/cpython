@@ -1,0 +1,3 @@
+Superinstructions are now formed after the compiler decides which
+:opcode:`LOAD_FAST` instructions can borrow their reference.
+This fixes reference count contention slowdown on the free-threaded build for single-line loops and comprehensions.

@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Barrier, Thread
+from threading import Barrier, Event, Thread
 from unittest import TestCase
 
 try:
@@ -228,6 +228,39 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_replace_inline_values_and_lookup(self):
+        # gh-160496: replacing an unmaterialized __dict__ clears inline
+        # values while attribute lookup can still read them without a lock.
+        class C:
+            pass
+
+        objects = [C() for _ in range(1000)]
+        for obj in objects:
+            obj.x = [0]
+
+        # Inline values are invalidated only once per object, so synchronize
+        # the threads for each fresh instance without accessing its __dict__.
+        barrier = Barrier(2)
+        observed = []
+
+        def writer():
+            for obj in objects:
+                barrier.wait()
+                obj.__dict__ = {"x": [1]}
+                barrier.wait()
+
+        def reader():
+            for obj in objects:
+                barrier.wait()
+                observed.append(getattr(obj, "x", None))
+                barrier.wait()
+
+        threading_helper.run_concurrently([writer, reader])
+        for value in observed:
+            self.assertIn(value, ([0], [1]))
+        for obj in objects:
+            self.assertEqual(obj.x, [1])
+
     def test_racing_object_get_set_dict(self):
         e = Exception()
 
@@ -437,6 +470,45 @@ class TestDict(TestCase):
 
         threading_helper.run_concurrently([reader, writer])
 
+    def test_racing_dealloc_and_split_dict_resize(self):
+        # gh-158198: an object's inline-values __dict__ escapes to another
+        # thread, which converts it to a combined table (by adding a non-str
+        # key) while the owning thread drops the last reference to the object.
+        NATTRS = 20
+
+        class C:
+            def __init__(self):
+                for i in range(NATTRS):
+                    setattr(self, f"a{i}", i)
+
+        def make_pair():
+            slot = [None]
+            done = Event()
+
+            def owner():
+                try:
+                    for j in range(2000):
+                        o = C()
+                        for i in range(NATTRS):
+                            self.assertEqual(getattr(o, f"a{i}"), i)
+                        slot[0] = o.__dict__
+                        for _ in range(j % 16):
+                            pass
+                        del o
+                finally:
+                    done.set()
+
+            def converter():
+                while not done.is_set():
+                    d = slot[0]
+                    if d is not None:
+                        d[0] = 0
+                        slot[0] = None
+
+            return [owner, converter]
+
+        threading_helper.run_concurrently(make_pair() + make_pair())
+
     def test_racing_dict_update_and_method_lookup_with_inline_values(self):
         # gh-149816: sub-case 108
         # The race below checks that a detached dict is still valid
@@ -492,6 +564,29 @@ class TestDict(TestCase):
         REPLACER_THREADS = 8
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
+
+    def test_racing_update_from_mutating_pair(self):
+        # gh-159244: dict() must not read the items of a key/value pair
+        # that another thread empties concurrently.
+        pair = [object(), object()]
+        done = Event()
+
+        def writer():
+            try:
+                for _ in range(10000):
+                    pair.clear()
+                    pair.extend((object(), object()))
+            finally:
+                done.set()
+
+        def reader():
+            while not done.is_set():
+                try:
+                    dict([pair])
+                except ValueError:
+                    pass
+
+        threading_helper.run_concurrently([writer] + [reader] * 4)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,5 @@
+Fix :meth:`codecs.StreamWriter.reset` of the stateful CJK codecs (``hz`` and
+the ``iso2022_*`` family) not writing the sequence that returns the output to
+ASCII.  ``seek(0)`` of :class:`codecs.StreamWriter`,
+:class:`codecs.StreamReaderWriter` and :class:`codecs.StreamRecoder` now
+resets the writer before moving the stream position.

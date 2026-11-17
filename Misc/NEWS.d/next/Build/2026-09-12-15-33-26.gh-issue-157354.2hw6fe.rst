@@ -1,0 +1,2 @@
+Fix the :samp:`--with-{name}-sanitizer=no` and :samp:`--without-{name}-sanitizer`
+:program:`configure` options enabling the sanitizer instead of disabling it.

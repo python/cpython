@@ -166,12 +166,17 @@ static inline void* mi_prim_tls_slot(size_t slot) mi_attr_noexcept {
     __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
     res = tcb[slot];
   #elif defined(__aarch64__)
-    void** tcb; MI_UNUSED(ofs);
+    // CPython: patched for watchOS support.
+    // Submitted upstream as microsoft/mimalloc#1444
+    // Use a 64-bit temporary: on arm64_32 (ILP32), pointers are 32 bits
+    // but system registers are 64 bits.
+    uint64_t tp; MI_UNUSED(ofs);
     #if defined(__APPLE__) // M1, issue #343
-    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tp));
     #else
-    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tp));
     #endif
+    void** tcb = (void**)(uintptr_t)tp;
     res = tcb[slot];
   #elif defined(__riscv)
     void** tcb; MI_UNUSED(ofs);
@@ -200,12 +205,15 @@ static inline void mi_prim_tls_slot_set(size_t slot, void* value) mi_attr_noexce
     __asm__ volatile ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tcb));
     tcb[slot] = value;
   #elif defined(__aarch64__)
-    void** tcb; MI_UNUSED(ofs);
+    // Use a 64-bit temporary: on arm64_32 (ILP32), pointers are 32 bits
+    // but system registers are 64 bits.
+    uint64_t tp; MI_UNUSED(ofs);
     #if defined(__APPLE__) // M1, issue #343
-    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tcb));
+    __asm__ volatile ("mrs %0, tpidrro_el0\nbic %0, %0, #7" : "=r" (tp));
     #else
-    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tcb));
+    __asm__ volatile ("mrs %0, tpidr_el0" : "=r" (tp));
     #endif
+    void** tcb = (void**)(uintptr_t)tp;
     tcb[slot] = value;
   #elif defined(__riscv)
     void** tcb; MI_UNUSED(ofs);

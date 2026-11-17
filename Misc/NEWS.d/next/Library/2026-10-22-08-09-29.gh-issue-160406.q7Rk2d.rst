@@ -1,0 +1,4 @@
+Fix in-place filtering in :mod:`fileinput` deleting the file when it cannot
+be opened or the output file cannot be created: the backup file is now kept.
+The output file is now created exclusively, so :exc:`FileExistsError` is
+raised if a file or symbolic link appears under the name of the input file.

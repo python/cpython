@@ -1,0 +1,3 @@
+Fix :meth:`io.BytesIO.getvalue` sometimes returning a :class:`bytes` object
+with the hash of earlier contents after the buffer was written to, which made
+:class:`dict` and :class:`set` lookups with it fail.

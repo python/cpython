@@ -1,0 +1,4 @@
+Fix a race in :mod:`asyncio` where closing a server after it accepted a
+connection, but before the connection's transport was created, reported an
+:exc:`AssertionError` to the exception handler. Such connections are now
+closed quietly.

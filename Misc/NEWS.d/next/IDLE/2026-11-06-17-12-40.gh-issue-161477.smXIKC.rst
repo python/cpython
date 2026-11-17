@@ -1,0 +1,3 @@
+Fix ``repr()`` of ``idlelib.redirector.WidgetRedirector`` and
+``idlelib.redirector.OriginalCommand``, which displayed a spurious
+one-element tuple.

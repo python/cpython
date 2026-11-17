@@ -1,0 +1,6 @@
+Fix a regression in Python 3.15.0 where threads importing submodules of
+packages for the first time could raise ``_DeadlockError`` or a spurious
+"partially initialized module" :exc:`ImportError`, or block one another, with
+no circular import involved. :func:`importlib.import_module` now returns the
+partially initialized module in a cross-thread circular import, as the
+:keyword:`import` statement does, instead of raising ``_DeadlockError``.

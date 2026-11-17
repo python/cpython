@@ -1,0 +1,1 @@
+Fix a crash (``RPC_NT_INTERNAL_ERROR``) and intermittent window class failures in :mod:`!_wmi` under high concurrency and load by initializing COM as multi-threaded (MTA) instead of apartment-threaded (STA).

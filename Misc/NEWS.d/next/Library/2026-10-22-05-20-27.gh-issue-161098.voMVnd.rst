@@ -1,0 +1,3 @@
+Fix :class:`multiprocessing.shared_memory.ShareableList` leaving its newly
+created shared memory block behind when a value cannot be stored, such as an
+integer outside the signed 64-bit range.

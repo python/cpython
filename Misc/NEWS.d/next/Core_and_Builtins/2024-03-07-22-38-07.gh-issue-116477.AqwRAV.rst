@@ -1,0 +1,1 @@
+Speed up the :class:`range` object constructor in the case of a single argument.

@@ -45,7 +45,11 @@ from test.support import (
     Py_GIL_DISABLED,
     no_rerun,
     force_not_colorized_test_class,
-    catch_unraisable_exception
+    catch_unraisable_exception,
+    infinite_recursion,
+    run_with_limited_c_stack,
+    skip_emscripten_stack_overflow,
+    skip_wasi_stack_overflow
 )
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -782,6 +786,24 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
+    @cpython_only
+    @skip_emscripten_stack_overflow()
+    @skip_wasi_stack_overflow()
+    @run_with_limited_c_stack(depth=100_000)
+    def test_acquire_lock_near_c_stack_limit(self):
+        # _imp.acquire_lock() must refuse to take the import lock when there
+        # is not enough C stack left to release it again.
+        def recurse(_):
+            _imp.acquire_lock()
+            _imp.release_lock()
+            list(map(recurse, [None]))
+
+        with infinite_recursion(100_000):
+            with self.assertRaisesRegex(RecursionError,
+                                        'acquiring the import lock'):
+                recurse(None)
+        self.assertFalse(_imp.lock_held())
+
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
     def test_dll_dependency_import(self):
         from _winapi import GetModuleFileName
@@ -1264,6 +1286,13 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+
+    def test_create_dynamic_no_origin(self):
+        with self.assertRaisesRegex(AttributeError, "no attribute 'origin'"):
+            class Spec:
+                name = "abc"
+            _imp.create_dynamic(Spec())
+
     def test_create_builtin(self):
         class Spec:
             pass
@@ -1273,7 +1302,7 @@ os.does_not_exist
         self.assertIs(_imp.create_builtin(spec), sys)
 
         spec.name = None
-        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+        with self.assertRaisesRegex(TypeError, 'module name must be a string, not NoneType'):
             _imp.create_builtin(spec)
 
         # gh-142029
@@ -1283,7 +1312,7 @@ os.does_not_exist
 
         # gh-142029
         spec.name = ""
-        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
+        with self.assertRaisesRegex(ValueError, 'module name must not be empty'):
             _imp.create_builtin(spec)
 
     def test_filter_syntax_warnings_by_module(self):
