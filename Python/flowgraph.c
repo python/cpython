@@ -1226,7 +1226,6 @@ basicblock_has_no_lineno(basicblock *b) {
 /* If this block ends with an unconditional jump to a small exit block or
  * a block that has no line numbers (and no fallthrough), then
  * remove the jump and extend this block with the target.
- * Also handles the case where a block falls through to a small exit block.
  * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
@@ -1236,15 +1235,6 @@ basicblock_inline_small_or_no_lineno_blocks(basicblock *bb) {
         return 0;
     }
     if (!IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
-        // If the block ends with a fallthrough to a small exit block, inline it.
-        if (BB_HAS_FALLTHROUGH(bb) && bb->b_next != NULL && !is_jump(last)) {
-            basicblock *next = bb->b_next;
-            if (basicblock_exits_scope(next) && next->b_iused <= MAX_COPY_SIZE) {
-                RETURN_IF_ERROR(basicblock_append_instructions(bb, next));
-                next->b_predecessors--;
-                return 1;
-            }
-        }
         return 0;
     }
     basicblock *target = last->i_target;
@@ -1286,6 +1276,28 @@ inline_small_or_no_lineno_blocks(basicblock *entryblock) {
         }
     } while(changes); /* every change removes a jump, ensuring convergence */
     return changes;
+}
+
+/* Merge an exit block into its fallthrough predecessor when it is the sole
+ * predecessor (requires b_predecessors to be up to date).
+ */
+static int
+merge_single_predecessor_exit_blocks(basicblock *entryblock)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        cfg_instr *last = basicblock_last_instr(b);
+        basicblock *next = b->b_next;
+        if (last == NULL || next == NULL || is_jump(last) ||
+            !BB_HAS_FALLTHROUGH(b) || next->b_predecessors != 1 ||
+            !basicblock_exits_scope(next))
+        {
+            continue;
+        }
+        RETURN_IF_ERROR(basicblock_append_instructions(b, next));
+        next->b_iused = 0;
+        next->b_predecessors = 0;
+    }
+    return SUCCESS;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -2687,6 +2699,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(check_cfg(g));
     RETURN_IF_ERROR(inline_small_or_no_lineno_blocks(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
+    RETURN_IF_ERROR(merge_single_predecessor_exit_blocks(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts, consts_index));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
