@@ -1732,7 +1732,7 @@ to speed up repeated connections from the same clients.
    Set the allowed ciphers for sockets created with this context when
    connecting using TLS 1.2 and earlier.  The *ciphers* argument should
    be a string in the `OpenSSL cipher list format
-   <https://docs.openssl.org/master/man1/ciphers/>`_.
+   <https://docs.openssl.org/master/man1/openssl-ciphers/#cipher-list-format>`_.
    To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
 
    If no cipher can be selected (because compile-time options or other
