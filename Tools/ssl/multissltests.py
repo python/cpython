@@ -277,9 +277,9 @@ class AbstractBuilder:
             url = url_template.format(v=self.version, s=self.short_version)
             log.info(f"Downloading from {url}")
             try:
-                req = urlopen(url)
-                # KISS, read all, write all
-                data = req.read()
+                with urlopen(url) as req:
+                    # KISS, read all, write all
+                    data = req.read()
             except HTTPError as e:
                 log.error(
                     f"Download from {url} has from failed: {e}"
@@ -300,19 +300,19 @@ class AbstractBuilder:
             shutil.rmtree(self.build_dir)
         os.makedirs(self.build_dir)
 
-        tf = tarfile.open(self.src_file)
         name = self.build_template.format(self.version)
         base = name + '/'
-        # force extraction into build dir
-        members = tf.getmembers()
-        for member in list(members):
-            if member.name == name:
-                members.remove(member)
-            elif not member.name.startswith(base):
-                raise ValueError(member.name, base)
-            member.name = member.name[len(base):].lstrip('/')
-        log.info(f"Unpacking files to {self.build_dir}")
-        tf.extractall(self.build_dir, members, filter='data')
+        with tarfile.open(self.src_file) as tf:
+            # force extraction into build dir
+            members = tf.getmembers()
+            for member in list(members):
+                if member.name == name:
+                    members.remove(member)
+                elif not member.name.startswith(base):
+                    raise ValueError(member.name, base)
+                member.name = member.name[len(base):].lstrip('/')
+            log.info(f"Unpacking files to {self.build_dir}")
+            tf.extractall(self.build_dir, members, filter='data')
 
     def _build_src(self, config_args=()):
         """Now build openssl"""
