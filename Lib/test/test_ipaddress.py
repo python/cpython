@@ -2852,6 +2852,25 @@ class IpaddrUnitTest(unittest.TestCase):
                 addr = ipaddress.IPv6Address(addr_v6)
                 self.assertEqual(addr.reverse_pointer, expected)
 
+    def testReversePointerInterface(self):
+        cases = [
+            ('192.0.2.1', '1.2.0.192.in-addr.arpa', (0, 24, 32)),
+            ('4321:0:1:2:3:4:567:89ab',
+             'b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.'
+             '2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa', (0, 64, 128)),
+            ('4321:0:1:2:3:4:567:89ab%eth0',
+             'b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.'
+             '2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa', (0, 64, 128)),
+            ('::ffff:192.0.2.1',
+             '1.0.2.0.0.0.0.c.f.f.f.f.0.0.0.0.'
+             '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa', (0, 96, 128)),
+        ]
+        for address, expected, prefixes in cases:
+            for prefix in prefixes:
+                with self.subTest(address=address, prefix=prefix):
+                    interface = ipaddress.ip_interface(f'{address}/{prefix}')
+                    self.assertEqual(interface.reverse_pointer, expected)
+
     def testIntRepresentation(self):
         self.assertEqual(16909060, int(self.ipv4_address))
         self.assertEqual(42540616829182469433547762482097946625,

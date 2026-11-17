@@ -1,0 +1,3 @@
+Fix :attr:`~ipaddress.IPv4Address.reverse_pointer` on
+:class:`ipaddress.IPv4Interface` and :class:`ipaddress.IPv6Interface` to use
+the host address without the network prefix.
