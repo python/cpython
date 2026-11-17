@@ -947,6 +947,13 @@ class TestInterpreterExec(TestBase):
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
 
+    def test_failure_memoryerror(self):
+        interp = interpreters.create()
+        with self.assertRaises(ExecutionFailed) as cm:
+            interp.exec('raise MemoryError("spam")')
+        self.assertEqual(cm.exception.excinfo.type.__name__, 'MemoryError')
+        self.assertEqual(cm.exception.excinfo.msg, 'spam')
+
     def test_failure_with_broken_exception_str(self):
         interp = interpreters.create()
         for raised, expected in [

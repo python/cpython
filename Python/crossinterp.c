@@ -1425,10 +1425,6 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
 {
     assert(exc != NULL);
 
-    if (PyErr_GivenExceptionMatches(exc, PyExc_MemoryError)) {
-        _PyXI_excinfo_clear(info);
-        return NULL;
-    }
     const char *failure = NULL;
 
     if (_excinfo_init_type_from_exception(&info->type, exc) < 0) {
