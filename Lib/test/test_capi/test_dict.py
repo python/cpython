@@ -656,14 +656,19 @@ class CAPITest(unittest.TestCase):
                 with self.assertRaises(SystemError):
                     as_frozendict(wrong_input)
 
-        # gh-161767: check embedded values
+        # gh-161767: check type with inline values and dict with embedded values
         class Regular: ...
 
         for klass in (Regular, _testcapi.ManagedDictType):
             with self.subTest(klass=klass):
-                instance = klass()
+                instance = klass()  # empty `.__dict__`
+                with self.assertRaisesRegex(ValueError, 'dict with embedded values'):
+                    as_frozendict(instance.__dict__)
+                self.assertEqual(instance.__dict__, {})
+
+                instance = klass()  # non-empty `.__dict__`
                 instance.key = 'value'
-                with self.assertRaisesRegex(ValueError, 'embedded values'):
+                with self.assertRaisesRegex(ValueError, 'dict with embedded values'):
                     as_frozendict(instance.__dict__)
 
                 self.assertEqual(instance.__dict__, {'key': 'value'})
