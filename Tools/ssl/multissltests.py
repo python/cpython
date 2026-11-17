@@ -18,27 +18,19 @@ The script uses LD_RUN_PATH, LD_LIBRARY_PATH, CPPFLAGS and LDFLAGS to bend
 search paths for header files and shared libraries. It's known to work on
 Linux with GCC and clang.
 
-Please keep this script compatible with Python 2.7, and 3.4 to 3.7.
-
 (c) 2013-2017 Christian Heimes <christian@python.org>
 """
-from __future__ import print_function
-
 import argparse
-from datetime import datetime
 import logging
 import os
-try:
-    from urllib.request import urlopen
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import urlopen, HTTPError
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
-
+from datetime import datetime
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 log = logging.getLogger("multissl")
 
@@ -95,18 +87,20 @@ parser.add_argument(
     nargs='+',
     default=(),
     help=(
-        "OpenSSL versions, defaults to '{}' (ancient: '{}') if no "
+        f"OpenSSL versions, defaults to '{OPENSSL_RECENT_VERSIONS}' "
+        f"(ancient: '{OPENSSL_OLD_VERSIONS}') if no "
         "OpenSSL and LibreSSL versions are given."
-    ).format(OPENSSL_RECENT_VERSIONS, OPENSSL_OLD_VERSIONS)
+    )
 )
 parser.add_argument(
     '--libressl',
     nargs='+',
     default=(),
     help=(
-        "LibreSSL versions, defaults to '{}' (ancient: '{}') if no "
+        f"LibreSSL versions, defaults to '{LIBRESSL_RECENT_VERSIONS}' "
+        f"(ancient: '{LIBRESSL_OLD_VERSIONS}') if no "
         "OpenSSL and LibreSSL versions are given."
-    ).format(LIBRESSL_RECENT_VERSIONS, LIBRESSL_OLD_VERSIONS)
+    )
 )
 parser.add_argument(
     '--aws-lc',
@@ -116,8 +110,9 @@ parser.add_argument(
     nargs='+',
     default=(),
     help=(
-        "AWS-LC versions, defaults to '{}' if no crypto library versions are given."
-    ).format(AWSLC_RECENT_VERSIONS)
+        f"AWS-LC versions, defaults to '{AWSLC_RECENT_VERSIONS}' "
+        f"if no crypto library versions are given."
+    )
 )
 parser.add_argument(
     '--tests',
@@ -171,7 +166,7 @@ parser.add_argument(
 )
 
 
-class AbstractBuilder(object):
+class AbstractBuilder:
     library = None
     url_templates = None
     src_template = None
@@ -206,7 +201,7 @@ class AbstractBuilder(object):
         self.system = args.system
 
     def __str__(self):
-        return "<{0.__class__.__name__} for {0.version}>".format(self)
+        return f"<{self.__class__.__name__} for {self.version}>"
 
     def __eq__(self, other):
         if not isinstance(other, AbstractBuilder):
@@ -261,11 +256,11 @@ class AbstractBuilder(object):
         return os.path.isfile(self.src_file)
 
     def _subprocess_call(self, cmd, env=None, **kwargs):
-        log.debug("Call '{}'".format(" ".join(cmd)))
+        log.debug(f"Call '{' '.join(cmd)}'")
         return subprocess.check_call(cmd, env=env, **kwargs)
 
     def _subprocess_output(self, cmd, env=None, **kwargs):
-        log.debug("Call '{}'".format(" ".join(cmd)))
+        log.debug(f"Call '{' '.join(cmd)}'")
         if env is None:
             env = os.environ.copy()
             env["LD_LIBRARY_PATH"] = self.lib_dir
@@ -280,21 +275,21 @@ class AbstractBuilder(object):
         data = None
         for url_template in self.url_templates:
             url = url_template.format(v=self.version, s=self.short_version)
-            log.info("Downloading from {}".format(url))
+            log.info(f"Downloading from {url}")
             try:
                 req = urlopen(url)
                 # KISS, read all, write all
                 data = req.read()
             except HTTPError as e:
                 log.error(
-                    "Download from {} has from failed: {}".format(url, e)
+                    f"Download from {url} has from failed: {e}"
                 )
             else:
-                log.info("Successfully downloaded from {}".format(url))
+                log.info(f"Successfully downloaded from {url}")
                 break
         if data is None:
             raise ValueError("All download URLs have failed")
-        log.info("Storing {}".format(self.src_file))
+        log.info(f"Storing {self.src_file}")
         with open(self.src_file, "wb") as f:
             f.write(data)
 
@@ -316,19 +311,19 @@ class AbstractBuilder(object):
             elif not member.name.startswith(base):
                 raise ValueError(member.name, base)
             member.name = member.name[len(base):].lstrip('/')
-        log.info("Unpacking files to {}".format(self.build_dir))
+        log.info(f"Unpacking files to {self.build_dir}")
         tf.extractall(self.build_dir, members, filter='data')
 
     def _build_src(self, config_args=()):
         """Now build openssl"""
-        log.info("Running build in {}".format(self.build_dir))
+        log.info(f"Running build in {self.build_dir}")
         cwd = self.build_dir
         if self.args.tsan:
             config_args += ("-fsanitize=thread",)
         cmd = [
             "./config", *config_args,
             "shared", "--debug",
-            "--prefix={}".format(self.install_dir)
+            f"--prefix={self.install_dir}"
         ]
         # cmd.extend(["no-deprecated", "--api=1.1.0"])
         env = os.environ.copy()
@@ -361,19 +356,19 @@ class AbstractBuilder(object):
             if not self.has_src:
                 self._download_src()
             else:
-                log.debug("Already has src {}".format(self.src_file))
+                log.debug(f"Already has src {self.src_file}")
             self._unpack_src()
             self._build_src()
             self._make_install()
         else:
-            log.info("Already has installation {}".format(self.install_dir))
+            log.info(f"Already has installation {self.install_dir}")
         # validate installation
         version = self.openssl_version
         if self.version not in version:
             raise ValueError(version)
 
     def recompile_pymods(self):
-        log.warning("Using build from {}".format(self.build_dir))
+        log.warning(f"Using build from {self.build_dir}")
         # force a rebuild of all modules that use OpenSSL APIs
         for fname in self.module_files:
             os.utime(fname, None)
@@ -385,8 +380,8 @@ class AbstractBuilder(object):
 
         # overwrite header and library search paths
         env = os.environ.copy()
-        env["CPPFLAGS"] = "-I{}".format(self.include_dir)
-        env["LDFLAGS"] = "-L{}".format(self.lib_dir)
+        env["CPPFLAGS"] = f"-I{self.include_dir}"
+        env["LDFLAGS"] = f"-L{self.lib_dir}"
         # set rpath
         env["LD_RUN_PATH"] = self.lib_dir
 
@@ -411,8 +406,6 @@ class AbstractBuilder(object):
                 os.path.join(PYTHONROOT, 'Lib/test/ssltests.py'),
                 '-j0'
             ]
-        elif sys.version_info < (3, 3):
-            cmd = [sys.executable, '-m', 'test.regrtest']
         else:
             cmd = [sys.executable, '-m', 'test', '-j0']
         if network:
@@ -493,7 +486,7 @@ class BuildAWSLC(AbstractBuilder):
 
     def _build_src(self, config_args=()):
         cwd = self.build_dir
-        log.info("Running build in {}".format(cwd))
+        log.info(f"Running build in {cwd}")
         env = os.environ.copy()
         env["LD_RUN_PATH"] = self.lib_dir # set rpath
         if self.system:
@@ -501,14 +494,14 @@ class BuildAWSLC(AbstractBuilder):
         cmd = [
             "cmake",
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
-            "-DCMAKE_PREFIX_PATH={}".format(self.install_dir),
-            "-DCMAKE_INSTALL_PREFIX={}".format(self.install_dir),
+            f"-DCMAKE_PREFIX_PATH={self.install_dir}",
+            f"-DCMAKE_INSTALL_PREFIX={self.install_dir}",
             "-DBUILD_SHARED_LIBS=ON",
             "-DBUILD_TESTING=OFF",
             "-DFIPS=OFF",
         ]
         self._subprocess_call(cmd, cwd=cwd, env=env)
-        self._subprocess_call(["make", "-j{}".format(self.jobs)], cwd=cwd, env=env)
+        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
 
 
 def configure_make():
@@ -577,13 +570,10 @@ def main():
                     )
             except Exception as e:
                 log.exception("%s failed", build)
-                print("{} failed: {}".format(build, e), file=sys.stderr)
+                print(f"{build} failed: {e}", file=sys.stderr)
                 sys.exit(2)
 
-    log.info("\n{} finished in {}".format(
-            args.steps.capitalize(),
-            datetime.now() - start
-        ))
+    log.info(f"\n{args.steps.capitalize()} finished in {datetime.now() - start}")
     print('Python: ', sys.version)
     if args.steps == 'tests':
         if args.tests:
@@ -593,7 +583,7 @@ def main():
 
     print('OpenSSL / LibreSSL / AWS-LC versions:')
     for build in builds:
-        print("    * {0.library} {0.version}".format(build))
+        print(f"    * {build.library} {build.version}")
 
 
 if __name__ == "__main__":
