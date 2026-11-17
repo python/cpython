@@ -22,6 +22,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 
 class GenericTests(unittest.TestCase):
@@ -179,6 +183,30 @@ class PosixTests(unittest.TestCase):
         # via a signal.  POSIX shells do more than look at the 8 bit value.
         # Writing an automation friendly test of an interactive shell
         # to confirm that our process died via a SIGINT proved too complex.
+
+    @support.requires_fork()
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_fork_with_handler_lock_held(self):
+        # A thread holding the handler table lock when another thread forks,
+        # such as one in a subinterpreter with its own GIL, does not exist in
+        # the child, so the child must not inherit the lock held.
+        _testinternalcapi.lock_signal_handlers()
+        try:
+            pid = os.fork()
+            # pid returned of 0 if child process
+            if pid > 0:
+                return
+
+            try:
+                signal.getsignal(signal.SIGINT)
+            except BaseException:
+                os._exit(1)
+            os._exit(0)
+        finally:
+            _testinternalcapi.unlock_signal_handlers()
+
+        # Failure case of lock being held is exposed via timeout
+        support.wait_process(pid, exitcode=0)
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")

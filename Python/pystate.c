@@ -322,6 +322,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->_main_interpreter.types.mutex, \
         &(runtime)->_main_interpreter.code_state.mutex, \
         &(runtime)->_main_interpreter.dict_state.watcher_mutex, \
+        &(runtime)->signals.handlers_mutex, \
     }
 
 static void

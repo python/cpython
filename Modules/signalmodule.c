@@ -11,7 +11,6 @@
 #include "pycore_interpframe.h"   // _PyThreadState_GetFrame()
 #include "pycore_lock.h"          // _Py_LOCK_DONT_DETACH
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_MUTEX_LOCK_FLAGS()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
@@ -140,10 +139,10 @@ get_handler(int i)
 Py_LOCAL_INLINE(PyObject *)
 get_handler_ref(int i)
 {
-    FT_MUTEX_LOCK_FLAGS(&_PyRuntime.signals.handlers_mutex,
-                        _Py_LOCK_DONT_DETACH);
+    PyMutex_LockFlags(&_PyRuntime.signals.handlers_mutex,
+                      _Py_LOCK_DONT_DETACH);
     PyObject *func = Py_XNewRef(get_handler(i));
-    FT_MUTEX_UNLOCK(&_PyRuntime.signals.handlers_mutex);
+    PyMutex_Unlock(&_PyRuntime.signals.handlers_mutex);
     return func;
 }
 
@@ -152,11 +151,11 @@ get_handler_ref(int i)
 Py_LOCAL_INLINE(PyObject *)
 swap_handler(int i, PyObject *func)
 {
-    FT_MUTEX_LOCK_FLAGS(&_PyRuntime.signals.handlers_mutex,
-                        _Py_LOCK_DONT_DETACH);
+    PyMutex_LockFlags(&_PyRuntime.signals.handlers_mutex,
+                      _Py_LOCK_DONT_DETACH);
     PyObject *old = _Py_atomic_exchange_ptr(&Handlers[i].func,
                                             Py_XNewRef(func));
-    FT_MUTEX_UNLOCK(&_PyRuntime.signals.handlers_mutex);
+    PyMutex_Unlock(&_PyRuntime.signals.handlers_mutex);
     return old;
 }
 
