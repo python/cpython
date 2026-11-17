@@ -1,0 +1,3 @@
+Skip ``@support.nomemtest`` tests when using a thread sanitizer (TSan).
+``set_nomemory()`` and ``call_with_nomemory()`` functions of the
+:mod:`!_testcapi` extension are not thread safe. Patch by Victor Stinner.
