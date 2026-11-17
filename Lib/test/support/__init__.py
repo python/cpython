@@ -1330,7 +1330,13 @@ def nomemtest(test):
         import_module('_testcapi')
         return test(*args, **kwargs)
 
-    return cpython_only(internal)
+    # gh-162144: set_nomemory() and call_with_nomemory() of _testcapi are not
+    # thread safe and emit warnings when using a thread sanitizer (TSan).
+    use_tsan = check_sanitizer(thread=True)
+    reason ='not working with thread sanitizer (gh-157415)'
+    skip_if_tsan = unittest.skipIf(use_tsan, reason)
+
+    return cpython_only(skip_if_tsan(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
