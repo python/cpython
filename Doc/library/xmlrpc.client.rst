@@ -361,7 +361,7 @@ The client gets the image and saves it to a file::
 
 .. _error-objects:
 
-Error Objects
+Error objects
 -------------
 
 .. exception:: Error
