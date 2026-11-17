@@ -34,6 +34,7 @@ from .readline import _get_reader, multiline_input, append_history_file
 
 
 # Called with submitted input before execution, except for REPL commands.
+# Exceptions (not KeyboardInterrupt or SystemExit) raised in the hook are displayed but do not prevent execution.
 input_submitted_hook = None
 
 
