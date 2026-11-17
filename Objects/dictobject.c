@@ -8707,13 +8707,6 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
-    PyDictObject *ma = (PyDictObject*)dict;
-    if (ma->ma_values && ma->ma_values->embedded) {
-        PyErr_SetString(PyExc_ValueError,
-                        "can't convert dict with embedded values");
-        return NULL;
-    }
-
     PyObject *res = frozendict_new_untracked(&PyFrozenDict_Type);
     if (res == NULL) {
         return NULL;
