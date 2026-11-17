@@ -2,7 +2,7 @@
 // Do no check PyType_Check() so Python tests can pass arbitrary objects,
 // even if it's likely to crash.
 
-// Need limited C API version 3.14 for PyType_Freeze()
+// Need limited C API version 3.15 for PyType_Freeze()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 #  define Py_LIMITED_API 0x030e0000
@@ -160,6 +160,40 @@ type_issubtype(PyObject *module, PyObject *args)
 }
 
 
+// Type whose tp_dealloc calls PyType_GetModuleByToken() (gh-160840)
+static int
+getmodulebytoken_dealloc_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
+static void
+getmodulebytoken_dealloc_dealloc(PyObject *op)
+{
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+
+    PyObject *mod = PyType_GetModuleByDef(tp, &_Py_TestLimitedCAPI_ModuleDef);
+    if (mod == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    freefunc tp_free = (freefunc)PyType_GetSlot(tp, Py_tp_free);
+    tp_free(op);
+    Py_DECREF(tp);
+}
+
+static PyType_Spec getmodulebytoken_dealloc_spec = {
+    .name = "_testlimitedcapi.GetModuleByTokenInDealloc",
+    .flags = Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = (PyType_Slot[]) {
+        {Py_tp_traverse, getmodulebytoken_dealloc_traverse},
+        {Py_tp_dealloc, getmodulebytoken_dealloc_dealloc},
+        {0},
+    },
+};
+
 static PyMethodDef test_methods[] = {
     {"get_heaptype_for_name", get_heaptype_for_name, METH_NOARGS},
     {"get_type_name", get_type_name, METH_O},
@@ -179,6 +213,12 @@ int
 _PyTestLimitedCAPI_Init_Type(PyObject *m)
 {
     if (PyModule_AddFunctions(m, test_methods) < 0) {
+        return -1;
+    }
+
+    PyObject *type = PyType_FromModuleAndSpec(
+        m, &getmodulebytoken_dealloc_spec, NULL);
+    if (PyModule_Add(m, "GetModuleByTokenInDealloc", type) < 0) {
         return -1;
     }
 

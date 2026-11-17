@@ -24,6 +24,9 @@
 #  error "Py_BUILD_CORE macro must not be defined"
 #endif
 
+// Definition (and token) of the _testlimitedcapi module
+extern PyModuleDef _Py_TestLimitedCAPI_ModuleDef;
+
 int _PyTestLimitedCAPI_Init_Abstract(PyObject *module);
 int _PyTestLimitedCAPI_Init_ByteArray(PyObject *module);
 int _PyTestLimitedCAPI_Init_Bytes(PyObject *module);
