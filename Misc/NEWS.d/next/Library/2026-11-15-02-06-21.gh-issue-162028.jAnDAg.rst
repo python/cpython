@@ -1,0 +1,2 @@
+Fix the position reported by the pure Python :mod:`json` decoder for an
+invalid escape. It now points to the backslash, like the C decoder.
