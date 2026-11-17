@@ -1,0 +1,1 @@
+Fix :func:`annotationlib.call_annotate_function` will now call annotate functions with ``Format.VALUE`` before trying to call the function in the fake globals context. This is faster in the case where ``VALUE`` annotations would succeed, especially in cases with large numbers of elements in globals.
