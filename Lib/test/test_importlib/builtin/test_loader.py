@@ -11,7 +11,6 @@ import warnings
 
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
 class InspectLoaderTests:
-
     """Tests for InspectLoader methods for BuiltinImporter."""
 
     def test_get_code(self):
@@ -44,7 +43,6 @@ class InspectLoaderTests:
 
 
 class OsModuleTests:
-
     """Test loading _os and its historical name by hand."""
 
     def test_load_by_hand(self):
