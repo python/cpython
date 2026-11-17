@@ -532,6 +532,23 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(spam.iterator)
 
+    def test_iter_function_sentinel_replaced_during_compare(self):
+        # gh-158031: the sentinel's __eq__ replaces the sentinel, which must
+        # stay alive until the comparison is finished.
+        class Sentinel:
+            def __eq__(self, other):
+                it.__setstate__(((), StopIteration))
+                return NotImplemented
+
+        class Result:
+            def __eq__(self, other):
+                self.other_type = type(other)
+                return NotImplemented
+
+        it = iter(Result, Sentinel())
+        result = next(it)
+        self.assertIs(result.other_type, Sentinel)
+
     # Test exception propagation through function iterator
     def test_exception_function(self):
         def spam(state=[0]):

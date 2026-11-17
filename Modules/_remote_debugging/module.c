@@ -384,12 +384,6 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
-    self->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&self->handle);
-    if (self->runtime_start_address == 0) {
-        set_exception_cause(self, PyExc_RuntimeError, "Failed to get Python runtime address");
-        return -1;
-    }
-
     if (_Py_RemoteDebug_ReadDebugOffsets(&self->handle,
                                          &self->runtime_start_address,
                                          &self->debug_offsets) < 0)
@@ -404,20 +398,8 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
-    // Try to read async debug offsets, but don't fail if they're not available
-    self->async_debug_offsets_available = 1;
-    int async_debug_result = read_async_debug(self);
-    if (async_debug_result == PY_REMOTE_DEBUG_INVALID_ASYNC_DEBUG_OFFSETS) {
-        return -1;
-    }
-    if (async_debug_result < 0) {
-        if (_Py_RemoteDebug_HasPermissionError()) {
-            return -1;
-        }
-        PyErr_Clear();
-        memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
-        self->async_debug_offsets_available = 0;
-    }
+    self->async_debug_offsets_available = 0;
+    memset(&self->async_debug_offsets, 0, sizeof(self->async_debug_offsets));
 
     if (populate_initial_state_data(all_threads, self, self->runtime_start_address,
                     &self->interpreter_addr ,&self->tstate_addr) < 0)
@@ -456,15 +438,6 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
-#if defined(__APPLE__)
-    self->thread_id_offset = 0;
-    self->thread_id_offset_initialized = 0;
-#endif
-
-#ifdef MS_WINDOWS
-    self->win_process_buffer = NULL;
-    self->win_process_buffer_size = 0;
-#endif
 #ifdef __linux__
     self->thread_tids = NULL;
     self->thread_tids_capacity = 0;
@@ -1347,11 +1320,6 @@ RemoteUnwinder_dealloc(PyObject *op)
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
     }
-#ifdef MS_WINDOWS
-    if (self->win_process_buffer != NULL) {
-        PyMem_Free(self->win_process_buffer);
-    }
-#endif
 
 #ifdef Py_GIL_DISABLED
     if (self->tlbc_cache) {
@@ -1405,11 +1373,6 @@ init_runtime_offsets(RuntimeOffsets *offsets, pid_t pid, int debug)
     if (_Py_RemoteDebug_InitProcHandle(&offsets->handle, pid) < 0) {
         set_exception_cause(offsets, PyExc_RuntimeError, "Failed to initialize process handle");
         return -1;
-    }
-    offsets->runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&offsets->handle);
-    if (offsets->runtime_start_address == 0) {
-        set_exception_cause(offsets, PyExc_RuntimeError, "Failed to get Python runtime address");
-        goto error;
     }
     if (_Py_RemoteDebug_ReadDebugOffsets(&offsets->handle,
                                          &offsets->runtime_start_address,
