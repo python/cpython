@@ -672,10 +672,11 @@ To configure the values returned from the iteration (implicit in the call to
     [1, 2, 3]
 
 .. [#] There are also generator expressions and more `advanced uses
-    <http://www.dabeaz.com/coroutines/index.html>`_ of generators, but we aren't
-    concerned about them here. A very good introduction to generators and how
-    powerful they are is: `Generator Tricks for Systems Programmers
-    <http://www.dabeaz.com/generators/>`_.
+    <https://www.dabeaz.com/tutorials.html#curious-course-coroutines>`_ of
+    generators, but we aren't concerned about them here. A very good
+    introduction to generators and how powerful they are is: `Generator Tricks
+    for Systems Programmers
+    <https://www.dabeaz.com/tutorials.html#generator-tricks-for-systems-programmers>`_.
 
 
 Applying the same patch to every test method
