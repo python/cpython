@@ -792,6 +792,8 @@ def call_annotate_function(
         # reconstruct the source. But in the dictionary that we eventually return, we
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
+
+        # Try Format.VALUE first if it has not already been tried by get_annotations
         if not _skip_value_call:
             try:
                 return annotate(Format.VALUE)
