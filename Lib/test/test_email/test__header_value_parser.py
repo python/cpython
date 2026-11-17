@@ -3409,9 +3409,11 @@ class TestFolding(TestEmailBase):
             with self.subTest(to=to):
                 self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
-    # XXX Need tests with comments on various sides of a unicode token,
-    # and with unicode tokens in the comments.  Spaces inside the quotes
-    # currently don't do the right thing.
+    def test_address_list_with_unicode_comment(self):
+        # Regression for gh-162125: parentheses are syntax, not part of
+        # the encoded word containing the comment text.
+        self._test(parser.get_address_list('Ana (ñ) <a@example.com>')[0],
+                   'Ana (=?utf-8?q?=C3=B1?=) <a@example.com>\n')
 
     def test_split_at_whitespace_after_header_before_long_token(self):
         body = parser.get_unstructured('   ' + 'x'*77)

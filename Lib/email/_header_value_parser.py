@@ -2911,12 +2911,24 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
     last_ew = None  # if there is an encoded word in the last line of lines,
                     # points to the encoded word's first character
     last_charset = None
+    last_comment_end = None  # (line count, column) of the last emitted comment
     wrap_as_ew_blocked = 0
     want_encoding = False  # This is set to True if we need to encode this part
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
     parts = list(parse_tree)
     while parts:
         part = parts.pop(0)
+        if part.token_type == 'cfws':
+            # Visit comments themselves before changing encoded-word state.
+            parts = list(part) + parts
+            continue
+        if part.token_type == 'comment':
+            # Encoded words must not combine across comment boundaries.
+            if (last_word_is_ew and parse_tree.token_type != 'comment' and
+                    not lines[-1].endswith((' ', '\t'))):
+                lines[-1] += ' '
+            last_ew = None
+            last_word_is_ew = False
         if part is end_ew_not_allowed:
             wrap_as_ew_blocked -= 1
             continue
@@ -2946,6 +2958,24 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
                 charset = 'utf-8'
             want_encoding = True
 
+        if (part.token_type == 'comment' and not wrap_as_ew_blocked and
+                (want_encoding or
+                 (parse_tree.token_type == 'comment' and
+                  len(tstr) > maxlen - len(lines[-1])))):
+            # Comment.__str__ supplies the parentheses.  Keep them outside
+            # encoded words, including those in nested comments.
+            if len(lines[-1]) >= maxlen:
+                newline = _steal_trailing_WSP_if_exists(lines)
+                lines.append(newline or ' ')
+            lines[-1] += '('
+            _refold_with_ew(part, lines, maxlen, encoding, policy=policy)
+            if len(lines[-1]) >= maxlen:
+                lines.append(' ')
+            lines[-1] += ')'
+            last_comment_end = (len(lines), len(lines[-1]))
+            want_encoding = False
+            continue
+
         if want_encoding and not wrap_as_ew_blocked:
             if any(
                     not x.as_ew_allowed for x in part
@@ -2955,7 +2985,10 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
                 last_ew = None
                 if part.syntactic_break:
                     encoded_part = part.fold(policy=policy)[:-len(policy.linesep)]
-                    if policy.linesep not in encoded_part:
+                    if (policy.linesep not in encoded_part and
+                            (not part.contains_token_type('comment') or
+                             len(encoded_part) <= maxlen - len(lines[-1]) or
+                             len(encoded_part) + 1 <= maxlen)):
                         # It fits on a single line
                         if len(encoded_part) > maxlen - len(lines[-1]):
                             # But not on this one, so start a new one.
@@ -2977,6 +3010,9 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             elif part.as_ew_allowed:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (parse_tree.token_type != 'comment' and
+                        last_comment_end == (len(lines), len(lines[-1]))):
+                    lines[-1] += ' '
                 if (last_ew is not None and
                     charset != last_charset and
                     (last_charset == 'unknown-8bit' or
@@ -3004,6 +3040,8 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
 
         if len(tstr) <= maxlen - len(lines[-1]):
             lines[-1] += tstr
+            if part.token_type == 'comment':
+                last_comment_end = (len(lines), len(lines[-1]))
             last_word_is_ew = last_word_is_ew and not bool(tstr.strip(_WSP))
             continue
 
@@ -3015,6 +3053,8 @@ def _refold_with_ew(parse_tree, lines, maxlen, encoding, *, policy):
             newline = _steal_trailing_WSP_if_exists(lines)
             if newline or part.startswith_fws():
                 lines.append(newline + tstr)
+                if part.token_type == 'comment':
+                    last_comment_end = (len(lines), len(lines[-1]))
                 last_word_is_ew = (last_word_is_ew
                                    and not bool(lines[-1].strip(_WSP)))
                 last_ew = None
@@ -3116,21 +3156,23 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
     while to_encode:
         remaining_space = maxlen - len(lines[-1])
         text_space = remaining_space - chrome_len
-        if text_space <= 0:
-            newline = _steal_trailing_WSP_if_exists(lines)
-            lines.append(newline or ' ')
-            new_last_ew = len(lines[-1])
-            continue
-
-        to_encode_word = to_encode[:text_space]
+        to_encode_word = to_encode[:max(1, text_space)]
         encoded_word = _ew.encode(to_encode_word, charset=encode_as)
         excess = len(encoded_word) - remaining_space
-        while excess > 0:
+        while excess > 0 and len(to_encode_word) > 1:
             # Since the chunk to encode is guaranteed to fit into less than 100 characters,
             # shrinking it by one at a time shouldn't take long.
             to_encode_word = to_encode_word[:-1]
             encoded_word = _ew.encode(to_encode_word, charset=encode_as)
             excess = len(encoded_word) - remaining_space
+        if excess > 0:
+            if not lines[-1].strip(_WSP):
+                raise errors.HeaderParseError(
+                    "max_line_length is too small to fit an encoded word")
+            newline = _steal_trailing_WSP_if_exists(lines)
+            lines.append(newline or ' ')
+            new_last_ew = len(lines[-1])
+            continue
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
 

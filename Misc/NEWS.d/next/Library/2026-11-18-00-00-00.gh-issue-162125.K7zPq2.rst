@@ -1,0 +1,2 @@
+Preserve parentheses around non-ASCII comments when folding :mod:`email`
+headers with encoded words.

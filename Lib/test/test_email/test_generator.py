@@ -6,6 +6,7 @@ import random
 import sys
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
+from email.header import decode_header, make_header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.generator import Generator, BytesGenerator
@@ -295,6 +296,89 @@ class TestGeneratorBase:
         g = self.genclass(s, policy=self.policy.clone(max_line_length=30))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
+
+    def test_non_ascii_address_comments(self):
+        cases = [
+            # (value, max_line_length, number of comment delimiters)
+            ('Ana (ñ) <a@example.com>', 20, 1),
+            ('Ana (ñ) <a@example.com>', 27, 1),
+            ('Ana (((é))) <a@example.com>', 20, 3),
+        ]
+        for value, maxlen, comment_count in cases:
+            p = self.policy.clone(max_line_length=maxlen)
+            with self.subTest(value=value, maxlen=maxlen):
+                msg = EmailMessage(policy=p)
+                msg['To'] = value
+                s = self.ioclass()
+                self.genclass(s, policy=p).flatten(msg)
+                folded = s.getvalue()
+                self.assertEqual(folded.count(self.typ('(')), comment_count)
+                self.assertEqual(folded.count(self.typ(')')), comment_count)
+                self.assertNotIn(self.typ('=?utf-8?q??='), folded)
+                for line in folded.splitlines():
+                    self.assertLessEqual(len(line), maxlen)
+                reparsed = self.msgmaker(folded, policy=p)
+                self.assertEqual(reparsed['To'].defects, ())
+                self.assertEqual(reparsed['To'].addresses,
+                                 (Address('Ana', 'a', 'example.com'),))
+
+    def test_generated_non_ascii_address_comments(self):
+        for case in range(32):
+            words = [''.join(random.choices('abcdeéñΩЖ日本',
+                                           k=random.randint(1, 8)))
+                     for _ in range(random.randint(1, 3))]
+            comment = random.choice('éñΩ日') + ''.join(
+                random.choices('abcéñΩ日()\\ ', k=random.randrange(24)))
+            comment = ' '.join(comment.split())
+            escaped = (comment.replace('\\', '\\\\')
+                              .replace('(', r'\(').replace(')', r'\)'))
+            position = random.randrange(len(words) + 1)
+            left = ' '.join(words[:position])
+            right = ' '.join(words[position:])
+            gap = random.choice(('', ' ', '\t'))
+            value = f'{left}{gap}({escaped}){gap}{right} <a@example.com>'
+            maxlen = random.choice((26, 40, 78))
+            p = self.policy.clone(max_line_length=maxlen)
+
+            with self.subTest(case=case, value=value, maxlen=maxlen):
+                msg = EmailMessage(policy=p)
+                msg['To'] = value
+                s = self.ioclass()
+                self.genclass(s, policy=p).flatten(msg)
+                folded = s.getvalue()
+                self.assertNotRegex(folded, self.typ(r'=\?[^?]+\?[bqBQ]\?\?='))
+                for line in folded.splitlines():
+                    self.assertLessEqual(len(line), maxlen)
+
+                header = self.msgmaker(folded, policy=p)['To']
+                self.assertEqual(header.defects, ())
+                self.assertEqual(header.addresses, (
+                    Address(' '.join(words), 'a', 'example.com'),))
+                comments = header._parse_tree.comments
+                self.assertEqual(len(comments), 1)
+                decoded = str(make_header(decode_header(comments[0])))
+                self.assertEqual(' '.join(decoded.split()), comment)
+
+    def test_encoded_word_after_literal_parenthesis(self):
+        msg = EmailMessage(policy=self.policy)
+        msg['Subject'] = ')=?utf-8?q?=C3=A9?='
+        s = self.ioclass()
+        self.genclass(s, policy=self.policy).flatten(msg)
+        reparsed = self.msgmaker(s.getvalue())
+        self.assertEqual(str(reparsed['Subject']), ')é')
+
+    def test_non_ascii_content_disposition_comment(self):
+        msg = EmailMessage(policy=self.policy)
+        msg['Content-Disposition'] = 'attachment (é)'
+        s = self.ioclass()
+        self.genclass(s, policy=self.policy).flatten(msg)
+        header = self.msgmaker(s.getvalue(), policy=self.policy)[
+            'Content-Disposition']
+        self.assertEqual(header.defects, ())
+        self.assertEqual(header.content_disposition, 'attachment')
+        comments = header._parse_tree.comments
+        self.assertEqual(len(comments), 1)
+        self.assertEqual(str(make_header(decode_header(comments[0]))), 'é')
 
     def test_non_ascii_addr_spec_raises(self):
         # non-ascii is not permitted in any part of an addr-spec.  If the
