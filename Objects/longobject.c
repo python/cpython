@@ -177,19 +177,22 @@ long_alloc(Py_ssize_t size)
      * assume that there is always at least one digit present. */
     Py_ssize_t ndigits = size ? size : 1;
 
-    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
-    sizeof(digit)*size.  Previous incarnations of this code used
-    sizeof() instead of the offsetof, but this risks being
-    incorrect in the presence of padding between the header
-    and the digits. */
-    size_t nbytes = (offsetof(PyLongObject, long_value.ob_digit) +
-                     ndigits*sizeof(digit));
+    Py_ssize_t alloc_digits = ndigits;
     if (ndigits <= MAX_DIGITS_FOR_FREELIST) {
-        nbytes = sizeof(PyLongObject);
         result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+        /* The block may later go on the freelist and be reused for any
+           int with up to MAX_DIGITS_FOR_FREELIST digits, so allocate room
+           for that many digits, not just ndigits. */
+        alloc_digits = MAX_DIGITS_FOR_FREELIST;
     }
     if (result == NULL) {
-        result = PyObject_Malloc(nbytes);
+        /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+        sizeof(digit)*size.  Previous incarnations of this code used
+        sizeof() instead of the offsetof, but this risks being
+        incorrect in the presence of padding between the header
+        and the digits. */
+        result = PyObject_Malloc(offsetof(PyLongObject, long_value.ob_digit) +
+                                alloc_digits*sizeof(digit));
         if (!result) {
             PyErr_NoMemory();
             return NULL;
