@@ -788,16 +788,21 @@ class TestSSL(test_utils.TestCase):
             await on_eof
 
             tr.close()
+            return tr
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
-            self.loop.run_until_complete(
+            tr = self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr),
                                  timeout=support.SHORT_TIMEOUT))
+        # Let the protocol's connection_lost() run.
+        self.loop.run_until_complete(asyncio.sleep(0))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
+        # (and keeps the transport after the connection is lost).
         client_context = weakref.ref(client_context)
         self.assertIsNone(client_context())
+        del tr
 
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE

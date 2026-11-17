@@ -1697,10 +1697,12 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
       intern-related details, may change between CPython versions.
 
 
+.. _pyunicodewriter:
+
 PyUnicodeWriter
 ^^^^^^^^^^^^^^^
 
-The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
+The ``PyUnicodeWriter`` API can be used to create a Python :class:`str`
 object.
 
 .. versionadded:: 3.14
@@ -1916,7 +1918,7 @@ then filling in its contents.
 They are :term:`soft deprecated`: they break the assumption that
 strings are immutable, making them hard to use correctly.
 
-Prefer using the :c:type:`PyUnicodeWriter` API,
+Prefer using the :ref:`PyUnicodeWriter API <pyunicodewriter>`,
 or one of the ``PyUnicode_From*``
 functions such as :c:func:`PyUnicode_FromStringAndSize`.
 
@@ -1971,7 +1973,7 @@ Python does not always check these requirements.
    .. versionadded:: 3.3
 
    .. soft-deprecated:: 3.16
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      Use the :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
 
 
 .. c:function:: Py_ssize_t PyUnicode_CopyCharacters(PyObject *to, \
@@ -1991,7 +1993,7 @@ Python does not always check these requirements.
    .. versionadded:: 3.3
 
    .. soft-deprecated:: 3.16
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      Use the :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
 
 
 .. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
@@ -2012,7 +2014,7 @@ Python does not always check these requirements.
    See :ref:`pyunicode-new-mutating` for details.
 
    .. soft-deprecated:: 3.16
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      Use the :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
@@ -2033,7 +2035,7 @@ Python does not always check these requirements.
    .. versionadded:: 3.3
 
    .. soft-deprecated:: 3.16
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      Use the :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.
 
 
 .. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
@@ -2053,4 +2055,4 @@ Python does not always check these requirements.
    .. versionadded:: 3.3
 
    .. soft-deprecated:: 3.16
-      Use the :c:type:`PyUnicodeWriter` API instead.
+      Use the :ref:`PyUnicodeWriter API <pyunicodewriter>` instead.

@@ -1,2 +1,0 @@
-Add support for Encrypted Client Hello (ECH) to the :mod:`ssl` module with
-OpenSSL 4.0 or later.

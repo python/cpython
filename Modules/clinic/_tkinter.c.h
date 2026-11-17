@@ -956,6 +956,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_tkinter__finalize_thread__doc__,
+"_finalize_thread($module, /)\n"
+"--\n"
+"\n"
+"Clean up per-thread state.");
+
+#define _TKINTER__FINALIZE_THREAD_METHODDEF    \
+    {"_finalize_thread", (PyCFunction)_tkinter__finalize_thread, METH_NOARGS, _tkinter__finalize_thread__doc__},
+
+static PyObject *
+_tkinter__finalize_thread_impl(PyObject *module);
+
+static PyObject *
+_tkinter__finalize_thread(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter__finalize_thread_impl(module);
+}
+
 #ifndef _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF) */
@@ -963,4 +981,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=229ae8ed00ee4e40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c94e363a6f9de67d input=a9049054013a1b77]*/
