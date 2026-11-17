@@ -1905,15 +1905,15 @@ static digit
 v_lshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
+    twodigits carry = 0;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=0; i < m; i++) {
         twodigits acc = (twodigits)a[i] << d | carry;
         z[i] = (digit)acc & PyLong_MASK;
-        carry = (digit)(acc >> PyLong_SHIFT);
+        carry = acc >> PyLong_SHIFT;
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Shift digit vector a[0:m] d bits right, with 0 <= d < PyLong_SHIFT.  Put
@@ -1923,16 +1923,16 @@ static digit
 v_rshift(digit *z, digit *a, Py_ssize_t m, int d)
 {
     Py_ssize_t i;
-    digit carry = 0;
-    digit mask = ((digit)1 << d) - 1U;
+    twodigits carry = 0;
+    twodigits mask = ((twodigits)1 << d) - 1U;
 
     assert(0 <= d && d < PyLong_SHIFT);
     for (i=m; i-- > 0;) {
-        twodigits acc = (twodigits)carry << PyLong_SHIFT | a[i];
-        carry = (digit)acc & mask;
+        twodigits acc = carry << PyLong_SHIFT | a[i];
+        carry = acc & mask;
         z[i] = (digit)(acc >> d);
     }
-    return carry;
+    return (digit)carry;
 }
 
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
@@ -3325,8 +3325,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
     int d;
     digit wm1, wm2, carry, q, r, vtop, *v0, *vk, *w0, *ak;
     twodigits vv;
-    sdigit zhi;
-    stwodigits z;
+    stwodigits z, zhi;
 
     /* We follow Knuth [The Art of Computer Programming, Vol. 2 (3rd
        edn.), section 4.3.1, Algorithm D], except that we don't explicitly
@@ -3416,16 +3415,15 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         for (i = 0; i < size_w; ++i) {
             /* invariants: -PyLong_BASE <= -q <= zhi <= 0;
                -PyLong_BASE * q <= z < PyLong_BASE */
-            z = (sdigit)vk[i] + zhi -
+            z = (stwodigits)vk[i] + zhi -
                 (stwodigits)q * (stwodigits)w0[i];
             vk[i] = (digit)z & PyLong_MASK;
-            zhi = (sdigit)Py_ARITHMETIC_RIGHT_SHIFT(stwodigits,
-                                                    z, PyLong_SHIFT);
+            zhi = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, z, PyLong_SHIFT);
         }
 
         /* add w back if q was too large (this branch taken rarely) */
-        assert((sdigit)vtop + zhi == -1 || (sdigit)vtop + zhi == 0);
-        if ((sdigit)vtop + zhi < 0) {
+        assert((stwodigits)vtop + zhi == -1 || (stwodigits)vtop + zhi == 0);
+        if ((stwodigits)vtop + zhi < 0) {
             carry = 0;
             for (i = 0; i < size_w; ++i) {
                 carry += vk[i] + w0[i];
@@ -4564,6 +4562,14 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         *pmod = (PyLongObject *)fast_mod(v, w);
         return -(*pmod == NULL);
     }
+#if WITH_PYLONG_MODULE
+    Py_ssize_t size_v = _PyLong_DigitCount(v); /* digits in numerator */
+    Py_ssize_t size_w = _PyLong_DigitCount(w); /* digits in denominator */
+    if (size_w > 300 && (size_v - size_w) > 150) {
+        /* Switch to _pylong.int_divmod(). See comments in l_divmod(). */
+        return pylong_int_divmod(v, w, NULL, pmod);
+    }
+#endif
     if (long_rem(v, w, &mod) < 0)
         return -1;
     if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||
@@ -5554,14 +5560,20 @@ _PyLong_Lshift(PyObject *a, int64_t shiftby)
 static void
 v_complement(digit *z, digit *a, Py_ssize_t m)
 {
-    Py_ssize_t i;
-    digit carry = 1;
-    for (i = 0; i < m; ++i) {
-        carry += a[i] ^ PyLong_MASK;
-        z[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
+    Py_ssize_t i = 0;
+
+    /* -a is ~a + 1, and the +1 only carries through the trailing zero
+       digits: they stay zero, the first nonzero digit is negated, and the
+       digits above it are just inverted.  No carry is passed between
+       iterations of the last loop, so it can be vectorized. */
+    while (i < m && a[i] == 0) {
+        z[i++] = 0;
     }
-    assert(carry == 0);
+    assert(i < m);
+    z[i] = (0U - a[i]) & PyLong_MASK;
+    for (++i; i < m; ++i) {
+        z[i] = a[i] ^ PyLong_MASK;
+    }
 }
 
 /* Bitwise and/xor/or operations */

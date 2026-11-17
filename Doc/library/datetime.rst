@@ -2480,7 +2480,7 @@ where historical changes have been made to civil time.
 
    The *name* passed to the constructor, or ``None`` if no name was passed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 Class attributes:
 
@@ -2724,7 +2724,7 @@ differences between platforms in handling of unsupported format specifiers.
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
 
-.. versionadded:: next
+.. versionadded:: 3.16
    ``%Nf`` was added.
 
 

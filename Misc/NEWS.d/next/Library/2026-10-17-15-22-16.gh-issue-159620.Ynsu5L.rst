@@ -1,3 +1,0 @@
-Fix ``python -m asyncio ps``, ``pstree`` and async-aware
-:mod:`profiling.sampling` stacks stopping at asynchronous generators.
-Patch by Timofei Ivankov.

@@ -1118,6 +1118,7 @@ bytesio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@vectorcall
 @critical_section
 _io.BytesIO.__init__
     initial_bytes as initvalue: object(c_default="NULL") = b''
@@ -1127,7 +1128,7 @@ Buffered I/O implementation using an in-memory bytes buffer.
 
 static int
 _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
-/*[clinic end generated code: output=65c0c51e24c5b621 input=3da5a74ee4c4f1ac]*/
+/*[clinic end generated code: output=65c0c51e24c5b621 input=a6dc38082204df28]*/
 {
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
@@ -1256,6 +1257,7 @@ static PyType_Slot bytesio_slots[] = {
     {Py_tp_getset, bytesio_getsetlist},
     {Py_tp_init, _io_BytesIO___init__},
     {Py_tp_new, bytesio_new},
+    {Py_tp_vectorcall, _io_BytesIO_vectorcall},
     {0, NULL},
 };
 
