@@ -1,3 +1,0 @@
-:mod:`ssl`: A failed assignment or deletion of the ``_msg_callback``
-attribute of :class:`ssl.SSLContext` no longer removes the current callback.
-Deleting it now raises :exc:`AttributeError` instead of :exc:`TypeError`.

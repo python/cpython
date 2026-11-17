@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -92,13 +93,8 @@ sys_audit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("audit", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t event_length;
-    event = PyUnicode_AsUTF8AndSize(args[0], &event_length);
+    event = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (event == NULL) {
-        goto exit;
-    }
-    if (strlen(event) != (size_t)event_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
@@ -1575,13 +1571,8 @@ sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t backend_length;
-    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    backend = _PyUnicode_AsUTF8NoNUL(arg);
     if (backend == NULL) {
-        goto exit;
-    }
-    if (strlen(backend) != (size_t)backend_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = sys_activate_stack_trampoline_impl(module, backend);
@@ -2226,4 +2217,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=0de5ea347ec24d8a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbca81c5072bd0e8 input=a9049054013a1b77]*/

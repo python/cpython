@@ -1,0 +1,4 @@
+Fix eagerly started :class:`asyncio.Task` objects missing their awaited-by
+edge during the first step. During that step, even a plain
+:func:`asyncio.create_task` call reports the creating task as an awaiter.
+Patch by Timofey Ivankov.

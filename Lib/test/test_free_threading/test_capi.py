@@ -1,14 +1,12 @@
-import ctypes.util
 import sys
 import unittest
 
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.threading_helper import run_concurrently
 
-
-@ctypes.util.wrap_dll_function(ctypes.pythonapi)
-def PyImport_AddModuleRef(name: ctypes.c_char_p) -> ctypes.py_object:
-    pass
+# Skip the test if the extension is missing
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 
 @threading_helper.requires_working_threading()
@@ -20,6 +18,7 @@ class TestImportCAPI(unittest.TestCase):
         NUM_ITERS = 10
         NTHREADS = 4
 
+        PyImport_AddModuleRef = _testlimitedcapi.PyImport_AddModuleRef
         module_name = f"test_free_threading_addmoduleref_{id(self)}"
         module_name_bytes = module_name.encode()
         sys.modules.pop(module_name, None)

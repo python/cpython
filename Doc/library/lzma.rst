@@ -324,14 +324,14 @@ the following constants:
    This may be different from the lzma library actually used at runtime, which
    is available as :const:`lzma_version`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: lzma_version
 
    The version string of the lzma library actually loaded by the interpreter.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: LZMA_VERSION_INFO
@@ -346,7 +346,7 @@ the following constants:
    This may be different from the lzma library actually used at runtime, which
    is available as :const:`lzma_version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: lzma_version_info
@@ -355,7 +355,7 @@ the following constants:
    actually loaded by the interpreter,
    with the same fields as :const:`LZMA_VERSION_INFO`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. _filter-chain-specs:
@@ -392,13 +392,13 @@ options. Valid filter IDs are as follows:
 
     Only works if the lzma version is 5.4.0 or later.
 
-    .. versionadded:: next
+    .. versionadded:: 3.16
 
   * :const:`!FILTER_RISCV`
 
     Only works if the lzma version is 5.6.0 or later.
 
-    .. versionadded:: next
+    .. versionadded:: 3.16
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be

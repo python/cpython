@@ -2030,8 +2030,9 @@ class Document(Node, DocumentLS):
         result = None
         while stack:
             node = stack.pop()
-            # add child elements to stack for continued searching
-            stack.extend([child for child in node.childNodes
+            # add child elements to stack for continued searching,
+            # last child first so that they are visited in document order
+            stack.extend([child for child in reversed(node.childNodes)
                           if child.nodeType in _nodeTypes_with_children])
             # check this node
             info = self._get_elem_info(node)
@@ -2042,19 +2043,19 @@ class Document(Node, DocumentLS):
                 for attr in node.attributes.values():
                     if attr.namespaceURI:
                         if info.isIdNS(attr.namespaceURI, attr.localName):
-                            self._id_cache[attr.value] = node
+                            self._id_cache.setdefault(attr.value, node)
                             if attr.value == id:
                                 result = node
                             elif not node._magic_id_nodes:
                                 break
                     elif info.isId(attr.name):
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif not node._magic_id_nodes:
                             break
                     elif attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif node._magic_id_nodes == 1:
@@ -2062,7 +2063,7 @@ class Document(Node, DocumentLS):
             elif node._magic_id_nodes:
                 for attr in node.attributes.values():
                     if attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
             if result is not None:
@@ -2129,15 +2130,17 @@ class Document(Node, DocumentLS):
             prefix = None
             localName = None
         if n.nodeType == Node.ATTRIBUTE_NODE:
+            if prefix is not None:
+                _check_prefix(prefix, namespaceURI, True)
             element = n.ownerElement
             if element is not None:
                 is_id = n._is_id
                 element.removeAttributeNode(n)
         else:
             element = None
+        n.namespaceURI = namespaceURI
         n.prefix = prefix
         n._localName = localName
-        n.namespaceURI = namespaceURI
         n.nodeName = name
         if n.nodeType == Node.ELEMENT_NODE:
             n.tagName = name
@@ -2169,11 +2172,20 @@ def _clone_node(node, deep, newOwnerDocument):
     else:
         operation = xml.dom.UserDataHandler.NODE_IMPORTED
     if node.nodeType == Node.ELEMENT_NODE:
-        clone = newOwnerDocument.createElementNS(node.namespaceURI,
-                                                 node.nodeName)
+        if node.namespaceURI is None:
+            clone = newOwnerDocument.createElement(node.nodeName)
+        else:
+            clone = newOwnerDocument.createElementNS(node.namespaceURI,
+                                                     node.nodeName)
         for attr in node.attributes.values():
-            clone.setAttributeNS(attr.namespaceURI, attr.nodeName, attr.value)
-            a = clone.getAttributeNodeNS(attr.namespaceURI, attr.localName)
+            if attr.namespaceURI is None:
+                clone.setAttribute(attr.nodeName, attr.value)
+                a = clone.getAttributeNode(attr.nodeName)
+            else:
+                clone.setAttributeNS(attr.namespaceURI, attr.nodeName,
+                                     attr.value)
+                a = clone.getAttributeNodeNS(attr.namespaceURI,
+                                             attr.localName)
             a.specified = attr.specified
 
         if deep:
@@ -2200,8 +2212,11 @@ def _clone_node(node, deep, newOwnerDocument):
     elif node.nodeType == Node.ENTITY_REFERENCE_NODE:
         clone = newOwnerDocument.createEntityReference(node.nodeName)
     elif node.nodeType == Node.ATTRIBUTE_NODE:
-        clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
-                                                   node.nodeName)
+        if node.namespaceURI is None:
+            clone = newOwnerDocument.createAttribute(node.nodeName)
+        else:
+            clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
+                                                       node.nodeName)
         clone.specified = True
         clone.value = node.value
     elif node.nodeType == Node.DOCUMENT_TYPE_NODE:

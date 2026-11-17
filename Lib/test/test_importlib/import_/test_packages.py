@@ -1,5 +1,6 @@
 from test.test_importlib import util
 import sys
+import types
 import unittest
 from test.support import import_helper
 
@@ -99,6 +100,21 @@ class ParentModuleTests:
                     submodule = self.__import__(subname)
                 finally:
                     import_helper.unload(subname)
+
+    def test_missing_grandparent_not_imported(self):
+        # Only the immediate parent has to be present.  With a hand-made
+        # 'pkg.sub' package in sys.modules and no 'pkg' at all, importing
+        # pkg.sub.mod must neither fail nor try to import 'pkg'.
+        parent = types.ModuleType('pkg.sub')
+        parent.__path__ = []
+        with util.mock_spec('pkg.sub.mod') as mock:
+            with util.import_state(meta_path=[mock]):
+                with util.uncache('pkg', 'pkg.sub', 'pkg.sub.mod'):
+                    sys.modules['pkg.sub'] = parent
+                    module = self.__import__('pkg.sub.mod', fromlist=['*'])
+                    self.assertEqual(module.__name__, 'pkg.sub.mod')
+                    self.assertIs(parent.mod, module)
+                    self.assertNotIn('pkg', sys.modules)
 
 
 (Frozen_ParentTests,

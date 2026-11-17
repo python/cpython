@@ -1,3 +1,0 @@
-Speed up converting a list to a tuple in the ``tuple(genexpr)`` fast path
-and in starred tuple displays (e.g. ``(*a, *b)``) by stealing the list's
-items into the tuple instead of copying them.

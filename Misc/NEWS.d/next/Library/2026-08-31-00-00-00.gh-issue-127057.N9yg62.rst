@@ -1,3 +1,0 @@
-Fix :class:`asyncio.ProactorEventLoop` UDP transports so that a
-:exc:`ConnectionResetError` raised by ``WSARecvFrom`` no longer stops the
-read loop.

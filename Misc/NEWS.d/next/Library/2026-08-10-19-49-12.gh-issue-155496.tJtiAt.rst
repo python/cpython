@@ -1,3 +1,0 @@
-The ``ctypes.set_errno`` and ``ctypes.set_last_error`` auditing events are
-now raised after the argument is converted to an integer, therefore they are
-no longer raised if the argument is invalid.

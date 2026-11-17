@@ -1,2 +1,0 @@
-:mod:`encodings` is no longer frozen, due to issues importing submodules
-when using a zipped standard library.

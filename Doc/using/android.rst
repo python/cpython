@@ -33,6 +33,7 @@ much easier experience:
 * `Briefcase <https://briefcase.beeware.org>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
 * `Chaquopy <https://chaquo.com/chaquopy>`__
+* `Flet <https://flet.dev/>`__
 * `pyqtdeploy <https://www.riverbankcomputing.com/static/Docs/pyqtdeploy/>`__
 * `Termux <https://termux.dev/en/>`__
 

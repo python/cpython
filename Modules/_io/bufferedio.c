@@ -1205,109 +1205,113 @@ _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer)
 static PyObject *
 _buffered_readline(buffered *self, Py_ssize_t limit)
 {
-    PyObject *res = NULL;
-    PyObject *chunks = NULL;
-    Py_ssize_t n;
-    const char *start, *s, *end;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
     CHECK_CLOSED(self, "readline of closed file")
 
     /* First, try to find a line in the buffer. This can run unlocked because
        the calls to the C API are simple enough that they can't trigger
        any thread switch. */
-    n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
-    if (limit >= 0 && n > limit)
+    Py_ssize_t n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    if (limit >= 0 && n > limit) {
         n = limit;
-    start = self->buffer + self->pos;
-    s = memchr(start, '\n', n);
-    if (s != NULL) {
-        res = PyBytes_FromStringAndSize(start, s - start + 1);
-        if (res != NULL)
-            self->pos += s - start + 1;
-        goto end_unlocked;
     }
-    if (n == limit) {
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res != NULL)
-            self->pos += n;
-        goto end_unlocked;
+    const char *start = self->buffer + self->pos;
+    const char *s = memchr(start, '\n', n);
+    if (s != NULL) {
+        n = s - start + 1;
+        PyObject *res = PyBytes_FromStringAndSize(start, n);
+        if (res == NULL) {
+            return NULL;
+        }
+        self->pos += n;
+        return res;
     }
 
-    if (!ENTER_BUFFERED(self))
-        goto end_unlocked;
+    if (n == limit) {
+        PyObject *res = PyBytes_FromStringAndSize(start, n);
+        if (res == NULL) {
+            return NULL;
+        }
+        self->pos += n;
+        return res;
+    }
+
+    PyBytesWriter *writer = NULL;
+    int locked = 0;
+    if (!ENTER_BUFFERED(self)) {
+        goto error;
+    }
+    locked = 1;
 
     /* Now we try to get some more from the raw stream */
-    chunks = PyList_New(0);
-    if (chunks == NULL)
-        goto end;
+    writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+
     if (n > 0) {
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res == NULL)
-            goto end;
-        if (PyList_Append(chunks, res) < 0) {
-            Py_CLEAR(res);
-            goto end;
+        if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+            goto error;
         }
-        Py_CLEAR(res);
         self->pos += n;
-        if (limit >= 0)
+        if (limit >= 0) {
             limit -= n;
+        }
     }
     if (self->writable) {
-        PyObject *r = buffered_flush_and_rewind_unlocked(self);
-        if (r == NULL)
-            goto end;
-        Py_DECREF(r);
+        PyObject *res = buffered_flush_and_rewind_unlocked(self);
+        if (res == NULL) {
+            goto error;
+        }
+        Py_DECREF(res);
     }
 
     for (;;) {
         _bufferedreader_reset_buf(self);
         n = _bufferedreader_fill_buffer(self);
-        if (n == -1)
-            goto end;
-        if (n <= 0)
-            break;
-        if (limit >= 0 && n > limit)
-            n = limit;
-        start = self->buffer;
-        end = start + n;
-        s = start;
-        while (s < end) {
-            if (*s++ == '\n') {
-                res = PyBytes_FromStringAndSize(start, s - start);
-                if (res == NULL)
-                    goto end;
-                self->pos = s - start;
-                goto found;
-            }
+        if (n == -1) {
+            goto error;
         }
-        res = PyBytes_FromStringAndSize(start, n);
-        if (res == NULL)
-            goto end;
+        if (n <= 0) {
+            break;
+        }
+        if (limit >= 0 && n > limit) {
+            n = limit;
+        }
+        start = self->buffer;
+        const char *newline = memchr(start, '\n', n);
+        if (newline != NULL) {
+            n = newline - start + 1;
+            if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+                goto error;
+            }
+            self->pos = n;
+            goto found;
+        }
+
+        if (PyBytesWriter_WriteBytes(writer, start, n) < 0) {
+            goto error;
+        }
         if (n == limit) {
             self->pos = n;
             break;
         }
-        if (PyList_Append(chunks, res) < 0) {
-            Py_CLEAR(res);
-            goto end;
-        }
-        Py_CLEAR(res);
-        if (limit >= 0)
+        if (limit >= 0) {
             limit -= n;
+        }
     }
-found:
-    if (res != NULL && PyList_Append(chunks, res) < 0) {
-        Py_CLEAR(res);
-        goto end;
-    }
-    Py_XSETREF(res, PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks));
 
-end:
+found:
     LEAVE_BUFFERED(self)
-end_unlocked:
-    Py_XDECREF(chunks);
-    return res;
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    if (locked) {
+        LEAVE_BUFFERED(self)
+    }
+    return NULL;
 }
 
 /*[clinic input]

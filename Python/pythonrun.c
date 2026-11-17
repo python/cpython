@@ -1157,6 +1157,13 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         }
     }
 
+    // gh-161863: Interpreter can be not fully initialized
+    // when calling this function. May be not safe to call the import.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->imports.importlib == NULL) {
+        goto fallback;
+    }
+
     // Try first with the stdlib traceback module
     PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
         "traceback",
@@ -1285,7 +1292,7 @@ _PyRun_String(const char *str, PyObject* name, int start,
         goto done;
     }
 
-    mod = _PyParser_ASTFromString(str, name, start, flags, arena, module);
+    mod = _PyParser_ASTFromString(str, name, start, flags, arena, module, NULL);
     Py_XDECREF(module);
 
     if (mod != NULL) {
@@ -1569,32 +1576,43 @@ _Py_CompileString(const char *str, PyObject *filename, int start,
         return NULL;
     }
 
-    PyCodeObject *co;
-    mod_ty mod;
     PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
+    PyObject *result = NULL;
+    PyObject *incomplete = NULL;
+    mod_ty mod = _PyParser_ASTFromString(str, filename, start, flags, arena,
+                                        module, &incomplete);
     if (mod == NULL) {
-        _PyArena_Free(arena);
-        return NULL;
+        goto done;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
         if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena,
                                      syntax_check_only, module) < 0)
         {
-            _PyArena_Free(arena);
-            return NULL;
+            goto done;
         }
-        PyObject *result = PyAST_mod2obj(mod);
+        if (incomplete != NULL) {
+            goto done;
+        }
+        result = PyAST_mod2obj(mod);
         _PyArena_Free(arena);
         return result;
     }
-    co = _PyAST_Compile(mod, filename, flags, optimize, arena, module);
+    result = (PyObject *)_PyAST_Compile(mod, filename, flags, optimize, arena, module);
+
+done:
     _PyArena_Free(arena);
-    return (PyObject *)co;
+    if (incomplete != NULL && !PyErr_Occurred()) {
+        Py_CLEAR(result);
+        PyErr_SetRaisedException(incomplete);
+    }
+    else {
+        Py_XDECREF(incomplete);
+    }
+    return result;
 }
 
 PyObject *

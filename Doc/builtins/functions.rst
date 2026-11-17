@@ -110,7 +110,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.10
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_value* and *stop_exception* parameters.
 
 .. function:: all(iterable, /)
@@ -354,6 +354,10 @@ are always available.  They are listed here in alphabetical order.
    consists of a single expression, or ``'single'`` if it consists of a single
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
+   It can also be ``'func_type'`` if *source* consists of a
+   function type signature, for example ``(int) -> str``; see
+   :func:`ast.parse` for more information. This mode requires passing
+   :data:`ast.PyCF_ONLY_AST` in *flags*.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
@@ -426,6 +430,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
+
+   .. versionchanged:: 3.8
+      Added support for ``mode='func_type'``.
 
    .. versionchanged:: 3.12
       :exc:`SyntaxError` is raised instead of :exc:`ValueError` when null bytes
@@ -733,7 +740,7 @@ are always available.  They are listed here in alphabetical order.
    This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
-   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
+   occurs). If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
    section :ref:`file-input` in the Reference Manual). Be aware that the
    :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
@@ -765,7 +772,7 @@ are always available.  They are listed here in alphabetical order.
    still access all builtins.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing
+   It's only valid when *source* is a code object containing
    :term:`free (closure) variables <closure variable>`.
    The length of the tuple must exactly match the length of the code object's
    :attr:`~codeobject.co_freevars` attribute.
@@ -1241,7 +1248,7 @@ are always available.  They are listed here in alphabetical order.
       for item in iter(input_queue.get_nowait, stop_exception=queue.Empty):
           process_item(item)
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *stop_exception* parameter
       and allowed passing *stop_value* by keyword.
 
@@ -1846,8 +1853,6 @@ are always available.  They are listed here in alphabetical order.
    including the name and address of the object.  A class can control what this
    function returns for its instances
    by defining a :meth:`~object.__repr__` method.
-   If :func:`sys.displayhook` is not accessible, this function will raise
-   :exc:`RuntimeError`.
 
    This class has a custom representation that can be evaluated::
 
@@ -1945,7 +1950,7 @@ are always available.  They are listed here in alphabetical order.
       >>> MISSING
       <MISSING>
 
-   Sentinel objects are truthy and compare equal only to themselves.  They are
+   Sentinel objects are true and compare equal only to themselves.  They are
    intended to be compared with the :keyword:`is` operator.
 
    ``sentinel`` does not support subclassing.
@@ -2161,10 +2166,10 @@ are always available.  They are listed here in alphabetical order.
 
    When called directly within an ordinary method of a class, both arguments may
    be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
-   enclosing class, and *obj* will be the first argument of the immediately
-   enclosing function (typically ``self``). (This means that zero-argument
+   enclosing class, and *object_or_type* will be the first argument of the
+   immediately enclosing function (typically ``self``). Zero-argument
    :func:`!super` will not work as expected within nested functions, including
-   generator expressions, which implicitly create nested functions.)
+   generator expressions, which implicitly create nested functions.
 
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without
@@ -2423,10 +2428,9 @@ are always available.  They are listed here in alphabetical order.
    determine the package context of the :keyword:`import` statement.
 
    *level* specifies whether to use absolute or relative imports. ``0`` (the
-   default) means only perform absolute imports.  Positive values for
-   *level* indicate the number of parent directories to search relative to the
-   directory of the module calling :func:`__import__` (see :pep:`328` for the
-   details).
+   default) means only perform absolute imports.  For relative imports,
+   ``1`` refers to the current package, ``2`` to its parent package, and so on
+   (see :pep:`328` for details).
 
    When the *name* variable is of the form ``package.module``, normally, the
    top-level package (the name up till the first dot) is returned, *not* the
@@ -2466,9 +2470,3 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       When the command line options :option:`-E` or :option:`-I` are being used,
       the environment variable :envvar:`PYTHONCASEOK` is now ignored.
-
-.. rubric:: Footnotes
-
-.. [#] Note that the parser only accepts the Unix-style end of line convention.
-   If you are reading the code from a file, make sure to use newline conversion
-   mode to convert Windows or Mac-style newlines.
