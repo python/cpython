@@ -34,7 +34,7 @@ from .readline import _get_reader, multiline_input, append_history_file
 
 
 # Called with submitted input before execution, except for REPL commands.
-statement_submitted_hook = None
+input_submitted_hook = None
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -156,11 +156,11 @@ def run_multiline_interactive_console(
 
             statement_with_final_indent = _strip_final_indent(statement)
 
-            if statement_submitted_hook is not None:
+            if input_submitted_hook is not None:
                 try:
-                    statement_submitted_hook(statement_with_final_indent)
+                    input_submitted_hook(statement_with_final_indent)
                 except Exception as exc:
-                    console.write("Error in statement_submitted_hook:\n")
+                    console.write("Error in input_submitted_hook:\n")
                     console._excepthook(type(exc), exc, exc.__traceback__)
 
             input_name = f"<python-input-{input_n}>"

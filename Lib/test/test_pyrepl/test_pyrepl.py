@@ -2102,7 +2102,7 @@ class TestMain(ReplTestCase):
         self.addCleanup(patcher.stop)
         patcher.start()
 
-    def test_statement_submitted_hook_exception(self):
+    def test_input_submitted_hook_exception(self):
         env = make_clean_env()
         env["NO_COLOR"] = "1"
         output, exit_code = self.run_repl(
@@ -2110,7 +2110,7 @@ class TestMain(ReplTestCase):
                 "from _pyrepl import simple_interact as si",
                 "def hook(statement): raise RuntimeError('hook failed')",
                 "",
-                "si.statement_submitted_hook = hook",
+                "si.input_submitted_hook = hook",
                 "x = 1",
                 "print('executed:', x)",
                 "exit",
@@ -2122,7 +2122,7 @@ class TestMain(ReplTestCase):
         output = output.replace("\r\n", "\n")
         self.assertEqual(exit_code, 0)
         self.assertEqual(
-            output.count("Error in statement_submitted_hook:\n"), 2
+            output.count("Error in input_submitted_hook:\n"), 2
         )
         self.assertEqual(output.count("RuntimeError: hook failed"), 2)
         self.assertIn("\nexecuted: 1\n", output)

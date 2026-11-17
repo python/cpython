@@ -361,7 +361,7 @@ class TestWarnings(unittest.TestCase):
         self.assertEqual(count, 1)
 
 
-class TestStatementSubmittedHook(unittest.TestCase):
+class TestInputSubmittedHook(unittest.TestCase):
     def _run_interactive(self, statements, hook):
         console = InteractiveColoredConsole()
         statement_iter = iter(statements)
@@ -374,7 +374,7 @@ class TestStatementSubmittedHook(unittest.TestCase):
 
         output = io.StringIO()
         with (
-            patch.object(simple_interact, "statement_submitted_hook", hook),
+            patch.object(simple_interact, "input_submitted_hook", hook),
             patch.object(
                 simple_interact,
                 "multiline_input",
@@ -417,11 +417,11 @@ class TestStatementSubmittedHook(unittest.TestCase):
         output, namespace = self._run_interactive(["x = 1"], hook)
 
         self.assertIn(
-            "Error in statement_submitted_hook:\n"
+            "Error in input_submitted_hook:\n"
             "Traceback (most recent call last):\n",
             output,
         )
-        self.assertIn("statement_submitted_hook(", output)
+        self.assertIn("input_submitted_hook(", output)
         self.assertIn("RuntimeError: hook error", output)
         self.assertEqual(namespace["x"], 1)
 
@@ -432,7 +432,7 @@ class TestStatementSubmittedHook(unittest.TestCase):
 
         output, namespace = self._run_interactive(["x = 1"], hook)
 
-        self.assertIn("Error in statement_submitted_hook:\n", output)
+        self.assertIn("Error in input_submitted_hook:\n", output)
         self.assertRegex(output, r"\x1b\[[0-9;]+m")
         self.assertIn("hook error", output)
         self.assertEqual(namespace["x"], 1)
@@ -474,7 +474,7 @@ class TestStatementSubmittedHook(unittest.TestCase):
         output, namespace = self._run_interactive(["x = 1", "y = 2"], hook)
 
         self.assertIn("\nKeyboardInterrupt\n", output)
-        self.assertNotIn("Error in statement_submitted_hook:", output)
+        self.assertNotIn("Error in input_submitted_hook:", output)
         self.assertNotIn("x", namespace)
         self.assertEqual(namespace["y"], 2)
         self.assertEqual(hook.call_count, 2)
