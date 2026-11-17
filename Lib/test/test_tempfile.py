@@ -1733,6 +1733,20 @@ class TestTemporaryDirectory(BaseTestCase):
                     temp_dir.cleanup()
 
     @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_cleanup_deep_tree_with_read_only_file(self):
+        # A read-only file with a path longer than MAX_PATH.
+        tmp = self.do_create(recurse=0, files=0)
+        path = '\\\\?\\' + os.path.abspath(tmp.name)
+        for i in range(200):
+            path += '\\d'
+            os.mkdir(path)
+        path += '\\f'
+        open(path, 'wb').close()
+        os.chmod(path, stat.S_IREAD)
+        tmp.cleanup()
+        self.assertFalse(os.path.exists(tmp.name))
+
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
     def test_cleanup_with_used_directory(self):
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(dir=working_dir)

@@ -148,6 +148,19 @@ class TestSupport(unittest.TestCase):
             os_helper.rmtree(dirpath)
         self.assertFalse(os.path.exists(dirpath))
 
+    def test_rmtree_deep_tree(self):
+        # The path is longer than MAX_PATH on Windows.
+        dirpath = os_helper.TESTFN + 'd'
+        path = os.path.abspath(dirpath)
+        if os.name == 'nt':
+            path = '\\\\?\\' + path
+        os.mkdir(path)
+        for i in range(200):
+            path = os.path.join(path, 'd')
+            os.mkdir(path)
+        os_helper.rmtree(dirpath)
+        self.assertFalse(os.path.exists(dirpath))
+
     def test_forget(self):
         mod_filename = TESTFN + '.py'
         with open(mod_filename, 'w', encoding="utf-8") as f:

@@ -989,6 +989,7 @@ class TemporaryDirectory:
                 fullname=None):
         if fullname is None:
             fullname = name
+        top_dir_fd = dir_fd
 
         def onexc(func, path, exc, direntry=None, dir_fd=None):
             # On DragonFly BSD, UF_NOUNLINK removal fails with EISDIR, not EPERM.
@@ -999,7 +1000,10 @@ class TemporaryDirectory:
                     raise
 
                 # fullpath is path as seen from the working directory
-                fullpath = fullname + path[len(name):]
+                if top_dir_fd is None:
+                    fullpath = path
+                else:
+                    fullpath = fullname + path[len(name):]
                 # base is path relative to dir_fd, the directory rmtree()
                 # reached it through, or the whole path when there is none
                 if dir_fd is None or not _rmtree_use_dir_fd:
