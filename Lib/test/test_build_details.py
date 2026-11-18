@@ -329,21 +329,18 @@ class BuildDetailsTargetTests(unittest.TestCase):
         # used to report its own flags and suffixes.
         data = generate_data(
             ABIFLAGS='td', MACHDEP='linux', DYNLOADFILE='dynload_shlib.o',
-            SOABI_PLATFORM='aarch64-linux-gnu',
             SOABI='cpython-3XXtd-aarch64-linux-gnu',
-            ALT_SOABI='cpython-3XXt-aarch64-linux-gnu',
-            EXT_SUFFIX='.cpython-3XXtd-aarch64-linux-gnu.so',
-            Py_GIL_DISABLED=1)
+            # pyconfig.h string values keep their quotes in sysconfig.
+            ALT_SOABI='"cpython-3XXt-aarch64-linux-gnu"',
+            EXT_SUFFIX='.cpython-3XXtd-aarch64-linux-gnu.so')
         self.assertEqual(data['abi']['flags'], ['t', 'd'])
         self.assertEqual(data['abi']['extension_suffix'],
                          '.cpython-3XXtd-aarch64-linux-gnu.so')
-        self.assertEqual(data['abi']['stable_abi_suffix'],
-                         '.abi3t-aarch64-linux-gnu.so')
+        self.assertEqual(data['abi']['stable_abi_suffix'], '.abi3.so')
         self.assertEqual(data['suffixes']['extensions'], [
             '.cpython-3XXtd-aarch64-linux-gnu.so',
             '.cpython-3XXt-aarch64-linux-gnu.so',
-            '.abi3t-aarch64-linux-gnu.so',
-            '.abi3t.so',
+            '.abi3.so',
             '.so',
         ])
 

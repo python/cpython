@@ -49,22 +49,17 @@ def get_extension_suffixes() -> list[str]:
     if dynloadfile != 'dynload_shlib.o':
         raise ValueError(f'Unsupported DYNLOADFILE: {dynloadfile!r}')
 
-    soabi = sysconfig.get_config_var('SOABI')
     if sysconfig.get_config_var('MACHDEP') == 'cygwin':
-        return [f'.{soabi}.dll', '.dll']
+        return ['.dll']
 
+    soabi = sysconfig.get_config_var('SOABI')
     suffixes = [f'.{soabi}.so']
     alt_soabi = sysconfig.get_config_var('ALT_SOABI')
     if alt_soabi:
+        # sysconfig keeps the quotes of string values from pyconfig.h.
+        alt_soabi = alt_soabi.strip('"')
         suffixes.append(f'.{alt_soabi}.so')
-    platform = sysconfig.get_config_var('SOABI_PLATFORM')
-    if not sysconfig.get_config_var('Py_GIL_DISABLED'):
-        if platform:
-            suffixes.append(f'.abi3-{platform}.so')
-        suffixes.append('.abi3.so')
-    if platform:
-        suffixes.append(f'.abi3t-{platform}.so')
-    suffixes.append('.abi3t.so')
+    suffixes.append('.abi3.so')
     suffixes.append('.so')
     return suffixes
 
