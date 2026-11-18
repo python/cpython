@@ -324,7 +324,7 @@ PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
 #endif  // Py_LIMITED_API
 
 #if defined(Py_LIMITED_API) || defined(_Py_OPAQUE_PYOBJECT)
-// Since Python 3.16, the stable ABI implements Py_DECREF() as a function call
+// gh-158401: The stable ABI now implements Py_DECREF() as a function call
 // on all limited C API version. _Py_DecRef() was added to Python 3.10.0a7,
 // use Py_DecRef() on older versions. Py_DecRef() accepts NULL, whereas
 // _Py_DecRef() doesn't.
