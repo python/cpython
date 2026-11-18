@@ -1326,7 +1326,7 @@ calls these functions.
       ...     "ls non_existent_file; exit 0",
       ...     stderr=subprocess.STDOUT,
       ...     shell=True)
-      'ls: non_existent_file: No such file or directory\n'
+      b'ls: non_existent_file: No such file or directory\n'
 
    .. versionadded:: 3.1
 
