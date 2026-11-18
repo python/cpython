@@ -1032,9 +1032,14 @@ Terminfo database
    Instantiate the bytes object *str* with the supplied parameters, where *str* should
    be a parameterized byte string obtained from the terminfo database.  For example,
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
-   result depending on terminal type.  Up to nine integer parameters may be supplied.
+   result depending on terminal type.  Up to nine parameters may be supplied.
+   They are integers, except in a few cases, such as ``Ms`` of xterm,
+   where they must be bytes objects.
 
    :func:`setupterm` (or :func:`initscr`) must be called first.
+
+   .. versionchanged:: next
+      Added support of bytes parameters.
 
 .. function:: putp(str)
 

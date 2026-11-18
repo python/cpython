@@ -8374,35 +8374,155 @@ _curses_tigetstr_impl(PyObject *module, const char *capname)
     return PyBytes_FromString( capname );
 }
 
+#ifndef NCURSES_TPARM_ARG
+#  define NCURSES_TPARM_ARG long
+#endif
+
+/* Return a bit mask of the parameters of a terminfo string that curses takes
+   as strings: those that %s or %l follows directly after %p, as in ncurses'
+   _nc_tparm_analyze().  The others are numbers. */
+static unsigned int
+curses_tparm_string_params(const char *str)
+{
+    unsigned int mask = 0;
+    int last = 0;               /* the parameter pushed last, or 0 */
+
+    while (*str) {
+        if (*str++ != '%') {
+            continue;
+        }
+        /* Skip the flags, width and precision of a conversion. */
+        int allowminus = 0;
+        while (*str) {
+            if (*str == ':') {
+                allowminus = 1;
+            }
+            else if (!(*str == '#' || *str == ' ' || *str == '.'
+                       || Py_ISDIGIT(*str) || (*str == '-' && allowminus)))
+            {
+                break;
+            }
+            str++;
+        }
+        switch (*str) {
+        case 'p':
+            if (str[1] >= '1' && str[1] <= '9') {
+                last = str[1] - '0';
+            }
+            str++;
+            break;
+        case 's':
+        case 'l':
+            if (last > 0) {
+                mask |= 1u << (last - 1);
+            }
+            break;
+        case 'd': case 'o': case 'x': case 'X': case 'c':
+        case '+': case '-': case '*': case '/': case 'm':
+        case '&': case '|': case '^': case '=': case '<': case '>':
+        case 'A': case 'O': case '!': case '~':
+            last = 0;
+            break;
+        case '\'':
+            str += 2;
+            last = 0;
+            break;
+        case '\0':
+            return mask;
+        default:
+            /* %P, %g, %{, %i, %?, %t, %e, %; and %% keep it. */
+            break;
+        }
+        str++;
+    }
+    return mask;
+}
+
+/* Convert a tparm() parameter: a string for those that the terminfo string
+   takes as strings (passing a number there would crash curses), otherwise a
+   number.  An omitted one is 0, or NULL, which curses takes as "". */
+static int
+curses_tparm_param(PyObject *arg, int argnum, int is_string,
+                   NCURSES_TPARM_ARG *result)
+{
+    if (arg == NULL) {
+        *result = 0;
+        return 0;
+    }
+    if (is_string) {
+        if (!PyBytes_Check(arg)) {
+            PyErr_Format(PyExc_TypeError,
+                         "tparm() argument %d must be bytes, not %T",
+                         argnum, arg);
+            return -1;
+        }
+        const char *value = PyBytes_AS_STRING(arg);
+        if (strlen(value) != (size_t)PyBytes_GET_SIZE(arg)) {
+            PyErr_SetString(PyExc_ValueError, "embedded null byte");
+            return -1;
+        }
+        *result = (NCURSES_TPARM_ARG)(intptr_t)value;
+        return 0;
+    }
+    if (PyBytes_Check(arg)) {
+        PyErr_Format(PyExc_TypeError,
+                     "tparm() argument %d must be int, not bytes", argnum);
+        return -1;
+    }
+    int value = PyLong_AsInt(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    *result = value;
+    return 0;
+}
+
 /*[clinic input]
 _curses.tparm
 
-    str: str(accept={robuffer})
+    str as string: object
         Parameterized byte string obtained from the terminfo database.
-    i1: int = 0
-    i2: int = 0
-    i3: int = 0
-    i4: int = 0
-    i5: int = 0
-    i6: int = 0
-    i7: int = 0
-    i8: int = 0
-    i9: int = 0
     /
+    *params: tuple
+        Up to nine parameters.
 
 Instantiate the specified byte string with the supplied parameters.
+
+The parameters are integers, except in a few cases where they must be
+bytes objects.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
-                   int i4, int i5, int i6, int i7, int i8, int i9)
-/*[clinic end generated code: output=599f62b615c667ff input=5e30b15786f032aa]*/
+_curses_tparm_impl(PyObject *module, PyObject *string, PyObject *params)
+/*[clinic end generated code: output=3439bb1b37a13d5b input=4889c0e3a5eab5b5]*/
 {
     char* result = NULL;
+    NCURSES_TPARM_ARG values[9];
+    Py_ssize_t count = PyTuple_GET_SIZE(params);
+    const char *str;
 
+    if (!PyArg_Parse(string, "y:tparm", &str)) {
+        return NULL;
+    }
+
+    if (count > 9) {
+        PyErr_Format(PyExc_TypeError,
+                     "tparm() takes at most 9 parameters (%zd given)", count);
+        return NULL;
+    }
     PyCursesStatefulSetupTermCalled(module);
 
-    result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+    unsigned int strings = curses_tparm_string_params(str);
+    for (int i = 0; i < 9; i++) {
+        PyObject *arg = i < count ? PyTuple_GET_ITEM(params, i) : NULL;
+        if (curses_tparm_param(arg, i + 2, strings & (1u << i),
+                               &values[i]) < 0)
+        {
+            return NULL;
+        }
+    }
+    result = tparm((char *)str, values[0], values[1], values[2], values[3],
+                   values[4], values[5], values[6], values[7], values[8]);
     if (!result) {
         curses_set_null_error(module, "tparm", NULL);
         return NULL;
