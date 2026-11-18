@@ -36,7 +36,7 @@ process_single_stack_chunk(
         return -1;
     }
 
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, current_size, this_chunk) < 0) {
+    if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, chunk_addr, current_size, this_chunk) < 0) {
         PyMem_RawFree(this_chunk);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read stack chunk");
         return -1;
@@ -65,7 +65,7 @@ process_single_stack_chunk(
         }
         this_chunk = tmp;
 
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
+        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
             PyMem_RawFree(this_chunk);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reread stack chunk with correct size");
             return -1;
