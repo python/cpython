@@ -224,7 +224,8 @@ static int codegen_call_helper_impl(compiler *c, location loc,
                                     int n, /* Args already pushed */
                                     asdl_expr_seq *args,
                                     PyObject *injected_arg,
-                                    asdl_keyword_seq *keywords);
+                                    asdl_keyword_seq *keywords,
+                                    int awaited);
 static int codegen_call_helper(compiler *c, location loc,
                                int n, asdl_expr_seq *args,
                                asdl_keyword_seq *keywords);
@@ -279,6 +280,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
 /* The oparg of CALL and CALL_KW: the number of arguments shifted left by one,
  * with the low bit set when the result is awaited right away. */
 #define CALL_OPARG(NARGS, AWAITED) (((NARGS) << 1) | (AWAITED))
+
 
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
@@ -621,9 +623,8 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             }
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
-                ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
                 ADDOP(c, *ploc, PUSH_NULL);
-                ADDOP_LOAD_CONST(c, *ploc, Py_None);
+                ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
                 ADD_YIELD_FROM(c, *ploc, 1);
             }
             ADDOP(c, *ploc, POP_TOP);
@@ -1762,7 +1763,7 @@ codegen_class(compiler *c, stmt_ty s)
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_call_helper_impl(c, loc, 2,
                                                              s->v.ClassDef.bases,
                                                              &_Py_STR(generic_base),
-                                                             s->v.ClassDef.keywords));
+                                                             s->v.ClassDef.keywords, 0));
 
         PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
 
@@ -4156,7 +4157,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 
 // Return 1 if the method call was optimized, 0 if not, and -1 on error.
 static int
-maybe_optimize_method_call(compiler *c, expr_ty e)
+maybe_optimize_method_call(compiler *c, expr_ty e, int awaited)
 {
     Py_ssize_t argsl, i, kwdsl;
     expr_ty meth = e->v.Call.func;
@@ -4221,11 +4222,11 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
         RETURN_IF_ERROR(
             codegen_call_simple_kw_helper(c, loc, kwds, kwdsl));
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(argsl + kwdsl, 0));
+        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(argsl + kwdsl, awaited));
     }
     else {
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL, CALL_OPARG(argsl, 0));
+        ADDOP_I(c, loc, CALL, CALL_OPARG(argsl, awaited));
     }
     return 1;
 }
@@ -4250,10 +4251,10 @@ codegen_validate_keywords(compiler *c, asdl_keyword_seq *keywords)
 }
 
 static int
-codegen_call(compiler *c, expr_ty e)
+codegen_call(compiler *c, expr_ty e, int awaited)
 {
     RETURN_IF_ERROR(codegen_validate_keywords(c, e->v.Call.keywords));
-    int ret = maybe_optimize_method_call(c, e);
+    int ret = maybe_optimize_method_call(c, e, awaited);
     if (ret < 0) {
         return ERROR;
     }
@@ -4267,11 +4268,33 @@ codegen_call(compiler *c, expr_ty e)
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
-    ret = codegen_call_helper(c, loc, 0,
-                              e->v.Call.args,
-                              e->v.Call.keywords);
+    ret = codegen_call_helper_impl(c, loc, 0, e->v.Call.args, NULL,
+                                   e->v.Call.keywords, awaited);
     USE_LABEL(c, skip_normal_call);
     return ret;
+}
+
+/* GET_AWAITABLE takes an extra slot. `await <call>` marks the call as awaited
+ * and pushes the slot below the callable: if the call runs a coroutine body
+ * without creating the coroutine object, the body reports there how it ended.
+ * Other awaitables get it pushed above them. */
+static int
+codegen_await(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    expr_ty value = e->v.Await.value;
+    if (value->kind == Call_kind) {
+        ADDOP(c, LOC(value), PUSH_NULL);
+        RETURN_IF_ERROR(codegen_call(c, value, 1));
+        ADDOP_I(c, loc, GET_AWAITABLE, GET_AWAITABLE_AFTER_CALL);
+    }
+    else {
+        VISIT(c, expr, value);
+        ADDOP(c, loc, PUSH_NULL);
+        ADDOP_I(c, loc, GET_AWAITABLE, 0);
+    }
+    ADD_YIELD_FROM(c, loc, 1);
+    return SUCCESS;
 }
 
 static int
@@ -4462,7 +4485,8 @@ codegen_call_helper_impl(compiler *c, location loc,
                          int n, /* Args already pushed */
                          asdl_expr_seq *args,
                          PyObject *injected_arg,
-                         asdl_keyword_seq *keywords)
+                         asdl_keyword_seq *keywords,
+                         int awaited)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
@@ -4501,10 +4525,10 @@ codegen_call_helper_impl(compiler *c, location loc,
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             codegen_call_simple_kw_helper(c, loc, keywords, nkwelts));
-        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(n + nelts + nkwelts, 0));
+        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(n + nelts + nkwelts, awaited));
     }
     else {
-        ADDOP_I(c, loc, CALL, CALL_OPARG(n + nelts, 0));
+        ADDOP_I(c, loc, CALL, CALL_OPARG(n + nelts, awaited));
     }
     return SUCCESS;
 
@@ -4570,7 +4594,7 @@ codegen_call_helper(compiler *c, location loc,
                     asdl_expr_seq *args,
                     asdl_keyword_seq *keywords)
 {
-    return codegen_call_helper_impl(c, loc, n, args, NULL, keywords);
+    return codegen_call_helper_impl(c, loc, n, args, NULL, keywords, 0);
 }
 
 /* List and set comprehensions work by being inlined at the location where
@@ -5170,9 +5194,8 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
 
     if (is_async_comprehension && type != COMP_GENEXP) {
-        ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_I(c, loc, GET_AWAITABLE, 0);
         ADD_YIELD_FROM(c, loc, 1);
     }
 
@@ -5315,9 +5338,8 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
-    ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
@@ -5352,9 +5374,8 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
      * call __exit__(None, None, None)
      */
     RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
-    ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP(c, loc, POP_TOP);
@@ -5367,9 +5388,8 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
-    ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADD_YIELD_FROM(c, loc, 1);
     RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
 
@@ -5554,16 +5574,11 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        VISIT(c, expr, e->v.Await.value);
-        ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
-        ADD_YIELD_FROM(c, loc, 1);
-        break;
+        return codegen_await(c, e);
     case Compare_kind:
         return codegen_compare(c, e);
     case Call_kind:
-        return codegen_call(c, e);
+        return codegen_call(c, e, 0);
     case Constant_kind:
         ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
         break;

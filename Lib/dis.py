@@ -47,6 +47,7 @@ LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 CALL = opmap['CALL']
 CALL_KW = opmap['CALL_KW']
 CALL_FUNCTION_EX = opmap['CALL_FUNCTION_EX']
+GET_AWAITABLE = opmap['GET_AWAITABLE']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
@@ -653,6 +654,9 @@ class ArgResolver:
             elif deop == CALL_FUNCTION_EX:
                 if arg & 1:
                     argrepr = "awaited"
+            elif deop == GET_AWAITABLE:
+                if arg & 4:
+                    argrepr = "after call"
             elif deop == CALL_INTRINSIC_1:
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:

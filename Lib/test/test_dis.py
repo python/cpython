@@ -614,9 +614,8 @@ dis_asyncwith = """\
                 SWAP                     3
                 LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0 (0)
-                GET_AWAITABLE            1
                 PUSH_NULL
-                LOAD_COMMON_CONSTANT     7 (None)
+                GET_AWAITABLE            1
         L2:     SEND                     4 (to L5)
         L3:     YIELD_VALUE              1
         L4:     RESUME                   3
@@ -631,9 +630,8 @@ dis_asyncwith = """\
                 LOAD_COMMON_CONSTANT     7 (None)
                 LOAD_COMMON_CONSTANT     7 (None)
                 CALL                     6 (3)
-                GET_AWAITABLE            2
                 PUSH_NULL
-                LOAD_COMMON_CONSTANT     7 (None)
+                GET_AWAITABLE            2
         L8:     SEND                     4 (to L11)
         L9:     YIELD_VALUE              1
        L10:     RESUME                   3
@@ -647,14 +645,13 @@ dis_asyncwith = """\
                 RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-       L13:     JUMP_BACKWARD_NO_INTERRUPT 28 (to L5)
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 27 (to L5)
        L14:     CLEANUP_THROW
        L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
        L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
-                GET_AWAITABLE            2
                 PUSH_NULL
-                LOAD_COMMON_CONSTANT     7 (None)
+                GET_AWAITABLE            2
        L17:     SEND                     5 (to L21)
        L18:     YIELD_VALUE              1
        L19:     RESUME                   3

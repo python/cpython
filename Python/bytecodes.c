@@ -1649,11 +1649,22 @@ dummy_func(
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
         }
 
-        inst(GET_AWAITABLE, (iterable -- iter)) {
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
-            PyStackRef_CLOSE(iterable);
+        // Also pushes the NULL and None that the following SEND loop starts
+        // with. The compiler pushes a NULL above the awaitable, or, with
+        // GET_AWAITABLE_AFTER_CALL, below the callable of an awaited call,
+        // so `top` is its result.
+        inst(GET_AWAITABLE, (bottom, top -- iter, null, none)) {
+            _PyStackRef awaitable = (oparg & GET_AWAITABLE_AFTER_CALL) ? top : bottom;
+            assert(PyStackRef_IsNull((oparg & GET_AWAITABLE_AFTER_CALL) ? bottom : top));
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(awaitable),
+                                                    oparg & GET_AWAITABLE_WHERE_MASK);
+            DEAD(top);
+            DEAD(bottom);
+            PyStackRef_CLOSE(awaitable);
             ERROR_IF(iter_o == NULL);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
         }
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {

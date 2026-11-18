@@ -6822,25 +6822,36 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
-            _PyStackRef iterable;
+            _PyStackRef bottom;
+            _PyStackRef top;
             _PyStackRef iter;
-            iterable = stack_pointer[-1];
+            _PyStackRef null;
+            _PyStackRef none;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2];
+            _PyStackRef awaitable = (oparg & GET_AWAITABLE_AFTER_CALL) ? top : bottom;
+            assert(PyStackRef_IsNull((oparg & GET_AWAITABLE_AFTER_CALL) ? bottom : top));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(awaitable),
+                oparg & GET_AWAITABLE_WHERE_MASK);
             _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(iterable);
+            PyStackRef_CLOSE(awaitable);
             _PyFrame_StackPointerInvalidate(frame);
             if (iter_o == NULL) {
                 JUMP_TO_LABEL(error);
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
             stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[1] = null;
+            stack_pointer[2] = none;
+            stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }

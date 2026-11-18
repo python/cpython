@@ -8906,36 +8906,47 @@
             break;
         }
 
-        case _GET_AWAITABLE_r11: {
-            CHECK_CURRENT_CACHED_VALUES(1);
+        case _GET_AWAITABLE_r23: {
+            CHECK_CURRENT_CACHED_VALUES(2);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef iterable;
+            _PyStackRef top;
+            _PyStackRef bottom;
             _PyStackRef iter;
+            _PyStackRef null;
+            _PyStackRef none;
             _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
-            iterable = _stack_item_0;
-            stack_pointer[0] = iterable;
-            stack_pointer += 1;
+            top = _stack_item_1;
+            bottom = _stack_item_0;
+            _PyStackRef awaitable = (oparg & GET_AWAITABLE_AFTER_CALL) ? top : bottom;
+            assert(PyStackRef_IsNull((oparg & GET_AWAITABLE_AFTER_CALL) ? bottom : top));
+            stack_pointer[0] = bottom;
+            stack_pointer[1] = top;
+            stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(awaitable),
+                oparg & GET_AWAITABLE_WHERE_MASK);
             _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(iterable);
+            PyStackRef_CLOSE(awaitable);
             _PyFrame_StackPointerInvalidate(frame);
             if (iter_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
+            _tos_cache2 = none;
+            _tos_cache1 = null;
             _tos_cache0 = iter;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
+            SET_CURRENT_CACHED_VALUES(3);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }

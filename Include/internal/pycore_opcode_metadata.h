@@ -221,7 +221,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case GET_ANEXT:
             return 1;
         case GET_AWAITABLE:
-            return 1;
+            return 2;
         case GET_ITER:
             return 1;
         case GET_ITER_SELF:
@@ -716,7 +716,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case GET_ANEXT:
             return 2;
         case GET_AWAITABLE:
-            return 1;
+            return 3;
         case GET_ITER:
             return 2;
         case GET_ITER_SELF:

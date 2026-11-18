@@ -94,6 +94,12 @@ extern "C" {
 #define RESUME_OPARG_LOCATION_MASK 0x7
 #define RESUME_OPARG_DEPTH1_MASK 0x8
 
+/* Values used in the oparg for GET_AWAITABLE: where the awaitable comes from
+ * (0: await, 1: __aenter__, 2: __aexit__), and whether it is the result of
+ * an awaited call, preceded on the stack by a slot pushed for that call. */
+#define GET_AWAITABLE_WHERE_MASK 0x3
+#define GET_AWAITABLE_AFTER_CALL 0x4
+
 #define GET_ITER_YIELD_FROM 1
 #define GET_ITER_YIELD_FROM_NO_CHECK 2
 #define GET_ITER_YIELD_FROM_CORO_CHECK 3

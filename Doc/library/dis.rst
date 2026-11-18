@@ -817,21 +817,30 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_AWAITABLE (where)
 
-   Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
-   returns ``o`` if ``o`` is a coroutine object or a generator object with
-   the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
-   ``o.__await__``.
+   Pops two values: the awaitable and a ``NULL`` pushed after it, or, if
+   ``where & 4`` is set, a slot pushed below the callable of an awaited call
+   and the call's result. Pushes ``get_awaitable(awaitable)``, ``NULL`` and
+   ``None``, which start the :opcode:`SEND` loop that follows.
+   ``get_awaitable(o)`` returns ``o`` if ``o`` is a coroutine object or a
+   generator object with the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or
+   resolves ``o.__await__``.
 
-    If the ``where`` operand is nonzero, it indicates where the instruction
-    occurs:
+   If ``where & 3`` is nonzero, it indicates where the instruction occurs:
 
-    * ``1``: After a call to ``__aenter__``
-    * ``2``: After a call to ``__aexit__``
+   * ``1``: After a call to ``__aenter__``
+   * ``2``: After a call to ``__aexit__``
+
+   If ``where & 4`` is set, the awaited object is the result of an
+   awaited :opcode:`CALL`, :opcode:`CALL_KW` or :opcode:`CALL_FUNCTION_EX`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.11
       Previously, this instruction did not have an oparg.
+
+   .. versionchanged:: next
+      Pops an extra slot and pushes ``NULL`` and ``None`` for the following
+      :opcode:`SEND`; ``where & 4`` marks an awaited call.
 
 
 .. opcode:: GET_AITER
