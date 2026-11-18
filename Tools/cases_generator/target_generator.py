@@ -12,6 +12,7 @@ from analyzer import (
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
+    write_header,
 )
 from tier1_generator import UNKNOWN_OPCODE_HANDLER
 from cwriter import CWriter
@@ -26,7 +27,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     for name, op in analysis.opmap.items():
         if op < 256:
             targets[op] = f"&&TARGET_{name},\n"
-    out.emit("#if !_Py_TAIL_CALL_INTERP\n")
+    out.emit("#ifndef _Py_TAIL_CALL_INTERP\n")
     out.emit("static void *opcode_targets_table[256] = {\n")
     for target in targets:
         out.emit(target)
@@ -35,13 +36,13 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     for name, op in analysis.opmap.items():
         if op < 256:
             targets[op] = f"&&TARGET_TRACE_RECORD,\n"
-    out.emit("#if _Py_TIER2\n")
+    out.emit("#ifdef _Py_TIER2\n")
     out.emit("static void *opcode_tracing_targets_table[256] = {\n")
     for target in targets:
         out.emit(target)
     out.emit("};\n")
     out.emit(f"#endif\n")
-    out.emit("#else /* _Py_TAIL_CALL_INTERP */\n")
+    out.emit("#else /* !_Py_TAIL_CALL_INTERP */\n")
 
 def function_proto(name: str) -> str:
     return f"static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
@@ -111,6 +112,7 @@ if __name__ == "__main__":
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
+        write_header(__file__, args.input, outfile)
         out = CWriter(outfile, 0, False)
         write_opcode_targets(data, out)
         write_tailcall_dispatch_table(data, out)
