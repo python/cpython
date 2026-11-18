@@ -422,7 +422,7 @@ The following classes are provided:
    received the request is re-sent with the authentication credentials.  If
    authentication succeeds, ``update_authenticated`` is called to set
    ``is_authenticated`` ``True`` for the URI, so that subsequent requests to
-   the URI or any of its super-URIs will automatically include the
+   the URI itself or any path below it will automatically include the
    authentication credentials.
 
    .. versionadded:: 3.5
@@ -855,7 +855,7 @@ The following attribute and methods should only be used by classes derived from
 
    1. a :class:`Request` object,
    #. a file-like object with the HTTP error body,
-   #. the three-digit code of the error, as a string,
+   #. the three-digit code of the error, as an integer,
    #. the user-visible explanation of the code, as a string, and
    #. the headers of the error, as a mapping object.
 
@@ -1009,11 +1009,10 @@ These methods are available on :class:`HTTPPasswordMgr` and
 .. method:: HTTPPasswordMgr.add_password(realm, uri, user, passwd)
 
    *uri* can be either a single URI, or a sequence of URIs. *realm*, *user* and
-   *passwd* must be strings. This causes ``(user, passwd)`` to be used as
-   authentication tokens when authentication for *realm* and a super-URI of any
-   of the given URIs is given. If a URI includes a scheme, its credentials only
-   match authentication URIs with the same scheme or no scheme. A URI without a
-   scheme matches authentication URIs with any scheme.
+   *passwd* must be strings. The credentials for *realm* apply to any registered
+   URI and to paths below it. If a URI includes a scheme,
+   its credentials only match authentication URIs with the same scheme or no
+   scheme. A URI without a scheme matches authentication URIs with any scheme.
 
    .. versionchanged:: 3.16
       Authentication credentials for URIs with a scheme are now scoped by
@@ -1229,8 +1228,9 @@ FTPHandler Objects
 
 .. method:: FTPHandler.ftp_open(req)
 
-   Open the FTP file indicated by *req*. The login is always done with empty
-   username and password.
+   Open the FTP file indicated by *req*. The username and password are taken
+   from the URL, with missing values defaulting to empty strings. See
+   :meth:`ftplib.FTP.login` for the login defaults.
 
 
 .. _cacheftp-handler-objects:
@@ -1272,9 +1272,9 @@ HTTPErrorProcessor Objects
 
    Process HTTP error responses.
 
-   For 200 error codes, the response object is returned immediately.
+   For 2xx status codes, the response object is returned immediately.
 
-   For non-200 error codes, this simply passes the job on to the
+   For other status codes, this simply passes the job on to the
    :meth:`!http_error_\<type\>` handler methods, via :meth:`OpenerDirector.error`.
    Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
@@ -1308,11 +1308,11 @@ it::
    ...         data = gzip.decompress(data)
    ...     print(data[:300].decode('utf-8', errors='replace'))
 
-Note that urlopen returns a bytes object.  This is because there is no way
-for urlopen to automatically determine the encoding of the byte stream
-it receives from the HTTP server. In general, a program will decode
-the returned bytes object to string once it determines or guesses
-the appropriate encoding.
+Note that calling ``read()`` on the response returned by :func:`urlopen` returns
+a :class:`bytes` object.  This is because there is no way for :func:`urlopen` to
+automatically determine the encoding of the byte stream it receives from the
+HTTP server. In general, a program will decode the returned bytes object to a
+string once it determines or guesses the appropriate encoding.
 
 The following HTML spec document, https://html.spec.whatwg.org/#charset, lists
 the various ways in which an HTML or an XML document could have specified its
@@ -1511,7 +1511,7 @@ The following example uses an explicitly specified HTTP proxy, overriding
 environment settings::
 
    >>> import urllib.request
-   >>> proxies = {'http': 'http://proxy.example.com:8080/'}
+   >>> proxies = {'https': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
    >>> with opener.open("https://www.python.org") as f:
    ...     f.read().decode('utf-8')
@@ -1660,7 +1660,8 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
    .. attribute:: headers
 
-      Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
+      Returns the headers of the response in the form of an
+      :class:`~email.message.Message` instance.
 
    .. attribute:: status
 

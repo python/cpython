@@ -11,8 +11,6 @@
 The :mod:`!urllib.error` module defines the exception classes for exceptions
 raised by :mod:`urllib.request`.  The base exception class is :exc:`URLError`.
 
-The following exceptions are raised by :mod:`!urllib.error` as appropriate:
-
 .. exception:: URLError
 
    The handlers raise this exception (or derived exceptions) when they run into
