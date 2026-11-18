@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import os.path
@@ -6,29 +5,12 @@ import sys
 import sysconfig
 import string
 import unittest
-from pathlib import Path
-from unittest import mock
+import unittest.mock
+import sysconfig._build_details as build_details
+import tempfile
 
 from test.support import is_android, is_apple_mobile, is_wasm32
-
-BASE_PATH = Path(
-    __file__,  # Lib/test/test_build_details.py
-    '..',  # Lib/test
-    '..',  # Lib
-    '..',  # <src/install dir>
-).resolve()
-MODULE_PATH = BASE_PATH / 'Tools' / 'build' / 'generate-build-details.py'
-
-try:
-    # Import "generate-build-details.py" as "generate_build_details"
-    spec = importlib.util.spec_from_file_location(
-        "generate_build_details", MODULE_PATH
-    )
-    generate_build_details = importlib.util.module_from_spec(spec)
-    sys.modules["generate_build_details"] = generate_build_details
-    spec.loader.exec_module(generate_build_details)
-except (FileNotFoundError, ImportError):
-    generate_build_details = None
+from unittest import mock
 
 
 class FormatTestsBase:
@@ -212,23 +194,19 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         self.assertTrue(os.path.isfile(value['dynamic']))
 
 
-@unittest.skipIf(
-    generate_build_details is None,
-    "Failed to import generate-build-details"
-)
+@unittest.skipIf('_PYTHON_SYSCONFIGDATA_NAME' in os.environ, 'Cross-compiling')
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
     def build_details_absolute_paths(self):
-        data = generate_build_details.generate_data(schema_version='1.0')
-        return json.loads(json.dumps(data))
+        json_data = build_details.BuildDetails.from_interpreter().as_json()
+        return json.loads(json_data)
 
     @property
     def build_details_relative_paths(self):
-        data = self.build_details_absolute_paths
-        generate_build_details.make_paths_relative(data, config_path=None)
-        return data
+        json_data = build_details.BuildDetails.from_interpreter().as_relocatable().as_json()
+        return json.loads(json_data)
 
     def test_round_trip(self):
         data_abs_path = self.build_details_absolute_paths
@@ -239,20 +217,21 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
 
         self.check_relative_paths(data_abs_path, data_rel_path)
 
-    def test_round_trip_with_config_file_path(self):
+    def test_round_trip_with_config_file_path(self, mock_open):
         data_abs_path = self.build_details_absolute_paths
         base_prefix = data_abs_path['base_prefix']
-        config_dir = os.path.join(base_prefix, 'lib', 'python3.X')
-        data_rel_path = self.build_details_absolute_paths
-        generate_build_details.make_paths_relative(
-            data_rel_path,
-            config_path=os.path.join(config_dir, 'build-details.json'),
-        )
 
-        # base_prefix is relative to the config file's directory...
-        self.assertEqual(data_rel_path['base_prefix'], os.path.join('..', '..'))
-        # ...while the other paths are still relative to base_prefix.
-        self.check_relative_paths(data_abs_path, data_rel_path)
+        with tempfile.TemporaryDirectory() as config_dir:
+            out_file = os.path.join(config_dir, 'build-details.json')
+            build_details.generate(out_file)
+
+            with open(data_rel_path) as f:
+                data_rel_path = json.loads(f.read())
+
+            # base_prefix is relative to the config file's directory...
+            self.assertEqual(data_rel_path['base_prefix'], os.path.relpath(out_file, base_prefix))
+            # ...while the other paths are still relative to base_prefix.
+            self.check_relative_paths(data_abs_path, data_rel_path)
 
     def check_relative_paths(self, data_abs_path, data_rel_path):
         base_prefix = data_abs_path['base_prefix']
@@ -289,10 +268,6 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
             self.assertEqual(data_abs_path[part][key], abs_rel_path)
 
 
-@unittest.skipIf(
-    generate_build_details is None,
-    "Failed to import generate-build-details"
-)
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsLibpythonTests(unittest.TestCase):
@@ -309,8 +284,8 @@ class BuildDetailsLibpythonTests(unittest.TestCase):
                 return config_vars[name]
             return get_config_var(name)
         with mock.patch('sysconfig.get_config_var', patched_get_config_var):
-            data = generate_build_details.generate_data(schema_version='1.0')
-        return json.loads(json.dumps(data)).get('libpython', {})
+            data = build_details.BuildDetails.from_interpreter().as_json()
+        return json.loads(data).get('libpython', {})
 
     def test_static_only(self):
         libpython = self.generate_libpython(
