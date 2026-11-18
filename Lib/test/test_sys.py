@@ -2276,23 +2276,21 @@ sock.close()
                       threading.current_thread() is threading.main_thread())
             '''))
 
+        # The new subinterpreter is at the head of the interpreter list.
+        interp = interpreters.create()
+        self.addCleanup(interp.close)
         for running in (False, True):
             with self.subTest(running=running):
-                # The new subinterpreter is at the head of the interpreter list.
-                interp = interpreters.create()
-                try:
-                    with (support.captured_stdout() as stdout,
-                          support.captured_stderr() as stderr):
-                        if running:
-                            interp.exec(textwrap.dedent(f'''
-                                import os
-                                import sys
-                                sys.remote_exec(os.getpid(), {script_path!r})
-                            '''))
-                        else:
-                            sys.remote_exec(os.getpid(), script_path)
-                finally:
-                    interp.close()
+                with (support.captured_stdout() as stdout,
+                      support.captured_stderr() as stderr):
+                    if running:
+                        interp.exec(textwrap.dedent(f'''
+                            import os
+                            import sys
+                            sys.remote_exec(os.getpid(), {script_path!r})
+                        '''))
+                    else:
+                        sys.remote_exec(os.getpid(), script_path)
                 self.assertEqual(stdout.getvalue(), '0 True\n')
                 self.assertEqual(stderr.getvalue(), '')
 
