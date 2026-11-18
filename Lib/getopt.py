@@ -92,7 +92,7 @@ def getopt(args, shortopts, longopts = []):
     return opts, args
 
 def gnu_getopt(args, shortopts, longopts = []):
-    """getopt(args, options[, long_options]) -> opts, args
+    """gnu_getopt(args, options[, long_options]) -> opts, args
 
     This function works like getopt(), except that GNU style scanning
     mode is used by default. This means that option and non-option
