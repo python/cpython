@@ -1331,8 +1331,11 @@ other libraries, and are not maintained or supported by the core Python team.
 Supported Windows versions
 ==========================
 
-As specified in :pep:`11`, a Python release only supports a Windows platform
-while Microsoft considers the platform under extended support. This means that
+As specified in :pep:`11`, a new Python feature release supports Windows
+versions whose Microsoft extended support has not ended. Bugfix releases
+retain support for the same Windows versions, even if Microsoft support ends
+in the meantime.
+
 Python |version| supports Windows 10 and newer. If you require Windows 7
 support, install Python 3.8. If you require Windows 8.1 support,
 install Python 3.12.
