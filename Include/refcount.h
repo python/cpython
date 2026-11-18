@@ -201,6 +201,28 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
 #endif
 
+#if !defined(Py_LIMITED_API)
+/* Refresh the refcount of an immortal object to make
+ * accidental de-immortalization less likely */
+static inline void
+_Py_RefreshImmortal(PyObject *ob)
+{
+#ifndef Py_GIL_DISABLED
+    if (_Py_IsImmortal(ob)) {
+#if SIZEOF_VOID_P > 4
+        ob->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+#else
+        if (_Py_IsStaticImmortal(ob)) {
+            ob->ob_refcnt = _Py_STATIC_IMMORTAL_INITIAL_REFCNT;
+        }
+        else {
+            ob->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+        }
+#endif
+    }
+#endif
+}
+#endif // Py_LIMITED_API
 
 /*
 The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
