@@ -58,7 +58,7 @@ def _has_surrogates(s):
 # How to deal with a string containing bytes before handing it to the
 # application through the 'normal' interface.
 def _sanitize(string):
-    # Turn any escaped bytes into unicode 'unknown' char.  If the escaped
+    # Turn any escaped bytes into the Unicode 'unknown' char.  If the escaped
     # bytes happen to be utf-8 they will instead get decoded, even if they
     # were invalid in the charset the source was supposed to be in.  This
     # seems like it is not a bad thing; a defect was still registered.
@@ -460,7 +460,7 @@ def collapse_rfc2231_value(value, errors='replace',
                            fallback_charset='us-ascii'):
     if not isinstance(value, tuple) or len(value) != 3:
         return unquote(value)
-    # While value comes to us as a unicode string, we need it to be a bytes
+    # While value comes to us as a string, we need it to be a bytes
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight
     # interpretation of the string as character bytes.
     charset, language, text = value

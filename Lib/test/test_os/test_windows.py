@@ -454,31 +454,71 @@ class Win32JunctionTests(unittest.TestCase):
         self.assertFalse(os.path.exists(self.junction))
 
 
+class Win32ChmodTests(unittest.TestCase):
+    # gh-140774: os.chmod(follow_symlinks=True) and os.fchmod() go through
+    # SetFileInformationByHandle(), which interprets FileAttributes == 0 as
+    # "leave the attributes unchanged".  Clearing the read-only flag of a
+    # file with no other attribute set must substitute FILE_ATTRIBUTE_NORMAL
+    # for 0 to take effect.
+
+    def setUp(self):
+        self.fname = os.path.abspath(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, self.fname)
+        self.addCleanup(self._make_writable)
+        create_file(self.fname)
+
+    def _make_writable(self):
+        try:
+            os.chmod(self.fname, stat.S_IWRITE | stat.S_IREAD,
+                     follow_symlinks=False)
+        except OSError:
+            pass
+
+    def _set_readonly_only_attribute(self):
+        # Make FILE_ATTRIBUTE_READONLY the only attribute of the file
+        # (in particular, clear FILE_ATTRIBUTE_ARCHIVE).
+        ctypes = import_helper.import_module('ctypes')
+        wintypes = import_helper.import_module('ctypes.wintypes')
+        kernel32 = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
+        SetFileAttributesW = kernel32.SetFileAttributesW
+        SetFileAttributesW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD)
+        SetFileAttributesW.restype = wintypes.BOOL
+
+        if not SetFileAttributesW(self.fname, stat.FILE_ATTRIBUTE_READONLY):
+            raise ctypes.WinError(ctypes.get_last_error())
+        attributes = os.stat(self.fname).st_file_attributes
+        if attributes != stat.FILE_ATTRIBUTE_READONLY:
+            self.skipTest('file system reports extra file attributes '
+                          f'{attributes:#x}')
+
+    def _assert_writable(self):
+        self.assertEqual(os.stat(self.fname).st_file_attributes
+                         & stat.FILE_ATTRIBUTE_READONLY, 0)
+
+    def test_chmod_clears_readonly_without_other_attributes(self):
+        self._set_readonly_only_attribute()
+        os.chmod(self.fname, stat.S_IWRITE | stat.S_IREAD,
+                 follow_symlinks=True)
+        self._assert_writable()
+
+    def test_fchmod_clears_readonly_without_other_attributes(self):
+        fd = os.open(self.fname, os.O_RDWR)
+        try:
+            self._set_readonly_only_attribute()
+            os.fchmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
+
+            self._set_readonly_only_attribute()
+            os.chmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
+        finally:
+            os.close(fd)
+
+
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
-        ctypes = import_helper.import_module('ctypes')
-        # Ruff false positive -- it thinks we're redefining `ctypes` here
-        import ctypes.wintypes  # noqa: F811
-
-        kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
-            pass
-
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
-                                  pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
-            pass
-
-        # This is a pseudo-handle that doesn't need to be closed
-        hproc = GetCurrentProcess()
-
-        handle_count = ctypes.wintypes.DWORD()
-        ok = GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        before_count = handle_count.value
+        before_count = os_helper.handle_count()
 
         # The first two test the error path, __file__ tests the success path
         filenames = [
@@ -500,11 +540,7 @@ class Win32NtTests(unittest.TestCase):
                 except Exception:
                     pass
 
-        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        handle_delta = handle_count.value - before_count
-
+        handle_delta = os_helper.handle_count() - before_count
         self.assertEqual(0, handle_delta)
 
     @support.requires_subprocess()
@@ -606,6 +642,82 @@ class Win32NtTests(unittest.TestCase):
 
         # st_atime should be the same or later
         self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
+
+class Win32DeviceEncodingTests(unittest.TestCase):
+    # gh-87587: any console file descriptor is supported, not only 0, 1 and 2,
+    # and other character devices are not consoles.
+
+    @staticmethod
+    def expected_encoding(cp):
+        return 'utf-8' if cp == 65001 else 'cp%d' % cp
+
+    def test_console(self):
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        try:
+            fin = open('CONIN$')
+        except OSError:
+            self.skipTest('no console')
+        with fin:
+            self.assertEqual(os.device_encoding(fin.fileno()),
+                             self.expected_encoding(kernel32.GetConsoleCP()))
+        with open('CONOUT$', 'w') as fout:
+            self.assertEqual(
+                os.device_encoding(fout.fileno()),
+                self.expected_encoding(kernel32.GetConsoleOutputCP()))
+
+    def test_not_a_console(self):
+        with open('NUL', 'w') as f:
+            self.assertTrue(os.isatty(f.fileno()))
+            self.assertIsNone(os.device_encoding(f.fileno()))
+            # Not a console even if it is a standard file descriptor.
+            saved = os.dup(1)
+            try:
+                os.dup2(f.fileno(), 1)
+                encoding = os.device_encoding(1)
+            finally:
+                os.dup2(saved, 1)
+                os.close(saved)
+            self.assertIsNone(encoding)
+
+
+class Win32StatExecutableTests(unittest.TestCase):
+    # gh-84419: Windows strips trailing dots and spaces from the last
+    # component of the path, so they should be ignored when guessing
+    # the execute permissions from the file extension.
+
+    SUFFIXES = ['', ' ', '   ', '.', '..', ' . .']
+
+    def check(self, ext, mask):
+        filename = os_helper.TESTFN + ext
+        create_file(filename)
+        try:
+            for suffix in self.SUFFIXES:
+                with self.subTest(suffix=suffix):
+                    mode = os.stat(filename + suffix).st_mode
+                    self.assertEqual(mode & 0o111, mask)
+        finally:
+            os_helper.unlink(filename)
+
+    def test_executable_extension(self):
+        for ext in '.exe', '.bat', '.cmd', '.com', '.EXE', '.Bat':
+            with self.subTest(ext=ext):
+                self.check(ext, 0o111)
+
+    def test_not_executable_extension(self):
+        for ext in '.txt', '.py', '.exe.txt', '':
+            with self.subTest(ext=ext):
+                self.check(ext, 0)
+
+    def test_extended_path(self):
+        # The \\?\ prefix disables normalization: trailing spaces and dots
+        # are part of the file name.
+        filename = os.path.abspath(os_helper.TESTFN + '.exe')
+        create_file(filename)
+        self.addCleanup(os_helper.unlink, filename)
+        self.assertEqual(os.stat('\\\\?\\' + filename).st_mode & 0o111, 0o111)
+        self.assertRaises(OSError, os.stat, '\\\\?\\' + filename + ' ')
 
 
 if __name__ == "__main__":

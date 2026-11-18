@@ -931,6 +931,8 @@ the mainloop call.  One then gets a shell prompt immediately and can
 interact with the live application.  One just has to remember to
 re-enable the mainloop call when running in standard Python.
 
+.. _idle-no-subprocess:
+
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

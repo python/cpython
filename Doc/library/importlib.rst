@@ -355,11 +355,11 @@ ABC hierarchy::
     See :pep:`302` for the exact definition for a loader.
 
     Loaders that wish to support resource reading should implement a
-    :meth:`get_resource_reader` method as specified by
+    :meth:`!get_resource_reader` method as specified by
     :class:`importlib.resources.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
-       Introduced the optional :meth:`get_resource_reader` method.
+       Introduced the optional :meth:`!get_resource_reader` method.
 
    .. versionchanged:: 3.15
       Removed the ``load_module()`` method.
@@ -717,7 +717,8 @@ find and load modules.
 
     .. versionchanged:: 3.5
        As part of :pep:`489`, the builtin importer now implements
-       :meth:`Loader.create_module` and :meth:`Loader.exec_module`
+       :meth:`Loader.create_module <importlib.abc.Loader.create_module>`
+       and :meth:`Loader.exec_module <importlib.abc.Loader.exec_module>`
 
 
 .. class:: FrozenImporter
@@ -730,7 +731,8 @@ find and load modules.
     instantiation.
 
     .. versionchanged:: 3.4
-       Gained :meth:`~Loader.create_module` and :meth:`~Loader.exec_module`
+       Gained :meth:`~importlib.abc.Loader.create_module` and
+       :meth:`~importlib.abc.Loader.exec_module`
        methods.
 
 
@@ -1180,8 +1182,8 @@ an :term:`importer`.
    with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
    value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
    The ``cpython-32`` string comes from the current magic tag (see
-   :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
-   :exc:`NotImplementedError` will be raised).
+   :attr:`sys.implementation.cache_tag <sys.implementation>`; if it is not
+   defined then :exc:`NotImplementedError` will be raised).
 
    The *optimization* parameter is used to specify the optimization level of the
    bytecode file. An empty string represents no optimization, so
@@ -1213,7 +1215,7 @@ an :term:`importer`.
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
    to :pep:`3147` or :pep:`488` format, a :exc:`ValueError` is raised. If
-   :attr:`sys.implementation.cache_tag` is not defined,
+   :attr:`sys.implementation.cache_tag <sys.implementation>` is not defined,
    :exc:`NotImplementedError` is raised.
 
    .. versionadded:: 3.4
@@ -1263,7 +1265,8 @@ an :term:`importer`.
    If **name** is for a submodule (contains a dot), the parent module is
    automatically imported.
 
-   **name** and **package** work the same as for :func:`import_module`.
+   **name** and **package** work the same as for
+   :func:`importlib.import_module`.
 
    .. versionadded:: 3.4
 
@@ -1293,7 +1296,8 @@ an :term:`importer`.
    A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
    instance based on a loader.  The parameters have the same meaning as they do
    for ModuleSpec.  The function uses available :term:`loader` APIs, such as
-   :meth:`InspectLoader.is_package`, to fill in any missing
+   :meth:`InspectLoader.is_package
+   <importlib.abc.InspectLoader.is_package>`, to fill in any missing
    information on the spec.
 
    .. versionadded:: 3.4

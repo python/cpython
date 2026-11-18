@@ -7,6 +7,7 @@
 
 #include "pycore_code.h"          // _PyCode_CODE()
 #include "pycore_interpframe_structs.h" // _PyInterpreterFrame
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_stats.h"         // CALL_STAT_INC()
 
@@ -344,7 +345,7 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
 
     assert(!_PyFrame_IsIncomplete(frame));
-    PyFrameObject *res =  frame->frame_obj;
+    PyFrameObject *res = (PyFrameObject*)FT_ATOMIC_LOAD_PTR_ACQUIRE(frame->frame_obj);
     if (res != NULL) {
         return res;
     }

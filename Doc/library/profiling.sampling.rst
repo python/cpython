@@ -29,6 +29,13 @@ code changes or restarts. Because sampling occurs externally to the target
 process, overhead is virtually zero, making Tachyon suitable for both
 development and production environments.
 
+Tachyon follows earlier work on external sampling profilers such as
+`Austin <https://github.com/P403n1x87/austin>`__,
+`py-spy <https://github.com/benfred/py-spy>`__,
+`Pyflame <https://github.com/uber-archive/pyflame>`__, and
+`rbspy <https://github.com/rbspy/rbspy>`__. We thank their authors and the wider
+profiling community for their work and ideas.
+
 
 What is statistical profiling?
 ==============================
@@ -1044,7 +1051,7 @@ an interactive flame graph visualization::
    `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__!
 
 If no output file is specified, the profiler generates a filename based on
-the process ID (for example, ``flamegraph.12345.html``).
+the process ID (for example, ``flamegraph_12345.html``).
 
 The generated HTML file requires no external dependencies and can be opened
 directly in a web browser. The visualization displays call stacks as nested
@@ -1270,8 +1277,8 @@ The :option:`--compression` option controls data compression:
 
    python -m profiling.sampling run --binary --compression=zstd -o profile.bin script.py
 
-To analyze binary profiles, use the :ref:`replay-command` to convert them to
-other formats like flame graphs or pstats output.
+To analyze binary profiles, use the :ref:`replay command <replay-command>` to convert
+them to other formats like flame graphs or pstats output.
 
 
 Record and replay workflow

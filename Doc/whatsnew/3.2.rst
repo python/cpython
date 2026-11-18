@@ -1351,9 +1351,9 @@ connection when done::
 
  >>> from ftplib import FTP
  >>> with FTP("ftp1.at.proftpd.org") as ftp:
-         ftp.login()
-         ftp.dir()
-
+ ...     ftp.login()
+ ...     ftp.dir()
+ ...
  '230 Anonymous login ok, restrictions apply.'
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
  dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
@@ -1596,7 +1596,7 @@ sqlite3
 
 The :mod:`sqlite3` module was updated to pysqlite version 2.6.0.  It has two new capabilities.
 
-* The :attr:`!sqlite3.Connection.in_transit` attribute is true if there is an
+* The :attr:`sqlite3.Connection.in_transaction` attribute is true if there is an
   active transaction for uncommitted changes.
 
 * The :meth:`sqlite3.Connection.enable_load_extension` and
@@ -2708,9 +2708,9 @@ require changes to your code:
 
   (Discovered by David Beazley and fixed by Victor Stinner; :issue:`10783`.)
 
-* The :class:`xml.etree.ElementTree` class now raises an
-  :exc:`xml.etree.ElementTree.ParseError` when a parse fails. Previously it
-  raised an :exc:`xml.parsers.expat.ExpatError`.
+* The :class:`xml.etree.ElementTree <xml.etree.ElementTree.ElementTree>` class
+  now raises an :exc:`xml.etree.ElementTree.ParseError` when a parse fails.
+  Previously it raised an :exc:`xml.parsers.expat.ExpatError`.
 
 * The new, longer :func:`str` value on floats may break doctests which rely on
   the old output format.

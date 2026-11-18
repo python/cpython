@@ -35,7 +35,7 @@ class HyperParser:
             return int(float(index))
         lno = index2line(text.index(index))
 
-        if not editwin.prompt_last_line:
+        if not editwin.is_shell:
             for context in editwin.num_context_lines:
                 startat = max(lno - context, 1)
                 startatindex = repr(startat) + ".0"

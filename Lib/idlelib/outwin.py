@@ -80,7 +80,7 @@ class OutputWindow(EditorWindow):
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
         # Output is not Python source, so save it as text by default
         # (gh-65339).
-        self.io.filetypes = self.io.text_filetypes
+        self.io.save_filetypes = self.io.text_filetypes
         self.io.defaultextension = self.io.text_defaultextension
 
     # Customize EditorWindow

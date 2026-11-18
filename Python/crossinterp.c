@@ -388,6 +388,8 @@ _PyXIData_InitWithSize(_PyXIData_t *xidata,
     _PyXIData_Init(xidata, interp, NULL, obj, new_object);
     xidata->data = PyMem_RawCalloc(1, size);
     if (xidata->data == NULL) {
+        Py_CLEAR(xidata->obj);
+        PyErr_NoMemory();
         return -1;
     }
     xidata->free = PyMem_RawFree;
@@ -664,6 +666,11 @@ check_missing___main___attr(PyObject *exc)
         }
     }
     const char *err = PyUnicode_AsUTF8(msgobj);
+    if (err == NULL) {
+        PyErr_Clear();
+        Py_DECREF(msgobj);
+        return 0;
+    }
 
     // Check if it's a missing __main__ attr.
     int cmp = strncmp(err, "module '__main__' has no attribute '", 36);
@@ -2011,6 +2018,14 @@ _PyXI_ApplyError(_PyXI_error *error, const char *failure)
     PyThreadState *tstate = PyThreadState_Get();
 
     if (failure != NULL) {
+        if (error->override != NULL
+            && error->override->code == _PyXI_ERR_NO_MEMORY)
+        {
+            PyErr_NoMemory();
+        }
+        else {
+            PyErr_SetString(PyExc_InterpreterError, failure);
+        }
         xi_error_clear(error);
         return NULL;
     }

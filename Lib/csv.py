@@ -82,6 +82,11 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "unix_dialect"]
 
 
+_dialect_attributes = frozenset({
+    'delimiter', 'quotechar', 'escapechar', 'doublequote',
+    'skipinitialspace', 'lineterminator', 'quoting', 'strict',
+})
+
 class Dialect:
     """Describe a CSV dialect.
 
@@ -112,6 +117,17 @@ class Dialect:
         except TypeError as e:
             # Re-raise to get a traceback showing more user code.
             raise Error(str(e)) from None
+
+    def __replace__(self, /, **changes):
+        unexpected = changes.keys() - _dialect_attributes
+        if unexpected:
+            raise TypeError(f'__replace__() got an unexpected keyword '
+                            f'argument {min(unexpected)!r}')
+        new = object.__new__(self.__class__)
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        new._validate()
+        return new
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""
@@ -373,9 +389,9 @@ class Sniffer:
 
         class dialect(Dialect):
             _name = "sniffed"
-            lineterminator = '\r\n'
             quoting = QUOTE_MINIMAL
 
+        dialect.lineterminator = self._detect_lineterminator(lines)
         dialect.delimiter = delimiter
         # _csv.reader won't accept a quotechar of ''
         dialect.quotechar = quotechar or '"'
@@ -563,22 +579,58 @@ class Sniffer:
     def _detect_skipinitialspace(self, lines, delimiter, quotechar,
                                  escapechar, doublequote):
         """
-        True only if every field following a delimiter starts with
-        a space.
+        Detect whether the spaces following a delimiter are a part of
+        the format or of the data.
         """
-        skipinitialspace = False
-        try:
-            for row in self._make_reader(lines, delimiter, quotechar,
-                                         escapechar,
-                                         doublequote=doublequote,
-                                         skipinitialspace=False):
-                for field in row[1:]:
-                    if not field.startswith(' '):
-                        return False
-                    skipinitialspace = True
-        except Error:
-            pass
-        return skipinitialspace
+        results = []
+        for skipinitialspace in False, True:
+            rows = []
+            try:
+                rows.extend(self._make_reader(
+                    lines, delimiter, quotechar, escapechar,
+                    doublequote=doublequote,
+                    skipinitialspace=skipinitialspace))
+            except Error:
+                # Keep the rows parsed before the error.
+                pass
+            results.append([row for row in rows if row])
+        if results[0] == results[1]:
+            return False  # No evidence.
+        counts = [[len(row) for row in rows] for rows in results]
+        if counts[0] != counts[1]:
+            # Prefer the more consistent row widths.
+            return len(set(counts[1])) <= len(set(counts[0]))
+        # Only some spaces are stripped.  A field differs only if
+        # a space was skipped at its start, which tells the padding
+        # apart from the spaces inside quoted or escaped fields.
+        if not all(kept_field != skipped_field
+                   for kept_row, skipped_row in zip(*results)
+                   for kept_field, skipped_field in zip(kept_row[1:],
+                                                        skipped_row[1:])):
+            return False
+        # The first field of a row is commonly not padded ('a, b, c'),
+        # so the first fields need only agree with each other.
+        first = [kept_row[0] != skipped_row[0]
+                 for kept_row, skipped_row in zip(*results)]
+        return all(first) or not any(first)
+
+    def _detect_lineterminator(self, lines):
+        """
+        Detect the line terminator by majority vote among the line
+        endings.  A line break inside a quoted field is counted too,
+        but it takes more of them than of the real ones to win the
+        vote.  A tie is broken in the order '\\r\\n', '\\n', '\\r',
+        so a sample without a complete line gives '\\r\\n'.
+        """
+        counts = dict.fromkeys(('\r\n', '\n', '\r'), 0)
+        for line in lines:
+            for lineterminator in counts:
+                if line.endswith(lineterminator):
+                    counts[lineterminator] += 1
+                    break
+        # max() returns the first of equal candidates, and dict
+        # preserves the insertion order.
+        return max(counts, key=counts.get)
 
     def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any
