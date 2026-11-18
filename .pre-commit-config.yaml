@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: 1986670a8c4578a526ad3dddee3b35d9cfb9d7be  # frozen: v0.3.4
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -8,7 +8,7 @@ repos:
         files: ^Lib/test/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: c4a0b883114b00d8d76b479c820ce7950211c99b  # frozen: v4.5.0
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -19,7 +19,7 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.9.1
+    rev: ce6d7aeab24d60b6119dbad180540bf3c9ff31da  # frozen: v0.9.1
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
