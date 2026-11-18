@@ -156,6 +156,7 @@ def multi_interp_extensions_check(enabled=True):
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
+                        force_eager_imports=True,
                         ):
     """Import and return a module, deliberately bypassing sys.modules.
 
@@ -187,7 +188,12 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
-    with force_eager_imports(), _ignore_deprecated_imports(deprecated):
+    eager_imports_context = (
+        force_eager_imports
+        if force_eager_imports
+        else contextlib.nullcontext
+    )
+    with eager_imports_context(), _ignore_deprecated_imports(deprecated):
         # Keep track of modules saved for later restoration as well
         # as those which just need a blocking entry removed
         fresh = list(fresh)
