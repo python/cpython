@@ -206,6 +206,13 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
+    op(_GET_AWAITABLE, (aux[oparg & 1], iterable -- iter, null, none)) {
+        // After an awaited call, any of the outputs may be NULL.
+        iter = sym_new_unknown(ctx);
+        null = sym_new_unknown(ctx);
+        none = sym_new_unknown(ctx);
+    }
+
     op(_GUARD_TOS_INT, (value -- value)) {
         if (sym_is_compact_int(value)) {
             ADD_OP(_NOP, 0, 0);

@@ -8906,20 +8906,25 @@
             break;
         }
 
-        case _GET_AWAITABLE_r11: {
+        case _GET_AWAITABLE_r13: {
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef iterable;
+            _PyStackRef *aux;
             _PyStackRef iter;
+            _PyStackRef null;
+            _PyStackRef none;
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             iterable = _stack_item_0;
+            aux = &stack_pointer[-(oparg & 1)];
+            assert((oparg & 1) == 0 || PyStackRef_IsNull(aux[0]));
             stack_pointer[0] = iterable;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg >> 1);
             _PyFrame_StackPointerInvalidate(frame);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8928,14 +8933,20 @@
             PyStackRef_CLOSE(iterable);
             _PyFrame_StackPointerInvalidate(frame);
             if (iter_o == NULL) {
+                stack_pointer += -(oparg & 1);
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
+            _tos_cache2 = none;
+            _tos_cache1 = null;
             _tos_cache0 = iter;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -(oparg & 1);
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }
