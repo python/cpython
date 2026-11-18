@@ -2655,7 +2655,7 @@ class BugsTest(unittest.TestCase):
 class BasicElementTest(ElementTestCase, unittest.TestCase):
 
     def test_reinit_releases_children(self):
-        # gh-153537: re-init should release the previous children.
+        # gh-114795: re-init should release the previous children.
         e = ET.Element('a', {'k': 'v'})
         children = [ET.SubElement(e, 'b') for _ in range(3)]
         refs = [weakref.ref(c) for c in children]
@@ -2666,6 +2666,22 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertEqual(len(e), 0)
         self.assertEqual(e.attrib, {})
         self.assertTrue(all(ref() is None for ref in refs))
+
+    def test_reinit_reentrant(self):
+        e = ET.Element('outer')
+
+        class Child(ET.Element):
+            def __del__(self):
+                e.__init__('inner', {'k': 'v'})
+                e.text = 'text'
+                e.tail = 'tail'
+
+        e.append(Child('child'))
+        e.__init__('outer')
+        self.assertEqual(e.tag, 'inner')
+        self.assertEqual(e.attrib, {'k': 'v'})
+        self.assertEqual(e.text, 'text')
+        self.assertEqual(e.tail, 'tail')
 
     def test___init__(self):
         tag = "foo"

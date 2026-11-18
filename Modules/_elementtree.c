@@ -268,20 +268,31 @@ typedef struct {
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
 
+LOCAL(ElementObjectExtra *)
+allocate_extra(PyObject *attrib)
+{
+    ElementObjectExtra *extra = PyMem_Malloc(sizeof(ElementObjectExtra));
+    if (extra == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    extra->attrib = Py_XNewRef(attrib);
+
+    extra->length = 0;
+    extra->allocated = STATIC_CHILDREN;
+    extra->children = extra->_children;
+
+    return extra;
+}
+
 LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
-    self->extra = PyMem_Malloc(sizeof(ElementObjectExtra));
-    if (!self->extra) {
-        PyErr_NoMemory();
+    self->extra = allocate_extra(attrib);
+    if (self->extra == NULL) {
         return -1;
     }
-
-    self->extra->attrib = Py_XNewRef(attrib);
-
-    self->extra->length = 0;
-    self->extra->allocated = STATIC_CHILDREN;
-    self->extra->children = self->extra->_children;
 
     return 0;
 }
@@ -418,7 +429,9 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *tag;
     PyObject *attrib = NULL;
+    PyObject *oldtag, *oldtext, *oldtail;
     ElementObject *self_elem;
+    ElementObjectExtra *newextra = NULL, *oldextra;
 
     if (!PyArg_ParseTuple(args, "O|O:Element", &tag, &attrib))
         return -1;
@@ -449,24 +462,31 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     self_elem = (ElementObject *)self;
 
-    /* On re-init, drop any children and attrib from a previous init. */
-    clear_extra(self_elem);
-
     if (attrib != NULL && !is_empty_dict(attrib)) {
-        if (create_extra(self_elem, attrib) < 0) {
+        newextra = allocate_extra(attrib);
+        if (newextra == NULL) {
             Py_DECREF(attrib);
             return -1;
         }
     }
 
-    /* We own a reference to attrib here and it's no longer needed. */
+    oldtag = self_elem->tag;
+    oldtext = JOIN_OBJ(self_elem->text);
+    oldtail = JOIN_OBJ(self_elem->tail);
+    oldextra = self_elem->extra;
+
+    /* Replace the entire state before dropping old references, since a
+       destructor can call element_init() again. */
+    self_elem->tag = Py_NewRef(tag);
+    self_elem->text = Py_NewRef(Py_None);
+    self_elem->tail = Py_NewRef(Py_None);
+    self_elem->extra = newextra;
+
     Py_XDECREF(attrib);
-
-    /* Replace the objects already pointed to by tag, text and tail. */
-    Py_XSETREF(self_elem->tag, Py_NewRef(tag));
-
-    _set_joined_ptr(&self_elem->text, Py_NewRef(Py_None));
-    _set_joined_ptr(&self_elem->tail, Py_NewRef(Py_None));
+    Py_XDECREF(oldtag);
+    Py_XDECREF(oldtext);
+    Py_XDECREF(oldtail);
+    dealloc_extra(oldextra);
 
     return 0;
 }
