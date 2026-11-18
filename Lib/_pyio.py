@@ -1404,6 +1404,9 @@ class BufferedRWPair(BufferedIOBase):
     def read1(self, size=-1):
         return self.reader.read1(size)
 
+    def readline(self, size=-1):
+        return self.reader.readline(size)
+
     def readinto1(self, b):
         return self.reader.readinto1(b)
 
