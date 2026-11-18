@@ -1646,10 +1646,14 @@ class NulledModules:
 class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
-    def do_create(self, dir=None, pre="", suf="", recurse=1, dirs=1, files=1,
+    def do_create(self, dir=None, pre=None, suf=None, recurse=1, dirs=1, files=1,
                   ignore_cleanup_errors=False):
         if dir is None:
             dir = tempfile.gettempdir()
+        if pre is None:
+            pre = type(dir)()
+        if suf is None:
+            suf = type(dir)()
         tmp = tempfile.TemporaryDirectory(
             dir=dir, prefix=pre, suffix=suf,
             ignore_cleanup_errors=ignore_cleanup_errors)
@@ -1659,13 +1663,17 @@ class TestTemporaryDirectory(BaseTestCase):
 
     def do_create2(self, path, recurse=1, dirs=1, files=1):
         # Create subdirectories and some files
+        def join(name):
+            if isinstance(path, bytes):
+                name = os.fsencode(name)
+            return os.path.join(path, name)
         if recurse:
             for i in range(dirs):
-                name = os.path.join(path, "dir%d" % i)
+                name = join("dir%d" % i)
                 os.mkdir(name)
                 self.do_create2(name, recurse-1, dirs, files)
         for i in range(files):
-            with open(os.path.join(path, "test%d.txt" % i), "wb") as f:
+            with open(join("test%d.txt" % i), "wb") as f:
                 f.write(b"Hello world!")
 
     def test_mkdtemp_failure(self):
@@ -1690,6 +1698,15 @@ class TestTemporaryDirectory(BaseTestCase):
                         "TemporaryDirectory %s exists after cleanup" % d.name)
         finally:
             os.rmdir(dir)
+
+    def test_explicit_cleanup_bytes(self):
+        # A TemporaryDirectory with a bytes name is deleted when cleaned up
+        with tempfile.TemporaryDirectory() as working_dir:
+            d = self.do_create(dir=os.fsencode(working_dir), recurse=2)
+            self.assertIsInstance(d.name, bytes)
+            self.assertTrue(os.path.exists(d.name))
+            d.cleanup()
+            self.assertFalse(os.path.exists(d.name))
 
     def test_explicit_cleanup_ignore_errors(self):
         """Test that cleanup doesn't return an error when ignoring them."""
@@ -1906,6 +1923,87 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertTrue(os.path.exists(target_file))
             self.assertEqual(os.stat(target_file).st_mode, target_mode)
 
+    def _make_unopenable_subdir(self):
+        # Create the following structure:
+        # work/          - top-level
+        #   <d>/         - tempdir to clean up (random name)
+        #     sub/       - an unopenable dir
+        #        subsub/
+        #          file
+        # Return:
+        # - `work` name (str)
+        # - `d` (TemporaryDirectory)
+        # - `subsub` stat result
+        work = self.enterContext(os_helper.temp_dir())
+        d = tempfile.TemporaryDirectory(dir=work)
+        sub = os.path.join(d.name, 'sub')
+        subsub = os.path.join(sub, 'subsub')
+        os.mkdir(sub)
+        os.mkdir(subsub)
+        subsub_stat = os.lstat(subsub)
+        with open(os.path.join(subsub, 'file'), 'w') as f:
+            f.write("rm me pls")
+        os.chmod(sub, 0)
+        # If the test fails, make sure everything can still be removed.
+        self.addCleanup(d.cleanup)
+        @self.addCleanup
+        def _clean():
+            if os.path.isdir(sub):
+                os.chmod(sub, 0o700)
+        return work, d, subsub_stat
+
+    @os_helper.skip_unless_working_chmod
+    @support.requires_non_root_user
+    @unittest.skipUnless(tempfile._rmtree_use_dir_fd
+                         and shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based cleanup')
+    def test_cleanup_nested_toplevel_error(self):
+        # rmtree() reports errors relative to the correct parent directory
+        work, d, subsub_stat = self._make_unopenable_subdir()
+        # An unrelated directory with the same name; should not be touched
+        unrelated = os.path.join(work, 'sub')
+        os.mkdir(unrelated)
+
+        rmdir = os.rmdir
+        failed_path = None
+        def failing_rmdir(path, *, dir_fd=None):
+            nonlocal failed_path
+            if path == 'sub' and dir_fd is not None and failed_path is None:
+                failed_path = path
+                raise PermissionError(errno.EPERM, 'simulated', path)
+            return rmdir(path, dir_fd=dir_fd)
+        with os_helper.change_cwd(work), mock.patch('os.rmdir', failing_rmdir):
+            d.cleanup()
+        self.assertEqual(failed_path, 'sub')
+        self.assertFalse(os.path.exists(d.name))
+        self.assertTrue(os.path.exists(unrelated))
+
+    @os_helper.skip_unless_working_chmod
+    @support.requires_non_root_user
+    @unittest.skipUnless(tempfile._rmtree_use_dir_fd
+                         and shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based cleanup')
+    def test_cleanup_nested_scandir_error(self):
+        # A scandir() error is reported relative to the parent directory.
+        work, d, subsub_stat = self._make_unopenable_subdir()
+
+        scandir = os.scandir
+        failed = False
+        def failing_scandir(path='.'):
+            nonlocal failed
+            if (
+                not failed
+                and isinstance(path, int)
+                and os.path.samestat(os.fstat(path), subsub_stat)
+            ):
+                failed = True
+                raise PermissionError(errno.EACCES, 'simulated')
+            return scandir(path)
+        with os_helper.change_cwd(work), mock.patch('os.scandir', failing_scandir):
+            d.cleanup()
+        self.assertTrue(failed)
+        self.assertFalse(os.path.exists(d.name))
+
     @support.cpython_only
     def test_del_on_collection(self):
         # A TemporaryDirectory is deleted when garbage collected
@@ -2064,11 +2162,17 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(name, d.name)
         self.assertFalse(os.path.exists(name))
 
-    def test_modes(self):
+    @support.subTests('bytes_name', (False, True))
+    def test_modes(self, bytes_name):
         for mode in range(8):
             mode <<= 6
             with self.subTest(mode=format(mode, '03o')):
-                d = self.do_create(recurse=3, dirs=2, files=2)
+                if bytes_name:
+                    d = self.do_create(recurse=3, dirs=2, files=2,
+                                       dir=tempfile.gettempdirb())
+                else:
+                    d = self.do_create(recurse=3, dirs=2, files=2)
+                self.assertIsInstance(d.name, bytes if bytes_name else str)
                 with d:
                     # Change files and directories mode recursively.
                     for root, dirs, files in os.walk(d.name, topdown=False):
@@ -2079,13 +2183,17 @@ class TestTemporaryDirectory(BaseTestCase):
                 self.assertFalse(os.path.exists(d.name))
 
     @support.subTests('ignore_errors', (True, False))
-    def test_parent_mode_preserved(self, ignore_errors):
+    @support.subTests('bytes_name', (False, True))
+    def test_parent_mode_preserved(self, ignore_errors, bytes_name):
         # Test that cleanup does not touch the parent directory,
         # even if that prevents removal.
         for mode in range(8):
             mode <<= 6
             with self.subTest(mode=format(mode, '03o')):
-                outer = self.do_create()
+                if bytes_name:
+                    outer = self.do_create(dir=tempfile.gettempdirb())
+                else:
+                    outer = self.do_create()
                 with outer:
                     d = self.do_create(dir=outer.name, dirs=2, files=2,
                                        ignore_cleanup_errors=ignore_errors)
