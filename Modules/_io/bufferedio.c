@@ -2403,14 +2403,12 @@ Read and return a line from the stream.
 
 If size is specified, at most size bytes will be read.
 
-The line terminator is always b'\n' for binary files; for text
-files, the newlines argument to open can be used to select the line
-terminator(s) recognized.
+The line terminator is always b'\n'.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BufferedRWPair_readline_impl(rwpair *self, PyObject *size)
-/*[clinic end generated code: output=ee5bb2364231e6e1 input=8ef2d3e003f34c31]*/
+/*[clinic end generated code: output=ee5bb2364231e6e1 input=1c552272a69db1ad]*/
 {
     return _forward_call(self->reader, &_Py_ID(readline), size);
 }

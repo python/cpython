@@ -1205,9 +1205,7 @@ PyDoc_STRVAR(_io_BufferedRWPair_readline__doc__,
 "\n"
 "If size is specified, at most size bytes will be read.\n"
 "\n"
-"The line terminator is always b\'\\n\' for binary files; for text\n"
-"files, the newlines argument to open can be used to select the line\n"
-"terminator(s) recognized.");
+"The line terminator is always b\'\\n\'.");
 
 #define _IO_BUFFEREDRWPAIR_READLINE_METHODDEF    \
     {"readline", _PyCFunction_CAST(_io_BufferedRWPair_readline), METH_FASTCALL, _io_BufferedRWPair_readline__doc__},
@@ -1479,4 +1477,4 @@ exit:
 
 #define _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF {"closed", (getter)_io_BufferedRWPair_closed_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=4c99c7646c6e959d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1596bb353f00a1ea input=a9049054013a1b77]*/

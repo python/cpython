@@ -1405,9 +1405,13 @@ class BufferedRWPair(BufferedIOBase):
         return self.reader.read1(size)
 
     def readline(self, size=-1):
-        return self.reader.readline(size)
+        r"""Read and return a line from the stream.
 
-    readline.__doc__ = BufferedReader.readline.__doc__
+        If size is specified, at most size bytes will be read.
+
+        The line terminator is always b'\n'.
+        """
+        return self.reader.readline(size)
 
     def readinto1(self, b):
         return self.reader.readinto1(b)
