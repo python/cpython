@@ -1407,6 +1407,8 @@ class BufferedRWPair(BufferedIOBase):
     def readline(self, size=-1):
         return self.reader.readline(size)
 
+    readline.__doc__ = BufferedReader.readline.__doc__
+
     def readinto1(self, b):
         return self.reader.readinto1(b)
 
