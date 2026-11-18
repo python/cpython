@@ -671,6 +671,7 @@ To configure the values returned from the iteration (implicit in the call to
     >>> list(mock_foo.iter())
     [1, 2, 3]
 
+
 Applying the same patch to every test method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
