@@ -1842,8 +1842,8 @@ _remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE records and updates the file header before the writer is
- * destroyed. Caching before finalize would preserve a count for a file that
+ * flushes the open sample block and updates the file header before the writer
+ * is destroyed. Caching before finalize would preserve a count for a file that
  * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
@@ -1957,13 +1957,13 @@ _remote_debugging.BinaryWriter.get_stats
 Get encoding statistics for the writer.
 
 Returns a dict with encoding statistics including
-repeat/full/suffix/pop-push record counts, frames written/saved, and
+repeat/full/suffix/reuse record counts, frames written/saved, and
 compression ratio.
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
-/*[clinic end generated code: output=06522cd52544df89 input=a8bb8c8682ccd34b]*/
+/*[clinic end generated code: output=06522cd52544df89 input=09c317b6289ae311]*/
 {
     if (!self->writer) {
         PyErr_SetString(PyExc_ValueError, "Writer is closed");
@@ -2044,6 +2044,22 @@ static PyType_Spec BinaryWriter_spec = {
 
 #define BinaryReader_CAST(op) ((BinaryReaderObject *)(op))
 
+static int
+binary_reader_close_checked(BinaryReaderObject *self)
+{
+    if (self->reader && self->reader->replaying) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Cannot close or reinitialize the reader "
+                        "while it is replaying");
+        return -1;
+    }
+    if (self->reader) {
+        binary_reader_close(self->reader);
+        self->reader = NULL;
+    }
+    return 0;
+}
+
 /*[clinic input]
 class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Type"
 [clinic start generated code]*/
@@ -2066,10 +2082,9 @@ _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
                                              PyObject *filename)
 /*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
+    if (binary_reader_close_checked(self) < 0) {
+        return -1;
     }
-
     self->reader = binary_reader_open(filename);
     if (!self->reader) {
         return -1;
@@ -2163,9 +2178,8 @@ static PyObject *
 _remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self)
 /*[clinic end generated code: output=ad0238cf5240b4f8 input=b919a66c737712d5]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
+    if (binary_reader_close_checked(self) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -2200,9 +2214,8 @@ _remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
                                              PyObject *exc_tb)
 /*[clinic end generated code: output=2acdd36cfdc14e4a input=87284243d7935835]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
+    if (binary_reader_close_checked(self) < 0) {
+        return NULL;
     }
     Py_RETURN_FALSE;
 }
