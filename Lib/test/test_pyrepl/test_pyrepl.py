@@ -2112,6 +2112,41 @@ class TestMain(ReplTestCase):
         self.addCleanup(patcher.stop)
         patcher.start()
 
+    def test_input_submitted_hook(self):
+        env = os.environ.copy()
+        env["PYTHON_COLORS"] = "0"
+        marker = "\x1b]633;C\x07"
+        output, exit_code = self.run_repl(
+            [
+                "from _pyrepl import simple_interact as si",
+                f"def hook(source): print({marker!r} + repr(source), flush=True)",
+                "",
+                "si.input_submitted_hook = hook",
+                "print('single executed')",
+                "if True:",
+                "print('block executed')",
+                "",
+                "a b c",
+                "clear",
+                "exit",
+            ],
+            env=env,
+            skip=True,
+        )
+        output = output.replace("\r\n", "\n")
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output.count(marker), 3)
+        for submitted_input, result in (
+            ("print('single executed')", "single executed\n"),
+            ("if True:\n    print('block executed')\n", "block executed\n"),
+            ("a b c", "SyntaxError: invalid syntax"),
+        ):
+            with self.subTest(submitted_input=submitted_input):
+                hook_output = f"{marker}{submitted_input!r}"
+                self.assertIn(hook_output, output)
+                self.assertIn(result, output)
+                self.assertLess(output.index(hook_output), output.index(result))
+
     def test_input_submitted_hook_exception(self):
         env = make_clean_env()
         env["NO_COLOR"] = "1"
@@ -2136,6 +2171,41 @@ class TestMain(ReplTestCase):
         )
         self.assertEqual(output.count("RuntimeError: hook failed"), 2)
         self.assertIn("\nexecuted: 1\n", output)
+
+    def test_input_submitted_hook_exception_preserves_sys_last(self):
+        env = os.environ.copy()
+        env["PYTHON_COLORS"] = "0"
+        output, exit_code = self.run_repl(
+            [
+                "import sys",
+                "from _pyrepl import simple_interact as si",
+                "names = ('last_exc', 'last_type', 'last_value', 'last_traceback')",
+                "print('initially unset:', all(not hasattr(sys, name) for name in names))",
+                "def hook(statement):",
+                "if statement in ('x = 1', 'y = 2'):",
+                "raise RuntimeError('hook failed')",
+                "",
+                "si.input_submitted_hook = hook",
+                "x = 1",
+                "print('still unset:', all(not hasattr(sys, name) for name in names))",
+                "si.input_submitted_hook = None",
+                "1 / 0",
+                "previous = tuple(getattr(sys, name) for name in names)",
+                "si.input_submitted_hook = hook",
+                "y = 2",
+                "print('last preserved:', isinstance(previous[0], ZeroDivisionError), "
+                "all(getattr(sys, name) is value for name, value in zip(names, previous)))",
+                "exit",
+            ],
+            env=env,
+            skip=True,
+        )
+        output = output.replace("\r\n", "\n")
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output.count("Error in input_submitted_hook:\n"), 2)
+        self.assertIn("initially unset: True\n", output)
+        self.assertIn("still unset: True\n", output)
+        self.assertIn("last preserved: True True\n", output)
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
