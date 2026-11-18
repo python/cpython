@@ -443,9 +443,9 @@ Module constants
    .. code-block:: sql
 
       CREATE TABLE test(
-         i integer primary key,  ! will look up a converter named "integer"
-         p point,                ! will look up a converter named "point"
-         n number(10)            ! will look up a converter named "number"
+         i integer primary key,  -- will look up a converter named "integer"
+         p point,                -- will look up a converter named "point"
+         n number(10)            -- will look up a converter named "number"
        )
 
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
@@ -453,8 +453,9 @@ Module constants
 
    .. note::
 
-      Generated fields (for example ``MAX(p)``) are returned as :class:`str`.
-      Use :const:`!PARSE_COLNAMES` to enforce types for such queries.
+      Expressions such as ``MAX(p)`` have no declared type, so their results use
+      the :ref:`default type conversions <sqlite3-types>`.
+      Use :const:`!PARSE_COLNAMES` to specify a converter for such expressions.
 
 .. data:: PARSE_COLNAMES
 
@@ -467,7 +468,7 @@ Module constants
 
    .. code-block:: sql
 
-      SELECT MAX(p) as "p [point]" FROM test;  ! will look up converter "point"
+      SELECT MAX(p) as "p [point]" FROM test;  -- will look up converter "point"
 
    This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
    (bitwise or) operator.
@@ -846,7 +847,7 @@ Connection objects
           * ``finalize()``: Return the final result of the aggregate as
             :ref:`a type natively supported by SQLite <sqlite3-types>`.
 
-          The number of arguments that the ``step()`` and ``value()`` methods
+          The number of arguments that the ``step()`` and ``inverse()`` methods
           must accept is controlled by *num_params*.
 
           Set to ``None`` to remove an existing SQL aggregate window function.
@@ -1186,8 +1187,8 @@ Connection objects
           ``ATTACH DATABASE`` SQL statement.
 
       :param float sleep:
-          The number of seconds to sleep between successive attempts
-          to back up remaining pages.
+          The number of seconds to wait before retrying a backup step
+          when the database is busy or locked.
 
       Example 1, copy an existing database into another:
 
@@ -1407,8 +1408,7 @@ Connection objects
       This read-only attribute corresponds to the low-level SQLite
       `autocommit mode`_.
 
-      ``True`` if a transaction is active (there are uncommitted changes),
-      ``False`` otherwise.
+      ``True`` if a transaction is active, ``False`` otherwise.
 
       .. versionadded:: 3.2
 
@@ -2172,7 +2172,7 @@ The coordinate pair will be stored as a text string in the database,
 using a semicolon to separate the coordinates.
 This can be implemented by adding a ``__conform__(self, protocol)``
 method which returns the adapted value.
-The object passed to *protocol* will be of type :class:`PrepareProtocol`.
+The parameter *protocol* will be :class:`PrepareProtocol`.
 
 .. testcode::
 
@@ -2443,7 +2443,7 @@ or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
 .. note::
-   The context manager neither implicitly opens a new transaction
+   The context manager neither implicitly opens a new transaction on entry
    nor closes the connection. If you need a closing context manager, consider
    using :meth:`contextlib.closing`.
 
@@ -2491,8 +2491,8 @@ Some useful URI tricks include:
    OperationalError: attempt to write a readonly database
    >>> con.close()
 
-* Do not implicitly create a new database file if it does not already exist;
-  will raise :exc:`~sqlite3.OperationalError` if unable to create a new file:
+* Open an existing database in read/write mode.
+  If the file does not exist, :func:`connect` raises :exc:`OperationalError`:
 
 .. doctest::
 
