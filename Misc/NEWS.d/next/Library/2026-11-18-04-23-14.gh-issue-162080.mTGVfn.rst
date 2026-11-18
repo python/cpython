@@ -1,0 +1,5 @@
+Fix :meth:`email.message.Message.as_bytes` and
+:meth:`email.message.Message.as_string` raising
+:exc:`UnicodeEncodeError` for a ``MIME-Version`` header containing
+non-ASCII bytes. Such headers are now refolded using the
+``unknown-8bit`` charset, as for other structured headers.

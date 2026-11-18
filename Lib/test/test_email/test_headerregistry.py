@@ -966,6 +966,49 @@ class TestMIMEVersionHeader(TestHeaderBase):
         self.assertEqual(h.fold(policy=policy.default),
                          'MIME-Version:' + source + '\n')
 
+    def test_non_ascii_in_minor_version(self):
+        # gh-162080: a non-ASCII byte in the minor version must be
+        # refolded as an unknown-8bit encoded word instead of raising
+        # UnicodeEncodeError on as_bytes()/as_string().
+        source = ('1.\xe9'.encode('latin-1')
+                          .decode('us-ascii', 'surrogateescape'))
+        h = self.make_header('MIME-Version', source)
+        self.assertEqual(h, '1.\ufffd')
+        self.assertEqual(h.version, None)
+        self.assertEqual(h.major, None)
+        self.assertEqual(h.minor, None)
+        self.assertDefectsEqual(h.defects, [errors.InvalidHeaderDefect,
+                                            errors.UndecodableBytesDefect])
+        self.assertEqual(h.fold(policy=policy.default),
+                         'MIME-Version: 1.=?unknown-8bit?q?=E9?=\n')
+
+    def test_non_ascii_in_major_version(self):
+        # gh-162080
+        source = ('\xe9.0'.encode('latin-1')
+                          .decode('us-ascii', 'surrogateescape'))
+        h = self.make_header('MIME-Version', source)
+        self.assertEqual(h, '\ufffd.0')
+        self.assertEqual(h.major, None)
+        self.assertEqual(h.minor, 0)
+        self.assertDefectsEqual(h.defects, [errors.InvalidHeaderDefect,
+                                            errors.UndecodableBytesDefect])
+        self.assertEqual(h.fold(policy=policy.default),
+                         'MIME-Version: =?unknown-8bit?q?=E9?=.0\n')
+
+    def test_non_ascii_in_excess_text_after_version(self):
+        # gh-162080
+        source = ('1.0 \xe9'.encode('latin-1')
+                            .decode('us-ascii', 'surrogateescape'))
+        h = self.make_header('MIME-Version', source)
+        self.assertEqual(h, '1.0 \ufffd')
+        self.assertEqual(h.version, '1.0')
+        self.assertEqual(h.major, 1)
+        self.assertEqual(h.minor, 0)
+        self.assertDefectsEqual(h.defects, [errors.InvalidHeaderDefect,
+                                            errors.UndecodableBytesDefect])
+        self.assertEqual(h.fold(policy=policy.default),
+                         'MIME-Version: 1.0 =?unknown-8bit?q?=E9?=\n')
+
     version_string_params = {
 
         # Examples from the RFC.
