@@ -1889,16 +1889,22 @@
         case _GET_AWAITABLE: {
             JitOptRef iter;
             JitOptRef null;
-            JitOptRef none;
+            JitOptRef v;
             iter = sym_new_unknown(ctx);
             null = sym_new_unknown(ctx);
-            none = sym_new_unknown(ctx);
+            v = sym_new_unknown(ctx);
             CHECK_STACK_BOUNDS(2 - (oparg & 1));
             stack_pointer[-1 - (oparg & 1)] = iter;
             stack_pointer[-(oparg & 1)] = null;
-            stack_pointer[1 - (oparg & 1)] = none;
+            stack_pointer[1 - (oparg & 1)] = v;
             stack_pointer += 2 - (oparg & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        /* _SEND_LAZY_CORO is not a viable micro-op for tier 2 */
+
+        case _GUARD_SEND_NOT_LAZY_CORO: {
             break;
         }
 
@@ -1969,6 +1975,12 @@
             stack_pointer[-3] = asend;
             stack_pointer[-2] = null_out;
             stack_pointer[-1] = retval;
+            break;
+        }
+
+        /* _CHECK_LAZY_CORO is not a viable micro-op for tier 2 */
+
+        case _GUARD_NOT_LAZY_CORO: {
             break;
         }
 
@@ -5589,6 +5601,8 @@
             (void)framesize;
             break;
         }
+
+        /* _MAYBE_LAZY_CORO is not a viable micro-op for tier 2 */
 
         case _SAVE_RETURN_OFFSET: {
             break;

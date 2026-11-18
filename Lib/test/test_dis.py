@@ -597,6 +597,39 @@ ExceptionTable:
        _with.__code__.co_firstlineno + 3,
        )
 
+async def _await_call(f):
+    return await f(1)
+
+dis_await_call = """\
+%4d           RETURN_GENERATOR
+               POP_TOP
+       L1:     RESUME                   0
+
+%4d           PUSH_NULL
+               LOAD_FAST_BORROW         0 (f)
+               PUSH_NULL
+               LOAD_SMALL_INT           1
+               CALL                     3 (1 + awaited)
+               GET_AWAITABLE            1 (after call)
+       L2:     SEND                     4 (to L5)
+       L3:     YIELD_VALUE              1
+       L4:     RESUME                   3
+               JUMP_BACKWARD_NO_INTERRUPT 6 (to L2)
+       L5:     END_SEND
+               RETURN_VALUE
+       L6:     CLEANUP_THROW
+       L7:     JUMP_BACKWARD_NO_INTERRUPT 4 (to L5)
+
+  --   L8:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+               RERAISE                  1
+ExceptionTable:
+  L1 to L3 -> L8 [0] lasti
+  L3 to L4 -> L6 [3]
+  L4 to L7 -> L8 [0] lasti
+""" % (_await_call.__code__.co_firstlineno,
+       _await_call.__code__.co_firstlineno + 1,
+       )
+
 async def _asyncwith(c):
     async with c:
         x = 1
@@ -1237,6 +1270,9 @@ class DisTests(DisTestBase):
 
     def test_disassemble_asyncwith(self):
         self.do_disassembly_test(_asyncwith, dis_asyncwith)
+
+    def test_disassemble_await_call(self):
+        self.do_disassembly_test(_await_call, dis_await_call)
 
     def test_disassemble_try_finally(self):
         self.do_disassembly_test(_tryfinally, dis_tryfinally)

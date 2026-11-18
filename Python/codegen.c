@@ -4587,7 +4587,7 @@ ex_call:
     if (nkwelts == 0) {
         ADDOP(c, loc, PUSH_NULL);
     }
-    ADDOP(c, loc, CALL_FUNCTION_EX);
+    ADDOP_I(c, loc, CALL_FUNCTION_EX, awaited);
     return SUCCESS;
 }
 

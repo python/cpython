@@ -206,11 +206,11 @@ dummy_func(void) {
         res = PyJitRef_Borrow(sym_new_null(ctx));
     }
 
-    op(_GET_AWAITABLE, (aux[oparg & 1], iterable -- iter, null, none)) {
+    op(_GET_AWAITABLE, (aux[oparg & 1], iterable -- iter, null, v)) {
         // After an awaited call, any of the outputs may be NULL.
         iter = sym_new_unknown(ctx);
         null = sym_new_unknown(ctx);
-        none = sym_new_unknown(ctx);
+        v = sym_new_unknown(ctx);
     }
 
     op(_GUARD_TOS_INT, (value -- value)) {

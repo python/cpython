@@ -44,9 +44,10 @@ struct _PyInterpreterFrame {
     char owner;
     uint8_t visited:1;
     uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+    uint8_t lazy_coro:1;
 #ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
-    uint8_t lltrace:5;
+    uint8_t lltrace:4;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];

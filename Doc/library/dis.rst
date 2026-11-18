@@ -831,7 +831,12 @@ not have to be) the original ``STACK[-2]``.
    If the low bit of ``where`` is set, the awaited object is the result of an
    awaited :opcode:`CALL`, :opcode:`CALL_KW` or :opcode:`CALL_FUNCTION_EX`,
    and the instruction also pops the extra slot that was pushed below that
-   call's callable.
+   call's callable. If the call ran a coroutine function without creating the
+   coroutine object, that slot tells how the body ended, and
+   :opcode:`GET_AWAITABLE` pushes the result or the yielded value in place of
+   ``None``, with a ``NULL`` receiver if the body returned, or with the new
+   coroutine and ``None`` in place of ``NULL`` if it suspended (see
+   :opcode:`SEND`).
 
    .. versionadded:: 3.5
 
@@ -1863,11 +1868,20 @@ iterations of the loop.
    push the exception's ``value`` attribute, and increment the bytecode counter
    by *delta*.
 
+   After an awaited call (see :opcode:`GET_AWAITABLE`), the receiver may be
+   ``NULL``: then ``STACK[-1]`` is already the result and the bytecode counter
+   is incremented by *delta*. If ``STACK[-2]`` is ``None``, ``STACK[-1]`` has
+   already been yielded by the receiver: ``STACK[-2]`` is set to ``NULL`` and
+   execution continues with the next instruction.
+
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.15
       The receiver is now at ``STACK[-3]``, followed by the value pushed with
       it by :opcode:`GET_ITER`.
+
+   .. versionchanged:: next
+      Handles the results of awaited calls.
 
 
 .. opcode:: HAVE_ARGUMENT

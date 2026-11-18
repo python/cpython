@@ -267,6 +267,12 @@ extern int _PyEval_EnsureBuiltinsWithModule(
     PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
+// Lazily created coroutines (see RETURN_GENERATOR in bytecodes.c).
+// Exported for _testinternalcapi and external JIT support.
+PyAPI_FUNC(PyObject *) _PyCoro_MaterializeLazy(_PyInterpreterFrame *frame);
+PyAPI_FUNC(_PyInterpreterFrame *) _PyEval_MoveLazyCoroFrame(PyThreadState *tstate,
+                                                      PyGenObject *gen,
+                                                      _PyInterpreterFrame *frame);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

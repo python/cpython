@@ -156,6 +156,27 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+/* An awaited call (the low bit of oparg is set) of a coroutine function lets
+ * the body run in the pushed frame without creating the coroutine object
+ * until it first suspends (see RETURN_GENERATOR). Not while the JIT records
+ * a trace, which expects the regular path, nor while coroutine origin
+ * tracking is on, since the origin is captured when the object is created. */
+#if _Py_TIER2
+#  define LAZY_CORO_ALLOWED() (!IS_JIT_TRACING())
+#else
+#  define LAZY_CORO_ALLOWED() 1
+#endif
+#define MAYBE_START_LAZY_CORO(FRAME) \
+    do { \
+        _PyInterpreterFrame *lazy_frame_ = (FRAME); \
+        if ((_PyFrame_GetCode(lazy_frame_)->co_flags & CO_COROUTINE) && \
+            tstate->coroutine_origin_tracking_depth == 0 && \
+            LAZY_CORO_ALLOWED()) \
+        { \
+            lazy_frame_->lazy_coro = 1; \
+        } \
+    } while (0)
+
 #if _Py_TIER2
 #define STOP_TRACING() \
     do { \

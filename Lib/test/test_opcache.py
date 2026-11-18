@@ -1630,8 +1630,15 @@ class TestSpecializer(TestBase):
                 except StopIteration:
                     break
 
+        class Suspend:
+            def __await__(self):
+                yield
+
         class CM:
             async def __aenter__(self):
+                # A coroutine that is awaited right away and never
+                # suspends doesn't execute the caller's SEND at all.
+                await Suspend()
                 return self
 
             async def __aexit__(self, *exc):

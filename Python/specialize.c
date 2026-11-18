@@ -2738,11 +2738,12 @@ failure:
 Py_NO_INLINE void
 _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
 {
-    PyObject *receiver = PyStackRef_AsPyObjectBorrow(receiver_st);
-
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[SEND] == INLINE_CACHE_ENTRIES_SEND);
-    PyTypeObject *tp = Py_TYPE(receiver);
+    /* NULL is a coroutine that an awaited call ran to completion without
+     * creating it (see GET_AWAITABLE); SEND_GEN handles that too. */
+    PyTypeObject *tp = PyStackRef_IsNull(receiver_st) ? &PyCoro_Type
+                                                      : PyStackRef_TYPE(receiver_st);
     if (tp == &PyGen_Type || tp == &PyCoro_Type) {
         /* Don't specialize if PEP 523 is active */
         if (!_PyInterpreterState_IsSpecializationEnabled(_PyInterpreterState_GET())) {
@@ -2761,7 +2762,8 @@ _Py_Specialize_Send(_PyStackRef receiver_st, _Py_CODEUNIT *instr)
         return;
     }
     SPECIALIZATION_FAIL(SEND,
-                        _PySpecialization_ClassifyIterator(receiver));
+                        _PySpecialization_ClassifyIterator(
+                            PyStackRef_AsPyObjectBorrow(receiver_st)));
 failure:
     unspecialize(instr);
 }
