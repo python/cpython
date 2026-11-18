@@ -6102,10 +6102,10 @@ dummy_func(
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
-            #if TIER_ONE
+            #ifdef TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
-            #if TIER_TWO
+            #ifdef TIER_TWO
             frame->return_offset = oparg;
             #endif
         }
