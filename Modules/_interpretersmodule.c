@@ -673,7 +673,8 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     _PyXI_session_result result = {0};
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(session, interp, shareables, &result) < 0) {
+    PyInterpreterView view = { .id = PyInterpreterState_GetID(interp) };
+    if (_PyXI_Enter(session, &view, shareables, &result) < 0) {
         // If an error occurred at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
@@ -1066,7 +1067,8 @@ _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
     }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(session, interp, updates, NULL) < 0) {
+    PyInterpreterView view = { .id = PyInterpreterState_GetID(interp) };
+    if (_PyXI_Enter(session, &view, updates, NULL) < 0) {
         _PyXI_FreeSession(session);
         return NULL;
     }
