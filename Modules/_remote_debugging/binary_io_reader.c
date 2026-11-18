@@ -307,7 +307,7 @@ static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
     if (reader_validate_count("string", reader->strings_count,
-                              file_size - reader->string_table_offset,
+                              file_size - (size_t)reader->string_table_offset,
                               MIN_STRING_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -318,7 +318,7 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
         return -1;
     }
 
-    size_t offset = reader->string_table_offset;
+    size_t offset = (size_t)reader->string_table_offset;
     for (uint32_t i = 0; i < reader->strings_count; i++) {
         size_t prev_offset = offset;
         uint32_t str_len = decode_varint_u32(data, &offset, file_size);
@@ -353,7 +353,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
 #endif
 
     if (reader_validate_count("frame", reader->frames_count,
-                              file_size - reader->frame_table_offset,
+                              file_size - (size_t)reader->frame_table_offset,
                               MIN_FRAME_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -365,7 +365,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 
-    size_t offset = reader->frame_table_offset;
+    size_t offset = (size_t)reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
         FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
@@ -638,7 +638,7 @@ binary_reader_open(PyObject *path)
     }
     reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
     reader->sample_data_size =
-        reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
+        (size_t)reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
 
     /* Parse string and frame tables */
     if (reader_parse_string_table(reader, data, file_size) < 0) {

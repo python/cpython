@@ -436,7 +436,11 @@ _close_open_fds_safe(int start_fd, int *fds_to_keep, Py_ssize_t fds_to_keep_len)
         Py_ssize_t bytes;
         while (1) {
 #ifdef HAVE_GETDENTS64
-            bytes = getdents64(fd_dir_fd, buffer, sizeof(buffer));
+            /* musl <1.2.4 headers expose `getdents64` as an alias for `getdents`, whose buffer parameter
+             * is `struct dirent *`. We use `void *` to support both that interface and the glibc declaration
+             * without an incompatible-pointer diagnostic.
+             */
+            bytes = getdents64(fd_dir_fd, (void *)buffer, sizeof(buffer));
 #else
             bytes = syscall(SYS_getdents64, fd_dir_fd,
                             (struct py_dirent64 *)buffer, sizeof(buffer));

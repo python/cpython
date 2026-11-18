@@ -176,8 +176,8 @@ struct encoding {
                           const char *);
   int (*nameLength)(const ENCODING *, const char *);
   const char *(*skipS)(const ENCODING *, const char *);
-  int (*getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
-                 ATTRIBUTE *atts);
+  size_t (*getAtts)(const ENCODING *enc, const char *ptr, size_t attsMax,
+                    ATTRIBUTE *atts);
   int (*charRefNumber)(const ENCODING *enc, const char *ptr);
   int (*predefinedEntityName)(const ENCODING *, const char *, const char *);
   void (*updatePosition)(const ENCODING *, const char *ptr, const char *end,

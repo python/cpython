@@ -1386,9 +1386,9 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a new :class:`datetime` object with the same attributes, but with
-   specified parameters updated. Note that ``tzinfo=None`` can be specified to
-   create a naive datetime from an aware datetime with no conversion of date
+   Return a new :class:`~datetime.datetime` object with the same attributes, but
+   with specified parameters updated. Note that ``tzinfo=None`` can be specified
+   to create a naive datetime from an aware datetime with no conversion of date
    and time data.
 
    :class:`.datetime` objects are also supported by generic function
@@ -2476,6 +2476,11 @@ where historical changes have been made to civil time.
   Return ``dt + offset``. The *dt* argument must be an aware
   :class:`.datetime` instance, with ``tzinfo`` set to ``self``.
 
+.. attribute:: timezone.name
+
+   The *name* passed to the constructor, or ``None`` if no name was passed.
+
+   .. versionadded:: 3.16
 
 Class attributes:
 
@@ -2719,7 +2724,7 @@ differences between platforms in handling of unsupported format specifiers.
    ``%D``, ``%F``, ``%n``, ``%t``, and ``%:z`` were added for
    :meth:`~.datetime.strptime`.
 
-.. versionadded:: next
+.. versionadded:: 3.16
    ``%Nf`` was added.
 
 

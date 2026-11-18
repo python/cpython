@@ -179,7 +179,7 @@ Custom OpenSSL
    .. code-block:: shell-session
 
       $ curl -O https://www.openssl.org/source/openssl-VERSION.tar.gz
-      $ tar xzf openssl-VERSION
+      $ tar xzf openssl-VERSION.tar.gz
       $ pushd openssl-VERSION
       $ ./config \
           --prefix=/usr/local/custom-openssl \

@@ -25,6 +25,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
+from test.support import isolation
 from test.support import os_helper
 from test.support import (skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow,
@@ -102,6 +103,17 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError), self.assertWarns(DeprecationWarning):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    # gh-161354: Run the test in a subprocess to make it more deterministic.
+    # Inline values depend on Constant_type.ht_cached_keys which changes when
+    # ast.Constant instances are created, so they depend on other run tests.
+    @isolation.runInSubprocess()
+    def test_nodes_have_inline_values(self):
+        tree = ast.parse("x = f(y, z=1)")
+        for node in ast.walk(tree):
+            with self.subTest(node=type(node).__name__):
+                self.assertTrue(_testinternalcapi.has_inline_values(node))
 
     def test_AST_fields_NULL_check(self):
         # See: https://github.com/python/cpython/issues/126105
@@ -1023,6 +1035,19 @@ class AST_Tests(unittest.TestCase):
                 ast.parse(sample)
                 with self.assertRaises(SyntaxError):
                     ast.parse(sample, feature_version=(3, 12))
+
+    def test_lazy_imports_feature_version(self):
+        samples = [
+            "lazy import os",
+            "lazy from .. import name",
+            "lazy from mod import some",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                ast.parse(sample, feature_version=(3, 15))
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 14))
 
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):

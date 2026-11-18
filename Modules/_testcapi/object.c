@@ -153,6 +153,13 @@ pyobject_is_unique_temporary_new_object(PyObject *self, PyObject *unused)
     return PyLong_FromLong(result);
 }
 
+static PyObject *
+pyobject_clear_managed_dict(PyObject *self, PyObject *obj)
+{
+    PyObject_ClearManagedDict(obj);
+    Py_RETURN_NONE;
+}
+
 static int MyObject_dealloc_called = 0;
 
 static void
@@ -358,6 +365,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
     {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
     {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
+    {"pyobject_clear_managed_dict", pyobject_clear_managed_dict, METH_O},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_py_set_immortal", test_py_set_immortal, METH_NOARGS},
 #ifdef Py_REF_DEBUG

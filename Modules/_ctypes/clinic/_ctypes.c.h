@@ -865,6 +865,21 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     return Simple_from_outparm_impl(self, cls);
 }
 
+static int
+Simple_bool_impl(CDataObject *self);
+
+static int
+Simple_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Simple_bool_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static PyObject *
 Pointer_item_impl(PyObject *myself, Py_ssize_t index);
 
@@ -894,6 +909,21 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 
     return return_value;
 }
+
+static int
+Pointer_bool_impl(PyObject *self);
+
+static int
+Pointer_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Pointer_bool_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
 
 #define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
@@ -908,4 +938,4 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=8fc24edc31ab60b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d9dd4bbae13cfca input=a9049054013a1b77]*/

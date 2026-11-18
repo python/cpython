@@ -1251,7 +1251,7 @@ ConfigParser Objects
       Comments in the original configuration file are not preserved when
       writing the configuration back.
       What is considered a comment, depends on the given values for
-      *comment_prefix* and *inline_comment_prefix*.
+      *comment_prefixes* and *inline_comment_prefixes*.
 
 
    .. method:: remove_option(section, option)

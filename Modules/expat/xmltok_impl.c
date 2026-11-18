@@ -1505,11 +1505,11 @@ PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
    first attsMax attributes are stored in atts.
 */
 
-static int
-PREFIX(getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
+static size_t
+PREFIX(getAtts)(const ENCODING *enc, const char *ptr, size_t attsMax,
                 ATTRIBUTE *atts) {
   enum { other, inName, inValue } state = inName;
-  int nAtts = 0;
+  size_t nAtts = 0;
   int open = 0; /* defined when state == inValue;
                    initialization just to shut up compilers */
 
