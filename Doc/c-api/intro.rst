@@ -140,12 +140,6 @@ System includes
    * ``<stdio.h>``
    * ``<stdlib.h>``
 
-.. note::
-
-   Since Python may define some pre-processor definitions which affect the standard
-   headers on some systems, you *must* include :file:`Python.h` before any standard
-   headers are included.
-
 
 Useful macros
 =============
