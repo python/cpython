@@ -84,6 +84,19 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
+def _get_file_attribute_mask():
+    mask = 0
+    for name in dir(stat):
+        if name.startswith("FILE_ATTRIBUTE_"):
+            mask |= getattr(stat, name)
+    return mask
+
+
+# gh-126253: Ignore unknown attributes, such as 0x1_000_0000
+# (Directory flag of DOS file attribute in NTFS)
+FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
+
+
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -5045,8 +5058,15 @@ class TestScandir(unittest.TestCase):
                 if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
                             "st_ctime_ns"):
                     continue
-                self.assertEqual(getattr(stat1, attr),
-                                 getattr(stat2, attr),
+                value1 = getattr(stat1, attr)
+                value2 = getattr(stat2, attr)
+                if attr == "st_file_attributes":
+                    # Filesystems may report attribute bits that aren't
+                    # exposed by the stat module.
+                    value1 &= FILE_ATTRIBUTE_MASK
+                    value2 &= FILE_ATTRIBUTE_MASK
+                self.assertEqual(value1,
+                                 value2,
                                  (stat1, stat2, attr))
         else:
             self.assertEqual(stat1, stat2)

@@ -183,7 +183,7 @@ _is_legal_chunk_size = re.compile(rb'[0-9a-fA-F]+').fullmatch
 
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
-_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
+_METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT', 'QUERY'}
 
 
 def _encode(data, name='data'):
@@ -1028,11 +1028,15 @@ class HTTPConnection:
         return ip
 
     def _tunnel(self):
-        if _contains_disallowed_url_pchar_re.search(self._tunnel_host):
+        # Check the host as it is sent: the IDNA codec normalizes the name
+        # first (NFKC), which maps some non-ASCII characters to ASCII ones,
+        # e.g. U+00A0 (NO-BREAK SPACE) to a space.
+        tunnel_host = self._tunnel_host.encode("idna")
+        if _contains_disallowed_url_pchar_re.search(tunnel_host.decode("ascii")):
             raise ValueError('Tunnel host can\'t contain control characters %r'
                              % (self._tunnel_host,))
         connect = b"CONNECT %s:%d %s\r\n" % (
-            self._wrap_ipv6(self._tunnel_host.encode("idna")),
+            self._wrap_ipv6(tunnel_host),
             self._tunnel_port,
             self._http_vsn_str.encode("ascii"))
         headers = [connect]
@@ -1268,7 +1272,6 @@ class HTTPConnection:
         """
         if continue_timeout <= 0.0:
             raise ValueError("continue_timeout must be greater than 0")
-        self._continue_timeout = continue_timeout
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
@@ -1294,6 +1297,7 @@ class HTTPConnection:
         #
         if self.__state == _CS_IDLE:
             self.__state = _CS_REQ_STARTED
+            self._continue_timeout = continue_timeout
         else:
             raise CannotSendRequest(self.__state)
 
