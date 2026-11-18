@@ -587,12 +587,6 @@ class TestRmTree(BaseTest, unittest.TestCase):
                 os.stat(os.path.join(TESTFN, path)),
                 os.stat(name, dir_fd=dir_fd)))
 
-        def rmtree():
-            errors.clear()
-            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
-                          _onexc_kwargs=True)
-            return errors
-
         def failing_rmdir(path, *, dir_fd=None):
             raise PermissionError(errno.EACCES, 'simulated')
         with unittest.mock.patch('os.rmdir', failing_rmdir):

@@ -1928,7 +1928,7 @@ class TestTemporaryDirectory(BaseTestCase):
             self.assertEqual(os.stat(target_file).st_mode, target_mode)
 
     def _make_unopenable_subdir(self):
-        # Create the fullowing structure:
+        # Create the following structure:
         # work/          - top-level
         #   <d>/         - tempdir to clean up (random name)
         #     sub/       - an unopenable dir
