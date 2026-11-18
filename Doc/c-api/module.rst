@@ -128,9 +128,8 @@ Module Objects
    The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
    is reassigned or the module is destroyed.
 
-   .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
-      unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
+   :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
+   unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
 .. _c_module_slots:
@@ -338,7 +337,7 @@ Creation and initialization slots
 
    .. versionchanged:: 3.15
 
-      The *slots* argument may be a ``ModuleSpec``-like object, rather than
+      The *spec* argument may be a ``ModuleSpec``-like object, rather than
       a true :py:class:`~importlib.machinery.ModuleSpec` instance.
       Note that previous versions of CPython did not enforce this.
 
@@ -553,19 +552,19 @@ This means that if you have a module object, but you are not sure if it
 
 .. code-block:: c
 
-   PyObject *module = <the module in question>
+   PyObject *module = <the module in question>;
 
    void *module_token;
    if (PyModule_GetToken(module, &module_token) < 0) {
        return NULL;
    }
    if (module_token != your_token) {
-       PyErr_SetString(PyExc_ValueError, "unexpected module")
+       PyErr_SetString(PyExc_ValueError, "unexpected module");
        return NULL;
    }
 
    // This module's state has the expected memory layout; it's safe to cast
-   struct my_state state = (struct my_state*)PyModule_GetState(module)
+   struct my_state *state = (struct my_state*)PyModule_GetState(module);
 
 A module's token -- and the *your_token* value to use in the above code -- is:
 

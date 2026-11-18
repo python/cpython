@@ -583,13 +583,13 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
-        return;
-
-    tp->tp_finalize(self);
     if (_PyType_IS_GC(tp)) {
+        if (_PyGC_FINALIZED(self))
+            return;
+
         _PyGC_SET_FINALIZED(self);
     }
+    tp->tp_finalize(self);
 }
 
 int
@@ -956,6 +956,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
+    clear_freelist(&freelists->tracebacks, is_finalization, PyObject_GC_Del);
 }
 
 /*
@@ -2533,8 +2534,6 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyACallIter_Type;
-extern PyTypeObject _PyACallIterAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2627,8 +2626,6 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyACallIter_Type,
-    &_PyACallIterAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,
@@ -3306,8 +3303,8 @@ next" object in the chain to 0.  This can easily lead to stack overflows.
 To avoid that, if the C stack is nearing its limit, instead of calling
 dealloc on the object, it is added to a queue to be freed later when the
 stack is shallower */
-void
-_Py_Dealloc(PyObject *op)
+static Py_NO_INLINE void
+py_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     unsigned long gc_flag = type->tp_flags & Py_TPFLAGS_HAVE_GC;
@@ -3370,6 +3367,28 @@ _Py_Dealloc(PyObject *op)
     if (gc_flag && tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
+}
+
+/*
+ * gh-130706: Keep the GC/reftracer path in the non-inlined py_dealloc().
+ * Inlining it makes the compiler save callee-saved registers at entry,
+ * so the non-GC objects path would have unnecessary register spills.
+ */
+void
+_Py_Dealloc(PyObject *op)
+{
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
+    // gh-130706: Avoid unnecessary register spills for non-GC objects.
+    PyTypeObject *type = Py_TYPE(op);
+    if (_PyRuntime.ref_tracer.tracer_func == NULL
+        && !(type->tp_flags & Py_TPFLAGS_HAVE_GC))
+    {
+        type->tp_dealloc(op);
+        return;
+    }
+#endif
+    // GC objects (trashcan), reftracer set, or debug builds.
+    py_dealloc(op);
 }
 
 

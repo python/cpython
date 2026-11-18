@@ -12,6 +12,7 @@ TODO:
     * std streams (pyshell, run),
     * warning stuff (pyshell, run).
 """
+import re
 import sys
 
 # .pyw is for Windows; .pyi is for typing stub files.
@@ -112,6 +113,60 @@ def wheel_event(event, widget=None):
     widget = event.widget if widget is None else widget
     widget.yview('scroll', lines, 'units')
     return 'break'
+
+
+_cli_token_re = re.compile(r"""
+    (?P<backslashes>\\*)(?P<quotes>"+)
+  | (?P<literal>\\+|[^ \t"\\]+)  # backslashes not followed by a quote
+  | (?P<space>[ \t]+)
+""", re.VERBOSE)
+
+
+def _split_windows(cli_string):
+    """Split a command line into arguments as the C runtime does.
+
+    See https://learn.microsoft.com/cpp/c-language/parsing-c-command-line-arguments
+    """
+    args = []
+    arg = None  # None when not in an argument.
+    quoted = False
+    for m in _cli_token_re.finditer(cli_string):
+        match m.lastgroup:
+            case 'space' if not quoted:
+                if arg is not None:
+                    args.append(arg)
+                    arg = None
+            case 'space' | 'literal':
+                arg = (arg or '') + m[0]
+            case _:  # Backslashes followed by quotes.
+                count = len(m['backslashes'])
+                escaped = count % 2  # Odd backslashes escape a quote.
+                bare = len(m['quotes']) - escaped
+                # In a quoted part every two quotes give a literal quote;
+                # if not quoted, the first quote opens a quoted part.
+                literal = escaped + ((bare + quoted - 1) // 2 if bare else 0)
+                arg = (arg or '') + '\\' * (count // 2) + '"' * literal
+                quoted ^= bare % 2
+    if arg is not None:
+        args.append(arg)
+    return args
+
+
+def split_cli_args(cli_string):  # Called in query.
+    "Split a command line as the Python executable does (gh-93016)."
+    if sys.platform == 'win32':
+        return _split_windows(cli_string)
+    import shlex
+    return shlex.split(cli_string)
+
+
+def join_cli_args(cli_args):  # Called in query.
+    "Join arguments into a command line which split_cli_args() splits back."
+    if sys.platform == 'win32':
+        import subprocess
+        return subprocess.list2cmdline(cli_args)
+    import shlex
+    return shlex.join(cli_args)
 
 
 if __name__ == '__main__':

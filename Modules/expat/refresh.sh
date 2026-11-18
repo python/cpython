@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_8_4"
-expected_libexpat_version="2.8.4"
-expected_libexpat_sha256="b8ece2437692dad44d851c4532723390a5a330990007706be9c8d2b90d294f36"
+expected_libexpat_tag="R_2_10_0"
+expected_libexpat_version="2.10.0"
+expected_libexpat_sha256="5466a341f9c692ef7a958a6881311be597f8e1ce345984cf78414f54793dea4c"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -31,9 +31,11 @@ declare -a lib_files
 lib_files=(
   ascii.h
   asciitab.h
+  entities.h
   expat.h
   expat_external.h
   fallthrough.h
+  hash_table.h
   iasciitab.h
   internal.h
   latin1tab.h
@@ -42,7 +44,8 @@ lib_files=(
   siphash.h
   utf8tab.h
   winconfig.h
-  xcsinc.c
+  xcs.c
+  xcs.h
   xmlparse.c
   xmlrole.c
   xmlrole.h

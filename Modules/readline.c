@@ -1508,10 +1508,19 @@ flex_complete(const char *text, int start, int end)
 
 done:
     if (state) {
-        Py_XDECREF(state->begidx);
-        Py_XDECREF(state->endidx);
-        state->begidx = PyLong_FromLong((long) start);
-        state->endidx = PyLong_FromLong((long) end);
+        PyObject *begidx = PyLong_FromLong((long) start);
+        PyObject *endidx = PyLong_FromLong((long) end);
+        if (begidx == NULL || endidx == NULL) {
+            Py_XDECREF(begidx);
+            Py_XDECREF(endidx);
+            PyErr_FormatUnraisable("Exception ignored while preparing "
+                                   "readline completion");
+            rl_attempted_completion_over = 1;
+            PyGILState_Release(gilstate);
+            return NULL;
+        }
+        Py_XSETREF(state->begidx, begidx);
+        Py_XSETREF(state->endidx, endidx);
     }
     result = completion_matches((char *)text, *on_completion);
     PyGILState_Release(gilstate);
@@ -1802,6 +1811,96 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 }
 
 
+PyDoc_STRVAR(readline_version_info__doc__,
+"readline.readline_version_info\n\
+\n\
+Readline version information as a named tuple.");
+
+static PyStructSequence_Field readline_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {0}
+};
+
+static PyStructSequence_Desc readline_version_info_desc = {
+    "readline.readline_version_info",   /* name */
+    readline_version_info__doc__,       /* doc */
+    readline_version_info_fields,       /* fields */
+    2
+};
+
+static PyObject *
+make_readline_version_info(PyTypeObject *type, int number)
+{
+    PyObject *version;
+    int pos = 0;
+    int major = (number >> 8) & 0xff;
+    int minor = number & 0xff;
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromLong(major))
+    SetItem(PyLong_FromLong(minor))
+#undef SetItem
+
+    return version;
+}
+
+static int
+add_version_constants(PyObject *m)
+{
+    if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
+                                RL_READLINE_VERSION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION",
+                                rl_readline_version) < 0) {
+        return -1;
+    }
+    PyObject *obj = PyUnicode_FromString(rl_library_version);
+    if (obj == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "readline_version", obj) < 0 ||
+        PyModule_AddObjectRef(m, "_READLINE_LIBRARY_VERSION", obj) < 0)
+    {
+        Py_DECREF(obj);
+        return -1;
+    }
+    Py_DECREF(obj);
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&readline_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "READLINE_VERSION_INFO",
+            make_readline_version_info(version_type,
+                                       RL_READLINE_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(m, "readline_version_info",
+            make_readline_version_info(version_type,
+                                       rl_readline_version)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
+    return 0;
+}
+
 /* Initialize the module */
 
 PyDoc_STRVAR(doc_module,
@@ -1853,17 +1952,7 @@ PyInit_readline(void)
     PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
-    if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
-                                RL_READLINE_VERSION) < 0) {
-        goto error;
-    }
-    if (PyModule_AddIntConstant(m, "_READLINE_RUNTIME_VERSION",
-                                rl_readline_version) < 0) {
-        goto error;
-    }
-    if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
-                                   rl_library_version) < 0)
-    {
+    if (add_version_constants(m) < 0) {
         goto error;
     }
 

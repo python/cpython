@@ -2285,10 +2285,13 @@ class VarTrace:
         def default_callback(*params):
             "Add config values to changes instance."
             value = var.get()
-            # A blanked int entry is an empty string; do not save it as an
-            # invalid config value (gh-83653).
             if value != '':
                 changes.add_option(*config, value)
+            else:
+                # A blanked int entry: do not save an invalid value, and
+                # forget the value recorded while editing (gh-75487).
+                config_type, section, item = config
+                changes[config_type].get(section, {}).pop(item, None)
         return default_callback
 
     def attach(self):

@@ -1,2 +1,0 @@
-The undocumented :func:`!ctypes.util.test` function is now :term:`soft
-deprecated` and a no-op at runtime.

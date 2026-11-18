@@ -1,3 +1,0 @@
-:func:`shutil.move` now resolves symlinks via :func:`os.path.realpath`
-when checking whether the destination is inside the source directory,
-preventing a symlink-based bypass of that guard.

@@ -3211,8 +3211,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdin__", std);
-    _PySys_SetAttr(&_Py_ID(stdin), std);
+    if (PySys_SetObject("__stdin__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdin), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -3222,8 +3228,14 @@ init_sys_streams(PyThreadState *tstate)
                        config->stdio_errors);
     if (std == NULL)
         goto error;
-    PySys_SetObject("__stdout__", std);
-    _PySys_SetAttr(&_Py_ID(stdout), std);
+    if (PySys_SetObject("__stdout__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (_PySys_SetAttr(&_Py_ID(stdout), std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
@@ -3830,10 +3842,9 @@ _Py_FatalRefcountErrorFunc(const char *func, const char *msg)
 void _Py_NO_RETURN
 Py_ExitStatusException(PyStatus status)
 {
-    if (_PyStatus_IS_EXIT(status)) {
-        exit(status.exitcode);
-    }
-    else if (_PyStatus_IS_ERROR(status)) {
+    assert(!_PyStatus_IS_EXIT(status));
+
+    if (_PyStatus_IS_ERROR(status)) {
         fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
@@ -3988,8 +3999,8 @@ PyOS_getsig(int sig)
     return context.sa_handler;
 #else
     PyOS_sighandler_t handler;
-/* Special signal handling for the secure CRT in Visual Studio 2005 */
-#if defined(_MSC_VER) && _MSC_VER >= 1400
+/* Special signal handling for the secure CRT */
+#if defined(_MSC_VER)
     switch (sig) {
     /* Only these signals are valid */
     case SIGINT:
@@ -4004,7 +4015,7 @@ PyOS_getsig(int sig)
     default:
         return SIG_ERR;
     }
-#endif /* _MSC_VER && _MSC_VER >= 1400 */
+#endif /* _MSC_VER */
     handler = signal(sig, SIG_IGN);
     if (handler != SIG_ERR)
         signal(sig, handler);

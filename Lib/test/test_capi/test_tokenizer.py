@@ -12,9 +12,6 @@ class TokenizerTests(unittest.TestCase):
     def test_source_discard(self):
         _testinternalcapi.test_tokenizer_source_discard()
 
-    def test_cursor(self):
-        _testinternalcapi.test_tokenizer_cursor()
-
 
 if __name__ == "__main__":
     unittest.main()

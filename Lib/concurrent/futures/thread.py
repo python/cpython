@@ -3,7 +3,7 @@
 
 """Implements ThreadPoolExecutor."""
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 from concurrent.futures import _base
 import itertools
@@ -12,6 +12,7 @@ import threading
 import types
 import weakref
 import os
+lazy import warnings
 
 
 _threads_queues = weakref.WeakKeyDictionary()
@@ -272,3 +273,10 @@ class ThreadPoolExecutor(_base.Executor):
             for t in self._threads:
                 t.join()
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return 'Brian Quinlan (brian@sweetapp.com)'  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

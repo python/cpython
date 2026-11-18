@@ -426,11 +426,11 @@ ensure_literal_number(expr_ty exp, bool allow_real, bool allow_imaginary)
 }
 
 static int
-ensure_literal_negative(expr_ty exp, bool allow_real, bool allow_imaginary)
+ensure_literal_signed(expr_ty exp, bool allow_real, bool allow_imaginary)
 {
     assert(exp->kind == UnaryOp_kind);
-    // Must be negation ...
-    if (exp->v.UnaryOp.op != USub) {
+    // Must be negation or positive ...
+    if (exp->v.UnaryOp.op != USub && exp->v.UnaryOp.op != UAdd) {
         return 0;
     }
     // ... of a constant ...
@@ -461,7 +461,7 @@ ensure_literal_complex(expr_ty exp)
             }
             break;
         case UnaryOp_kind:
-            if (!ensure_literal_negative(left, /*real=*/true, /*imaginary=*/false)) {
+            if (!ensure_literal_signed(left, /*real=*/true, /*imaginary=*/false)) {
                 return 0;
             }
             break;
@@ -512,9 +512,9 @@ validate_pattern_match_value(expr_ty exp)
             // Constants and attribute lookups are always permitted
             return 1;
         case UnaryOp_kind:
-            // Negated numbers are permitted (whether real or imaginary)
+            // Signed numbers are permitted (whether real or imaginary)
             // Compiler will complain if AST folding doesn't create a constant
-            if (ensure_literal_negative(exp, /*real=*/true, /*imaginary=*/true)) {
+            if (ensure_literal_signed(exp, /*real=*/true, /*imaginary=*/true)) {
                 return 1;
             }
             break;

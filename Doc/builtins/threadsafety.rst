@@ -408,9 +408,9 @@ as operands and always lock both objects:
 iterate through all the passed iterables and do the following:
 
    * :meth:`set.update` and :meth:`set.union` lock both objects only when
-      the other operand is a :class:`set`, :class:`frozenset`, or :class:`dict`.
+     the other operand is a :class:`set`, :class:`frozenset`, or :class:`dict`.
    * :meth:`set.intersection` and :meth:`set.difference` always try to lock
-      all objects.
+     all objects.
 
 :meth:`set.symmetric_difference` tries to lock both objects.
 
@@ -418,9 +418,9 @@ The update variants of the above methods also have some differences between
 them:
 
    * :meth:`set.difference_update` and :meth:`set.intersection_update` try
-      to lock all objects one-by-one.
+     to lock all objects one-by-one.
    * :meth:`set.symmetric_difference_update` only locks the arguments if it is
-      of type :class:`set`, :class:`frozenset`, or :class:`dict`.
+     of type :class:`set`, :class:`frozenset`, or :class:`dict`.
 
 The following methods always try to lock both objects:
 
@@ -604,3 +604,13 @@ underlying object supports it:
 Resizing or reallocating the underlying object (such as calling
 :meth:`bytearray.resize`) while a memoryview is exported raises
 :exc:`BufferError`. This is enforced regardless of threading.
+
+In the :term:`free-threaded build`, :meth:`~memoryview.release` is
+thread-safe. If another thread has an in-flight operation on the memoryview
+when it is released, the underlying buffer may remain exported until that
+operation completes. Restrictions on the exporter, such as prohibiting
+resizing, remain in effect until then.
+
+For read-heavy workloads that share an underlying object across threads,
+creating a separate memoryview of that object in each thread may improve
+performance.

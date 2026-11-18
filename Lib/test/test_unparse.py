@@ -335,6 +335,14 @@ class UnparseTestCase(ASTTestCase):
     def test_integer_parens(self):
         self.check_ast_roundtrip("3 .__abs__()")
 
+    def test_attribute_on_bool(self):
+        # gh-158237: True.real should not gain a space
+        self.check_src_roundtrip("x = True.real")
+        self.check_src_roundtrip("x = False.__class__")
+
+    def test_attribute_on_int_still_spaced(self):
+        self.check_src_roundtrip("x = 3 .__abs__()")
+
     def test_huge_float(self):
         self.check_ast_roundtrip("1e1000")
         self.check_ast_roundtrip("-1e1000")
@@ -692,6 +700,24 @@ class UnparseTestCase(ASTTestCase):
             out = statement + '\n    i = 1\n    j = 2'
 
             self.check_src_roundtrip(src, out, mode='single')
+
+    @test.support.subTests('case', [
+        "case 'a string':",
+        "case True:",
+        "case _:",
+        "case [*_]:",
+        "case tuple():",
+        "case cls(arg, more=arg2):",
+        "case tuple() | list():",
+        "case [tuple() as obj, _, {'a': a, **more}]:",
+        "case -2:",
+        "case +2:",
+        "case 2 + 3j:",
+        "case +2 - 3j:",
+    ])
+    def test_unparse_match(self, case):
+        src = 'match x:\n    ' + case + '\n        pass'
+        self.check_src_roundtrip(src)
 
 
 class CosmeticTestCase(ASTTestCase):

@@ -11,6 +11,7 @@ preserve
 #include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -154,6 +155,101 @@ _ssl__SSLSocket_get_unverified_chain(PyObject *self, PyObject *Py_UNUSED(ignored
 
     return return_value;
 }
+
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLSocket_get_ech_status__doc__,
+"get_ech_status($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF    \
+    {"get_ech_status", (PyCFunction)_ssl__SSLSocket_get_ech_status, METH_NOARGS, _ssl__SSLSocket_get_ech_status__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_ech_status_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_ech_status(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_get_ech_status_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLSocket_get_ech_retry_config__doc__,
+"get_ech_retry_config($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF    \
+    {"get_ech_retry_config", (PyCFunction)_ssl__SSLSocket_get_ech_retry_config, METH_NOARGS, _ssl__SSLSocket_get_ech_retry_config__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_ech_retry_config_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_ech_retry_config(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_get_ech_retry_config_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLSocket_set_ech_config__doc__,
+"set_ech_config($self, ech_config, /)\n"
+"--\n"
+"\n"
+"Set the ECH configuration for this connection.\n"
+"\n"
+"This replaces any configuration inherited from the context and\n"
+"must be called before the handshake starts.");
+
+#define _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF    \
+    {"set_ech_config", (PyCFunction)_ssl__SSLSocket_set_ech_config, METH_O, _ssl__SSLSocket_set_ech_config__doc__},
+
+static PyObject *
+_ssl__SSLSocket_set_ech_config_impl(PySSLSocket *self, Py_buffer *ech_config);
+
+static PyObject *
+_ssl__SSLSocket_set_ech_config(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer ech_config = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &ech_config, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_set_ech_config_impl((PySSLSocket *)self, &ech_config);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for ech_config */
+    if (ech_config.obj) {
+       PyBuffer_Release(&ech_config);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_shared_ciphers__doc__,
 "shared_ciphers($self, /)\n"
@@ -771,13 +867,8 @@ _ssl__SSLSocket_get_channel_binding(PyObject *self, PyObject *const *args, Py_ss
         _PyArg_BadArgument("get_channel_binding", "argument 'cb_type'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t cb_type_length;
-    cb_type = PyUnicode_AsUTF8AndSize(args[0], &cb_type_length);
+    cb_type = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (cb_type == NULL) {
-        goto exit;
-    }
-    if (strlen(cb_type) != (size_t)cb_type_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -922,13 +1013,8 @@ _ssl__SSLContext_set_ciphers(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_ciphers", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t cipherlist_length;
-    cipherlist = PyUnicode_AsUTF8AndSize(arg, &cipherlist_length);
+    cipherlist = _PyUnicode_AsUTF8NoNUL(arg);
     if (cipherlist == NULL) {
-        goto exit;
-    }
-    if (strlen(cipherlist) != (size_t)cipherlist_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -961,13 +1047,8 @@ _ssl__SSLContext_set_ciphersuites(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_ciphersuites", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t ciphersuites_length;
-    ciphersuites = PyUnicode_AsUTF8AndSize(arg, &ciphersuites_length);
+    ciphersuites = _PyUnicode_AsUTF8NoNUL(arg);
     if (ciphersuites == NULL) {
-        goto exit;
-    }
-    if (strlen(ciphersuites) != (size_t)ciphersuites_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1022,13 +1103,8 @@ _ssl__SSLContext_set_groups(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_groups", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t grouplist_length;
-    grouplist = PyUnicode_AsUTF8AndSize(arg, &grouplist_length);
+    grouplist = _PyUnicode_AsUTF8NoNUL(arg);
     if (grouplist == NULL) {
-        goto exit;
-    }
-    if (strlen(grouplist) != (size_t)grouplist_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1128,13 +1204,8 @@ _ssl__SSLContext_set_client_sigalgs(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_client_sigalgs", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sigalgslist_length;
-    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    sigalgslist = _PyUnicode_AsUTF8NoNUL(arg);
     if (sigalgslist == NULL) {
-        goto exit;
-    }
-    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1167,13 +1238,8 @@ _ssl__SSLContext_set_server_sigalgs(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("set_server_sigalgs", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sigalgslist_length;
-    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    sigalgslist = _PyUnicode_AsUTF8NoNUL(arg);
     if (sigalgslist == NULL) {
-        goto exit;
-    }
-    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1217,6 +1283,44 @@ exit:
 
     return return_value;
 }
+
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLContext__set_outer_alpn_protocols__doc__,
+"_set_outer_alpn_protocols($self, protos, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF    \
+    {"_set_outer_alpn_protocols", (PyCFunction)_ssl__SSLContext__set_outer_alpn_protocols, METH_O, _ssl__SSLContext__set_outer_alpn_protocols__doc__},
+
+static PyObject *
+_ssl__SSLContext__set_outer_alpn_protocols_impl(PySSLContext *self,
+                                                Py_buffer *protos);
+
+static PyObject *
+_ssl__SSLContext__set_outer_alpn_protocols(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer protos = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext__set_outer_alpn_protocols_impl((PySSLContext *)self, &protos);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for protos */
+    if (protos.obj) {
+       PyBuffer_Release(&protos);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
 
 static int
 _ssl__SSLContext_verify_mode_get_impl(PySSLContext *self);
@@ -2058,6 +2162,139 @@ _ssl__SSLContext_set_default_verify_paths(PyObject *self, PyObject *Py_UNUSED(ig
     return return_value;
 }
 
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLContext_set_ech_config__doc__,
+"set_ech_config($self, ech_config, /)\n"
+"--\n"
+"\n"
+"Set the ECH configuration on the SSL context.\n"
+"\n"
+"ech_config must be a bytes-like object containing an ECHConfigList\n"
+"in binary or Base64 encoding.");
+
+#define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF    \
+    {"set_ech_config", (PyCFunction)_ssl__SSLContext_set_ech_config, METH_O, _ssl__SSLContext_set_ech_config__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_ech_config_impl(PySSLContext *self,
+                                     Py_buffer *ech_config);
+
+static PyObject *
+_ssl__SSLContext_set_ech_config(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer ech_config = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &ech_config, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_ech_config_impl((PySSLContext *)self, &ech_config);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for ech_config */
+    if (ech_config.obj) {
+       PyBuffer_Release(&ech_config);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
+#if defined(HAVE_OPENSSL_ECH)
+
+PyDoc_STRVAR(_ssl__SSLContext_load_ech_keys__doc__,
+"load_ech_keys($self, /, keyfile, password=None, *, for_retry=True)\n"
+"--\n"
+"\n"
+"Load server ECH keys and configurations from a PEM file.\n"
+"\n"
+"The file must contain a private key followed by its ECHConfigList.\n"
+"The password argument may be a string, bytes, bytearray, or a\n"
+"callable returning one of those types. It is only needed for\n"
+"encrypted keys.\n"
+"If for_retry is true, advertise the configurations in ECH retry\n"
+"responses.");
+
+#define _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF    \
+    {"load_ech_keys", _PyCFunction_CAST(_ssl__SSLContext_load_ech_keys), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_load_ech_keys__doc__},
+
+static PyObject *
+_ssl__SSLContext_load_ech_keys_impl(PySSLContext *self, PyObject *keyfile,
+                                    PyObject *password, int for_retry);
+
+static PyObject *
+_ssl__SSLContext_load_ech_keys(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(keyfile), &_Py_ID(password), &_Py_ID(for_retry), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"keyfile", "password", "for_retry", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "load_ech_keys",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *keyfile;
+    PyObject *password = Py_None;
+    int for_retry = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    keyfile = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        password = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    for_retry = PyObject_IsTrue(args[2]);
+    if (for_retry < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _ssl__SSLContext_load_ech_keys_impl((PySSLContext *)self, keyfile, password, for_retry);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_OPENSSL_ECH) */
+
 PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 "set_ecdh_curve($self, name, /)\n"
 "--\n"
@@ -2354,13 +2591,8 @@ _ssl__SSLContext_set_psk_server_callback(PyObject *self, PyObject *const *args, 
         identity_hint = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        Py_ssize_t identity_hint_length;
-        identity_hint = PyUnicode_AsUTF8AndSize(args[1], &identity_hint_length);
+        identity_hint = _PyUnicode_AsUTF8NoNUL(args[1]);
         if (identity_hint == NULL) {
-            goto exit;
-        }
-        if (strlen(identity_hint) != (size_t)identity_hint_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2855,13 +3087,8 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("txt2obj", "argument 'txt'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t txt_length;
-    txt = PyUnicode_AsUTF8AndSize(args[0], &txt_length);
+    txt = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (txt == NULL) {
-        goto exit;
-    }
-    if (strlen(txt) != (size_t)txt_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -2973,13 +3200,8 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("enum_certificates", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t store_name_length;
-    store_name = PyUnicode_AsUTF8AndSize(args[0], &store_name_length);
+    store_name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (store_name == NULL) {
-        goto exit;
-    }
-    if (strlen(store_name) != (size_t)store_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(module);
@@ -3054,13 +3276,8 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("enum_crls", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t store_name_length;
-    store_name = PyUnicode_AsUTF8AndSize(args[0], &store_name_length);
+    store_name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (store_name == NULL) {
-        goto exit;
-    }
-    if (strlen(store_name) != (size_t)store_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(module);
@@ -3073,9 +3290,33 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
+    #define _SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_GET_ECH_STATUS_METHODDEF) */
+
+#ifndef _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
+    #define _SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_GET_ECH_RETRY_CONFIG_METHODDEF) */
+
+#ifndef _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
+    #define _SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SET_ECH_CONFIG_METHODDEF) */
+
 #ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
     #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
+
+#ifndef _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF
+    #define _SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT__SET_OUTER_ALPN_PROTOCOLS_METHODDEF) */
+
+#ifndef _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
+    #define _SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT_SET_ECH_CONFIG_METHODDEF) */
+
+#ifndef _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF
+    #define _SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF
+#endif /* !defined(_SSL__SSLCONTEXT_LOAD_ECH_KEYS_METHODDEF) */
 
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
@@ -3132,4 +3373,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=42b28429643df3e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb3476aa2f825376 input=a9049054013a1b77]*/

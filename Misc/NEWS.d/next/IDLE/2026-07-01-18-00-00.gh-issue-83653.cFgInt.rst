@@ -1,3 +1,0 @@
-Blanking an integer entry in IDLE's Settings dialog, such as "Auto squeeze
-min lines", no longer saves an empty string as an invalid configuration
-value.

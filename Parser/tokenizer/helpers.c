@@ -91,9 +91,9 @@ _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
     // These errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
     va_start(vargs, format);
-    int ret = _syntaxerror_range(tok, _PyLexer_BufferPointer(tok, tok->line_start),
-                                 tok->cur - tok->line_start, tok->lineno,
-                                 format, -1, -1, vargs);
+    int ret = _syntaxerror_range(
+        tok, _PyTok_SourcePointer(&tok->source, tok->line_start),
+        tok->cur - tok->line_start, tok->lineno, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
 }
@@ -105,9 +105,10 @@ _PyTokenizer_syntaxerror_known_range(struct tok_state *tok,
 {
     va_list vargs;
     va_start(vargs, format);
-    int ret = _syntaxerror_range(tok, _PyLexer_BufferPointer(tok, tok->line_start),
-                                 tok->cur - tok->line_start, tok->lineno,
-                                 format, col_offset, end_col_offset, vargs);
+    int ret = _syntaxerror_range(
+        tok, _PyTok_SourcePointer(&tok->source, tok->line_start),
+        tok->cur - tok->line_start, tok->lineno,
+        format, col_offset, end_col_offset, vargs);
     va_end(vargs);
     return ret;
 }
@@ -137,10 +138,6 @@ _PyTokenizer_indenterror(struct tok_state *tok)
 int
 _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *msg = PyUnicode_FromFormat(
         "\"\\%c\" is an invalid escape sequence. "
         "Such sequences will not work in the future. "
@@ -226,10 +223,6 @@ error:
 int
 _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
-    if (!tok->report_warnings) {
-        return 0;
-    }
-
     PyObject *errmsg;
     va_list vargs;
     va_start(vargs, format);
@@ -341,12 +334,9 @@ _PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
         }
     }
     if (badchar) {
-        tok->lineno = lineno;
-        tok->line_start = _PyLexer_BufferOffset(tok, line_start);
-        tok->cur = _PyLexer_BufferOffset(tok, badchar);
-        _PyTokenizer_syntaxerror_known_range(tok,
-                (int)(badchar - line_start) + 1,
-                (int)(badchar - line_start) + 1,
+        _PyTokenizer_syntaxerror_at(
+                tok, line_start, badchar - line_start + 1, lineno,
+                -1, -1,
                 "Non-UTF-8 code starting with '\\x%.2x'"
                 "%s%V on line %i, "
                 "but no encoding declared; "
@@ -388,13 +378,5 @@ _PyTokenizer_print_escape(FILE *f, const char *s, Py_ssize_t size)
         }
     }
     putc('"', f);
-}
-
-void
-_PyTokenizer_tok_dump(int type, char *start, char *end)
-{
-    fprintf(stderr, "%s", _PyParser_TokenNames[type]);
-    if (type == NAME || type == NUMBER || type == STRING || type == OP)
-        fprintf(stderr, "(%.*s)", (int)(end - start), start);
 }
 #endif
