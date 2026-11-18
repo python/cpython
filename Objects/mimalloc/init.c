@@ -647,7 +647,7 @@ static void mi_process_init_once(void) mi_attr_noexcept {
 
 // Initialize the process; called by thread_init or the process loader
 void mi_process_init(void) mi_attr_noexcept {
-  #if _MSC_VER < 1920
+  #if defined(_MSC_VER) && _MSC_VER < 1920
 	mi_heap_main_init(); // vs2017 can dynamically re-initialize _mi_heap_main
 	#endif
   mi_atomic_do_once {

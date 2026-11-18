@@ -385,7 +385,7 @@ static inline mi_heap_t* mi_prim_get_default_heap(void);
 #endif
 
 
-#if MI_TLS_SLOT
+#ifdef MI_TLS_SLOT
 # if !defined(MI_HAS_TLS_SLOT)
 #  error "trying to use a TLS slot for the default heap, but the mi_prim_tls_slot primitives are not defined"
 # endif

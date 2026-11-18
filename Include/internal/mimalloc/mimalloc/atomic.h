@@ -511,7 +511,7 @@ static inline void mi_atomic_yield_sleep( size_t* ticks, const size_t ticks_unti
 // These should be light-weight in-process only locks.
 // Only used for reserving arena's and to maintain the abandoned list.
 // ----------------------------------------------------------------------
-#if _MSC_VER
+#if defined(_MSC_VER)
 #pragma warning(disable:26110)  // unlock with holding lock
 #endif
 

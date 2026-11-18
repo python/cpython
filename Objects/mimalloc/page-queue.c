@@ -253,7 +253,7 @@ static bool mi_page_queue_is_consistent(const mi_page_queue_t* queue);
 static void mi_page_queue_push(mi_heap_t* heap, mi_page_queue_t* queue, mi_page_t* page) {
   mi_assert_internal(mi_page_heap(page) == heap);
   mi_assert_internal(!mi_page_queue_contains(queue, page));
-  #if MI_HUGE_PAGE_ABANDON
+  #ifdef MI_HUGE_PAGE_ABANDON
   mi_assert_internal(_mi_page_segment(page)->kind != MI_SEGMENT_HUGE);
   #endif
   mi_assert_internal(mi_page_block_size(page) == queue->block_size ||

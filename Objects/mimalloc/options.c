@@ -236,7 +236,7 @@ void mi_options_print(void) mi_attr_noexcept
   #if MI_GUARDED
   _mi_message("guarded build: %s\n", mi_option_get(mi_option_guarded_sample_rate) != 0 ? "enabled" : "disabled");
   #endif
-  #if MI_TSAN
+  #ifdef MI_TSAN
   _mi_message("thread santizer enabled\n");
   #endif
 }
