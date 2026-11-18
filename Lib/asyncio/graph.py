@@ -51,7 +51,7 @@ def _build_graph_for_future(
 
     coro = None
     if get_coro := getattr(future, 'get_coro', None):
-        coro = get_coro() if limit != 0 else None
+        coro = get_coro() if limit != 0 and not future.done() else None
 
     st: list[FrameCallGraphEntry] = []
     awaited_by: list[FutureCallGraph] = []
