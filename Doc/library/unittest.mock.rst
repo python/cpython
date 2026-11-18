@@ -2840,7 +2840,7 @@ Sealing mocks
 
         >>> mock = Mock()
         >>> mock.submock.attribute1 = 2
-        >>> mock.not_submock = mock.Mock(name="sample_name")
+        >>> mock.not_submock = Mock(name="sample_name")
         >>> seal(mock)
         >>> mock.new_attribute  # This will raise AttributeError.
         >>> mock.submock.attribute2  # This will raise AttributeError.
