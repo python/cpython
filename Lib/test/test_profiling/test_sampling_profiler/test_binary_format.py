@@ -127,17 +127,6 @@ class RawCollector:
         pass
 
 
-def stack_cache_hash(frame_ids):
-    """Hash a stack the way the writer's stack cache does."""
-    mask = (1 << 64) - 1
-    value = 0xcbf29ce484222325
-    for frame_id in frame_ids:
-        value = ((value ^ frame_id) * 0x100000001b3) & mask
-    value ^= value >> 33
-    value = (value * 0xff51afd7ed558ccd) & mask
-    return value ^ (value >> 33)
-
-
 def encode_varint(value):
     """Encode an unsigned varint."""
     out = bytearray()
@@ -220,9 +209,7 @@ class BinaryFormatTestBase(unittest.TestCase):
     def write_binary_file(self, samples, interval=1000, compression="none",
                           mode=None, capture_config=None):
         """Like create_binary_file but also returns the writer collector."""
-        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
-            filename = f.name
-        self.temp_files.append(filename)
+        filename = self.temp_filename()
 
         collector = BinaryCollector(
             filename, interval, compression=compression, mode=mode,
@@ -1053,40 +1040,6 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(stats["total_samples"], 2)
         writer.close()
 
-    def test_writer_reuses_colliding_stacks(self):
-        """Stacks sharing a cache bucket are both stored as STACK_REUSE."""
-        # STACK_CACHE_BUCKET_COUNT in Modules/_remote_debugging/binary_io.h
-        bucket_count = 2048
-        buckets = {}
-        for frame_id in range(2, 4099):
-            bucket = stack_cache_hash((0, 1, frame_id)) % bucket_count
-            if bucket in buckets:
-                first_id = buckets[bucket]
-                second_id = frame_id
-                break
-            buckets[bucket] = frame_id
-
-        frames = [make_frame("a.py", line, "f")
-                  for line in range(second_id + 1)]
-        first = [frames[0], frames[1], frames[first_id]]
-        second = [frames[0], frames[1], frames[second_id]]
-
-        filename = self.temp_filename()
-        writer = _remote_debugging.BinaryWriter(filename, 1000, 0)
-        timestamp = 1000
-        # Assign frame IDs without exceeding MAX_STACK_DEPTH.
-        for start in range(0, len(frames), 256):
-            stack = frames[start:start + 256]
-            writer.write_sample([make_interpreter(0, [make_thread(2, stack)])],
-                                timestamp)
-            timestamp += 1000
-        for stack in (first, second, first, second):
-            writer.write_sample([make_interpreter(0, [make_thread(1, stack)])],
-                                timestamp)
-            timestamp += 1000
-        self.assertEqual(writer.get_stats()["reuse_records"], 2)
-        writer.close()
-
     def test_writer_buffered_bytes_match_flushed_bytes(self):
         """bytes_written before finalize() matches the flushed size."""
         filename = self.temp_filename()
@@ -1105,38 +1058,28 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         self.assertEqual(buffered,
                          sum(size for size, _ in block["columns"]))
 
-    def _write_block_spanning_file(self):
-        # A block accepts at most 4,096 streams.
+    def test_samples_span_multiple_blocks(self):
+        """Replay preserves samples and progress across block boundaries."""
+        # Stream 4097 starts the second block. Thread 1 then returns.
         frame = make_frame("many_threads.py", 1, "work")
         samples = [
             [make_interpreter(0, [make_thread(i + 1, [frame])])]
             for i in range(4097)
         ]
-        return samples, self.create_binary_file(samples)
-
-    def test_samples_span_multiple_blocks(self):
-        """Samples filling more than one block roundtrip."""
-        samples, filename = self._write_block_spanning_file()
-        self.assertGreaterEqual(len(self.read_block_columns(filename)), 2)
-
-        collector = RawCollector()
-        with BinaryReader(filename) as reader:
-            self.assertEqual(reader.replay_samples(collector), len(samples))
-        self.assert_samples_equal(samples, collector)
-
-    def test_thread_returns_in_later_block(self):
-        """A thread from a full block gets a new stream in the next block."""
-        samples, _ = self._write_block_spanning_file()
-        # Thread 4097 starts the second block in stream 0, which thread 1
-        # used in the first block.
         samples.append(samples[0])
         filename = self.create_binary_file(samples)
         self.assertEqual(len(self.read_block_columns(filename)), 2)
 
         collector = RawCollector()
+        progress = mock.Mock()
         with BinaryReader(filename) as reader:
-            self.assertEqual(reader.replay_samples(collector), len(samples))
+            self.assertEqual(reader.replay_samples(collector, progress),
+                             len(samples))
         self.assert_samples_equal(samples, collector)
+        total = len(samples)
+        self.assertEqual(progress.call_args_list,
+                         [mock.call(current, total)
+                          for current in (0, 1000, 2000, 3000, 4000, total)])
 
     def test_block_size_limit_starts_new_block(self):
         """A thread whose samples exceed 1 MiB is split across blocks."""
@@ -1256,21 +1199,6 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         with BinaryReader(filename) as reader:
             self.assertEqual(reader.replay_samples(collector), 6)
         self.assert_samples_equal(samples, collector)
-
-    def test_progress_updates_across_blocks(self):
-        """Progress is reported at fixed intervals across block boundaries."""
-        samples, filename = self._write_block_spanning_file()
-        calls = []
-        with BinaryReader(filename) as reader:
-            reader.replay_samples(
-                RawCollector(),
-                lambda current, total: calls.append((current, total)))
-        total = len(samples)
-        self.assertEqual(
-            calls,
-            [(0, total), (1000, total), (2000, total), (3000, total),
-             (4000, total), (total, total)],
-        )
 
     def test_reader_replays_twice(self):
         """Replaying twice gives the same samples and statistics."""

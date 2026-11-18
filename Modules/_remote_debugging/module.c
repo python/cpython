@@ -2056,13 +2056,17 @@ static PyType_Spec BinaryWriter_spec = {
 #define BinaryReader_CAST(op) ((BinaryReaderObject *)(op))
 
 static int
-binary_reader_check_not_replaying(BinaryReaderObject *self)
+binary_reader_close_checked(BinaryReaderObject *self)
 {
     if (self->reader && self->reader->replaying) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Cannot close or reinitialize the reader "
                         "while it is replaying");
         return -1;
+    }
+    if (self->reader) {
+        binary_reader_close(self->reader);
+        self->reader = NULL;
     }
     return 0;
 }
@@ -2089,13 +2093,9 @@ _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
                                              PyObject *filename)
 /*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
-    if (binary_reader_check_not_replaying(self) < 0) {
+    if (binary_reader_close_checked(self) < 0) {
         return -1;
     }
-    if (self->reader) {
-        binary_reader_close(self->reader);
-    }
-
     self->reader = binary_reader_open(filename);
     if (!self->reader) {
         return -1;
@@ -2189,12 +2189,8 @@ static PyObject *
 _remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self)
 /*[clinic end generated code: output=ad0238cf5240b4f8 input=b919a66c737712d5]*/
 {
-    if (binary_reader_check_not_replaying(self) < 0) {
+    if (binary_reader_close_checked(self) < 0) {
         return NULL;
-    }
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
     }
     Py_RETURN_NONE;
 }
@@ -2229,12 +2225,8 @@ _remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
                                              PyObject *exc_tb)
 /*[clinic end generated code: output=2acdd36cfdc14e4a input=87284243d7935835]*/
 {
-    if (binary_reader_check_not_replaying(self) < 0) {
+    if (binary_reader_close_checked(self) < 0) {
         return NULL;
-    }
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
     }
     Py_RETURN_FALSE;
 }

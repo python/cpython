@@ -289,7 +289,7 @@ typedef struct {
     uint8_t opcode;
 } FrameKey;
 
-/* Thread entry - one per thread seen while writing */
+/* One entry per (thread, interpreter) pair seen in the file */
 typedef struct {
     uint64_t thread_id;
     uint32_t interpreter_id;
@@ -422,13 +422,6 @@ typedef struct {
  * BINARY READER STRUCTURES
  * ============================================================================ */
 
-/* Thread seen during replay */
-typedef struct {
-    uint64_t thread_id;
-    uint32_t interpreter_id;
-    uint32_t block_stream_index;
-} ReaderThreadState;
-
 typedef struct {
     uint32_t frame_index;
     PyObject *frame_info;
@@ -453,7 +446,7 @@ typedef struct {
     uint64_t thread_id;
     uint32_t interpreter_id;
     uint64_t prev_timestamp;
-    uint32_t *current_stack;
+    uint32_t current_stack[MAX_STACK_DEPTH];
     size_t current_stack_depth;
     uint32_t pending_repeats;
     int has_stack;
@@ -518,12 +511,11 @@ typedef struct {
     ByteBuffer block_statuses;
     ByteBuffer block_frames;
     ReaderBlockStream *block_streams;
-    uint32_t *block_stacks;
     size_t block_stream_capacity;
     int replaying;
 
     /* Threads seen during replay */
-    ReaderThreadState *thread_states;
+    ThreadEntry *thread_states;
     size_t thread_state_count;
     size_t thread_state_capacity;
 

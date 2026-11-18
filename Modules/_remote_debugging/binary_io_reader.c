@@ -656,7 +656,7 @@ error:
 }
 
 /* Get or create reader thread state for stack reconstruction */
-static ReaderThreadState *
+static ThreadEntry *
 reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
                                    uint32_t interpreter_id)
 {
@@ -678,23 +678,19 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
 
     if (!reader->thread_states) {
         reader->thread_state_capacity = 16;
-        reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ReaderThreadState));
+        reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ThreadEntry));
         if (!reader->thread_states) {
             PyErr_NoMemory();
             return NULL;
         }
-    } else if (reader->thread_state_count >= reader->thread_state_capacity) {
-        ReaderThreadState *new_states = grow_array(reader->thread_states,
-                                                   &reader->thread_state_capacity,
-                                                   sizeof(ReaderThreadState));
-        if (!new_states) {
-            return NULL;
-        }
-        reader->thread_states = new_states;
+    }
+    else if (GROW_ARRAY(reader->thread_states, reader->thread_state_count,
+                        reader->thread_state_capacity, ThreadEntry) < 0) {
+        return NULL;
     }
 
-    ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count];
-    memset(ts, 0, sizeof(ReaderThreadState));
+    ThreadEntry *ts = &reader->thread_states[reader->thread_state_count];
+    memset(ts, 0, sizeof(ThreadEntry));
     ts->thread_id = thread_id;
     ts->interpreter_id = interpreter_id;
     reader->thread_state_count++;
@@ -1156,14 +1152,6 @@ reserve_block_streams(BinaryReader *reader, uint32_t stream_count)
         return -1;
     }
     reader->block_streams = streams;
-    uint32_t *stacks = PyMem_Realloc(
-        reader->block_stacks,
-        stream_count * MAX_STACK_DEPTH * sizeof(uint32_t));
-    if (stacks == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    reader->block_stacks = stacks;
     reader->block_stream_capacity = stream_count;
     return 0;
 }
@@ -1184,7 +1172,7 @@ reader_parse_stream_table(BinaryReader *reader, const DecodedBlock *block)
         memcpy(&thread_id, entry + STM_OFF_THREAD_ID, STM_SIZE_THREAD_ID);
         memcpy(&interpreter_id, entry + STM_OFF_INTERPRETER_ID,
                STM_SIZE_INTERPRETER_ID);
-        ReaderThreadState *thread = reader_get_or_create_thread_state(
+        ThreadEntry *thread = reader_get_or_create_thread_state(
             reader, SWAP64_IF(reader->needs_swap, thread_id),
             SWAP32_IF(reader->needs_swap, interpreter_id));
         if (thread == NULL) {
@@ -1207,8 +1195,6 @@ reader_parse_stream_table(BinaryReader *reader, const DecodedBlock *block)
         stream->thread_id = thread->thread_id;
         stream->interpreter_id = thread->interpreter_id;
         stream->prev_timestamp = initial_prev_timestamp;
-        stream->current_stack =
-            reader->block_stacks + (size_t)i * MAX_STACK_DEPTH;
     }
     return 0;
 }
@@ -1873,7 +1859,6 @@ binary_reader_close(BinaryReader *reader)
     buffer_clear(&reader->block_statuses);
     buffer_clear(&reader->block_frames);
     PyMem_Free(reader->block_streams);
-    PyMem_Free(reader->block_stacks);
 
     if (reader->frame_info_cache != NULL) {
         for (size_t i = 0; i < reader->frame_info_cache_size; i++) {

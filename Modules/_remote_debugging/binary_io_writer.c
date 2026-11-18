@@ -439,21 +439,16 @@ writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *ind
     return 0;
 }
 
-/* Get or create a thread entry for the given thread_id.
- * Returns pointer to ThreadEntry, or NULL on allocation failure.
- * If is_new is non-NULL, sets it to 1 if this is a new thread, 0 otherwise. */
+/* Get or create the entry for a (thread, interpreter) pair. */
 static ThreadEntry *
 writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
-                                   uint32_t interpreter_id, int *is_new)
+                                   uint32_t interpreter_id)
 {
     /* Linear search is OK for small number of threads.
      * Key is (thread_id, interpreter_id) since same thread_id can exist in different interpreters. */
     for (size_t i = 0; i < writer->thread_count; i++) {
         if (writer->thread_entries[i].thread_id == thread_id &&
             writer->thread_entries[i].interpreter_id == interpreter_id) {
-            if (is_new) {
-                *is_new = 0;
-            }
             return &writer->thread_entries[i];
         }
     }
@@ -464,17 +459,12 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
             "too many threads for binary format");
         return NULL;
     }
-    if (writer->thread_count >= writer->thread_capacity) {
-        ThreadEntry *new_entries = grow_array(writer->thread_entries,
-                                              &writer->thread_capacity,
-                                              sizeof(ThreadEntry));
-        if (!new_entries) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                writer->state = BINARY_WRITER_LIMIT_REACHED;
-            }
-            return NULL;
+    if (GROW_ARRAY(writer->thread_entries, writer->thread_count,
+                   writer->thread_capacity, ThreadEntry) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            writer->state = BINARY_WRITER_LIMIT_REACHED;
         }
-        writer->thread_entries = new_entries;
+        return NULL;
     }
 
     ThreadEntry *entry = &writer->thread_entries[writer->thread_count];
@@ -484,14 +474,11 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     entry->block_stream_index = UINT32_MAX;
 
     writer->thread_count++;
-    if (is_new) {
-        *is_new = 1;
-    }
     return entry;
 }
 
 static int
-encode_column(BinaryWriter *writer, ByteBuffer *decoded,
+encode_column(BinaryWriter *writer, const ByteBuffer *decoded,
               ColumnDescriptor *descriptor)
 {
     SampleBlock *block = writer->block;
@@ -540,15 +527,14 @@ encode_column(BinaryWriter *writer, ByteBuffer *decoded,
     return 0;
 }
 
-static int
-transform_statuses(SampleBlock *block, uint8_t bitmap_flags,
-                   ByteBuffer **decoded)
+static ByteBuffer *
+transform_statuses(SampleBlock *block, uint8_t bitmap_flags)
 {
     size_t plane_size = status_bitmap_size(block->sample_count);
     unsigned plane_count = (unsigned)_Py_popcount32(bitmap_flags);
     if (buffer_reserve(&block->transformed,
                        plane_size * plane_count) < 0) {
-        return -1;
+        return NULL;
     }
     const uint8_t *statuses =
         block->columns[COLUMN_STATUS_BITMAPS].data;
@@ -565,18 +551,17 @@ transform_statuses(SampleBlock *block, uint8_t bitmap_flags,
         }
         block->transformed.size += plane_size;
     }
-    *decoded = &block->transformed;
-    return 0;
+    return &block->transformed;
 }
 
-static int
-transform_frame_ids(SampleBlock *block, uint32_t frame_count,
-                    unsigned width, ByteBuffer **decoded)
+static ByteBuffer *
+transform_frame_ids(SampleBlock *block, unsigned width)
 {
     ByteBuffer *frames = &block->columns[COLUMN_FRAME_IDS];
+    size_t frame_count = frames->size / sizeof(uint32_t);
     if (buffer_reserve(&block->transformed,
-                       (size_t)frame_count * width) < 0) {
-        return -1;
+                       frame_count * width) < 0) {
+        return NULL;
     }
     const uint32_t *frame_ids = (const uint32_t *)frames->data;
     for (unsigned byte = 0; frame_count && byte < width; byte++) {
@@ -587,20 +572,19 @@ transform_frame_ids(SampleBlock *block, uint32_t frame_count,
                 (uint8_t)(frame_ids[frame] >> (byte * CHAR_BIT));
         }
     }
-    block->transformed.size = (size_t)frame_count * width;
-    *decoded = &block->transformed;
-    return 0;
+    block->transformed.size = frame_count * width;
+    return &block->transformed;
 }
 
-static int
-transform_stack_instructions(SampleBlock *block, ByteBuffer **decoded)
+static ByteBuffer *
+transform_stack_instructions(SampleBlock *block)
 {
-    size_t repeat_count = block->repeats.size / sizeof(Repeat);
-    if (repeat_count == 0) {
-        return 0;
-    }
     ByteBuffer *instructions =
         &block->columns[COLUMN_STACK_INSTRUCTIONS];
+    size_t repeat_count = block->repeats.size / sizeof(Repeat);
+    if (repeat_count == 0) {
+        return instructions;
+    }
     const Repeat *repeats = (const Repeat *)block->repeats.data;
     size_t copied_offset = 0;
     block->transformed.size = 0;
@@ -612,17 +596,16 @@ transform_stack_instructions(SampleBlock *block, ByteBuffer **decoded)
                 &block->transformed, STACK_REPEAT) < 0 ||
             buffer_append_varint(
                 &block->transformed, repeats[i].count) < 0) {
-            return -1;
+            return NULL;
         }
         copied_offset = repeats[i].offset;
     }
     if (buffer_append(&block->transformed,
                       instructions->data + copied_offset,
                       instructions->size - copied_offset) < 0) {
-        return -1;
+        return NULL;
     }
-    *decoded = &block->transformed;
-    return 0;
+    return &block->transformed;
 }
 
 static void
@@ -703,8 +686,6 @@ block_flush(BinaryWriter *writer)
     if (block->sample_count == 0) {
         return 0;
     }
-    uint32_t frame_count = (uint32_t)(
-        block->columns[COLUMN_FRAME_IDS].size / sizeof(uint32_t));
     BlockHeader header = {0};
     header.sample_count = block->sample_count;
     header.base_timestamp = block->base_timestamp;
@@ -721,21 +702,18 @@ block_flush(BinaryWriter *writer)
     size_t decoded_payload_size = 0;
     for (unsigned column = 0; column < COLUMN_COUNT; column++) {
         ByteBuffer *decoded = &block->columns[column];
-        int result = 0;
         switch (column) {
         case COLUMN_STATUS_BITMAPS:
-            result = transform_statuses(block, header.status_bitmap_flags,
-                                        &decoded);
+            decoded = transform_statuses(block, header.status_bitmap_flags);
             break;
         case COLUMN_STACK_INSTRUCTIONS:
-            result = transform_stack_instructions(block, &decoded);
+            decoded = transform_stack_instructions(block);
             break;
         case COLUMN_FRAME_IDS:
-            result = transform_frame_ids(
-                block, frame_count, header.frame_width, &decoded);
+            decoded = transform_frame_ids(block, header.frame_width);
             break;
         }
-        if (result < 0) {
+        if (decoded == NULL) {
             return -1;
         }
         if (decoded->size >
@@ -1326,7 +1304,7 @@ process_thread_sample(BinaryWriter *writer, PyObject *thread_info,
     uint8_t status = (uint8_t)status_long;
 
     ThreadEntry *entry = writer_get_or_create_thread_entry(
-        writer, thread_id, interpreter_id, NULL);
+        writer, thread_id, interpreter_id);
     if (!entry) {
         return -1;
     }
