@@ -153,6 +153,7 @@ SYMBOL_NAMES = (
     "PyDictRevIterKey_Type",
     "PyDictRevIterValue_Type",
     "PyDictValues_Type",
+    "PyDict_AsFrozenDictAndClear",
     "PyDict_Clear",
     "PyDict_Contains",
     "PyDict_Copy",

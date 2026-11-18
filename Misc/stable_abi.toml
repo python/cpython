@@ -2953,3 +2953,5 @@
     added = '3.16'
 [data.PyFrozenDict_Type]
     added = '3.16'
+[function.PyDict_AsFrozenDictAndClear]
+    added = '3.16'
