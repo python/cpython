@@ -55,7 +55,7 @@ jobs:
     steps:
     - run: >-
         echo '${{ github.event_name }}'
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Check for source changes
@@ -113,7 +113,7 @@ jobs:
     - name: Get a list of the changed documentation-related files
       if: github.event_name == 'pull_request'
       id: changed-docs-files
-      uses: Ana06/get-changed-files@25f79e676e7ea1868813e21465014798211fad8c # v2.3.0
+      uses: Ana06/get-changed-files@v2.3.0
       with:
         filter: |
           Doc/**
