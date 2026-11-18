@@ -142,6 +142,17 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
 
+    def test_abi(self):
+        self.assertEqual(self.key('abi.flags'), list(sys.abiflags))
+        self.assertEqual(self.key('abi.extension_suffix'),
+                         sysconfig.get_config_var('EXT_SUFFIX'))
+        self.assertIn(self.key('abi.stable_abi_suffix'),
+                      importlib.machinery.EXTENSION_SUFFIXES)
+
+    def test_extension_suffixes(self):
+        self.assertEqual(self.key('suffixes.extensions'),
+                         importlib.machinery.EXTENSION_SUFFIXES)
+
     # Override generic format tests with tests for our specific implemenation.
 
     @needs_installed_python
@@ -289,6 +300,62 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
             self.assertEqual(data_abs_path[part][key], abs_rel_path)
 
 
+def generate_data(**config_vars):
+    """Generate build-details data with overridden config vars."""
+    get_config_var = sysconfig.get_config_var
+    def patched_get_config_var(name):
+        if name in config_vars:
+            return config_vars[name]
+        return get_config_var(name)
+    with mock.patch('sysconfig.get_config_var', patched_get_config_var):
+        data = generate_build_details.generate_data(schema_version='1.0')
+    return json.loads(json.dumps(data))
+
+
+@unittest.skipIf(
+    generate_build_details is None,
+    "Failed to import generate-build-details"
+)
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX')
+class BuildDetailsTargetTests(unittest.TestCase):
+    """Values that must come from the target configuration (gh-136267)."""
+
+    def test_native_extension_suffixes(self):
+        self.assertEqual(generate_build_details.get_extension_suffixes(),
+                         importlib.machinery.EXTENSION_SUFFIXES)
+
+    def test_free_threaded_debug(self):
+        # A GIL-enabled release build Python generating for this target
+        # used to report its own flags and suffixes.
+        data = generate_data(
+            ABIFLAGS='td', MACHDEP='linux', DYNLOADFILE='dynload_shlib.o',
+            SOABI_PLATFORM='aarch64-linux-gnu',
+            SOABI='cpython-3XXtd-aarch64-linux-gnu',
+            ALT_SOABI='cpython-3XXt-aarch64-linux-gnu',
+            EXT_SUFFIX='.cpython-3XXtd-aarch64-linux-gnu.so',
+            Py_GIL_DISABLED=1)
+        self.assertEqual(data['abi']['flags'], ['t', 'd'])
+        self.assertEqual(data['abi']['extension_suffix'],
+                         '.cpython-3XXtd-aarch64-linux-gnu.so')
+        self.assertEqual(data['abi']['stable_abi_suffix'],
+                         '.abi3t-aarch64-linux-gnu.so')
+        self.assertEqual(data['suffixes']['extensions'], [
+            '.cpython-3XXtd-aarch64-linux-gnu.so',
+            '.cpython-3XXt-aarch64-linux-gnu.so',
+            '.abi3t-aarch64-linux-gnu.so',
+            '.abi3t.so',
+            '.so',
+        ])
+
+    def test_no_dynamic_loading(self):
+        data = generate_data(MACHDEP='wasi', DYNLOADFILE='dynload_stub.o')
+        self.assertEqual(data['suffixes']['extensions'], [])
+        self.assertNotIn('extension_suffix', data['abi'])
+        self.assertNotIn('stable_abi_suffix', data['abi'])
+        self.assertFalse(
+            data['implementation']['supports_isolated_interpreters'])
+
+
 @unittest.skipIf(
     generate_build_details is None,
     "Failed to import generate-build-details"
@@ -299,26 +366,25 @@ class BuildDetailsLibpythonTests(unittest.TestCase):
     LIBDIR = '/prefix/lib'
     LIBPL = '/prefix/lib/python3.X/config-3.X'
 
+    def generate(self, **config_vars):
+        return generate_data(LIBDIR=self.LIBDIR, LIBPL=self.LIBPL,
+                             LIBRARY='libpython3.X.a', **config_vars)
+
     def generate_libpython(self, **config_vars):
         """Generate the libpython section with overridden config vars."""
-        config_vars = dict(LIBDIR=self.LIBDIR, LIBPL=self.LIBPL,
-                           LIBRARY='libpython3.X.a', **config_vars)
-        get_config_var = sysconfig.get_config_var
-        def patched_get_config_var(name):
-            if name in config_vars:
-                return config_vars[name]
-            return get_config_var(name)
-        with mock.patch('sysconfig.get_config_var', patched_get_config_var):
-            data = generate_build_details.generate_data(schema_version='1.0')
-        return json.loads(json.dumps(data)).get('libpython', {})
+        return self.generate(**config_vars).get('libpython', {})
 
     def test_static_only(self):
-        libpython = self.generate_libpython(
+        data = self.generate(
             LDLIBRARY='libpython3.X.a', STATIC_LIBPYTHON=1,
             PYTHONFRAMEWORK='')
+        libpython = data['libpython']
         self.assertNotIn('dynamic', libpython)
         self.assertEqual(libpython['static'],
                          os.path.join(self.LIBDIR, 'libpython3.X.a'))
+        # Extension modules are supported without a shared libpython.
+        self.assertIn('extension_suffix', data['abi'])
+        self.assertIn('stable_abi_suffix', data['abi'])
 
     def test_shared_and_static(self):
         # The static library is only installed into LIBPL, not LIBDIR.
