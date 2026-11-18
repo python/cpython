@@ -162,10 +162,17 @@ def get_externals() -> list[str]:
     # CI and the other platforms, so expand that reference the same way.
     openssl_version_path = CPYTHON_ROOT_DIR / "Tools/ssl/openssl-version.txt"
     openssl_version = openssl_version_path.read_text().strip()
-    return [
+    externals = [
         external.replace("%OPENSSL_VER%", openssl_version)
         for external in externals
     ]
+    for external in externals:
+        # A remaining "%" means we didn't replace the version properly
+        error_if(
+            "%" in external,
+            f"Unexpanded variable in {get_externals_bat_path}: {external}",
+        )
+    return externals
 
 
 def download_with_retries(download_location: str,
