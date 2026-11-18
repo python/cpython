@@ -276,6 +276,10 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
     return _PyInstructionSequence_Addop(seq, opcode, oparg_, loc);
 }
 
+/* The oparg of CALL and CALL_KW: the number of arguments shifted left by one,
+ * with the low bit set when the result is awaited right away. */
+#define CALL_OPARG(NARGS, AWAITED) (((NARGS) << 1) | (AWAITED))
+
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
@@ -492,7 +496,7 @@ codegen_call_exit_with_nones(compiler *c, location loc)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADDOP_LOAD_CONST(c, loc, Py_None);
-    ADDOP_I(c, loc, CALL, 3);
+    ADDOP_I(c, loc, CALL, CALL_OPARG(3, 0));
     return SUCCESS;
 }
 
@@ -1056,7 +1060,7 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
 
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
     }
     return SUCCESS;
 }
@@ -1584,11 +1588,11 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
         RETURN_IF_ERROR(ret);
         if (num_typeparam_args > 0) {
             ADDOP_I(c, loc, SWAP, num_typeparam_args + 1);
-            ADDOP_I(c, loc, CALL, num_typeparam_args - 1);
+            ADDOP_I(c, loc, CALL, CALL_OPARG(num_typeparam_args - 1, 0));
         }
         else {
             ADDOP(c, loc, PUSH_NULL);
-            ADDOP_I(c, loc, CALL, 0);
+            ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
         }
     }
 
@@ -1770,7 +1774,7 @@ codegen_class(compiler *c, stmt_ty s)
         Py_DECREF(co);
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
     } else {
         RETURN_IF_ERROR(codegen_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -1859,7 +1863,7 @@ codegen_typealias(compiler *c, stmt_ty s)
         Py_DECREF(co);
         RETURN_IF_ERROR(ret);
         ADDOP(c, loc, PUSH_NULL);
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
     }
     RETURN_IF_ERROR(codegen_nameop(c, loc, name, Store));
     return SUCCESS;
@@ -4217,11 +4221,11 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
         RETURN_IF_ERROR(
             codegen_call_simple_kw_helper(c, loc, kwds, kwdsl));
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
+        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(argsl + kwdsl, 0));
     }
     else {
         loc = update_start_location_to_match_attr(c, LOC(e), meth);
-        ADDOP_I(c, loc, CALL, argsl);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(argsl, 0));
     }
     return 1;
 }
@@ -4327,7 +4331,7 @@ codegen_joined_str(compiler *c, expr_ty e)
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
-        ADDOP_I(c, loc, CALL, 1);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(1, 0));
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
@@ -4497,10 +4501,10 @@ codegen_call_helper_impl(compiler *c, location loc,
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             codegen_call_simple_kw_helper(c, loc, keywords, nkwelts));
-        ADDOP_I(c, loc, CALL_KW, n + nelts + nkwelts);
+        ADDOP_I(c, loc, CALL_KW, CALL_OPARG(n + nelts + nkwelts, 0));
     }
     else {
-        ADDOP_I(c, loc, CALL, n + nelts);
+        ADDOP_I(c, loc, CALL, CALL_OPARG(n + nelts, 0));
     }
     return SUCCESS;
 
@@ -5163,7 +5167,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(co);
 
     VISIT(c, expr, outermost->iter);
-    ADDOP_I(c, loc, CALL, 0);
+    ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
@@ -5310,7 +5314,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
-    ADDOP_I(c, loc, CALL, 0);
+    ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -5422,7 +5426,7 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___ENTER__);
-    ADDOP_I(c, loc, CALL, 0);
+    ADDOP_I(c, loc, CALL, CALL_OPARG(0, 0));
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */

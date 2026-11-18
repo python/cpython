@@ -44,6 +44,9 @@ FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
+CALL = opmap['CALL']
+CALL_KW = opmap['CALL_KW']
+CALL_FUNCTION_EX = opmap['CALL_FUNCTION_EX']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
@@ -642,6 +645,14 @@ class ArgResolver:
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
+            elif deop == CALL or deop == CALL_KW:
+                argval = arg >> 1
+                argrepr = str(argval)
+                if arg & 1:
+                    argrepr = f"{argrepr} + awaited"
+            elif deop == CALL_FUNCTION_EX:
+                if arg & 1:
+                    argrepr = "awaited"
             elif deop == CALL_INTRINSIC_1:
                 argrepr = _intrinsic_1_descs[arg]
             elif deop == CALL_INTRINSIC_2:

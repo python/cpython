@@ -93,21 +93,21 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CACHE:
             return 0;
         case CALL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_ALLOC_AND_ENTER_INIT:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BOUND_METHOD_GENERAL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BUILTIN_CLASS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BUILTIN_FAST:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BUILTIN_FAST_WITH_KEYWORDS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_BUILTIN_O:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_EX_NON_PY_GENERAL:
             return 4;
         case CALL_EX_PY:
@@ -121,31 +121,31 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CALL_ISINSTANCE:
             return 4;
         case CALL_KW:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case CALL_KW_BOUND_METHOD:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case CALL_KW_NON_PY:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case CALL_KW_PY:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case CALL_LEN:
             return 3;
         case CALL_LIST_APPEND:
             return 3;
         case CALL_METHOD_DESCRIPTOR_FAST:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_METHOD_DESCRIPTOR_NOARGS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_METHOD_DESCRIPTOR_O:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_NON_PY_GENERAL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_PY_EXACT_ARGS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_PY_GENERAL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case CALL_STR_1:
             return 3;
         case CALL_TUPLE_1:
@@ -235,11 +235,11 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case IMPORT_NAME:
             return 2;
         case INSTRUMENTED_CALL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case INSTRUMENTED_CALL_FUNCTION_EX:
             return 4;
         case INSTRUMENTED_CALL_KW:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case INSTRUMENTED_END_ASYNC_FOR:
             return 2;
         case INSTRUMENTED_END_FOR:

@@ -1615,7 +1615,8 @@ iterations of the loop.
    * ``self`` or ``NULL``
    * The remaining positional arguments
 
-   ``argc`` is the total of the positional arguments, excluding ``self``.
+   ``argc >> 1`` is the total of the positional arguments, excluding ``self``.
+   The low bit of ``argc`` is set when the result is awaited right away.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
@@ -1629,6 +1630,10 @@ iterations of the loop.
    .. versionchanged:: 3.13
       Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
 
+   .. versionchanged:: next
+      The number of arguments is now ``argc >> 1``; the low bit marks an
+      awaited call.
+
 
 .. opcode:: CALL_KW (argc)
 
@@ -1641,7 +1646,8 @@ iterations of the loop.
    * The named arguments
    * A :class:`tuple` of keyword argument names
 
-   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   ``argc >> 1`` is the total of the positional and named arguments, excluding
+   ``self``. The low bit of ``argc`` is set when the result is awaited right away.
    The length of the tuple of keyword argument names is the number of named arguments.
 
    ``CALL_KW`` pops all arguments, the keyword names, and the callable object
@@ -1650,20 +1656,28 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: next
+      The number of arguments is now ``argc >> 1``; the low bit marks an
+      awaited call.
+
 
 .. opcode:: CALL_FUNCTION_EX (flags)
 
    Calls a callable object with variable set of positional and keyword
-   arguments.  If the lowest bit of *flags* is set, the top of the stack
-   contains a mapping object containing additional keyword arguments.
+   arguments.  The top of the stack contains a mapping object with additional
+   keyword arguments, or ``NULL``.
    Before the callable is called, the mapping object and iterable object
    are each "unpacked" and their contents passed in as keyword and
    positional arguments respectively.
    ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
+   The lowest bit of *flags* is set when the result is awaited right away.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: next
+      The lowest bit of *flags* marks an awaited call.
 
 
 .. opcode:: PUSH_NULL

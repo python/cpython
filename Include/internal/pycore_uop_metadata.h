@@ -311,6 +311,11 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_3] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_4] = HAS_PURE_FLAG,
+    [_INIT_CALL_PY_EXACT_ARGS_5] = HAS_PURE_FLAG,
+    [_INIT_CALL_PY_EXACT_ARGS_6] = HAS_PURE_FLAG,
+    [_INIT_CALL_PY_EXACT_ARGS_7] = HAS_PURE_FLAG,
+    [_INIT_CALL_PY_EXACT_ARGS_8] = HAS_PURE_FLAG,
+    [_INIT_CALL_PY_EXACT_ARGS_9] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_GUARD_NOS_NULL] = HAS_EXIT_FLAG,
@@ -439,7 +444,7 @@ const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST_BORROW] = { 0, 8 },
     [_LOAD_SMALL_INT] = { 0, 4 },
     [_SWAP_FAST] = { 0, 8 },
-    [_INIT_CALL_PY_EXACT_ARGS] = { 0, 5 },
+    [_INIT_CALL_PY_EXACT_ARGS] = { 0, 10 },
     [_COPY] = { 1, 4 },
     [_SWAP] = { 2, 4 },
     [_GUARD_BIT_IS_SET_POP] = { 4, 8 },
@@ -2931,6 +2936,51 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_INIT_CALL_PY_EXACT_ARGS_5] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 1, 0, _INIT_CALL_PY_EXACT_ARGS_5_r01 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_INIT_CALL_PY_EXACT_ARGS_6] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 1, 0, _INIT_CALL_PY_EXACT_ARGS_6_r01 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_INIT_CALL_PY_EXACT_ARGS_7] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 1, 0, _INIT_CALL_PY_EXACT_ARGS_7_r01 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_INIT_CALL_PY_EXACT_ARGS_8] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 1, 0, _INIT_CALL_PY_EXACT_ARGS_8_r01 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_INIT_CALL_PY_EXACT_ARGS_9] = {
+        .best = { 0, 0, 0, 0 },
+        .entries = {
+            { 1, 0, _INIT_CALL_PY_EXACT_ARGS_9_r01 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
     [_INIT_CALL_PY_EXACT_ARGS] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
@@ -4568,6 +4618,11 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2_r01] = _INIT_CALL_PY_EXACT_ARGS_2,
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = _INIT_CALL_PY_EXACT_ARGS_3,
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = _INIT_CALL_PY_EXACT_ARGS_4,
+    [_INIT_CALL_PY_EXACT_ARGS_5_r01] = _INIT_CALL_PY_EXACT_ARGS_5,
+    [_INIT_CALL_PY_EXACT_ARGS_6_r01] = _INIT_CALL_PY_EXACT_ARGS_6,
+    [_INIT_CALL_PY_EXACT_ARGS_7_r01] = _INIT_CALL_PY_EXACT_ARGS_7,
+    [_INIT_CALL_PY_EXACT_ARGS_8_r01] = _INIT_CALL_PY_EXACT_ARGS_8,
+    [_INIT_CALL_PY_EXACT_ARGS_9_r01] = _INIT_CALL_PY_EXACT_ARGS_9,
     [_INIT_CALL_PY_EXACT_ARGS_r01] = _INIT_CALL_PY_EXACT_ARGS,
     [_PUSH_FRAME_r10] = _PUSH_FRAME,
     [_GUARD_NOS_NULL_r02] = _GUARD_NOS_NULL,
@@ -5658,6 +5713,16 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_3_r01] = "_INIT_CALL_PY_EXACT_ARGS_3_r01",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
     [_INIT_CALL_PY_EXACT_ARGS_4_r01] = "_INIT_CALL_PY_EXACT_ARGS_4_r01",
+    [_INIT_CALL_PY_EXACT_ARGS_5] = "_INIT_CALL_PY_EXACT_ARGS_5",
+    [_INIT_CALL_PY_EXACT_ARGS_5_r01] = "_INIT_CALL_PY_EXACT_ARGS_5_r01",
+    [_INIT_CALL_PY_EXACT_ARGS_6] = "_INIT_CALL_PY_EXACT_ARGS_6",
+    [_INIT_CALL_PY_EXACT_ARGS_6_r01] = "_INIT_CALL_PY_EXACT_ARGS_6_r01",
+    [_INIT_CALL_PY_EXACT_ARGS_7] = "_INIT_CALL_PY_EXACT_ARGS_7",
+    [_INIT_CALL_PY_EXACT_ARGS_7_r01] = "_INIT_CALL_PY_EXACT_ARGS_7_r01",
+    [_INIT_CALL_PY_EXACT_ARGS_8] = "_INIT_CALL_PY_EXACT_ARGS_8",
+    [_INIT_CALL_PY_EXACT_ARGS_8_r01] = "_INIT_CALL_PY_EXACT_ARGS_8_r01",
+    [_INIT_CALL_PY_EXACT_ARGS_9] = "_INIT_CALL_PY_EXACT_ARGS_9",
+    [_INIT_CALL_PY_EXACT_ARGS_9_r01] = "_INIT_CALL_PY_EXACT_ARGS_9_r01",
     [_INSERT_NULL] = "_INSERT_NULL",
     [_INSERT_NULL_r10] = "_INSERT_NULL_r10",
     [_IS_NONE] = "_IS_NONE",
@@ -6287,7 +6352,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _POP_TOP_UNICODE:
             return 1;
         case _POP_TOP_OPARG:
-            return oparg;
+            return (oparg >> 1);
         case _PUSH_NULL:
             return 0;
         case _END_FOR:
@@ -6715,7 +6780,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MAYBE_EXPAND_METHOD:
             return 0;
         case _PY_FRAME_GENERAL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _CHECK_FUNCTION_VERSION:
             return 0;
         case _CHECK_FUNCTION_VERSION_INLINE:
@@ -6727,7 +6792,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_IS_NOT_PY_CALLABLE:
             return 0;
         case _CALL_NON_PY_GENERAL:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
             return 0;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
@@ -6741,17 +6806,27 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_RECURSION_REMAINING:
             return 0;
         case _INIT_CALL_PY_EXACT_ARGS_0:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_1:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_2:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_3:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS_4:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
+        case _INIT_CALL_PY_EXACT_ARGS_5:
+            return 2 + (oparg >> 1);
+        case _INIT_CALL_PY_EXACT_ARGS_6:
+            return 2 + (oparg >> 1);
+        case _INIT_CALL_PY_EXACT_ARGS_7:
+            return 2 + (oparg >> 1);
+        case _INIT_CALL_PY_EXACT_ARGS_8:
+            return 2 + (oparg >> 1);
+        case _INIT_CALL_PY_EXACT_ARGS_9:
+            return 2 + (oparg >> 1);
         case _INIT_CALL_PY_EXACT_ARGS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _PUSH_FRAME:
             return 1;
         case _GUARD_NOS_NULL:
@@ -6775,7 +6850,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ALLOCATE_OBJECT:
             return 0;
         case _CREATE_INIT_FRAME:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _EXIT_INIT_CHECK:
             return 1;
         case _GUARD_CALLABLE_BUILTIN_CLASS:
@@ -6785,7 +6860,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_BUILTIN_O:
             return 0;
         case _CALL_BUILTIN_O:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _GUARD_CALLABLE_BUILTIN_FAST:
             return 0;
         case _CALL_BUILTIN_FAST:
@@ -6809,7 +6884,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_O:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_O:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _CHECK_RECURSION_LIMIT:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_O_INLINE:
@@ -6823,7 +6898,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_NOARGS:
             return 0;
         case _CALL_METHOD_DESCRIPTOR_NOARGS:
-            return 2 + oparg;
+            return 2 + (oparg >> 1);
         case _CALL_METHOD_DESCRIPTOR_NOARGS_INLINE:
             return 1 + oparg;
         case _GUARD_CALLABLE_METHOD_DESCRIPTOR_FAST:
@@ -6835,7 +6910,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MAYBE_EXPAND_METHOD_KW:
             return 0;
         case _PY_FRAME_KW:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case _CHECK_FUNCTION_VERSION_KW:
             return 0;
         case _CHECK_METHOD_VERSION_KW:
@@ -6845,7 +6920,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_IS_NOT_PY_CALLABLE_KW:
             return 0;
         case _CALL_KW_NON_PY:
-            return 3 + oparg;
+            return 3 + (oparg >> 1);
         case _MAKE_CALLARGS_A_TUPLE:
             return 0;
         case _CHECK_IS_PY_CALLABLE_EX:
