@@ -1,0 +1,3 @@
+Speed up ``await`` of a coroutine that completes without suspending by about
+40% by running it without creating a coroutine object. Until such a coroutine
+first suspends, :attr:`frame.f_generator` is ``None``.

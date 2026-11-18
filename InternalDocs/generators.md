@@ -45,7 +45,30 @@ The generator's frame is initialized as a copy of the frame in which
 `RETURN_GENERATOR` is executing, but its `owner` field is overwritten to indicate
 that it is owned by a generator. Finally, `RETURN_GENERATOR` pushes the new generator
 object to the stack and returns to the caller of the generator function (at
-which time its frame is destroyed). When the generator is next resumed by
+which time its frame is destroyed).
+
+There is one exception: a coroutine function called by an awaited call
+(`await f()`, compiled as `CALL`, `CALL_KW` or `CALL_FUNCTION_EX` with the low
+bit of the oparg set) gets the `lazy_coro` flag on its frame (see
+`_MAYBE_LAZY_CORO`). `RETURN_GENERATOR` then keeps running the body in that
+frame, with its own `_PyErr_StackItem` pushed on the data stack right after the
+frame, so that a body that returns or raises without suspending never creates a
+coroutine object. If the body reaches `YIELD_VALUE`, the coroutine object is
+created then and the frame is moved into it (see `_PyCoro_MaterializeLazy()`
+and `_PyEval_MoveLazyCoroFrame()`).
+
+The compiler pushes an extra `NULL` below the callable of an awaited call, and
+the `GET_AWAITABLE` that follows the call pops it (other awaitables get the
+`NULL` pushed above them, so `GET_AWAITABLE` always pops two values). A lazily run body reports
+there how it ended: a tagged int if it returned, or the new coroutine object if
+it suspended. `GET_AWAITABLE` turns this into the input of the `SEND` loop: a
+`NULL` receiver, which makes `SEND` jump to `END_SEND` with the return value, or
+`None` in place of the `NULL` below the value, which makes `SEND` go on to
+`YIELD_VALUE` with the value that the body has already yielded. An exception
+that leaves the body is raised from the caller's `SEND`, as it would be if the
+coroutine object had been created.
+
+When the generator is next resumed by
 [`gen_send_ex2()`](../Objects/genobject.c), `_PyEval_EvalFrame()` is called
 to continue executing the generator function, in the frame that is embedded in
 the generator object.

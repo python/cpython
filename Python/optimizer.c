@@ -502,6 +502,9 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_LOAD_BYTECODE] = _NOP,
     [_SEND_VIRTUAL] = _SEND_VIRTUAL_TIER_TWO,
     [_SEND_ASYNC_GEN] = _SEND_ASYNC_GEN_TIER_TWO,
+    [_SEND_LAZY_CORO] = _GUARD_SEND_NOT_LAZY_CORO,
+    [_MAYBE_LAZY_CORO] = _NOP,
+    [_CHECK_LAZY_CORO] = _GUARD_NOT_LAZY_CORO,
 };
 
 static const uint8_t
@@ -965,6 +968,9 @@ _PyJit_translate_single_bytecode_to_trace(
                             else {
                                 target = next_inst;
                             }
+                        }
+                        else if (uop == _NOP || uop == _GUARD_NOT_LAZY_CORO) {
+                            // _MAYBE_LAZY_CORO and _CHECK_LAZY_CORO don't jump.
                         }
                         else {
                             int extended_arg = orig_oparg > 255;

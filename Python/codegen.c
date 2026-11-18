@@ -281,7 +281,6 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
  * with the low bit set when the result is awaited right away. */
 #define CALL_OPARG(NARGS, AWAITED) (((NARGS) << 1) | (AWAITED))
 
-
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
 
@@ -4584,7 +4583,7 @@ ex_call:
     if (nkwelts == 0) {
         ADDOP(c, loc, PUSH_NULL);
     }
-    ADDOP(c, loc, CALL_FUNCTION_EX);
+    ADDOP_I(c, loc, CALL_FUNCTION_EX, awaited);
     return SUCCESS;
 }
 

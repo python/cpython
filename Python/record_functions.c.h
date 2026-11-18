@@ -52,7 +52,7 @@ void _PyOpcode_RecordFunction_3OS_GEN_FUNC(_PyInterpreterFrame *frame, _PyStackR
     _PyStackRef gen;
     gen = stack_pointer[-3];
     PyObject *obj = PyStackRef_AsPyObjectBorrow(gen);
-    if (PyGen_Check(obj)) {
+    if (obj != NULL && PyGen_Check(obj)) {
         PyGenObject *gen_obj = (PyGenObject *)obj;
         _PyStackRef func = gen_obj->gi_iframe.f_funcobj;
         if (!PyStackRef_IsNull(func)) {
