@@ -1552,13 +1552,14 @@ def getclosurevars(func):
     code = func.__code__
     # Nonlocal references are named in co_freevars and resolved
     # by looking them up in __closure__ by positional index
-    if func.__closure__ is None:
-        nonlocal_vars = {}
-    else:
-        nonlocal_vars = {
-            var : cell.cell_contents
-            for var, cell in zip(code.co_freevars, func.__closure__)
-       }
+    nonlocal_vars = {}
+    unbound_names = set()
+    if func.__closure__ is not None:
+        for var, cell in zip(code.co_freevars, func.__closure__):
+            try:
+                nonlocal_vars[var] = cell.cell_contents
+            except ValueError:
+                unbound_names.add(var)
 
     # Global and builtin references are named in co_names and resolved
     # by looking them up in __globals__ or __builtins__
@@ -1568,7 +1569,6 @@ def getclosurevars(func):
         builtin_ns = builtin_ns.__dict__
     global_vars = {}
     builtin_vars = {}
-    unbound_names = set()
     global_names = set()
     for instruction in dis.get_instructions(code):
         opname = instruction.opname
