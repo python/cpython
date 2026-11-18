@@ -517,12 +517,12 @@ Additional Utility Classes and Functions
 
 .. class:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
-   Route attribute access on a class to __getattr__.
+   Route attribute access on a class to :meth:`~object.__getattr__`.
 
    This is a descriptor, used to define attributes that act differently when
    accessed through an instance and through a class.  Instance access remains
    normal, but access to an attribute through a class will be routed to the
-   class's __getattr__ method; this is done by raising AttributeError.
+   class's ``__getattr__`` method; this is done by raising :exc:`AttributeError`.
 
    This allows one to have properties active on an instance, and have virtual
    attributes on the class with the same name (see :class:`enum.Enum` for an example).
