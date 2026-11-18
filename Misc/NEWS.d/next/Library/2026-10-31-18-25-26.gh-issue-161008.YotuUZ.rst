@@ -1,0 +1,2 @@
+Fix zero duration and sample rate in heatmap replay output. Patch by Timofei
+Ivankov.

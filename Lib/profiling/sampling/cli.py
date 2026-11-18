@@ -22,7 +22,7 @@ from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .jsonl_collector import JsonlCollector
 from .binary_collector import BinaryCollector
-from .binary_reader import BinaryReader
+from .binary_reader import BinaryReader, _set_replay_stats
 from .constants import (
     MICROSECONDS_PER_SECOND,
     PROFILING_MODE_ALL,
@@ -793,10 +793,7 @@ def _replay_with_reader(args, reader):
             )
 
     count = reader.replay_samples(collector, progress_callback)
-    if hasattr(collector, "set_replay_stats"):
-        collector.set_replay_stats(info)
-    if hasattr(collector, "set_mode"):
-        collector.set_mode(info.get("mode"))
+    _set_replay_stats(collector, info, interval)
     print()
 
     if args.format == "pstats":
