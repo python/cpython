@@ -658,6 +658,24 @@ _codecs_iconv_decode_impl(PyObject *module, const char *encoding,
                           Py_buffer *data, const char *errors, int final)
 /*[clinic end generated code: output=6c6145a9decc2ba8 input=d15a04d7d3a3e0cd]*/
 {
+    /* Reject encodings whose charset portion before '/' or ',' lacks any
+     * ASCII alphanumeric; glibc's iconv_open() normalizes those to "" and
+     * silently falls back to the current locale encoding. */
+    int has_alnum = 0;
+    for (const char *p = encoding; *p != '\0' && *p != '/' && *p != ','; p++) {
+        unsigned char c = (unsigned char)*p;
+        if ((c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z')) {
+            has_alnum = 1;
+            break;
+        }
+    }
+    if (!has_alnum) {
+        PyErr_Format(PyExc_LookupError, "unknown encoding: %s", encoding);
+        return NULL;
+    }
+
     Py_ssize_t consumed = data->len;
     PyObject *decoded = _PyUnicode_DecodeIconv(encoding, data->buf, data->len,
                                                errors,
@@ -992,6 +1010,24 @@ _codecs_iconv_encode_impl(PyObject *module, const char *encoding,
                           PyObject *str, const char *errors)
 /*[clinic end generated code: output=bda0c5acd9be0f17 input=53a1e2028c9e2b43]*/
 {
+    /* Reject encodings whose charset portion before '/' or ',' lacks any
+     * ASCII alphanumeric; glibc's iconv_open() normalizes those to "" and
+     * silently falls back to the current locale encoding. */
+    int has_alnum = 0;
+    for (const char *p = encoding; *p != '\0' && *p != '/' && *p != ','; p++) {
+        unsigned char c = (unsigned char)*p;
+        if ((c >= '0' && c <= '9') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z')) {
+            has_alnum = 1;
+            break;
+        }
+    }
+    if (!has_alnum) {
+        PyErr_Format(PyExc_LookupError, "unknown encoding: %s", encoding);
+        return NULL;
+    }
+
     return codec_tuple(_PyUnicode_EncodeIconv(encoding, str, errors),
                        PyUnicode_GET_LENGTH(str));
 }
