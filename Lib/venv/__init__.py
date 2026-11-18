@@ -152,10 +152,6 @@ class EnvBuilder:
         if '\n' in os.fspath(env_dir) or '\r' in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir!r} '
                              'because its path contains a line break.')
-        if self.prompt is not None and ('\n' in self.prompt
-                                        or '\r' in self.prompt):
-            raise ValueError(f'Refusing to use the prompt {self.prompt!r} '
-                             'because it contains a line break.')
         if os.path.exists(env_dir) and self.clear:
             self.clear_directory(env_dir)
         context = types.SimpleNamespace()
@@ -258,7 +254,8 @@ class EnvBuilder:
             if self.upgrade_deps:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
-                args.append(f'--prompt="{self.orig_prompt}"')
+                prompt = self.orig_prompt.replace('\n', ' ').replace('\r', ' ')
+                args.append(f'--prompt="{prompt}"')
             if not self.scm_ignore_files:
                 args.append('--without-scm-ignore-files')
 
