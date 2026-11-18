@@ -30104,7 +30104,7 @@ printf "%s\n" "$ac_cv_readline_rl_change_environment" >&6; }
 then :
 
 
-printf "%s\n" "#define HAVE_RL_CHANGE_ENVIRONMENT 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_RL_CHANGE_ENVIRONMENT 1" >>confdefs.h
 
 
 fi
