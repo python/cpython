@@ -93,7 +93,3 @@ PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
 // Mark given dictionary as "watched" (callback will be called if it is modified)
 PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);
 PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);
-
-// Create a frozendict from existing dict.
-// Transfers existing keys and values.
-PyAPI_FUNC(PyObject*) PyDict_AsFrozenDictAndClear(PyObject *dict);

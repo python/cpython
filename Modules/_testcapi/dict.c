@@ -257,13 +257,6 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-dict_as_frozendict_and_clear(PyObject *self, PyObject *obj)
-{
-    NULLABLE(obj);
-    return PyDict_AsFrozenDictAndClear(obj);
-}
-
 
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
@@ -276,7 +269,6 @@ static PyMethodDef test_methods[] = {
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
-    {"dict_as_frozendict_and_clear", dict_as_frozendict_and_clear, METH_O},
     {NULL},
 };
 

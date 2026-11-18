@@ -611,7 +611,7 @@ class CAPITest(unittest.TestCase):
 
     def test_dict_as_frozendict_and_clear(self):
         # Test PyDict_AsFrozenDictAndClear()
-        as_frozendict = _testcapi.dict_as_frozendict_and_clear
+        as_frozendict = _testlimitedcapi.dict_as_frozendict_and_clear
         d = dict(x=1, y=2)
         f = as_frozendict(d)
         self.assertIs(type(f), frozendict)

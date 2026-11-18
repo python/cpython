@@ -1578,6 +1578,7 @@ New features
 
   * :c:func:`PyAnyDict_CheckExact`
   * :c:func:`PyAnyDict_Check`
+  * :c:func:`PyDict_AsFrozenDictAndClear`
   * :c:func:`PyFrozenDict_CheckExact`
   * :c:func:`PyFrozenDict_Check`
   * :c:func:`PyFrozenDict_New`

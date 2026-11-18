@@ -258,6 +258,7 @@ dict_mergefromseq2(PyObject *self, PyObject *args)
 }
 
 
+// Test PyFrozenDict_Check()
 static PyObject *
 frozendict_check(PyObject *self, PyObject *obj)
 {
@@ -265,6 +266,7 @@ frozendict_check(PyObject *self, PyObject *obj)
     return PyLong_FromLong(PyFrozenDict_Check(obj));
 }
 
+// Test PyFrozenDict_CheckExact()
 static PyObject *
 frozendict_checkexact(PyObject *self, PyObject *obj)
 {
@@ -272,6 +274,7 @@ frozendict_checkexact(PyObject *self, PyObject *obj)
     return PyLong_FromLong(PyFrozenDict_CheckExact(obj));
 }
 
+// Test PyAnyDict_Check()
 static PyObject *
 anydict_check(PyObject *self, PyObject *obj)
 {
@@ -279,6 +282,7 @@ anydict_check(PyObject *self, PyObject *obj)
     return PyLong_FromLong(PyAnyDict_Check(obj));
 }
 
+// Test PyAnyDict_CheckExact()
 static PyObject *
 anydict_checkexact(PyObject *self, PyObject *obj)
 {
@@ -287,11 +291,21 @@ anydict_checkexact(PyObject *self, PyObject *obj)
 }
 
 
+// Test PyFrozenDict_New()
 static PyObject *
 frozendict_new(PyObject *self, PyObject *obj)
 {
     NULLABLE(obj);
     return PyFrozenDict_New(obj);
+}
+
+
+// Test PyDict_AsFrozenDictAndClear()
+static PyObject *
+dict_as_frozendict_and_clear(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyDict_AsFrozenDictAndClear(obj);
 }
 
 
@@ -323,6 +337,7 @@ static PyMethodDef test_methods[] = {
     {"anydict_check", anydict_check, METH_O},
     {"anydict_checkexact", anydict_checkexact, METH_O},
     {"frozendict_new", frozendict_new, METH_O},
+    {"dict_as_frozendict_and_clear", dict_as_frozendict_and_clear, METH_O},
     {NULL},
 };
 

@@ -121,6 +121,10 @@ PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
 
 // Create a frozendict. Create an empty dictionary if iterable is NULL.
 PyAPI_FUNC(PyObject*) PyFrozenDict_New(PyObject *iterable);
+
+// Create a frozendict from existing dict.
+// Transfers existing keys and values.
+PyAPI_FUNC(PyObject*) PyDict_AsFrozenDictAndClear(PyObject *dict);
 #endif  // Py_LIMITED_API
 
 
