@@ -156,7 +156,7 @@ class TypeAnnotationTests(unittest.TestCase):
         # Results are different with and without lazy imports, we need both:
         partialexe = import_helper.import_fresh_module(
             "test.typinganndata.partialexecution",
-            force_eager_imports=False,
+            eager_imports=False,
         )
         self.assertEqual(
             partialexe.a.__annotations__,

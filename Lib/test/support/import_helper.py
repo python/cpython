@@ -156,7 +156,7 @@ def multi_interp_extensions_check(enabled=True):
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
-                        force_eager_imports=True,
+                        eager_imports=True,
                         ):
     """Import and return a module, deliberately bypassing sys.modules.
 
@@ -190,7 +190,7 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     # to make sure that this utility function is working as expected
     eager_imports_context = (
         force_eager_imports
-        if force_eager_imports
+        if eager_imports
         else contextlib.nullcontext
     )
     with eager_imports_context(), _ignore_deprecated_imports(deprecated):
