@@ -1,1 +1,0 @@
-Fix a possible crash when a list of :mod:`sqlite3` parameters is modified concurrently on a free-threaded build.

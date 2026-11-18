@@ -2158,19 +2158,23 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Deallocations after the refcount merge may run Python code.
     bool needs_resurrection_check = state->objs_to_decref.head != 0;
 
-    // Print debugging information.
-    if (FT_ATOMIC_LOAD_INT_RELAXED(interp->gc.debug) & _PyGC_DEBUG_COLLECTABLE) {
-        needs_resurrection_check = true;
-        PyObject *op;
-        WORKSTACK_FOR_EACH(&state->unreachable, op) {
-            debug_cycle("collectable", op);
-        }
-    }
+    // The debug output is written with sys.stderr.write(), which may run
+    // Python code, so it is printed below after the world is started.
+    bool debug_print = (FT_ATOMIC_LOAD_INT_RELAXED(interp->gc.debug) &
+                        _PyGC_DEBUG_COLLECTABLE) != 0;
 
     // Find weakref callbacks and pending finalizers (but do not call them).
     bool has_finalizers = prepare_finalization(state, &needs_resurrection_check);
-    if (needs_resurrection_check) {
+    if (needs_resurrection_check || debug_print) {
         _PyEval_StartTheWorld(interp);
+
+        // Print debugging information.
+        if (debug_print) {
+            PyObject *op;
+            WORKSTACK_FOR_EACH(&state->unreachable, op) {
+                debug_cycle("collectable", op);
+            }
+        }
 
         // Deallocate any object from the refcount merge step
         cleanup_worklist(&state->objs_to_decref);

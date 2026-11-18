@@ -1149,11 +1149,11 @@ reused in custom filters:
      links (symbolic and hard) to arbitrary files on the filesystem,
      potentially granting unintended access to these files.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
 
      Filenames containing ``..`` components are now normalized.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
 
      Filenames with a drive that are not absolute are now refused.
 
@@ -1204,7 +1204,7 @@ reused in custom filters:
 
      Link targets are now normalized.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
 
      Link targets with a drive that are not absolute are now refused.
 

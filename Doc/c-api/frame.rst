@@ -258,4 +258,4 @@ Unless using :pep:`523`, you will not need this.
    * If the slot is unset or hidden, store ``NULL`` in *result* and return ``0``.
    * On error, raise an exception, store ``NULL`` in *result* and return ``-1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16

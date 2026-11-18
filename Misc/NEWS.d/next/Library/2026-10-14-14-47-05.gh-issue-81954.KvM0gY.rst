@@ -1,2 +1,0 @@
-Fix :class:`zipfile.ZipFile` not being closed at interpreter shutdown when
-emitting its :exc:`ResourceWarning` failed with an :exc:`ImportError`.

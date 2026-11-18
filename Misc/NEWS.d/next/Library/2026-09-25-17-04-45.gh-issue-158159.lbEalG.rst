@@ -1,3 +1,0 @@
-Fix a use-after-free in :meth:`asyncio.Task.get_name` when formatting the
-default task name triggers a garbage collection whose finalizers call
-:meth:`~asyncio.Task.get_name` on the same task.

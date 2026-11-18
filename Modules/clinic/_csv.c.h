@@ -70,15 +70,7 @@ _csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        changes = PyDict_New();
-        if (changes == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        changes = Py_NewRef(kwargs);
-    }
+    changes = Py_XNewRef(kwargs);
     return_value = _csv_Dialect___replace___impl((DialectObj *)self, changes);
 
 exit:
@@ -142,15 +134,7 @@ _csv_reader(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_reader_impl(module, iterable, dialect, fmtparams);
 
 exit:
@@ -195,15 +179,7 @@ _csv_writer(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_writer_impl(module, output_file, dialect, fmtparams);
 
 exit:
@@ -266,15 +242,7 @@ _csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect_obj = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_register_dialect_impl(module, name_obj, dialect_obj, fmtparams);
 
 exit:
@@ -465,4 +433,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e3a92d524d88023 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30eac1c04ff9d38a input=a9049054013a1b77]*/

@@ -1,2 +1,0 @@
-Fix bug where compiler did not set the right exception handler for some jump
-instructions.

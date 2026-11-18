@@ -291,7 +291,7 @@ The :mod:`!binascii` module defines the following functions:
    If the optional argument *strip_ws* is true,
    trailing whitespace is stripped from each line, as required by :rfc:`2045`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *strip_ws* parameter.
 
 

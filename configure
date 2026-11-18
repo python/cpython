@@ -1035,6 +1035,7 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+RUNSHARED_FOR_BUILD
 PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
@@ -3863,6 +3864,9 @@ then :
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
 
 else case e in #(
   e)
@@ -3871,10 +3875,12 @@ else case e in #(
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
 
  ;;
 esac
 fi
+
 
 
 
@@ -9307,6 +9313,92 @@ fi
 
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
+          LTOCFLAGS="$LTOFLAGS"
+          # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
+          # cannot link LTO objects, try lld, which does not need that plugin.
+          save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether Clang LTO works with the configured linker" >&5
+printf %s "checking whether Clang LTO works with the configured linker... " >&6; }
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  clang_lto_link=yes
+else case e in #(
+  e) clang_lto_link=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $clang_lto_link" >&5
+printf "%s\n" "$clang_lto_link" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+          if test "$clang_lto_link" = no; then
+            save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether Clang LTO works with lld" >&5
+printf %s "checking whether Clang LTO works with lld... " >&6; }
+              cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  clang_lto_link=yes
+else case e in #(
+  e) clang_lto_link=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+              { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $clang_lto_link" >&5
+printf "%s\n" "$clang_lto_link" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+            if test "$clang_lto_link" = no; then
+              as_fn_error $? "Clang LTO requires a working LTO-aware linker. Install lld or the LLVMgold.so plugin, select a linker with LDFLAGS, or disable LTO with --without-lto." "$LINENO" 5
+            fi
+            LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
+            LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
           fi
           ;;
       esac
@@ -20918,12 +21010,6 @@ then :
   printf "%s\n" "#define HAVE_GAI_STRERROR 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "getdents64" "ac_cv_func_getdents64"
-if test "x$ac_cv_func_getdents64" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETDENTS64 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getegid" "ac_cv_func_getegid"
 if test "x$ac_cv_func_getegid" = xyes
 then :
@@ -21086,12 +21172,6 @@ then :
   printf "%s\n" "#define HAVE_GETSID 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
-if test "x$ac_cv_func_gettid" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETTID 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
@@ -21104,22 +21184,10 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
-if test "x$ac_cv_func_if_indextoname" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
-if test "x$ac_cv_func_if_nametoindex" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
@@ -21264,24 +21332,6 @@ ac_fn_c_check_func "$LINENO" "pause" "ac_cv_func_pause"
 if test "x$ac_cv_func_pause" = xyes
 then :
   printf "%s\n" "#define HAVE_PAUSE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_open" "ac_cv_func_pidfd_open"
-if test "x$ac_cv_func_pidfd_open" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_OPEN 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_getfd" "ac_cv_func_pidfd_getfd"
-if test "x$ac_cv_func_pidfd_getfd" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_GETFD 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_send_signal" "ac_cv_func_pidfd_send_signal"
-if test "x$ac_cv_func_pidfd_send_signal" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
@@ -22004,6 +22054,299 @@ printf "%s\n" "#define _Py_HAVE_PTHREAD_ATTR_GET_NP 1" >>confdefs.h
 
 fi
 
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getdents64" >&5
+printf %s "checking for getdents64... " >&6; }
+if test ${ac_cv_func_getdents64+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <dirent.h>
+int
+main (void)
+{
+(void)getdents64
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getdents64=yes
+else case e in #(
+  e) ac_cv_func_getdents64=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getdents64" >&5
+printf "%s\n" "$ac_cv_func_getdents64" >&6; }
+  if test "x$ac_cv_func_getdents64" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETDENTS64 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gettid" >&5
+printf %s "checking for gettid... " >&6; }
+if test ${ac_cv_func_gettid+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+(void)gettid
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_gettid=yes
+else case e in #(
+  e) ac_cv_func_gettid=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gettid" >&5
+printf "%s\n" "$ac_cv_func_gettid" >&6; }
+  if test "x$ac_cv_func_gettid" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETTID 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_indextoname" >&5
+printf %s "checking for if_indextoname... " >&6; }
+if test ${ac_cv_func_if_indextoname+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/if.h>
+int
+main (void)
+{
+(void)if_indextoname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_indextoname=yes
+else case e in #(
+  e) ac_cv_func_if_indextoname=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_indextoname" >&5
+printf "%s\n" "$ac_cv_func_if_indextoname" >&6; }
+  if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_nametoindex" >&5
+printf %s "checking for if_nametoindex... " >&6; }
+if test ${ac_cv_func_if_nametoindex+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/if.h>
+int
+main (void)
+{
+(void)if_nametoindex
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_nametoindex=yes
+else case e in #(
+  e) ac_cv_func_if_nametoindex=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_nametoindex" >&5
+printf "%s\n" "$ac_cv_func_if_nametoindex" >&6; }
+  if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_NAMETOINDEX 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_open" >&5
+printf %s "checking for pidfd_open... " >&6; }
+if test ${ac_cv_func_pidfd_open+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_open
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_open=yes
+else case e in #(
+  e) ac_cv_func_pidfd_open=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_open" >&5
+printf "%s\n" "$ac_cv_func_pidfd_open" >&6; }
+  if test "x$ac_cv_func_pidfd_open" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_OPEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_getfd" >&5
+printf %s "checking for pidfd_getfd... " >&6; }
+if test ${ac_cv_func_pidfd_getfd+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_getfd
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_getfd=yes
+else case e in #(
+  e) ac_cv_func_pidfd_getfd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_getfd" >&5
+printf "%s\n" "$ac_cv_func_pidfd_getfd" >&6; }
+  if test "x$ac_cv_func_pidfd_getfd" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_GETFD 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_send_signal" >&5
+printf %s "checking for pidfd_send_signal... " >&6; }
+if test ${ac_cv_func_pidfd_send_signal+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_send_signal
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_send_signal=yes
+else case e in #(
+  e) ac_cv_func_pidfd_send_signal=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_send_signal" >&5
+printf "%s\n" "$ac_cv_func_pidfd_send_signal" >&6; }
+  if test "x$ac_cv_func_pidfd_send_signal" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
+
+fi
 
 
 

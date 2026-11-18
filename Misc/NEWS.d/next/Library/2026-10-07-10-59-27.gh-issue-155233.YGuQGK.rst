@@ -1,1 +1,0 @@
-Fix :meth:`asyncio.Barrier.wait` returning duplicate indices when a waiting task is cancelled before the barrier is released.```
