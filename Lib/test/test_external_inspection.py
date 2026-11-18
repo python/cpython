@@ -55,7 +55,7 @@ PROCESS_VM_READV_SUPPORTED = False
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
     from _remote_debugging import RemoteUnwinder
-    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo
+    from _remote_debugging import FrameInfo, CoroInfo, TaskInfo, AwaitedInfo
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -488,6 +488,23 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         }
 
     @skip_if_not_supported
+    def test_async_awaited_info(self):
+        async def main():
+            task = asyncio.current_task()
+            unwinder = RemoteUnwinder(os.getpid())
+            for method in (unwinder.get_async_stack_trace,
+                           unwinder.get_all_awaited_by):
+                with self.subTest(method=method.__name__):
+                    info, = (info for info in method()
+                             if info.thread_id == threading.get_native_id())
+                    self.assertIsInstance(info, AwaitedInfo)
+                    task_info, = info.awaited_by
+                    self.assertEqual(task_info.task_id, id(task))
+                    self.assertEqual(task_info.task_name, task.get_name())
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     def test_long_task_name_is_truncated(self):
         # gh-157788
         async def main():
@@ -519,6 +536,22 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             ]
 
         self.assertEqual(asyncio.run(rec(3)), ["rec"] * 4)
+
+    @skip_if_not_supported
+    def test_future_waiter_has_empty_stack(self):
+        async def main():
+            task = asyncio.current_task()
+            future = asyncio.get_running_loop().create_future()
+            asyncio.future_add_to_awaited_by(task, future)
+            try:
+                trace = RemoteUnwinder(os.getpid()).get_all_awaited_by()
+                task_info = self._get_task_id_map(trace)[id(task)]
+                self.assertEqual(task_info.awaited_by, [([], id(future))])
+                self.assertTrue(task_info.coroutine_stack[0].call_stack)
+            finally:
+                asyncio.future_discard_from_awaited_by(task, future)
+
+        asyncio.run(main())
 
     @skip_if_not_supported
     def test_async_generator_stack_is_not_truncated(self):
@@ -662,6 +695,17 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
 
         stacks = self._extract_coroutine_funcnames(asyncio.run(main()))
         self.assertEqual(stacks["consumer"], ["consumer"])
+
+    @skip_if_not_supported
+    def test_self_trace_with_empty_linetable(self):
+        def sample():
+            return RemoteUnwinder(os.getpid()).get_stack_trace()
+
+        sample.__code__ = sample.__code__.replace(co_linetable=b"")
+        frame = self._find_frame_in_trace(
+            sample(), lambda f: f.funcname == sample.__qualname__
+        )
+        self.assertEqual(frame.location, (-1, -1, -1, -1))
 
     @skip_if_not_supported
     @unittest.skipIf(
