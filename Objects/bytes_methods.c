@@ -377,7 +377,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 }
 
 #define FASTSEARCH fastsearch
-#define STRINGLIB_IS_UNICODE     0
+#define STRINGLIB_IS_UNICODE 0
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1
