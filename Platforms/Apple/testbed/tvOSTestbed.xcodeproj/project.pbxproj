@@ -37,6 +37,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		60214C9030AD4273006FA640 /* prepare_python_code.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = prepare_python_code.sh; sourceTree = "<group>"; };
 		6077B3802E82A4BE00E3D6A3 /* tvOSTestbed.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = tvOSTestbed.xctestplan; sourceTree = "<group>"; };
 		EE7C8A1C2DCD6FF3003206DB /* Python{{abiflags}}.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python{{abiflags}}.xcframework; sourceTree = "<group>"; };
 		EE989E4E2DCD6E780036B268 /* tvOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tvOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,6 +99,7 @@
 			children = (
 				6077B3802E82A4BE00E3D6A3 /* tvOSTestbed.xctestplan */,
 				EE7C8A1C2DCD6FF3003206DB /* Python{{abiflags}}.xcframework */,
+				60214C9030AD4273006FA640 /* prepare_python_code.sh */,
 				EE989E502DCD6E780036B268 /* tvOSTestbed */,
 				EE989E682DCD6E7A0036B268 /* TestbedTests */,
 				EE989E4F2DCD6E780036B268 /* Products */,
@@ -236,7 +238,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nsource \"$PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\"\n\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
+			shellScript = "set -e\nsource \"$PROJECT_DIR/prepare_python_code.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

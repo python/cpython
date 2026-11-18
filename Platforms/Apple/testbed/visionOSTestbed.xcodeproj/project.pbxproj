@@ -49,6 +49,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		60214C9030AD4273006FA640 /* prepare_python_code.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = prepare_python_code.sh; sourceTree = "<group>"; };
 		6077B3D62E82E60C00E3D6A3 /* visionOSTestbed.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = visionOSTestbed.xctestplan; sourceTree = "<group>"; };
 		607A66122B0EFA380010BFC8 /* visionOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = visionOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607A662D2B0EFA3A0010BFC8 /* TestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -110,6 +111,7 @@
 			children = (
 				6077B3D62E82E60C00E3D6A3 /* visionOSTestbed.xctestplan */,
 				EEE9C80C2DAB5ECA0056F8C6 /* Python{{abiflags}}.xcframework */,
+				60214C9030AD4273006FA640 /* prepare_python_code.sh */,
 				607A66142B0EFA380010BFC8 /* visionOSTestbed */,
 				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
 				607A66132B0EFA380010BFC8 /* Products */,
@@ -250,7 +252,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nsource \"$PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\"\n\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
+			shellScript = "set -e\nsource \"$PROJECT_DIR/prepare_python_code.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

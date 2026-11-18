@@ -49,6 +49,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		60214C9030AD4273006FA640 /* prepare_python_code.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = prepare_python_code.sh; sourceTree = "<group>"; };
 		607A66122B0EFA380010BFC8 /* iOSTestbed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSTestbed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = "Python{{abiflags}}.xcframework"; sourceTree = "<group>"; };
@@ -110,6 +111,7 @@
 			children = (
 				60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */,
 				607A664A2B0EFB310010BFC8 /* Python{{abiflags}}.xcframework */,
+				60214C9030AD4273006FA640 /* prepare_python_code.sh */,
 				607A66142B0EFA380010BFC8 /* iOSTestbed */,
 				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
 				607A66132B0EFA380010BFC8 /* Products */,
@@ -250,7 +252,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nsource \"$PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\"\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
+			shellScript = "set -e\nsource \"$PROJECT_DIR/prepare_python_code.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

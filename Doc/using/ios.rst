@@ -194,13 +194,21 @@ To add Python to an iOS Xcode project:
    adjusting paths as needed. Ensure that this folder is associated with your
    app target.
 
-4. Select the app target by selecting the root node of your Xcode project, then
+4. Create folders to store your third-party dependencies (e.g., packages you've
+   installed from PyPI). You'll need a separate dependencies folder for iOS
+   devices and iOS simulators. In the following instructions, we'll assume
+   you've used folders named ``app_packages.iphoneos`` and
+   ``app_packages.iphonesimulator``, located in the root of your project; you
+   can use any other location by adjusting paths as needed. These folders
+   *should not* be associated with the app target.
+
+5. Select the app target by selecting the root node of your Xcode project, then
    the target name in the sidebar that appears.
 
-5. In the "General" settings, under "Frameworks, Libraries and Embedded
+6. In the "General" settings, under "Frameworks, Libraries and Embedded
    Content", add ``Python.xcframework``, with "Embed & Sign" selected.
 
-6. In the "Build Settings" tab, modify the following:
+7. In the "Build Settings" tab, modify the following:
 
    - Build Options
 
@@ -216,7 +224,7 @@ To add Python to an iOS Xcode project:
 
      * Quoted Include In Framework Header: No
 
-7. Add a build step that processes the Python standard library, and your own
+8. Add a build step that processes the Python standard library, and your own
    Python binary dependencies. In the "Build Phases" tab, add a new "Run
    Script" build step *before* the "Embed Frameworks" step, but *after* the
    "Copy Bundle Resources" step. Name the step "Process Python libraries",
@@ -228,11 +236,18 @@ To add Python to an iOS Xcode project:
       set -e
       source "$PROJECT_DIR/Python.xcframework/build/utils.sh"
       install_python Python.xcframework app
+      if [ "$EFFECTIVE_PLATFORM_NAME" = "-iphonesimulator" ]; then
+        APP_PACKAGES_DIR="$PROJECT_DIR/app_packages.iphonesimulator/"
+      else
+        APP_PACKAGES_DIR="$PROJECT_DIR/app_packages.iphoneos/"
+      fi
+      rsync -au --delete "$APP_PACKAGES_DIR" "$CODESIGNING_FOLDER_PATH/app_packages"
+      install_site_packages Python.xcframework app_packages
 
    If you have placed your XCframework somewhere other than the root of your
    project, modify the path to the first argument.
 
-8. Add Objective C code to initialize and use a Python interpreter in embedded
+9. Add Objective C code to initialize and use a Python interpreter in embedded
    mode. You should ensure that:
 
    * UTF-8 mode (:c:member:`PyPreConfig.utf8_mode`) is *enabled*;
@@ -241,35 +256,13 @@ To add Python to an iOS Xcode project:
    * Signal handlers (:c:member:`PyConfig.install_signal_handlers`) are *enabled*;
    * System logging (:c:member:`PyConfig.use_system_logger`) is *enabled*
      (optional, but strongly recommended; this is enabled by default);
-   * :envvar:`PYTHONHOME` for the interpreter is configured to point at the
-     ``python`` subfolder of your app's bundle; and
-   * The :envvar:`PYTHONPATH` for the interpreter includes:
-
-     - the ``python/lib/python3.X`` subfolder of your app's bundle,
-     - the ``python/lib/python3.X/lib-dynload`` subfolder of your app's bundle, and
-     - the ``app`` subfolder of your app's bundle
+   * The interpreter's home direectory (:c:member:`PyConfig.home`) is configured
+     to point at the ``python`` subfolder of your app's bundle; and
+   * The interpreter's module search paths (:c:member:`PyConfig.home`) includes
+     the ``app`` subfolder of your app's bundle.
 
    Your app's bundle location can be determined using ``[[NSBundle mainBundle]
    resourcePath]``.
-
-Steps 7 and 8 of these instructions assume that you have a single folder of
-pure Python application code, named ``app``. If you have third-party binary
-modules in your app, some additional steps will be required:
-
-* You need to ensure that any folders containing third-party binaries are
-  either associated with the app target, or are explicitly copied as part of
-  step 7. Step 7 should also purge any binaries that are not appropriate for
-  the platform a specific build is targeting (i.e., delete any device binaries
-  if you're building an app targeting the simulator).
-
-* If you're using a separate folder for third-party packages, ensure that
-  folder is added to the end of the call to ``install_python`` in step 7, and
-  as part of the :envvar:`PYTHONPATH` configuration in step 8.
-
-* If any of the folders that contain third-party packages will contain ``.pth``
-  files, you should add that folder as a *site directory* (using
-  :meth:`site.addsitedir`), rather than adding to :envvar:`PYTHONPATH` or
-  :attr:`sys.path` directly.
 
 Testing a Python package
 ------------------------

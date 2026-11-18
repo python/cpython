@@ -15,7 +15,8 @@
 # -----
 #   set -e
 #   source "$PROJECT_DIR/Python.xcframework/build/utils.sh"
-#   install_python Python.xcframework app app_packages
+#   install_python Python.xcframework app
+#   install_site_packages Python.xcframework app_packages
 # -----
 
 # Copy the standard library from the XCframework into the app bundle.
@@ -161,20 +162,39 @@ process_dylibs () {
 #
 # Accepts 1 or more arguments:
 # 1. The path, relative to the root of the Xcode project, where the Python
-#    XCframework can be found. If the XCframework is in the root of the project,
-# 2+. The path of a package, relative to the root of the packaged app, that contains
-#     library content that should be processed for binary libraries.
+#    XCframework can be found.
+# 2+. The path of any package, relative to the root of the Xcode project, that contains
+#     user-space Python code that should be processed for binary libraries.
 install_python() {
     PYTHON_XCFRAMEWORK_PATH=$1
     shift
 
     install_stdlib "$PYTHON_XCFRAMEWORK_PATH"
-    PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+[a-z]*$")
-    echo "Install Python $PYTHON_VER standard library extension modules..."
-    process_dylibs "$PYTHON_XCFRAMEWORK_PATH" python/lib/$PYTHON_VER/lib-dynload
+    PYTHON_LIBDIR=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+[a-z]*$")
+
+    echo "Install Python $PYTHON_LIBDIR standard library extension modules..."
+    process_dylibs "$PYTHON_XCFRAMEWORK_PATH" python/lib/$PYTHON_LIBDIR/lib-dynload
 
     for package_path in "$@"; do
         echo "Installing $package_path extension modules ..."
         process_dylibs "$PYTHON_XCFRAMEWORK_PATH" "$package_path"
     done
+}
+
+# The entry point for post-processing the site packages for a Python XCframework.
+#
+# Accepts 2 arguments:
+# 1. The path, relative to the root of the Xcode project, where the Python
+#    XCframework can be found.
+# 2. The path, relative to the root of the Xcode project, that contains
+#    the site-packages content for the app.
+install_site_packages() {
+    PYTHON_XCFRAMEWORK_PATH=$1
+    APP_PACKAGES_PATH=$2
+    PYTHON_LIBDIR=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+[a-z]*$")
+
+    echo "Install Python $PYTHON_LIBDIR site-packages extension modules..."
+    rm -rf "$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_LIBDIR/site-packages"
+    mv "$CODESIGNING_FOLDER_PATH/$APP_PACKAGES_PATH" "$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_LIBDIR/site-packages"
+    process_dylibs "$PYTHON_XCFRAMEWORK_PATH" python/lib/$PYTHON_LIBDIR/site-packages
 }
