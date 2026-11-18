@@ -1548,7 +1548,7 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
-#if !_Py_TAIL_CALL_INTERP
+#ifndef _Py_TAIL_CALL_INTERP
             assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
@@ -1962,7 +1962,7 @@ dummy_func(
 
         tier1 inst(CLEANUP_THROW, (sub_iter, null_in, last_sent_val, exc_value_st -- none, null_out, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            #if !_Py_TAIL_CALL_INTERP
+            #ifndef _Py_TAIL_CALL_INTERP
             assert(throwflag);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -6501,7 +6501,7 @@ dummy_func(
             }
 #endif
             RELOAD_STACK();
-#if _Py_TAIL_CALL_INTERP
+#ifdef _Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
@@ -6525,7 +6525,7 @@ dummy_func(
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-#if !_Py_TAIL_CALL_INTERP
+#ifndef _Py_TAIL_CALL_INTERP
                 assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
@@ -6565,14 +6565,14 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
             RELOAD_STACK();
-#if _Py_TAIL_CALL_INTERP
+#ifdef _Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
         }
 
         inst(TRACE_RECORD, (--)) {
-#if _Py_TIER2
+#ifdef _Py_TIER2
             assert(IS_JIT_TRACING());
             next_instr = this_instr;
             frame->instr_ptr = prev_instr;
@@ -6629,7 +6629,7 @@ dummy_func(
         }
 
         label(stop_tracing) {
-#if _Py_TIER2
+#ifdef _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);

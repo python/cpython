@@ -79,7 +79,7 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
-#if _Py_TAIL_CALL_INTERP
+#ifdef _Py_TAIL_CALL_INTERP
 #   if defined(__clang__) || defined(__GNUC__)
 #       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
 #           error "This compiler does not have support for efficient tail calling."
@@ -144,7 +144,7 @@
 #  define LABEL(name) name:
 #endif
 
-#if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
+#if (defined(_Py_TAIL_CALL_INTERP) || USE_COMPUTED_GOTOS) && defined(_Py_TIER2)
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
@@ -156,7 +156,7 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
-#if _Py_TIER2
+#ifdef _Py_TIER2
 #define STOP_TRACING() \
     do { \
         if (IS_JIT_TRACING()) { \

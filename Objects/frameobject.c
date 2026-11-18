@@ -279,7 +279,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             return -1;
         }
 
-#if _Py_TIER2
+#ifdef _Py_TIER2
         _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), co, 1);
 #endif
 
