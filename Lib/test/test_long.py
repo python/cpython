@@ -1702,7 +1702,6 @@ class LongTest(unittest.TestCase):
         # see gh-100687
         x = (MASK//2) * (MASK+1)
         x2 = (MASK//2 + 1) * (MASK+1)
-        z = x + x2
         self.assertEqual(x + x2, MASK * (MASK + 1))
 
     def test_karatsuba_single_digit_parts(self):

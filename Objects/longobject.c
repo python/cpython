@@ -3764,7 +3764,7 @@ x_add(PyLongObject *a, PyLongObject *b)
     /* A carry out of the top digit is only possible if the top digits sum
        to at least PyLong_MASK; only then allocate a digit for it. */
     digit top_sum = a->long_value.ob_digit[size_a - 1]
-        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : (digit)0);
+        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : 0);
     int extra_digit = top_sum >= PyLong_MASK;
     z = long_alloc(size_a + extra_digit);
     if (z == NULL)
