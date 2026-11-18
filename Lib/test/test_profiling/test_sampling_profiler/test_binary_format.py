@@ -915,6 +915,7 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             ("thread_info", [(0, [()])]),
             ("thread_info", [(0, [(1,)])]),
             ("thread_info", [(0, [(1, 0)])]),
+            ("thread_info", [(0, [(1, 0, []), (2, 0)])]),
             ("frame_list", [(0, [(1, 0, 42)])]),
             ("frame_info", [(0, [(1, 0, [42])])]),
             ("frame_info", [(0, [(1, 0, [()])])]),
