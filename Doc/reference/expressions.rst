@@ -2534,10 +2534,8 @@ Evaluation order
 
 .. index:: pair: evaluation; order
 
-Python evaluates expressions from left to right (except for
-:ref:`conditional expressions <if_expr>`, which evaluate the condition first).
-Notice that while evaluating an assignment, the right-hand side is evaluated
-before the left-hand side.
+Python evaluates expressions from left to right.  Notice that while evaluating
+an assignment, the right-hand side is evaluated before the left-hand side.
 
 In the following lines, expressions will be evaluated in the arithmetic order of
 their suffixes::
@@ -2548,7 +2546,6 @@ their suffixes::
    expr1 + expr2 * (expr3 - expr4)
    expr1(expr2, expr3, *expr4, **expr5)
    expr3, expr4 = expr1, expr2
-   expr2 if expr1 else expr3
 
 
 .. _operator-summary:
