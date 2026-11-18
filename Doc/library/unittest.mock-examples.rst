@@ -642,7 +642,7 @@ Mocking a generator method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Python generator is a function or method that uses the :keyword:`yield` statement
-to return a series of values when iterated over [#]_.
+to return a series of values when iterated over.
 
 A generator method / function is called to return the generator object. It is
 the generator object that is then iterated over. The protocol method for
@@ -670,14 +670,6 @@ To configure the values returned from the iteration (implicit in the call to
     >>> mock_foo.iter.return_value = iter([1, 2, 3])
     >>> list(mock_foo.iter())
     [1, 2, 3]
-
-.. [#] There are also generator expressions and more `advanced uses
-    <https://www.dabeaz.com/tutorials.html#curious-course-coroutines>`_ of
-    generators, but we aren't concerned about them here. A very good
-    introduction to generators and how powerful they are is: `Generator Tricks
-    for Systems Programmers
-    <https://www.dabeaz.com/tutorials.html#generator-tricks-for-systems-programmers>`_.
-
 
 Applying the same patch to every test method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
