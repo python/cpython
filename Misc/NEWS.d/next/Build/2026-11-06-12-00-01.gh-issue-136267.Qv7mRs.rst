@@ -1,0 +1,8 @@
+``build-details.json`` now describes the interpreter being built rather than
+the interpreter running :program:`generate-build-details.py`: ``abi.flags``,
+``suffixes.extensions``, ``abi.stable_abi_suffix`` and
+``implementation.supports_isolated_interpreters`` are derived from the
+target's configuration, which fixes cross builds and builds that use
+:option:`--with-build-python`. ``abi.extension_suffix`` and
+``abi.stable_abi_suffix`` are now also present when libpython is only built
+as a static library.
