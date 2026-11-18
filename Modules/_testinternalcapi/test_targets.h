@@ -2,7 +2,7 @@
 // from:
 //   Python/bytecodes.c, Modules/_testinternalcapi/testbytecodes.c
 // Do not edit!
-#ifndef _Py_TAIL_CALL_INTERP
+#if !defined(_Py_TAIL_CALL_INTERP) || _Py_TAIL_CALL_INTERP == 0
 static void *opcode_targets_table[256] = {
     &&TARGET_CACHE,
     &&TARGET_BINARY_SLICE,
