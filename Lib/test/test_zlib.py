@@ -1195,6 +1195,35 @@ class ZlibDecompressorTest(unittest.TestCase):
             compressed = None
             decompressed = None
 
+    @support.skip_if_pgo_task
+    @bigmemtest(size=_4G + 100, memuse=2.5)
+    def testDecompressMaxLength4G(self, size):
+        # gh-162153: a decompress() call whose input exceeds UINT_MAX
+        # bytes must not silently drop the unconsumed remainder when
+        # max_length is reached in the same call.
+        # Peak memory is about 2x size: the >4 GiB compressed input and
+        # the decompressor's internal copy of the unconsumed input tail
+        # coexist across the first decompress() call.
+        blocksize = min(10 * 1024 * 1024, size)
+        block = random.randbytes(blocksize)
+        nblocks = (size - 1) // blocksize + 1
+        # Level 0 (stored blocks) keeps the compressed input above
+        # 4 GiB, so arrange_input_buffer() has to chunk it.
+        c = zlib.compressobj(0)
+        compressed = bytearray()
+        try:
+            for _ in range(nblocks):
+                compressed += c.compress(block)
+            compressed += c.flush()
+            zlibd = zlib._ZlibDecompressor()
+            out = len(zlibd.decompress(compressed, 65536))
+        finally:
+            block = compressed = None
+        while not zlibd.eof and not zlibd.needs_input:
+            out += len(zlibd.decompress(b"", 65536))
+        self.assertTrue(zlibd.eof)
+        self.assertEqual(out, blocksize * nblocks)
+
     def testPickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
