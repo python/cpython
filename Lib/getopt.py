@@ -47,9 +47,7 @@ class GetoptError(Exception):
 error = GetoptError # backward compatibility
 
 def getopt(args, shortopts, longopts = []):
-    """getopt(args, options[, long_options]) -> opts, args
-
-    Parses command line options and parameter list.  args is the
+    """Parses command line options and parameter list.  args is the
     argument list to be parsed, without the leading reference to the
     running program.  Typically, this means "sys.argv[1:]".  shortopts
     is the string of option letters that the script wants to
@@ -92,9 +90,7 @@ def getopt(args, shortopts, longopts = []):
     return opts, args
 
 def gnu_getopt(args, shortopts, longopts = []):
-    """gnu_getopt(args, options[, long_options]) -> opts, args
-
-    This function works like getopt(), except that GNU style scanning
+    """This function works like getopt(), except that GNU style scanning
     mode is used by default. This means that option and non-option
     arguments may be intermixed. The getopt() function stops
     processing options as soon as a non-option argument is
