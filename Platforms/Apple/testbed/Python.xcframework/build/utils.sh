@@ -72,9 +72,9 @@ install_dylib () {
     MODULE_PATH=$(dirname "$FULL_EXT")
     MODULE_NAME=$(echo $EXT | cut -d "." -f 1)
     # The location of the extension file, relative to the bundle
-    RELATIVE_EXT=${FULL_EXT#$CODESIGNING_FOLDER_PATH/}
+    RELATIVE_EXT=${FULL_EXT#"$CODESIGNING_FOLDER_PATH"/}
     # The path to the extension file, relative to the install base
-    PYTHON_EXT=${RELATIVE_EXT/$INSTALL_BASE/}
+    PYTHON_EXT=${RELATIVE_EXT/"$INSTALL_BASE"/}
     # The full dotted name of the extension module, constructed from the file path.
     FULL_MODULE_NAME=$(echo $PYTHON_EXT | cut -d "." -f 1 | tr "/" ".");
     # A bundle identifier; not actually used, but required by Xcode framework packaging
@@ -123,8 +123,8 @@ install_dylib () {
 process_dylibs () {
     PYTHON_XCFRAMEWORK_PATH=$1
     LIB_PATH=$2
-    find "$CODESIGNING_FOLDER_PATH/$LIB_PATH" -name "*.so" | while read FULL_EXT; do
-        install_dylib $PYTHON_XCFRAMEWORK_PATH "$LIB_PATH/" "$FULL_EXT"
+    find "$CODESIGNING_FOLDER_PATH/$LIB_PATH" -name "*.so" | while read -r FULL_EXT; do
+        install_dylib "$PYTHON_XCFRAMEWORK_PATH" "$LIB_PATH/" "$FULL_EXT"
     done
 }
 
@@ -139,13 +139,13 @@ install_python() {
     PYTHON_XCFRAMEWORK_PATH=$1
     shift
 
-    install_stdlib $PYTHON_XCFRAMEWORK_PATH
+    install_stdlib "$PYTHON_XCFRAMEWORK_PATH"
     PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib" | grep -E "^python3\.\d+$")
     echo "Install Python $PYTHON_VER standard library extension modules..."
-    process_dylibs $PYTHON_XCFRAMEWORK_PATH python/lib/$PYTHON_VER/lib-dynload
+    process_dylibs "$PYTHON_XCFRAMEWORK_PATH" python/lib/$PYTHON_VER/lib-dynload
 
-    for package_path in $@; do
+    for package_path in "$@"; do
         echo "Installing $package_path extension modules ..."
-        process_dylibs $PYTHON_XCFRAMEWORK_PATH $package_path
+        process_dylibs "$PYTHON_XCFRAMEWORK_PATH" "$package_path"
     done
 }
