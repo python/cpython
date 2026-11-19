@@ -690,7 +690,7 @@ enum {
     _FOR_ITER_VIRTUAL_TIER_TWO_r23,
     _GET_AITER_r11,
     _GET_ANEXT_r12,
-    _GET_AWAITABLE_r11,
+    _GET_AWAITABLE_r13,
     _GET_ITER_r12,
     _GET_ITER_TRAD_r12,
     _GET_LEN_r12,

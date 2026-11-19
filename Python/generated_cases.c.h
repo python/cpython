@@ -6824,6 +6824,8 @@
             INSTRUCTION_STATS(GET_AWAITABLE);
             _PyStackRef iterable;
             _PyStackRef iter;
+            _PyStackRef null;
+            _PyStackRef none;
             iterable = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
@@ -6839,8 +6841,12 @@
                 JUMP_TO_LABEL(error);
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
             stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[1] = null;
+            stack_pointer[2] = none;
+            stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
