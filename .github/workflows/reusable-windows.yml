@@ -37,6 +37,17 @@ jobs:
     - name: Register MSVC problem matcher
       if: inputs.arch != 'Win32'
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Select native ARM64 MSBuild
+      if: inputs.arch == 'arm64'
+      shell: pwsh
+      run: |
+        # The x86-hosted linker can run out of heap space during LTCG.
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $msbuild = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 -find 'MSBuild\Current\Bin\arm64\MSBuild.exe'
+        if (!$msbuild -or !(Test-Path -LiteralPath $msbuild -PathType Leaf)) {
+          throw 'Native ARM64 MSBuild was not found.'
+        }
+        ('MSBUILD="{0}"' -f $msbuild) >> $env:GITHUB_ENV
     - name: Build CPython
       # msvc::musttail is not supported for debug builds, so we have to
       # switch to release.
