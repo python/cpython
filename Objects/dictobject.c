@@ -8717,6 +8717,7 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
     transfer = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
     if (transfer < 0) {
+        Py_DECREF(res);
         return NULL;
     }
 
