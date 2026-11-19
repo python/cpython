@@ -166,6 +166,8 @@ long_alloc(Py_ssize_t size)
 {
     static_assert(MAX_DIGITS_FOR_FREELIST >= 1,
                   "int freelist blocks must hold at least one digit");
+    // ints from tp_alloc must be big enough for the freelist too.
+    assert(_PyObject_VAR_SIZE(&PyLong_Type, 1) >= sizeof(PyLongObject));
     assert(size >= 0);
     PyLongObject *result = NULL;
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
@@ -204,7 +206,7 @@ long_alloc(Py_ssize_t size)
 #ifdef Py_DEBUG
     // gh-147988: Fill digits with an invalid pattern to catch usage
     // of uninitialized digits.
-    memset(result->long_value.ob_digit, 0xFF, ndigits * sizeof(digit));
+    memset(result->long_value.ob_digit, 0xFF, alloc_digits * sizeof(digit));
 #endif
     return result;
 }
@@ -3652,6 +3654,12 @@ _PyLong_ExactDealloc(PyObject *self)
         return;
     }
     if (_PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST) {
+#if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
+        // Validate on debug and ASAN builds we always have
+        // MAX_DIGITS_FOR_FREELIST space writeable
+        memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
+               MAX_DIGITS_FOR_FREELIST * sizeof(digit));
+#endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
@@ -3674,6 +3682,12 @@ long_dealloc(PyObject *self)
     if (PyLong_CheckExact(self)
         && _PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST)
     {
+#if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
+        // Validate on debug and ASAN builds we always have
+        // MAX_DIGITS_FOR_FREELIST space writeable
+        memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
+               MAX_DIGITS_FOR_FREELIST * sizeof(digit));
+#endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
