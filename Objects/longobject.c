@@ -3655,8 +3655,7 @@ _PyLong_ExactDealloc(PyObject *self)
     }
     if (_PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST) {
 #if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
-        // Validate on debug and ASAN builds we always have
-        // MAX_DIGITS_FOR_FREELIST space writeable
+        // Use allocator to detect allocations that are too small.
         memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
                MAX_DIGITS_FOR_FREELIST * sizeof(digit));
 #endif
@@ -3683,8 +3682,7 @@ long_dealloc(PyObject *self)
         && _PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST)
     {
 #if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
-        // Validate on debug and ASAN builds we always have
-        // MAX_DIGITS_FOR_FREELIST space writeable
+        // Use allocator to detect allocations that are too small.
         memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
                MAX_DIGITS_FOR_FREELIST * sizeof(digit));
 #endif
