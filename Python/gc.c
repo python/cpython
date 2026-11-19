@@ -14,7 +14,7 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
+#include "pycore_tuple.h"         // _PyTuple_CanUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -595,18 +595,26 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 
     while (gc != young) {
         if (gc_get_refs(gc)) {
-            /* gc is definitely reachable from outside the
-             * original 'young'.  Mark it as such, and traverse
-             * its pointers to find any other objects that may
-             * be directly reachable from it.  Note that the
-             * call to tp_traverse may append objects to young,
-             * so we have to wait until it returns to determine
-             * the next object to visit.
-             */
+            // gc is definitely reachable from outside the original 'young'.
+            // Unless it can be untracked, traverse its pointers to find other
+            // reachable objects.  tp_traverse may append objects to young,
+            // so wait until it returns to determine the next object to visit.
             PyObject *op = FROM_GC(gc);
-            traverseproc traverse = Py_TYPE(op)->tp_traverse;
             _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(gc) > 0,
                                       "refcount is too small");
+            // An untrackable tuple cannot lead to another GC candidate.
+            if (PyTuple_CheckExact(op) && _PyTuple_CanUntrack(op)) {
+                // Ordinary untracking would overwrite the next node's gc_refs.
+                PyGC_Head *next = GC_NEXT(gc);
+                _PyGCHead_SET_NEXT(prev, next);
+                gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+                gc->_gc_next = 0;
+                _PyInterpreterState_GET()->gc.heap_size--;
+                gc = next;
+                continue;
+            }
+
+            traverseproc traverse = Py_TYPE(op)->tp_traverse;
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
@@ -616,21 +624,8 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             _PyGCHead_SET_PREV(gc, prev);
             // gc is not COLLECTING state after here.
             gc_clear_collecting(gc);
-            if (PyTuple_CheckExact(op)) {
-                // Untracking gc overwrites the gc_refs of the next object.
-                PyGC_Head *next = GC_NEXT(gc);
-                uintptr_t next_refs = next->_gc_prev;
-                _PyTuple_MaybeUntrack(op);
-                next->_gc_prev = next_refs;
-                if (gc->_gc_next != 0) {
-                    prev = gc;
-                    reachable++;
-                }
-            }
-            else {
-                prev = gc;
-                reachable++;
-            }
+            prev = gc;
+            reachable++;
         }
         else {
             /* This *may* be unreachable.  To make progress,

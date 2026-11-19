@@ -107,6 +107,25 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 2)
 
+    @requires_gil_enabled("tests the generation-list collector")
+    def test_unreachable_tuple_leaf_is_collected(self):
+        """Keep unreachable tuple leaves in the collected-object count."""
+        was_enabled = gc.isenabled()
+        gc.disable()
+        self.addCleanup(gc.enable if was_enabled else gc.disable)
+        gc.collect()
+
+        cycle = []
+        # Iterator construction keeps this atomic-only tuple tracked until GC.
+        leaf = tuple(iter((object(),)))
+        cycle.extend((cycle, leaf))
+        self.assertTrue(gc.is_tracked(leaf))
+
+        # The tuple must stay tracked until classification so both objects
+        # contribute to the collected count.
+        del cycle, leaf
+        self.assertEqual(gc.collect(), 2)
+
     def test_class(self):
         class A:
             pass
@@ -1287,6 +1306,21 @@ class GCTests(unittest.TestCase):
         l = []
         self.assertEqual(count + 1, _testinternalcapi.get_tracked_heap_size())
         del l
+        self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
+
+    @requires_gil_enabled('need generational GC')
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_heap_size_after_tuple_untracking(self):
+        """GC heap accounting reflects tuples untracked during collection."""
+        gc.collect()
+        count = _testinternalcapi.get_tracked_heap_size()
+        # Iterator-based construction initially tracks even atomic-only tuples.
+        value = tuple(iter((object(),)))
+        self.assertTrue(gc.is_tracked(value))
+        self.assertEqual(count + 1, _testinternalcapi.get_tracked_heap_size())
+
+        gc.collect()
+        self.assertFalse(gc.is_tracked(value))
         self.assertEqual(count, _testinternalcapi.get_tracked_heap_size())
 
 
