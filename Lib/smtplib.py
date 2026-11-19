@@ -26,7 +26,7 @@ Example:
   End of HELP info
   >>> s.putcmd("vrfy","someone@here")
   >>> s.getreply()
-  (250, "Somebody OverHere <somebody@here.my.org>")
+  (250, b"Somebody OverHere <somebody@here.my.org>")
   >>> s.quit()
 '''
 
@@ -89,9 +89,9 @@ class SMTPResponseException(SMTPException):
     """Base class for all exceptions that include an SMTP error code.
 
     These exceptions are generated in some instances when the SMTP
-    server returns an error code.  The error code is stored in the
-    `smtp_code' attribute of the error, and the `smtp_error' attribute
-    is set to the error message.
+    server returns an error code. The error code is stored as an integer
+    in the `smtp_code' attribute, and the `smtp_error' attribute is set
+    to the error message as bytes.
     """
 
     def __init__(self, code, msg):
@@ -328,6 +328,9 @@ class SMTP:
         Note: This method is automatically invoked by __init__, if a host is
         specified during instantiation.
 
+        Returns a (code, message) tuple, where code is the server response
+        code as an integer and message is the server response as bytes.
+
         """
 
         if source_address:
@@ -389,11 +392,11 @@ class SMTP:
 
         Returns a tuple consisting of:
 
-          - server response code (e.g. '250', or such, if all goes well)
-            Note: returns -1 if it can't read response code.
+          - server response code as an integer (e.g. 250 if all goes well).
+            Returns -1 if it can't read the response code.
 
-          - server response string corresponding to response code (multiline
-            responses are converted to a single, multiline string).
+          - server response as bytes corresponding to the response code.
+            Multiline responses are joined with newline bytes.
 
         Raises SMTPServerDisconnected if end-of-file is reached.
         """
@@ -434,7 +437,7 @@ class SMTP:
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
-        """Send a command, and return its response code."""
+        """Send a command and return its (code, message) response tuple."""
         self.putcmd(cmd, args)
         return self.getreply()
 
@@ -565,10 +568,11 @@ class SMTP:
 
         Automatically quotes lines beginning with a period per rfc821.
         Raises SMTPDataError if there is an unexpected reply to the
-        DATA command; the return value from this method is the final
-        response code received when the all data is sent.  If msg
-        is a string, lone '\\r' and '\\n' characters are converted to
-        '\\r\\n' characters.  If msg is bytes, it is transmitted as is.
+        DATA command. Returns a (code, message) tuple, where code is the
+        final response code as an integer and message is the server response
+        as bytes. If msg is a string, lone '\\r' and '\\n' characters are
+        converted to '\\r\\n' characters. If msg is bytes, it is transmitted
+        as is.
         """
         self.putcmd("data")
         (code, repl) = self.getreply()
@@ -831,8 +835,9 @@ class SMTP:
 
         This method will return normally if the mail is accepted for at least
         one recipient.  It returns a dictionary, with one entry for each
-        recipient that was refused.  Each entry contains a tuple of the SMTP
-        error code and the accompanying error message sent by the server.
+        recipient that was refused. Each entry contains a (code, response)
+        tuple, where code is the SMTP error code as an integer and response is
+        the accompanying server error response as bytes.
 
         This method may raise the following exceptions:
 
@@ -861,7 +866,7 @@ class SMTP:
          ...
          ... This is a test '''
          >>> s.sendmail("me@my.org",tolist,msg)
-         { "three@three.org" : ( 550 ,"User unknown" ) }
+         { "three@three.org" : ( 550 ,b"User unknown" ) }
          >>> s.quit()
 
         In the above example, the message was accepted for delivery to three
