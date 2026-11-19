@@ -655,7 +655,7 @@ _run_result_clear(struct run_result *runres)
 }
 
 static int
-_run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
+_run_in_interpreter(PyThreadState *tstate, PyInterpreterView *view,
                      _PyXIData_t *script, struct interp_call *call,
                      PyObject *shareables, struct run_result *runres)
 {
@@ -673,8 +673,7 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     _PyXI_session_result result = {0};
 
     // Prep and switch interpreters.
-    PyInterpreterView view = { .id = PyInterpreterState_GetID(interp) };
-    if (_PyXI_Enter(session, &view, shareables, &result) < 0) {
+    if (_PyXI_Enter(session, view, shareables, &result) < 0) {
         // If an error occurred at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
@@ -1066,9 +1065,17 @@ _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
         return NULL;
     }
 
+    PyInterpreterView *view =
+            _PyInterpreterView_FromID(PyInterpreterState_GetID(interp));
+    if (view == NULL) {
+        _PyXI_FreeSession(session);
+        return NULL;
+    }
+
     // Prep and switch interpreters, including apply the updates.
-    PyInterpreterView view = { .id = PyInterpreterState_GetID(interp) };
-    if (_PyXI_Enter(session, &view, updates, NULL) < 0) {
+    int entered = _PyXI_Enter(session, view, updates, NULL);
+    PyInterpreterView_Close(view);
+    if (entered < 0) {
         _PyXI_FreeSession(session);
         return NULL;
     }
@@ -1147,9 +1154,17 @@ _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
         return NULL;
     }
 
+    PyInterpreterView *view =
+            _PyInterpreterView_FromID(PyInterpreterState_GetID(interp));
+    if (view == NULL) {
+        _PyXIData_Release(&xidata);
+        return NULL;
+    }
+
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1197,9 +1212,17 @@ _interpreters_run_string_impl(PyObject *module, PyObject *id,
         return NULL;
     }
 
+    PyInterpreterView *view =
+            _PyInterpreterView_FromID(PyInterpreterState_GetID(interp));
+    if (view == NULL) {
+        _PyXIData_Release(&xidata);
+        return NULL;
+    }
+
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1260,9 +1283,17 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
         return NULL;
     }
 
+    PyInterpreterView *view =
+            _PyInterpreterView_FromID(PyInterpreterState_GetID(interp));
+    if (view == NULL) {
+        _PyXIData_Release(&xidata);
+        return NULL;
+    }
+
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1306,9 +1337,18 @@ _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
         return NULL;
     }
 
+    PyInterpreterView *view =
+            _PyInterpreterView_FromID(PyInterpreterState_GetID(interp));
+    if (view == NULL) {
+        _interp_call_clear(&call);
+        return NULL;
+    }
+
     PyObject *res_and_exc = NULL;
     struct run_result runres = {0};
-    if (_run_in_interpreter(tstate, interp, NULL, &call, NULL, &runres) < 0) {
+    int res = _run_in_interpreter(tstate, view, NULL, &call, NULL, &runres);
+    PyInterpreterView_Close(view);
+    if (res < 0) {
         if (runres.excinfo == NULL) {
             assert(_PyErr_Occurred(tstate));
             goto finally;

@@ -2732,7 +2732,8 @@ _PyXI_Enter(_PyXI_session *session,
         if (sharedns != NULL) {
             _destroy_sharedns(sharedns);
         }
-        PyErr_SetString(PyExc_InterpreterError, "interpreter is being destroyed");
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "cannot enter an interpreter that is being finalized");
         return -1;
     }
     PyInterpreterState *interp = _PyInterpreterGuard_GetInterpreter(session->guard);

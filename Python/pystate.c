@@ -3626,6 +3626,21 @@ PyInterpreterView_FromCurrent(void)
     return view;
 }
 
+PyInterpreterView *
+_PyInterpreterView_FromID(int64_t interp_id)
+{
+    assert(interp_id >= 0);
+
+    PyInterpreterView *view = PyMem_RawMalloc(sizeof(PyInterpreterView));
+    if (view == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    view->id = interp_id;
+    return view;
+}
+
 void
 PyInterpreterView_Close(PyInterpreterView *view)
 {

@@ -476,7 +476,8 @@ class DestroyTests(TestBase):
                 barrier.wait()
                 try:
                     _interpreters.run_string(interp, "x = 1")
-                except _interpreters.InterpreterError:
+                except (_interpreters.InterpreterError,
+                        PythonFinalizationError):
                     pass
 
             def destroyer():
