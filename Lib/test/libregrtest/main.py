@@ -207,7 +207,6 @@ class Regrtest:
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
-            self.want_header = True
 
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
