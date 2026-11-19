@@ -2288,6 +2288,8 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         Py_DECREF(file);
         return NULL;
     }
+    /* Keep this private list out of GC inspection during callbacks. */
+    PyObject_GC_UnTrack(parts);
     /* Keep only accumulated parts visible when a conversion fails. */
     Py_SET_SIZE(parts, 0);
     PyObject *exception, *saved_exception, *line;
