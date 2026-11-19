@@ -12,6 +12,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import types
 from collections.abc import Callable
 _winapi: types.ModuleType | None
 try:
