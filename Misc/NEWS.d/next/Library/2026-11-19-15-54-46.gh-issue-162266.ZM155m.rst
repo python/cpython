@@ -1,2 +1,2 @@
-Fix a memory leak in :func:`os.fork`, :func:`os.fork1` and
-:func:`os.forkpty` on macOS that made each following fork slower.
+Fix a memory leak in :func:`os.fork`, :func:`os.fork1` and :func:`os.forkpty`
+on macOS that made each following fork slower. Reported by Karel Bilek.
