@@ -2146,10 +2146,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # mistake) pass a string directly, which (if it's the right length)
         # will get treated like a pickle, and bypass the normal sanity
         # checks in the constructor.  This can create insane objects.
-        # The constructor doesn't want to burn the time to validate all
-        # fields, but does check the month field.  This stops, e.g.,
-        # datetime.datetime('1995-03-25') from yielding an insane object.
-        base = b'1995-03-25'
+        # The constructor validates fields (year, month, day, time).
+        # This stops, e.g., datetime.datetime('1995-03-25') from yielding an insane object.
+        base = b'\x07\xe8\x01\x01\x00\x00\x00\x00\x00\x00'
         if not issubclass(self.theclass, datetime):
             base = base[:4]
         for month_byte in b'9', b'\0', b'\r', b'\xff':
@@ -2161,10 +2160,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 self.theclass(bytes([1] * len(base)), 'EST')
 
         for ord_byte in range(1, 13):
-            # This shouldn't blow up because of the month byte alone.  If
-            # the implementation changes to do more-careful checking, it may
-            # blow up because other fields are insane.
             self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
+
+        # Arbitrary ASCII strings of matching length with out-of-range fields
+        # (e.g. '1995' or '1995-03-25') must be rejected as invalid states.
+        bad_ascii = b'1995-03-25' if issubclass(self.theclass, datetime) else b'1995'
+        self.assertRaises(TypeError, self.theclass, bad_ascii)
 
     def test_valuerror_messages(self):
         pattern = re.compile(
