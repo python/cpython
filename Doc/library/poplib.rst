@@ -110,7 +110,7 @@ POP3 Objects
 ------------
 
 All POP3 commands are represented by methods of the same name, in lowercase;
-most return the response text sent by the server.
+most return the response data sent by the server as :class:`bytes`.
 
 A :class:`POP3` instance has the following methods:
 
@@ -126,13 +126,14 @@ A :class:`POP3` instance has the following methods:
 
 .. method:: POP3.getwelcome()
 
-   Returns the greeting string sent by the POP3 server.
+   Returns the greeting sent by the POP3 server as :class:`bytes`.
 
 
 .. method:: POP3.capa()
 
    Query the server's capabilities as specified in :rfc:`2449`.
-   Returns a dictionary in the form ``{'name': ['param'...]}``.
+   Returns a dictionary of :class:`str` keys and :class:`str` parameter values
+   in the form ``{'name': ['param', ...]}``.
 
    .. versionadded:: 3.4
 
@@ -166,14 +167,17 @@ A :class:`POP3` instance has the following methods:
 
 .. method:: POP3.list([which])
 
-   Request message list, result is in the form ``(response, ['mesg_num octets',
-   ...], octets)``. If *which* is set, it is the message to list.
+   Request message list. Without *which*, the result is in the form
+   ``(response, [b'mesg_num octets', ...], octets)``; *response* and list items
+   are :class:`bytes`. If *which* is set, it is the message to list and the
+   result is a single :class:`bytes` response.
 
 
 .. method:: POP3.retr(which)
 
-   Retrieve whole message number *which*, and set its seen flag. Result is in form
-   ``(response, ['line', ...], octets)``.
+   Retrieve whole message number *which*, and set its seen flag. The result is
+   in form ``(response, [b'line', ...], octets)``. *response* and list items
+   are :class:`bytes`.
 
 
 .. method:: POP3.dele(which)
@@ -201,8 +205,8 @@ A :class:`POP3` instance has the following methods:
 .. method:: POP3.top(which, howmuch)
 
    Retrieves the message header plus *howmuch* lines of the message after the
-   header of message number *which*. Result is in form ``(response, ['line', ...],
-   octets)``.
+   header of message number *which*. The result is in form ``(response,
+   [b'line', ...], octets)``. *response* and list items are :class:`bytes`.
 
    The POP3 TOP command this method uses, unlike the RETR command, doesn't set the
    message's seen flag; unfortunately, TOP is poorly specified in the RFCs and is
@@ -212,9 +216,11 @@ A :class:`POP3` instance has the following methods:
 
 .. method:: POP3.uidl(which=None)
 
-   Return message digest (unique id) list. If *which* is specified, result contains
-   the unique id for that message in the form ``'response mesgnum uid``, otherwise
-   result is list ``(response, ['mesgnum uid', ...], octets)``.
+   Return message digest (unique id) list. If *which* is specified, the result
+   contains the unique id for that message in a single :class:`bytes` response,
+   such as ``b'+OK mesgnum uid'``. Otherwise, the result is a tuple in the form
+   ``(response, [b'mesgnum uid', ...], octets)``. *response* and list items are
+   :class:`bytes`.
 
 
 .. method:: POP3.utf8()
