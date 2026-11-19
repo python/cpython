@@ -1,0 +1,4 @@
+The buffer exported by :mod:`ctypes` arrays now provides strides if they are
+requested, as required by :pep:`3118`.  The format and the shape are now
+provided only if they are requested, and requesting a Fortran contiguous
+buffer for a multidimensional array now fails.
