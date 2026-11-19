@@ -61,10 +61,10 @@ create your own weak references directly.  The low-level machinery is
 exposed by the :mod:`!weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced. Objects which support weak references
-include class instances, functions written in Python (but not in C), instance methods,
-sets, frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
-type objects, sockets, arrays, deques, regular expression pattern objects, code
-objects, and frame objects.
+include class instances, functions written in Python, built-in functions,
+instance methods, sets, frozensets, some :term:`file objects <file object>`,
+:term:`generators <generator>`, type objects, sockets, arrays, deques,
+regular expression pattern objects, code objects, and frame objects.
 
 .. versionchanged:: 3.2
    Added support for thread.lock, threading.Lock, and code objects.
