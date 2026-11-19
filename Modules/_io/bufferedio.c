@@ -60,6 +60,11 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
     if (data == NULL)
         return NULL;
 
+    /* Non-blocking stream with no data available */
+    if (data == Py_None) {
+        return data;
+    }
+
     if (!PyBytes_Check(data)) {
         Py_DECREF(data);
         PyErr_SetString(PyExc_TypeError, "read() should return bytes");
