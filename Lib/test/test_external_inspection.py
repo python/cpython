@@ -171,7 +171,7 @@ def _wait_for_process_exec(pid, cmdline, timeout=SHORT_TIMEOUT):
     # the forked process calls execve(). Wait until the new command line is
     # visible before inspecting the process with RemoteUnwinder. Raise
     # AssertionError on timeout.
-    for _ in sleeping_retry(timeout, max_delay=0.1):
+    for _ in sleeping_retry(timeout):
         with open(f"/proc/{pid}/cmdline", "rb") as f:
             if cmdline in f.read():
                 break
