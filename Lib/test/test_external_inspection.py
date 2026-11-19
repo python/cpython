@@ -2085,9 +2085,7 @@ while True:
         server_socket = _create_server_socket(port)
         client_socket = None
         try:
-            with _managed_subprocess(
-                [sys.executable, "-c", script]
-            ) as process:
+            with _managed_subprocess([sys.executable, "-c", script]) as process:
                 client_socket, _ = server_socket.accept()
                 server_socket.close()
                 _wait_for_signal(client_socket, b"ready")
@@ -2095,8 +2093,7 @@ while True:
                 for _ in busy_retry(SHORT_TIMEOUT):
                     try:
                         unwinder = RemoteUnwinder(
-                            process.pid, native=True, gc=False,
-                            cache_frames=False,
+                            process.pid, native=True, gc=False, cache_frames=False,
                         )
                     except RuntimeError:
                         continue
@@ -2122,8 +2119,7 @@ while True:
                     if "leaf" not in names:
                         continue
                     samples += 1
-                    self.assertNotIn(("leaf", "<native>"),
-                                     zip(names, names[1:]))
+                    self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
                 self.assertGreater(samples, 1000)
         finally:
             _cleanup_sockets(server_socket, client_socket)
