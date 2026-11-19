@@ -536,9 +536,22 @@ static PyObject *
 get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
     PyObject *args[] = { NULL, operation, };  // Borrowed ref.
-    PyObject *cache = self->connection->statement_cache;
+    // Hold a strong reference: the call may run Python code (e.g. a str
+    // subclass __hash__) or let another thread run, and either may close
+    // the connection and clear the cache.
+    PyObject *cache;
+    Py_BEGIN_CRITICAL_SECTION(self->connection);
+    cache = Py_XNewRef(self->connection->statement_cache);
+    Py_END_CRITICAL_SECTION();
+    if (cache == NULL) {
+        PyErr_SetString(self->connection->state->ProgrammingError,
+                        "Cannot operate on a closed database.");
+        return NULL;
+    }
     size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
+    PyObject *stmt = PyObject_Vectorcall(cache, args + 1, nargsf, NULL);
+    Py_DECREF(cache);
+    return stmt;
 }
 
 static inline int

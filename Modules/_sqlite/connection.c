@@ -303,7 +303,8 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->autocommit = autocommit;
     self->check_same_thread = check_same_thread;
     self->thread_ident = PyThread_get_thread_ident();
-    self->statement_cache = statement_cache;
+    pysqlite_set_ref((PyObject *)self, &self->statement_cache,
+                     statement_cache);
     self->blobs = blobs;
     pysqlite_set_ref((PyObject *)self, &self->row_factory, Py_NewRef(Py_None));
     pysqlite_set_ref((PyObject *)self, &self->text_factory,
@@ -410,7 +411,7 @@ static int
 connection_clear(PyObject *op)
 {
     pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
-    Py_CLEAR(self->statement_cache);
+    pysqlite_set_ref(op, &self->statement_cache, NULL);
     Py_CLEAR(self->blobs);
     pysqlite_set_ref(op, &self->row_factory, NULL);
     pysqlite_set_ref(op, &self->text_factory, NULL);
@@ -709,7 +710,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     }
 
     pysqlite_close_all_blobs(self);
-    Py_CLEAR(self->statement_cache);
+    pysqlite_set_ref((PyObject *)self, &self->statement_cache, NULL);
     if (connection_close(self) < 0) {
         return NULL;
     }

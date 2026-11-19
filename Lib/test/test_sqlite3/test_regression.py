@@ -277,6 +277,18 @@ class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
             cur.executemany("insert into b (baz) values (?)",
                             ((i,) for i in foo()))
 
+    def test_close_during_statement_cache_lookup(self):
+        # The statement cache hashes the SQL string, which can run Python
+        # code. Closing the connection there must not crash.
+        with memory_database() as con:
+            class SQL(str):
+                def __hash__(self):
+                    con.close()
+                    return super().__hash__()
+
+            with self.assertRaises(sqlite.ProgrammingError):
+                con.execute(SQL("select 1"))
+
     def test_convert_timestamp_microsecond_padding(self):
         """
         http://bugs.python.org/issue14720
