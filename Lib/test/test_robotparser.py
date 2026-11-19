@@ -875,5 +875,23 @@ class NetworkTestCase(unittest.TestCase):
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
 
+
+class RepeatedUserAgentPerformanceTest(unittest.TestCase):
+    """Parsing many identical ``User-agent:`` lines must stay linear."""
+
+    def test_many_duplicate_user_agents(self):
+        import time
+        body = ("User-agent: evil\n" * 50_000) + "Disallow: /\n"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.modified()
+        start = time.perf_counter()
+        parser.parse(body.splitlines())
+        elapsed = time.perf_counter() - start
+        self.assertLess(elapsed, 5.0,
+                        f"parse of 50_000 duplicate User-agent lines "
+                        f"took {elapsed:.3f}s")
+        self.assertFalse(parser.can_fetch("evil", "/"))
+
+
 if __name__=='__main__':
     unittest.main()
