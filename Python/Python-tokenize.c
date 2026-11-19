@@ -206,7 +206,11 @@ _get_col_offsets(tokenizeriterobject *it, const struct token *token,
 
     if (token_end >= view->end_line_start) {
         Py_ssize_t end_byte_offset = token_end - view->end_line_start;
-        if (lineno == end_lineno) {
+        // byte_offset is -1 when the token starts before the current line's
+        // span, as an INDENT token does when the tokenizer still holds
+        // earlier lines in its buffer. The callee reads data[col_offset],
+        // so a negative offset would read before the line's buffer.
+        if (lineno == end_lineno && byte_offset >= 0) {
             // Avoid rescanning the prefix of a very long line.
             Py_ssize_t token_col_offset = _PyPegen_byte_offset_to_character_offset_line(line, byte_offset, end_byte_offset);
             if (token_col_offset < 0) {

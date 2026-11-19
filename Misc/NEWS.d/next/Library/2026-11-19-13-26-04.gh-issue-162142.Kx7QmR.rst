@@ -1,0 +1,5 @@
+Fix a one-byte heap over-read in the tokenizer: ``_get_col_offsets`` could
+pass a byte offset of ``-1`` to
+``_PyPegen_byte_offset_to_character_offset_line`` when an ``INDENT`` token
+started before the current line, which then read one byte before the line
+buffer. The same-line fast path now skips the call for a negative offset.

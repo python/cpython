@@ -2687,6 +2687,24 @@ class CTokenizeTest(TestCase):
                         self._get_tokens(source, extra_tokens=extra_tokens)
                     self.assertEqual(caught.exception.args, error)
 
+    def test_fstring_unmatched_paren_before_indent(self):
+        # gh-162142: on 3.15.1 this input reached _get_col_offsets with a
+        # byte offset of -1 for the INDENT token, and the same-line fast
+        # path passed it to _PyPegen_byte_offset_to_character_offset_line,
+        # which read one byte before the line buffer. The mismatched
+        # bracket is now a TokenError before any INDENT is produced, so
+        # the over-read no longer triggers on main, but keep the input
+        # covered as a regression test for the guard in _get_col_offsets.
+        source = 'f"{)\n \u00e9\n'
+        for extra_tokens in (False, True):
+            with self.subTest(extra_tokens=extra_tokens):
+                with self.assertRaises(tokenize.TokenError) as caught:
+                    self._get_tokens(source, extra_tokens=extra_tokens)
+                self.assertEqual(
+                    caught.exception.args,
+                    ("f-string: unmatched ')'", (1, 4)),
+                )
+
     def test_int(self):
 
         self.check_tokenize('0xff <= 255', """\
