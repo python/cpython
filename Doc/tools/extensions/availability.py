@@ -46,7 +46,13 @@ _THREADING = frozenset({
     # POSIX platforms with pthreads
     "pthreads",
 })
-KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING
+_SSL_BACKENDS = frozenset({
+    "OpenSSL",
+    "AWS-LC",
+    "LibreSSL",
+    "BoringSSL",
+})
+KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING | _SSL_BACKENDS
 
 
 class Availability(SphinxDirective):
