@@ -525,8 +525,9 @@ There are three different types of interpreters to choose from based on compiler
    [preserve_none](https://clang.llvm.org/docs/AttributeReference.html#preserve-none)
    calling convention between the small C functions that implement individual Python opcodes.
 
-   Not all compilers support these and if they do not all targets might be supported (for example,
-   MSVC currently only supports x64 and only in optimized builds).
+   Support depends on the compiler and target architecture. With MSVC, the
+   tail-calling interpreter is available only in optimized builds. The minimum
+   MSVC version is 14.50 for x64 and 14.52 for ARM64.
 
    In addition, compilers must do [escape analysis](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html#index-musttail)
    of the lifetimes of automatic variables, function parameters, and temporaries to ensure proper tail-calls. They
