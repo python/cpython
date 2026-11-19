@@ -114,6 +114,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_exec_prefix")),
     SPEC(base_executable, WSTR_OPT, PUBLIC, SYS_ATTR("_base_executable")),
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
+    SPEC(build_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("build_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
     SPEC(cpu_count, INT, PUBLIC, NO_SYS),
     SPEC(lazy_imports, INT, PUBLIC, NO_SYS),
@@ -1088,6 +1089,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
+    CLEAR(config->build_prefix);
     CLEAR(config->platlibdir);
     CLEAR(config->sys_path_0);
 
@@ -3965,6 +3967,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(_base_executable);
     DUMP_SYS(base_prefix);
     DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(build_prefix);
     DUMP_SYS(platlibdir);
     DUMP_SYS(executable);
     DUMP_SYS(prefix);
