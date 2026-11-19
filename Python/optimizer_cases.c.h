@@ -1888,8 +1888,17 @@
 
         case _GET_AWAITABLE: {
             JitOptRef iter;
+            JitOptRef null;
+            JitOptRef none;
             iter = sym_new_not_null(ctx);
+            null = PyJitRef_Borrow(sym_new_null(ctx));
+            none = PyJitRef_Borrow(sym_new_const(ctx, Py_None));
+            CHECK_STACK_BOUNDS(2);
             stack_pointer[-1] = iter;
+            stack_pointer[0] = null;
+            stack_pointer[1] = none;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

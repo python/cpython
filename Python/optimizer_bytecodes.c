@@ -2772,6 +2772,12 @@ dummy_func(void) {
         }
     }
 
+    op(_GET_AWAITABLE, (iterable -- iter, null, none)) {
+        iter = sym_new_not_null(ctx);
+        null = PyJitRef_Borrow(sym_new_null(ctx));
+        none = PyJitRef_Borrow(sym_new_const(ctx, Py_None));
+    }
+
 // END BYTECODES //
 
 }
