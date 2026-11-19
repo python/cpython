@@ -261,6 +261,48 @@ class TestPrint(unittest.TestCase):
         self.assertEqual(file.writes, ['first', ' ', 'second', '\n'])
         self.assertEqual(file.flushes, 1)
 
+    @support.nomemtest
+    def test_print_textio_allocation_error(self):
+        import _testcapi
+
+        class Value:
+            def __str__(self):
+                # Fail the first allocation used to prepare the output.
+                _testcapi.set_nomemory(0, 1)
+                return 'second'
+
+        for encoding in ['ascii', 'latin-1', 'utf-8', 'utf-16', 'iso2022_jp']:
+            with self.subTest(encoding=encoding):
+                raw = io.BytesIO()
+                with io.TextIOWrapper(raw, encoding=encoding,
+                                      newline='\n') as file:
+                    try:
+                        with self.assertRaises(MemoryError):
+                            print('first', Value(), file=file, flush=True)
+                    finally:
+                        _testcapi.remove_mem_hooks()
+                    self.assertEqual(raw.getvalue(),
+                                     'first second\n'.encode(encoding))
+
+    def test_print_textio_memory_error_after_write(self):
+        import tempfile
+
+        error = MemoryError('cannot write')
+        writes = []
+
+        def write(data):
+            writes.append(data)
+            raise error
+
+        with tempfile.TemporaryFile() as buffer:
+            with io.TextIOWrapper(buffer, encoding='utf-8', newline='\n',
+                                  line_buffering=True) as file:
+                buffer.write = write
+                with self.assertRaises(MemoryError) as cm:
+                    print('first', 'second', file=file)
+                self.assertIs(cm.exception, error)
+                self.assertEqual(writes, [b'first second\n'])
+
     def test_print_textio_encodings(self):
         cases = [
             ('ascii', ('first', 'second', 'a\0b')),

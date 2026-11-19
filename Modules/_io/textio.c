@@ -1949,7 +1949,6 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 static int
 textiowrapper_write_list(textio *self, PyObject *strlist)
 {
-    PyObject *line, *result;
     if (self->dict != NULL) {
         PyObject *dict = Py_NewRef(self->dict);
         int overridden = PyDict_Contains(dict, &_Py_ID(write));
@@ -1958,13 +1957,20 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
             return overridden < 0 ? -1 : 0;
         }
     }
+    /* A custom buffer's closed getter can run Python code. Let write()
+       check it once, after the caller has joined the strings. */
+    if (self->raw == NULL &&
+        (self->buffer == NULL ||
+         !Py_IS_TYPE(self->buffer, self->state->PyBytesIO_Type))) {
+        return 0;
+    }
     if (textiowrapper_check_write(self) == NULL) {
         return -1;
     }
 
     /* Stateful codecs must see the whole string. */
     if (!is_asciicompat_encoding(self->encodefunc)) {
-        goto fallback;
+        return 0;
     }
 
     /* Reserve the known byte lengths up front to avoid repeatedly copying
@@ -1981,18 +1987,18 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
         }
         if (size > PY_SSIZE_T_MAX - capacity) {
             PyErr_NoMemory();
-            return -1;
+            return -2;
         }
         capacity += size;
     }
     PyBytesWriter *writer = PyBytesWriter_Create(capacity);
     if (writer == NULL) {
-        return -1;
+        return -2;
     }
     /* Reset the logical size while keeping the reserved allocation. */
     if (PyBytesWriter_Resize(writer, 0) < 0) {
         PyBytesWriter_Discard(writer);
-        return -1;
+        return -2;
     }
     int needflush = 0;
     if (self->line_buffering) {
@@ -2035,7 +2041,7 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
                         Py_UCS4 ch = PyUnicode_READ(kind, unicode_data, j);
                         if (Py_UNICODE_IS_SURROGATE(ch)) {
                             PyBytesWriter_Discard(writer);
-                            goto fallback;
+                            return 0;
                         }
                     }
                 }
@@ -2043,7 +2049,7 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
                 encoded = _PyUnicode_AsUTF8String(text, "strict");
                 if (encoded == NULL) {
                     PyBytesWriter_Discard(writer);
-                    return -1;
+                    return -2;
                 }
                 data = PyBytes_AS_STRING(encoded);
                 size = PyBytes_GET_SIZE(encoded);
@@ -2052,7 +2058,7 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
         else {
             /* An ASCII or Latin-1 encoding error needs the joined string. */
             PyBytesWriter_Discard(writer);
-            goto fallback;
+            return 0;
         }
         int res = 0;
         if (writenl != NULL) {
@@ -2075,30 +2081,17 @@ textiowrapper_write_list(textio *self, PyObject *strlist)
         Py_XDECREF(encoded);
         if (res < 0) {
             PyBytesWriter_Discard(writer);
-            return -1;
+            return -2;
         }
     }
     PyObject *b = PyBytesWriter_Finish(writer);
     if (b == NULL) {
-        return -1;
+        return -2;
     }
     self->encoding_start_of_stream = 0;
     if (textiowrapper_write_bytes(self, b, needflush, self->write_through) < 0) {
         return -1;
     }
-    return 1;
-
-fallback:
-    line = PyUnicode_Join(&_Py_STR(empty), strlist);
-    if (line == NULL) {
-        return -1;
-    }
-    result = textiowrapper_write_text(self, line);
-    Py_DECREF(line);
-    if (result == NULL) {
-        return -1;
-    }
-    Py_DECREF(result);
     return 1;
 }
 

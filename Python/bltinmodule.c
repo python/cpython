@@ -2326,6 +2326,9 @@ write:
 
     int written = _PyTextIOWrapper_WriteList(file, parts);
     if (written < 0) {
+        if (written == -2 && PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            goto write_parts;
+        }
         goto done;
     }
     if (written) {
@@ -2340,20 +2343,21 @@ write:
             goto done;
         }
         Py_DECREF(result);
+        goto flush;
     }
-    else {
-        /* If joining fails (usually from lack of memory), try writing the
-           parts separately before propagating the exception. */
-        Py_XSETREF(exception, PyErr_GetRaisedException());
-        PyErr_SetHandledException(exception);
-        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(parts); i++) {
-            PyObject *result = PyObject_CallMethodOneArg(
-                file, &_Py_ID(write), PyList_GET_ITEM(parts, i));
-            if (result == NULL) {
-                goto done;
-            }
-            Py_DECREF(result);
+
+write_parts:
+    /* If preparing the output fails (usually from lack of memory), try
+       writing the parts separately before propagating the exception. */
+    Py_XSETREF(exception, PyErr_GetRaisedException());
+    PyErr_SetHandledException(exception);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(parts); i++) {
+        PyObject *result = PyObject_CallMethodOneArg(
+            file, &_Py_ID(write), PyList_GET_ITEM(parts, i));
+        if (result == NULL) {
+            goto done;
         }
+        Py_DECREF(result);
     }
 
 flush:
