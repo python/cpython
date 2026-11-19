@@ -106,6 +106,7 @@ static const char PyCursesVersion[] = "2.2";
 
 #define CURSES_MODULE
 #include "py_curses.h"
+#include "pycore_curses.h"
 
 #ifdef HAVE_TERM_H
 /* For termname, longname, putp, tigetflag, tigetnum, tigetstr, tparm
@@ -9273,15 +9274,16 @@ static void *
 curses_capi_new(cursesmodule_state *state)
 {
     assert(state->window_type != NULL);
-    void **capi = (void **)PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
+    PyCurses_CAPI *capi = PyMem_Malloc(sizeof(PyCurses_CAPI));
     if (capi == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    capi[0] = (void *)Py_NewRef(state->window_type);
-    capi[1] = curses_capi_setupterm_called;
-    capi[2] = curses_capi_initscr_called;
-    capi[3] = curses_capi_start_color_called;
+    /* Initialize the C API struct */
+    capi->window_type = (PyTypeObject *)Py_NewRef(state->window_type);
+    capi->setup_term_called = curses_capi_setupterm_called;
+    capi->initialized = curses_capi_initscr_called;
+    capi->initialized_color = curses_capi_start_color_called;
     return (void *)capi;
 }
 
@@ -9289,10 +9291,11 @@ static void
 curses_capi_free(void *capi)
 {
     assert(capi != NULL);
-    void **capi_ptr = (void **)capi;
-    // In free-threaded builds, capi_ptr[0] may have been already cleared
-    // by curses_capi_capsule_destructor(), hence the use of Py_XDECREF().
-    Py_XDECREF(capi_ptr[0]); // decref curses window type
+    PyCurses_CAPI *capi_ptr = (PyCurses_CAPI *)capi;
+    // In free-threaded builds, capi_ptr->window_type may have been already
+    // cleared by curses_capi_capsule_destructor(), hence the use of
+    // Py_XDECREF().
+    Py_XDECREF(capi_ptr->window_type); // decref curses window type
     PyMem_Free(capi_ptr);
 }
 
@@ -9308,18 +9311,18 @@ curses_capi_capsule_destructor(PyObject *op)
 static int
 curses_capi_capsule_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    void **capi_ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    PyCurses_CAPI *capi_ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
     assert(capi_ptr != NULL);
-    Py_VISIT(capi_ptr[0]);  // visit curses window type
+    Py_VISIT(capi_ptr->window_type);  // visit curses window type
     return 0;
 }
 
 static int
 curses_capi_capsule_clear(PyObject *op)
 {
-    void **capi_ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    PyCurses_CAPI *capi_ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
     assert(capi_ptr != NULL);
-    Py_CLEAR(capi_ptr[0]);  // clear curses window type
+    Py_CLEAR(capi_ptr->window_type);  // clear curses window type
     return 0;
 }
 
