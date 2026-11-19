@@ -289,6 +289,58 @@ class SocketServerTest(unittest.TestCase):
                 socketserver.TCPServer((HOST, -1),
                                        socketserver.StreamRequestHandler)
 
+    def test_port_zero_no_reuse_address(self):
+        # gh-162256: binding port 0 must not set SO_REUSEADDR, or another
+        # process could claim the port between bind() and listen().
+        class MyServer(socketserver.TCPServer):
+            allow_reuse_address = True
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler,
+                          bind_and_activate=False)
+        try:
+            server.server_bind()
+            self.assertEqual(server.socket.getsockopt(socket.SOL_SOCKET,
+                                                     socket.SO_REUSEADDR), 0)
+            port = server.server_address[1]
+            other = socket.socket()
+            try:
+                other.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                with self.assertRaises(OSError):
+                    other.bind((HOST, port))
+            finally:
+                other.close()
+            server.server_activate()
+        finally:
+            server.server_close()
+
+        if socket_helper.IPV6_ENABLED:
+            class MyServer6(socketserver.TCPServer):
+                address_family = socket.AF_INET6
+                allow_reuse_address = True
+
+            server = MyServer6(('::1', 0), socketserver.StreamRequestHandler,
+                               bind_and_activate=False)
+            try:
+                server.server_bind()
+                self.assertEqual(server.socket.getsockopt(
+                    socket.SOL_SOCKET, socket.SO_REUSEADDR), 0)
+                server.server_activate()
+            finally:
+                server.server_close()
+
+        # A fixed port still gets SO_REUSEADDR.
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        port = server.server_address[1]
+        server.server_close()
+        server = MyServer((HOST, port), socketserver.StreamRequestHandler,
+                          bind_and_activate=False)
+        try:
+            server.server_bind()
+            self.assertEqual(server.socket.getsockopt(socket.SOL_SOCKET,
+                                                     socket.SO_REUSEADDR), 1)
+        finally:
+            server.server_close()
+
     def test_context_manager(self):
         with socketserver.TCPServer((HOST, 0),
                                     socketserver.StreamRequestHandler) as server:
