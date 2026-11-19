@@ -1387,6 +1387,31 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         td = SubclassDate(2010, 10, day=10)
         self.assertEqual(repr(td), "SubclassDate(2010, 10, 10)")
 
+    def test_unpickle_invalid_state(self):
+        # gh-160358: Out-of-range year and day states must not create
+        # corrupted date/datetime objects or cause assertion failures.
+        is_date = (self.theclass is date or issubclass(self.theclass, date) and not issubclass(self.theclass, datetime))
+        suffix = b"" if is_date else b"\x00\x00\x00\x00\x00\x00"
+
+        invalid_states = [
+            b'\x00\x00\x01\x01' + suffix,  # year 0
+            b'\x27\x10\x01\x01' + suffix,  # year 10000 (MAXYEAR is 9999)
+            b'\x07\xe8\x01\x00' + suffix,  # day 0
+            b'\x07\xe8\x01\x20' + suffix,  # day 32 in Jan
+            b'\x07\xe8\x02\x1e' + suffix,  # day 30 in Feb (leap year 2024)
+            b'\x07\xe7\x02\x1d' + suffix,  # day 29 in Feb (non-leap year 2023)
+        ]
+        if not is_date:
+            invalid_states.extend([
+                b'\x07\xe8\x01\x01\x18\x00\x00\x00\x00\x00',  # hour 24
+                b'\x07\xe8\x01\x01\x00\x3c\x00\x00\x00\x00',  # minute 60
+                b'\x07\xe8\x01\x01\x00\x00\x3c\x00\x00\x00',  # second 60
+                b'\x07\xe8\x01\x01\x00\x00\x00\x0f\x42\x40',  # microsecond 1000000
+            ])
+        for state in invalid_states:
+            with self.subTest(state=state):
+                self.assertRaises(TypeError, self.theclass, state)
+
     def test_ordinal_conversions(self):
         # Check some fixed values.
         for y, m, d, n in [(1, 1, 1, 1),      # calendar origin

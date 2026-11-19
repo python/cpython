@@ -449,6 +449,14 @@ days_in_month(int year, int month)
         return _days_in_month[month];
 }
 
+static inline int
+date_state_is_sane(int year, int month, int day)
+{
+    return (year >= MINYEAR && year <= MAXYEAR &&
+            month >= 1 && month <= 12 &&
+            day >= 1 && day <= days_in_month(year, month));
+}
+
 /* year, month -> number of days in year preceding first day of month */
 static int
 days_before_month(int year, int month)
@@ -3260,30 +3268,37 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyTuple_GET_SIZE(args) == 1) {
         PyObject *state = PyTuple_GET_ITEM(args, 0);
         if (PyBytes_Check(state)) {
-            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
-                MONTH_IS_SANE(PyBytes_AS_STRING(state)[2]))
-            {
-                return date_from_pickle(type, state);
+            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE) {
+                const unsigned char *data = (const unsigned char *)PyBytes_AS_STRING(state);
+                int year = (data[0] << 8) | data[1];
+                int month = data[2];
+                int day = data[3];
+                if (date_state_is_sane(year, month, day)) {
+                    return date_from_pickle(type, state);
+                }
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE &&
-                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2)))
-            {
-                state = PyUnicode_AsLatin1String(state);
-                if (state == NULL) {
-                    if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
-                        /* More informative error message. */
-                        PyErr_SetString(PyExc_ValueError,
-                            "Failed to encode latin1 string when unpickling "
-                            "a date object. "
-                            "pickle.load(data, encoding='latin1') is assumed.");
+            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATE_DATASIZE) {
+                int year = (PyUnicode_READ_CHAR(state, 0) << 8) | PyUnicode_READ_CHAR(state, 1);
+                int month = PyUnicode_READ_CHAR(state, 2);
+                int day = PyUnicode_READ_CHAR(state, 3);
+                if (date_state_is_sane(year, month, day)) {
+                    state = PyUnicode_AsLatin1String(state);
+                    if (state == NULL) {
+                        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                            /* More informative error message. */
+                            PyErr_SetString(PyExc_ValueError,
+                                "Failed to encode latin1 string when unpickling "
+                                "a date object. "
+                                "pickle.load(data, encoding='latin1') is assumed.");
+                        }
+                        return NULL;
                     }
-                    return NULL;
+                    PyObject *self = date_from_pickle(type, state);
+                    Py_DECREF(state);
+                    return self;
                 }
-                PyObject *self = date_from_pickle(type, state);
-                Py_DECREF(state);
-                return self;
             }
         }
     }
@@ -5570,30 +5585,51 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             tzinfo = PyTuple_GET_ITEM(args, 1);
         }
         if (PyBytes_Check(state)) {
-            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
-                MONTH_IS_SANE(PyBytes_AS_STRING(state)[2] & 0x7F))
-            {
-                return datetime_from_pickle(type, state, tzinfo);
+            if (PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE) {
+                const unsigned char *data = (const unsigned char *)PyBytes_AS_STRING(state);
+                int year = (data[0] << 8) | data[1];
+                int month = data[2] & 0x7F;
+                int day = data[3];
+                int hour = data[4];
+                int minute = data[5];
+                int second = data[6];
+                int usecond = (data[7] << 16) | (data[8] << 8) | data[9];
+                if (date_state_is_sane(year, month, day) &&
+                    hour < 24 && minute < 60 && second < 60 && usecond < 1000000)
+                {
+                    return datetime_from_pickle(type, state, tzinfo);
+                }
             }
         }
         else if (PyUnicode_Check(state)) {
-            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE &&
-                MONTH_IS_SANE(PyUnicode_READ_CHAR(state, 2) & 0x7F))
-            {
-                state = PyUnicode_AsLatin1String(state);
-                if (state == NULL) {
-                    if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
-                        /* More informative error message. */
-                        PyErr_SetString(PyExc_ValueError,
-                            "Failed to encode latin1 string when unpickling "
-                            "a datetime object. "
-                            "pickle.load(data, encoding='latin1') is assumed.");
+            if (PyUnicode_GET_LENGTH(state) == _PyDateTime_DATETIME_DATASIZE) {
+                int year = (PyUnicode_READ_CHAR(state, 0) << 8) | PyUnicode_READ_CHAR(state, 1);
+                int month = PyUnicode_READ_CHAR(state, 2) & 0x7F;
+                int day = PyUnicode_READ_CHAR(state, 3);
+                int hour = PyUnicode_READ_CHAR(state, 4);
+                int minute = PyUnicode_READ_CHAR(state, 5);
+                int second = PyUnicode_READ_CHAR(state, 6);
+                int usecond = (PyUnicode_READ_CHAR(state, 7) << 16) |
+                              (PyUnicode_READ_CHAR(state, 8) << 8) |
+                              PyUnicode_READ_CHAR(state, 9);
+                if (date_state_is_sane(year, month, day) &&
+                    hour < 24 && minute < 60 && second < 60 && usecond < 1000000)
+                {
+                    state = PyUnicode_AsLatin1String(state);
+                    if (state == NULL) {
+                        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+                            /* More informative error message. */
+                            PyErr_SetString(PyExc_ValueError,
+                                "Failed to encode latin1 string when unpickling "
+                                "a datetime object. "
+                                "pickle.load(data, encoding='latin1') is assumed.");
+                        }
+                        return NULL;
                     }
-                    return NULL;
+                    PyObject *self = datetime_from_pickle(type, state, tzinfo);
+                    Py_DECREF(state);
+                    return self;
                 }
-                PyObject *self = datetime_from_pickle(type, state, tzinfo);
-                Py_DECREF(state);
-                return self;
             }
         }
     }
