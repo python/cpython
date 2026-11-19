@@ -2068,46 +2068,61 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         "Test only runs on Linux with process_vm_readv support",
     )
     def test_popping_python_frame_is_not_native(self):
-        script = """\
+        port = find_unused_port()
+        script = f"""\
+import socket
+
 def leaf(depth):
     if depth:
         leaf(depth - 1)
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+sock.sendall(b"ready")
 while True:
         leaf(300)
 """
-        with _managed_subprocess([sys.executable, "-c", script]) as process:
-            for _ in busy_retry(SHORT_TIMEOUT):
-                try:
-                    unwinder = RemoteUnwinder(
-                        process.pid, native=True, gc=False, cache_frames=False,
-                    )
-                except RuntimeError:
-                    continue
-                break
-            # The unwinder can attach before the main loop starts.
-            _get_stack_trace_with_retry(
-                unwinder,
-                condition=lambda trace: trace[0].threads and any(
-                    frame.funcname == "leaf"
-                    for frame in trace[0].threads[0].frame_info
-                ),
-            )
-            samples = 0
-            for _ in range(10_000):
-                try:
-                    threads = unwinder.get_stack_trace()[0].threads
-                except TRANSIENT_ERRORS:
-                    continue
-                if not threads:
-                    continue
-                frames = threads[0].frame_info
-                names = [frame.funcname for frame in frames]
-                if "leaf" not in names:
-                    continue
-                samples += 1
-                self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
-            self.assertGreater(samples, 1000)
+        server_socket = _create_server_socket(port)
+        client_socket = None
+        try:
+            with _managed_subprocess([sys.executable, "-c", script]) as process:
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                _wait_for_signal(client_socket, b"ready")
+
+                for _ in busy_retry(SHORT_TIMEOUT):
+                    try:
+                        unwinder = RemoteUnwinder(
+                            process.pid, native=True, gc=False, cache_frames=False,
+                        )
+                    except RuntimeError:
+                        continue
+                    break
+                # The unwinder can attach before the main loop starts.
+                _get_stack_trace_with_retry(
+                    unwinder,
+                    condition=lambda trace: trace[0].threads and any(
+                        frame.funcname == "leaf"
+                        for frame in trace[0].threads[0].frame_info
+                    ),
+                )
+                samples = 0
+                for _ in range(10_000):
+                    try:
+                        threads = unwinder.get_stack_trace()[0].threads
+                    except TRANSIENT_ERRORS:
+                        continue
+                    if not threads:
+                        continue
+                    frames = threads[0].frame_info
+                    names = [frame.funcname for frame in frames]
+                    if "leaf" not in names:
+                        continue
+                    samples += 1
+                    self.assertNotIn(("leaf", "<native>"), zip(names, names[1:]))
+                self.assertGreater(samples, 1000)
+        finally:
+            _cleanup_sockets(server_socket, client_socket)
 
     @skip_if_not_supported
     @unittest.skipIf(
