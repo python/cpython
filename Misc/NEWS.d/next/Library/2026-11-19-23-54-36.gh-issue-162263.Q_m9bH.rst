@@ -1,0 +1,4 @@
+Fix :mod:`urllib.robotparser` ending a group at a ``Crawl-delay`` or
+``Request-rate`` line. The rules of the group now apply to all of its
+user agents, as :rfc:`9309` requires, while the crawl delay and request
+rate still apply only to the user agents listed directly before them.
