@@ -334,7 +334,7 @@ the module-level functions described above.
       The :attr:`~BaseException.__notes__` value from the original exception,
       or ``None``
       if the exception does not have any notes. If it is not ``None``
-      is it formatted in the traceback after the exception string.
+      it is formatted in the traceback after the exception string.
 
       .. versionadded:: 3.11
 
