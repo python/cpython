@@ -2171,7 +2171,6 @@ ndarray_tobytes(PyObject *self, PyObject *dummy)
     Py_buffer *src = &ndbuf->base;
     Py_buffer dest;
     PyObject *ret = NULL;
-    char *mem;
 
     if (ND_C_CONTIGUOUS(ndbuf->flags))
         return PyBytes_FromStringAndSize(src->buf, src->len);
@@ -2180,14 +2179,13 @@ ndarray_tobytes(PyObject *self, PyObject *dummy)
     assert(src->strides != NULL);
     assert(src->ndim > 0);
 
-    mem = PyMem_Malloc(src->len);
-    if (mem == NULL) {
-        PyErr_NoMemory();
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
     dest = *src;
-    dest.buf = mem;
+    dest.buf = PyBytesWriter_GetData(writer);
     dest.suboffsets = NULL;
     dest.strides = strides_from_shape(ndbuf, 0);
     if (dest.strides == NULL)
@@ -2195,11 +2193,12 @@ ndarray_tobytes(PyObject *self, PyObject *dummy)
     if (copy_buffer(&dest, src) < 0)
         goto out;
 
-    ret = PyBytes_FromStringAndSize(mem, src->len);
+    ret = PyBytesWriter_Finish(writer);
+    writer = NULL;
 
 out:
     PyMem_XFree(dest.strides);
-    PyMem_Free(mem);
+    PyBytesWriter_Discard(writer);
     return ret;
 }
 
@@ -2445,7 +2444,7 @@ py_buffer_to_contiguous(PyObject *self, PyObject *args)
     int flags;
     char ord;
     Py_buffer view;
-    char *buf = NULL;
+    PyBytesWriter *writer = NULL;
 
     if (!PyArg_ParseTuple(args, "OOi", &obj, &order, &flags)) {
         return NULL;
@@ -2460,21 +2459,21 @@ py_buffer_to_contiguous(PyObject *self, PyObject *args)
         goto out;
     }
 
-    buf = PyMem_Malloc(view.len);
-    if (buf == NULL) {
-        PyErr_NoMemory();
+    writer = PyBytesWriter_Create(view.len);
+    if (writer == NULL) {
         goto out;
     }
 
-    if (PyBuffer_ToContiguous(buf, &view, view.len, ord) < 0) {
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer), &view, view.len, ord) < 0) {
         goto out;
     }
 
-    ret = PyBytes_FromStringAndSize(buf, view.len);
+    ret = PyBytesWriter_Finish(writer);
+    writer = NULL;
 
 out:
     PyBuffer_Release(&view);
-    PyMem_XFree(buf);
+    PyBytesWriter_Discard(writer);
     return ret;
 }
 
