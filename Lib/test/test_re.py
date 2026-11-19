@@ -902,6 +902,25 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
+    def test_property_escapes_in_ignorecase_sets(self):
+        cases = (
+            (r'[\p{Lu}x]', 'A', True),
+            (r'[\p{Lu}x]', 'a', False),
+            (r'[\p{Lu}x]', 'X', True),
+            (r'[\p{Lu}x]', 'x', True),
+            (r'[^\p{Lu}x]', 'A', False),
+            (r'[^\p{Lu}x]', 'a', True),
+            (r'[\P{Lu}a-c]', 'Z', False),
+            (r'[\P{Lu}a-c]', 'B', True),
+            (r'[\p{Lowercase}x]', 'A', False),
+            (r'[\p{Lt}x]', '\u01c5', True),
+        )
+        for flags in (re.IGNORECASE, re.IGNORECASE | re.ASCII):
+            for pattern, text, matches in cases:
+                with self.subTest(pattern=pattern, text=text, flags=flags):
+                    self.assertEqual(bool(re.fullmatch(pattern, text, flags)),
+                                     matches)
+
     def test_property_escapes(self):
         import unicodedata
         # Properties that reuse the engine categories behave exactly like

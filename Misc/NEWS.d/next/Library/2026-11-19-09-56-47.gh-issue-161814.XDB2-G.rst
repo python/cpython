@@ -1,0 +1,2 @@
+Fix Unicode property matching in :mod:`re` case-insensitive character sets
+that also contain literals or ranges.
