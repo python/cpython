@@ -3065,12 +3065,7 @@ class PathTest(PurePathTest):
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
-        if sys.platform == "emscripten":
-            # Emscripten will return ELOOP if there are 49 or more ..'s.
-            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
-            NDOTDOTS = 48
-        else:
-            NDOTDOTS = 50
+        NDOTDOTS = 50
         self.assertEqual(set(p.glob("/".join([".."] * NDOTDOTS))), { P(self.base, *[".."] * NDOTDOTS)})
 
     def test_glob_inaccessible(self):

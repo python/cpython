@@ -2395,6 +2395,25 @@ _io_BufferedRWPair_read1_impl(rwpair *self, PyObject *size)
 }
 
 /*[clinic input]
+_io.BufferedRWPair.readline
+    size: object(c_default="NULL") = -1
+    /
+
+Read and return a line from the stream.
+
+If size is specified, at most size bytes will be read.
+
+The line terminator is always b'\n'.
+[clinic start generated code]*/
+
+static PyObject *
+_io_BufferedRWPair_readline_impl(rwpair *self, PyObject *size)
+/*[clinic end generated code: output=ee5bb2364231e6e1 input=1c552272a69db1ad]*/
+{
+    return _forward_call(self->reader, &_Py_ID(readline), size);
+}
+
+/*[clinic input]
 _io.BufferedRWPair.readinto
     buffer: object
     /
@@ -2735,6 +2754,7 @@ static PyMethodDef bufferedrwpair_methods[] = {
     _IO_BUFFEREDRWPAIR_READ_METHODDEF
     _IO_BUFFEREDRWPAIR_PEEK_METHODDEF
     _IO_BUFFEREDRWPAIR_READ1_METHODDEF
+    _IO_BUFFEREDRWPAIR_READLINE_METHODDEF
     _IO_BUFFEREDRWPAIR_READINTO_METHODDEF
     _IO_BUFFEREDRWPAIR_READINTO1_METHODDEF
 
