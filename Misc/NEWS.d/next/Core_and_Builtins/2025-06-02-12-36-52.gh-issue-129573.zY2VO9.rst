@@ -1,0 +1,1 @@
+Avoid possible abort when getting suggestions and there are non-string candidates.
