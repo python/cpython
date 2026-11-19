@@ -7666,6 +7666,7 @@ dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_CURSES_]m4_toupper($1)], [$3]))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
@@ -7684,6 +7685,13 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
+])
+
+dnl PY_CHECK_CURSES_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_CURSES_FUNC but define macro _Py_HAVE_CURSES_xxx,
+dnl instead of HAVE_CURSES_xxx
+AC_DEFUN([PY_CHECK_CURSES_FUNC_PRIVATE],
+[ PY_CHECK_CURSES_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_CURSES_]m4_toupper($1)], [$3]))
 ])
 
 dnl PY_CHECK_CURSES_VAR(VARIABLE)
@@ -7718,35 +7726,36 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
-PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
-PY_CHECK_CURSES_FUNC([has_mouse])
-PY_CHECK_CURSES_FUNC([is_keypad])
-PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
-PY_CHECK_CURSES_FUNC([new_prescr])
-PY_CHECK_CURSES_FUNC([use_screen])
-PY_CHECK_CURSES_FUNC([use_window])
-PY_CHECK_CURSES_FUNC([key_defined])
-PY_CHECK_CURSES_FUNC([term_attrs])
-PY_CHECK_CURSES_FUNC([define_key])
-PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 dnl The X/Open attr_t and soft-label attribute functions are absent on old
 dnl SVr4 curses (e.g. illumos).
-PY_CHECK_CURSES_FUNC([wattr_get])
-PY_CHECK_CURSES_FUNC([wattr_set])
-PY_CHECK_CURSES_FUNC([wattr_on])
-PY_CHECK_CURSES_FUNC([wattr_off])
-PY_CHECK_CURSES_FUNC([wcolor_set])
-PY_CHECK_CURSES_FUNC([slk_attr_on])
-PY_CHECK_CURSES_FUNC([slk_attr_off])
-PY_CHECK_CURSES_FUNC([slk_attr_set])
-PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+PY_CHECK_CURSES_FUNC_PRIVATE([define_key])
+PY_CHECK_CURSES_FUNC_PRIVATE([has_mouse])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_keypad])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_leaveok])
+PY_CHECK_CURSES_FUNC_PRIVATE([key_defined])
+PY_CHECK_CURSES_FUNC_PRIVATE([keyok])
+PY_CHECK_CURSES_FUNC_PRIVATE([new_prescr])
+PY_CHECK_CURSES_FUNC_PRIVATE([nofilter])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_color])
+PY_CHECK_CURSES_FUNC_PRIVATE([term_attrs])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_screen])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_window])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_get])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([wcolor_set])
 
 dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
 dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
@@ -7762,8 +7771,9 @@ AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
 
 dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
 dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
-PY_CHECK_CURSES_FUNC([scr_dump])
-PY_CHECK_CURSES_FUNC([scr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_dump])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_set])
+
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env
