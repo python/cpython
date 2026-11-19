@@ -3870,21 +3870,24 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    PyObject *fillvalue = Py_None;
+    PyObject *fillvalue = NULL;
     Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
-        fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = PyDict_GetItemWithError(kwds, &_Py_ID(fillvalue));
+            int rc = PyDict_GetItemRef(kwds, &_Py_ID(fillvalue), &fillvalue);
+            if (rc < 0) {
+                return NULL;
+            }
         }
         if (fillvalue == NULL) {
-            if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_TypeError,
-                    "zip_longest() got an unexpected keyword argument");
-            }
+            PyErr_SetString(PyExc_TypeError,
+                "zip_longest() got an unexpected keyword argument");
             return NULL;
         }
+    }
+    else {
+        fillvalue = Py_NewRef(Py_None);
     }
 
     /* args must be a tuple */
@@ -3893,13 +3896,16 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);
-    if (ittuple == NULL)
+    if (ittuple == NULL) {
+        Py_DECREF(fillvalue);
         return NULL;
+    }
     for (i=0; i < tuplesize; i++) {
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
             Py_DECREF(ittuple);
+            Py_DECREF(fillvalue);
             return NULL;
         }
         PyTuple_SET_ITEM(ittuple, i, it);
@@ -3909,6 +3915,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     result = PyTuple_New(tuplesize);
     if (result == NULL) {
         Py_DECREF(ittuple);
+        Py_DECREF(fillvalue);
         return NULL;
     }
     for (i=0 ; i < tuplesize ; i++) {
@@ -3921,13 +3928,14 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (lz == NULL) {
         Py_DECREF(ittuple);
         Py_DECREF(result);
+        Py_DECREF(fillvalue);
         return NULL;
     }
     lz->ittuple = ittuple;
     lz->tuplesize = tuplesize;
     lz->numactive = tuplesize;
     lz->result = result;
-    lz->fillvalue = Py_NewRef(fillvalue);
+    lz->fillvalue = fillvalue;
     return (PyObject *)lz;
 }
 

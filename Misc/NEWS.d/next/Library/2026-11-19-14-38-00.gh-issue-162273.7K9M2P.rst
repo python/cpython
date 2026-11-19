@@ -1,0 +1,2 @@
+Fix a use-after-free in :class:`itertools.zip_longest` when the ``kwds``
+dictionary is mutated or cleared while initializing input iterators.

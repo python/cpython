@@ -908,6 +908,48 @@ class TestBasicOps(unittest.TestCase):
 
         self.assertIs(cm.exception, exception)
 
+    @threading_helper.requires_working_threading()
+    def test_zip_longest_reentrant_kwds_clear(self):
+        # gh-162273: clearing kwds inside __iter__ must not deallocate
+        # fillvalue before zip_longest_new acquires a strong reference.
+        import _thread
+
+        events = []
+        cleared = threading.Event()
+        merged = threading.Event()
+        finished = threading.Event()
+
+        class EphemeralFillValue:
+            def __del__(self):
+                events.append("DEALLOCATED")
+
+        class Trigger:
+            def __init__(self, kw):
+                self.kw = kw
+            def __iter__(self):
+                events.append("BEFORE_CLEAR")
+                self.kw.clear()
+                cleared.set()
+                merged.wait(timeout=support.SHORT_TIMEOUT)
+                events.append("RETURNING_FROM_GETITER")
+                return iter([1])
+
+        class TailIterable:
+            def __iter__(self):
+                finished.set()
+                return iter([2])
+
+        kw = {"fillvalue": EphemeralFillValue()}
+        with threading_helper.wait_threads_exit():
+            _thread.start_new_thread(zip_longest, (Trigger(kw), TailIterable()), kw)
+            self.assertTrue(cleared.wait(timeout=support.SHORT_TIMEOUT))
+            for _ in range(1000):
+                pass
+            merged.set()
+            self.assertTrue(finished.wait(timeout=support.SHORT_TIMEOUT))
+
+        self.assertEqual(events[:2], ["BEFORE_CLEAR", "RETURNING_FROM_GETITER"])
+
     def test_bug_7244(self):
 
         class Repeater:
