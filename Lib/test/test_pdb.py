@@ -54,7 +54,7 @@ def test_pdb_displayhook():
     >>> def test_function(foo, bar):
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([ # doctest: +REPORT_NDIFF
     ...     'foo',
     ...     'bar',
     ...     'for i in range(5): print(i)',
@@ -103,7 +103,7 @@ def test_pdb_basic_commands():
     ...     test_function4(1, 2, 3)
     ...     print(ret)
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'step',       # go to line ret = test_function_2('baz')
     ...     'step',       # entering the function call
     ...     'args',       # display function args
@@ -243,7 +243,7 @@ def test_pdb_breakpoint_commands():
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
     lines, which we don't want to put in here.
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'break 3',
     ...     'break 4, +',
     ...     'disable 1',
@@ -589,7 +589,7 @@ def test_pdb_breakpoint_on_disabled_line():
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...    'import test.test_pdb',
     ...    'break test.test_pdb.do_something',
     ...    'break test.test_pdb.do_nothing',
@@ -609,7 +609,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) continue
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...    'break',
     ...    'break pdb.find_function',
     ...    'break',
@@ -633,7 +633,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     Deleted breakpoint 1 at ...test_pdb.py:...
     (Pdb) continue
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...    'break',
     ...    'clear 2',
     ...    'clear 3',
@@ -699,7 +699,7 @@ def test_pdb_pp_repr_exc():
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'p obj',
     ...     'pp obj',
     ...     'continue',
@@ -775,7 +775,7 @@ def test_list_commands():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     ret = test_function_2('baz')
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'step',      # go to the test function line
     ...     'list',      # list first function
     ...     'step',      # step into second function
@@ -865,7 +865,7 @@ def test_pdb_whatis_command():
     >>> def test_function():
     ...   import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...    'whatis myvar',
     ...    'whatis myfunc',
     ...    'whatis MyClass',
@@ -1720,7 +1720,7 @@ def test_post_mortem():
     ...     test_function_2()
     ...     print('Not reached.')
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'step',      # step to test_function_2() line
     ...     'next',      # step over exception-raising call
     ...     'bt',        # get a backtrace
@@ -1831,7 +1831,7 @@ def test_pdb_skip_modules():
     ...     import pdb; pdb.Pdb(skip=['stri*'], nosigint=True, readrc=False).set_trace()
     ...     string.capwords('FOO')
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([ # doctest: +REPORT_NDIFF
     ...     'step',
     ...     'step',
     ...     'continue',
@@ -1899,7 +1899,7 @@ def test_pdb_skip_modules_with_callback():
     ...     import pdb; pdb.Pdb(skip=['module_to_skip*'], nosigint=True, readrc=False).set_trace()
     ...     mod.foo_pony(callback)
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([ # doctest: +REPORT_NDIFF
     ...     'step',
     ...     'step',
     ...     'step',
@@ -1949,7 +1949,7 @@ def test_pdb_continue_in_bottomframe():
     ...     print(3)
     ...     print(4)
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +REPORT_NDIFF
     ...     'step',
     ...     'next',
     ...     'break 7',
@@ -1992,7 +1992,7 @@ def test_pdb_run_with_incorrect_argument():
     """Testing run and runeval with incorrect first argument.
 
     >>> pti = PdbTestInput(['continue',])
-    >>> with pti:
+    >>> with pti: # doctest: +REPORT_NDIFF
     ...     pdb_invoke('run', lambda x: x)
     Traceback (most recent call last):
     TypeError: exec() arg 1 must be a string, bytes or code object
@@ -2007,7 +2007,7 @@ def test_pdb_run_with_incorrect_argument():
 def test_pdb_run_with_code_object():
     """Testing run and runeval with code object as a first argument.
 
-    >>> with PdbTestInput(['step','x', 'continue']):  # doctest: +ELLIPSIS
+    >>> with PdbTestInput(['step','x', 'continue']):  # doctest: +ELLIPSIS, +REPORT_NDIFF
     ...     pdb_invoke('run', compile('x=1', '<string>', 'exec'))
     > <string>(1)<module>()...
     (Pdb) step
@@ -2017,7 +2017,7 @@ def test_pdb_run_with_code_object():
     1
     (Pdb) continue
 
-    >>> with PdbTestInput(['x', 'continue']):
+    >>> with PdbTestInput(['x', 'continue']): # doctest: +REPORT_NDIFF
     ...     x=0
     ...     pdb_invoke('runeval', compile('x+1', '<string>', 'eval'))
     > <string>(1)<module>()->None
@@ -2040,7 +2040,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> with PdbTestInput(['break test_function_2',
+    >>> with PdbTestInput(['break test_function_2', # doctest: +REPORT_NDIFF
     ...                    'continue',
     ...                    'return',
     ...                    'next',
@@ -2109,7 +2109,7 @@ def test_pdb_next_command_for_generator():
     ...             raise AssertionError
     ...     print("finished")
 
-    >>> with PdbTestInput(['step',
+    >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
     ...                    'step',
     ...                    'step',
     ...                    'step',
@@ -2368,7 +2368,7 @@ if not SKIP_CORO_TESTS:
         ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
-        >>> with PdbTestInput(['step',
+        >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
         ...                    'step',
         ...                    'step',
         ...                    'next',
@@ -2429,7 +2429,7 @@ if not SKIP_CORO_TESTS:
         ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
-        >>> with PdbTestInput(['step',
+        >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
         ...                    'step',
         ...                    'step',
         ...                    'next',
@@ -2490,7 +2490,7 @@ def test_pdb_return_command_for_generator():
     ...             raise AssertionError
     ...     print("finished")
 
-    >>> with PdbTestInput(['step',
+    >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
     ...                    'step',
     ...                    'step',
     ...                    'step',
@@ -2547,7 +2547,7 @@ if not SKIP_CORO_TESTS:
         ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
-        >>> with PdbTestInput(['step',
+        >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
         ...                    'step',
         ...                    'step',
         ...                    'next',
@@ -2587,7 +2587,7 @@ def test_pdb_until_command_for_generator():
     ...         print(i)
     ...     print("finished")
 
-    >>> with PdbTestInput(['step',
+    >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
     ...                    'step',
     ...                    'until 4',
     ...                    'step',
@@ -2644,7 +2644,7 @@ if not SKIP_CORO_TESTS:
         ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
-        >>> with PdbTestInput(['step',
+        >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
         ...                    'step',
         ...                    'until 8',
         ...                    'continue']):
@@ -2682,7 +2682,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
-    >>> with PdbTestInput(['break test_gen',
+    >>> with PdbTestInput(['break test_gen', # doctest: +REPORT_NDIFF
     ...                    'continue',
     ...                    'next',
     ...                    'next',
@@ -2727,7 +2727,7 @@ def test_pdb_next_command_subiterator():
     ...         print('value', i)
     ...     x = 123
 
-    >>> with PdbTestInput(['step',
+    >>> with PdbTestInput(['step', # doctest: +REPORT_NDIFF
     ...                    'step',
     ...                    'step',
     ...                    'next',
@@ -3047,7 +3047,7 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
-    >>> with PdbTestInput(['continue',
+    >>> with PdbTestInput(['continue', # doctest: +REPORT_NDIFF
     ...                    'continue']):
     ...     test_function()
     > <doctest test.test_pdb.test_pdb_issue_20766[0]>(5)test_function()
@@ -3069,7 +3069,7 @@ def test_pdb_issue_43318():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE, +REPORT_NDIFF
     ...     'break 3',
     ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
     ...     'continue'
