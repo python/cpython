@@ -1,3 +1,4 @@
 :func:`print` now writes its output in a single ``write()`` call whenever
 possible, reducing interleaving between concurrent calls and the overhead of
-repeated writes. Patch by Inada Naoki.
+repeated writes. If combining the output raises :exc:`MemoryError`,
+:func:`print` may make multiple ``write()`` calls. Patch by Inada Naoki.
