@@ -1057,6 +1057,20 @@ class BufferedRWPairTest:
         pair = self.tp(self.BytesIO(b"abc"), self.MockRawIO())
         self.assertEqual(pair.read(None), b"abc")
 
+    def test_readline(self):
+        pair = self.tp(self.BytesIO(b"ab\ncd"), self.MockRawIO())
+
+        self.assertEqual(pair.readline(1), b"a")
+        self.assertEqual(pair.readline(5), b"b\n")
+        self.assertEqual(pair.readline(0), b"")
+        self.assertEqual(pair.readline(None), b"cd")
+
+    def test_readline_nonblocking(self):
+        raw = self.MockRawIO([b"abc", None, None])
+        pair = self.tp(raw, self.MockRawIO())
+
+        self.assertEqual(pair.readline(), b"abc")
+
     def test_readlines(self):
         pair = lambda: self.tp(self.BytesIO(b"abc\ndef\nh"), self.MockRawIO())
         self.assertEqual(pair().readlines(), [b"abc\n", b"def\n", b"h"])
