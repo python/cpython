@@ -169,21 +169,36 @@ or :c:member:`PyTypeObject.tp_itemsize`), it cannot be ported to
 ``abi3t`` 3.15.
 
 
+.. _abi3t-migration-build:
+
 Setting up the build
 ====================
 
-If you use a build tool (such as setuptools, meson-python, scikit-build-core),
-search its documentation for a way to select ``abi3t``.
-At the time of writing, not all of them have this; but if your tool does,
-use it.
-You may want to verify that it set the right flag by temporarily adding the
+If you use a build tool, search its documentation for "``abi3t``", and follow
+any instructions to select the ABI.
+For reference, here are direct links for several popular build tools:
+
+- `meson-python
+  <https://mesonbuild.com/meson-python/how-to-guides/limited-api.html#the-abi3t-stable-abi>`__
+- `scikit-build-core
+  <https://scikit-build-core.readthedocs.io/en/stable/configuration/#customizing-the-output-wheel>`__
+- `Maturin <https://www.maturin.rs/bindings#py_limited_apiabi3>`__
+
+You may want to verify that the tool set the right flag by temporarily adding the
 following just after ``#include <Python.h>``::
 
-   #if Py_TARGET_ABI3T+0 <= 0x30f0000
+   #if Py_TARGET_ABI3T+0 < 0x30f0000
    #error "abi3t define is not set!"
    #endif
 
-This should result in a different error than "``abi3t`` define is not set".
+This should result in a different error than "``abi3t`` define is not set". (If you get no error at all, either the module is already ported or you're not compiling the code you changed.)
+
+.. seealso::
+
+   `Building and distributing abi3t extensions
+   <https://py-free-threading.github.io/abi3t/>`__:
+   Build configuration and wheel testing examples in the community-maintained
+   Python Free-Threading Guide.
 
 .. note::
 
@@ -342,13 +357,13 @@ It should be a :c:type:`PyModuleDef_Slot` array like the following:
    static PyModuleDef_Slot my_slots[] = {
       {Py_mod_gil, Py_MOD_GIL_NOT_USED},
       {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-      {Py_mod_create, my_module_create},
+      {Py_mod_create, create_module},
       {Py_mod_exec, my_first_module_exec},
       {Py_mod_exec, my_second_module_exec},
       {0, NULL}
    };
 
-``py_mod_create``
+``Py_mod_create``
 .................
 
 
@@ -368,7 +383,7 @@ Commonly, the information is static and you can refer to it directly.
 defining several functions instead.)
 
 
-Multiple ``py_mod_exec``
+Multiple ``Py_mod_exec``
 ........................
 
 If you have *more than one* :c:macro:`Py_mod_exec` entry, consolidate them:
@@ -381,6 +396,7 @@ with it.
    static int my_module_exec(PyObject *module) {
       if (my_first_module_exec(module) < 0) return -1;
       if (my_second_module_exec(module) < 0) return -1;
+      return 0;
    }
 
    static PyModuleDef_Slot my_slots[] = {
@@ -408,8 +424,8 @@ definitions to :c:macro:`PySlot_DATA` and :c:macro:`PySlot_FUNC`:
        ...
        PySlot_DATA(Py_mod_gil, Py_MOD_GIL_NOT_USED),
        PySlot_DATA(Py_mod_multiple_interpreters,
-            Py_MOD_PER_INTERPRETER_GIL_SUPPORTED)
-       PySlot_FUNC(Py_mod_create, my_module_create),
+            Py_MOD_PER_INTERPRETER_GIL_SUPPORTED),
+       PySlot_FUNC(Py_mod_create, create_module),
        PySlot_FUNC(Py_mod_exec, my_module_exec),
        PySlot_END
    };
@@ -460,7 +476,7 @@ These functions are typically used for two purposes:
          ...
          PySlot_STATIC_DATA(Py_mod_token, &my_token),
          PySlot_END
-      }
+      };
 
    Then, switch from :c:func:`PyModule_GetDef` calls such as:
 
@@ -493,7 +509,7 @@ These functions are typically used for two purposes:
    .. code-block::
       :class: good
 
-      PyObject *module = PyType_GetModuleByToken(type, my_token);
+      PyObject *module = PyType_GetModuleByToken(type, &my_token);
       /* handle error; use module */
       Py_XDECREF(module);
 
@@ -640,11 +656,12 @@ There are two main ways to get the right class:
   .. code-block::
      :class: good
 
-     PyTypeObject cls;
+     PyTypeObject *cls;
      if (PyType_GetBaseByToken(Py_TYPE(obj), my_tp_token, &cls) < 0) {
          /* handle error */
      }
      CustomObjectData *data = PyObject_GetTypeData(obj, cls);
+     Py_DECREF(cls);
 
   Type tokens work similarly to module tokens covered :ref:`earlier in this
   guide <abi3t-migration-module-token>`.

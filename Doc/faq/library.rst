@@ -7,6 +7,7 @@ Library and Extension FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 General Library Questions
 =========================
@@ -241,51 +242,6 @@ The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
 
-None of my threads seem to run: why?
-------------------------------------
-
-As soon as the main thread exits, all threads are killed.  Your main thread is
-running too quickly, giving the threads no time to do any work.
-
-A simple fix is to add a sleep to the end of the program that's long enough for
-all the threads to finish::
-
-   import threading, time
-
-   def thread_task(name, n):
-       for i in range(n):
-           print(name, i)
-
-   for i in range(10):
-       T = threading.Thread(target=thread_task, args=(str(i), i))
-       T.start()
-
-   time.sleep(10)  # <---------------------------!
-
-But now (on many platforms) the threads don't run in parallel, but appear to run
-sequentially, one at a time!  The reason is that the OS thread scheduler doesn't
-start a new thread until the previous thread is blocked.
-
-A simple fix is to add a tiny sleep to the start of the run function::
-
-   def thread_task(name, n):
-       time.sleep(0.001)  # <--------------------!
-       for i in range(n):
-           print(name, i)
-
-   for i in range(10):
-       T = threading.Thread(target=thread_task, args=(str(i), i))
-       T.start()
-
-   time.sleep(10)
-
-Instead of trying to guess a good delay value for :func:`time.sleep`,
-it's better to use some kind of semaphore mechanism.  One idea is to use the
-:mod:`queue` module to create a queue object, let each thread append a token to
-the queue when it finishes, and let the main thread read as many tokens from the
-queue as there are threads.
-
-
 How do I parcel out work among a bunch of worker threads?
 ---------------------------------------------------------
 
@@ -410,35 +366,17 @@ deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
-With the approval of :pep:`703` work is now underway to remove the GIL from the
-CPython implementation of Python.  Initially it will be implemented as an
-optional compiler flag when building the interpreter, and so separate
-builds will be available with and without the GIL.  Long-term, the hope is
-to settle on a single build, once the performance implications of removing the
-GIL are fully understood.  Python 3.13 is likely to be the first release
-containing this work, although it may not be completely functional in this
-release.
-
-The current work to remove the GIL is based on a
-`fork of Python 3.9 with the GIL removed <https://github.com/colesbury/nogil>`_
-by Sam Gross.
-Prior to that,
-in the days of Python 1.5, Greg Stein actually implemented a comprehensive
-patch set (the "free threading" patches) that removed the GIL and replaced it
-with fine-grained locking.  Adam Olsen did a similar experiment
-in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
-project.  Unfortunately, both of these earlier experiments exhibited a sharp
-drop in single-thread
-performance (at least 30% slower), due to the amount of fine-grained locking
-necessary to compensate for the removal of the GIL.  The Python 3.9 fork
-is the first attempt at removing the GIL with an acceptable performance
-impact.
+Since Python 3.13, CPython provides an optional free-threaded build that can run
+with the GIL disabled, allowing Python threads to run in parallel on multiple
+CPU cores (see :pep:`703`).  Free-threaded Python is officially supported as of
+Python 3.14 (see :pep:`779`), but is not the default build.  See
+:doc:`/howto/free-threading-python` for details.
 
 The presence of the GIL in current Python releases
 doesn't mean that you can't make good use of Python on multi-CPU machines!
 You just have to be creative with dividing the work up between multiple
 *processes* rather than multiple *threads*.  The
-:class:`~concurrent.futures.ProcessPoolExecutor` class in the new
+:class:`~concurrent.futures.ProcessPoolExecutor` class in the
 :mod:`concurrent.futures` module provides an easy way of doing so; the
 :mod:`multiprocessing` module provides a lower-level API in case you want
 more control over dispatching of tasks.
@@ -452,7 +390,9 @@ already do this.
 An alternative approach to reducing the impact of the GIL is
 to make the GIL a per-interpreter-state lock rather than truly global.
 This was :ref:`first implemented in Python 3.12 <whatsnew312-pep684>` and is
-available in the C API. A Python interface to it is expected in Python 3.13.
+available in the C API. Python interfaces were added in Python 3.14 through the
+:mod:`concurrent.interpreters` module and the
+:class:`~concurrent.futures.InterpreterPoolExecutor` class.
 The main limitation to it at the moment is likely to be 3rd party extension
 modules, since these must be written with multiple interpreters in mind in
 order to be usable, so many older extension modules will not be usable.

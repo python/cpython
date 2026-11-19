@@ -1,2 +1,0 @@
-:func:`array.array` setter now correctly detects overflows for the ``'e'``,
-``'f'`` and ``'Zf'`` type codes.  Patch by Sergey B Kirpichev.

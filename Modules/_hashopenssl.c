@@ -693,43 +693,46 @@ static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
                                Py_hash_type py_ht)
 {
-    PY_EVP_MD *digest = NULL, *other_digest = NULL;
+    PY_EVP_MD *digest = NULL, *fresh = NULL;
     py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
+    int fips = !disable_fips_property(py_ht);
 
     if (entry != NULL) {
-        if (!disable_fips_property(py_ht)) {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
-#else
-                entry->evp = digest;
-#endif
+        PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
+        digest = FT_ATOMIC_LOAD_PTR_RELAXED(*cached);
+        if (digest == NULL) {
+            fresh = PY_EVP_MD_fetch(entry->ossl_name, fips ? NULL : "-fips");
+            if (fresh != NULL) {
+                /*
+                 * Publish a freshly fetched digest into the cache exactly once.
+                 *
+                 * On the first publication, 'cached' adopts the 'fresh' ref.
+                 * If another thread wins the race, 'fresh' is released and
+                 * the cached digest is used instead.
+                 *
+                 * See https://github.com/python/cpython/issues/128657
+                 * and https://github.com/python/cpython/issues/149816.
+                 */
+                PY_EVP_MD *expected = NULL;
+                if (_Py_atomic_compare_exchange_ptr(cached, &expected, (void *)fresh)) {
+                    digest = fresh;         // we won: 'cached' now owns the fresh digest
+                }
+                else {
+                    PY_EVP_MD_free(fresh);  // we lost: discard the fresh digest
+                    digest = expected;      // reuse the winner's digest
+                }
             }
         }
-        else {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
-#else
-                entry->evp_nosecurity = digest;
-#endif
-            }
-        }
-        // if another thread same thing at same time make sure we got same ptr
-        assert(other_digest == NULL || other_digest == digest);
-        if (digest != NULL && other_digest == NULL) {
+        /* Hand the caller its own reference; the cache keeps its own. Valid
+         * whether `digest` was already cached, freshly published by this
+         * thread, or published by a thread that won the race. */
+        if (digest != NULL) {
             PY_EVP_MD_up_ref(digest);
         }
     }
     else {
         // Fall back for looking up an unindexed OpenSSL specific name.
-        const char *props = disable_fips_property(py_ht) ? "-fips" : NULL;
+        const char *props = fips ? NULL : "-fips";
         (void)props;  // will only be used in OpenSSL 3.0 and later
         digest = PY_EVP_MD_fetch(name, props);
     }
@@ -847,6 +850,12 @@ new_hash_object(PyTypeObject *type)
     return retval;
 }
 
+/*
+ * Update the digest context of 'self' with 'len' bytes from 'vp'.
+ *
+ * Return 0 on success and -1 if EVP_DigestUpdate() failed. No exception
+ * is set, so that this can be called without an attached thread state.
+ */
 static int
 _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
 {
@@ -858,7 +867,6 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             return -1;
         }
         len -= process;
@@ -991,7 +999,11 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
         result = _hashlib_HASH_hash(self, view.buf, view.len)
     );
     PyBuffer_Release(&view);
-    return result < 0 ? NULL : Py_None;
+    if (result < 0) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -1305,7 +1317,7 @@ _hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
             result = _hashlib_HASH_hash(self, view.buf, view.len)
         );
         if (result == -1) {
-            assert(PyErr_Occurred());
+            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             Py_CLEAR(self);
             goto exit;
         }
@@ -1976,16 +1988,6 @@ hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
 #endif
 }
 
-static int
-hashlib_openssl_HMAC_update_once(PY_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
-{
-    if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
-        return -1;
-    }
-    return 0;
-}
-
 /* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
 static inline void
 hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
@@ -2240,10 +2242,15 @@ _hmac_update(HMACobject *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, view.len,
-        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
+        r = PY_HMAC_update(self->ctx, (const unsigned char *)view.buf,
+                           (size_t)view.len)
     );
     PyBuffer_Release(&view);
-    return r;
+    if (r == 0) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
+        return -1;
+    }
+    return 0;
 }
 
 /*[clinic input]

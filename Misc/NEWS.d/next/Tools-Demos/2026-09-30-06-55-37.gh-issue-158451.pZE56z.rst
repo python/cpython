@@ -1,3 +1,0 @@
-``python-gdb.py`` is now able to format an invalid Unicode string: render
-invalid characters as ``\Uhhhhhhhh`` instead of raising an exception. Patch by
-Victor Stinner.

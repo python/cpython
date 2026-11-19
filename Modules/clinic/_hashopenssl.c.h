@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_hashlib_HASH_copy__doc__,
 "copy($self, /)\n"
@@ -307,13 +308,8 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("new", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1463,13 +1459,8 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'hash_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t hash_name_length;
-    hash_name = PyUnicode_AsUTF8AndSize(args[0], &hash_name_length);
+    hash_name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (hash_name == NULL) {
-        goto exit;
-    }
-    if (strlen(hash_name) != (size_t)hash_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
@@ -1986,4 +1977,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-/*[clinic end generated code: output=cf405e652a340bb2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=608e8ac9483c9173 input=a9049054013a1b77]*/

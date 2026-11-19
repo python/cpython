@@ -1258,6 +1258,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
             goto done;
         }
         tmp = PyUnicode_FromOrdinal(x);
+        if (tmp == NULL) {
+            goto done;
+        }
         inumeric_chars = 0;
         n_digits = 1;
         maxchar = Py_MAX(maxchar, (Py_UCS4)x);

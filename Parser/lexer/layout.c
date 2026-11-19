@@ -21,6 +21,9 @@ _PyLexer_ContinueLine(struct tok_state *tok)
         return -1;
     }
     c = tok_nextc(tok);
+    if (tok->implicit_newline == _PyTokenizer_APPEND_NEWLINE) {
+        tok->needs_newline |= _PyTokenizer_NEWLINE_CONTINUATION;
+    }
     if (c == EOF) {
         tok->done = E_EOF;
         tok->cur = tok->inp;
@@ -114,6 +117,11 @@ _PyLexer_BeginLine(struct tok_state *tok)
         }
     }
     tok_backup(tok, c);
+    if (c == '\n' && tok->implicit_newline == _PyTokenizer_IMPLY_NEWLINE &&
+        tok->level == 0 && (cont_line_col || col)) {
+        // Without the newline, a whitespace-only line affects indentation.
+        tok->needs_newline |= _PyTokenizer_NEWLINE_INDENT;
+    }
     if (c == '#' || c == '\n' || c == '\r') {
         int interactive = _PyTok_ReaderIsInteractive(tok);
         /* Lines with only whitespace and/or comments
@@ -171,6 +179,10 @@ _PyLexer_IndentationToken(struct tok_state *tok, struct token *token)
 int
 _PyLexer_Newline(struct tok_state *tok, struct token *token, int blankline)
 {
+    if (!blankline && tok->implicit_newline == _PyTokenizer_IMPLY_NEWLINE) {
+        // The statement's terminating newline was not in the input.
+        tok->needs_newline |= _PyTokenizer_NEWLINE_STATEMENT;
+    }
     tok->layout.at_bol = 1;
     if (blankline || tok->level > 0) {
         if (!tok->tok_extra_tokens) {

@@ -12,6 +12,7 @@ import time
 import unittest
 from unittest import mock
 from test.support import requires, requires_remote_subprocess_debugging
+from test.support import os_helper
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
@@ -870,8 +871,11 @@ class TestLiveModeErrors(unittest.TestCase):
             ),
             mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
             mock.patch("sys.argv", args),
-            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
+            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr,
+            os_helper.EnvironmentVarGuard() as env,
         ):
+            # Don't report the crash to the CI running this test
+            env.unset('GITHUB_STEP_SUMMARY')
             main()
             self.assertIn(
                 'test test_asdasd crashed -- Traceback (most recent call last):',

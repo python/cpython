@@ -167,7 +167,7 @@ The module defines the following user-callable items:
       deprecated alias for this class.
       It will be removed in Python 3.21
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)

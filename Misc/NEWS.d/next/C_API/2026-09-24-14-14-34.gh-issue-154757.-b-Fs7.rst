@@ -1,3 +1,0 @@
-:c:func:`PyModule_GetFilename` is no longer deprecated, but using
-:c:func:`PyModule_GetFilenameObject` instead is still recommended. Patch by
-Victor Stinner.

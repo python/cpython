@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.8
 
 import argparse
+import pathlib
 import pprint
 import sys
 
@@ -28,7 +29,7 @@ argparser = argparse.ArgumentParser(
     prog="calculate_first_sets",
     description="Calculate the first sets of a grammar",
 )
-argparser.add_argument("grammar_file", help="The grammar file")
+argparser.add_argument("grammar_file", type=pathlib.Path, help="The grammar file")
 
 
 class FirstSetCalculator(GrammarVisitor):

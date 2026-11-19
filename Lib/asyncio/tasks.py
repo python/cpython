@@ -257,9 +257,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         prev_task = _py_swap_current_task(self._loop, self)
         try:
             _py_register_eager_task(self)
+            # gh-157299: the eager step must record the awaited_by edge
+            futures.future_add_to_awaited_by(self, prev_task)
             try:
                 self._context.run(self.__step_run_and_handle_result, None)
             finally:
+                futures.future_discard_from_awaited_by(self, prev_task)
                 _py_unregister_eager_task(self)
         finally:
             try:
@@ -578,7 +581,13 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
-        self._cur_task = current_task()
+        # The iterator may be created outside of a running event loop and
+        # then driven with loop.run_until_complete(), in which case there
+        # is no current task to record as the waiter.
+        if events._get_running_loop() is loop:
+            self._cur_task = current_task(loop)
+        else:
+            self._cur_task = None
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
@@ -630,7 +639,11 @@ class _AsCompletedIterator:
         # Wait for the next future to be done and return it unless resolve is
         # set, in which case return either the result of the future or raise
         # an exception.
-        f = await self._done.get()
+        try:
+            f = await self._done.get()
+        except:
+            self._todo_left += 1
+            raise
         if f is None:
             # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError
@@ -916,8 +929,6 @@ def gather(*coros_or_futures, return_exceptions=False):
             if fut.done():
                 done_futs.append(fut)
             else:
-                if cur_task is not None:
-                    futures.future_add_to_awaited_by(fut, cur_task)
                 fut.add_done_callback(_done_callback)
 
         else:
@@ -927,6 +938,11 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    # Add the awaited-by edges only after all arguments are validated
+    if cur_task is not None and len(done_futs) < nfuts:
+        for fut in arg_to_fut.values():
+            if not fut.done():
+                futures.future_add_to_awaited_by(fut, cur_task)
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,

@@ -281,7 +281,7 @@ extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsi
 //      _Py_BEGIN_SUPPRESS_IPH
 //      ...
 //      _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1900
+#if defined _MSC_VER
 
 #  include <stdlib.h>   // _set_thread_local_invalid_parameter_handler()
 
@@ -294,7 +294,7 @@ extern void _Py_skiproot(const wchar_t *path, Py_ssize_t size, Py_ssize_t *drvsi
 #else
 #  define _Py_BEGIN_SUPPRESS_IPH
 #  define _Py_END_SUPPRESS_IPH
-#endif /* _MSC_VER >= 1900 */
+#endif /* _MSC_VER */
 
 // Export for 'select' shared extension (Argument Clinic code)
 PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
@@ -320,6 +320,9 @@ extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(int) _Py_IsValidFD(int fd);
+
+// Export for '_remote_debugging' shared extension
+PyAPI_FUNC(PyObject*) _Py_strerror(int code);
 
 #ifdef __cplusplus
 }

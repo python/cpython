@@ -1,1 +1,0 @@
-Stop deleting tkinter submodules when idlelib.run is imported.

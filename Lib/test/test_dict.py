@@ -121,18 +121,16 @@ class DictTest(unittest.TestCase):
         import_helper.import_module('_testcapi')
         from test.support.script_helper import assert_python_ok
         code = """if 1:
-            import _testcapi
+            from test import support
             items = {1: 2, 3: 4}.items()
             ballast = [(i, i) for i in range(3000)]
             held = []
             for start in range(1, 5):
-                _testcapi.set_nomemory(start)
                 try:
-                    held.append(iter(items))
+                    with support.inject_memory_error_cm(start):
+                        held.append(iter(items))
                 except MemoryError:
                     pass
-                finally:
-                    _testcapi.remove_mem_hooks()
             """
         assert_python_ok('-c', code)
 
@@ -478,6 +476,13 @@ class DictTest(unittest.TestCase):
             del d[k]
         d2 = d.copy()
         self.assertEqual(d2, d)
+
+    @support.nomemtest
+    def test_copy_empty_no_memory(self):
+        import _testcapi
+        d = {}
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, d.copy)
 
     def test_get(self):
         d = {}
@@ -1014,6 +1019,26 @@ class DictTest(unittest.TestCase):
 
         self.assertEqual(list(a), ['x', 'y', 'z', 'a', 'b'])
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
+
+    @support.cpython_only
+    def test_splittable_setdefault_str_subclass(self):
+        class C:
+            pass
+
+        class S(str):
+            pass
+
+        a = C()
+        a.x = 1
+        b = C()
+        b.y = 2
+        d = b.__dict__
+
+        self.assertEqual(d.setdefault(S('x'), 5), 5)
+        self.assertEqual(d, {'y': 2, 'x': 5})
+        self.assertEqual(d.setdefault(S('x'), 6), 5)
+        self.assertEqual(list(d), ['y', 'x'])
+        self.assertEqual(a.__dict__, {'x': 1})
 
     @support.cpython_only
     def test_splittable_del(self):
@@ -1830,6 +1855,45 @@ class DictTest(unittest.TestCase):
         d = x.__dict__
         d.clear()
 
+    def test_clear_reentrant_detached_split(self):
+        # gh-158198 follow-up: dict.clear() on a detached split-table dict
+        # must not expose (Py_EMPTY_KEYS, non-NULL ma_values) to a
+        # finalizer.  A reentrant insert must see a consistent empty dict.
+        class MyObj: pass
+        class Reinsert:
+            def __del__(self):
+                d['reentrant'] = 1
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        # Detach: the old dict becomes a heap-allocated split table
+        # (ma_values non-NULL, embedded == 0).
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, {'reentrant': 1})
+
+    def test_clear_reentrant_detached_split_update(self):
+        # Same as above but with a reentrant update large enough to force
+        # a resize.  On the buggy code this frees the values array that
+        # clear() is still iterating over (use-after-free / segfault).
+        class MyObj: pass
+        other = {f'k{i}': i for i in range(20)}
+        class Reinsert:
+            def __del__(self):
+                d.update(other)
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, other)
+
 
 class CAPITest(unittest.TestCase):
 
@@ -1914,6 +1978,20 @@ class FrozenDictTests(unittest.TestCase):
         self.assertEqual(d2, frozendict(x=1, y=2))
         self.assertEqual(type(d2), frozendict)
 
+    def test_copy_iter_override(self):
+        class CustomReversedDict(frozendict):
+            def keys(self):
+                return reversed(list(frozendict.keys(self)))
+
+            __iter__ = keys
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+        d = CustomReversedDict(pairs)
+        d2 = d.copy()
+        self.assertIsNot(d2, d)
+        self.assertEqual(type(d2), frozendict)
+        self.assertEqual(list(d2.items()), pairs[::-1])
+
     def test_merge(self):
         # test "a | b" operator
         self.assertEqual(frozendict(x=1) | frozendict(y=2),
@@ -1983,6 +2061,21 @@ class FrozenDictTests(unittest.TestCase):
 
         fd = frozendict(x=[1], y=[2])
         with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
+            hash(fd)
+
+    @support.skip_if_huge_c_stack(500_000)
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    def test_hash_deeply_nested(self):
+        # This should raise a RecursionError and not crash.
+        # Nesting through *values*: unlike keys, values are not hashed at
+        # construction time, so hashing recurses the full depth.
+        # See https://github.com/python/cpython/issues/154318.
+        fd = frozendict({0: 0})
+        for _ in range(500_000):
+            fd = frozendict({0: fd})
+        with self.assertRaisesRegex(RecursionError,
+                                    "while hashing a frozendict"):
             hash(fd)
 
     @support.cpython_only
