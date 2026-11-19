@@ -1,0 +1,2 @@
+Apply the existing ``unicodectype.c`` optimization workaround to Windows
+ARM64 release builds using MSVC 14.52.
