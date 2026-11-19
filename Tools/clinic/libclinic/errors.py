@@ -27,6 +27,14 @@ class ParseError(ClinicError):
     pass
 
 
+warning_count = 0
+
+
+def reset_warning_count() -> None:
+    global warning_count
+    warning_count = 0
+
+
 @overload
 def warn_or_fail(
     *args: object,
@@ -54,6 +62,8 @@ def warn_or_fail(
     if fail:
         raise error
     else:
+        global warning_count
+        warning_count += 1
         print(error.report(warn_only=True))
 
 
