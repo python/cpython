@@ -1302,15 +1302,35 @@ curses_pack_cell(cursesmodule_state *state, PyObject *item, curses_cell_t *out)
 {
     if (Py_IS_TYPE(item, state->complexchar_type)) {
         *out = _PyCursesComplexCharObject_CAST(item)->cval;
-        return 0;
     }
-    if (PyUnicode_Check(item)) {
-        return curses_cell_pack(state, out, item, A_NORMAL, 0, "complexstr");
+    else if (PyUnicode_Check(item)) {
+        if (curses_cell_pack(state, out, item, A_NORMAL, 0, "complexstr") < 0) {
+            return -1;
+        }
     }
-    PyErr_Format(PyExc_TypeError,
-                 "complexstr cell must be a complexchar or a str, not %T",
-                 item);
-    return -1;
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "complexstr cell must be a complexchar or a str, not %T",
+                     item);
+        return -1;
+    }
+#ifdef HAVE_NCURSESW
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attr;
+    int pair;
+    if (curses_getcchar(out, wstr, &attr, &pair) == ERR) {
+        PyErr_SetString(state->error, "getcchar() returned ERR");
+        return -1;
+    }
+    int nul = wstr[0] == L'\0';
+#else
+    int nul = (*out & A_CHARTEXT) == 0;
+#endif
+    if (nul) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return -1;
+    }
+    return 0;
 }
 
 /* Wrap a buffer of len cells in a new complexstr, copying them in.  tp_alloc
