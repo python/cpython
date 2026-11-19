@@ -318,9 +318,8 @@ frame_cache_store(
     // Validate we have a complete stack before caching.
     // Only cache if last_frame_visited matches base_frame_addr (the sentinel
     // at the bottom of the stack). Note: we use last_frame_visited rather than
-    // addrs[num_addrs-1] because the base frame is visited but not added to the
-    // addrs array (it returns frame==NULL from is_frame_valid due to
-    // owner==FRAME_OWNED_BY_INTERPRETER).
+    // addrs[num_addrs-1] because the base frame's address is not added to the
+    // addrs array.
     if (base_frame_addr != 0 && last_frame_visited != base_frame_addr) {
         // Incomplete stack - don't cache (graceful degradation)
         return 0;

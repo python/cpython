@@ -36,7 +36,7 @@ process_single_stack_chunk(
         return -1;
     }
 
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, current_size, this_chunk) < 0) {
+    if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, chunk_addr, current_size, this_chunk) < 0) {
         PyMem_RawFree(this_chunk);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read stack chunk");
         return -1;
@@ -65,7 +65,7 @@ process_single_stack_chunk(
         }
         this_chunk = tmp;
 
-        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
+        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle, chunk_addr, actual_size, this_chunk) < 0) {
             PyMem_RawFree(this_chunk);
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reread stack chunk with correct size");
             return -1;
@@ -293,6 +293,14 @@ process_frame_chain(
             return -1;
         }
         assert(frame_count <= MAX_FRAME_CHAIN_DEPTH);
+
+        // The base frame is a sentinel with previous == NULL: reaching it is
+        // enough, no need to read it. Still read it when it is the GC frame
+        // so the <GC> marker gets emitted.
+        if (frame_addr == ctx->base_frame_addr
+                && !(unwinder->gc && frame_addr == ctx->gc_frame)) {
+            break;
+        }
 
         if (ctx->chunks && ctx->chunks->count > 0) {
             parse_result = parse_frame_from_chunks(

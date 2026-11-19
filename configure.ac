@@ -5757,15 +5757,15 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dladdr dup explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fpathconf fstatat ftruncate futimens futimes futimesat \
-  gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
-  gettid getuid grantpt if_indextoname if_nameindex \
-  if_nametoindex initgroups kill killpg lchown linkat \
+  getuid grantpt if_nameindex \
+  initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
-  pidfd_open pidfd_getfd pidfd_send_signal pipe \
+  pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5788,7 +5788,13 @@ PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 # FreeBSD pthread_attr_get_np()
 PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
-
+PY_CHECK_FUNC_PRIVATE([getdents64], [@%:@include <dirent.h>])
+PY_CHECK_FUNC_PRIVATE([gettid], [@%:@include <unistd.h>])
+PY_CHECK_FUNC_PRIVATE([if_indextoname], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([if_nametoindex], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_open], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_getfd], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_send_signal], [@%:@include <sys/pidfd.h>])
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
@@ -7255,7 +7261,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
-      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+      AC_DEFINE([_Py_HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
     ])
 
     # check for readline 4.2
