@@ -125,6 +125,10 @@
 
 #if defined(__APPLE__)
 #  include <copyfile.h>           // fcopyfile()
+#  include <TargetConditionals.h>
+#  if !defined(TARGET_OS_OSX) || TARGET_OS_OSX
+#    include <libproc.h>          // proc_pidinfo()
+#  endif
 #endif
 
 #ifdef HAVE_SCHED_H
@@ -478,8 +482,6 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
  * errors.
  */
 #if defined(__APPLE__)
-
-#include <mach/mach.h>
 
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_available)
@@ -8570,16 +8572,11 @@ static Py_ssize_t get_number_of_os_threads(void)
     // of threads in the process. That'd presumably use this platform code but
     // raise an error rather than using the inaccurate fallback.
     Py_ssize_t num_python_threads = 0;
-#if defined(__APPLE__) && defined(HAVE_GETPID)
-    mach_port_t macos_self = mach_task_self();
-    mach_port_t macos_task;
-    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
-        thread_array_t macos_threads;
-        mach_msg_type_number_t macos_n_threads;
-        if (task_threads(macos_task, &macos_threads,
-                         &macos_n_threads) == KERN_SUCCESS) {
-            num_python_threads = macos_n_threads;
-        }
+#if defined(PROC_PIDTASKINFO) && defined(HAVE_GETPID)
+    struct proc_taskinfo info;
+    int size = proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &info, sizeof(info));
+    if (size == sizeof(info)) {
+        num_python_threads = info.pti_threadnum;
     }
 #elif defined(__linux__)
     // Linux /proc/self/stat 20th field is the number of threads.
