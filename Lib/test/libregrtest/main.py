@@ -203,9 +203,11 @@ class Regrtest:
 
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
+            self.want_header = True
 
         if self.tsan_parallel:
             setup_tsan_parallel_tests(self.cmdline_args)
+            self.want_header = True
 
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
