@@ -662,8 +662,8 @@ def display_header(use_resources: dict[str, str | None],
         else:
             encodings.append(f'locale={locale_encoding}')
             encodings.append(f'FS={fs_encoding}')
-    if not sys.flags.utf8_mode:
-        encodings.append('utf8=0')
+    if sys.flags.utf8_mode:
+        encodings.append('utf8=1')
     if (not sys.flags.ignore_environment
         and os.environ.get('PYTHONCOERCECLOCALE') == '0'):
         encodings.append('coerce=0')
