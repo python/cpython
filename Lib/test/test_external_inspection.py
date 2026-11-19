@@ -18,6 +18,7 @@ from test.support import (
     busy_retry,
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
+    sleeping_retry,
 )
 from test.support.import_helper import import_module
 from test.support.script_helper import make_script
@@ -163,6 +164,17 @@ def _wait_for_n_signals(sock, signal_pattern, count, timeout=SHORT_TIMEOUT):
             )
 
     return buffer
+
+
+def _wait_for_process_exec(pid, cmdline, timeout=SHORT_TIMEOUT):
+    # /proc/<pid>/cmdline is still the parent's command line until
+    # the forked process calls execve(). Wait until the new command line is
+    # visible before inspecting the process with RemoteUnwinder. Raise
+    # AssertionError on timeout.
+    for _ in sleeping_retry(timeout, max_delay=0.1):
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            if cmdline in f.read():
+                break
 
 
 @contextmanager
@@ -2077,6 +2089,9 @@ while True:
         leaf(300)
 """
         with _managed_subprocess([sys.executable, "-c", script]) as process:
+            # On Linux, wait until execve() replaced the forked process image.
+            if sys.platform == "linux":
+                _wait_for_process_exec(process.pid, script.encode())
             for _ in busy_retry(SHORT_TIMEOUT):
                 try:
                     unwinder = RemoteUnwinder(
