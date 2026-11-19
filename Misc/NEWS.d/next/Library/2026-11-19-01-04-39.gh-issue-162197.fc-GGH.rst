@@ -1,0 +1,1 @@
+:mod:`_pyrepl`: Fix a crash when a failed ``yank-pop`` command is followed by another ``yank-pop`` command.
