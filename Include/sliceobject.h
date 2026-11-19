@@ -8,7 +8,7 @@ extern "C" {
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_Ellipsis Py_GetConstantBorrowed(Py_CONSTANT_ELLIPSIS)
 #else
 #  define Py_Ellipsis (&_Py_EllipsisObject)

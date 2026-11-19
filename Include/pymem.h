@@ -87,7 +87,7 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #define PyMem_DEL(p)              PyMem_Free((p))
 
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 // Memory allocator which doesn't require the GIL to be held.
 // Usually, it's just a thin wrapper to functions of the standard C library:
 // malloc(), calloc(), realloc() and free(). The difference is that
