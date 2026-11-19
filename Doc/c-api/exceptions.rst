@@ -893,6 +893,10 @@ Exception Objects
    it.  There is no type check to make sure that *ctx* is an exception instance.
    This ":term:`steals <steal>`" a reference to *ctx*.
 
+   .. versionchanged:: 3.5.2
+      If *ctx* is *ex*, the function has no any effect.  If *ex* is in the
+      context chain started from *ctx*, it is moved to the start of the chain.
+
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 

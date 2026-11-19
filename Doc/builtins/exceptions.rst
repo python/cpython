@@ -100,6 +100,12 @@ attribute, as well as due to possible memory layout incompatibilities.
    conflicts in the future.  Therefore, it's recommended to avoid
    subclassing multiple exception types altogether.
 
+.. versionchanged:: 3.5.2
+
+   Setting :attr:`__context__` to self has no any effect.  If set
+   ``__context__`` to the chain contained original exception, it is moved to
+   the start of the context chain.
+
 
 Base classes
 ------------
