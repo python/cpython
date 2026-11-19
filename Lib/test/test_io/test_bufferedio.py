@@ -1118,7 +1118,10 @@ class BufferedRWPairTest:
 
     def test_destructor_flushes_shared_stream(self):
         raw = self.MockRawIO()
-        self.tp(raw, raw).write(b"abc")
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        self.assertEqual(raw._write_stack, [])
+        del pair
         support.gc_collect()
         self.assertEqual(raw._write_stack, [b"abc"])
 
