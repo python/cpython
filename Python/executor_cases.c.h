@@ -10440,7 +10440,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             if (!increfed) {
                 UOP_STAT_INC(uopcode, miss);
@@ -10485,7 +10485,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             if (!increfed) {
                 UOP_STAT_INC(uopcode, miss);

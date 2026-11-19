@@ -64,6 +64,25 @@ class AugAssignTest(unittest.TestCase):
         self.assertEqual(x, [1, 2, 1, 2, 3])
         self.assertTrue(x is y)
 
+    def testSequenceRepeatRightOperand(self):
+        # gh-161968
+        class MyInt(int):
+            pass
+        class Index:
+            def __index__(self):
+                return 2
+
+        seq = [1]
+        x = MyInt(2)
+        x *= seq
+        self.assertEqual(x, [1, 1])
+        # The right operand is not modified in place.
+        self.assertEqual(seq, [1])
+
+        x = Index()
+        x *= 'a'
+        self.assertEqual(x, 'aa')
+
     def testCustomMethods1(self):
 
         class aug_test:

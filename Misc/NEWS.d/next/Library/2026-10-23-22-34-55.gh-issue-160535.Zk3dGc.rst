@@ -1,4 +1,0 @@
-Fix a crash in :mod:`compression.zstd` when the garbage collector frees a
-:class:`~compression.zstd.ZstdCompressor` that uses worker threads together
-with its :class:`~compression.zstd.ZstdDict` before the compression of
-already submitted data has finished.

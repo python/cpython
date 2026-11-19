@@ -2278,7 +2278,7 @@ dummy_func(
             assert(index < DK_SIZE(keys));
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else
@@ -2297,7 +2297,7 @@ dummy_func(
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else

@@ -566,6 +566,8 @@ class EventTests(BaseTestCase):
         evt = self.eventtype()
         self.assertRaises(ValueError, evt.wait, float('nan'))
 
+    # Use private attributes (event._cond._waiters)
+    @support.cpython_only
     def test_set_and_clear(self):
         # gh-57711: check that wait() returns true even when the event is
         # cleared before the waiting thread is woken up.
@@ -576,8 +578,11 @@ class EventTests(BaseTestCase):
 
         N = 5
         with Bunch(f, N):
-            # Threads blocked on event.wait()
-            wait_threads_blocked(N)
+            # Wait until all threads are registered as waiters in
+            # event.wait().
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(event._cond._waiters) >= N:
+                    break
 
             # Threads unblocked
             event.set()

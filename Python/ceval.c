@@ -1200,7 +1200,13 @@ dtrace_function_return(_PyInterpreterFrame *frame)
 }
 #endif
 
-PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
+/*
+ * _PyEval_EvalFrameDefault must remain a separate frame in the C call stack:
+ * stack unwinders, profilers and other tools that walk the stack use it to
+ * find the interpreter loop. With the tail-calling interpreter it is small
+ * enough to be inlined into its callers, e.g. by Clang with PGO.
+ */
+Py_NO_INLINE PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);

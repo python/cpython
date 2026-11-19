@@ -1404,6 +1404,15 @@ class BufferedRWPair(BufferedIOBase):
     def read1(self, size=-1):
         return self.reader.read1(size)
 
+    def readline(self, size=-1):
+        r"""Read and return a line from the stream.
+
+        If size is specified, at most size bytes will be read.
+
+        The line terminator is always b'\n'.
+        """
+        return self.reader.readline(size)
+
     def readinto1(self, b):
         return self.reader.readinto1(b)
 
@@ -2458,9 +2467,12 @@ class TextIOWrapper(TextIOBase):
             # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
-            skip_bytes = int(self._b2cratio * chars_to_skip)
+            skip_estimate = self._b2cratio * chars_to_skip
+            if 0 <= skip_estimate <= len(next_input):
+                skip_bytes = int(skip_estimate)
+            else:
+                skip_bytes = 0
             skip_back = 1
-            assert skip_bytes <= len(next_input)
             while skip_bytes > 0:
                 decoder.setstate((b'', dec_flags))
                 # Decode up to temptative start point

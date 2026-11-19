@@ -307,7 +307,7 @@ Once executed the :mod:`!gzip` module keeps the input file(s).
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
 
    An existing output file is removed and created anew instead of being
    opened for writing, so a symbolic link at that name is replaced rather

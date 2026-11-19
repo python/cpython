@@ -2390,10 +2390,8 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
     Py_ssize_t in, out;
     char ch;
     const unsigned char *ascii_data;
-    unsigned char *odata;
     unsigned char *stripped = NULL;
     Py_ssize_t datalen = 0;
-    PyObject *rv;
 
     ascii_data = data->buf;
     datalen = data->len;
@@ -2443,14 +2441,12 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
         }
     }
 
-    /* We allocate the output same size as input, this is overkill.
-     */
-    odata = (unsigned char *) PyMem_Calloc(1, datalen);
-    if (odata == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(datalen);
+    if (writer == NULL) {
         PyMem_Free(stripped);
-        PyErr_NoMemory();
         return NULL;
     }
+    unsigned char *odata = PyBytesWriter_GetData(writer);
 
     in = out = 0;
     while (in < datalen) {
@@ -2492,10 +2488,8 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
             out++;
         }
     }
-    rv = PyBytes_FromStringAndSize((char *)odata, out);
-    PyMem_Free(odata);
     PyMem_Free(stripped);
-    return rv;
+    return PyBytesWriter_FinishWithSize(writer, out);
 }
 
 static int
@@ -2535,9 +2529,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
 {
     Py_ssize_t in, out;
     const unsigned char *databuf;
-    unsigned char *odata;
     Py_ssize_t datalen = 0, odatalen = 0;
-    PyObject *rv;
     unsigned int linelen = 0;
     unsigned char ch;
     int crlf = 0;
@@ -2622,13 +2614,11 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
         odatalen += delta;
     }
 
-    /* We allocate the output same size as input, this is overkill.
-     */
-    odata = (unsigned char *) PyMem_Calloc(1, odatalen);
-    if (odata == NULL) {
-        PyErr_NoMemory();
+    PyBytesWriter *writer = PyBytesWriter_Create(odatalen);
+    if (writer == NULL) {
         return NULL;
     }
+    unsigned char *odata = PyBytesWriter_GetData(writer);
 
     in = out = linelen = 0;
     while (in < datalen) {
@@ -2698,9 +2688,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             }
         }
     }
-    rv = PyBytes_FromStringAndSize((char *)odata, out);
-    PyMem_Free(odata);
-    return rv;
+    return PyBytesWriter_FinishWithSize(writer, out);
 }
 
 /* List of functions defined in the module */
