@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
+#include "pycore_pyerrors.h"      // _PyErr_SetOSErrorWithMessage()
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
@@ -212,7 +213,7 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
     else if (res == PY_LOCK_FAILURE) {
         assert(!PyErr_Occurred());
         assert(timeout > 0);
-        PyErr_SetString(PyExc_TimeoutError, "timed out");
+        _PyErr_SetOSErrorWithMessage(PyExc_TimeoutError, ETIMEDOUT, "timed out");
         return -1;
     }
     assert(res == PY_LOCK_ACQUIRED);

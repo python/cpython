@@ -1,4 +1,5 @@
 import contextlib
+import errno
 import os.path
 
 
@@ -28,7 +29,7 @@ def good_file(filename, alt=None):
         yield filename
     except Exception:
         if not os.path.exists(filename):
-            raise FileNotFoundError(f'file not found: {filename}')
+            raise FileNotFoundError(errno.ENOENT, 'file not found', filename)
         raise  # re-raise
 
 

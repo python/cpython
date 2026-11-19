@@ -53,6 +53,8 @@ More condensed:
     '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 """
 
+import errno
+
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
@@ -253,7 +255,8 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     while True:
         size = fileobj.readinto(buf)
         if size is None:
-            raise BlockingIOError("I/O operation would block.")
+            raise BlockingIOError(errno.EAGAIN,
+                                  "I/O operation would block.")
         if size == 0:
             break  # EOF
         digestobj.update(view[:size])

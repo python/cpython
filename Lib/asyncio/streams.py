@@ -3,6 +3,7 @@ __all__ = (
     'open_connection', 'start_server')
 
 import collections
+import errno
 import socket
 import sys
 import warnings
@@ -163,7 +164,7 @@ class FlowControlMixin(protocols.Protocol):
 
     async def _drain_helper(self):
         if self._connection_lost:
-            raise ConnectionResetError('Connection lost')
+            raise ConnectionResetError(errno.ECONNRESET, 'Connection lost')
         if not self._paused:
             return
         waiter = self._loop.create_future()

@@ -14,6 +14,7 @@ __all__ = ['Pool', 'ThreadPool']
 #
 
 import collections
+import errno
 import itertools
 import os
 import queue
@@ -802,7 +803,7 @@ class ApplyResult(object):
     def get(self, timeout=None):
         self.wait(timeout)
         if not self.ready():
-            raise TimeoutError
+            raise TimeoutError(errno.ETIMEDOUT, os.strerror(errno.ETIMEDOUT))
         if self._success:
             return self._value
         else:
@@ -925,7 +926,8 @@ class IMapIterator(object):
                 except IndexError:
                     if self._index == self._length:
                         self._stop_iterator()
-                    raise TimeoutError from None
+                    raise TimeoutError(errno.ETIMEDOUT,
+                                       os.strerror(errno.ETIMEDOUT)) from None
 
         if self._buffersize_sema is not None:
             self._buffersize_sema.release()
