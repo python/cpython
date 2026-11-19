@@ -316,11 +316,19 @@ Diff generation
    Setting the optional *autojunk* argument to ``False`` will turn
    :ref:`automatic junk heuristic <difflib-junk>` off.
 
+   Optional arg *key* (default ``None``) specifies a function of one argument that
+   is used to extract a comparison key from each element in *possibilities*
+   (for example, ``key=str.lower``). If the value is ``None``, the elements are
+   compared with *word* directly.
+
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
 
       >>> get_close_matches('appel', ['ape', 'apple', 'peach', 'puppy'])
       ['apple', 'ape']
+      >>> get_close_matches("appel", [("aple", 9), ("peach", 8), ("puppy", 7)],
+      ...                   key=lambda x: x[0])
+      [('aple', 9)]
       >>> import keyword
       >>> get_close_matches('wheel', keyword.kwlist)
       ['while']
