@@ -3320,8 +3320,13 @@ Functions and decorators
       @overload
       def process(response: bytes) -> str:
           ...
-      def process(response):
-          ...  # actual implementation goes here
+      def process(response: int | bytes | None) -> tuple[int, str] | str | None:
+          # The implementation is not decorated with @overload
+          if response is None:
+              return None
+          if isinstance(response, int):
+              return response, str(response)
+          return response.decode()
 
    See :pep:`484` for more details and comparison with other typing semantics.
 
