@@ -320,6 +320,12 @@ class CookieTests(unittest.TestCase):
         with self.assertRaises(cookies.CookieError):
             C.load(rawdata)
 
+    def test_illegal_key_no_partial_state(self):
+        C = cookies.SimpleCookie()
+        with self.assertRaises(cookies.CookieError):
+            C.load("a=1; b,c=2; d=3")
+        self.assertEqual(len(C), 0)
+
     def test_comment_quoting(self):
         c = cookies.SimpleCookie()
         c['foo'] = '\N{COPYRIGHT SIGN}'
