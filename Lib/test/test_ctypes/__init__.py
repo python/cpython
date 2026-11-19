@@ -9,18 +9,15 @@ import_helper.import_module('ctypes')
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
+    def test_deprecated_module_attributes(self):
         import ctypes
         import _ctypes
 
         for mod in (ctypes, _ctypes):
             with self.subTest(mod=mod):
-                with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "'__version__' is deprecated and slated for removal in Python 3.20",
-                ) as cm:
-                    getattr(mod, "__version__")
-                self.assertEqual(cm.filename, __file__)
+                support.check_deprecated_module_attributes(
+                    self, mod, "__version__", remove=(3, 20),
+                )
 
 
 def load_tests(*args):

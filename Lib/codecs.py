@@ -402,9 +402,10 @@ class StreamWriter(Codec):
         pass
 
     def seek(self, offset, whence=0):
-        self.stream.seek(offset, whence)
+        # reset() may write to the stream: call it at the old position.
         if whence == 0 and offset == 0:
             self.reset()
+        self.stream.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -741,10 +742,11 @@ class StreamReaderWriter:
         self.writer.reset()
 
     def seek(self, offset, whence=0):
-        self.stream.seek(offset, whence)
-        self.reader.reset()
+        # writer.reset() may write to the stream: call it at the old position.
         if whence == 0 and offset == 0:
             self.writer.reset()
+        self.stream.seek(offset, whence)
+        self.reader.reset()
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -864,8 +866,8 @@ class StreamRecoder:
     def seek(self, offset, whence=0):
         # Seeks must be propagated to both the readers and writers
         # as they might need to reset their internal buffers.
-        self.reader.seek(offset, whence)
         self.writer.seek(offset, whence)
+        self.reader.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):

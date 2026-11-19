@@ -84,22 +84,6 @@ module _posixsubprocess
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=c62211df27cf7334]*/
 
-/*[python input]
-class pid_t_converter(CConverter):
-    type = 'pid_t'
-    format_unit = '" _Py_PARSE_PID "'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsPid({argname});
-            if ({paramname} == -1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
-
 #include "clinic/_posixsubprocess.c.h"
 
 /* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
@@ -368,7 +352,8 @@ _close_range_except(int start_fd,
                     int (*closer)(int, int))
 {
     if (end_fd == -1) {
-        end_fd = Py_MIN(safe_get_max_fd(), INT_MAX);
+        end_fd = safe_get_max_fd();
+        end_fd = Py_MIN(end_fd, INT_MAX);
     }
     Py_ssize_t keep_seq_idx;
     /* As fds_to_keep is sorted we can loop through the list closing
@@ -388,10 +373,10 @@ _close_range_except(int start_fd,
     return 0;
 }
 
-#if defined(HAVE_GETDENTS64) \
+#if defined(_Py_HAVE_GETDENTS64) \
     || (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H))
 
-#ifdef HAVE_GETDENTS64
+#ifdef _Py_HAVE_GETDENTS64
 #  define py_dirent64 dirent64
 #else
 /* It doesn't matter if d_name has room for NAME_MAX chars; we're using this
@@ -407,7 +392,7 @@ struct py_dirent64 {
    unsigned char  d_type;
    char           d_name[256];  /* Filename (null-terminated) */
 };
-#endif  // !HAVE_GETDENTS64
+#endif  // !_Py_HAVE_GETDENTS64
 
 static int
 _brute_force_closer(int first, int last)
@@ -450,8 +435,12 @@ _close_open_fds_safe(int start_fd, int *fds_to_keep, Py_ssize_t fds_to_keep_len)
         char buffer[sizeof(struct py_dirent64)];
         Py_ssize_t bytes;
         while (1) {
-#ifdef HAVE_GETDENTS64
-            bytes = getdents64(fd_dir_fd, buffer, sizeof(buffer));
+#ifdef _Py_HAVE_GETDENTS64
+            /* musl <1.2.4 headers expose `getdents64` as an alias for `getdents`, whose buffer parameter
+             * is `struct dirent *`. We use `void *` to support both that interface and the glibc declaration
+             * without an incompatible-pointer diagnostic.
+             */
+            bytes = getdents64(fd_dir_fd, (void *)buffer, sizeof(buffer));
 #else
             bytes = syscall(SYS_getdents64, fd_dir_fd,
                             (struct py_dirent64 *)buffer, sizeof(buffer));

@@ -1,1 +1,0 @@
-:class:`tarfile.TarInfo` objects now support :func:`copy.replace`.

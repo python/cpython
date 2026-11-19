@@ -274,30 +274,7 @@ except ImportError:
 ### partial() argument application
 ################################################################################
 
-
-class _PlaceholderType:
-    """The type of the Placeholder singleton.
-
-    Used as a placeholder for partial arguments.
-    """
-    __instance = None
-    __slots__ = ()
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(f"type '{cls.__name__}' is not an acceptable base type")
-
-    def __new__(cls):
-        if cls.__instance is None:
-            cls.__instance = object.__new__(cls)
-        return cls.__instance
-
-    def __repr__(self):
-        return 'Placeholder'
-
-    def __reduce__(self):
-        return 'Placeholder'
-
-Placeholder = _PlaceholderType()
+Placeholder = sentinel('Placeholder')
 
 def _partial_prepare_merger(args):
     if not args:
@@ -440,7 +417,7 @@ class partial:
 
 
 try:
-    from _functools import partial, Placeholder, _PlaceholderType
+    from _functools import partial, Placeholder
 except ImportError:
     pass
 
@@ -990,6 +967,16 @@ def singledispatch(func):
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} is not a class."
                     )
+            if argname == 'return':
+                import warnings
+                warnings.warn(
+                    "Using the return annotation to infer the dispatch type "
+                    "is deprecated and will raise TypeError in Python 3.21. "
+                    "Annotate the dispatch parameter or pass the dispatch "
+                    "type explicitly to register() decorator.",
+                    DeprecationWarning,
+                    skip_file_prefixes=(__file__,),
+                )
 
         if isinstance(cls, UnionType):
             for arg in cls.__args__:

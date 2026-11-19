@@ -153,7 +153,11 @@ class TypeAnnotationTests(unittest.TestCase):
         self.assertEqual(D.__annotations__, {})
 
     def test_partially_executed_module(self):
-        partialexe = import_helper.import_fresh_module("test.typinganndata.partialexecution")
+        # Results are different with and without lazy imports, we need both:
+        partialexe = import_helper.import_fresh_module(
+            "test.typinganndata.partialexecution",
+            eager_imports=False,
+        )
         self.assertEqual(
             partialexe.a.__annotations__,
             {"v1": int, "v2": int},
@@ -328,6 +332,18 @@ class AnnotateTests(unittest.TestCase):
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
 
+    def test_annotate_sets_annotations(self):
+        # If __annotate__ sets the function's annotations while it runs,
+        # those are kept instead of the result of the call.
+        def f():
+            pass
+        def annotate(format):
+            f.__annotations__ = {"x": int}
+            return {"y": str}
+        f.__annotate__ = annotate
+        self.assertEqual(f.__annotations__, {"x": int})
+        self.assertIs(f.__annotate__, None)
+
     def test_user_defined_annotate(self):
         class X:
             a: int
@@ -492,6 +508,32 @@ class DeferredEvaluationTests(unittest.TestCase):
                 __classdict__: int
         """)
         self.assertEqual(ns["C"].__annotations__, {"__classdict__": int})
+
+    def test_class_binds_dunder_classdict(self):
+        # The class body binding __classdict__ must not hide the cell that
+        # annotation and type parameter scopes use to see the class namespace.
+        for binding in (
+            "__classdict__ = 1",
+            "__classdict__: str = 1",
+            "for __classdict__ in (1,): pass",
+            "global __classdict__",
+        ):
+            with self.subTest(binding=binding):
+                ns = run_code(f"""
+                    class C:
+                        {binding}
+                        y = int
+                        def f(x: y): pass
+                        class D[T: y]: pass
+                        class E[T]: pass
+                        type A[T: y] = y
+                """)
+                C = ns["C"]
+                self.assertEqual(C.f.__annotations__, {"x": int})
+                self.assertIs(C.D.__type_params__[0].__bound__, int)
+                self.assertEqual(C.E.__type_params__[0].__name__, "T")
+                self.assertIs(C.A.__type_params__[0].__bound__, int)
+                self.assertIs(C.A.__value__, int)
 
     def test_future_annotations(self):
         code = """

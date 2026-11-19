@@ -147,7 +147,7 @@ the list, thus saving space.
 
 We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
-obtain successive items until the supply is exhausted.  We have seen that
+obtain successive items until the supply is :term:`exhausted`.  We have seen that
 the :keyword:`for` statement is such a construct, while an example of a function
 that takes an iterable is :func:`sum`::
 

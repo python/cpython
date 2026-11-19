@@ -366,7 +366,8 @@ class IMAP4:
                 self._encoding, 'replace')
             raise self.error('invalid greeting: ' + greeting)
 
-        self._refresh_capabilities()
+        # The greeting is not a response to a command.
+        self._refresh_capabilities(consume=True)
         if __debug__:
             if self.debug >= 3:
                 self._mesg('CAPABILITIES: %r' % (self.capabilities,))
@@ -1175,6 +1176,12 @@ class IMAP4:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
+            if any(self._readbuf):
+                raise self.abort('unexpected data after STARTTLS response')
+            # Discard received state before TLS was established
+            # since data could have been injected by a MITM.
+            self._readbuf = []
+            self.untagged_responses = {}
             self._close_imaplib_file()
             self.sock = ssl_context.wrap_socket(self.sock,
                                                 server_hostname=self.host)
@@ -1509,10 +1516,14 @@ class IMAP4:
         self.capabilities = tuple(dat.split())
 
 
-    def _refresh_capabilities(self):
+    def _refresh_capabilities(self, consume=False):
         # Use a CAPABILITY response sent by the server, or ask for it.
+        # Unless it is consumed, the response can still be read with
+        # response('CAPABILITY').
         if 'CAPABILITY' in self.untagged_responses:
-            dat = self.untagged_responses.pop('CAPABILITY')[-1]
+            dat = self.untagged_responses['CAPABILITY'][-1]
+            if consume:
+                del self.untagged_responses['CAPABILITY']
             self.capabilities = tuple(str(dat, self._encoding).upper().split())
         else:
             self._get_capabilities()

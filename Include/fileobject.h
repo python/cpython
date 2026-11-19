@@ -16,19 +16,6 @@ PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
 
-/* The default encoding used by the platform file system APIs
-   If non-NULL, this is different than the default encoding for strings
-*/
-Py_DEPRECATED(3.12) PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
-Py_DEPRECATED(3.12) PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
-#endif
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
-Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_UTF8Mode;
-#endif
-
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEOBJECT_H
 #  include "cpython/fileobject.h"

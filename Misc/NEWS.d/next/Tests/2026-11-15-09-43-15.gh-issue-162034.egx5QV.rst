@@ -1,0 +1,2 @@
+The Apple testbed projects now build when the path of the project contains a
+space.

@@ -257,9 +257,9 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
     PyObject *exc = PyErr_GetRaisedException();
-    PyObject *name = f->func_qualname;
+    PyObject *name = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_qualname));
     if (name == NULL) {
-        name = f->func_name;
+        name = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_name));
     }
     printf("\nResuming frame");
     if (name) {
@@ -267,12 +267,15 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         if (PyObject_Print(name, stdout, 0) < 0) {
             PyErr_Clear();
         }
+        Py_DECREF(name);
     }
-    if (f->func_module) {
+    PyObject *module = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_module));
+    if (module) {
         printf(" in module ");
-        if (PyObject_Print(f->func_module, stdout, 0) < 0) {
+        if (PyObject_Print(module, stdout, 0) < 0) {
             PyErr_Clear();
         }
+        Py_DECREF(module);
     }
     printf("\n");
     fflush(stdout);

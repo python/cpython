@@ -1,3 +1,0 @@
-Fix undefined behavior in
-:attr:`compression.zstd.ZstdDecompressor.unused_data` when a complete frame
-was decompressed in a single call.

@@ -1,3 +1,0 @@
-Fix :func:`shutil.copyfile` to copy a symbolic link to a special file when
-``follow_symlinks=False`` instead of raising
-:exc:`~shutil.SpecialFileError`.

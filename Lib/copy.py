@@ -122,9 +122,8 @@ def deepcopy(x, memo=None):
     if memo is None:
         memo = {}
     else:
-        y = memo.get(d, None)
-        if y is not None:
-            return y
+        if d in memo:
+            return memo[d]
 
     copier = _deepcopy_dispatch.get(cls)
     if copier is not None:

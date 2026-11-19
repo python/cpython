@@ -481,7 +481,7 @@ You can stack up multiple patch decorators using this pattern::
 When you nest patch decorators the mocks are passed in to the decorated
 function in the same order they applied (the normal *Python* order that
 decorators are applied). This means from the bottom up, so in the example
-above the mock for ``test_module.ClassName2`` is passed in first.
+above the mock for ``package.module.ClassName2`` is passed in first.
 
 There is also :func:`patch.dict` for setting values in a dictionary just
 during a scope and restoring the dictionary to its original state when the test
@@ -642,7 +642,7 @@ Mocking a generator method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Python generator is a function or method that uses the :keyword:`yield` statement
-to return a series of values when iterated over [#]_.
+to return a series of values when iterated over.
 
 A generator method / function is called to return the generator object. It is
 the generator object that is then iterated over. The protocol method for
@@ -670,12 +670,6 @@ To configure the values returned from the iteration (implicit in the call to
     >>> mock_foo.iter.return_value = iter([1, 2, 3])
     >>> list(mock_foo.iter())
     [1, 2, 3]
-
-.. [#] There are also generator expressions and more `advanced uses
-    <http://www.dabeaz.com/coroutines/index.html>`_ of generators, but we aren't
-    concerned about them here. A very good introduction to generators and how
-    powerful they are is: `Generator Tricks for Systems Programmers
-    <http://www.dabeaz.com/generators/>`_.
 
 
 Applying the same patch to every test method
