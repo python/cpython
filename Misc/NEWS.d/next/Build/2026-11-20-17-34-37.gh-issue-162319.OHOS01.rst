@@ -1,0 +1,1 @@
+Add OpenHarmony platform identifiers for the ``linux-ohos`` target triple.

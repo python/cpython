@@ -1703,6 +1703,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    iOS              ``'ios'``
    Linux            ``'linux'``
    macOS            ``'darwin'``
+   OpenHarmony      ``'ohos'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
    WASI             ``'wasi'``
