@@ -1,0 +1,3 @@
+Made ``urllib.parse.urlencode`` iterate on any iterable object when the
+``doseq`` parameter is ``True``. Each pair in the iterable can now be an
+iterable (while only ``tuple`` was accepted before).
