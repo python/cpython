@@ -5154,7 +5154,6 @@ Array_subscript_impl(PyObject *myself, PyObject *item)
 
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
             char *ptr = (char *)self->b_ptr;
-            char *dest;
 
             if (slicelen <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
@@ -5164,19 +5163,17 @@ Array_subscript_impl(PyObject *myself, PyObject *item)
                                                 slicelen);
                 return res;
             }
-            dest = (char *)PyMem_Malloc(slicelen);
-
-            if (dest == NULL)
-                return PyErr_NoMemory();
-
+            PyBytesWriter *writer = PyBytesWriter_Create(slicelen);
+            if (writer == NULL) {
+                return NULL;
+            }
+            char *dest = PyBytesWriter_GetData(writer);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
 
-            np = PyBytes_FromStringAndSize(dest, slicelen);
-            PyMem_Free(dest);
-            return np;
+            return PyBytesWriter_Finish(writer);
         }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = (wchar_t *)self->b_ptr;
@@ -5964,8 +5961,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         }
         assert(iteminfo);
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-            char *dest;
-
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
@@ -5977,18 +5972,18 @@ Pointer_subscript(PyObject *myself, PyObject *item)
                 Py_END_CRITICAL_SECTION();
                 return res;
             }
-            dest = (char *)PyMem_Malloc(len);
-            if (dest == NULL)
-                return PyErr_NoMemory();
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
+                return NULL;
+            }
+            char *dest = PyBytesWriter_GetData(writer);
             Py_BEGIN_CRITICAL_SECTION(self);
             char *ptr = *(void **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
             Py_END_CRITICAL_SECTION();
-            np = PyBytes_FromStringAndSize(dest, len);
-            PyMem_Free(dest);
-            return np;
+            return PyBytesWriter_Finish(writer);
         }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *dest;

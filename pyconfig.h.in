@@ -552,9 +552,6 @@
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 
-/* Define to 1 if you have the 'getdents64' function. */
-#undef HAVE_GETDENTS64
-
 /* Define to 1 if you have the 'getegid' function. */
 #undef HAVE_GETEGID
 
@@ -684,9 +681,6 @@
 /* Define if you have the 'getsockname' function. */
 #undef HAVE_GETSOCKNAME
 
-/* Define to 1 if you have the 'gettid' function. */
-#undef HAVE_GETTID
-
 /* Define to 1 if you have the 'getuid' function. */
 #undef HAVE_GETUID
 
@@ -705,14 +699,8 @@
 /* Define to 1 if you have the <iconv.h> header file. */
 #undef HAVE_ICONV_H
 
-/* Define to 1 if you have the 'if_indextoname' function. */
-#undef HAVE_IF_INDEXTONAME
-
 /* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
-
-/* Define to 1 if you have the 'if_nametoindex' function. */
-#undef HAVE_IF_NAMETOINDEX
 
 /* Define if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON
@@ -1009,15 +997,6 @@
 /* Define to 1 if you have the 'pause' function. */
 #undef HAVE_PAUSE
 
-/* Define to 1 if you have the 'pidfd_getfd' function. */
-#undef HAVE_PIDFD_GETFD
-
-/* Define to 1 if you have the 'pidfd_open' function. */
-#undef HAVE_PIDFD_OPEN
-
-/* Define to 1 if you have the 'pidfd_send_signal' function. */
-#undef HAVE_PIDFD_SEND_SIGNAL
-
 /* Define to 1 if you have the 'pipe' function. */
 #undef HAVE_PIPE
 
@@ -1163,9 +1142,6 @@
 
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
-
-/* Define if you have readline 6.3 */
-#undef HAVE_RL_CHANGE_ENVIRONMENT
 
 /* Define to 1 if the system has the type 'rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
@@ -2151,18 +2127,42 @@
 /* Define if you have the 'freadlink' function. */
 #undef _Py_HAVE_FREADLINK
 
+/* Define if you have the 'getdents64' function. */
+#undef _Py_HAVE_GETDENTS64
+
+/* Define if you have the 'gettid' function. */
+#undef _Py_HAVE_GETTID
+
 /* Define if you have a working iconv() function. */
 #undef _Py_HAVE_ICONV
+
+/* Define if you have the 'if_indextoname' function. */
+#undef _Py_HAVE_IF_INDEXTONAME
+
+/* Define if you have the 'if_nametoindex' function. */
+#undef _Py_HAVE_IF_NAMETOINDEX
 
 /* Define to 1 if libgcc __register_frame and __deregister_frame are linkable.
    */
 #undef _Py_HAVE_LIBGCC_EH_FRAME_REGISTRATION
+
+/* Define if you have the 'pidfd_getfd' function. */
+#undef _Py_HAVE_PIDFD_GETFD
+
+/* Define if you have the 'pidfd_open' function. */
+#undef _Py_HAVE_PIDFD_OPEN
+
+/* Define if you have the 'pidfd_send_signal' function. */
+#undef _Py_HAVE_PIDFD_SEND_SIGNAL
 
 /* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
 #undef _Py_HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define if you have the 'pthread_attr_get_np' function. */
 #undef _Py_HAVE_PTHREAD_ATTR_GET_NP
+
+/* Define if you have readline 6.3 */
+#undef _Py_HAVE_RL_CHANGE_ENVIRONMENT
 
 /* Define if you have the 'sinpi' function. */
 #undef _Py_HAVE_SINPI

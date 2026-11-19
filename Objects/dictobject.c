@@ -8663,16 +8663,22 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return d;
 }
 
-static void
+static int
 transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 {
     PyDictObject *new = (PyDictObject *)res;
     PyDictObject *old = (PyDictObject *)dict;
     assert(can_modify_dict(old));
 
+    if (old->ma_values && old->ma_values->embedded) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't convert dict with embedded values");
+        return -1;
+    }
+
     // Fast path: do nothing on an empty dict:
     if (old->ma_keys == Py_EMPTY_KEYS) {
-        return;
+        return 0;
     }
 
     Py_ssize_t used = old->ma_used;
@@ -8690,6 +8696,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
     new->ma_keys = keys;
     new->ma_values = values;
     ASSERT_CONSISTENT(new);
+    return 0;
 }
 
 PyObject *
@@ -8705,9 +8712,14 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
+    int transfer;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    transfer_keys_and_values_lock_held(res, dict);
+    transfer = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
+    if (transfer < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
 
     _PyObject_GC_TRACK(res);
     assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);
