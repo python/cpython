@@ -112,7 +112,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
     def _get_close_waiter(self, stream):
         if stream is self.stdin:
-            return self._stdin_closed
+            # Cancellation of one waiter must not cancel the shared future.
+            return tasks.shield(self._stdin_closed)
 
 
 class Process:
