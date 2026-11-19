@@ -1567,22 +1567,16 @@ mmap_subscript_impl(mmap_object *self, PyObject *item)
         else if (step == 1)
             return _safe_PyBytes_FromStringAndSize(self->data + start, slicelen);
         else {
-            char *result_buf = (char *)PyMem_Malloc(slicelen);
-            PyObject *result;
-
-            if (result_buf == NULL)
-                return PyErr_NoMemory();
-
-            if (safe_copy_to_slice(result_buf, self->data, start, step,
-                                   slicelen) < 0)
-            {
-                result = NULL;
+            PyBytesWriter *writer = PyBytesWriter_Create(slicelen);
+            if (writer == NULL) {
+                return NULL;
             }
-            else {
-                result = PyBytes_FromStringAndSize(result_buf, slicelen);
+            if (safe_copy_to_slice(PyBytesWriter_GetData(writer), self->data,
+                                   start, step, slicelen) < 0) {
+                PyBytesWriter_Discard(writer);
+                return NULL;
             }
-            PyMem_Free(result_buf);
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
     }
     else {
