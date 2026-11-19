@@ -328,7 +328,8 @@ class SocketServerTest(unittest.TestCase):
             finally:
                 server.server_close()
 
-        # A fixed port still gets SO_REUSEADDR.
+        # A fixed port still gets SO_REUSEADDR. Check for non-zero rather
+        # than 1: on macOS getsockopt returns the raw flag value 4.
         server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
         port = server.server_address[1]
         server.server_close()
@@ -336,8 +337,8 @@ class SocketServerTest(unittest.TestCase):
                           bind_and_activate=False)
         try:
             server.server_bind()
-            self.assertEqual(server.socket.getsockopt(socket.SOL_SOCKET,
-                                                     socket.SO_REUSEADDR), 1)
+            self.assertNotEqual(server.socket.getsockopt(socket.SOL_SOCKET,
+                                                        socket.SO_REUSEADDR), 0)
         finally:
             server.server_close()
 
