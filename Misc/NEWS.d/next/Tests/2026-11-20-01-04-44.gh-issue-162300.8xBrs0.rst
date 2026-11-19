@@ -1,0 +1,3 @@
+test_pdb now saves/restores :const:`~signal.SIGINT` signal handler.
+Previously, test_signal failed when run after test_pdb in the same process.
+Patch by Victor Stinner.
