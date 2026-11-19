@@ -1929,6 +1929,24 @@ _winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _winapi_GetACP_impl(module);
 }
 
+PyDoc_STRVAR(_winapi_GetOEMCP__doc__,
+"GetOEMCP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETOEMCP_METHODDEF    \
+    {"GetOEMCP", (PyCFunction)_winapi_GetOEMCP, METH_NOARGS, _winapi_GetOEMCP__doc__},
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetOEMCP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetOEMCP_impl(module);
+}
+
 PyDoc_STRVAR(_winapi_GetFileType__doc__,
 "GetFileType($module, /, handle)\n"
 "--\n"
@@ -2179,4 +2197,4 @@ _winapi_GetTickCount64(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _winapi_GetTickCount64_impl(module);
 }
-/*[clinic end generated code: output=4a408e816118d0a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8583aef46a1b76ed input=a9049054013a1b77]*/
