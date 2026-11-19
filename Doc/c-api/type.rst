@@ -676,7 +676,7 @@ but need extra remarks for use as slots:
 
 .. c:macro:: Py_tp_bases
 
-   :c:member:`Slot ID <PySlot.sl_id>` for type flags, used to set
+   :c:member:`Slot ID <PySlot.sl_id>` for base types, used to set
    :c:member:`PyTypeObject.tp_bases`.
 
    The slot can be set to a tuple of type objects which the newly created
@@ -814,7 +814,7 @@ They will continue to work, but new features will be added as slots for
    :c:macro:`Py_tp_metaclass` slot.
 
    A non-``NULL`` *bases* argument corresponds to the :c:data:`Py_tp_bases`
-   slot, and takes precedence over :c:data:`Py_tp_bases` and
+   slot, and takes precedence over :c:data:`Py_tp_base` and
    :c:data:`Py_tp_bases` slots.
 
    A non-``NULL`` *module* argument corresponds to the
@@ -828,7 +828,7 @@ They will continue to work, but new features will be added as slots for
 
    .. versionadded:: 3.12
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -859,7 +859,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -885,7 +885,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -910,7 +910,7 @@ They will continue to work, but new features will be added as slots for
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
-   .. soft-deprecated:: next
+   .. soft-deprecated:: 3.15
 
       Prefer :c:func:`PyType_FromSlots` in new code.
 
@@ -985,7 +985,7 @@ They will continue to work, but new features will be added as slots for
             (PySlot){
                .sl_id=tpslot.slot,
                .sl_flags=PySlot_INTPTR | sub_static,
-               .sl_ptr=tpslot.func
+               .sl_ptr=tpslot.pfunc
             }
 
          where ``sub_static`` is ``PySlot_STATIC`` if the slot requires

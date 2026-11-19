@@ -1,3 +1,0 @@
-Fix direct execution of files with invalid source encodings to report the
-underlying codec lookup or decoding error instead of the generic
-``SyntaxError: encoding problem`` message. Patch by Bartosz Sławecki.

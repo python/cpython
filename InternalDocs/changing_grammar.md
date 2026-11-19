@@ -13,10 +13,13 @@ Below is a checklist of things that may need to change.
 ## Checklist
 
 * [`Grammar/python.gram`](../Grammar/python.gram): The grammar definition,
-  with actions that build AST nodes.
-  After changing it, run ``make regen-pegen`` (or ``build.bat --regen`` on Windows),
-  to regenerate [`Parser/parser.c`](../Parser/parser.c).
-  (This runs Python's parser generator, [`Tools/peg_generator`](../Tools/peg_generator)).
+  with actions that build AST nodes. The rules for specialized syntax errors
+  (`invalid_*` rules) are in [`Grammar/invalid.gram`](../Grammar/invalid.gram),
+  included by `python.gram`. After changing either, run ``make regen-pegen``
+  (or ``build.bat --regen`` on Windows), to regenerate
+  [`Parser/parser.c`](../Parser/parser.c) and
+  [`Parser/parser_invalid.c`](../Parser/parser_invalid.c). (This runs Python's
+  parser generator, [`Tools/peg_generator`](../Tools/peg_generator)).
 
 * [`Grammar/Tokens`](../Grammar/Tokens) is a place for adding new token types.  After
   changing it, run ``make regen-token`` to regenerate

@@ -2,6 +2,7 @@
 
 import _colorize
 import contextlib
+import copy
 import functools
 import io
 import operator
@@ -17,6 +18,7 @@ import argparse
 import warnings
 
 from enum import StrEnum
+from test import support
 from test.support import (
     captured_stderr,
     force_not_colorized,
@@ -78,6 +80,24 @@ class StdStreamTest(unittest.TestCase):
             ):
                 func()
                 self.assertRegex(mocked_stderr.getvalue(), r'usage:')
+
+    def test_invalid_file_only(self):
+        parser = argparse.ArgumentParser()
+        for func in (parser.print_usage, parser.print_help):
+            for invalid_f in ("invalid file", "", 0):
+                with (
+                    self.subTest(func=func, invalid_f=invalid_f),
+                    self.assertRaises(AttributeError),
+                ):
+                    func(file=invalid_f)
+
+    def test_exit_when_stderr_oserror(self):
+        parser = argparse.ArgumentParser()
+        with (mock.patch('argparse._sys.stderr.write',
+                         side_effect=OSError('not raise this')),
+              self.assertRaises(SystemExit),
+              ):
+            parser.exit(status=0, message='foo')
 
 
 class TestLazyImports(unittest.TestCase):
@@ -1819,6 +1839,75 @@ class TestNargsRemainder(ParserTestCase):
     ]
 
 
+class TestNargsRemainderBoundaries(TestCase):
+
+    def test_first_positional(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        parser.add_argument('--foo')
+        parser.add_argument('args', nargs=argparse.REMAINDER)
+
+        for args in (['--unknown'], ['--foo', 'B', '--unknown']):
+            with self.subTest(args=args):
+                with self.assertRaisesRegex(
+                        argparse.ArgumentError,
+                        'unrecognized arguments: --unknown'):
+                    parser.parse_args(args)
+        self.assertEqual(parser.parse_args(['--foo', 'B']),
+                         NS(foo='B', args=[]))
+        self.assertEqual(parser.parse_args(['cmd', '--foo', 'C']),
+                         NS(foo=None, args=['cmd', '--foo', 'C']))
+        self.assertEqual(parser.parse_args(['--', '--foo', 'C']),
+                         NS(foo=None, args=['--', '--foo', 'C']))
+
+    def test_first_positional_in_subparser(self):
+        parser = argparse.ArgumentParser(exit_on_error=False)
+        subparser = parser.add_subparsers().add_parser('run')
+        subparser.add_argument('--foo', action='store_true')
+        subparser.add_argument('args', nargs=argparse.REMAINDER)
+
+        with self.assertRaisesRegex(argparse.ArgumentError,
+                                    'unrecognized arguments: --unknown'):
+            parser.parse_args(['run', '--unknown'])
+        self.assertEqual(parser.parse_args(['run', '--foo']),
+                         NS(foo=True, args=[]))
+        self.assertEqual(parser.parse_args(['run', 'cmd', '--foo']),
+                         NS(foo=False, args=['cmd', '--foo']))
+        self.assertEqual(parser.parse_args(['run', '--', '--foo']),
+                         NS(foo=False, args=['--', '--foo']))
+
+    def test_optional_captures_options(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', action='store_true')
+        parser.add_argument('--forward', nargs=argparse.REMAINDER,
+                            default=['fallback'])
+
+        self.assertEqual(parser.parse_args(['--forward']),
+                         NS(foo=False, forward=[]))
+        self.assertEqual(parser.parse_args(['--forward', '--foo']),
+                         NS(foo=False, forward=['--foo']))
+
+    def test_optional_attached_value(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-f', '--forward', nargs=argparse.REMAINDER)
+
+        for option in ('--forward=a', '-fa'):
+            with self.subTest(option=option):
+                self.assertEqual(parser.parse_known_args([option, 'b']),
+                                 (NS(forward=['a']), ['b']))
+
+    def test_empty_positional_ignores_default(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('args', nargs=argparse.REMAINDER,
+                            default=['fallback'])
+        self.assertEqual(parser.parse_args([]), NS(args=[]))
+
+    def test_type_conversion_without_choices_validation(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('args', nargs=argparse.REMAINDER,
+                            type=int, choices=[1])
+        self.assertEqual(parser.parse_args(['2']), NS(args=[2]))
+
+
 class TestOptionLike(ParserTestCase):
     """Tests options that may or may not be arguments"""
 
@@ -3226,6 +3315,20 @@ class TestGroupConstructor(TestCase):
         self.assertRaisesRegex(ValueError,
                                  'argument groups cannot be nested',
                                  g.add_argument_group)
+
+    def test_group_types(self):
+        parser = argparse.ArgumentParser()
+        group = parser.add_argument_group()
+        self.assertIs(type(group), argparse.ArgumentGroup)
+        self.assertIs(type(parser.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+        self.assertIs(type(group.add_mutually_exclusive_group()),
+                      argparse.MutuallyExclusiveGroup)
+
+    def test_private_aliases(self):
+        self.assertIs(argparse._ArgumentGroup, argparse.ArgumentGroup)
+        self.assertIs(argparse._MutuallyExclusiveGroup,
+                      argparse.MutuallyExclusiveGroup)
 
 # ===================
 # Parent parser tests
@@ -6267,6 +6370,19 @@ class TestNamespace(TestCase):
         self.assertIs(ns.__eq__(None), NotImplemented)
         self.assertIs(ns.__ne__(None), NotImplemented)
 
+    def test_replace(self):
+        ns = argparse.Namespace(a=1, b=2)
+        new = copy.replace(ns, b=3, c=4)
+        self.assertIsInstance(new, argparse.Namespace)
+        self.assertEqual(new, argparse.Namespace(a=1, b=3, c=4))
+        self.assertEqual(ns, argparse.Namespace(a=1, b=2))
+
+        class MyNamespace(argparse.Namespace):
+            pass
+        new = copy.replace(MyNamespace(a=1), a=2)
+        self.assertIsInstance(new, MyNamespace)
+        self.assertEqual(new.a, 2)
+
 
 # ===================
 # File encoding tests
@@ -6810,7 +6926,7 @@ class TestIntermixedArgs(TestCase):
         self.assertEqual(bar.required, True)
 
     def test_remainder(self):
-        # Intermixed and remainder are incompatible
+        # Intermixed and positional remainder are incompatible
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('-z')
         parser.add_argument('x')
@@ -6821,6 +6937,14 @@ class TestIntermixedArgs(TestCase):
         with self.assertRaises(TypeError) as cm:
             parser.parse_intermixed_args(argv)
         self.assertRegex(str(cm.exception), r'\.\.\.')
+
+    def test_optional_remainder(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('command')
+        parser.add_argument('--forward', nargs=argparse.REMAINDER)
+        self.assertEqual(
+            parser.parse_intermixed_args(['cmd', '--forward', '--foo']),
+            NS(command='cmd', forward=['--foo']))
 
     def test_required_exclusive(self):
         # required mutually exclusive group; intermixed works fine
@@ -6834,7 +6958,7 @@ class TestIntermixedArgs(TestCase):
         args = parser.parse_intermixed_args('1 --foo 2'.split())
         self.assertEqual(NS(badger=['1', '2'], foo=True, spam=None), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-                'one of the arguments --foo --spam is required',
+                'one of the following arguments is required: --foo, --spam',
                 parser.parse_intermixed_args, '1 2'.split())
         self.assertEqual(group.required, True)
 
@@ -6850,7 +6974,7 @@ class TestIntermixedArgs(TestCase):
         args = parser.parse_intermixed_args(['a', 'b'])
         self.assertEqual(NS(foo=False, spam=None, badger=['a', 'b']), args)
         self.assertRaisesRegex(argparse.ArgumentError,
-                'one of the arguments --foo --spam badger is required',
+                'one of the following arguments is required: --foo, --spam, badger',
                 parser.parse_intermixed_args, [])
         self.assertRaisesRegex(argparse.ArgumentError,
                 'argument badger: not allowed with argument --foo',
@@ -7226,7 +7350,7 @@ class TestExitOnError(TestCase):
         group.add_argument('--bar')
         group.add_argument('--baz')
         self.assertRaisesRegex(argparse.ArgumentError,
-                               'one of the arguments --bar --baz is required',
+                               'one of the following arguments is required: --bar, --baz',
                                self.parser.parse_args, [])
 
     def test_conflicting_mutually_exclusive_args_optional_with_metavar(self):
@@ -7345,6 +7469,22 @@ class TestProgName(TestCase):
 
     def test_module_compiled(self):
         self.test_module(compiled=True)
+
+    def test_module_as_main_without_altering_argv(self):
+        basename = 'module' + os_helper.FS_NONASCII
+        modulename = f'{self.dirname}.{basename}'
+        self.make_script(self.dirname, basename)
+        # The filesystem encoding may be non-UTF-8,
+        # but the runner runs in UTF-8 mode
+        modulename = os.fsencode(modulename).decode("utf-8", "surrogateescape")
+        runner_source = textwrap.dedent(f'''\
+            import runpy
+            runpy._run_module_as_main({modulename!r}, alter_argv=False)
+        ''')
+        runner = script_helper.make_script(
+            self.dirname, 'runner', runner_source)
+        self.check_usage(os.path.basename(runner), runner,
+                         PYTHONPATH=os.curdir)
 
     def test_package(self, compiled=False):
         basename = 'subpackage' + os_helper.FS_NONASCII
@@ -7898,6 +8038,41 @@ class TestColorized(TestCase):
         self.assertIn("set the `foo` value", help_text)
         self.assertNotIn("\x1b[", help_text)
 
+    def test_argument_help_interpolation_accepts_string_like_proxy(self):
+        class LazyStr:
+            def __init__(self, message):
+                self._message = message
+
+            def __str__(self):
+                return self._message
+
+            def __getattr__(self, name):
+                return getattr(str(self), name)
+
+            def __contains__(self, item):
+                return item in self._message
+
+            def __mod__(self, other):
+                return self._message % other
+
+        parser = argparse.ArgumentParser(prog="PROG", color=True)
+        parser.add_argument(
+            "--foo",
+            default="bar",
+            help=LazyStr("foo (default: %(default)s)"),
+        )
+        parser.add_argument(
+            "--baz",
+            help=LazyStr("baz plain text"),
+        )
+
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f"foo (default: {interp}bar{reset})", help_text)
+        self.assertIn("baz plain text", help_text)
+
     def test_help_with_format_specifiers(self):
         # GH-142950: format specifiers like %x should work with color=True
         parser = argparse.ArgumentParser(prog='PROG', color=True)
@@ -7987,13 +8162,10 @@ class TestColorized(TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(argparse, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, argparse, "__version__", remove=(3, 20),
+        )
 
 
 def tearDownModule():

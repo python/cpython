@@ -6,7 +6,7 @@ import sys
 import sysconfig
 import time
 from collections import deque
-lazy from _colorize import ANSIColors
+lazy from _colorize import get_colors
 
 from .binary_collector import BinaryCollector
 
@@ -272,6 +272,8 @@ class SampleProfiler:
         )  # Max time = Min Hz
 
         # Build cache stats string if stats collection is enabled
+        ANSIColors = get_colors()
+
         cache_stats_str = ""
         if self.collect_stats:
             try:
@@ -304,6 +306,8 @@ class SampleProfiler:
             stats = self.unwinder.get_stats()
         except RuntimeError:
             return  # Stats not enabled
+
+        ANSIColors = get_colors()
 
         print(f"\n{ANSIColors.BOLD_BLUE}{'='*50}{ANSIColors.RESET}")
         print(f"{ANSIColors.BOLD_BLUE}Unwinder Statistics:{ANSIColors.RESET}")
@@ -399,28 +403,30 @@ class SampleProfiler:
         except (ValueError, RuntimeError):
             return  # Collector closed or stats unavailable
 
+        ANSIColors = get_colors()
+
         print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
 
         repeat_records = stats.get('repeat_records', 0)
         repeat_samples = stats.get('repeat_samples', 0)
         full_records = stats.get('full_records', 0)
         suffix_records = stats.get('suffix_records', 0)
-        pop_push_records = stats.get('pop_push_records', 0)
+        reuse_records = stats.get('reuse_records', 0)
         total_records = stats.get('total_records', 0)
 
         if total_records > 0:
             repeat_pct = repeat_records / total_records * 100
             full_pct = full_records / total_records * 100
             suffix_pct = suffix_records / total_records * 100
-            pop_push_pct = pop_push_records / total_records * 100
+            reuse_pct = reuse_records / total_records * 100
         else:
-            repeat_pct = full_pct = suffix_pct = pop_push_pct = 0
+            repeat_pct = full_pct = suffix_pct = reuse_pct = 0
 
         print(f"    Records:          {total_records:,}")
         print(f"      RLE repeat:     {repeat_records:,} ({ANSIColors.GREEN}{repeat_pct:.1f}%{ANSIColors.RESET}) [{repeat_samples:,} samples]")
         print(f"      Full stack:     {full_records:,} ({full_pct:.1f}%)")
         print(f"      Suffix match:   {suffix_records:,} ({suffix_pct:.1f}%)")
-        print(f"      Pop-push:       {pop_push_records:,} ({pop_push_pct:.1f}%)")
+        print(f"      Stack reuse:    {reuse_records:,} ({reuse_pct:.1f}%)")
 
         frames_written = stats.get('total_frames_written', 0)
         frames_saved = stats.get('frames_saved', 0)

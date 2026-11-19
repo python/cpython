@@ -25,6 +25,7 @@ from collections import defaultdict
 import collections.abc
 import copyreg
 import functools
+import keyword
 import operator
 import sys
 import types
@@ -122,7 +123,6 @@ __all__ = [
     'TextIO',
 
     # One-off things.
-    'AnyStr',
     'assert_type',
     'assert_never',
     'cast',
@@ -474,6 +474,9 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
+        if isinstance(t, _LiteralGenericAlias):
+            # Unlike other generic aliases, Literal arguments aren't type expressions
+            return t
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
@@ -494,7 +497,7 @@ def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset()
         if isinstance(t, GenericAlias):
             return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
+            return Union[ev_args]
         else:
             return t.copy_with(ev_args)
     return t
@@ -998,8 +1001,12 @@ def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
         if parent_fwdref.__owner__ is not None:
             kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = annotationlib.ForwardRef(code, **kwargs)
-    # For compatibility, eagerly compile the forwardref's code.
-    forward_ref.__forward_code__
+    # For compatibility, eagerly compile the forwardref's code so that any
+    # SyntaxError is raised immediately rather than when the forward
+    # reference is evaluated. Similar to 'ForwardRef.evaluate()', we only compile
+    # it if necessary:
+    if not (code.isidentifier() and not keyword.iskeyword(code)):
+        forward_ref.__forward_code__
     return forward_ref
 
 
@@ -2546,7 +2553,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return functools.reduce(operator.or_, stripped_args)
+        return Union[stripped_args]
 
     return t
 
@@ -2830,11 +2837,6 @@ VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
 T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 # Internal type bound to class object types.
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
-
-
-# A useful type variable with constraints.  This represents string types.
-# (This one *is* for export!)
-AnyStr = TypeVar('AnyStr', bytes, str)
 
 
 # Various ABCs mimicking those in collections.abc.
@@ -3540,8 +3542,9 @@ Text = str
 # Constant that's True when type checking, but False here.
 TYPE_CHECKING = False
 
-
-class IO(Generic[AnyStr]):
+# Since `AnyStr` public API is deprecated since 3.16 and will be removed
+# in 3.21, we need to keep `IO` protocol the same as it used to be:
+class IO[AnyStr: (bytes, str)]:
     """Generic base class for TextIO and BinaryIO.
 
     This is an abstract, generic version of the return of open().
@@ -3941,6 +3944,20 @@ def __getattr__(attr):
             )
 
         return ByteString
+    elif attr == "AnyStr":
+        import warnings
+
+        warnings._deprecated(
+            "typing.AnyStr",
+            message=(
+                "{name!r} is deprecated and slated for removal "
+                "in Python {remove}. Use PEP 695 type parameters "
+                "with constraints instead"
+            ),
+            remove=(3, 21),
+        )
+        AnyStr = globals()["AnyStr"] = TypeVar('AnyStr', bytes, str)
+        return AnyStr
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj

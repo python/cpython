@@ -196,7 +196,13 @@ if hasattr(socket, 'TCP_NODELAY'):
         if (sock.family in {socket.AF_INET, socket.AF_INET6} and
                 sock.type == socket.SOCK_STREAM and
                 sock.proto == socket.IPPROTO_TCP):
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            except OSError:
+                # TCP_NODELAY is only a latency optimization.  It can fail
+                # on a connection already reset by the peer (e.g. EINVAL
+                # on macOS); the error will surface on the next I/O.
+                pass
 else:
     def _set_nodelay(sock):
         pass
@@ -432,7 +438,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Identifier of the thread running the event loop, or None if the
         # event loop is not running
         self._thread_id = None
-        self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
         # The preserved state of async generator hooks.
@@ -1244,6 +1249,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             await waiter
         except:
             transport.close()
+            waiter = None
             raise
 
         return transport, protocol
@@ -1381,6 +1387,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
+            waiter = None
             raise
 
         return ssl_protocol._app_transport
@@ -1497,7 +1504,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 raise exceptions[0]
 
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the socket yet, so close it.
+            sock.close()
+            raise
         waiter = self.create_future()
         transport = self._make_datagram_transport(
             sock, protocol, r_addr, waiter)
@@ -1714,7 +1726,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_read_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_read_pipe_transport(pipe, protocol, waiter)
 
@@ -1730,7 +1747,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     async def connect_write_pipe(self, protocol_factory, pipe):
-        protocol = protocol_factory()
+        try:
+            protocol = protocol_factory()
+        except:
+            # gh-156400: no transport owns the pipe yet, so close it.
+            pipe.close()
+            raise
         waiter = self.create_future()
         transport = self._make_write_pipe_transport(pipe, protocol, waiter)
 
@@ -2040,7 +2062,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         now = self.time()
         # Ensure that `end_time` is strictly increasing
         # when the clock resolution is too small.
-        end_time = now + max(self._clock_resolution, math.ulp(now))
+        end_time = now + max(constants.CLOCK_RESOLUTION, math.ulp(now))
         while self._scheduled:
             handle = self._scheduled[0]
             if handle._when >= end_time:

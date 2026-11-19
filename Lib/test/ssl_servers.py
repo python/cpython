@@ -61,7 +61,7 @@ class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = urllib.parse.urlparse(path)[2]
+        path = urllib.parse.urlparse(path).path
         path = os.path.normpath(urllib.parse.unquote(path))
         words = path.split('/')
         words = filter(None, words)
