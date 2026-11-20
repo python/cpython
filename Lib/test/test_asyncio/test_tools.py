@@ -7,7 +7,11 @@ from collections import namedtuple
 
 FrameInfo = namedtuple('FrameInfo', ['funcname', 'filename', 'lineno'])
 CoroInfo = namedtuple('CoroInfo', ['call_stack', 'task_name'])
-TaskInfo = namedtuple('TaskInfo', ['task_id', 'task_name', 'coroutine_stack', 'awaited_by'])
+class TaskInfo(namedtuple('TaskInfoBase',
+                          ['task_id', 'task_name', 'coroutine_stack', 'awaited_by'])):
+    is_future = False
+
+
 AwaitedInfo = namedtuple('AwaitedInfo', ['thread_id', 'awaited_by'])
 
 

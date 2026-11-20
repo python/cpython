@@ -180,11 +180,12 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "\n"
 "Get all tasks and their awaited_by relationships from the remote process.\n"
 "\n"
-"This provides a tree structure showing which tasks are waiting for other tasks.\n"
+"This provides a tree structure showing which tasks and futures are waiting for\n"
+"other tasks.\n"
 "\n"
 "For each task, returns:\n"
 "1. The call stack frames leading to where the task is currently executing\n"
-"2. The name of the task\n"
+"2. The name of the task, or a generated name for a future\n"
 "3. A list of tasks that this task is waiting for, with their own frames/names/etc\n"
 "\n"
 "Returns a list of [frames, task_name, subtasks] where:\n"
@@ -239,6 +240,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "\n"
 "This returns information about running tasks and all tasks that are waiting for them,\n"
 "forming a complete dependency graph for each thread\'s active task.\n"
+"Intermediate futures are included in each dependency graph.\n"
 "\n"
 "For each thread with a running task, returns the running task plus all tasks that\n"
 "transitively depend on it (tasks waiting for the running task, tasks waiting for\n"
@@ -250,7 +252,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "\n"
 "Each task info contains:\n"
 "- Task ID (memory address)\n"
-"- Task name\n"
+"- Task name, or a generated name for a future\n"
 "- Call stack frames: List of (func_name, filename, lineno)\n"
 "- List of tasks waiting for this task (recursive structure)\n"
 "\n"
@@ -288,4 +290,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=0dd1e6e8bab2a8b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d3800769c130513 input=a9049054013a1b77]*/
