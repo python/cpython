@@ -226,7 +226,10 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
                      params=None, headers=None):
     _prepare_set(msg, maintype, subtype, headers)
     if cte == 'base64':
-        data = binascii.b2a_base64(data, wrapcol=msg.policy.max_line_length)
+        maxlen = msg.policy.max_line_length
+        if maxlen:
+            maxlen = min(maxlen, 76)
+        data = binascii.b2a_base64(data, wrapcol=maxlen)
         data = data.decode('ascii')
     elif cte == 'quoted-printable':
         # XXX: quoprimime.body_encode won't encode newline characters in data,
