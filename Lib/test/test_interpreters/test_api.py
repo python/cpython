@@ -832,6 +832,31 @@ class TestInterpreterClose(TestBase):
         assert_python_ok('-c', code)
 
 
+class TestInterpreterContextManager(TestBase):
+
+    def test_basic(self):
+        main, = interpreters.list_all()
+        with interpreters.create() as interp:
+            self.assertIsInstance(interp, interpreters.Interpreter)
+            self.assertEqual(interpreters.list_all(), [main, interp])
+        self.assertEqual(interpreters.list_all(), [main])
+        with self.assertRaises(InterpreterNotFoundError):
+            interp.exec('pass')
+
+    def test_exception(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(ZeroDivisionError):
+            with interpreters.create() as interp:
+                1/0
+        self.assertEqual(interpreters.list_all(), [main])
+
+    def test_main(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(InterpreterError):
+            with main:
+                pass
+
+
 class TestInterpreterPrepareMain(TestBase):
 
     def test_empty(self):
@@ -921,6 +946,21 @@ class TestInterpreterExec(TestBase):
         interp = interpreters.create()
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
+
+    def test_failure_with_broken_exception_str(self):
+        interp = interpreters.create()
+        for raised, expected in [
+            ('ValueError', interpreters.InterpreterError),
+            ('MemoryError', MemoryError),
+        ]:
+            with self.subTest(raised=raised):
+                with self.assertRaises(expected):
+                    interp.exec(dedent(f"""
+                        class BrokenError(Exception):
+                            def __str__(self):
+                                raise {raised}
+                        raise BrokenError
+                        """))
 
     @force_not_colorized
     def test_display_preserved_exception(self):

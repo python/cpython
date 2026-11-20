@@ -618,8 +618,6 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
-                ADDOP(c, *ploc, PUSH_NULL);
-                ADDOP_LOAD_CONST(c, *ploc, Py_None);
                 ADD_YIELD_FROM(c, *ploc, 1);
             }
             ADDOP(c, *ploc, POP_TOP);
@@ -2225,8 +2223,6 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
@@ -4843,8 +4839,6 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);
@@ -5167,8 +5161,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     if (is_async_comprehension && type != COMP_GENEXP) {
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
     }
 
@@ -5312,8 +5304,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
@@ -5349,8 +5339,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
      */
     RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
 
     ADDOP(c, loc, POP_TOP);
@@ -5364,8 +5352,6 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
 
@@ -5552,8 +5538,6 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
     case Await_kind:
         VISIT(c, expr, e->v.Await.value);
         ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADDOP(c, loc, PUSH_NULL);
-        ADDOP_LOAD_CONST(c, loc, Py_None);
         ADD_YIELD_FROM(c, loc, 1);
         break;
     case Compare_kind:
@@ -6432,6 +6416,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
+    PyObject *mismatched_names = NULL;
+    Py_ssize_t mismatch_index = 0;
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
@@ -6466,6 +6452,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
             control = Py_NewRef(pc->stores);
         }
         else if (nstores != PyList_GET_SIZE(control)) {
+            mismatch_index = i;
+            mismatched_names = Py_NewRef(pc->stores);
             goto diff;
         }
         else if (nstores) {
@@ -6476,6 +6464,8 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
                 Py_ssize_t istores = PySequence_Index(pc->stores, name);
                 if (istores < 0) {
                     PyErr_Clear();
+                    mismatch_index = i;
+                    mismatched_names = Py_NewRef(pc->stores);
                     goto diff;
                 }
                 if (icontrol != istores) {
@@ -6567,10 +6557,24 @@ codegen_pattern_or(compiler *c, pattern_ty p, pattern_context *pc)
     // Pop the copy of the subject:
     ADDOP(c, LOC(p), POP_TOP);
     return SUCCESS;
-diff:
-    _PyCompile_Error(c, LOC(p), "alternative patterns bind different names");
+diff:;
+    int control_is_empty = PyList_GET_SIZE(control) == 0;
+    int pattern_is_empty = (
+        mismatched_names == NULL
+        || PyList_GET_SIZE(mismatched_names) == 0
+    );
+
+    _PyCompile_Error(
+        c, LOC(p),
+        "alternative patterns bind different names "
+        "(pattern 1 binds %S, pattern %zd binds %S)",
+        control_is_empty ? &_Py_ID(nothing) : control,
+        mismatch_index + 1,
+        pattern_is_empty ? &_Py_ID(nothing) : mismatched_names
+    );
 error:
     PyMem_Free(old_pc.fail_pop);
+    Py_XDECREF(mismatched_names);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return ERROR;

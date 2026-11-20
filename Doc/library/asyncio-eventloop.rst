@@ -581,7 +581,7 @@ Opening network connections
    .. versionchanged:: 3.12
       *all_errors* was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Raises a ``ValueError`` if ``ssl.check_hostname`` is ``True``
       and ``server_hostname`` is not supplied.
 
@@ -1537,7 +1537,7 @@ Allows customizing how exceptions are handled in the event loop.
    * 'source_traceback' (optional): Traceback of the source;
    * 'handle_traceback' (optional): Traceback of the handle;
    * 'asyncgen' (optional): Asynchronous generator that caused
-                            the exception.
+     the exception.
 
    .. note::
 
@@ -1967,6 +1967,17 @@ By default asyncio is configured to use :class:`EventLoop`.
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
 
+.. class:: BaseEventLoop
+
+   A base class that partially implements :class:`AbstractEventLoop`
+   to simplify writing custom event loops.
+
+   It provides default implementations of many :class:`AbstractEventLoop`
+   methods, so subclasses have fewer methods to implement themselves.
+   In return, a subclass is expected to implement a number of internal,
+   protected methods.
+   See :ref:`writing_custom_event_loop` for more information.
+
 
 Examples
 ========
@@ -2018,7 +2029,7 @@ Display the current date with call_later()
 
 An example of a callback displaying the current date every second. The
 callback uses the :meth:`loop.call_later` method to reschedule itself
-after 5 seconds, and then stops the event loop::
+after 1 second, and eventually stops the event loop::
 
     import asyncio
     import datetime as dt

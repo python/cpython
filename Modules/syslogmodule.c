@@ -106,8 +106,7 @@ syslog_get_argv(void)
         return NULL;
     }
 
-    scriptobj = PyList_GetItem(argv, 0);
-    Py_XINCREF(scriptobj);
+    scriptobj = PyList_GetItemRef(argv, 0);
     Py_DECREF(argv);
     if (scriptobj == NULL) {
         PyErr_Clear();

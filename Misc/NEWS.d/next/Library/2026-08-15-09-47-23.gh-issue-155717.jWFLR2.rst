@@ -1,5 +1,0 @@
-:mod:`multiprocessing`'s default start method is now
-:ref:`"spawn" <multiprocessing-start-methods>` instead of ``"forkserver"``
-when there is no writable temporary directory, such as on a read-only file
-system. Previously starting a process failed with an :exc:`OSError` there.
-Patch by Bénédikt Tran.

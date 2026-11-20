@@ -96,6 +96,35 @@ test_tokenizer_source(PyObject *Py_UNUSED(module),
     }
 
     _PyTok_SourceClear(&source);
+    if (check(_PyTok_SourceAppendLineWithNewline(&source, "", 0) == 0,
+              "cannot append empty terminated line") < 0 ||
+            check(_PyTok_SourceAppendLineWithNewline(&source, tail, 4) == 1,
+                  "wrong terminated line offset") < 0 ||
+            check(source.len == 6 && source.nlines == 2 &&
+                      memcmp(source.bytes, "\ntail\n", 7) == 0,
+                  "wrong terminated source contents") < 0 ||
+            check_system_error(_PyTok_SourceAppendLineWithNewline(
+                &source, terminated_line, 2) < 0,
+                "accepted newline in line payload") < 0) {
+        goto error;
+    }
+    source.base_offset = PY_SSIZE_T_MAX - source.len;
+    if (check(_PyTok_SourceAppendLineWithNewline(&source, "", 0) < 0 &&
+                  PyErr_ExceptionMatches(PyExc_MemoryError),
+              "accepted overflowing appended newline") < 0) {
+        goto error;
+    }
+    PyErr_Clear();
+    source.base_offset = 0;
+    source.nlines = INT_MAX - 1;
+    if (check(_PyTok_SourceAppendLineWithNewline(&source, "", 0) < 0 &&
+                  PyErr_ExceptionMatches(PyExc_OverflowError),
+              "accepted overflowing newline count") < 0) {
+        goto error;
+    }
+    PyErr_Clear();
+
+    _PyTok_SourceClear(&source);
     Py_RETURN_NONE;
 
 error:

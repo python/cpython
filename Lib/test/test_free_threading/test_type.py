@@ -1,3 +1,4 @@
+import gc
 import threading
 import unittest
 
@@ -18,6 +19,24 @@ ITERS = 100
 
 class A:
     attr = 1
+
+def world_stoppers():
+    """Finite workloads that contend for the stop-the-world mutex.
+
+    Waiting for the mutex releases the type lock, so that other threads
+    can change types in the meantime.  Use a short pause rather than full collections
+    to prolong the contention without depending on the size of the heap.
+    """
+    def stopper():
+        for _ in range(100):
+            _testinternalcapi.stop_the_world()
+
+    def pauser():
+        for _ in range(100):
+            _testinternalcapi.stop_the_world(0.0001)
+
+    return [stopper, pauser]
+
 
 @threading_helper.requires_working_threading()
 class TestType(TestCase):
@@ -325,9 +344,8 @@ class TestType(TestCase):
             reader.join()
 
     def test_setattr_many_subclasses(self):
-        # gh-155978: Updating a special method queues a slot update for every
-        # affected subclass.  Keep enough subclasses alive to require
-        # heap-allocated queue chunks in addition to the stack chunk.
+        # gh-155978: Updating a special method updates the slot of every
+        # affected subclass.
         class Base:
             pass
 
@@ -344,6 +362,11 @@ class TestType(TestCase):
         self.assertTrue(all(repr(cls()) != "custom repr"
                             for cls in subclasses))
 
+        # The slot update must not keep references to the types.
+        del subclasses
+        gc.collect()
+        self.assertEqual(Base.__subclasses__(), [])
+
     def test_concurrent_setattr_deadlock(self):
         # gh-155400: two threads assigning to a special method of the same
         # class could deadlock.  One thread held the type lock and waited for
@@ -352,6 +375,7 @@ class TestType(TestCase):
         # dict mutex and waited for the type lock.
         # This is fairly difficult to trigger the race but this N seems to do
         # it at least sometimes.
+        type_freeze = import_helper.import_module("_testlimitedcapi").type_freeze
         N = 200
         done = False
 
@@ -378,6 +402,15 @@ class TestType(TestCase):
             while not done:
                 Base.__subclasses__()
 
+        def freezer():
+            # gh-158194: Exercise type freezing concurrently with slot
+            # updates and competing stop-the-world requests.
+            barrier.wait()
+            for _ in range(10):
+                class Frozen:
+                    pass
+                type_freeze(Frozen)
+
         def basesetter():
             nonlocal done
             barrier.wait()
@@ -395,11 +428,224 @@ class TestType(TestCase):
         # to keep the type lock and the stop-the-world mutex contended, which
         # is what gets the setters into the window where it happens.
         targets = (setter, setter, subclasser, subclasser,
-                   lister, lister, basesetter)
+                   lister, lister, basesetter, freezer)
         barrier = threading.Barrier(len(targets))
         threads = [Thread(target=target) for target in targets]
         with threading_helper.start_threads(threads):
             pass
+
+    def check_stop_the_world_under_type_lock(self, setter):
+        # gh-158195: Python code that runs with the type lock held and stops
+        # the world could deadlock with a thread that held the type lock
+        # pinned while it waited for the stop-the-world mutex (__bases__
+        # assignment).  The first thread released the type lock while it was
+        # blocked on the stop-the-world mutex, was handed the mutex, and then
+        # waited for the type lock while owning the mutex.
+        def basesetter():
+            class A:
+                pass
+            class B:
+                pass
+            class C(A):
+                pass
+            for _ in range(100):
+                C.__bases__ = (B,)
+                C.__bases__ = (A,)
+
+        def stopper():
+            for _ in range(100):
+                _testinternalcapi.stop_the_world()
+
+        # The stopper keeps the stop-the-world mutex contended, which makes
+        # the setters block on it.  All workers have finite workloads so
+        # that repeated invalidation cannot indefinitely delay a setter.
+        threading_helper.run_concurrently(
+            [setter, setter, basesetter, stopper])
+
+    def test_stop_the_world_in_mro_deadlock(self):
+        # type_ready() calls a metaclass mro() with the type lock held.
+        N = 50
+
+        class Meta(type):
+            def mro(cls):
+                _testinternalcapi.stop_the_world()
+                return type.mro(cls)
+
+        def setter():
+            for _ in range(N):
+                Meta("K", (), {})
+
+        self.check_stop_the_world_under_type_lock(setter)
+
+    def test_reentrant_mro_always_publishes(self):
+        # A custom mro() that updates a slot on every call must not make
+        # the __bases__ assignment retry forever.
+        class Other:
+            pass
+
+        class Meta(type):
+            def mro(cls):
+                Other.__repr__ = lambda self: "x"
+                return type.mro(cls)
+
+        class A:
+            pass
+
+        class B:
+            pass
+
+        class C(A, metaclass=Meta):
+            pass
+
+        C.__bases__ = (B,)
+        self.assertEqual(C.__mro__, (C, B, object))
+
+    def test_slot_update_skips_non_str_keys(self):
+        # Slots are computed (with the world stopped, for an update) without
+        # comparing the slot name with non-str keys of the type dicts, which
+        # could run user code.  Here, that code would also update a slot
+        # every time.
+        calls = 0
+
+        class Other:
+            pass
+
+        class Key:
+            def __hash__(self):
+                return hash("__hash__")
+
+            def __eq__(self, other):
+                nonlocal calls
+                calls += 1
+                Other.__repr__ = lambda self: "x"
+                return False
+
+        class Base:
+            pass
+
+        with self.assertWarns(RuntimeWarning):
+            Sub = type("Sub", (Base,), {Key(): None})
+        self.assertEqual(calls, 0)
+
+        Base.__hash__ = None
+        self.assertEqual(calls, 0)
+        with self.assertRaises(TypeError):
+            hash(Sub())
+        del Base.__hash__
+        hash(Sub())
+
+    def test_concurrent_bases_assignment(self):
+        # Several threads reassign __bases__ of the same class, and of its
+        # base, while others stop the world.  The type lock is released while
+        # waiting for the stop-the-world.  At the end, the MRO must agree
+        # with __bases__.
+        N = 50
+
+        class A:
+            def meth(self):
+                return "A"
+            def __repr__(self):
+                return "A"
+        class B:
+            def meth(self):
+                return "B"
+            def __repr__(self):
+                return "B"
+        class C(A):
+            pass
+        class D(C):
+            pass
+
+        def setter():
+            for _ in range(N):
+                C.__bases__ = (B,)
+                C.__bases__ = (A,)
+
+        def subsetter():
+            for _ in range(N):
+                D.__bases__ = (C, B)
+                D.__bases__ = (C,)
+
+        threading_helper.run_concurrently(
+            [setter, setter, subsetter] + world_stoppers())
+
+        self.assertEqual(C.__bases__, (A,))
+        self.assertEqual(C.__mro__, (C, A, object))
+        self.assertEqual(D.__bases__, (C,))
+        self.assertEqual(D.__mro__, (D, C, A, object))
+        self.assertEqual(D().meth(), "A")
+        self.assertEqual(repr(C()), "A")
+        self.assertEqual(repr(D()), "A")
+        self.assertIn(C, A.__subclasses__())
+        self.assertNotIn(C, B.__subclasses__())
+
+    def test_class_creation_with_concurrent_setattr(self):
+        # Creating a class resolves its slots from the dicts along the MRO
+        # while holding the type lock, before the class is reachable from
+        # its bases.  If that resolution blocked on a base's dict mutex, the
+        # type lock would be released while blocked, and another thread
+        # could then assign a special method on a base that was already
+        # resolved.  The new class would end up with a slot that does not
+        # match its MRO.
+        N = 300
+
+        class B2:
+            pass
+
+        class B1(B2):
+            pass
+
+        lock = threading.Lock()
+        mismatches = []
+        done = False
+
+        def custom_repr(self):
+            return "custom repr"
+
+        def setter():
+            # Toggle B1.__repr__, so a stale resolution of B1 gives the new
+            # class object.__repr__ while B1.__repr__ is custom_repr.
+            barrier.wait()
+            while not done:
+                with lock:
+                    B1.__repr__ = custom_repr
+                with lock:
+                    del B1.__repr__
+
+        def churner():
+            # type.__setattr__ takes B2's dict mutex before the type lock
+            # and holds it while waiting for the type lock, so B2's dict
+            # mutex is contended whenever creator holds the type lock.
+            barrier.wait()
+            n = 0
+            while not done:
+                n += 1
+                B2.attr = n
+
+        def creator():
+            nonlocal done
+            # Mark the base dicts as shared, so lookups from this thread
+            # never need to take their mutexes.
+            getattr(B1, "nope", None)
+            barrier.wait()
+            try:
+                for _ in range(N):
+                    C = type("C", (B1,), {})
+                    c = C()
+                    with lock:
+                        slot_result = repr(c)
+                        mro_result = C.__repr__(c)
+                    if slot_result != mro_result:
+                        mismatches.append((slot_result, mro_result))
+            finally:
+                done = True
+
+        targets = (setter, churner, churner, creator)
+        barrier = threading.Barrier(len(targets))
+        threads = [Thread(target=target) for target in targets]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(mismatches, [])
 
 
 if __name__ == "__main__":

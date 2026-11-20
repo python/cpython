@@ -226,6 +226,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         transport = None
         try:
             protocol = protocol_factory()
+            if server is not None and not server.is_serving():
+                # The server was closed after the connection was accepted.
+                conn.close()
+                return
             waiter = self.create_future()
             if sslcontext:
                 transport = self._make_ssl_transport(
@@ -1095,7 +1099,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             # Not all was written; register write handler.
             self._add_writer(self._sock_fd, self._write_ready)
 
-        # Add it to the buffer.
+        # Add it to the buffer as a view, so partial sends don't copy it.
+        if not isinstance(data, memoryview):
+            data = memoryview(data)
         self._buffer.append(data)
         self._buffer_size += len(data)
         self._maybe_pause_protocol()
@@ -1225,6 +1231,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             super()._call_connection_lost(exc)
         finally:
             self._write_ready = None
+            self._read_ready_cb = None
             if self._empty_waiter is not None:
                 self._empty_waiter.set_exception(
                     ConnectionError("Connection is closed by peer"))

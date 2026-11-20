@@ -1492,6 +1492,30 @@ py_w_stopcode(PyObject *self, PyObject *args)
 
 
 static PyObject *
+sequence_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_Repeat(sequence, count);
+}
+
+static PyObject *
+sequence_inplace_repeat(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t count;
+    if (!PyArg_ParseTuple(args, "On", &sequence, &count)) {
+        return NULL;
+    }
+
+    return PySequence_InPlaceRepeat(sequence, count);
+}
+
+static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
 {
     Py_tss_t tss_key = Py_tss_NEEDS_INIT;
@@ -2949,6 +2973,8 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
+    {"sequence_repeat", sequence_repeat, METH_VARARGS},
+    {"sequence_inplace_repeat", sequence_inplace_repeat, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"bad_get", bad_get, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
@@ -3281,6 +3307,17 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
+/* Like MyList, but tp_dict is initialized with a dict subclass before
+   PyType_Ready(), as extension modules may do (e.g. ctypes before 3.13). */
+static PyTypeObject MyListDictSubclass_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MyListDictSubclass",
+    sizeof(MyListObject),
+    .tp_dealloc = MyList_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_new = MyList_new,
+};
+
 /* Test PEP 560 */
 
 typedef struct {
@@ -3596,6 +3633,28 @@ _testcapi_exec(PyObject *m)
         return -1;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
+
+    MyListDictSubclass_Type.tp_base = &PyList_Type;
+    if (MyListDictSubclass_Type.tp_dict == NULL) {
+        PyObject *cls = PyObject_CallFunction((PyObject *)&PyType_Type,
+                                              "s(O){}", "DictSubclass",
+                                              &PyDict_Type);
+        if (cls == NULL) {
+            return -1;
+        }
+        MyListDictSubclass_Type.tp_dict = PyObject_CallNoArgs(cls);
+        Py_DECREF(cls);
+        if (MyListDictSubclass_Type.tp_dict == NULL) {
+            return -1;
+        }
+    }
+    /* PyModule_AddType() would skip PyType_Ready() as tp_dict is set. */
+    if (PyType_Ready(&MyListDictSubclass_Type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(m, &MyListDictSubclass_Type) < 0) {
+        return -1;
+    }
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return -1;

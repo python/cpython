@@ -746,6 +746,66 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+static PyObject *
+Array_item_impl(PyObject *myself, Py_ssize_t index);
+
+static PyObject *
+Array_item(PyObject *myself, Py_ssize_t index)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_item_impl(myself, index);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+Array_subscript_impl(PyObject *myself, PyObject *item);
+
+static PyObject *
+Array_subscript(PyObject *myself, PyObject *item)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_subscript_impl(myself, item);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Array_ass_subscript_impl(PyObject *myself, PyObject *item, PyObject *value);
+
+static int
+Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Array_ass_subscript_impl(myself, item, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 static int
 _ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
 
@@ -804,6 +864,66 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
+
+static int
+Simple_bool_impl(CDataObject *self);
+
+static int
+Simple_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Simple_bool_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+Pointer_item_impl(PyObject *myself, Py_ssize_t index);
+
+static PyObject *
+Pointer_item(PyObject *myself, Py_ssize_t index)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_item_impl(myself, index);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value);
+
+static int
+Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = Pointer_ass_item_impl(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
+Pointer_bool_impl(PyObject *self);
+
+static int
+Pointer_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Pointer_bool_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 #define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
 
 #define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
@@ -818,4 +938,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=fdf9a3519e34b6f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d9dd4bbae13cfca input=a9049054013a1b77]*/

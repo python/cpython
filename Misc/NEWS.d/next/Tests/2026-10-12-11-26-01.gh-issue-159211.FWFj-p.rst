@@ -1,2 +1,0 @@
-The iOS testbed no longer gathers simulator diagnostics when a test run
-fails.

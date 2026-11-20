@@ -120,6 +120,20 @@ def frozen_modules(enabled=True):
 
 
 @contextlib.contextmanager
+def force_eager_imports():
+    """Force eager imports inside the context manager."""
+    original_lazy_imports_filter = sys.get_lazy_imports_filter()
+    sys.set_lazy_imports_filter(
+        # Tools must be imported eagerly under this context manager:
+        lambda importing, imported, fromlist: False
+    )
+    try:
+        yield
+    finally:
+        sys.set_lazy_imports_filter(original_lazy_imports_filter)
+
+
+@contextlib.contextmanager
 def multi_interp_extensions_check(enabled=True):
     """Force legacy modules to be allowed in subinterpreters (or not).
 
@@ -142,6 +156,7 @@ def multi_interp_extensions_check(enabled=True):
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
+                        eager_imports=True,
                         ):
     """Import and return a module, deliberately bypassing sys.modules.
 
@@ -173,7 +188,12 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
-    with _ignore_deprecated_imports(deprecated):
+    eager_imports_context = (
+        force_eager_imports
+        if eager_imports
+        else contextlib.nullcontext
+    )
+    with eager_imports_context(), _ignore_deprecated_imports(deprecated):
         # Keep track of modules saved for later restoration as well
         # as those which just need a blocking entry removed
         fresh = list(fresh)

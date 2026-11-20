@@ -1,3 +1,0 @@
-Fix the :mod:`asyncio` REPL namespace so that relative imports no longer
-resolve against the :mod:`asyncio` package and ``__file__`` is no longer
-set.

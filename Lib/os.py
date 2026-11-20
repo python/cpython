@@ -161,6 +161,9 @@ if _exists("_have_functions"):
         _add("HAVE_FSTATVFS", "statvfs")
     if _exists("statx"):
         _set.add(statx)
+    _add("HAVE_FREADLINK", "readlink")
+    if sys.platform in ["linux", "android"] and "O_PATH" in _globals:
+        _add("HAVE_READLINKAT", "readlink")
     supports_fd = _set
 
     _set = set()

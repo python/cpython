@@ -1,5 +1,0 @@
-Fix a crash or incorrect output that could occur when formatting a
-:class:`float` or :class:`complex` with a precision close to the platform's
-``INT_MAX``.  :c:func:`PyOS_double_to_string` now raises :exc:`ValueError` for
-any precision of that magnitude, regardless of presentation type or value, as
-the format string parsers already did for precisions above ``INT_MAX``.

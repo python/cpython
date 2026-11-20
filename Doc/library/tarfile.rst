@@ -781,7 +781,7 @@ call the :meth:`~TarInfo.replace` method to create a modified copy in one step.
 
 Several attributes can be set to ``None`` to indicate that a piece of metadata
 is unused or unknown.
-Different :class:`TarInfo` methods handle ``None`` differently:
+Different :class:`TarFile` methods handle ``None`` differently:
 
 - The :meth:`~TarFile.extract` or :meth:`~TarFile.extractall` methods will
   ignore the corresponding metadata, leaving it set to a default.
@@ -976,7 +976,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    This method is also used by :func:`copy.replace`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added support for :func:`copy.replace`.
 
 A :class:`TarInfo` object also provides some convenient query methods:
@@ -1120,36 +1120,42 @@ reused in custom filters:
   Implements the ``'tar'`` filter.
 
   - Strip leading slashes (``/`` and :data:`os.sep`) from filenames.
-  - :ref:`Refuse <tarfile-extraction-refuse>` to extract files with absolute
-    paths (in case the name is absolute
-    even after stripping slashes, e.g. ``C:/foo`` on Windows).
-    This raises :class:`~tarfile.AbsolutePathError`.
   - Normalize filenames (:attr:`TarInfo.name`) that contain ``..`` components
     using :func:`os.path.normpath`.
     Note that this removes internal ``..`` components, which may change the
     meaning of the name if it traverses symbolic links.
+  - :ref:`Refuse <tarfile-extraction-refuse>` to extract files with absolute
+    paths (in case the name is absolute
+    even after stripping slashes, e.g. ``C:/foo`` on Windows)
+    or with a drive (e.g. ``C:foo`` on Windows).
+    This raises :class:`~tarfile.AbsolutePathError`.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files whose absolute
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
+  - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
+    whose name refers to the destination directory itself.
+    This raises :class:`~tarfile.OutsideDestinationError`.
+    Note that such files are refused even on platforms that do not support
+    symbolic links.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
     (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
   .. warning::
-     This filter does not check :attr:`TarInfo.linkname`. This means it does
-     not limit where a symbolic link member points. An absolute symbolic-link
-     target will remain absolute, and a relative target may resolve outside the
-     extraction destination. The destination path protection described above
-     concerns only where the archive member itself is written, not where a
-     symbolic link resolves. The stricter :func:`data_filter` rejects these
-     unsafe link targets, raising :class:`~tarfile.AbsoluteLinkError` for
-     absolute link targets or :class:`~tarfile.LinkOutsideDestinationError`
-     for link targets outside the destination.
 
-  .. versionchanged:: next
+     This filter does not check link targets (:attr:`TarInfo.linkname`).
+     It allows benign cases (like links to ``/dev/null``), but it also allows
+     links (symbolic and hard) to arbitrary files on the filesystem,
+     potentially granting unintended access to these files.
+
+  .. versionchanged:: 3.16
 
      Filenames containing ``..`` components are now normalized.
+
+  .. versionchanged:: 3.16
+
+     Filenames with a drive that are not absolute are now refused.
 
 .. function:: data_filter(member, path)
 
@@ -1163,7 +1169,8 @@ reused in custom filters:
     symbolic links.
 
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
-    that link to absolute paths, or ones that link outside the destination.
+    that link to absolute paths or to paths with a drive,
+    or ones that link outside the destination.
 
     This raises :class:`~tarfile.AbsoluteLinkError` or
     :class:`~tarfile.LinkOutsideDestinationError`.
@@ -1196,6 +1203,10 @@ reused in custom filters:
   .. versionchanged:: 3.15
 
      Link targets are now normalized.
+
+  .. versionchanged:: 3.16
+
+     Link targets with a drive that are not absolute are now refused.
 
 
 .. _tarfile-extraction-refuse:
@@ -1465,7 +1476,7 @@ The same example using the :keyword:`with` statement::
 
 How to create and write an archive to stdout using
 :data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
-in :meth:`TarFile.add`::
+in :func:`~tarfile.open`::
 
     import sys
     import tarfile

@@ -1,3 +1,0 @@
-Add the ``--list`` option to Argument Clinic.
-It prints the modules, classes and functions which Argument Clinic defines in
-the specified files, each function with its signature.

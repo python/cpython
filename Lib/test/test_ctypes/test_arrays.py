@@ -1,11 +1,14 @@
 import ctypes
 import sys
+import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from ctypes import (Structure, Array, ARRAY, sizeof, addressof,
                     create_string_buffer, create_unicode_buffer,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
-from test.support import bigmemtest, _2G, threading_helper, Py_GIL_DISABLED
+from test.support import (bigmemtest, _2G, threading_helper,
+                          Py_GIL_DISABLED, SHORT_TIMEOUT)
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 
@@ -286,6 +289,50 @@ class ArrayTestCase(unittest.TestCase):
 
             if cm.exc_value:
                 raise cm.exc_value
+
+
+class ArrayTypeCacheTest(unittest.TestCase):
+    # gh-160978: the array type cache could hand out distinct type objects for
+    # the same (item type, length) pair when the array type was created from
+    # more than one thread at a time.
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_creation_with_set_name(self):
+        # Creating the array type runs Python code -- ``__set_name__`` here --
+        # which lets a second thread reach the cache before the first one has
+        # stored its type. Without the fix this fails on the default build as
+        # well, so it guards the fix even where threads cannot interleave
+        # freely.
+        barrier = threading.Barrier(2)
+
+        class Meta(type(c_int)):
+            def __set_name__(cls, owner, name):
+                barrier.wait(timeout=SHORT_TIMEOUT)
+
+        class Item(c_int, metaclass=Meta):
+            pass
+
+        with ThreadPoolExecutor(2) as pool:
+            first, second = pool.map(lambda _: Item * 100, range(2))
+
+        self.assertIs(first, second)
+        # Raises TypeError if the two types are distinct.
+        first.from_param(second())
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_creation_returns_identical_types(self):
+        nthreads = 8
+        barrier = threading.Barrier(nthreads)
+
+        def make_type(length):
+            barrier.wait(timeout=SHORT_TIMEOUT)
+            return c_int * length
+
+        with ThreadPoolExecutor(nthreads) as pool:
+            for length in range(1, 51):
+                types = list(pool.map(make_type, [length] * nthreads))
+                barrier.reset()
+                self.assertEqual(len(set(types)), 1)
 
 
 if __name__ == '__main__':

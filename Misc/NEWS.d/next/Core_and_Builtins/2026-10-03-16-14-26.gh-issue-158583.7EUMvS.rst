@@ -1,2 +1,0 @@
-:meth:`bytes.fromhex` and :meth:`bytearray.fromhex`: Fix uninitialized
-memory read. Patch by Victor Stinner.
