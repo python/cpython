@@ -1,0 +1,2 @@
+Add :meth:`list.discard`, which removes the first occurrence of a value from
+a list if it is present and returns whether an item was removed.
