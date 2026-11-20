@@ -660,6 +660,10 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
                                         child, waiter)
                 layers.append(waiters)
 
+            leaf, root = layers[-1][0], layers[0][0]
+            asyncio.future_add_to_awaited_by(leaf, root)
+            self.addCleanup(asyncio.future_discard_from_awaited_by, leaf, root)
+
             expected_ids = [id(node) for layer in layers for node in layer]
             unwinder = RemoteUnwinder(os.getpid())
             for method in (unwinder.get_all_awaited_by,
@@ -4864,10 +4868,18 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
             release = asyncio.Event()
             child = asyncio.create_task(release.wait())
             waiter = asyncio.create_task(asyncio.wait([child]), eager_start=True)
-            snapshot = RemoteUnwinder(os.getpid()).get_all_awaited_by()
+            unwinder = RemoteUnwinder(os.getpid())
+            snapshot = unwinder.get_all_awaited_by()
             count = sum(node.is_future for thread in snapshot
                         for node in thread.awaited_by)
             self.assertEqual(count, limit)
+
+            extra = asyncio.Future()
+            asyncio.future_add_to_awaited_by(task, extra)
+            self.addCleanup(asyncio.future_discard_from_awaited_by, task, extra)
+            with self.assertRaisesRegex(RuntimeError, "Too many task waiters"):
+                unwinder.get_all_awaited_by()
+
             release.set()
             await waiter
 
