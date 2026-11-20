@@ -4205,6 +4205,12 @@ k_mul(PyLongObject *a, PyLongObject *b)
     if (a == b) {
         t2 = (PyLongObject*)Py_NewRef(t1);
     }
+    else if (_PyLong_IsZero(bh)) {
+        /* b can be an unnormalized slice made by k_lopsided_mul(), so bh
+         * (and bl too) can be zero, and x_add() needs a nonzero operand.
+         */
+        t2 = (PyLongObject*)Py_NewRef(bl);
+    }
     else if ((t2 = x_add(bh, bl)) == NULL) {
         Py_DECREF(t1);
         goto fail;
