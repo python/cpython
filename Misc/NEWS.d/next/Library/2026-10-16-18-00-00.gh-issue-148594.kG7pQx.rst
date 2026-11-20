@@ -1,0 +1,2 @@
+Prevent stale OpenSSL errors from causing spurious exceptions during TLS I/O
+in the :mod:`ssl` module by clearing the error queue before each operation.
