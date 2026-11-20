@@ -1,0 +1,2 @@
+Add ``ignore_errors`` kwarg to :class:``contextlib.chdir`` to suppress
+exceptions when the original directory cannot be returned to.
