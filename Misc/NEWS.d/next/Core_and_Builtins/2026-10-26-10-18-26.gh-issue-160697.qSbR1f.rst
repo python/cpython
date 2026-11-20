@@ -1,0 +1,4 @@
+Fix crashes and hangs in the :term:`free-threaded build` when a destructor
+ran in the middle of a :class:`dict` resize, a :class:`list` resize or a type
+cache update. The thread's queue of delayed frees is now processed only from
+the eval breaker, instead of synchronously when the queue fills up.
