@@ -608,6 +608,73 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
         self.assertEqual(stacks["anext"], ["agen"])
 
     @skip_if_not_supported
+    def test_future_between_tasks(self):
+        # gh-161502
+        from asyncio.tools import build_async_tree
+
+        async def worker(method):
+            return getattr(RemoteUnwinder(os.getpid()), method)()
+
+        async def main(method):
+            parent = asyncio.current_task()
+            parent.set_name("main")
+            future = asyncio.Future()
+            task = asyncio.create_task(worker(method), name="worker")
+            asyncio.future_add_to_awaited_by(task, future)
+            task.add_done_callback(future.set_result)
+            try:
+                await future
+                return task.result(), {
+                    id(parent): [],
+                    id(future): [id(parent)],
+                    id(task): [id(future)],
+                }
+            finally:
+                asyncio.future_discard_from_awaited_by(task, future)
+
+        for method in ("get_all_awaited_by", "get_async_stack_trace"):
+            with self.subTest(method=method):
+                snapshot, expected = asyncio.run(main(method))
+                tree, = build_async_tree(snapshot)
+                rendered = "\n".join(tree)
+                self.assertIn("(T) main", rendered)
+                self.assertIn("(F) Future-", rendered)
+                self.assertIn("(T) worker", rendered)
+                relationships = {
+                    node.task_id: [edge.task_name for edge in node.awaited_by]
+                    for thread in snapshot for node in thread.awaited_by
+                }
+                self.assertEqual(relationships, expected)
+
+    @skip_if_not_supported
+    def test_shared_future_waiter(self):
+        async def main():
+            layers = [[asyncio.current_task()]]
+            for _ in range(14):
+                waiters = [asyncio.Future(), asyncio.Future()]
+                for child in layers[-1]:
+                    for waiter in waiters:
+                        asyncio.future_add_to_awaited_by(child, waiter)
+                        self.addCleanup(asyncio.future_discard_from_awaited_by,
+                                        child, waiter)
+                layers.append(waiters)
+
+            leaf, root = layers[-1][0], layers[0][0]
+            asyncio.future_add_to_awaited_by(leaf, root)
+            self.addCleanup(asyncio.future_discard_from_awaited_by, leaf, root)
+
+            expected_ids = [id(node) for layer in layers for node in layer]
+            unwinder = RemoteUnwinder(os.getpid())
+            for method in (unwinder.get_all_awaited_by,
+                           unwinder.get_async_stack_trace):
+                with self.subTest(method=method.__name__):
+                    ids = [node.task_id for thread in method()
+                           for node in thread.awaited_by]
+                    self.assertCountEqual(ids, expected_ids)
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     def test_async_generator_running_task_stack(self):
         # gh-159620
         async def agen():
@@ -4733,6 +4800,37 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
             f"frame chain limit never raised; last transient error: "
             f"{last_error!r}"
         )
+
+    @skip_if_not_supported
+    def test_get_all_awaited_by_at_waiter_limit(self):
+        # gh-161502
+        async def main():
+            task = asyncio.current_task()
+            limit = self.TASK_WAITER_WALK_TASKS - 1
+            for _ in range(limit):
+                future = asyncio.Future()
+                asyncio.future_add_to_awaited_by(task, future)
+                self.addCleanup(asyncio.future_discard_from_awaited_by, task, future)
+
+            release = asyncio.Event()
+            child = asyncio.create_task(release.wait())
+            waiter = asyncio.create_task(asyncio.wait([child]), eager_start=True)
+            unwinder = RemoteUnwinder(os.getpid())
+            snapshot = unwinder.get_all_awaited_by()
+            count = sum(node.is_future for thread in snapshot
+                        for node in thread.awaited_by)
+            self.assertEqual(count, limit)
+
+            extra = asyncio.Future()
+            asyncio.future_add_to_awaited_by(task, extra)
+            self.addCleanup(asyncio.future_discard_from_awaited_by, task, extra)
+            with self.assertRaisesRegex(RuntimeError, "Too many task waiters"):
+                unwinder.get_all_awaited_by()
+
+            release.set()
+            await waiter
+
+        asyncio.run(main())
 
     @skip_if_not_supported
     @unittest.skipIf(

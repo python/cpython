@@ -34,12 +34,13 @@ static PyStructSequence_Field TaskInfo_fields[] = {
     {"task_name", "Task name"},
     {"coroutine_stack", "Coroutine call stack"},
     {"awaited_by", "Tasks awaiting this task"},
+    {"is_future", "Whether this node is a plain Future rather than a Task"},
     {NULL}
 };
 
 PyStructSequence_Desc TaskInfo_desc = {
     "_remote_debugging.TaskInfo",
-    "Information about an asyncio task",
+    "Information about an asyncio task or future",
     TaskInfo_fields,
     4
 };
@@ -887,14 +888,17 @@ Returns:
 
     - thread_id (int): Identifier of the thread, or 0 for tasks in the
       interpreter's fallback task list.
-    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread and
+      intermediate futures in their awaited_by chains.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
-    - task_name (str): Name of the task.
+    - task_name (str): Name of the task, or a generated name for
+      a future.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
     - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
       awaiting this task.
+    - is_future (bool, named-only): True for a plain Future.
 
 Each CoroInfo contains:
     - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
@@ -925,7 +929,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=17fcd3d7bb835624]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -986,13 +990,16 @@ running task, tasks waiting for those tasks, etc.).
 Returns a list of per-thread results, where each thread result
 contains:
 - Thread ID
-- List of task information for the running task and all its waiters
+- List of task or Future information for the running task and all
+  its waiters
 
 Each task info contains:
 - Task ID (memory address)
-- Task name
+- Task name, or a generated name for a Future
 - Call stack frames: List of (func_name, filename, lineno)
-- List of tasks waiting for this task (recursive structure)
+- List of tasks or Futures waiting for this node
+  (recursive structure)
+- is_future (bool, named-only): True for a plain Future
 
 Raises:
     RuntimeError: If AsyncioDebug section is not available in the
@@ -1020,7 +1027,7 @@ running tasks):
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=bc802e4221c99399]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=cd96a679dec506af]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
