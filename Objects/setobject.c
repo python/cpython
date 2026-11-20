@@ -1060,11 +1060,12 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
     PySetObject *so = si->si_set;
-    if (so != NULL
-        && FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used)
-           == FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used))
-    {
-        len = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->len);
+    if (so != NULL) {
+        Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
+        Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
+        if (si_used == so_used) {
+            len = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->len);
+        }
     }
     return PyLong_FromSsize_t(len);
 }
@@ -1108,8 +1109,8 @@ static void
 setiter_set_exhausted(setiterobject *si, PySetObject *so)
 {
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ssize_relaxed(&si->si_pos, SETITER_EXHAUSTED);
-    _Py_atomic_store_ssize_relaxed(&si->len, 0);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, SETITER_EXHAUSTED);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(si->len, 0);
 #else
     si->si_set = NULL;
     Py_DECREF(so);
@@ -1129,7 +1130,7 @@ static PyObject *setiter_iternext(PyObject *self)
     assert (PyAnySet_Check(so));
 
 #ifdef Py_GIL_DISABLED
-    if (_Py_atomic_load_ssize_relaxed(&si->si_pos) == SETITER_EXHAUSTED) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos) == SETITER_EXHAUSTED) {
         return NULL;
     }
 #endif
@@ -1149,7 +1150,7 @@ static PyObject *setiter_iternext(PyObject *self)
     Py_BEGIN_CRITICAL_SECTION(so);
     i = si->si_pos;
     if (i != SETITER_EXHAUSTED) {
-        assert(i>=0);
+        assert(i >= 0);
         entry = so->table;
         mask = so->mask;
         while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
@@ -1157,7 +1158,7 @@ static PyObject *setiter_iternext(PyObject *self)
         }
         if (i <= mask) {
             key = Py_NewRef(entry[i].key);
-            FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, i+1);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, i + 1);
             FT_ATOMIC_STORE_SSIZE_RELAXED(si->len, si->len - 1);
         }
         else {
