@@ -687,13 +687,6 @@ process_task_waiters(
             if (seen < 0 || PySet_Add(visited, task_id) < 0) {
                 goto error;
             }
-            if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
-                PyErr_SetString(PyExc_RuntimeError,
-                    "Too many task waiters (possible infinite loop)");
-                set_exception_cause(unwinder, PyExc_RuntimeError,
-                    "Task waiter walk size limit exceeded");
-                goto error;
-            }
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
                 set_exception_cause(unwinder, PyExc_RuntimeError,
@@ -710,6 +703,13 @@ process_task_waiters(
                 if (is_task) {
                     continue;
                 }
+            }
+            if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
+                PyErr_SetString(PyExc_RuntimeError,
+                    "Too many task waiters (possible infinite loop)");
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                    "Task waiter walk size limit exceeded");
+                goto error;
             }
             if (process_single_task_node(
                     unwinder, (uintptr_t)task_ptr, NULL, result) < 0)

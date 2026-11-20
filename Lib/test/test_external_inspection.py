@@ -4851,6 +4851,29 @@ class TestFrameChainLimits(RemoteInspectionTestBase):
         )
 
     @skip_if_not_supported
+    def test_get_all_awaited_by_at_waiter_limit(self):
+        # gh-161502
+        async def main():
+            task = asyncio.current_task()
+            limit = self.TASK_WAITER_WALK_TASKS - 1
+            for _ in range(limit):
+                future = asyncio.Future()
+                asyncio.future_add_to_awaited_by(task, future)
+                self.addCleanup(asyncio.future_discard_from_awaited_by, task, future)
+
+            release = asyncio.Event()
+            child = asyncio.create_task(release.wait())
+            waiter = asyncio.create_task(asyncio.wait([child]), eager_start=True)
+            snapshot = RemoteUnwinder(os.getpid()).get_all_awaited_by()
+            count = sum(node.is_future for thread in snapshot
+                        for node in thread.awaited_by)
+            self.assertEqual(count, limit)
+            release.set()
+            await waiter
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
