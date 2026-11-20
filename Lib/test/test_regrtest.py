@@ -930,20 +930,45 @@ class CheckActualTests(BaseTestCase):
 
     @unittest.skipUnless(hasattr(time, 'clock_settime'), 'requires clock_settime')
     @support.thread_unsafe('changes the enabled test resources')
-    def test_system_clock_restored_after_interrupt(self):
+    def test_system_clock_restored(self):
         from test.test_time import TimeTestCase
 
-        # A signal can arrive after the clock changed, before the setter returns.
-        with (unittest.mock.patch.object(support, 'use_resources', {'settime': None}),
-              unittest.mock.patch.object(time, 'clock_gettime', return_value=7200),
-              unittest.mock.patch.object(time, 'clock_settime',
-                                         side_effect=[KeyboardInterrupt, None]) as setter):
-            with self.assertRaises(KeyboardInterrupt):
-                TimeTestCase('test_monotonic_settime').test_monotonic_settime()
-            self.assertEqual(setter.call_args_list, [
-                unittest.mock.call(time.CLOCK_REALTIME, 3600),
-                unittest.mock.call(time.CLOCK_REALTIME, 7200),
-            ])
+        # Each step of clock_settime(): (exception raised, clock changed).
+        cases = (
+            ('success', [(None, True), (None, True)], None),
+            # A signal can arrive after the clock changed, before the setter
+            # returns.
+            ('interrupted', [(KeyboardInterrupt, True), (None, True)],
+             KeyboardInterrupt),
+            ('denied', [(PermissionError, False)], unittest.SkipTest),
+            ('failed', [(OSError, False)], OSError),
+        )
+        for name, steps, expected in cases:
+            clock = 7200
+            writes = 0
+
+            def clock_settime(clock_id, value):
+                nonlocal clock, writes
+                self.assertLess(writes, len(steps), 'unexpected clock write')
+                exc, changed = steps[writes]
+                writes += 1
+                if changed:
+                    clock = value
+                if exc is not None:
+                    raise exc
+
+            with (self.subTest(name),
+                  unittest.mock.patch.object(support, 'use_resources', {'settime': None}),
+                  unittest.mock.patch.object(time, 'clock_gettime', lambda clock_id: clock),
+                  unittest.mock.patch.object(time, 'clock_settime', clock_settime)):
+                test = TimeTestCase('test_monotonic_settime')
+                if expected is None:
+                    test.test_monotonic_settime()
+                else:
+                    with self.assertRaises(expected):
+                        test.test_monotonic_settime()
+                self.assertEqual(writes, len(steps))
+                self.assertEqual(clock, 7200)
 
     def test_finds_expected_number_of_tests(self):
         """
