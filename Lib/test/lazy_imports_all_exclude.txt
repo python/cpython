@@ -20,10 +20,8 @@ test.test_inspect.test_inspect
 test___all__
 test__interpreters
 test_crossinterp
-test_datetime
 test_import
 test_importlib
-test_json
 test_pkg
 test_profile
 test_profiling
