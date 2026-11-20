@@ -1042,6 +1042,7 @@ FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
 FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
+MODULE_CHECK_COMMAND
 PYTHON_FOR_BUILD
 host_os
 host_vendor
@@ -3848,6 +3849,17 @@ fi
 esac
 fi
 
+
+
+# Module import checks must run with the target interpreter on native builds.
+if test "x$cross_compiling" = xyes
+then :
+  MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'
+else case e in #(
+  e) MODULE_CHECK_COMMAND='./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling'
+ ;;
+esac
+fi
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5

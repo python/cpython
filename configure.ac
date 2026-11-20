@@ -182,6 +182,13 @@ AC_ARG_WITH([build-python],
 )
 AC_SUBST([PYTHON_FOR_BUILD])
 
+# Module import checks must run with the target interpreter on native builds.
+AS_VAR_IF([cross_compiling], [yes],
+  [MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'],
+  [MODULE_CHECK_COMMAND='./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling']
+)
+AC_SUBST([MODULE_CHECK_COMMAND])
+
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
 AC_SUBST([PYTHON_FOR_FREEZE])
