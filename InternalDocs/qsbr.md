@@ -111,6 +111,13 @@ to defer the global counter advancement. This optimization improves runtime
 speed but may increase peak memory usage by slightly delaying when memory can
 be reclaimed.
 
+Processing of the deferred-free list happens from the eval breaker rather
+than from inside `_PyMem_FreeDelayed`. This gives the global `rd_seq` a better
+chance to have advanced far enough that items can actually be freed. It is
+also required for correctness: items queued by `_PyObject_XDecRefDelayed` may
+run arbitrary code when they are released, and the callers of
+`_PyMem_FreeDelayed` may be in the middle of mutating a dict, list or type.
+
 
 ## Limitations
 
