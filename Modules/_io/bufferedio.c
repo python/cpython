@@ -9,11 +9,11 @@
 
 #include "Python.h"
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h"    // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_fileutils.h"           // _PyFile_Flush
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
-#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -265,8 +265,6 @@ typedef struct {
     Py_ssize_t buffer_size;
     Py_ssize_t buffer_mask;
 
-    PyObject *dict;
-    PyObject *weakreflist;
 } buffered;
 
 #define buffered_CAST(op)   ((buffered *)(op))
@@ -422,7 +420,7 @@ buffered_clear(PyObject *op)
     buffered *self = buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -436,7 +434,7 @@ buffered_dealloc(PyObject *op)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -472,8 +470,7 @@ buffered_traverse(PyObject *op, visitproc visit, void *arg)
     buffered *self = buffered_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 /* Because this can call arbitrary code, it shouldn't be called when
@@ -2255,8 +2252,6 @@ typedef struct {
     PyObject_HEAD
     buffered *reader;
     buffered *writer;
-    PyObject *dict;
-    PyObject *weakreflist;
 } rwpair;
 
 #define rwpair_CAST(op) ((rwpair *)(op))
@@ -2314,10 +2309,9 @@ bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 {
     rwpair *self = rwpair_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
     Py_VISIT(self->reader);
     Py_VISIT(self->writer);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
@@ -2327,7 +2321,7 @@ bufferedrwpair_clear(PyObject *op)
     /* Let the writer flush before the reader closes a shared raw stream. */
     Py_CLEAR(self->writer);
     Py_CLEAR(self->reader);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -2337,7 +2331,7 @@ bufferedrwpair_dealloc(PyObject *op)
     rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     (void)bufferedrwpair_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2663,8 +2657,6 @@ static PyMethodDef bufferedreader_methods[] = {
 static PyMemberDef bufferedreader_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2722,8 +2714,6 @@ static PyMethodDef bufferedwriter_methods[] = {
 static PyMemberDef bufferedwriter_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2776,12 +2766,6 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {NULL, NULL}
 };
 
-static PyMemberDef bufferedrwpair_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rwpair, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(rwpair, dict), Py_READONLY},
-    {NULL}
-};
-
 static PyGetSetDef bufferedrwpair_getset[] = {
     _IO_BUFFEREDRWPAIR_CLOSED_GETSETDEF
     {NULL}
@@ -2793,7 +2777,6 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {Py_tp_traverse, bufferedrwpair_traverse},
     {Py_tp_clear, bufferedrwpair_clear},
     {Py_tp_methods, bufferedrwpair_methods},
-    {Py_tp_members, bufferedrwpair_members},
     {Py_tp_getset, bufferedrwpair_getset},
     {Py_tp_init, _io_BufferedRWPair___init__},
     {0, NULL},
@@ -2840,8 +2823,6 @@ static PyMethodDef bufferedrandom_methods[] = {
 static PyMemberDef bufferedrandom_members[] = {
     {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
