@@ -143,6 +143,7 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime()')
+    @support.requires_resource('settime')
     def test_clock_settime(self):
         t = time.clock_gettime(time.CLOCK_REALTIME)
         try:
@@ -150,9 +151,12 @@ class TimeTestCase(unittest.TestCase):
         except PermissionError:
             pass
 
-        if hasattr(time, 'CLOCK_MONOTONIC'):
-            self.assertRaises(OSError,
-                              time.clock_settime, time.CLOCK_MONOTONIC, 0)
+    @unittest.skipUnless(hasattr(time, 'clock_settime') and
+                         hasattr(time, 'CLOCK_MONOTONIC'),
+                         'need clock_settime() and CLOCK_MONOTONIC')
+    def test_clock_settime_monotonic(self):
+        with self.assertRaises(OSError):
+            time.clock_settime(time.CLOCK_MONOTONIC, 0)
 
     def test_large_timestamp_year(self):
         # 2147483648-06-29 00:00:00 UTC, away from local year boundaries.
@@ -703,6 +707,7 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
+    @support.requires_resource('settime')
     def test_monotonic_settime(self):
         t1 = time.monotonic()
         realtime = time.clock_gettime(time.CLOCK_REALTIME)
@@ -711,8 +716,10 @@ class TimeTestCase(unittest.TestCase):
             time.clock_settime(time.CLOCK_REALTIME, realtime - 3600)
         except PermissionError as err:
             self.skipTest(err)
-        t2 = time.monotonic()
-        time.clock_settime(time.CLOCK_REALTIME, realtime)
+        try:
+            t2 = time.monotonic()
+        finally:
+            time.clock_settime(time.CLOCK_REALTIME, realtime)
         # monotonic must not be affected by system clock updates
         self.assertGreaterEqual(t2, t1)
 

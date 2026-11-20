@@ -340,6 +340,11 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt, 'none=0'], 'invalid resource: none=0')
                 self.checkError([opt, 'all,-gui=0'], 'invalid resource: -gui=0')
 
+    def test_settime_requires_opt_in(self):
+        self.assertNotIn('settime', self.parse_args([]).use_resources)
+        self.assertNotIn('settime', self.parse_args(['-u', 'all']).use_resources)
+        self.assertIn('settime', self.parse_args(['-u', 'settime']).use_resources)
+
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
             with self.subTest(opt=opt):

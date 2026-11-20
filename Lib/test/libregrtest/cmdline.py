@@ -122,6 +122,9 @@ resources to test.  Currently only the following are defined:
 
     walltime -       Long running but not CPU-bound tests.
 
+    settime -        Allow tests to change the system clock. Must be enabled
+                     explicitly, even when using `-u all`.
+
     subprocess       Run all tests for the subprocess module.
 
     urlfetch -       It is okay to download files required on testing.
