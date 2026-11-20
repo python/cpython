@@ -1,0 +1,3 @@
+Tests in :mod:`!test.test_time` that change the system clock now require the
+``settime`` resource, which is not enabled by ``-u all``. Moving the clock
+back could make tests running in parallel fail. Patch by Gabriel Lobo.

@@ -714,14 +714,20 @@ class TimeTestCase(unittest.TestCase):
         t1 = time.monotonic()
         realtime = time.clock_gettime(time.CLOCK_REALTIME)
         # jump backward with an offset of 1 hour
+        restore_clock = True
         try:
-            time.clock_settime(time.CLOCK_REALTIME, realtime - 3600)
-        except PermissionError as err:
-            self.skipTest(err)
-        try:
+            try:
+                time.clock_settime(time.CLOCK_REALTIME, realtime - 3600)
+            except OSError as err:
+                # A failed system call did not change the clock.
+                restore_clock = False
+                if isinstance(err, PermissionError):
+                    self.skipTest(err)
+                raise
             t2 = time.monotonic()
         finally:
-            time.clock_settime(time.CLOCK_REALTIME, realtime)
+            if restore_clock:
+                time.clock_settime(time.CLOCK_REALTIME, realtime)
         # monotonic must not be affected by system clock updates
         self.assertGreaterEqual(t2, t1)
 

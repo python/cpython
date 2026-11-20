@@ -915,7 +915,9 @@ class CheckActualTests(BaseTestCase):
         from test.test_time import TimeTestCase
 
         names = ('test_clock_settime', 'test_monotonic_settime')
-        for resources, expected in (({}, 0), ({'settime': None}, 3), ({}, 0)):
+        # None: the tests are run directly by unittest, outside regrtest.
+        cases = ((None, 0), ({}, 0), ({'settime': None}, 3), ({}, 0))
+        for resources, expected in cases:
             with (self.subTest(resources=resources),
                   unittest.mock.patch.object(support, 'use_resources', resources),
                   unittest.mock.patch.object(time, 'clock_settime') as setter):
@@ -925,6 +927,23 @@ class CheckActualTests(BaseTestCase):
                 suite.run(result)
                 self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
                 self.assertEqual(setter.call_count, expected)
+
+    @unittest.skipUnless(hasattr(time, 'clock_settime'), 'requires clock_settime')
+    @support.thread_unsafe('changes the enabled test resources')
+    def test_system_clock_restored_after_interrupt(self):
+        from test.test_time import TimeTestCase
+
+        # A signal can arrive after the clock changed, before the setter returns.
+        with (unittest.mock.patch.object(support, 'use_resources', {'settime': None}),
+              unittest.mock.patch.object(time, 'clock_gettime', return_value=7200),
+              unittest.mock.patch.object(time, 'clock_settime',
+                                         side_effect=[KeyboardInterrupt, None]) as setter):
+            with self.assertRaises(KeyboardInterrupt):
+                TimeTestCase('test_monotonic_settime').test_monotonic_settime()
+            self.assertEqual(setter.call_args_list, [
+                unittest.mock.call(time.CLOCK_REALTIME, 3600),
+                unittest.mock.call(time.CLOCK_REALTIME, 7200),
+            ])
 
     def test_finds_expected_number_of_tests(self):
         """
