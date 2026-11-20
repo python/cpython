@@ -188,6 +188,44 @@ class TestUops(unittest.TestCase):
     def setUp(self):
         self.guard_is_false, self.guard_is_true = get_bool_guard_ops()
 
+    def test_awaited_call_jump_not_traced(self):
+        # Tier two runs only END_AWAITED_CALL's fall-through: no trace may
+        # continue past END_SEND after a lazily started coroutine returned.
+        async def body():
+            t = 0
+            for i in range(2):
+                t += i
+            return t
+
+        async def main():
+            x = await body()
+            return x + 1
+
+        def run():
+            coro = main()
+            try:
+                coro.send(None)
+            except StopIteration as exc:
+                return exc.value
+            return "suspended"
+
+        offset = next(i.offset for i in dis.get_instructions(main)
+                      if i.opname == "END_AWAITED_CALL")
+        enter_executor = dis.opmap["ENTER_EXECUTOR"]
+        for _ in range(30_000):  # Long enough to chain side exits.
+            self.assertEqual(run(), 2)
+            if main.__code__._co_code_adaptive[offset] == enter_executor:
+                break
+        # Origin tracking makes the coroutine start eagerly.
+        old_depth = sys.get_coroutine_origin_tracking_depth()
+        sys.set_coroutine_origin_tracking_depth(1)
+        try:
+            self.assertEqual(run(), 2)
+        finally:
+            sys.set_coroutine_origin_tracking_depth(old_depth)
+        self.assertNotEqual(main.__code__._co_code_adaptive[offset],
+                            enter_executor)
+
     def test_basic_loop(self):
         def testfunc(x):
             i = 0

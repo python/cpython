@@ -156,6 +156,28 @@
 #  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
+/* Tier one only, after next_instr has skipped the call's inline cache.
+ * END_AWAITED_CALL is never instrumented or specialized. */
+#define IS_AWAITED_CALL() (next_instr->op.code == END_AWAITED_CALL)
+
+/* The JIT recorder expects the regular path, and coroutine origin tracking
+ * captures the origin when the object is created. */
+#if _Py_TIER2
+#  define LAZY_CORO_ALLOWED() (!IS_JIT_TRACING())
+#else
+#  define LAZY_CORO_ALLOWED() 1
+#endif
+#define MAYBE_START_LAZY_CORO(FRAME) \
+    do { \
+        _PyInterpreterFrame *lazy_frame_ = (FRAME); \
+        if ((_PyFrame_GetCode(lazy_frame_)->co_flags & CO_COROUTINE) && \
+            tstate->coroutine_origin_tracking_depth == 0 && \
+            LAZY_CORO_ALLOWED()) \
+        { \
+            lazy_frame_->lazy_coro = LAZY_CORO_REQUESTED; \
+        } \
+    } while (0)
+
 #if _Py_TIER2
 #define STOP_TRACING() \
     do { \

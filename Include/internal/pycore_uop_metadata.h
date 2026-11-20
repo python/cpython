@@ -168,12 +168,14 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_POP_LAZY_OUTCOME] = 0,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_GUARD_TOS_IS_NONE] = HAS_EXIT_FLAG,
     [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_SEND_VIRTUAL_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
     [_GUARD_3OS_ASYNC_GEN_ASEND] = HAS_EXIT_FLAG,
     [_SEND_ASYNC_GEN_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_NOT_LAZY_CORO] = HAS_EXIT_FLAG,
     [_YIELD_VALUE] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_SYNC_SP_FLAG | HAS_NEEDS_GUARD_IP_FLAG,
     [_POP_EXCEPT] = HAS_ESCAPES_FLAG,
     [_LOAD_COMMON_CONSTANT] = HAS_ARG_FLAG,
@@ -1644,6 +1646,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
+    [_POP_LAZY_OUTCOME] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 1, 0, _POP_LAZY_OUTCOME_r01 },
+            { 1, 1, _POP_LAZY_OUTCOME_r11 },
+            { 1, 2, _POP_LAZY_OUTCOME_r21 },
+            { 2, 3, _POP_LAZY_OUTCOME_r32 },
+        },
+    },
     [_SEND_GEN_FRAME] = {
         .best = { 3, 3, 3, 3 },
         .entries = {
@@ -1696,6 +1707,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { 3, 3, _SEND_ASYNC_GEN_TIER_TWO_r33 },
+        },
+    },
+    [_GUARD_NOT_LAZY_CORO] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 0, 0, _GUARD_NOT_LAZY_CORO_r00 },
+            { 1, 1, _GUARD_NOT_LAZY_CORO_r11 },
+            { 2, 2, _GUARD_NOT_LAZY_CORO_r22 },
+            { 3, 3, _GUARD_NOT_LAZY_CORO_r33 },
         },
     },
     [_YIELD_VALUE] = {
@@ -4285,6 +4305,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r13] = _GET_ANEXT,
     [_GET_AWAITABLE_r13] = _GET_AWAITABLE,
+    [_POP_LAZY_OUTCOME_r01] = _POP_LAZY_OUTCOME,
+    [_POP_LAZY_OUTCOME_r11] = _POP_LAZY_OUTCOME,
+    [_POP_LAZY_OUTCOME_r21] = _POP_LAZY_OUTCOME,
+    [_POP_LAZY_OUTCOME_r32] = _POP_LAZY_OUTCOME,
     [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
     [_GUARD_TOS_IS_NONE_r01] = _GUARD_TOS_IS_NONE,
     [_GUARD_TOS_IS_NONE_r11] = _GUARD_TOS_IS_NONE,
@@ -4303,6 +4327,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_3OS_ASYNC_GEN_ASEND_r23] = _GUARD_3OS_ASYNC_GEN_ASEND,
     [_GUARD_3OS_ASYNC_GEN_ASEND_r33] = _GUARD_3OS_ASYNC_GEN_ASEND,
     [_SEND_ASYNC_GEN_TIER_TWO_r33] = _SEND_ASYNC_GEN_TIER_TWO,
+    [_GUARD_NOT_LAZY_CORO_r00] = _GUARD_NOT_LAZY_CORO,
+    [_GUARD_NOT_LAZY_CORO_r11] = _GUARD_NOT_LAZY_CORO,
+    [_GUARD_NOT_LAZY_CORO_r22] = _GUARD_NOT_LAZY_CORO,
+    [_GUARD_NOT_LAZY_CORO_r33] = _GUARD_NOT_LAZY_CORO,
     [_YIELD_VALUE_r11] = _YIELD_VALUE,
     [_POP_EXCEPT_r10] = _POP_EXCEPT,
     [_LOAD_COMMON_CONSTANT_r01] = _LOAD_COMMON_CONSTANT,
@@ -5535,6 +5563,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_TUPLE_r12] = "_GUARD_NOT_EXHAUSTED_TUPLE_r12",
     [_GUARD_NOT_EXHAUSTED_TUPLE_r22] = "_GUARD_NOT_EXHAUSTED_TUPLE_r22",
     [_GUARD_NOT_EXHAUSTED_TUPLE_r33] = "_GUARD_NOT_EXHAUSTED_TUPLE_r33",
+    [_GUARD_NOT_LAZY_CORO] = "_GUARD_NOT_LAZY_CORO",
+    [_GUARD_NOT_LAZY_CORO_r00] = "_GUARD_NOT_LAZY_CORO_r00",
+    [_GUARD_NOT_LAZY_CORO_r11] = "_GUARD_NOT_LAZY_CORO_r11",
+    [_GUARD_NOT_LAZY_CORO_r22] = "_GUARD_NOT_LAZY_CORO_r22",
+    [_GUARD_NOT_LAZY_CORO_r33] = "_GUARD_NOT_LAZY_CORO_r33",
     [_GUARD_THIRD_NULL] = "_GUARD_THIRD_NULL",
     [_GUARD_THIRD_NULL_r03] = "_GUARD_THIRD_NULL_r03",
     [_GUARD_THIRD_NULL_r13] = "_GUARD_THIRD_NULL_r13",
@@ -5928,6 +5961,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_EXCEPT_r10] = "_POP_EXCEPT_r10",
     [_POP_ITER] = "_POP_ITER",
     [_POP_ITER_r20] = "_POP_ITER_r20",
+    [_POP_LAZY_OUTCOME] = "_POP_LAZY_OUTCOME",
+    [_POP_LAZY_OUTCOME_r01] = "_POP_LAZY_OUTCOME_r01",
+    [_POP_LAZY_OUTCOME_r11] = "_POP_LAZY_OUTCOME_r11",
+    [_POP_LAZY_OUTCOME_r21] = "_POP_LAZY_OUTCOME_r21",
+    [_POP_LAZY_OUTCOME_r32] = "_POP_LAZY_OUTCOME_r32",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_r10] = "_POP_TOP_r10",
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
@@ -6464,6 +6502,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GET_AWAITABLE:
             return 1;
+        case _POP_LAZY_OUTCOME:
+            return 2;
         case _SEND_GEN_FRAME:
             return 1;
         case _GUARD_TOS_IS_NONE:
@@ -6476,6 +6516,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _SEND_ASYNC_GEN_TIER_TWO:
             return 3;
+        case _GUARD_NOT_LAZY_CORO:
+            return 0;
         case _YIELD_VALUE:
             return 1;
         case _POP_EXCEPT:

@@ -267,6 +267,13 @@ extern int _PyEval_EnsureBuiltinsWithModule(
     PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
+PyAPI_FUNC(PyObject *) _PyCoro_MaterializeLazy(_PyInterpreterFrame *frame);
+PyAPI_FUNC(_PyInterpreterFrame *) _PyEval_SuspendLazyCoro(
+    PyThreadState *tstate, _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyGenObject *) _PyEval_MaterializeLazyCoro(PyThreadState *tstate,
+                                                      _PyInterpreterFrame *frame);
+PyAPI_FUNC(_PyInterpreterFrame *) _PyEval_ThrowIntoLazyCoro(
+    PyThreadState *tstate, _PyInterpreterFrame *frame, _PyStackRef value);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */

@@ -1736,9 +1736,21 @@ Special read-only attributes
 
    * - .. attribute:: frame.f_generator
      - The :term:`generator` or :term:`coroutine` object that owns this frame,
-       or ``None`` if the frame is a normal function.
+       or ``None`` if the frame is a normal function or if the generator
+       is not materialized yet.
+
+       .. impl-detail::
+
+          A coroutine that is awaited as soon as it is called
+          (``await coro_func()``) may run without a coroutine object until
+          it first suspends, so this attribute is ``None`` before that.
+          Use :attr:`~codeobject.co_flags` of :attr:`frame.f_code` to tell
+          coroutine frames apart from normal function frames.
 
        .. versionadded:: 3.14
+
+       .. versionchanged:: 3.16
+          May be ``None`` for a coroutine frame before its first suspension.
 
 .. index::
    single: f_trace (frame attribute)

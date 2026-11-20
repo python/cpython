@@ -574,6 +574,7 @@ sanity_check_instrumentation(PyCodeObject *code)
             opcode = _PyCode_GetOriginalOpcode(data->lines, i);
             CHECK(valid_opcode(opcode));
             CHECK(opcode != END_FOR);
+            CHECK(opcode != END_AWAITED_CALL);
             CHECK(opcode != RESUME);
             CHECK(opcode != RESUME_CHECK);
             CHECK(opcode != RESUME_CHECK_JIT);
@@ -1579,6 +1580,14 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
                     * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */
                     set_original_opcode(line_data, i, 0);
                     break;
+                case END_AWAITED_CALL:
+                    /* END_AWAITED_CALL must not be instrumented with INSTRUMENTED_LINE,
+                    * as no events may fire before it handles a lazy coroutine.
+                    * It has the location of the await, which starts a line
+                    * after the call, so it keeps the line of the call. */
+                    set_line_delta(line_data, i, compute_line_delta(code, current_line));
+                    set_original_opcode(line_data, i, 0);
+                    break;
                 default:
                     /* Set original_opcode to the opcode iff the instruction
                     * starts a line, and thus should be instrumented.
@@ -1638,13 +1647,19 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
                 target = i - oparg;
                 break;
             }
+            case END_AWAITED_CALL:
+            {
+                /* To YIELD_VALUE; the jump past END_SEND lands on SEND's target */
+                target = i + oparg;
+                break;
+            }
             default:
                 continue;
         }
         assert(target >= 0);
         if (get_line_delta(line_data, target) != NO_LINE) {
             int opcode = _Py_GetBaseCodeUnit(code, target).op.code;
-            if (opcode != POP_ITER) {
+            if (opcode != POP_ITER && opcode != END_AWAITED_CALL) {
                 set_original_opcode(line_data, target, opcode);
             }
         }
@@ -1901,7 +1916,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (removed_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
-            if (opcode == RESUME || opcode == END_FOR) {
+            if (opcode == RESUME || opcode == END_FOR || opcode == END_AWAITED_CALL) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }
@@ -1928,7 +1943,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (new_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
-            if (opcode == RESUME || opcode == END_FOR) {
+            if (opcode == RESUME || opcode == END_FOR || opcode == END_AWAITED_CALL) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }

@@ -798,6 +798,12 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
         effects->net = 0;
         return 0;
     }
+    if (opcode == END_AWAITED_CALL && jump) {
+        // The jump to YIELD_VALUE leaves (coroutine, NULL, value) in place
+        // of (lazy_outcome, value).
+        effects->net = 1;
+        return 0;
+    }
     effects->net = pushed - popped;
     return 0;
 }
@@ -946,7 +952,11 @@ label_exception_targets(basicblock *entryblock) {
             else if (is_jump(instr)) {
                 instr->i_except = handler;
                 assert(i == b->b_iused -1);
-                if (!instr->i_target->b_visited) {
+                // END_AWAITED_CALL's target is inside the SETUP_FINALLY
+                // that follows SEND.
+                if (!instr->i_target->b_visited &&
+                    instr->i_opcode != END_AWAITED_CALL)
+                {
                     if (BB_HAS_FALLTHROUGH(b)) {
                         struct _PyCfgExceptStack *copy = copy_except_stack(except_stack);
                         if (copy == NULL) {
@@ -3114,6 +3124,14 @@ optimize_load_fast(cfg_builder *g)
                     ref tos = ref_stack_pop(&refs);
                     PUSH_REF(i, NOT_LOCAL);
                     PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
+                case END_AWAITED_CALL: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size + 1);
+                    ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
                     break;
                 }
 

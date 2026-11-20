@@ -839,6 +839,27 @@ not have to be) the original ``STACK[-2]``.
       separate instructions.
 
 
+.. opcode:: END_AWAITED_CALL (delta)
+
+   Follows a call whose result is awaited right away (``await f()``, and the
+   calls of :meth:`~object.__aenter__` and :meth:`~object.__aexit__` in
+   :keyword:`async with`).
+   The compiler pushes an extra ``NULL``, the *lazy outcome*, below the
+   callable of such a call, and the call may run the body of a coroutine
+   function without creating the coroutine object, reporting in the lazy
+   outcome how the body ended.
+
+   If the lazy outcome is ``NULL``, it is removed and execution continues with
+   :opcode:`GET_AWAITABLE`. If the body returned, it is removed and
+   execution continues after the :opcode:`END_SEND` of the following
+   :opcode:`SEND` loop. If the body suspended, the coroutine object is
+   created and the bytecode counter is incremented by *delta*, to the
+   :opcode:`YIELD_VALUE` of that loop, with ``STACK[-3:]`` set to the
+   coroutine, ``NULL`` and the yielded value.
+
+   .. versionadded:: 3.16
+
+
 .. opcode:: GET_AITER
 
    Implements ``STACK[-1] = STACK[-1].__aiter__()``.

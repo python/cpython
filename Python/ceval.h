@@ -304,6 +304,8 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
             lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
+    // 5 is the highest level; it must fit in frame->lltrace
+    lltrace = Py_MIN(lltrace, 5);
     if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }

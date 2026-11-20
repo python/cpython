@@ -1751,6 +1751,14 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
     return 0;
 }
 
+static bool
+is_awaited_coroutine_call(_Py_CODEUNIT *instr, int cache_entries,
+                          PyCodeObject *code)
+{
+    return (instr[1 + cache_entries].op.code == END_AWAITED_CALL &&
+            (code->co_flags & CO_COROUTINE));
+}
+
 static int
 specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    bool bound_method)
@@ -1782,7 +1790,17 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     }
     write_u32(cache->func_version, version);
     uint8_t opcode;
-    if (argcount == nargs + bound_method) {
+    if (is_awaited_coroutine_call(instr, INLINE_CACHE_ENTRIES_CALL, code)) {
+        if (argcount == nargs + bound_method) {
+            opcode = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS_AWAITED
+                                  : CALL_PY_EXACT_ARGS_AWAITED;
+        }
+        else {
+            opcode = bound_method ? CALL_BOUND_METHOD_GENERAL_AWAITED
+                                  : CALL_PY_GENERAL_AWAITED;
+        }
+    }
+    else if (argcount == nargs + bound_method) {
         opcode =
             bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
@@ -1820,7 +1838,13 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     write_u32(cache->func_version, version);
-    specialize(instr, bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY);
+    if (is_awaited_coroutine_call(instr, INLINE_CACHE_ENTRIES_CALL_KW, code)) {
+        specialize(instr, bound_method ? CALL_KW_BOUND_METHOD_AWAITED
+                                       : CALL_KW_PY_AWAITED);
+    }
+    else {
+        specialize(instr, bound_method ? CALL_KW_BOUND_METHOD : CALL_KW_PY);
+    }
     return 0;
 }
 

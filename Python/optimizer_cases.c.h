@@ -1908,6 +1908,18 @@
             break;
         }
 
+        /* _END_AWAITED_CALL is not a viable micro-op for tier 2 */
+
+        case _POP_LAZY_OUTCOME: {
+            JitOptRef value;
+            value = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
         case _SEND_GEN_FRAME: {
             JitOptRef v;
             JitOptRef receiver;
@@ -1975,6 +1987,12 @@
             stack_pointer[-3] = asend;
             stack_pointer[-2] = null_out;
             stack_pointer[-1] = retval;
+            break;
+        }
+
+        /* _CHECK_LAZY_CORO is not a viable micro-op for tier 2 */
+
+        case _GUARD_NOT_LAZY_CORO: {
             break;
         }
 
@@ -4290,6 +4308,8 @@
             break;
         }
 
+        /* _START_LAZY_CORO is not a viable micro-op for tier 2 */
+
         case _GUARD_NOS_NULL: {
             JitOptRef null;
             null = stack_pointer[-2];
@@ -5595,6 +5615,8 @@
             (void)framesize;
             break;
         }
+
+        /* _MAYBE_LAZY_CORO is not a viable micro-op for tier 2 */
 
         case _SAVE_RETURN_OFFSET: {
             break;
