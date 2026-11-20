@@ -4148,6 +4148,26 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
             self.assertIn(f'{FalseyException.__name__}: {msg}', str_exc[-2])
 
 
+    def test_syntax_error_keyword_typo_preserves_lineno_type(self):
+        # gh-162296: formatting must not change lineno/end_lineno types.
+        try:
+            compile("whille True:\n    pass\n", "example.py", "exec")
+        except SyntaxError as exc:
+            te = traceback.TracebackException.from_exception(exc)
+            self.assertIsInstance(te.lineno, str)
+            self.assertIsInstance(te.end_lineno, str)
+            self.assertEqual(te.lineno, '1')
+            self.assertEqual(te.end_lineno, '1')
+            ''.join(te.format())
+            self.assertIsInstance(te.lineno, str)
+            self.assertIsInstance(te.end_lineno, str)
+            self.assertEqual(te.lineno, '1')
+            self.assertEqual(te.end_lineno, '1')
+        else:
+            self.fail("SyntaxError not raised")
+
+
+
 global_for_suggestions = None
 
 
