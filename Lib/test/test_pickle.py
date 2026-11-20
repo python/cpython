@@ -470,6 +470,42 @@ if has_c_implementation:
                 unpickler.memo = {-1: None}
             unpickler.memo = {1: None}
 
+        def test_invalid_unpickler_memo_preserves_entries(self):
+            for key, error in (('invalid', TypeError), (-1, ValueError),
+                               (sys.maxsize + 1, OverflowError)):
+                with self.subTest(key=key):
+                    unpickler = self.unpickler_class(io.BytesIO(b']q\x00.h\x00.'))
+                    value = unpickler.load()
+                    with self.assertRaises(error):
+                        unpickler.memo = {0: None, key: None}
+                    self.assertIs(unpickler.load(), value)
+
+        def test_assign_unpickler_memo_copies_dict(self):
+            for index in (0, 1, 1000):
+                with self.subTest(index=index):
+                    unpickler = self.unpickler_class(
+                        io.BytesIO(f'g{index}\n.'.encode()))
+                    value = []
+                    memo = {index: value}
+                    unpickler.memo = memo
+                    memo.clear()
+                    self.assertEqual(unpickler.memo.copy(), {index: value})
+                    self.assertIs(unpickler.load(), value)
+
+        def test_assign_unpickler_memo_reentrant(self):
+            unpickler = self.unpickler_class(io.BytesIO(b'h\x00.'))
+            observed = []
+
+            class Observer:
+                def __del__(self):
+                    observed.append(unpickler.memo.copy())
+
+            unpickler.memo = {0: Observer()}
+            value = []
+            unpickler.memo = {0: value}
+            self.assertEqual(observed, [{0: value}])
+            self.assertIs(unpickler.load(), value)
+
         def test_concurrent_pickler_dump(self):
             f = io.BytesIO()
             pickler = self.pickler_class(f)

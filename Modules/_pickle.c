@@ -7940,7 +7940,8 @@ _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=e12af7e9bc1e4c77 input=97769247ce032c1d]*/
 {
     size_t i;
-    PyObject *new_memo = PyDict_New();
+    PyObject *new_memo = self->unpickler->memo_dict == NULL
+        ? PyDict_New() : PyDict_Copy(self->unpickler->memo_dict);
     if (new_memo == NULL)
         return NULL;
 
@@ -8074,6 +8075,8 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
     PyObject **new_memo;
     UnpicklerObject *self = UnpicklerObject_CAST(op);
     size_t new_memo_size = 0;
+    size_t new_memo_len = 0;
+    PyObject *new_memo_dict = NULL;
 
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -8091,6 +8094,13 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         if (new_memo == NULL)
             return -1;
 
+        new_memo_len = unpickler->memo_len;
+        if (unpickler->memo_dict != NULL) {
+            new_memo_dict = PyDict_Copy(unpickler->memo_dict);
+            if (new_memo_dict == NULL)
+                goto error;
+        }
+
         for (size_t i = 0; i < new_memo_size; i++) {
             new_memo[i] = Py_XNewRef(unpickler->memo[i]);
         }
@@ -8100,6 +8110,7 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         PyObject *key, *value;
 
         new_memo_size = PyDict_GET_SIZE(obj);
+        new_memo_len = new_memo_size;
         new_memo = _Unpickler_NewMemo(new_memo_size);
         if (new_memo == NULL)
             return -1;
@@ -8119,8 +8130,23 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
                                 "memo key must be positive integers.");
                 goto error;
             }
-            if (_Unpickler_MemoPut(self, idx, value) < 0)
-                goto error;
+            if ((size_t)idx < new_memo_size) {
+                Py_XSETREF(new_memo[idx], Py_NewRef(value));
+            }
+            else {
+                if (new_memo_dict == NULL) {
+                    new_memo_dict = PyDict_New();
+                    if (new_memo_dict == NULL)
+                        goto error;
+                }
+                PyObject *index = PyLong_FromSsize_t(idx);
+                if (index == NULL)
+                    goto error;
+                int status = PyDict_SetItem(new_memo_dict, index, value);
+                Py_DECREF(index);
+                if (status < 0)
+                    goto error;
+            }
         }
     }
     else {
@@ -8130,19 +8156,28 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         return -1;
     }
 
-    _Unpickler_MemoCleanup(self, NULL);
-    self->memo_size = new_memo_size;
+    /* Install all of the new state before releasing the old entries, which
+       may call back into the unpickler. */
+    PyObject **old_memo = self->memo;
+    size_t old_memo_size = self->memo_size;
+    PyObject *old_memo_dict = self->memo_dict;
     self->memo = new_memo;
-
+    self->memo_size = new_memo_size;
+    self->memo_len = new_memo_len;
+    self->memo_dict = new_memo_dict;
+    for (size_t i = 0; i < old_memo_size; i++) {
+        Py_XDECREF(old_memo[i]);
+    }
+    PyMem_Free(old_memo);
+    Py_XDECREF(old_memo_dict);
     return 0;
 
   error:
-    if (new_memo_size) {
-        for (size_t i = new_memo_size - 1; i != SIZE_MAX; i--) {
-            Py_XDECREF(new_memo[i]);
-        }
-        PyMem_Free(new_memo);
+    for (size_t i = 0; i < new_memo_size; i++) {
+        Py_XDECREF(new_memo[i]);
     }
+    PyMem_Free(new_memo);
+    Py_XDECREF(new_memo_dict);
     return -1;
 }
 
