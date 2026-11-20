@@ -4020,6 +4020,7 @@ class TestDateTime(TestDate):
             "2009-04-01T25:30:45",          # Hour out of range
             "2009-00-01T24:00:00",          # Month below range
             "2009-13-01T24:00:00",          # Month out of range
+            "0000-12-31T24:00:00",          # Year below range
             "9999-12-31T24:00:00",          # Year out of range
         ]
 
@@ -4029,9 +4030,12 @@ class TestDateTime(TestDate):
                     self.theclass.fromisoformat(bad_str)
 
         # days out of range have their own error message, see issue 70647
-        with self.assertRaises(ValueError) as msg:
-            self.theclass.fromisoformat("2009-04-32T24:00:00")
-        self.assertIn(f"day 32 must be in range 1..30 for month 4 in year 2009", str(msg.exception))
+        for day in (0, 32):
+            with self.subTest(day=day):
+                with self.assertRaises(ValueError) as msg:
+                    self.theclass.fromisoformat(f"2009-04-{day:02d}T24:00:00")
+                self.assertIn(f"day {day} must be in range 1..30 for month 4 in year 2009",
+                              str(msg.exception))
 
     def test_fromisoformat_fails_surrogate(self):
         # Test that when fromisoformat() fails with a surrogate character as
