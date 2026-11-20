@@ -369,13 +369,13 @@ Other functions
 
 .. function:: get_platform()
 
-   Return a string that identifies the current platform.
+   Return a string that identifies the platform Python was built for.
 
    This is used mainly to distinguish platform-specific build directories and
    platform-specific built distributions.  Typically includes the OS name and
-   version and the architecture (as supplied by :func:`os.uname`), although the
-   exact information included depends on the OS; e.g., on Linux, the kernel
-   version isn't particularly important.
+   version and the architecture (as supplied by :func:`os.uname` at build time),
+   although the exact information included depends on the OS; e.g., on Linux,
+   the kernel version isn't particularly important.
 
    Examples of returned values:
 
@@ -397,6 +397,10 @@ Other functions
    - android-24-arm64_v8a
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
+
+   .. versionchanged:: 3.16
+      On POSIX platforms, use the platform recorded at build time, so that
+      running Python on a compatible architecture does not change the result.
 
 
 .. function:: is_python_build()

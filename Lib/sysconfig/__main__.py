@@ -5,6 +5,7 @@ import types
 from sysconfig import (
     _ALWAYS_STR,
     _PYTHON_BUILD,
+    _get_platform,
     _get_sysconfigdata_name,
     get_config_h_filename,
     get_config_var,
@@ -193,6 +194,10 @@ def _generate_posix_vars():
     module = types.ModuleType(name)
     module.build_time_vars = vars
     sys.modules[name] = module
+
+    # Compute this from the build configuration, not a previous build's data.
+    vars['HOST_PLATFORM'] = _get_platform()
+    get_config_vars()['HOST_PLATFORM'] = vars['HOST_PLATFORM']
 
     pybuilddir = _get_pybuilddir()
     os.makedirs(pybuilddir, exist_ok=True)

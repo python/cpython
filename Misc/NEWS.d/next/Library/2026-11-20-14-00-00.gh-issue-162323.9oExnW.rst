@@ -1,0 +1,4 @@
+:func:`sysconfig.get_platform` now uses the platform recorded at build time on
+POSIX, so that running Python on a compatible architecture does not change
+the result. Fix platform detection for native 32-bit x86 and ARM builds on
+64-bit Linux kernels.

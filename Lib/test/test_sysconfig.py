@@ -22,7 +22,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd, temp_dir,
+                                    change_cwd, temp_cwd, temp_dir,
                                     EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
@@ -257,6 +257,9 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(actual_platform, str)
         self.assertTrue(actual_platform)
 
+        # Exercise platform detection without the saved build platform.
+        get_config_vars().pop('HOST_PLATFORM', None)
+
         # Windows
         os.name = 'nt'
         with patch('_sysconfig.get_platform', create=True, return_value='win32'):
@@ -393,6 +396,82 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 self.assertEqual(get_platform(), f'android-9-{abi}')
 
         # XXX more platforms to tests here
+
+    def test_get_platform_build(self):
+        os.name = 'posix'
+        sys.platform = 'linux'
+        with EnvironmentVarGuard() as env:
+            env.unset('_PYTHON_HOST_PLATFORM')
+            for build_platform, machine in (
+                ('linux-i686', 'x86_64'),
+                ('linux-armv7l', 'armv8l'),
+                ('linux-armv7l', 'aarch64'),
+                ('linux-arm', 'armv7l'),
+            ):
+                with self.subTest(build_platform=build_platform, machine=machine):
+                    get_config_vars()['HOST_PLATFORM'] = build_platform
+                    self._set_uname(('Linux', 'localhost', '6.1', '', machine))
+                    self.assertEqual(get_platform(), build_platform)
+
+    def test_get_platform_cross_compile(self):
+        os.name = 'posix'
+        sys.platform = 'linux'
+        get_config_vars()['HOST_PLATFORM'] = 'linux-x86_64'
+        with EnvironmentVarGuard() as env:
+            for target in ('linux-i686', 'linux-arm', 'linux-aarch64'):
+                with self.subTest(target=target):
+                    env['_PYTHON_HOST_PLATFORM'] = target
+                    self.assertEqual(get_platform(), target)
+
+    def test_get_platform_linux_build_architecture(self):
+        os.name = 'posix'
+        sys.platform = 'linux'
+        get_config_vars().pop('HOST_PLATFORM', None)
+        with EnvironmentVarGuard() as env:
+            env.unset('_PYTHON_HOST_PLATFORM')
+            for multiarch, machine, expected in (
+                ('i386-linux-gnu', 'x86_64', 'i686'),
+                ('i386-linux-musl', 'x86_64', 'i686'),
+                ('x86_64-linux-gnu', 'x86_64', 'x86_64'),
+                ('x86_64-linux-gnux32', 'x86_64', 'x86_64'),
+                ('arm-linux-gnueabihf', 'aarch64', 'armv8l'),
+                ('arm-linux-gnueabihf', 'armv7l', 'armv7l'),
+                ('aarch64-linux-gnu', 'aarch64', 'aarch64'),
+            ):
+                with self.subTest(multiarch=multiarch, machine=machine):
+                    get_config_vars()['MULTIARCH'] = multiarch
+                    self._set_uname(('Linux', 'localhost', '6.1', '', machine))
+                    self.assertEqual(get_platform(), f'linux-{expected}')
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX-specific test')
+    @unittest.skipIf(is_wasi or is_apple_mobile,
+                     'Makefile and pyconfig.h are not available')
+    @requires_subprocess()
+    def test_generate_posix_vars_platform(self):
+        from runpy import run_path
+
+        expected = sysconfig._get_platform()
+        for initialized in (False, True):
+            with self.subTest(initialized=initialized), temp_cwd():
+                script = textwrap.dedent(f"""
+                    import sysconfig
+                    from sysconfig.__main__ import _generate_posix_vars
+                    if {initialized!r}:
+                        sysconfig.get_config_vars()['HOST_PLATFORM'] = 'stale-platform'
+                    _generate_posix_vars()
+                """)
+                subprocess.run([sys.executable, '-S', '-c', script],
+                               check=True, capture_output=True)
+
+                with open('pybuilddir.txt', encoding='utf-8') as f:
+                    pybuilddir = f.read()
+                datafile = os.path.join(
+                    pybuilddir, sysconfig._get_sysconfigdata_name() + '.py')
+                build_vars = run_path(datafile)['build_time_vars']
+                self.assertEqual(build_vars['HOST_PLATFORM'], expected)
+                with open(os.path.join(pybuilddir, _get_json_data_name())) as f:
+                    install_vars = json.load(f)
+                self.assertEqual(install_vars['HOST_PLATFORM'], expected)
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
