@@ -1,4 +1,3 @@
-import sys
 import unittest
 from threading import Thread, Barrier, Event
 from test.support import threading_helper
@@ -161,51 +160,70 @@ class LargeSetTest(RaceTestBase, unittest.TestCase):
 
 
 class TestSetIteratorExhaustion(unittest.TestCase):
-    """Exhausting one set iterator from several threads at once."""
+    def test_racing_shared_iterator_exhaustion(self):
+        # gh-160573: exhausting a set iterator shared between threads must
+        # not release the iterator's reference to the set more than once.
+        for tp in (set, frozenset):
+            cell = [iter(tp(range(8)))]
 
-    # One live element followed by a long run of dummy entries widens the
-    # window between reading si_set and clearing it, so threads that arrive
-    # together all reach the exhausted branch.
-    SET_SIZE = 300_000
-    NUM_THREADS = 8
-    ROUNDS = 3
-
-    @threading_helper.requires_working_threading()
-    def test_racing_exhaustion_releases_set_once(self):
-        s = set(range(self.SET_SIZE))
-        for i in range(1, self.SET_SIZE):
-            s.discard(i)
-        # Extra references keep a wrongly released set alive, so every lost
-        # reference shows up as a refcount difference instead of a crash.
-        keep = [s] * 1000
-        base = sys.getrefcount(s)
-        try:
-            for _ in range(self.ROUNDS):
-                it = iter(s)
-                next(it)  # leave the iterator on the exhausted branch
-                barrier = Barrier(self.NUM_THREADS, timeout=10)
-                errors = []
-
-                def exhaust():
-                    barrier.wait()
+            def worker():
+                for _ in range(5000):
+                    it = cell[0]
                     try:
                         next(it)
                     except StopIteration:
+                        cell[0] = iter(tp(range(8)))
+
+            with self.subTest(tp=tp):
+                threading_helper.run_concurrently(worker, nthreads=4)
+
+    def test_racing_shared_iterator_exhaustion_contended(self):
+        # Same as above, but the set's lock is contended: other threads
+        # keep mutating and iterating the set while its iterator is shared.
+        s = set(range(8))
+        cell = [iter(s)]
+        done = Event()
+
+        def exhaust():
+            for _ in range(5000):
+                it = cell[0]
+                try:
+                    next(it)
+                except StopIteration:
+                    cell[0] = iter(s)
+                except RuntimeError:
+                    # The set changed size during iteration.
+                    cell[0] = iter(s)
+
+        def mutate():
+            while not done.is_set():
+                s.add(100)
+                s.discard(100)
+
+        def iterate():
+            while not done.is_set():
+                try:
+                    for _ in s:
                         pass
-                    except BaseException as exc:
-                        errors.append(exc)
+                except RuntimeError:
+                    pass
 
-                threads = [Thread(target=exhaust)
-                           for _ in range(self.NUM_THREADS)]
-                for thread in threads:
-                    thread.start()
-                for thread in threads:
-                    thread.join()
+        def run_exhaust():
+            try:
+                threading_helper.run_concurrently(exhaust, nthreads=4)
+            finally:
+                done.set()
 
-                self.assertEqual(errors, [])
-                self.assertEqual(sys.getrefcount(s), base)
-        finally:
-            del keep
+        threading_helper.run_concurrently([run_exhaust, mutate, iterate])
+
+    def test_exhausted_iterator_stays_exhausted(self):
+        s = {1}
+        it = iter(s)
+        self.assertEqual(list(it), [1])
+        s.add(2)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEqual(it.__length_hint__(), 0)
+        self.assertEqual(list(it.__reduce__()[1][0]), [])
 
 
 if __name__ == "__main__":
