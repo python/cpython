@@ -471,7 +471,7 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
-    @unittest.skipUnless(sysconfig.get_config_var("HAVE_RL_CHANGE_ENVIRONMENT"),
+    @unittest.skipUnless(sysconfig.get_config_var("_Py_HAVE_RL_CHANGE_ENVIRONMENT"),
                          "readline can modify the environment")
     def test_environment_is_not_modified(self):
         # os.environ contains environment at the time "os" module was loaded, so

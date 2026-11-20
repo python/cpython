@@ -155,8 +155,6 @@ get_page_size(void) {
 typedef struct page_cache_entry {
     uintptr_t page_addr; // page-aligned base address
     char *data;
-    int valid;
-    struct page_cache_entry *next;
 } page_cache_entry_t;
 
 #define MAX_PAGES 1024
@@ -211,7 +209,6 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
             PyMem_RawFree(handle->pages[i].data);
         }
         handle->pages[i].data = NULL;
-        handle->pages[i].valid = 0;
     }
     handle->page_cache_count = 0;
 }
@@ -219,9 +216,6 @@ _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
 UNUSED static void
 _Py_RemoteDebug_ClearCache(proc_handle_t *handle)
 {
-    for (int i = 0; i < handle->page_cache_count; i++) {
-        handle->pages[i].valid = 0;
-    }
     handle->page_cache_count = 0;
 }
 
@@ -244,7 +238,6 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->page_cache_count = 0;
     for (int i = 0; i < MAX_PAGES; i++) {
         handle->pages[i].data = NULL;
-        handle->pages[i].valid = 0;
     }
 
     handle->pid = pid;
@@ -1539,7 +1532,7 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
     // between profiler samples, so entries are packed at the front.
     for (int i = 0; i < handle->page_cache_count; i++) {
         page_cache_entry_t *entry = &handle->pages[i];
-        if (entry->valid && entry->page_addr == page_base) {
+        if (entry->page_addr == page_base) {
             memcpy(out, entry->data + offset_in_page, size);
             return 0;
         }
@@ -1566,7 +1559,6 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
         }
 
         entry->page_addr = page_base;
-        entry->valid = 1;
         handle->page_cache_count++;
         memcpy(out, entry->data + offset_in_page, size);
         return 0;

@@ -168,6 +168,7 @@ class TestResults:
             self.bad.clear()
             self.env_changed.clear()
             self.rerun_results.clear()
+            self.worker_bug = False
 
         return (tuple(tests), match_tests_dict)
 
