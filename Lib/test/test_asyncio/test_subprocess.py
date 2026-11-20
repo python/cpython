@@ -324,6 +324,31 @@ class SubprocessMixin:
                               self.loop.run_until_complete, coro)
         self.loop.run_until_complete(proc.wait())
 
+    def test_stdin_wait_closed_cancelled(self):
+        # gh-162217: cancelling a task waiting in stdin.wait_closed() must
+        # not make pipe_connection_lost() fail with InvalidStateError.
+        async def main():
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+            )
+            try:
+                task = asyncio.create_task(proc.stdin.wait_closed())
+                await asyncio.sleep(0)
+                task.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await task
+            finally:
+                proc.stdin.close()
+                await proc.wait()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        self.loop.run_until_complete(main())
+        self.assertEqual(messages, [])
+
     def test_communicate_ignore_broken_pipe(self):
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
