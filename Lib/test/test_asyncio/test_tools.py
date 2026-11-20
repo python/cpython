@@ -19,8 +19,7 @@ def CoroInfo(call_stack, task_name):
 
 
 def TaskInfo(task_id, task_name, coroutine_stack, awaited_by):
-    return _remote_debugging.TaskInfo(
-        (task_id, task_name, coroutine_stack, awaited_by, False))
+    return _remote_debugging.TaskInfo((task_id, task_name, coroutine_stack, awaited_by))
 
 
 def AwaitedInfo(thread_id, awaited_by):

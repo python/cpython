@@ -1666,7 +1666,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     ]
                     self.assertIn(
                         TaskInfo(
-                            [ANY, "Task-1", [CoroInfo([main_stack, ANY])], [], False]
+                            [ANY, "Task-1", [CoroInfo([main_stack, ANY])], []]
                         ),
                         entries,
                     )
@@ -1720,7 +1720,6 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                         ]
                                     )
                                 ],
-                                False,
                             ]
                         ),
                         entries,
@@ -1788,7 +1787,6 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                         ]
                                     )
                                 ],
-                                False,
                             ]
                         ),
                         entries,

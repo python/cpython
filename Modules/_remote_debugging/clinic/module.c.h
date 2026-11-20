@@ -305,7 +305,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.\n"
 "    - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures\n"
 "      awaiting this task.\n"
-"    - is_future (bool): True for a Future that is not a Task.\n"
+"    - is_future (bool, named-only): True for a plain Future.\n"
 "\n"
 "Each CoroInfo contains:\n"
 "    - call_stack (list[FrameInfo]): Call stack frames for the coroutine.\n"
@@ -327,8 +327,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_all_awaited_by__doc__,
 "                    task_id=1,\n"
 "                    task_name=\"Task-1\",\n"
 "                    coroutine_stack=[...],\n"
-"                    awaited_by=[],\n"
-"                    is_future=False\n"
+"                    awaited_by=[]\n"
 "                )\n"
 "            ]\n"
 "        )\n"
@@ -380,7 +379,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "    - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.\n"
 "    - awaited_by (list[CoroInfo]): Coroutine information for\n"
 "      tasks or futures awaiting this task.\n"
-"    - is_future (bool): True for a Future that is not a Task.\n"
+"    - is_future (bool, named-only): True for a plain Future.\n"
 "\n"
 "Each CoroInfo contains:\n"
 "    - call_stack (list[FrameInfo]): Frames for the coroutine.\n"
@@ -416,8 +415,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "                ],\n"
 "                awaited_by=[\n"
 "                    CoroInfo(call_stack=[...], task_name=2)\n"
-"                ],\n"
-"                is_future=False\n"
+"                ]\n"
 "            ),\n"
 "            TaskInfo(\n"
 "                task_id=2,\n"
@@ -425,8 +423,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "                coroutine_stack=[\n"
 "                    CoroInfo(call_stack=[...], task_name=2)\n"
 "                ],\n"
-"                awaited_by=[],\n"
-"                is_future=False\n"
+"                awaited_by=[]\n"
 "            )\n"
 "        ])\n"
 "    ]");
@@ -1750,4 +1747,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=53620298ea6bc685 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2be4cb3f27f6c8d8 input=a9049054013a1b77]*/
