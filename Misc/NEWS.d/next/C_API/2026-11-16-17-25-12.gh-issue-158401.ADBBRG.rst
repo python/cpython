@@ -1,0 +1,4 @@
+:c:func:`Py_INCREF`, :c:func:`Py_XINCREF`, :c:func:`Py_DECREF` and
+:c:func:`Py_XDECREF` are now implemented as function calls on all limited C
+API versions.  Previously, they were only implemented as function calls on
+the limited C API version 3.12 or newer. Patch by Victor Stinner:
