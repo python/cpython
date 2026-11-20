@@ -950,7 +950,7 @@ append_awaited_by(
         return -1;
     }
 
-    return process_task_waiters(unwinder, awaited_by_for_thread, true);
+    return process_task_waiters(unwinder, task_list, true);
 }
 
 /* ============================================================================
