@@ -16,6 +16,7 @@ import os
 import sys
 import socket
 import struct
+import threading
 import time
 
 
@@ -283,22 +284,33 @@ if _winapi:
         with FILE_FLAG_OVERLAPPED.
         """
         _got_empty_message = False
-        _send_ov = None
+
+        def __init__(self, handle, readable=True, writable=True):
+            super().__init__(handle, readable, writable)
+            # Several threads may write to the same connection. Keep track of
+            # all pending overlapped operations so that close() can cancel
+            # them.
+            self._send_ov = []
+            self._send_ov_lock = threading.Lock()
+            self._closing = False
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
-            ov = self._send_ov
-            if ov is not None:
+            with self._send_ov_lock:
+                # Prevent new writes from being submitted after we have
+                # taken the snapshot of pending operations.
+                self._closing = True
+                overlapped = list(self._send_ov)
+            for ov in overlapped:
                 # Interrupt WaitForMultipleObjects() in _send_bytes()
                 ov.cancel()
             _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
-            if self._send_ov is not None:
-                # A connection should only be used by a single thread
-                raise ValueError("concurrent send_bytes() calls "
-                                 "are not supported")
-            ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
-            self._send_ov = ov
+            with self._send_ov_lock:
+                if self._closing:
+                    raise OSError(errno.EPIPE, "handle is closed")
+                ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+                self._send_ov.append(ov)
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -308,7 +320,8 @@ if _winapi:
                 ov.cancel()
                 raise
             finally:
-                self._send_ov = None
+                with self._send_ov_lock:
+                    self._send_ov.remove(ov)
                 nwritten, err = ov.GetOverlappedResult(True)
             if err == _winapi.ERROR_OPERATION_ABORTED:
                 # close() was called by another thread while
