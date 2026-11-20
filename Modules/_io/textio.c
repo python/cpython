@@ -1945,13 +1945,15 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 static int
 textiowrapper_write_list(textio *self, PyObject *strlist)
 {
-    if (self->dict != NULL) {
-        PyObject *dict = Py_NewRef(self->dict);
-        int overridden = PyDict_Contains(dict, &_Py_ID(write));
-        Py_DECREF(dict);
-        if (overridden != 0) {
-            return overridden < 0 ? -1 : 0;
-        }
+    /* Let normal method lookup handle a write override or a non-inline dict. */
+    PyObject *override;
+    if (!_PyObject_TryGetInstanceAttribute((PyObject *)self, &_Py_ID(write),
+                                           &override)) {
+        return 0;
+    }
+    if (override != NULL) {
+        Py_DECREF(override);
+        return 0;
     }
     /* A custom buffer's closed getter can run Python code. Let write()
        check it once, after the caller has joined the strings. */
