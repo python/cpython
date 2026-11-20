@@ -2069,13 +2069,13 @@ class TestGetStackTrace(RemoteInspectionTestBase):
     )
     def test_popping_python_frame_is_not_native(self):
         script_body = """\
-            def leaf(depth):
-                if depth:
-                    leaf(depth - 1)
+def leaf(depth):
+    if depth:
+        leaf(depth - 1)
 
-            while True:
-                leaf(300)
-            """
+while True:
+        leaf(300)
+"""
 
         with self._target_process(script_body) as (process, _, _):
             unwinder = RemoteUnwinder(
