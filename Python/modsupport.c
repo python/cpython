@@ -549,52 +549,55 @@ va_build_value(const char *format, va_list va)
     return retval;
 }
 
-PyObject **
-_Py_VaBuildStack(PyObject **small_stack, Py_ssize_t small_stack_len,
-                const char *format, va_list va, Py_ssize_t *p_nargs)
+int
+_Py_VaBuildArray(PyObject ***array, Py_ssize_t *array_size,
+                 PyObject **small_array, Py_ssize_t small_array_len,
+                 const char *format, va_list va)
 {
-    const char *f;
-    Py_ssize_t n;
-    va_list lva;
-    PyObject **stack;
-    int res;
-
-    n = countformat(format, '\0');
+    Py_ssize_t n = countformat(format, '\0');
     if (n < 0) {
-        *p_nargs = 0;
-        return NULL;
+        goto error;
     }
 
     if (n == 0) {
-        *p_nargs = 0;
-        return small_stack;
+        *array = small_array;
+        *array_size = 0;
+        return 0;
     }
 
-    if (n <= small_stack_len) {
-        stack = small_stack;
+    PyObject **stack;
+    if (n <= small_array_len) {
+        stack = small_array;
     }
     else {
         stack = PyMem_Malloc(n * sizeof(stack[0]));
         if (stack == NULL) {
             PyErr_NoMemory();
-            return NULL;
+            goto error;
         }
     }
 
+    va_list lva;
     va_copy(lva, va);
-    f = format;
-    res = do_mkstack(stack, &f, &lva, '\0', n);
+    const char *f = format;
+    int res = do_mkstack(stack, &f, &lva, '\0', n);
     va_end(lva);
 
     if (res < 0) {
-        if (stack != small_stack) {
+        if (stack != small_array) {
             PyMem_Free(stack);
         }
-        return NULL;
+        goto error;
     }
 
-    *p_nargs = n;
-    return stack;
+    *array = stack;
+    *array_size = n;
+    return 0;
+
+error:
+    *array = NULL;
+    *array_size = -1;
+    return -1;
 }
 
 
