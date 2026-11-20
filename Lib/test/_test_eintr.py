@@ -11,6 +11,7 @@ sub-second periodicity (contrarily to signal()).
 import contextlib
 import faulthandler
 import fcntl
+import itertools
 import os
 import platform
 import select
@@ -18,6 +19,7 @@ import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import textwrap
 import time
 import unittest
@@ -385,6 +387,66 @@ class SocketEINTRTest(EINTRBaseTest):
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)
+
+
+@unittest.skipUnless(hasattr(os, 'sendfile'), 'needs os.sendfile()')
+class SendfileEINTRTest(EINTRBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.stop_alarm()
+        with socket.create_server((socket_helper.HOSTv4, 0)) as server:
+            wr = socket.create_connection(server.getsockname())
+            self.wr = self.enterContext(wr)
+            rd, _ = server.accept()
+            self.rd = self.enterContext(rd)
+
+        self.data = bytes(range(256)) * (support.SOCK_MAX_SIZE // 256)
+        self.file = self.enterContext(tempfile.TemporaryFile(buffering=0))
+        self.file.write(self.data)
+
+    def test_sendfile(self):
+        wr = self.wr.fileno()
+        src = self.file.fileno()
+        self.file.write(b'AB')
+
+        # Make an incorrect retry on the full socket raise BlockingIOError.
+        signal.signal(signal.SIGALRM, lambda *_: self.wr.setblocking(False))
+        signal.setitimer(signal.ITIMER_REAL, self.signal_delay)
+        sent = os.sendfile(wr, src, 0, len(self.data))
+        self.assertGreater(sent, 0)
+
+        # Interrupt a send on the full socket and make room for its retry.
+        self.wr.setblocking(True)
+        reader = self.enterContext(self.rd.makefile('rb'))
+        received = bytearray()
+
+        def drain(signum, frame):
+            received.extend(reader.read(sent))
+
+        signal.signal(signal.SIGALRM, drain)
+        signal.setitimer(signal.ITIMER_REAL, self.signal_delay)
+        self.assertEqual(os.sendfile(wr, src, len(self.data), 1), 1)
+        self.stop_alarm()
+
+        self.wr.shutdown(socket.SHUT_WR)
+        received.extend(reader.read())
+        expected = self.data[:sent] + b'A'
+        self.assertEqual(len(received), len(expected))
+        self.assertEqual(received, expected)
+
+    @unittest.skipUnless(
+        sys.platform.startswith(('darwin', 'freebsd', 'dragonfly')),
+        'requires sendfile() to report EINTR on a partial send')
+    def test_sendfile_signal_exception(self):
+        args = (self.wr.fileno(), self.file.fileno(), 0, len(self.data))
+        results = []
+        # Collect the return value in C before Python can run a deferred handler.
+        calls = itertools.starmap(os.sendfile, [args])
+        signal.signal(signal.SIGALRM, signal.default_int_handler)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.setitimer(signal.ITIMER_REAL, self.signal_delay)
+            results.extend(calls)
+        self.assertEqual(results, [])
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
