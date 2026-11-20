@@ -94,10 +94,10 @@ mode.  Other common values are 'w' for writing (truncating the file if
 it already exists), 'x' for creating and writing to a new file, and
 'a' for appending (which on some Unix systems, means that all writes
 append to the end of the file regardless of the current seek position).
-In text mode, if encoding is not specified the encoding used is platform
-dependent: locale.getencoding() is called to get the current locale
-encoding.  (For reading and writing raw bytes use binary mode and leave
-encoding unspecified.)  The available modes are:
+In text mode, if encoding is not specified UTF-8 is used by default;
+if Python UTF-8 Mode is disabled, locale.getencoding() is called to get
+the current locale encoding.  (For reading and writing raw bytes use
+binary mode and leave encoding unspecified.)  The available modes are:
 
 ========= ==========================================================
 Character Meaning
