@@ -1,0 +1,3 @@
+``make install`` now depends on the ``all`` target, so running it directly
+after ``./configure --enable-optimizations`` installs the PGO-optimized
+interpreter rather than an unoptimized build.

@@ -185,9 +185,6 @@ read_py_bytes(
     uintptr_t address,
     Py_ssize_t max_len
 ) {
-    PyObject *result = NULL;
-    char *buf = NULL;
-
     // Read the entire PyBytesObject at once
     char bytes_obj[SIZEOF_BYTES_OBJ];
     int res = _Py_RemoteDebug_PagedReadRemoteMemory(
@@ -198,7 +195,7 @@ read_py_bytes(
     );
     if (res < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read PyBytesObject");
-        goto err;
+        return NULL;
     }
 
     Py_ssize_t len = GET_MEMBER(Py_ssize_t, bytes_obj, unwinder->debug_offsets.bytes_object.ob_size);
@@ -209,36 +206,26 @@ read_py_bytes(
         return NULL;
     }
 
-    buf = (char *)PyMem_RawMalloc(len+1);
-    if (buf == NULL) {
-        PyErr_NoMemory();
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate buffer for bytes reading");
         return NULL;
     }
 
     size_t offset = (size_t)unwinder->debug_offsets.bytes_object.ob_sval;
-    res = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, address + offset, len, buf);
+    res = _Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, address + offset,
+                                             len, PyBytesWriter_GetData(writer));
     if (res < 0) {
+        PyBytesWriter_Discard(writer);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read bytes data from remote memory");
-        goto err;
+        return NULL;
     }
-    buf[len] = '\0';
 
-    result = PyBytes_FromStringAndSize(buf, len);
+    PyObject *result = PyBytesWriter_Finish(writer);
     if (result == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create PyBytes from remote bytes data");
-        goto err;
     }
-
-    PyMem_RawFree(buf);
-    assert(result != NULL);
     return result;
-
-err:
-    if (buf != NULL) {
-        PyMem_RawFree(buf);
-    }
-    return NULL;
 }
 
 long
