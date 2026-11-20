@@ -4083,6 +4083,68 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, writer.recv)
             self.assertRaises(OSError, writer.poll)
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test Windows PipeConnection')
+    def test_concurrent_send_bytes(self):
+        if self.TYPE != 'processes':
+            self.skipTest('test requires a real PipeConnection')
+        # gh-162304: Several Pool threads can write to the same pipe. Fake the
+        # Win32 I/O calls to keep one write pending while a second thread
+        # submits another one, so the old single _send_ov slot is detected
+        # deterministically.
+        import _winapi
+
+        reader, writer = self.Pipe(duplex=False)
+        entered = threading.Event()
+        release = threading.Event()
+        errors = []
+
+        class FakeOverlapped:
+            def __init__(self, size):
+                self.event = object()
+                self.size = size
+
+            def cancel(self):
+                pass
+
+            def GetOverlappedResult(self, wait):
+                return self.size, 0
+
+        def fake_write(handle, buf, overlapped=False):
+            return FakeOverlapped(len(buf)), _winapi.ERROR_IO_PENDING
+
+        def fake_wait(handles, waitall, timeout):
+            entered.set()
+            release.wait(support.SHORT_TIMEOUT)
+            return _winapi.WAIT_OBJECT_0
+
+        def send():
+            try:
+                writer.send_bytes(b'x')
+            except BaseException as exc:
+                errors.append(exc)
+
+        with unittest.mock.patch.object(_winapi, 'WriteFile', fake_write), \
+             unittest.mock.patch.object(_winapi, 'WaitForMultipleObjects',
+                                        fake_wait):
+            t1 = threading.Thread(target=send)
+            t2 = threading.Thread(target=send)
+            try:
+                t1.start()
+                # t1 is now blocked inside fake_wait() with its write
+                # registered. A second write must be allowed concurrently.
+                self.assertTrue(entered.wait(support.SHORT_TIMEOUT))
+                t2.start()
+                t2.join(0.5)
+            finally:
+                release.set()
+                t1.join(support.SHORT_TIMEOUT)
+                t2.join(support.SHORT_TIMEOUT)
+
+        self.assertEqual(errors, [])
+        reader.close()
+        writer.close()
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_close(self):
         # We test that a pipe connection can be closed by parent
