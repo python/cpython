@@ -1,2 +1,0 @@
-Fix resource leaks in :mod:`ssl` when certificate conversion or key log setup
-fails.

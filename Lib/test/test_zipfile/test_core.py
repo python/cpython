@@ -58,6 +58,15 @@ def get_files(test):
         test.assertFalse(f.closed)
 
 
+@contextlib.contextmanager
+def save_restore_sys_path():
+    old_path = sys.path.copy()
+    try:
+        yield
+    finally:
+        sys.path[:] = old_path
+
+
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
@@ -4530,6 +4539,66 @@ class OtherTests(unittest.TestCase):
             self.fail("Unable to create empty ZIP file in 'a' mode")
         zipf.close()
 
+    def test_append_preserves_ascii_utf8_flag(self):
+        comments = (b'', 'caf\N{LATIN SMALL LETTER E WITH ACUTE}'.encode('utf-8'))
+        updates = (
+            ('append', lambda zf: zf.writestr('added.txt', b'added')),
+            ('comment', lambda zf: setattr(zf, 'comment', b'archive comment')),
+        )
+        for comment, (operation, update) in itertools.product(comments, updates):
+            with self.subTest(comment=comment, operation=operation):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w') as archive:
+                    entry = zipfile.ZipInfo('file.txt')
+                    entry.comment = comment
+                    archive.writestr(entry, b'payload')
+                original = bytearray(stream.getvalue())
+                central_offset = original.index(b'PK\x01\x02')
+                struct.pack_into('<H', original, 6, 1 << 11)
+                struct.pack_into('<H', original, central_offset + 8, 1 << 11)
+                stream = io.BytesIO(original)
+                with zipfile.ZipFile(stream, 'a') as archive:
+                    update(archive)
+                with zipfile.ZipFile(stream) as archive:
+                    entry = archive.getinfo('file.txt')
+                    self.assertEqual(entry.flag_bits, 1 << 11)
+                    self.assertEqual(entry.comment, comment)
+                    self.assertEqual(archive.read('file.txt'), b'payload')
+                    self.assertIsNone(archive.testzip())
+                self.assertEqual(stream.getvalue()[:central_offset],
+                                 original[:central_offset])
+
+    def test_new_entry_filename_encoding_flags(self):
+        cases = (
+            ('file.txt', b'\x82', 0, 'cp437', 0,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('caf\N{LATIN SMALL LETTER E WITH ACUTE}.txt', b'\xc3\xa9',
+             0, 'utf-8', 1 << 11,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('file.txt', b'\xc3\xa9', 1 << 11, 'utf-8', 1 << 11,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('file.txt', b'', 1 << 11, 'utf-8', 1 << 11, ''),
+            ('file.txt', b'ascii', 1 << 11, 'utf-8', 1 << 11, 'ascii'),
+        )
+        for (name, comment, initial_flags, encoding, expected_flags,
+             expected_comment) in cases:
+            with self.subTest(name=name, comment=comment,
+                              initial_flags=initial_flags):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w') as archive:
+                    entry = zipfile.ZipInfo(name)
+                    entry.flag_bits = initial_flags
+                    entry.comment = comment
+                    archive.writestr(entry, b'payload')
+                with zipfile.ZipFile(stream) as archive:
+                    entry = archive.getinfo(name)
+                    self.assertEqual(entry.flag_bits, expected_flags)
+                    self.assertEqual(entry.comment, comment)
+                    self.assertEqual(entry.comment.decode(encoding),
+                                     expected_comment)
+                    self.assertEqual(archive.read(name), b'payload')
+                    self.assertIsNone(archive.testzip())
+
     def test_open_empty_file(self):
         # Issue 1710703: Check that opening a file with less than 22 bytes
         # raises a BadZipFile exception (rather than the previously unhelpful
@@ -5598,14 +5667,14 @@ class TestWithDirectory(unittest.TestCase):
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zipf.write(dirpath, "y")
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
         with zipfile.ZipFile(TESTFN, "r") as zipf:
             zinfo = zipf.filelist[0]
             self.assertEndsWith(zinfo.filename, "/x/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             zinfo = zipf.filelist[1]
-            self.assertTrue(zinfo.filename, "y/")
+            self.assertEqual(zinfo.filename, "y/")
             self.assertEqual(zinfo.external_attr, (mode << 16) | 0x10)
             target = os.path.join(TESTFN2, "target")
             os.mkdir(target)
@@ -5987,17 +6056,18 @@ class EncodedMetadataTests(unittest.TestCase):
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
-        with captured_stdout() as stdout:
-            with captured_stderr() as stderr:
+        with (captured_stdout() as stdout,
+              captured_stderr() as stderr,
+              save_restore_sys_path()):
                 self.assertRaises(SystemExit, zipfile.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
-        with captured_stdout() as stdout:
+        with captured_stdout() as stdout, save_restore_sys_path():
             zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
@@ -6016,7 +6086,9 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!a}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        with save_restore_sys_path():
+            zipfile.main(["--metadata-encoding=shift_jis", "-e",
+                          TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)

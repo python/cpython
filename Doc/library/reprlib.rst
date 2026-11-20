@@ -40,7 +40,7 @@ This module provides a class, an instance, and a function:
    .. versionchanged:: 3.12
       Allow attributes to be set via keyword arguments.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       :class:`!Repr` instances now have a string representation that includes
       their attribute values.
 

@@ -306,12 +306,18 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(b, b"gf")
         self.assertEqual(bufio.readinto(b), 0)
         self.assertEqual(b, b"gf")
-        rawio = self.MockRawIO((b"abc", None))
-        bufio = self.tp(rawio)
+        rawio = self.MockRawIO((b"abc", None, None, None, None, None))
+        bufio = self.tp(rawio, buffer_size=4)
         self.assertEqual(bufio.readinto(b), 2)
         self.assertEqual(b, b"ab")
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
+        # Larger than buffer_size: read directly into b
+        b = bytearray(5)
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
 
     def test_readinto1(self):
         buffer_size = 10
@@ -1056,6 +1062,20 @@ class BufferedRWPairTest:
         self.assertEqual(pair.read(), b"ef")
         pair = self.tp(self.BytesIO(b"abc"), self.MockRawIO())
         self.assertEqual(pair.read(None), b"abc")
+
+    def test_readline(self):
+        pair = self.tp(self.BytesIO(b"ab\ncd"), self.MockRawIO())
+
+        self.assertEqual(pair.readline(1), b"a")
+        self.assertEqual(pair.readline(5), b"b\n")
+        self.assertEqual(pair.readline(0), b"")
+        self.assertEqual(pair.readline(None), b"cd")
+
+    def test_readline_nonblocking(self):
+        raw = self.MockRawIO([b"abc", None, None])
+        pair = self.tp(raw, self.MockRawIO())
+
+        self.assertEqual(pair.readline(), b"abc")
 
     def test_readlines(self):
         pair = lambda: self.tp(self.BytesIO(b"abc\ndef\nh"), self.MockRawIO())

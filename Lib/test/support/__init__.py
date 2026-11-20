@@ -462,11 +462,11 @@ def skip_if_buildbot(reason=None):
     return unittest.skipIf(isbuildbot, reason)
 
 def check_sanitizer(*, address=False, hwaddress=False, memory=False, ub=False,
-                    thread=False, function=True):
+                    thread=False, function=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or hwaddress or memory or ub or thread):
-        raise ValueError('At least one of address, hwaddress, memory, ub or '
-                         'thread must be True')
+    if not (address or hwaddress or memory or ub or thread or function):
+        raise ValueError('At least one of address, hwaddress, memory, ub, '
+                         'thread or function must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -517,11 +517,13 @@ def check_sanitizer(*, address=False, hwaddress=False, memory=False, ub=False,
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False,
+                      thread=False, function=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub,
+                           thread=thread, function=function)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -1405,7 +1407,13 @@ def nomemtest(test):
         import_module('_testcapi')
         return test(*args, **kwargs)
 
-    return cpython_only(internal)
+    # gh-162144: set_nomemory() and call_with_nomemory() of _testcapi are not
+    # thread safe and emit warnings when using a thread sanitizer (TSan).
+    use_tsan = check_sanitizer(thread=True)
+    reason ='not working with thread sanitizer (gh-157415)'
+    skip_if_tsan = unittest.skipIf(use_tsan, reason)
+
+    return cpython_only(skip_if_tsan(internal))
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
@@ -3614,3 +3622,10 @@ def inject_memory_error_cm(start=0, stop=0):
         yield
     finally:
         _testcapi.remove_mem_hooks()
+
+
+def supports_perf_trampoline_profiling():
+    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
+    if not perf_trampoline:
+        return False
+    return int(perf_trampoline) == 1

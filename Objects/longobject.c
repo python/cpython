@@ -3325,8 +3325,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
     int d;
     digit wm1, wm2, carry, q, r, vtop, *v0, *vk, *w0, *ak;
     twodigits vv;
-    sdigit zhi;
-    stwodigits z;
+    stwodigits z, zhi;
 
     /* We follow Knuth [The Art of Computer Programming, Vol. 2 (3rd
        edn.), section 4.3.1, Algorithm D], except that we don't explicitly
@@ -3416,16 +3415,15 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
         for (i = 0; i < size_w; ++i) {
             /* invariants: -PyLong_BASE <= -q <= zhi <= 0;
                -PyLong_BASE * q <= z < PyLong_BASE */
-            z = (sdigit)vk[i] + zhi -
+            z = (stwodigits)vk[i] + zhi -
                 (stwodigits)q * (stwodigits)w0[i];
             vk[i] = (digit)z & PyLong_MASK;
-            zhi = (sdigit)Py_ARITHMETIC_RIGHT_SHIFT(stwodigits,
-                                                    z, PyLong_SHIFT);
+            zhi = Py_ARITHMETIC_RIGHT_SHIFT(stwodigits, z, PyLong_SHIFT);
         }
 
         /* add w back if q was too large (this branch taken rarely) */
-        assert((sdigit)vtop + zhi == -1 || (sdigit)vtop + zhi == 0);
-        if ((sdigit)vtop + zhi < 0) {
+        assert((stwodigits)vtop + zhi == -1 || (stwodigits)vtop + zhi == 0);
+        if ((stwodigits)vtop + zhi < 0) {
             carry = 0;
             for (i = 0; i < size_w; ++i) {
                 carry += vk[i] + w0[i];
@@ -3757,7 +3755,13 @@ x_add(PyLongObject *a, PyLongObject *b)
             size_a = size_b;
             size_b = size_temp; }
     }
-    z = long_alloc(size_a+1);
+    assert(size_a >= 1);
+    /* A carry out of the top digit is only possible if the top digits sum
+       to at least PyLong_MASK; only then allocate a digit for it. */
+    digit top_sum = a->long_value.ob_digit[size_a - 1]
+        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : 0);
+    int extra_digit = top_sum >= PyLong_MASK;
+    z = long_alloc(size_a + extra_digit);
     if (z == NULL)
         return NULL;
     for (i = 0; i < size_b; ++i) {
@@ -3770,8 +3774,13 @@ x_add(PyLongObject *a, PyLongObject *b)
         z->long_value.ob_digit[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
     }
-    z->long_value.ob_digit[i] = carry;
-    return long_normalize(z);
+    if (extra_digit) {
+        z->long_value.ob_digit[i] = carry;
+        return long_normalize(z);
+    }
+    assert(carry == 0);
+    assert(z->long_value.ob_digit[i - 1] != 0);
+    return z;
 }
 
 /* Subtract the absolute values of two integers. */
@@ -4564,6 +4573,14 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
         *pmod = (PyLongObject *)fast_mod(v, w);
         return -(*pmod == NULL);
     }
+#if WITH_PYLONG_MODULE
+    Py_ssize_t size_v = _PyLong_DigitCount(v); /* digits in numerator */
+    Py_ssize_t size_w = _PyLong_DigitCount(w); /* digits in denominator */
+    if (size_w > 300 && (size_v - size_w) > 150) {
+        /* Switch to _pylong.int_divmod(). See comments in l_divmod(). */
+        return pylong_int_divmod(v, w, NULL, pmod);
+    }
+#endif
     if (long_rem(v, w, &mod) < 0)
         return -1;
     if ((_PyLong_IsNegative(mod) && _PyLong_IsPositive(w)) ||

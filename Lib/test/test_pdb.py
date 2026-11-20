@@ -7,6 +7,7 @@ import io
 import os
 import pdb
 import re
+import signal
 import sys
 import types
 import codecs
@@ -2973,6 +2974,68 @@ def test_pdb_with_inline_breakpoint():
     (Pdb) c
     """
 
+def test_pdb_sigint():
+    """SIGINT should pause continue, next, until and return
+
+    >>> def interrupt():
+    ...     signal.raise_signal(signal.SIGINT)
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(readrc=False).set_trace()
+    ...     interrupt()
+    ...     interrupt()
+    ...     interrupt()
+    ...     interrupt()
+
+    >>> with PdbTestInput([
+    ...     'n',
+    ...     'n',
+    ...     'up',
+    ...     'until 5',
+    ...     'up',
+    ...     'r',
+    ...     'up',
+    ...     'c',
+    ...     'c',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(readrc=False).set_trace()
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(3)test_function()
+    -> interrupt()
+    (Pdb) n
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(3)test_function()
+    -> interrupt()
+    (Pdb) until 5
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(4)test_function()
+    -> interrupt()
+    (Pdb) r
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) up
+    > <doctest test.test_pdb.test_pdb_sigint[1]>(5)test_function()
+    -> interrupt()
+    (Pdb) c
+    <BLANKLINE>
+    Program interrupted. (Use 'cont' to resume).
+    > <doctest test.test_pdb.test_pdb_sigint[0]>(2)interrupt()
+    -> signal.raise_signal(signal.SIGINT)
+    (Pdb) c
+    """
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -5432,9 +5495,15 @@ def load_tests(loader, tests, pattern):
         def setUp(test):
             import pdb
             pdb.set_default_backend(backend)
+            test.original_sigint_handler = signal.getsignal(signal.SIGINT)
+            test.previous_sigint_handler = pdb.Pdb._previous_sigint_handler
         return setUp
 
     def tearDown(test):
+        # Restore signal state even if a SIGINT doctest fails.
+        signal.signal(signal.SIGINT, test.original_sigint_handler)
+        pdb.Pdb._previous_sigint_handler = test.previous_sigint_handler
+
         # Ensure that asyncio state has been cleared at the end of the test.
         # This prevents a "test altered the execution environment" warning if
         # asyncio features are used.
