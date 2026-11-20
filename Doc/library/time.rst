@@ -300,7 +300,7 @@ Functions
 
 .. function:: monotonic() -> float
 
-   Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
+   Return the value in seconds of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
    difference between the results of two calls is valid.
@@ -338,7 +338,7 @@ Functions
    .. index::
       single: benchmarking
 
-   Return the value (in fractional seconds) of a performance counter, i.e. a
+   Return the value in seconds of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep. The clock is the same for all
    processes. The reference
@@ -376,8 +376,8 @@ Functions
       single: processor time
       single: benchmarking
 
-   Return the value (in fractional seconds) of the sum of the system and user
-   CPU time of the current process.  It does not include time elapsed during
+   Return the value in seconds of the sum of the system and user CPU time
+   of the current process.  It does not include time elapsed during
    sleep.  It is process-wide by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
    of two calls is valid.
@@ -762,8 +762,8 @@ Functions
       single: processor time
       single: benchmarking
 
-   Return the value (in fractional seconds) of the sum of the system and user
-   CPU time of the current thread.  It does not include time elapsed during
+   Return the value in seconds of the sum of the system and user CPU time
+   of the current thread.  It does not include time elapsed during
    sleep.  It is thread-specific by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
    of two calls in the same thread is valid.
