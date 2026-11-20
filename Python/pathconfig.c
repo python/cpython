@@ -340,7 +340,7 @@ Py_GetProgramName(void)
 
 
 /* Compute module search path from argv[0] or the current working
-   directory ("-m module" case) which will be prepended to sys.argv:
+   directory ("-m module" case) which will be prepended to sys.path:
    sys.path[0].
 
    Return 1 if the path is correctly resolved and written into *path0_p.

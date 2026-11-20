@@ -342,7 +342,11 @@ _Py_get_machine_stack_pointer(void) {
 #elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
     result = (uintptr_t)_AddressOfReturnAddress();
 #elif defined(__aarch64__)
-    __asm__ ("mov %0, sp" : "=r" (result));
+    // Use a 64-bit temporary: on arm64_32 (ILP32), uintptr_t is 32 bits
+    // but sp is a 64-bit register.
+    uint64_t sp;
+    __asm__ ("mov %0, sp" : "=r" (sp));
+    result = (uintptr_t)sp;
 #elif defined(__x86_64__)
     __asm__ ("{movq %%rsp, %0|mov %0, rsp}" : "=r" (result));
 #else

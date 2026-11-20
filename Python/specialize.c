@@ -30,7 +30,7 @@
  * InternalDocs/interpreter.md `Specialization` section.
  */
 
-#if Py_STATS
+#ifdef Py_STATS
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     PyStats *s = _PyStats_GET(); \
@@ -42,7 +42,7 @@ do { \
 } while (0)
 #else
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
-#endif  // Py_STATS
+#endif  // !Py_STATS
 
 static void
 fixup_getiter(_Py_CODEUNIT *instruction, int flags)
@@ -1011,7 +1011,7 @@ _Py_Specialize_LoadAttr(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *nam
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
         fail = true;
     }
-    else if (Py_TYPE(owner)->tp_getattro == PyModule_Type.tp_getattro) {
+    else if (PyModule_CheckExact(owner)) {
         fail = specialize_module_load_attr(owner, instr, name);
     }
     else if (PyType_Check(owner)) {

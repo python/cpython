@@ -1,3 +1,0 @@
-Fix a crash when walking a very long chain of lazy import placeholders, as
-created by an aliased dotted import such as ``lazy import a.b.c as d``.
-:exc:`RecursionError` is now raised instead.

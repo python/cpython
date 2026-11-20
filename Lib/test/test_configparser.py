@@ -936,6 +936,52 @@ boolean {self.delimiters[0]} NO
         self.assertEqual(set(cf.sections()), set())
         self.assertEqual(set(cf[self.default_section].keys()), {'foo'})
 
+    def test_section_popitem(self):
+        cf = self.fromstring(f"""
+            [section]
+            name1 {self.delimiters[0]} value1
+            name2 {self.delimiters[0]} value2
+            name3 {self.delimiters[0]} value3
+        """, defaults={"name2": "<default>", "name4": "<default>"})
+        section = cf['section']
+        self.assertEqual(section.popitem(), ('name1', 'value1'))
+        self.assertEqual(section.popitem(), ('name2', 'value2'))
+        self.assertEqual(section.popitem(), ('name3', 'value3'))
+        with self.assertRaises(KeyError):
+            section.popitem()
+        self.assertEqual(dict(section), {'name2': '<default>',
+                                         'name4': '<default>'})
+        default = cf[self.default_section]
+        self.assertEqual(default.popitem(), ('name2', '<default>'))
+        self.assertEqual(default.popitem(), ('name4', '<default>'))
+        with self.assertRaises(KeyError):
+            default.popitem()
+        self.assertEqual(dict(section), {})
+        del cf['section']
+        with self.assertRaises(configparser.NoSectionError):
+            section.popitem()
+
+    def test_section_clear(self):
+        cf = self.fromstring(f"""
+            [section1]
+            name1 {self.delimiters[0]} value1
+            name2 {self.delimiters[0]} value2
+            [section2]
+            name3 {self.delimiters[0]} value3
+        """, defaults={"name2": "<default>", "name4": "<default>"})
+        section = cf['section1']
+        section.clear()
+        self.assertEqual(dict(section), {'name2': '<default>',
+                                         'name4': '<default>'})
+        self.assertEqual(cf.sections(), ['section1', 'section2'])
+        cf[self.default_section].clear()
+        self.assertEqual(dict(cf[self.default_section]), {})
+        self.assertEqual(dict(section), {})
+        self.assertEqual(dict(cf['section2']), {'name3': 'value3'})
+        del cf['section1']
+        with self.assertRaises(configparser.NoSectionError):
+            section.clear()
+
     def test_setitem(self):
         cf = self.fromstring(
             f"""
@@ -1032,6 +1078,11 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
             self.assertEqual(
                 e.args, ('name', 'Interpolation Error', '%(reference)s', 'reference')
             )
+
+    def test_section_clear_does_not_interpolate(self):
+        cf = self.get_interpolation_config()
+        cf["Interpolation Error"].clear()
+        self.assertEqual(cf.options("Interpolation Error"), [])
 
     def test_items(self):
         self.check_items_config([
@@ -2466,6 +2517,33 @@ class ReDoSTestCase(unittest.TestCase):
         content = "[section]\n" + "x" + " " * 40000 + "y" + "\n"
         parser.read_string(content)
         self.assertTrue(parser.has_option("section", "x" + " " * 40000 + "y"))
+
+
+class MappingComplexityTestCase(unittest.TestCase):
+    """Removing all sections or all options should take linear time."""
+
+    @support.requires_resource('cpu')
+    def test_clear_many_sections(self):
+        n = 50000
+        parser = configparser.RawConfigParser()
+        parser.read_string("".join(f"[{i}]\n" for i in range(n)))
+        self.assertEqual(len(parser.sections()), n)
+        # A quadratic clear() would copy the names of all remaining
+        # sections for every removed section.
+        parser.clear()
+        self.assertEqual(parser.sections(), [])
+
+    @support.requires_resource('cpu')
+    def test_clear_many_options(self):
+        n = 50000
+        parser = configparser.RawConfigParser({"key": "value"})
+        parser["section"] = {str(i): str(i) for i in range(n)}
+        section = parser["section"]
+        self.assertEqual(len(section), n + 1)
+        # A quadratic clear() would copy the whole section merged with
+        # the defaults for every removed option.
+        section.clear()
+        self.assertEqual(dict(section), {"key": "value"})
 
 
 class MiscTestCase(unittest.TestCase):

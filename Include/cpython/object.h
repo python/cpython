@@ -469,8 +469,12 @@ _Py_ThreadId(void)
 #elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
-    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
-#elif defined(__aarch64__)
+    // Use a 64-bit temporary: on arm64_32 (ILP32), uintptr_t is 32 bits
+    // but system registers are 64 bits.
+    uint64_t tp;
+    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tp));
+    tid = (uintptr_t)tp;
+#elif defined (__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
 #elif defined(__powerpc64__)
     #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)

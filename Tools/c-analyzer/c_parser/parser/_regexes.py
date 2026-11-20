@@ -340,7 +340,10 @@ STRUCT_MEMBER_DECL = textwrap.dedent(rf'''
                     # This is actually a "constant expression".
                     \d+
                     |
-                    [^'",}}]+
+                    [^'",(}}]+
+                    |
+                    # Parens may hold commas (e.g. from offsetof()).
+                    [^'";}}]+ (?= ; )
                  )
              )?
             \s*

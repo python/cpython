@@ -566,6 +566,63 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertTrue(onexc_called)
         self.assertFalse(onerror_called)
 
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks,
+                         'requires the fd based implementation of rmtree()')
+    def test_onexc_kwargs_dir_fd(self):
+        os.mkdir(TESTFN)
+        self.addCleanup(os_helper.rmtree, TESTFN)
+        top_name = os.path.join(TESTFN, 'top')
+        child_name = os.path.join(TESTFN, 'top', 'child')
+        os.mkdir(top_name)
+        os.mkdir(child_name)
+        parent_fd = os.open(TESTFN, os.O_RDONLY)
+        self.addCleanup(os.close, parent_fd)
+
+        errors = []
+        def onexc(func, path, err, direntry=None, dir_fd=None):
+            errors.append((func, path.replace(os.path.sep, '/')))
+            name = path if direntry is None else direntry.name
+            self.assertEqual(name, os.path.basename(path))
+            self.assertTrue(os.path.samestat(
+                os.stat(os.path.join(TESTFN, path)),
+                os.stat(name, dir_fd=dir_fd)))
+
+        def failing_rmdir(path, *, dir_fd=None):
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.rmdir', failing_rmdir):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(
+            errors,
+            [(failing_rmdir, 'top/child'), (failing_rmdir, 'top')])
+
+        child_stat = os.stat(child_name)
+        scandir = os.scandir
+
+        # Fail for the top-level directory
+        errors.clear()
+        def failing_scandir(fd):
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.scandir', failing_scandir):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(
+            errors,
+            [(failing_scandir, 'top'), (os.rmdir, 'top')])
+        self.assertTrue(os.path.exists(top_name))
+
+        # Fail for the child (which is empty, so the rmdir succeeds)
+        errors.clear()
+        def failing_scandir_2(fd):
+            if not os.path.samestat(os.fstat(fd), child_stat):
+                return scandir(fd)
+            raise PermissionError(errno.EACCES, 'simulated')
+        with unittest.mock.patch('os.scandir', failing_scandir_2):
+            shutil.rmtree('top', dir_fd=parent_fd, onexc=onexc,
+                          _onexc_kwargs=True)
+        self.assertEqual(errors, [(failing_scandir_2, 'top/child')])
+        self.assertFalse(os.path.exists(top_name))
+
     def test_rmtree_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
@@ -987,6 +1044,47 @@ class TestCopyTree(BaseTest, unittest.TestCase):
                                               os.path.split(restrictive_subdir)[1])
         self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
+
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        sub_dir = os.path.join(src_dir, 'sub')
+        os.makedirs(sub_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+        old_time = 1_000_000_000  # 2001-09-09, far from "now"
+        for path in (sub_dir, src_dir):
+            os.utime(path, (old_time, old_time))
+            os.chmod(path, 0o555)
+            self.addCleanup(os.chmod, path, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        for src_path, dst_path in ((src_dir, dst_dir),
+                                   (sub_dir, os.path.join(dst_dir, 'sub'))):
+            mode = stat.S_IMODE(os.stat(dst_path).st_mode)
+            self.assertNotEqual(mode, 0o555)
+            self.assertTrue(mode & stat.S_IWUSR, oct(mode))
+            self.assertNotEqual(os.stat(src_path).st_mtime,
+                                os.stat(dst_path).st_mtime)
+
+    @os_helper.skip_unless_working_chmod
+    def test_copytree_no_copy_dir_stat_keeps_file_metadata(self):
+        tmp_dir = self.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        os.mkdir(src_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+
+        create_file((src_dir, 'restricted.txt'), '123')
+        os.chmod(os.path.join(src_dir, 'restricted.txt'), 0o600)
+        os.chmod(src_dir, 0o555)
+        self.addCleanup(os.chmod, src_dir, 0o700)
+
+        shutil.copytree(src_dir, dst_dir, copy_dir_stat=False)
+        self.assertNotEqual(stat.S_IMODE(os.stat(dst_dir).st_mode), 0o555)
+        self.assertEqual(os.stat(os.path.join(src_dir, 'restricted.txt')).st_mode,
+                          os.stat(os.path.join(dst_dir, 'restricted.txt')).st_mode)
 
     @unittest.mock.patch('os.chmod')
     def test_copytree_winerror(self, mock_patch):
@@ -2148,6 +2246,21 @@ class TestArchives(BaseTest, unittest.TestCase):
             # root_dir must be None, so the archive path is relative.
             self.assertEqual(make_archive('test', 'zip'), 'test.zip')
             self.assertTrue(os.path.isfile('test.zip'))
+            # The archive does not contain itself.
+            with zipfile.ZipFile('test.zip') as zf:
+                self.assertEqual(zf.namelist(), [])
+
+    @support.requires_zlib()
+    @os_helper.skip_unless_symlink
+    def test_make_zipfile_symlink_to_archive(self):
+        root_dir, base_dir = self._create_files('')
+        os.symlink('archive.zip', os.path.join(root_dir, 'link'))
+        base_name = os.path.join(root_dir, 'archive')
+        with no_chdir:
+            archive = make_archive(base_name, 'zip', root_dir)
+        with zipfile.ZipFile(archive) as zf:
+            self.assertCountEqual(zf.namelist(),
+                    ['sub/', 'sub2/', 'file1', 'file2', 'sub/file3'])
 
     def test_make_archive_pathlike_cwd_default(self):
         called_args = []
@@ -2246,12 +2359,18 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
     def check_unpack_archive_with_converter(self, format, converter, **kwargs):
+        make_format = kwargs.pop("make_format", format)
+        extension = kwargs.pop("extension", None)
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
 
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        filename = make_archive(base_name, format, root_dir, base_dir)
+        filename = make_archive(base_name, make_format, root_dir, base_dir)
+        if extension is not None:
+            new_filename = os.path.splitext(filename)[0] + extension
+            os.rename(filename, new_filename)
+            filename = new_filename
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
@@ -2298,6 +2417,13 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.check_unpack_archive('zip')
         with self.assertRaises(TypeError):
             self.check_unpack_archive('zip', filter='data')
+
+    @support.requires_zlib()
+    def test_unpack_archive_whl(self):
+        self.check_unpack_archive('whl', make_format='zip', extension='.whl')
+        with self.assertRaises(TypeError):
+            self.check_unpack_archive('whl', filter='data', make_format='zip',
+                                      extension='.whl')
 
     def test_unpack_archive_zip_badpaths(self):
         srcdir = self.mkdtemp()
@@ -2543,6 +2669,10 @@ class TestWhich(BaseTest, unittest.TestCase):
     def test_basic(self):
         # Given an EXE in a directory, it should be returned.
         rv = shutil.which(self.file, path=self.dir)
+        self.assertEqual(rv, self.filepath)
+
+    def test_pathlike_cmd(self):
+        rv = shutil.which(FakePath(self.file), path=self.dir)
         self.assertEqual(rv, self.filepath)
 
     def test_absolute_cmd(self):

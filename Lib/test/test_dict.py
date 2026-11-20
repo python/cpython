@@ -1021,6 +1021,26 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
     @support.cpython_only
+    def test_splittable_setdefault_str_subclass(self):
+        class C:
+            pass
+
+        class S(str):
+            pass
+
+        a = C()
+        a.x = 1
+        b = C()
+        b.y = 2
+        d = b.__dict__
+
+        self.assertEqual(d.setdefault(S('x'), 5), 5)
+        self.assertEqual(d, {'y': 2, 'x': 5})
+        self.assertEqual(d.setdefault(S('x'), 6), 5)
+        self.assertEqual(list(d), ['y', 'x'])
+        self.assertEqual(a.__dict__, {'x': 1})
+
+    @support.cpython_only
     def test_splittable_del(self):
         """split table must be combined when del d[k]"""
         a, b = self.make_shared_key_dict(2)
@@ -1835,6 +1855,45 @@ class DictTest(unittest.TestCase):
         d = x.__dict__
         d.clear()
 
+    def test_clear_reentrant_detached_split(self):
+        # gh-158198 follow-up: dict.clear() on a detached split-table dict
+        # must not expose (Py_EMPTY_KEYS, non-NULL ma_values) to a
+        # finalizer.  A reentrant insert must see a consistent empty dict.
+        class MyObj: pass
+        class Reinsert:
+            def __del__(self):
+                d['reentrant'] = 1
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        # Detach: the old dict becomes a heap-allocated split table
+        # (ma_values non-NULL, embedded == 0).
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, {'reentrant': 1})
+
+    def test_clear_reentrant_detached_split_update(self):
+        # Same as above but with a reentrant update large enough to force
+        # a resize.  On the buggy code this frees the values array that
+        # clear() is still iterating over (use-after-free / segfault).
+        class MyObj: pass
+        other = {f'k{i}': i for i in range(20)}
+        class Reinsert:
+            def __del__(self):
+                d.update(other)
+
+        x = MyObj()
+        x.a = Reinsert()
+        x.b = 'other'
+
+        d = x.__dict__
+        x.__dict__ = {}
+        d.clear()
+        self.assertEqual(d, other)
+
 
 class CAPITest(unittest.TestCase):
 
@@ -1918,6 +1977,20 @@ class FrozenDictTests(unittest.TestCase):
         self.assertIsNot(d2, d)
         self.assertEqual(d2, frozendict(x=1, y=2))
         self.assertEqual(type(d2), frozendict)
+
+    def test_copy_iter_override(self):
+        class CustomReversedDict(frozendict):
+            def keys(self):
+                return reversed(list(frozendict.keys(self)))
+
+            __iter__ = keys
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+        d = CustomReversedDict(pairs)
+        d2 = d.copy()
+        self.assertIsNot(d2, d)
+        self.assertEqual(type(d2), frozendict)
+        self.assertEqual(list(d2.items()), pairs[::-1])
 
     def test_merge(self):
         # test "a | b" operator

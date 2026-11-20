@@ -120,13 +120,13 @@ The different font weights and slants are:
       Options include:
 
       *ascent* - distance between baseline and highest point that a
-         character of the font can occupy
+      character of the font can occupy
 
       *descent* - distance between baseline and lowest point that a
-         character of the font can occupy
+      character of the font can occupy
 
       *linespace* - minimum vertical separation necessary between any two
-         characters of the font that ensures no vertical overlap between lines.
+      characters of the font that ensures no vertical overlap between lines.
 
       *fixed* - 1 if font is fixed-width else 0
 

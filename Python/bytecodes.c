@@ -1641,19 +1641,23 @@ dummy_func(
             iter = PyStackRef_FromPyObjectSteal(iter_o);
         }
 
-        inst(GET_ANEXT, (aiter -- aiter, awaitable)) {
+        inst(GET_ANEXT, (aiter -- aiter, awaitable, null, none)) {
             PyObject *awaitable_o = _PyEval_GetANext(PyStackRef_AsPyObjectBorrow(aiter));
             if (awaitable_o == NULL) {
                 ERROR_NO_POP();
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
         }
 
-        inst(GET_AWAITABLE, (iterable -- iter)) {
+        inst(GET_AWAITABLE, (iterable -- iter, null, none)) {
             PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
             PyStackRef_CLOSE(iterable);
             ERROR_IF(iter_o == NULL);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
+            none = PyStackRef_None;
         }
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
@@ -2278,7 +2282,7 @@ dummy_func(
             assert(index < DK_SIZE(keys));
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else
@@ -2297,7 +2301,7 @@ dummy_func(
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_CONSUME(entries[index].me_value);
             DEOPT_IF(res_o == NULL);
-            #if Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
             #else
@@ -2888,7 +2892,7 @@ dummy_func(
 
         op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            EXIT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
+            EXIT_IF(!PyModule_CheckExact(owner_o));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);

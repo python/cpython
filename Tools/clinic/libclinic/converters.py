@@ -1449,15 +1449,5 @@ class var_keyword_dict_converter(VarKeywordCConverter):
         return f'Py_XDECREF({self.parser_name});\n'
 
     def parse_var_keyword(self) -> str:
-        param_name = self.parser_name
-        return f"""
-            if (kwargs == NULL) {{{{
-                {param_name} = PyDict_New();
-                if ({param_name} == NULL) {{{{
-                    goto exit;
-                }}}}
-            }}}}
-            else {{{{
-                {param_name} = Py_NewRef(kwargs);
-            }}}}
-            """
+        # NULL when there are no keywords: no call allocates an empty dict.
+        return f"{self.parser_name} = Py_XNewRef(kwargs);\n"
