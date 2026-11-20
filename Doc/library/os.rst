@@ -2838,7 +2838,7 @@ features:
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Accepts file descriptors pointing to symbolic links as *path* on
       Linux, Android, macOS and iOS.
 
@@ -6466,9 +6466,12 @@ Random numbers
    random bytes in non-blocking mode (using the :data:`GRND_NONBLOCK` flag) or
    to poll until the system urandom entropy pool is initialized.
 
-   On a Unix-like system, random bytes are read from the ``/dev/urandom``
-   device. If the ``/dev/urandom`` device is not available or not readable, the
-   :exc:`NotImplementedError` exception is raised.
+   On other Unix-like systems, the C ``getrandom()`` function is used if it is
+   available, otherwise the C ``getentropy()`` function.
+
+   If none of these functions can be used, random bytes are read from the
+   ``/dev/urandom`` device. If the ``/dev/urandom`` device is not available or
+   not readable, the :exc:`NotImplementedError` exception is raised.
 
    On Windows, it will use ``BCryptGenRandom()``.
 

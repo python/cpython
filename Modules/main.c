@@ -214,6 +214,10 @@ pymain_sys_path_add_path0(PyObject *path0)
         return -1;
     }
 
+    if (PyDict_SetItemString(sysdict, "_path0", path0) < 0) {
+        return -1;
+    }
+
     if (PyList_Insert(sys_path, 0, path0)) {
         return -1;
     }

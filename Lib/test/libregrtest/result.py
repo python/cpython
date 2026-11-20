@@ -226,6 +226,7 @@ class TestResult:
 
     def write_json_into(self, file) -> None:
         json.dump(self, file, cls=_EncodeTestResult)
+        file.flush()
 
     @staticmethod
     def from_json(worker_json: StrJSON) -> 'TestResult':

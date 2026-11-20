@@ -357,8 +357,10 @@ class Request:
         return self.full_url
 
     def set_proxy(self, host, type):
-        if self.type == 'https' and not self._tunnel_host:
-            self._tunnel_host = self.host
+        if self.type == 'https':
+            # A retried request keeps the tunnel host set on the first pass.
+            if not self._tunnel_host:
+                self._tunnel_host = self.host
         else:
             self.type= type
             self.selector = self.full_url
@@ -1049,6 +1051,9 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
     auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
+        # gh-158907: a 407 from a direct origin is not a proxy challenge
+        if not req.has_proxy() and not req._tunnel_host:
+            return None
         # http_error_auth_reqed requires that there is no userinfo component in
         # authority.  Assume there isn't one, since urllib.request does not (and
         # should not, RFC 3986 s. 3.2.1) support requests for URLs containing
@@ -1228,10 +1233,19 @@ class AbstractDigestAuthHandler:
         # HTTP proxy.  RFC 7616, Section 3.4 allows both.  An empty path is
         # sent as '/' by http.client, so use the same here.
 
-        uri = req.selector or '/'
+        if self.auth_header == 'Proxy-Authorization' and req._tunnel_host:
+            # For an https URL the proxy authenticates the CONNECT request,
+            # whose request-target is host:port, as sent by http.client.
+            method = 'CONNECT'
+            host, port = _splitport(req._tunnel_host)
+            uri = '%s:%s' % (host.encode('idna').decode('ascii'),
+                             port or http.client.HTTPS_PORT)
+        else:
+            method = req.get_method()
+            uri = req.selector or '/'
 
         A1 = "%s:%s:%s" % (user, realm, pw)
-        A2 = "%s:%s" % (req.get_method(), uri)
+        A2 = "%s:%s" % (method, uri)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
         if qop is None:
@@ -1308,11 +1322,34 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_407(self, req, fp, code, msg, headers):
+        # gh-158907: a 407 from a direct origin is not a proxy challenge
+        if not req.has_proxy() and not req._tunnel_host:
+            return None
         host = req.host
         retry = self.http_error_auth_reqed('proxy-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
         return retry
+
+class _ProxyTunnelResponse(io.BytesIO):
+    """The proxy's error response to CONNECT, as an empty-bodied response."""
+
+    def __init__(self, err, url):
+        super().__init__()
+        self.url = url
+        self.code = self.status = err.code
+        self.msg = self.reason = err.reason
+        self.headers = err.headers
+
+    def info(self):
+        return self.headers
+
+    def geturl(self):
+        return self.url
+
+    def getcode(self):
+        return self.code
+
 
 class AbstractHTTPHandler(BaseHandler):
 
@@ -1407,6 +1444,12 @@ class AbstractHTTPHandler(BaseHandler):
             try:
                 h.request(req.get_method(), req.selector, req.data, headers,
                           encode_chunked=req.has_header('Transfer-encoding'))
+            except http.client.ProxyTunnelError as err:
+                if err.code != 407:
+                    raise URLError(err)
+                # Pass the proxy's challenge to CONNECT on to the
+                # http_error_407 handlers, like any other error response.
+                return _ProxyTunnelResponse(err, req.full_url)
             except OSError as err: # timeout error
                 raise URLError(err)
             r = h.getresponse()
