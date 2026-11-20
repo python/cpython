@@ -34,12 +34,13 @@ static PyStructSequence_Field TaskInfo_fields[] = {
     {"task_name", "Task name"},
     {"coroutine_stack", "Coroutine call stack"},
     {"awaited_by", "Tasks awaiting this task"},
+    {"is_future", "Whether this node is a plain Future rather than a Task"},
     {NULL}
 };
 
 PyStructSequence_Desc TaskInfo_desc = {
     "_remote_debugging.TaskInfo",
-    "Information about an asyncio task",
+    "Information about an asyncio task or future",
     TaskInfo_fields,
     4
 };
@@ -887,14 +888,17 @@ Returns:
 
     - thread_id (int): Identifier of the thread, or 0 for tasks in the
       interpreter's fallback task list.
-    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread and
+      intermediate futures in their awaited_by chains.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
-    - task_name (str): Name of the task.
+    - task_name (str): Name of the task, or a generated name for
+      a future.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
     - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
       awaiting this task.
+    - is_future (bool, named-only): True for a plain Future.
 
 Each CoroInfo contains:
     - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
@@ -925,7 +929,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=17fcd3d7bb835624]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -988,14 +992,16 @@ Returns:
 
     - thread_id (int): Identifier of the thread.
     - awaited_by (list[TaskInfo]): The running task and all its
-      transitive waiters.
+      transitive waiters, including intermediate futures.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
-    - task_name (str): Name of the task.
+    - task_name (str): Name of the task, or a generated name for
+      a future.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
     - awaited_by (list[CoroInfo]): Coroutine information for
       tasks or futures awaiting this task.
+    - is_future (bool, named-only): True for a plain Future.
 
 Each CoroInfo contains:
     - call_stack (list[FrameInfo]): Frames for the coroutine.
@@ -1029,7 +1035,9 @@ Example output:
                 coroutine_stack=[
                     CoroInfo(call_stack=[...], task_name=1)
                 ],
-                awaited_by=[CoroInfo(call_stack=[...], task_name=2)]
+                awaited_by=[
+                    CoroInfo(call_stack=[...], task_name=2)
+                ]
             ),
             TaskInfo(
                 task_id=2,
@@ -1046,7 +1054,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=0532031a7c495491]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=a95958816358476a]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
