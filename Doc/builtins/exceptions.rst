@@ -790,6 +790,13 @@ depending on the system error code.
    Raised when trying to create a file or directory which already exists.
    Corresponds to :c:data:`errno` :py:const:`~errno.EEXIST`.
 
+   .. note::
+
+      On Windows, :exc:`FileExistsError` may include the message
+      "Cannot create a file when that file already exists" even when
+      attempting to create a directory.  This wording comes from the
+      Windows operating system.  See :attr:`OSError.strerror`.
+
 .. exception:: FileNotFoundError
 
    Raised when a file or directory is requested but doesn't exist.
