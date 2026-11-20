@@ -2068,7 +2068,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         "Test only runs on Linux with process_vm_readv support",
     )
     def test_popping_python_frame_is_not_native(self):
-        script = """\
+        script_body = """\
 def leaf(depth):
     if depth:
         leaf(depth - 1)
@@ -2076,15 +2076,11 @@ def leaf(depth):
 while True:
         leaf(300)
 """
-        with _managed_subprocess([sys.executable, "-c", script]) as process:
-            for _ in busy_retry(SHORT_TIMEOUT):
-                try:
-                    unwinder = RemoteUnwinder(
-                        process.pid, native=True, gc=False, cache_frames=False,
-                    )
-                except RuntimeError:
-                    continue
-                break
+
+        with self._target_process(script_body) as (process, _, _):
+            unwinder = RemoteUnwinder(
+                process.pid, native=True, gc=False, cache_frames=False,
+            )
             # The unwinder can attach before the main loop starts.
             _get_stack_trace_with_retry(
                 unwinder,
