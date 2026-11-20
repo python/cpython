@@ -143,13 +143,14 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime()')
-    @support.requires_resource('settime')
+    @support.thread_unsafe('sets the system clock')
     def test_clock_settime(self):
+        support.requires('settime')
         t = time.clock_gettime(time.CLOCK_REALTIME)
         try:
             time.clock_settime(time.CLOCK_REALTIME, t)
-        except PermissionError:
-            pass
+        except PermissionError as err:
+            self.skipTest(err)
 
     @unittest.skipUnless(hasattr(time, 'clock_settime') and
                          hasattr(time, 'CLOCK_MONOTONIC'),
@@ -707,8 +708,9 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(time, 'clock_settime'),
                          'need time.clock_settime')
-    @support.requires_resource('settime')
+    @support.thread_unsafe('sets the system clock')
     def test_monotonic_settime(self):
+        support.requires('settime')
         t1 = time.monotonic()
         realtime = time.clock_gettime(time.CLOCK_REALTIME)
         # jump backward with an offset of 1 hour

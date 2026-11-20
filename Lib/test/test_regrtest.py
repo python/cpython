@@ -22,6 +22,7 @@ import sysconfig
 import tempfile
 import threading
 import textwrap
+import time
 import types
 import unittest
 import unittest.mock
@@ -907,6 +908,24 @@ class BaseTestCase(unittest.TestCase):
 
 
 class CheckActualTests(BaseTestCase):
+    @unittest.skipUnless(hasattr(time, 'clock_settime'), 'requires clock_settime')
+    @support.thread_unsafe('changes the enabled test resources')
+    def test_system_clock_writes(self):
+        from test.libregrtest.single import _parallelize_tests
+        from test.test_time import TimeTestCase
+
+        names = ('test_clock_settime', 'test_monotonic_settime')
+        for resources, expected in (({}, 0), ({'settime': None}, 3), ({}, 0)):
+            with (self.subTest(resources=resources),
+                  unittest.mock.patch.object(support, 'use_resources', resources),
+                  unittest.mock.patch.object(time, 'clock_settime') as setter):
+                suite = unittest.TestSuite(TimeTestCase(name) for name in names)
+                _parallelize_tests(suite, 2)
+                result = unittest.TestResult()
+                suite.run(result)
+                self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+                self.assertEqual(setter.call_count, expected)
+
     def test_finds_expected_number_of_tests(self):
         """
         Check that regrtest appears to find the expected set of tests.
