@@ -22,7 +22,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio",
                                              NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
@@ -33,23 +33,16 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     address = search_linux_map_for_section(handle, "AsyncioDebug", "python",
                                            NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
         }
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
-    // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "libpython",
-                                     NULL);
-    if (address == 0 && !_Py_RemoteDebug_HasPermissionError()) {
-        PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "python",
-                                         NULL);
-    }
+    address = search_loaded_images_for_section(handle, "AsyncioDebug", NULL);
     if (address == 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
+        if (!_Py_RemoteDebug_IsFatalReadError()) {
             PyObject *exc = PyErr_GetRaisedException();
             PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
             _PyErr_ChainExceptions1(exc);
@@ -99,12 +92,22 @@ ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
         return -1;
     }
     if (result < 0) {
-        if (!_Py_RemoteDebug_HasPermissionError()) {
-            PyErr_Clear();
-            PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
-            set_exception_cause(unwinder, PyExc_RuntimeError,
-                "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        if (_Py_RemoteDebug_IsFatalReadError()) {
+            return -1;
         }
+        PyErr_Clear();
+        /* Image discovery can fail without reporting that the target exited.
+           Read a known runtime address before reporting unavailable asyncio. */
+        char runtime_byte;
+        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle,
+                unwinder->runtime_start_address, sizeof(runtime_byte),
+                &runtime_byte) < 0)
+        {
+            return -1;
+        }
+        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
         return -1;
     }
 
@@ -241,8 +244,8 @@ parse_task_name(
  * ============================================================================ */
 
 // gh-159620
-/* Return in *coro_addr the coroutine or async generator to walk for the
-   awaitable at addr, or 0 if it is neither (for example, a future). */
+/* Return in *coro_addr the coroutine, generator or async generator to walk
+   for the awaitable at addr, or 0 if it is none (for example, a future). */
 static int
 get_coro_like_address(
     RemoteUnwinderObject *unwinder,
@@ -279,7 +282,7 @@ get_coro_like_address(
         return -1;
     }
 
-    if (strcmp(name, "coroutine") == 0) {
+    if (strcmp(name, "coroutine") == 0 || strcmp(name, "generator") == 0) {
         *coro_addr = addr;
     }
     else if (strcmp(name, "async_generator_asend") == 0
@@ -383,8 +386,7 @@ parse_coro_chain(
         // Parse the previous frame using the gi_iframe from local copy
         uintptr_t prev_frame;
         uintptr_t gi_iframe_addr = coro_address + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
-        uintptr_t address_of_code_object = 0;
-        if (parse_frame_object(unwinder, &name, gi_iframe_addr, &address_of_code_object, &prev_frame) < 0) {
+        if (parse_frame_object(unwinder, &name, gi_iframe_addr, &prev_frame) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in coro chain");
             return -1;
         }
@@ -419,13 +421,12 @@ parse_coro_chain(
 static PyObject*
 create_task_result(
     RemoteUnwinderObject *unwinder,
-    uintptr_t task_address
+    uintptr_t task_address,
+    char is_task
 ) {
     PyObject* result = NULL;
     PyObject *call_stack = NULL;
     PyObject *tn = NULL;
-    char task_obj[SIZEOF_TASK_OBJ];
-    uintptr_t coro_addr;
 
     // Create call_stack first since it's the first tuple element
     call_stack = PyList_New(0);
@@ -441,25 +442,27 @@ create_task_result(
         goto error;
     }
 
-    // Parse coroutine chain
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
-                                              (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
-                                              task_obj) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object for coro chain");
-        goto error;
-    }
-
-    coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
-
-    if ((void*)coro_addr != NULL) {
-        if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
+    if (is_task) {
+        char task_obj[SIZEOF_TASK_OBJ];
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
+                                                  (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
+                                                  task_obj) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object for coro chain");
             goto error;
         }
 
-        if (PyList_Reverse(call_stack)) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse call stack");
-            goto error;
+        uintptr_t coro_addr = GET_MEMBER_NO_TAG(uintptr_t, task_obj, unwinder->async_debug_offsets.asyncio_task_object.task_coro);
+
+        if ((void*)coro_addr != NULL) {
+            if (parse_coro_chain(unwinder, coro_addr, call_stack) < 0) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse coroutine chain");
+                goto error;
+            }
+
+            if (PyList_Reverse(call_stack)) {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to reverse call stack");
+                goto error;
+            }
         }
     }
 
@@ -503,33 +506,10 @@ parse_task(
         goto error;
     }
 
-    if (is_task) {
-        result = create_task_result(unwinder, task_address);
-        if (!result) {
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task result");
-            goto error;
-        }
-    } else {
-        // Create an empty CoroInfo for non-task objects
-        RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
-        result = PyStructSequence_New(state->CoroInfo_Type);
-        if (result == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty CoroInfo");
-            goto error;
-        }
-        PyObject *empty_list = PyList_New(0);
-        if (empty_list == NULL) {
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create empty list");
-            goto error;
-        }
-        PyObject *task_name = PyLong_FromUnsignedLongLong(task_address);
-        if (task_name == NULL) {
-            Py_DECREF(empty_list);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task name");
-            goto error;
-        }
-        PyStructSequence_SetItem(result, 0, empty_list);  // This steals the reference
-        PyStructSequence_SetItem(result, 1, task_name);  // This steals the reference
+    result = create_task_result(unwinder, task_address, is_task);
+    if (result == NULL) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create task result");
+        goto error;
     }
     if (PyList_Append(render_to, result)) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append task result to render list");
@@ -795,14 +775,12 @@ parse_async_frame_chain(
             return -1;
         }
         PyObject* frame_info = NULL;
-        uintptr_t address_of_code_object;
 
         uintptr_t this_frame = address_of_current_frame;
         int res = parse_frame_object(
             unwinder,
             &frame_info,
             address_of_current_frame,
-            &address_of_code_object,
             &address_of_current_frame
         );
 
@@ -891,11 +869,11 @@ append_awaited_by_for_thread(
     return 0;
 }
 
-int
-append_awaited_by(
+static int
+append_awaited_info(
     RemoteUnwinderObject *unwinder,
     unsigned long tid,
-    uintptr_t head_addr,
+    PyObject *task_list,
     PyObject *result)
 {
     PyObject *tid_py = PyLong_FromUnsignedLong(tid);
@@ -904,24 +882,16 @@ append_awaited_by(
         return -1;
     }
 
-    PyObject* awaited_by_for_thread = PyList_New(0);
-    if (awaited_by_for_thread == NULL) {
-        Py_DECREF(tid_py);
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by thread list");
-        return -1;
-    }
-
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
     PyObject *result_item = PyStructSequence_New(state->AwaitedInfo_Type);
     if (result_item == NULL) {
         Py_DECREF(tid_py);
-        Py_DECREF(awaited_by_for_thread);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create AwaitedInfo");
         return -1;
     }
 
-    PyStructSequence_SetItem(result_item, 0, tid_py);  // steals ref
-    PyStructSequence_SetItem(result_item, 1, awaited_by_for_thread);  // steals ref
+    PyStructSequence_SetItem(result_item, 0, tid_py);
+    PyStructSequence_SetItem(result_item, 1, Py_NewRef(task_list));
     if (PyList_Append(result, result_item)) {
         Py_DECREF(result_item);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by result item");
@@ -929,8 +899,30 @@ append_awaited_by(
     }
     Py_DECREF(result_item);
 
-    if (append_awaited_by_for_thread(unwinder, head_addr, awaited_by_for_thread))
-    {
+    return 0;
+}
+
+int
+append_awaited_by(
+    RemoteUnwinderObject *unwinder,
+    unsigned long tid,
+    uintptr_t head_addr,
+    PyObject *result)
+{
+    PyObject *task_list = PyList_New(0);
+    if (task_list == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create awaited_by thread list");
+        return -1;
+    }
+
+    if (append_awaited_info(unwinder, tid, task_list, result) < 0) {
+        Py_DECREF(task_list);
+        return -1;
+    }
+
+    int err = append_awaited_by_for_thread(unwinder, head_addr, task_list);
+    Py_DECREF(task_list);
+    if (err < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append awaited_by for thread");
         return -1;
     }
@@ -1035,32 +1027,9 @@ process_thread_for_async_stack_trace(
             return -1;
         }
 
-        // Create AwaitedInfo structure for this thread
-        PyObject *tid_py = PyLong_FromUnsignedLong(tid);
-        if (tid_py == NULL) {
-            Py_DECREF(task_list);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
-            return -1;
-        }
-
-        RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
-        PyObject *awaited_info = PyStructSequence_New(state->AwaitedInfo_Type);
-        if (awaited_info == NULL) {
-            Py_DECREF(tid_py);
-            Py_DECREF(task_list);
-            set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create AwaitedInfo");
-            return -1;
-        }
-
-        PyStructSequence_SetItem(awaited_info, 0, tid_py);  // steals ref
-        PyStructSequence_SetItem(awaited_info, 1, task_list);  // steals ref
-
-        if (PyList_Append(result, awaited_info)) {
-            Py_DECREF(awaited_info);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append AwaitedInfo to result");
-            return -1;
-        }
-        Py_DECREF(awaited_info);
+        int err = append_awaited_info(unwinder, tid, task_list, result);
+        Py_DECREF(task_list);
+        return err;
     }
 
     return 0;

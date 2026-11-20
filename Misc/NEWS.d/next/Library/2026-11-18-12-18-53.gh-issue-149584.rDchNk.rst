@@ -1,0 +1,3 @@
+Read stack chunks directly in :mod:`profiling.sampling`, without the page
+cache. This removes a redundant retry on macOS that can read a replacement
+chunk after the target process reuses the same address.

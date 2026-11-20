@@ -139,6 +139,20 @@ class CProfileTest(ProfileTest):
         profiler.disable()
         profiler.clear()
 
+    def test_external_timer_is_none(self):
+        # gh-161233
+        def work():
+            pass
+
+        for kwargs in ({}, {'timer': None}):
+            with self.subTest(kwargs=kwargs):
+                profiler = cProfile.Profile(**kwargs)
+                profiler.enable()
+                with support.catch_unraisable_exception() as cm:
+                    work()
+                    self.assertIsNone(cm.unraisable)
+                profiler.disable()
+
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
         # Make sure we clean ourselves up if the test fails for some reason.

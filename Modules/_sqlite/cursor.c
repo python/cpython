@@ -121,18 +121,15 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     Py_CLEAR(self->statement);
     Py_CLEAR(self->row_cast_map);
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->description, Py_None);
+    pysqlite_set_ref((PyObject *)self, &self->description, Py_NewRef(Py_None));
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->lastrowid, Py_None);
+    pysqlite_set_ref((PyObject *)self, &self->lastrowid, Py_NewRef(Py_None));
 
     self->arraysize = 1;
     self->closed = 0;
     self->rowcount = -1L;
 
-    Py_INCREF(Py_None);
-    Py_XSETREF(self->row_factory, Py_None);
+    pysqlite_set_ref((PyObject *)self, &self->row_factory, Py_NewRef(Py_None));
 
     if (!pysqlite_check_thread(self->connection)) {
         return -1;
@@ -176,10 +173,10 @@ cursor_clear(PyObject *op)
 {
     pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     Py_CLEAR(self->connection);
-    Py_CLEAR(self->description);
+    pysqlite_set_ref(op, &self->description, NULL);
     Py_CLEAR(self->row_cast_map);
-    Py_CLEAR(self->lastrowid);
-    Py_CLEAR(self->row_factory);
+    pysqlite_set_ref(op, &self->lastrowid, NULL);
+    pysqlite_set_ref(op, &self->row_factory, NULL);
     if (self->statement) {
         /* Reset the statement if the user has not closed the cursor */
         int rc = stmt_reset(self->statement);
@@ -415,12 +412,17 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 }
 
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
-                if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
+                PyObject *factory = pysqlite_get_ref(
+                    (PyObject *)self->connection,
+                    &self->connection->text_factory,
+                    (PyObject *)&PyUnicode_Type);
+                if (factory == (PyObject*)&PyUnicode_Type) {
                     converted = PyUnicode_FromStringAndSize(text, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
                         colname = sqlite3_column_name(self->statement->st, i);
                         if (colname == NULL) {
+                            Py_DECREF(factory);
                             PyErr_NoMemory();
                             goto error;
                         }
@@ -436,13 +438,14 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                             Py_DECREF(error_msg);
                         }
                     }
-                } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
+                } else if (factory == (PyObject*)&PyBytes_Type) {
                     converted = PyBytes_FromStringAndSize(text, nbytes);
-                } else if (self->connection->text_factory == (PyObject*)&PyByteArray_Type) {
+                } else if (factory == (PyObject*)&PyByteArray_Type) {
                     converted = PyByteArray_FromStringAndSize(text, nbytes);
                 } else {
-                    converted = PyObject_CallFunction(self->connection->text_factory, "y#", text, nbytes);
+                    converted = PyObject_CallFunction(factory, "y#", text, nbytes);
                 }
+                Py_DECREF(factory);
             } else {
                 /* coltype == SQLITE_BLOB */
                 const void *blob = sqlite3_column_blob(self->statement->st, i);
@@ -797,6 +800,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
+    PyObject* description = NULL;
     int i;
     int rc;
     int numcols;
@@ -846,8 +850,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     /* reset description */
-    Py_INCREF(Py_None);
-    Py_SETREF(self->description, Py_None);
+    pysqlite_set_ref((PyObject *)self, &self->description, Py_NewRef(Py_None));
 
     if (self->statement) {
         // Reset pending statements on this cursor.
@@ -931,8 +934,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         numcols = sqlite3_column_count(self->statement->st);
         Py_END_ALLOW_THREADS
         if (self->description == Py_None && numcols > 0) {
-            Py_SETREF(self->description, PyTuple_New(numcols));
-            if (!self->description) {
+            description = PyTuple_New(numcols);
+            if (description == NULL) {
                 goto error;
             }
             for (i = 0; i < numcols; i++) {
@@ -953,8 +956,10 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                 if (descriptor == NULL) {
                     goto error;
                 }
-                PyTuple_SET_ITEM(self->description, i, descriptor);
+                PyTuple_SET_ITEM(description, i, descriptor);
             }
+            pysqlite_set_ref((PyObject *)self, &self->description, description);
+            description = NULL;
         }
 
         if (rc == SQLITE_DONE) {
@@ -975,11 +980,15 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         lastrowid = sqlite3_last_insert_rowid(self->connection->db);
         Py_END_ALLOW_THREADS
 
-        Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-        // Fall through on error.
+        PyObject *lastrowid_obj = PyLong_FromLongLong(lastrowid);
+        if (lastrowid_obj == NULL) {
+            goto error;
+        }
+        pysqlite_set_ref((PyObject *)self, &self->lastrowid, lastrowid_obj);
     }
 
 error:
+    Py_XDECREF(description);
     Py_XDECREF(parameters);
     Py_XDECREF(parameters_iter);
     Py_XDECREF(parameters_list);
@@ -1177,12 +1186,13 @@ pysqlite_cursor_iternext(PyObject *op)
         }
         return NULL;
     }
-    if (!Py_IsNone(self->row_factory)) {
-        PyObject *factory = self->row_factory;
+    PyObject *factory = pysqlite_get_ref(op, &self->row_factory, Py_None);
+    if (!Py_IsNone(factory)) {
         PyObject *args[] = { op, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
         Py_SETREF(row, new_row);
     }
+    Py_DECREF(factory);
     return row;
 
 reset_failure:
@@ -1411,7 +1421,7 @@ static PyObject *
 cursor_get_row_factory(PyObject *op, void *Py_UNUSED(closure))
 {
     pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
-    return Py_NewRef(self->row_factory);
+    return pysqlite_get_ref(op, &self->row_factory, Py_None);
 }
 
 static int
@@ -1423,7 +1433,7 @@ cursor_set_row_factory(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
                         "cannot delete row_factory attribute");
         return -1;
     }
-    Py_XSETREF(self->row_factory, Py_NewRef(value));
+    pysqlite_set_ref(op, &self->row_factory, Py_NewRef(value));
     return 0;
 }
 

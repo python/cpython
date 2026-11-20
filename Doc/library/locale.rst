@@ -715,7 +715,7 @@ Access to message catalogs
 .. function:: bind_textdomain_codeset(domain, codeset)
 
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`gettext`,
+provide this interface.  It consists of the functions :func:`~locale.gettext`,
 :func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
 and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message

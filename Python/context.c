@@ -866,8 +866,13 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Assoc will
+    // not free the HAMT during traversal.
+    PyHamtObject *old_vars = context_get_current_vars(ctx);
+    Py_INCREF(old_vars);
     PyHamtObject *new_vars = _PyHamt_Assoc(
-        context_get_current_vars(ctx), (PyObject *)var, val);
+        old_vars, (PyObject *)var, val);
+    Py_DECREF(old_vars);
     if (new_vars == NULL) {
         return -1;
     }
@@ -894,8 +899,12 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Without will
+    // not free the HAMT during traversal.
     PyHamtObject *vars = context_get_current_vars(ctx);
+    Py_INCREF(vars);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
+    Py_DECREF(vars);
     if (new_vars == NULL) {
         return -1;
     }

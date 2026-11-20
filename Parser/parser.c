@@ -3485,7 +3485,7 @@ import_stmt_rule(Parser *p)
     return _res;
 }
 
-// import_name: "lazy"? 'import' dotted_as_names
+// import_name: "lazy" 'import' dotted_as_names | 'import' dotted_as_names
 static stmt_ty
 import_name_rule(Parser *p)
 {
@@ -3507,24 +3507,24 @@ import_name_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // "lazy"? 'import' dotted_as_names
+    { // "lazy" 'import' dotted_as_names
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> import_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'import' dotted_as_names"));
-        Token * _keyword;
+        D(fprintf(stderr, "%*c> import_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'import' dotted_as_names"));
+        expr_ty _keyword;
+        Token * _keyword_1;
         asdl_alias_seq* a;
-        void *lazy;
         if (
-            (lazy = _PyPegen_expect_soft_keyword(p, "lazy"), !p->error_indicator)  // "lazy"?
+            (_keyword = _PyPegen_expect_soft_keyword(p, "lazy"))  // soft_keyword='"lazy"'
             &&
-            (_keyword = _PyPegen_expect_token(p, 500))  // token='import'
+            (_keyword_1 = _PyPegen_expect_token(p, 500))  // token='import'
             &&
             (a = dotted_as_names_rule(p))  // dotted_as_names
         )
         {
-            D(fprintf(stderr, "%*c+ import_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'import' dotted_as_names"));
+            D(fprintf(stderr, "%*c+ import_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'import' dotted_as_names"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -3534,7 +3534,7 @@ import_name_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_Import ( a , lazy ? 1 : 0 , EXTRA );
+            _res = CHECK_VERSION ( stmt_ty , 15 , "Lazy imports are" , _PyAST_Import ( a , 1 , EXTRA ) );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -3544,7 +3544,43 @@ import_name_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s import_name[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\"? 'import' dotted_as_names"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\" 'import' dotted_as_names"));
+    }
+    { // 'import' dotted_as_names
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> import_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'import' dotted_as_names"));
+        Token * _keyword;
+        asdl_alias_seq* a;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 500))  // token='import'
+            &&
+            (a = dotted_as_names_rule(p))  // dotted_as_names
+        )
+        {
+            D(fprintf(stderr, "%*c+ import_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'import' dotted_as_names"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_Import ( a , 0 , EXTRA );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s import_name[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'import' dotted_as_names"));
     }
     _res = NULL;
   done:
@@ -3554,8 +3590,10 @@ import_name_rule(Parser *p)
 
 // import_from:
 //     | invalid_import_from
-//     | "lazy"? 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
-//     | "lazy"? 'from' (('.' | '...'))+ 'import' import_from_targets
+//     | "lazy" 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
+//     | "lazy" 'from' (('.' | '...'))+ 'import' import_from_targets
+//     | 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
+//     | 'from' (('.' | '...'))+ 'import' import_from_targets
 static stmt_ty
 import_from_rule(Parser *p)
 {
@@ -3596,20 +3634,20 @@ import_from_rule(Parser *p)
         D(fprintf(stderr, "%*c%s import_from[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_import_from"));
     }
-    { // "lazy"? 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
+    { // "lazy" 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
         Token * _keyword;
         Token * _keyword_1;
         asdl_seq * a;
         expr_ty b;
         asdl_alias_seq* c;
-        void *lazy;
+        expr_ty lazy;
         if (
-            (lazy = _PyPegen_expect_soft_keyword(p, "lazy"), !p->error_indicator)  // "lazy"?
+            (lazy = _PyPegen_expect_soft_keyword(p, "lazy"))  // soft_keyword='"lazy"'
             &&
             (_keyword = _PyPegen_expect_token(p, 501))  // token='from'
             &&
@@ -3622,7 +3660,7 @@ import_from_rule(Parser *p)
             (c = import_from_targets_rule(p))  // import_from_targets
         )
         {
-            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -3632,7 +3670,7 @@ import_from_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyPegen_checked_from_import ( p , a , b , c , lazy , EXTRA );
+            _res = CHECK_VERSION ( stmt_ty , 15 , "Lazy imports are" , _PyPegen_checked_from_import ( p , a , b , c , lazy , EXTRA ) );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -3642,22 +3680,109 @@ import_from_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s import_from[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
     }
-    { // "lazy"? 'from' (('.' | '...'))+ 'import' import_from_targets
+    { // "lazy" 'from' (('.' | '...'))+ 'import' import_from_targets
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))+ 'import' import_from_targets"));
+        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))+ 'import' import_from_targets"));
+        expr_ty _keyword;
+        Token * _keyword_1;
+        Token * _keyword_2;
+        asdl_seq * a;
+        asdl_alias_seq* b;
+        if (
+            (_keyword = _PyPegen_expect_soft_keyword(p, "lazy"))  // soft_keyword='"lazy"'
+            &&
+            (_keyword_1 = _PyPegen_expect_token(p, 501))  // token='from'
+            &&
+            (a = _loop1_18_rule(p))  // (('.' | '...'))+
+            &&
+            (_keyword_2 = _PyPegen_expect_token(p, 500))  // token='import'
+            &&
+            (b = import_from_targets_rule(p))  // import_from_targets
+        )
+        {
+            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))+ 'import' import_from_targets"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = CHECK_VERSION ( stmt_ty , 15 , "Lazy imports are" , _PyAST_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , 1 , EXTRA ) );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s import_from[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\" 'from' (('.' | '...'))+ 'import' import_from_targets"));
+    }
+    { // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+        Token * _keyword;
+        Token * _keyword_1;
+        asdl_seq * a;
+        expr_ty b;
+        asdl_alias_seq* c;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 501))  // token='from'
+            &&
+            (a = _loop0_17_rule(p))  // (('.' | '...'))*
+            &&
+            (b = dotted_name_rule(p))  // dotted_name
+            &&
+            (_keyword_1 = _PyPegen_expect_token(p, 500))  // token='import'
+            &&
+            (c = import_from_targets_rule(p))  // import_from_targets
+        )
+        {
+            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyPegen_checked_from_import ( p , a , b , c , NULL , EXTRA );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s import_from[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'from' (('.' | '...'))* dotted_name 'import' import_from_targets"));
+    }
+    { // 'from' (('.' | '...'))+ 'import' import_from_targets
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> import_from[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))+ 'import' import_from_targets"));
         Token * _keyword;
         Token * _keyword_1;
         asdl_seq * a;
         asdl_alias_seq* b;
-        void *lazy;
         if (
-            (lazy = _PyPegen_expect_soft_keyword(p, "lazy"), !p->error_indicator)  // "lazy"?
-            &&
             (_keyword = _PyPegen_expect_token(p, 501))  // token='from'
             &&
             (a = _loop1_18_rule(p))  // (('.' | '...'))+
@@ -3667,7 +3792,7 @@ import_from_rule(Parser *p)
             (b = import_from_targets_rule(p))  // import_from_targets
         )
         {
-            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))+ 'import' import_from_targets"));
+            D(fprintf(stderr, "%*c+ import_from[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'from' (('.' | '...'))+ 'import' import_from_targets"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -3677,7 +3802,7 @@ import_from_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , lazy ? 1 : 0 , EXTRA );
+            _res = _PyAST_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , 0 , EXTRA );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -3687,7 +3812,7 @@ import_from_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s import_from[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"lazy\"? 'from' (('.' | '...'))+ 'import' import_from_targets"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'from' (('.' | '...'))+ 'import' import_from_targets"));
     }
     _res = NULL;
   done:

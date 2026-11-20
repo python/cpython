@@ -18,7 +18,7 @@
 #include <signal.h>
 #include <unistd.h>             /* pause(), also getthrid() on OpenBSD */
 
-#ifdef HAVE_GETTID
+#ifdef _Py_HAVE_GETTID
 #   include <unistd.h>          // gettid()
 #elif defined(__linux__)
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
@@ -384,7 +384,7 @@ PyThread_get_thread_native_id(void)
 #ifdef __APPLE__
     uint64_t native_id;
     (void) pthread_threadid_np(NULL, &native_id);
-#elif defined(HAVE_GETTID)
+#elif defined(_Py_HAVE_GETTID)
     pid_t native_id;
     native_id = gettid();
 #elif defined(__linux__)

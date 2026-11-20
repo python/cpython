@@ -1,3 +1,0 @@
-Fix a crash in :mod:`hashlib` when the OpenSSL routine used by
-:meth:`hash.update() <hashlib.hash.update>` or by hash object constructors
-fails on data larger than 2048 bytes. Patch by Bénédikt Tran.
