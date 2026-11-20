@@ -604,12 +604,13 @@ static PyStructSequence_Field TaskInfo_fields[] = {
     {"task_name", "Task name"},
     {"coroutine_stack", "Coroutine call stack"},
     {"awaited_by", "Tasks awaiting this task"},
+    {"is_future", "Whether this node is a plain Future rather than a Task"},
     {NULL}
 };
 
 static PyStructSequence_Desc TaskInfo_desc = {
     "_remote_debugging.TaskInfo",
-    "Information about an asyncio task",
+    "Information about an asyncio task or future",
     TaskInfo_fields,
     4
 };
@@ -792,7 +793,8 @@ parse_async_frame_chain(
 
 static int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
 
-static int process_task_waiters(RemoteUnwinderObject *unwinder, PyObject *result);
+static int process_task_waiters(RemoteUnwinderObject *unwinder, PyObject *result,
+                                bool futures_only);
 static int parse_task_awaited_by(RemoteUnwinderObject *unwinder, uintptr_t task_address, PyObject *awaited_by);
 static int find_running_task_in_thread(RemoteUnwinderObject *unwinder, uintptr_t thread_state_addr, uintptr_t *running_task_addr);
 static int get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *code_obj_addr);
@@ -1739,7 +1741,16 @@ process_single_task_node(
     PyObject *result_item = NULL;
     PyObject *coroutine_stack = NULL;
 
-    tn = parse_task_name(unwinder, task_addr);
+    char is_task;
+    // task_is_task = 1 => task
+    // task_is_task = 0 => future
+    if (read_char(unwinder,
+            task_addr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
+            &is_task) < 0) {
+        goto error;
+    }
+    tn = is_task ? parse_task_name(unwinder, task_addr)
+                 : PyUnicode_FromFormat("Future-%p", (void *)task_addr);
     if (tn == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse task name in single task node");
         goto error;
@@ -1780,6 +1791,7 @@ process_single_task_node(
     PyStructSequence_SetItem(result_item, 1, tn);  // steals ref
     PyStructSequence_SetItem(result_item, 2, coroutine_stack);  // steals ref
     PyStructSequence_SetItem(result_item, 3, current_awaited_by);  // steals ref
+    PyStructSequence_SetItem(result_item, 4, PyBool_FromLong(!is_task));
 
     // References transferred to tuple
     task_id = NULL;
@@ -1837,10 +1849,11 @@ parse_task_awaited_by(
     uintptr_t task_address,
     PyObject *awaited_by
 ) {
-    // Read the entire TaskObj at once
     char task_obj[SIZEOF_TASK_OBJ];
+    size_t size = unwinder->async_debug_offsets.asyncio_task_object.task_awaited_by_is_set
+                  + sizeof(char);
     if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, task_address,
-                                              (size_t)unwinder->async_debug_offsets.asyncio_task_object.size,
+                                              size,
                                               task_obj) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read task object");
         return -1;
@@ -1906,7 +1919,7 @@ process_running_task_chain(
     }
 
     // Now find all tasks that are waiting for this task and process them
-    if (process_task_waiters(unwinder, result) < 0) {
+    if (process_task_waiters(unwinder, result, false) < 0) {
         return -1;
     }
 
@@ -1977,37 +1990,68 @@ process_thread_for_async_stack_trace(
 static int
 process_task_waiters(
     RemoteUnwinderObject *unwinder,
-    PyObject *result
+    PyObject *result,
+    bool futures_only
 ) {
+    Py_ssize_t initial_count = futures_only ? PyList_GET_SIZE(result) : 0;
+    PyObject *visited = PySet_New(NULL);
+    if (visited == NULL) {
+        return -1;
+    }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
         PyObject *task_info = PyList_GET_ITEM(result, i);
+        if (PySet_Add(visited, PyStructSequence_GET_ITEM(task_info, 0)) < 0) {
+            goto error;
+        }
         PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
         for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
-            if (PyList_GET_SIZE(result) >= MAX_TASK_WAITER_WALK_TASKS) {
-                PyErr_SetString(PyExc_RuntimeError,
-                    "Too many task waiters (possible infinite loop)");
-                set_exception_cause(unwinder, PyExc_RuntimeError,
-                    "Task waiter walk size limit exceeded");
-                return -1;
-            }
             PyObject *waiter = PyList_GET_ITEM(waiters, j);
-            // CoroInfo item 1 holds the waiter task address stored by parse_task().
             PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
+            int seen = PySet_Contains(visited, task_id);
+            if (seen > 0) {
+                continue;
+            }
+            if (seen < 0 || PySet_Add(visited, task_id) < 0) {
+                goto error;
+            }
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
                 set_exception_cause(unwinder, PyExc_RuntimeError,
                                     "Failed to parse waiter task ID");
-                return -1;
+                goto error;
+            }
+            if (futures_only) {
+                char is_task;
+                if (read_char(unwinder,
+                        (uintptr_t)task_ptr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
+                        &is_task) < 0) {
+                    goto error;
+                }
+                if (is_task) {
+                    continue;
+                }
+            }
+            if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
+                PyErr_SetString(PyExc_RuntimeError,
+                    "Too many task waiters (possible infinite loop)");
+                set_exception_cause(unwinder, PyExc_RuntimeError,
+                    "Task waiter walk size limit exceeded");
+                goto error;
             }
             if (process_single_task_node(
                     unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
             {
-                return -1;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(visited);
     return 0;
+
+error:
+    Py_DECREF(visited);
+    return -1;
 }
 
 static int
@@ -3011,7 +3055,7 @@ append_awaited_by(
         return -1;
     }
 
-    return 0;
+    return process_task_waiters(unwinder, awaited_by_for_thread, true);
 }
 
 /* ============================================================================
@@ -3447,11 +3491,12 @@ _remote_debugging.RemoteUnwinder.get_all_awaited_by
 
 Get all tasks and their awaited_by relationships from the remote process.
 
-This provides a tree structure showing which tasks are waiting for other tasks.
+This provides a tree structure showing which tasks and futures are waiting for
+other tasks.
 
 For each task, returns:
 1. The call stack frames leading to where the task is currently executing
-2. The name of the task
+2. The name of the task, or a generated name for a future
 3. A list of tasks that this task is waiting for, with their own frames/names/etc
 
 Returns a list of [frames, task_name, subtasks] where:
@@ -3487,7 +3532,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=a452c652bb00701a]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=9125e1b63ae0c0a9]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
@@ -3537,6 +3582,7 @@ Get the currently running async tasks and their dependency graphs from the remot
 
 This returns information about running tasks and all tasks that are waiting for them,
 forming a complete dependency graph for each thread's active task.
+Intermediate futures are included in each dependency graph.
 
 For each thread with a running task, returns the running task plus all tasks that
 transitively depend on it (tasks waiting for the running task, tasks waiting for
@@ -3548,7 +3594,7 @@ Returns a list of per-thread results, where each thread result contains:
 
 Each task info contains:
 - Task ID (memory address)
-- Task name
+- Task name, or a generated name for a future
 - Call stack frames: List of (func_name, filename, lineno)
 - List of tasks waiting for this task (recursive structure)
 
@@ -3576,7 +3622,7 @@ Example output (similar structure to get_all_awaited_by but only for running tas
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=8744b47c9ec2220a]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=75424725716fbcda]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
