@@ -5705,7 +5705,10 @@ PyDict_DelItemString(PyObject *v, const char *key)
 
 typedef struct {
     PyObject_HEAD
-    PyDictObject *di_dict; /* Set to NULL when iterator is exhausted */
+    /* Set to NULL when the iterator is exhausted, except in the free-threaded
+       build, where the reference is kept until the iterator is deallocated
+       (see dictiter_set_exhausted()). */
+    PyDictObject *di_dict;
     Py_ssize_t di_used;
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
