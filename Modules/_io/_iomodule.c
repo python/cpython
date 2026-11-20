@@ -200,7 +200,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=b3cefa70bef404b3]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=44463133cc1c2e32]*/
 {
     size_t i;
 
