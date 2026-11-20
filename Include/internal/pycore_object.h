@@ -27,9 +27,6 @@ extern "C" {
 // `ob_ref_shared` are used for flags.
 #define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
 
-/* For backwards compatibility -- Do not use this */
-#define _Py_IsImmortalLoose(op) _Py_IsImmortal
-
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
@@ -712,6 +709,8 @@ _PyObject_ResurrectEnd(PyObject *op)
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 # ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 # endif

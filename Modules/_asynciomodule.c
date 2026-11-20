@@ -3491,17 +3491,36 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
 
     int retval = 0;
 
+    // gh-157299: the eager step must record the awaited_by edge
+    int eager_edge = TaskOrFuture_Check(state, prevtask);
     PyObject *stepres;
     Py_BEGIN_CRITICAL_SECTION(task);
-    stepres = task_step_impl(state, task, NULL);
-    Py_END_CRITICAL_SECTION();
+    if (eager_edge &&
+        future_awaited_by_add(state, (FutureObj *)task, prevtask) < 0)
+    {
+        eager_edge = 0;
+        task->task_log_destroy_pending = 0;
+        unregister_task(task);
+        stepres = NULL;
+    }
+    else {
+        stepres = task_step_impl(state, task, NULL);
+    }
+
+    PyObject *exc = stepres == NULL ? PyErr_GetRaisedException() : NULL;
+    if (eager_edge) {
+        int res = future_awaited_by_discard(state, (FutureObj *)task, prevtask);
+        if (res) {
+            retval = -1;
+        }
+    }
     if (stepres == NULL) {
-        PyObject *exc = PyErr_GetRaisedException();
         _PyErr_ChainExceptions1(exc);
         retval = -1;
     } else {
         Py_DECREF(stepres);
     }
+    Py_END_CRITICAL_SECTION();
 
     PyObject *curtask = swap_current_task(ts, task->task_loop, prevtask);
     Py_DECREF(prevtask);

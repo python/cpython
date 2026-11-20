@@ -1117,7 +1117,7 @@ an object passed for a pointer argument (see
 ``c_int`` instance is passed by reference, and one whose :attr:`!_as_parameter_`
 is a ``c_int`` array is accepted as well.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Objects with an :attr:`!_as_parameter_` attribute now receive the same
    implicit conversions for pointer arguments as the object they wrap.
 
@@ -1358,7 +1358,7 @@ the simple types:
    same requirement C itself imposes. Returning a pointer to memory owned by
    a temporary Python object will leave the C caller with a dangling pointer.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    Callback functions can now return structures and unions.
 
 .. _ctypes-accessing-values-exported-from-dlls:

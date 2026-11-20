@@ -2957,20 +2957,6 @@ class TestLocationHelpers(unittest.TestCase):
         """Test extracting lineno from None (synthetic frames)."""
         self.assertEqual(extract_lineno(None), 0)
 
-    def test_extract_lineno_from_int(self):
-        """Test extracting lineno from a bare integer line number.
-
-        Mirrors normalize_location's int contract so callers like the
-        collapsed/flamegraph collectors do not crash on a bare-int location.
-        """
-        self.assertEqual(extract_lineno(42), 42)
-        self.assertEqual(extract_lineno(0), 0)
-
-    def test_normalize_location_with_int(self):
-        """Test normalize_location expands a legacy integer line number."""
-        result = normalize_location(42)
-        self.assertEqual(result, (42, 42, -1, -1))
-
     def test_normalize_location_with_location_info(self):
         """Test normalize_location passes through LocationInfo."""
         loc = LocationInfo(10, 15, 0, 5)

@@ -1,4 +1,4 @@
-This is Python version 3.16.0 alpha 1+dev
+This is Python version 3.16.0 alpha 2+dev
 =========================================
 
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push

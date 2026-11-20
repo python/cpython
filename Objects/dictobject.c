@@ -4300,7 +4300,9 @@ static int
 dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **dupkey)
 {
     assert(can_modify_dict(mp));
-    ASSERT_DICT_LOCKED(other);
+    if (!PyFrozenDict_Check(other)) {
+        ASSERT_DICT_LOCKED(other);
+    }
 
     if (other == mp || other->ma_used == 0)
         /* a.update(a) or a.update({}); nothing to do */
@@ -4666,7 +4668,14 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
     }
     if (copy == NULL)
         return NULL;
-    if (dict_merge(copy, o, 1, NULL) < 0) {
+    int res;
+    if (Py_TYPE(mp)->tp_iter == dict_iter) {
+        res = dict_dict_merge((PyDictObject *)copy, mp, 1, NULL);
+    }
+    else {
+        res = dict_merge(copy, o, 1, NULL);
+    }
+    if (res < 0) {
         Py_DECREF(copy);
         return NULL;
     }
@@ -4970,7 +4979,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || value == NULL) {
         value = default_value;
 
         // See comment to this function in insertdict.
@@ -8137,6 +8146,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 /* Clear the dict */
                 Py_BEGIN_CRITICAL_SECTION(dict);
                 PyDictKeysObject *oldkeys = dict->ma_keys;
+                ensure_shared_on_resize(dict);
                 set_keys(dict, Py_EMPTY_KEYS);
                 dict->ma_values = NULL;
                 dictkeys_decref(oldkeys, IS_DICT_SHARED(dict));
@@ -8653,16 +8663,22 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return d;
 }
 
-static void
+static int
 transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 {
     PyDictObject *new = (PyDictObject *)res;
     PyDictObject *old = (PyDictObject *)dict;
     assert(can_modify_dict(old));
 
+    if (old->ma_values && old->ma_values->embedded) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't convert dict with embedded values");
+        return -1;
+    }
+
     // Fast path: do nothing on an empty dict:
     if (old->ma_keys == Py_EMPTY_KEYS) {
-        return;
+        return 0;
     }
 
     Py_ssize_t used = old->ma_used;
@@ -8680,6 +8696,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
     new->ma_keys = keys;
     new->ma_values = values;
     ASSERT_CONSISTENT(new);
+    return 0;
 }
 
 PyObject *
@@ -8695,9 +8712,14 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
+    int transfer;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    transfer_keys_and_values_lock_held(res, dict);
+    transfer = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
+    if (transfer < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
 
     _PyObject_GC_TRACK(res);
     assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);

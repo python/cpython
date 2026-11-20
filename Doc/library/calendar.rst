@@ -162,10 +162,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       final newline.
 
 
-   .. method:: formatday(theday, weekday, width)
+   .. method:: formatday(day, weekday, width)
 
       Return a string representing a single day formatted with the given *width*.
-      If *theday* is ``0``, return a string of spaces of
+      If *day* is ``0``, return a string of spaces of
       the specified width, representing an empty day. The *weekday* parameter
       is unused.
 
@@ -177,10 +177,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       :meth:`setfirstweekday` method.
 
 
-   .. method:: formatweekday(weekday, width)
+   .. method:: formatweekday(day, width)
 
       Return a string representing the name of a single weekday formatted to
-      the specified *width*. The *weekday* parameter is an integer representing
+      the specified *width*. The *day* parameter is an integer representing
       the day of the week, where ``0`` is Monday and ``6`` is Sunday.
 
 

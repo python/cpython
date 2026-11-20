@@ -1,2 +1,0 @@
-Prevent free-threaded builds from interning and immortalizing complex
-subclasses in code object constants.

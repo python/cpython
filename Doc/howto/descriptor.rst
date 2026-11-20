@@ -1678,7 +1678,7 @@ variables:
 
         def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
-            # type_new() calls PyTypeReady() which calls add_methods()
+            # type_new() calls PyType_Ready() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)

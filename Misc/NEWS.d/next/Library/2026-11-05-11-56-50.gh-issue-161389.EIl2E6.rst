@@ -1,2 +1,0 @@
-Fixes a crash in :class:`decimal.Context` when passing invalid signaling
-dicts as *flags* and *traps*.

@@ -1,2 +1,0 @@
-:mod:`uuid`: Reimplement :class:`~uuid.UUID` objects, :func:`~uuid.uuid4`,
-and :func:`~uuid.uuid7` in C.

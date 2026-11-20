@@ -867,13 +867,13 @@ class TestFrameCApi(unittest.TestCase):
             pass
 
         frame_locals = PyEval_GetFrameLocals()
-        self.assertTrue(type(frame_locals), dict)
+        self.assertIs(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
 
         frame_globals = PyEval_GetFrameGlobals()
-        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
         frame_builtins = PyEval_GetFrameBuiltins()
@@ -881,7 +881,7 @@ class TestFrameCApi(unittest.TestCase):
 
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
-        self.assertTrue(f_locals['x'], 1)
+        self.assertEqual(f_locals['x'], 1)
         f_locals['x'] = 2
         self.assertEqual(x, 2)
 

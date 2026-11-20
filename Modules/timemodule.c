@@ -487,7 +487,7 @@ tmtotuple(time_module_state *state, struct tm *p
 #define SET(INDEX, VAL) \
     SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
-    SET(0, p->tm_year + 1900);
+    SET_ITEM(0, PyLong_FromLongLong((long long)p->tm_year + 1900));
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
     SET(2, p->tm_mday);
     SET(3, p->tm_hour);
@@ -629,7 +629,7 @@ static int
 gettmarg(time_module_state *state, PyObject *args,
          struct tm *p, const char *format)
 {
-    int y;
+    long long y;
 
     memset((void *) p, '\0', sizeof(struct tm));
 
@@ -645,12 +645,12 @@ gettmarg(time_module_state *state, PyObject *args,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
 
-    if (y < INT_MIN + 1900) {
+    if (y < (long long)INT_MIN + 1900 || y > (long long)INT_MAX + 1900) {
         PyErr_SetString(PyExc_OverflowError, "year out of range");
         return 0;
     }
 
-    p->tm_year = y - 1900;
+    p->tm_year = (int)(y - 1900);
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
@@ -906,7 +906,7 @@ time_strftime(PyObject *module, PyObject *args)
             return NULL;
     }
     else if (!gettmarg(state, tup, &buf,
-                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+                       "Liiiiiiii;strftime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
         return NULL;
@@ -918,7 +918,7 @@ time_strftime(PyObject *module, PyObject *args)
 // physical devices (#123017).
 #if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) \
     || defined(__VXWORKS__) || defined(__ANDROID__)
-    if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
+    if (buf.tm_year < 1 - 1900 || buf.tm_year > 9999 - 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
         return NULL;
@@ -1075,12 +1075,12 @@ _asctime(struct tm *timeptr)
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
     return PyUnicode_FromFormat(
-        "%s %s%3d %.2d:%.2d:%.2d %d",
+        "%s %s%3d %.2d:%.2d:%.2d %lld",
         wday_name[timeptr->tm_wday],
         mon_name[timeptr->tm_mon],
         timeptr->tm_mday, timeptr->tm_hour,
         timeptr->tm_min, timeptr->tm_sec,
-        1900 + timeptr->tm_year);
+        (long long)timeptr->tm_year + 1900);
 }
 
 /*[clinic input]
@@ -1108,7 +1108,7 @@ time_asctime_impl(PyObject *module, PyObject *tup)
             return NULL;
     }
     else if (!gettmarg(state, tup, &buf,
-                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+                       "Liiiiiiii;asctime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
         return NULL;
@@ -1164,7 +1164,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 
     time_module_state *state = get_time_state(module);
     if (!gettmarg(state, tm_tuple, &tm,
-                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+                  "Liiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }

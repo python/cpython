@@ -2827,6 +2827,10 @@ subtype_dealloc(PyObject *self)
         }
         _PyObject_GC_UNTRACK(self);
     }
+
+    /* Extract the type again; tp_finalize may have changed it */
+    type = Py_TYPE(self);
+
     /*
       If we added a weaklist, we clear it. Do this *before* calling tp_del,
       clearing slots, or clearing the instance dict.
@@ -6667,11 +6671,11 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     return 0;
 }
 
-static void
+static int
 update_slot_after_setattr(PyTypeObject *type, PyObject *name)
 {
     types_stop_world();
-    update_slot(type, name);
+    int res = update_slot(type, name);
     types_start_world();
 #ifdef Py_GIL_DISABLED
     // Invalidate again, after the slots are updated and while TYPE_LOCK is
@@ -6682,6 +6686,7 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
     ASSERT_TYPE_LOCK_HELD();
     _PyType_Modified_Unlocked(type);
 #endif
+    return res;
 }
 
 static int
@@ -6770,7 +6775,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
             // The name corresponds to a type slot.
-            update_slot_after_setattr(type, name);
+            res = update_slot_after_setattr(type, name);
         }
     }
     END_TYPE_DICT_LOCK();

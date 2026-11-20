@@ -1052,10 +1052,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                eval, code, ns)
 
     def test_exec_builtins_mapping_import(self):
+        # Globally enabled lazy imports do use different import hooks:
+        if sys.get_lazy_imports() == "all":
+            hook = "__lazy_import__"
+        else:
+            hook = "__import__"
+
         code = compile("import foo.bar", "test", "exec")
         ns = {'__builtins__': types.MappingProxyType({})}
-        self.assertRaisesRegex(ImportError, "__import__ not found", exec, code, ns)
-        ns = {'__builtins__': types.MappingProxyType({'__import__': lambda *args: args})}
+        self.assertRaisesRegex(ImportError, f"{hook} not found", exec, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({hook: lambda *args: args})}
         exec(code, ns)
         self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
 

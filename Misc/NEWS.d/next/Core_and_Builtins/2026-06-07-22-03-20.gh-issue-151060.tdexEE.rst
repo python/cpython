@@ -1,2 +1,0 @@
-Fix a crash or memory corruption in :func:`sum` when summing a
-:class:`float` subclass instance into a complex running total.

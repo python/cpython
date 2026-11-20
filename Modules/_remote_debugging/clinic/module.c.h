@@ -1178,7 +1178,7 @@ PyDoc_STRVAR(_remote_debugging_BinaryWriter_get_stats__doc__,
 "Get encoding statistics for the writer.\n"
 "\n"
 "Returns a dict with encoding statistics including\n"
-"repeat/full/suffix/pop-push record counts, frames written/saved, and\n"
+"repeat/full/suffix/reuse record counts, frames written/saved, and\n"
 "compression ratio.");
 
 #define _REMOTE_DEBUGGING_BINARYWRITER_GET_STATS_METHODDEF    \
@@ -1750,4 +1750,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=14b1276cd3302ecc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef0d1eaac8262c2c input=a9049054013a1b77]*/
