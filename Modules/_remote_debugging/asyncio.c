@@ -667,31 +667,45 @@ process_task_waiters(
     bool futures_only
 ) {
     Py_ssize_t initial_count = futures_only ? PyList_GET_SIZE(result) : 0;
+    PyObject *visited = PySet_New(NULL);
+    if (visited == NULL) {
+        return -1;
+    }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(result); i++) {
         PyObject *task_info = PyList_GET_ITEM(result, i);
+        if (PySet_Add(visited, PyStructSequence_GET_ITEM(task_info, 0)) < 0) {
+            goto error;
+        }
         PyObject *waiters = PyStructSequence_GET_ITEM(task_info, 3);
         for (Py_ssize_t j = 0; j < PyList_GET_SIZE(waiters); j++) {
+            PyObject *waiter = PyList_GET_ITEM(waiters, j);
+            PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
+            int seen = PySet_Contains(visited, task_id);
+            if (seen > 0) {
+                continue;
+            }
+            if (seen < 0 || PySet_Add(visited, task_id) < 0) {
+                goto error;
+            }
             if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
                 PyErr_SetString(PyExc_RuntimeError,
                     "Too many task waiters (possible infinite loop)");
                 set_exception_cause(unwinder, PyExc_RuntimeError,
                     "Task waiter walk size limit exceeded");
-                return -1;
+                goto error;
             }
-            PyObject *waiter = PyList_GET_ITEM(waiters, j);
-            PyObject *task_id = PyStructSequence_GET_ITEM(waiter, 1);
             void *task_ptr = PyLong_AsVoidPtr(task_id);
             if (task_ptr == NULL && PyErr_Occurred()) {
                 set_exception_cause(unwinder, PyExc_RuntimeError,
                                     "Failed to parse waiter task ID");
-                return -1;
+                goto error;
             }
             if (futures_only) {
                 char is_task;
                 if (read_char(unwinder,
                         (uintptr_t)task_ptr + unwinder->async_debug_offsets.asyncio_task_object.task_is_task,
                         &is_task) < 0) {
-                    return -1;
+                    goto error;
                 }
                 if (is_task) {
                     continue;
@@ -700,12 +714,17 @@ process_task_waiters(
             if (process_single_task_node(
                     unwinder, (uintptr_t)task_ptr, NULL, result) < 0)
             {
-                return -1;
+                goto error;
             }
         }
     }
 
+    Py_DECREF(visited);
     return 0;
+
+error:
+    Py_DECREF(visited);
+    return -1;
 }
 
 /* ============================================================================

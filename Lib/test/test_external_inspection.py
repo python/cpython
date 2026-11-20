@@ -648,6 +648,30 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
                 self.assertEqual(relationships, expected)
 
     @skip_if_not_supported
+    def test_shared_future_waiter(self):
+        async def main():
+            layers = [[asyncio.current_task()]]
+            for _ in range(14):
+                waiters = [asyncio.Future(), asyncio.Future()]
+                for child in layers[-1]:
+                    for waiter in waiters:
+                        asyncio.future_add_to_awaited_by(child, waiter)
+                        self.addCleanup(asyncio.future_discard_from_awaited_by,
+                                        child, waiter)
+                layers.append(waiters)
+
+            expected_ids = [id(node) for layer in layers for node in layer]
+            unwinder = RemoteUnwinder(os.getpid())
+            for method in (unwinder.get_all_awaited_by,
+                           unwinder.get_async_stack_trace):
+                with self.subTest(method=method.__name__):
+                    ids = [node.task_id for thread in method()
+                           for node in thread.awaited_by]
+                    self.assertCountEqual(ids, expected_ids)
+
+        asyncio.run(main())
+
+    @skip_if_not_supported
     def test_async_generator_running_task_stack(self):
         # gh-159620
         async def agen():
