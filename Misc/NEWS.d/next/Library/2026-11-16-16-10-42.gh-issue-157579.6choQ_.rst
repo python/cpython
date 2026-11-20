@@ -1,0 +1,3 @@
+The error handler :class:`~tempfile.TemporaryDirectory` uses to clean up
+unreadable and inaccessible files no longer fails for temporary directories
+created using :class:`bytes` paths.
