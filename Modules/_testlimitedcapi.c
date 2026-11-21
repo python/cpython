@@ -103,7 +103,7 @@ module_exec(PyObject *mod)
     return 0;
 }
 
-static struct PyModuleDef _testlimitedcapimodule_def = {
+PyModuleDef _Py_TestLimitedCAPI_ModuleDef = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testlimitedcapi",
     .m_size = 0,
@@ -119,5 +119,5 @@ static struct PyModuleDef _testlimitedcapimodule_def = {
 PyMODINIT_FUNC
 PyInit__testlimitedcapi(void)
 {
-    return PyModuleDef_Init(&_testlimitedcapimodule_def);
+    return PyModuleDef_Init(&_Py_TestLimitedCAPI_ModuleDef);
 }
