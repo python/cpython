@@ -168,11 +168,11 @@ def run_multiline_interactive_console(
             r.invalidate_full()
             r.refresh()
             console.write("\n")
-            console._excepthook(type(exc), exc, tb=None)  # hide traceback
+            console._excepthook(type(exc), exc, tb=None)  # type: ignore[attr-defined] # hides traceback
             console.resetbuffer()
         except MemoryError as exc:
             console.write("\n")
-            console._excepthook(type(exc), exc, tb=None)  # hide traceback
+            console._excepthook(type(exc), exc, tb=None)  # type: ignore[attr-defined] # hides traceback
             console.resetbuffer()
         except SystemExit:
             raise
