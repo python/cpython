@@ -324,16 +324,15 @@ def is_resource_enabled(resource):
     """Test whether a resource is enabled.
 
     Known resources are set by regrtest.py.  If not running under regrtest.py,
-    all resources are assumed enabled unless use_resources has been set.
+    all resources except settime are assumed enabled unless use_resources
+    has been set.
     """
-    return use_resources is None or resource in use_resources
+    if use_resources is None:
+        return resource != 'settime'
+    return resource in use_resources
 
 def get_resource_value(resource):
-    """Test whether a resource is enabled.
-
-    Known resources are set by regrtest.py.  If not running under regrtest.py,
-    all resources are assumed enabled unless use_resources has been set.
-    """
+    """Return the configured resource value, or None if no value was set."""
     if use_resources is None:
         return None
     return use_resources.get(resource)

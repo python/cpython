@@ -22,6 +22,7 @@ import sysconfig
 import tempfile
 import threading
 import textwrap
+import time
 import types
 import unittest
 import unittest.mock
@@ -339,6 +340,11 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt, 'all=0'], 'invalid resource: all=0')
                 self.checkError([opt, 'none=0'], 'invalid resource: none=0')
                 self.checkError([opt, 'all,-gui=0'], 'invalid resource: -gui=0')
+
+    def test_settime_requires_opt_in(self):
+        self.assertNotIn('settime', self.parse_args([]).use_resources)
+        self.assertNotIn('settime', self.parse_args(['-u', 'all']).use_resources)
+        self.assertIn('settime', self.parse_args(['-u', 'settime']).use_resources)
 
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
@@ -902,6 +908,68 @@ class BaseTestCase(unittest.TestCase):
 
 
 class CheckActualTests(BaseTestCase):
+    @unittest.skipUnless(hasattr(time, 'clock_settime'), 'requires clock_settime')
+    @support.thread_unsafe('changes the enabled test resources')
+    def test_system_clock_writes(self):
+        from test.libregrtest.single import _parallelize_tests
+        from test.test_time import TimeTestCase
+
+        names = ('test_clock_settime', 'test_monotonic_settime')
+        # None: the tests are run directly by unittest, outside regrtest.
+        cases = ((None, 0), ({}, 0), ({'settime': None}, 3), ({}, 0))
+        for resources, expected in cases:
+            with (self.subTest(resources=resources),
+                  unittest.mock.patch.object(support, 'use_resources', resources),
+                  unittest.mock.patch.object(time, 'clock_settime') as setter):
+                suite = unittest.TestSuite(TimeTestCase(name) for name in names)
+                _parallelize_tests(suite, 2)
+                result = unittest.TestResult()
+                suite.run(result)
+                self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+                self.assertEqual(setter.call_count, expected)
+
+    @unittest.skipUnless(hasattr(time, 'clock_settime'), 'requires clock_settime')
+    @support.thread_unsafe('changes the enabled test resources')
+    def test_system_clock_restored(self):
+        from test.test_time import TimeTestCase
+
+        # Each step of clock_settime(): (exception raised, clock changed).
+        cases = (
+            ('success', [(None, True), (None, True)], None),
+            # A signal can arrive after the clock changed, before the setter
+            # returns.
+            ('interrupted', [(KeyboardInterrupt, True), (None, True)],
+             KeyboardInterrupt),
+            ('denied', [(PermissionError, False)], unittest.SkipTest),
+            ('failed', [(OSError, False)], OSError),
+        )
+        for name, steps, expected in cases:
+            clock = 7200
+            writes = 0
+
+            def clock_settime(clock_id, value):
+                nonlocal clock, writes
+                self.assertLess(writes, len(steps), 'unexpected clock write')
+                exc, changed = steps[writes]
+                writes += 1
+                if changed:
+                    clock = value
+                if exc is not None:
+                    raise exc
+
+            with (self.subTest(name),
+                  unittest.mock.patch.object(support, 'use_resources', {'settime': None}),
+                  unittest.mock.patch.object(time, 'clock_gettime', lambda clock_id: clock),
+                  unittest.mock.patch.object(time, 'clock_settime', clock_settime)):
+                test = TimeTestCase('test_monotonic_settime')
+                if expected is None:
+                    test.test_monotonic_settime()
+                else:
+                    with self.assertRaises(expected):
+                        test.test_monotonic_settime()
+                self.assertEqual(writes, len(steps))
+                self.assertEqual(clock, 7200)
+
     def test_finds_expected_number_of_tests(self):
         """
         Check that regrtest appears to find the expected set of tests.

@@ -490,7 +490,7 @@ The :mod:`!test.support` module defines the following functions:
 
    Return ``True`` if *resource* is enabled and available. The list of
    available resources is only set when :mod:`test.regrtest` is executing the
-   tests.
+   tests. Otherwise, all resources except ``settime`` are enabled.
 
 
 .. function:: get_resource_value(resource)
