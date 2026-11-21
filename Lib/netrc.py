@@ -77,6 +77,13 @@ class _netrclex:
         self.pushback.append(token)
 
 
+def _quote(token):
+    """Quote a token so that _netrclex reads back the same value."""
+    if token and not any(ch in token for ch in ' \t\r\n"\\'):
+        return token
+    return '"' + token.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
 class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
@@ -190,10 +197,10 @@ class netrc:
         rep = ""
         for host in self.hosts.keys():
             attrs = self.hosts[host]
-            rep += f"machine {host}\n\tlogin {attrs[0]}\n"
+            rep += f"machine {_quote(host)}\n\tlogin {_quote(attrs[0])}\n"
             if attrs[1]:
-                rep += f"\taccount {attrs[1]}\n"
-            rep += f"\tpassword {attrs[2]}\n"
+                rep += f"\taccount {_quote(attrs[1])}\n"
+            rep += f"\tpassword {_quote(attrs[2])}\n"
         for macro in self.macros.keys():
             rep += f"macdef {macro}\n"
             for line in self.macros[macro]:
