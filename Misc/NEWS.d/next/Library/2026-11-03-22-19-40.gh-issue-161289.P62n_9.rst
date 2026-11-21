@@ -1,0 +1,4 @@
+Fix :class:`reprlib.Repr` truncation of strings, integers and other objects
+when a custom :attr:`~reprlib.Repr.fillvalue` is not three characters long.
+The result now fits :attr:`~reprlib.Repr.maxstring`,
+:attr:`~reprlib.Repr.maxlong` and :attr:`~reprlib.Repr.maxother`.

@@ -209,6 +209,23 @@ class ReprTests(unittest.TestCase):
         self.assertEndsWith(s, ">")
         self.assertIn(s.find("..."), [12, 13])
 
+    def test_truncation_with_custom_fillvalue(self):
+        # The truncated repr must fit the limit whatever the fillvalue length.
+        eq = self.assertEqual
+        s = 'abcdefghijklmnopqrstuvwxyz'
+        n = 12345678901234567890
+        i = ClassWithRepr('x' * 100)
+
+        r1 = Repr(maxstring=10, maxlong=10, maxother=10, fillvalue='…')
+        eq(r1.repr(s), "'abc…wxyz'")
+        eq(r1.repr(n), '1234…67890')
+        eq(r1.repr(i), "Clas…xxx')")
+
+        r2 = Repr(maxstring=10, maxlong=10, maxother=10, fillvalue='<snip>')
+        eq(r2.repr(s), "'a<snip>z'")
+        eq(r2.repr(n), '12<snip>90')
+        eq(r2.repr(i), "Cl<snip>')")
+
     def test_lambda(self):
         r = repr(lambda x: x)
         self.assertStartsWith(r, "<function ReprTests.test_lambda.<locals>.<lambda")
