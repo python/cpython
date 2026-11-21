@@ -4342,7 +4342,8 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer([msg])
         self.assertEqual(nbytes, len(msg))
 
-    @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(support.is_apple_mobile, "skipping, see issue #12958")
+    @support.requires_mac_ver(14, 0)
     def testFDPassEmpty(self):
         # Try to pass an empty FD array.  Can receive either no array
         # or an empty array.
