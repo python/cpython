@@ -931,6 +931,8 @@ struct _is {
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
     int eval_frame_allow_specialization;
+    // Perf wraps the default evaluator and permits prepared frame entry.
+    int eval_frame_is_perf;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers
