@@ -362,5 +362,4 @@ require a potentially expensive `gcd` computation. We can use the
 
 In addition to the above proof, a formal, computer-verified proof
 of correctness (using Lean) of the algorithm can be found here:
-
-    https://github.com/mdickinson/snippets/tree/1f47f8cc33185c646b679647e88cb24f29fd6a4e/proofs/limit_denominator
+https://github.com/mdickinson/snippets/tree/1f47f8cc33185c646b679647e88cb24f29fd6a4e/proofs/limit_denominator
