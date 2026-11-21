@@ -958,6 +958,16 @@ A ``TarInfo`` object has the following public data attributes:
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
+   When the member is written in :const:`PAX_FORMAT`, the fields ``path``,
+   ``linkpath``, ``size``, ``mtime``, ``uid``, ``gid``, ``uname`` and ``gname``
+   have priority over the corresponding attributes of the :class:`!TarInfo`
+   object, unless the field was read from an archive and the attribute has
+   been changed since, for example by :meth:`~TarInfo.replace`.
+
+   .. versionchanged:: next
+      Fields read from an archive no longer have priority over attributes
+      that were changed afterwards.
+
 .. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=..., \
                             uid=..., gid=..., uname=..., gname=..., \
                             deep=True)
