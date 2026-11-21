@@ -1,0 +1,2 @@
+Fix :class:`socket.socket` to respect caller-specified proto over
+auto-detection, which is not supported on platforms such as macOS.
