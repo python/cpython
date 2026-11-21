@@ -9,6 +9,7 @@ __name__ = "datetime"
 import time as _time
 import math as _math
 import sys
+import types as _types
 from operator import index as _index
 
 def _cmp(x, y):
@@ -2393,6 +2394,8 @@ class datetime(date):
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
 
 datetime.min = datetime(1, 1, 1)
