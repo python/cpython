@@ -1147,6 +1147,15 @@ datetime and time
   (Contributed by Paul Ganssle in :gh:`158252`, based on work by
   Stan Ulbrych.)
 
+mmap
+----
+
+* On macOS, creating a file-backed :class:`mmap.mmap` no longer synchronizes
+  the file with the physical backing store, which could take several
+  milliseconds and blocked other threads. Code that relied on this can call
+  :func:`fcntl.fcntl` with :const:`!fcntl.F_FULLFSYNC` before mapping.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`162356`.)
+
 re
 --
 
