@@ -265,7 +265,7 @@ def _remove_universal_flags(_config_vars):
         # Do not alter a config var explicitly overridden by env var
         if cv in _config_vars and cv not in os.environ:
             flags = _config_vars[cv]
-            flags = re.sub(r'-arch\s+\w+\s', ' ', flags, flags=re.ASCII)
+            flags = re.sub(r'-arch\s+\S+', '', flags, flags=re.ASCII)
             flags = re.sub(r'-isysroot\s*\S+', ' ', flags)
             _save_modified_value(_config_vars, cv, flags)
 
@@ -306,7 +306,7 @@ def _remove_unsupported_archs(_config_vars):
             for cv in _UNIVERSAL_CONFIG_VARS:
                 if cv in _config_vars and cv not in os.environ:
                     flags = _config_vars[cv]
-                    flags = re.sub(r'-arch\s+ppc\w*\s', ' ', flags)
+                    flags = re.sub(r'-arch\s+ppc\S*', '', flags)
                     _save_modified_value(_config_vars, cv, flags)
 
     return _config_vars
@@ -322,7 +322,7 @@ def _override_all_archs(_config_vars):
         for cv in _UNIVERSAL_CONFIG_VARS:
             if cv in _config_vars and '-arch' in _config_vars[cv]:
                 flags = _config_vars[cv]
-                flags = re.sub(r'-arch\s+\w+\s', ' ', flags)
+                flags = re.sub(r'-arch\s+\S+', '', flags)
                 flags = flags + ' ' + arch
                 _save_modified_value(_config_vars, cv, flags)
 

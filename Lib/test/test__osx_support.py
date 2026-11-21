@@ -155,6 +155,7 @@ class Test_OSXSupport(unittest.TestCase):
     def test__remove_universal_flags(self):
         config_vars = {
         'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
+        'BASECFLAGS': '-O3 -arch i386 -arch ppc',
         'LDFLAGS': '-arch ppc -arch i386   -g',
         'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
         'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
@@ -163,6 +164,7 @@ class Test_OSXSupport(unittest.TestCase):
         }
         expected_vars = {
         'CFLAGS': '-fno-strict-aliasing  -g -O3    ',
+        'BASECFLAGS': '-O3  ',
         'LDFLAGS': '    -g',
         'CPPFLAGS': '-I.  ',
         'BLDSHARED': 'gcc-4.0 -bundle    -g',
@@ -201,6 +203,7 @@ class Test_OSXSupport(unittest.TestCase):
         config_vars = {
         'CC': 'clang',
         'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
+        'BASECFLAGS': '-O3 -arch i386 -arch ppc64',
         'LDFLAGS': '-arch ppc -arch i386   -g',
         'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
         'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
@@ -210,6 +213,7 @@ class Test_OSXSupport(unittest.TestCase):
         expected_vars = {
         'CC': 'clang',
         'CFLAGS': '-fno-strict-aliasing  -g -O3  -arch i386  ',
+        'BASECFLAGS': '-O3 -arch i386 ',
         'LDFLAGS': ' -arch i386   -g',
         'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
         'BLDSHARED': 'gcc-4.0 -bundle   -arch i386 -g',
@@ -236,6 +240,7 @@ class Test_OSXSupport(unittest.TestCase):
         config_vars = {
         'CC': 'clang',
         'CFLAGS': '-fno-strict-aliasing  -g -O3 -arch ppc -arch i386  ',
+        'BASECFLAGS': '-O3 -arch i386 -arch ppc',
         'LDFLAGS': '-arch ppc -arch i386   -g',
         'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
         'BLDSHARED': 'gcc-4.0 -bundle  -arch ppc -arch i386 -g',
@@ -245,6 +250,7 @@ class Test_OSXSupport(unittest.TestCase):
         expected_vars = {
         'CC': 'clang',
         'CFLAGS': '-fno-strict-aliasing  -g -O3     -arch x86_64',
+        'BASECFLAGS': '-O3   -arch x86_64',
         'LDFLAGS': '    -g -arch x86_64',
         'CPPFLAGS': '-I. -isysroot /Developer/SDKs/MacOSX10.4u.sdk',
         'BLDSHARED': 'gcc-4.0 -bundle    -g -arch x86_64',
