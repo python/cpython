@@ -1581,8 +1581,8 @@ $(LIBHACL_BLAKE2_LIB_STATIC): $(LIBHACL_BLAKE2_OBJS)
 
 Modules/_hacl/Hacl_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_HMAC.c $(LIBHACL_HMAC_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_HMAC.c
-Modules/_hacl/Hacl_Streaming_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c $(LIBHACL_HMAC_HEADERS)
-	$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c
+Modules/_hacl/Hacl_Streaming_HMAC.o: $(srcdir)/Modules/_hmac_hacl.c $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c $(LIBHACL_HMAC_HEADERS)
+	$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hmac_hacl.c
 $(LIBHACL_HMAC_LIB_STATIC): $(LIBHACL_HMAC_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_HMAC_OBJS)
