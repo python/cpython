@@ -28,6 +28,7 @@
 #include "module.h"
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "connection.h"
+#include "util.h"
 
 // Returns non-NULL if a new exception should be raised
 static PyObject *
@@ -72,10 +73,12 @@ get_exception_class(pysqlite_state *state, int errorcode)
 }
 
 static void
-raise_exception(PyObject *type, int errcode, const char *errmsg)
+raise_exception(PyObject *type, int errcode, PyObject *errmsg)
 {
     PyObject *exc = NULL;
-    PyObject *args[] = { PyUnicode_FromString(errmsg), };
+    // errmsg is consumed.  NULL means creating it failed and an exception is
+    // already set.
+    PyObject *args[] = { errmsg, };
     if (args[0] == NULL) {
         goto exit;
     }
@@ -129,7 +132,7 @@ set_error_from_code(pysqlite_state *state, int code)
 
     const char *errmsg = sqlite3_errstr(code);
     assert(errmsg != NULL);
-    raise_exception(exc_class, code, errmsg);
+    raise_exception(exc_class, code, PyUnicode_FromString(errmsg));
 }
 
 /**
@@ -138,17 +141,20 @@ set_error_from_code(pysqlite_state *state, int code)
 int
 set_error_from_db(pysqlite_state *state, sqlite3 *db)
 {
+    pysqlite_db_mutex_enter(db);
     int errorcode = sqlite3_errcode(db);
     PyObject *exc_class = get_exception_class(state, errorcode);
     if (exc_class == NULL) {
         // No new exception need be raised.
+        pysqlite_db_mutex_leave(db);
         return SQLITE_OK;
     }
 
     /* Create and set the exception. */
     int extended_errcode = sqlite3_extended_errcode(db);
     // sqlite3_errmsg() always returns an UTF-8 encoded message
-    const char *errmsg = sqlite3_errmsg(db);
+    PyObject *errmsg = PyUnicode_FromString(sqlite3_errmsg(db));
+    pysqlite_db_mutex_leave(db);
     raise_exception(exc_class, extended_errcode, errmsg);
     return errorcode;
 }
