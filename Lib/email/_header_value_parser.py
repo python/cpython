@@ -1073,7 +1073,7 @@ def get_fws(value):
     been done so we don't need to watch out for CRLF.
 
     """
-    newvalue = value.lstrip()
+    newvalue = value.lstrip(_WSP)
     fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
     return fws, newvalue
 
