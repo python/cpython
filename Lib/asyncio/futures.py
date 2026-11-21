@@ -127,7 +127,10 @@ class Future:
     def _asyncio_awaited_by(self):
         if self.__asyncio_awaited_by is None:
             return None
-        return frozenset(self.__asyncio_awaited_by)
+        return frozenset(
+            waiter for waiter in self.__asyncio_awaited_by
+            if not waiter.done()
+        )
 
     def get_loop(self):
         """Return the event loop the Future is bound to."""
