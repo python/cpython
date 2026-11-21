@@ -248,6 +248,18 @@ class Bdb:
         self.botframe = None
         self._set_stopinfo(None, None)
 
+    def update_skip(self, patterns):
+        if self.skip is None:
+            self.skip = set(patterns)
+        else:
+            self.skip.update(patterns)
+
+    def remove_skip(self, patterns):
+        if self.skip is None:
+            return
+        else:
+            self.skip.difference_update(patterns)
+
     @contextmanager
     def set_enterframe(self, frame):
         self.enterframe = frame
