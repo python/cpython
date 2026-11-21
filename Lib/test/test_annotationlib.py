@@ -1404,6 +1404,21 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertIs(fwdrefs["x"].evaluate(), list)
         self.assertEqual(fwdrefs["y"].evaluate(), list[int])
 
+    def test_class_namespace_shadows_nonlocal(self):
+        # gh-160948: a class attribute takes precedence over a nonlocal
+        # of the same name, whether the annotation names it alone or not.
+        class Demo:
+            a: unknown
+            b: undefined[unknown]
+
+        fwdrefs = get_annotations(Demo, format=Format.FORWARDREF)
+        undefined = list
+        unknown = "nonlocal"
+        Demo.unknown = "local"
+
+        self.assertEqual(fwdrefs["a"].evaluate(), "local")
+        self.assertEqual(fwdrefs["b"].evaluate(), list["local"])
+
     def test_raises_error_from_value(self):
         # test that if VALUE is the only supported format, but raises an error
         # that error is propagated from get_annotations
