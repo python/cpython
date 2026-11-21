@@ -528,7 +528,7 @@ class IOBase(metaclass=abc.ABCMeta):
                     return 1
                 n = (readahead.find(b"\n") + 1) or len(readahead)
                 if size >= 0:
-                    n = min(n, size)
+                    n = min(n, size - len(res))
                 return n
         else:
             def nreadahead():
@@ -733,6 +733,8 @@ class BufferedIOBase(IOBase):
             data = self.read1(len(b))
         else:
             data = self.read(len(b))
+        if data is None:
+            return None
         n = len(data)
 
         b[:n] = data
@@ -1003,9 +1005,19 @@ class BytesIO(BufferedIOBase):
     def peek(self, size=0):
         if self.closed:
             raise ValueError("peek on closed file")
+        try:
+            size_index = size.__index__
+        except AttributeError:
+            raise TypeError(f"{size!r} is not an integer")
+        else:
+            size = size_index()
+
         if size < 1:
-            return self._buffer[self._pos:self._pos + io.DEFAULT_BUFFER_SIZE]
-        return self._buffer[self._pos:self._pos + size]
+            size = io.DEFAULT_BUFFER_SIZE
+
+        with self._lock:
+            b = self._buffer[self._pos:self._pos + size]
+            return b.take_bytes()
 
     def truncate(self, pos=None):
         if self.closed:
@@ -1212,14 +1224,22 @@ class BufferedReader(_BufferedIOMixin):
                 if len(buf) - written > self.buffer_size:
                     n = self.raw.readinto(buf[written:])
                     if not n:
+                        if n is None and not written:
+                            return None # would block
                         break # eof
                     written += n
 
                 # Otherwise refill internal buffer - unless we're
                 # in read1 mode and already got some data
                 elif not (read1 and written):
-                    if not self._peek_unlocked(1):
+                    # The internal buffer is empty here.
+                    chunk = self.raw.read(self.buffer_size)
+                    if not chunk:
+                        if chunk is None and not written:
+                            return None # would block
                         break # eof
+                    self._read_buf = chunk
+                    self._read_pos = 0
 
                 # In readinto1 mode, return as soon as we have some data
                 if read1 and written:
@@ -1393,6 +1413,15 @@ class BufferedRWPair(BufferedIOBase):
 
     def read1(self, size=-1):
         return self.reader.read1(size)
+
+    def readline(self, size=-1):
+        r"""Read and return a line from the stream.
+
+        If size is specified, at most size bytes will be read.
+
+        The line terminator is always b'\n'.
+        """
+        return self.reader.readline(size)
 
     def readinto1(self, b):
         return self.reader.readinto1(b)
@@ -2448,9 +2477,12 @@ class TextIOWrapper(TextIOBase):
             # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
-            skip_bytes = int(self._b2cratio * chars_to_skip)
+            skip_estimate = self._b2cratio * chars_to_skip
+            if 0 <= skip_estimate <= len(next_input):
+                skip_bytes = int(skip_estimate)
+            else:
+                skip_bytes = 0
             skip_back = 1
-            assert skip_bytes <= len(next_input)
             while skip_bytes > 0:
                 decoder.setstate((b'', dec_flags))
                 # Decode up to temptative start point

@@ -16,7 +16,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -336,8 +335,11 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 
     /* decode input (with the eventual \r from a previous pass) */
     if (self->decoder != Py_None) {
-        output = PyObject_CallMethodObjArgs(self->decoder,
+        /* The wrapper can be reinitialized by a decoding callback. */
+        PyObject *decoder = Py_NewRef(self->decoder);
+        output = PyObject_CallMethodObjArgs(decoder,
             &_Py_ID(decode), input, final ? Py_True : Py_False, NULL);
+        Py_DECREF(decoder);
     }
     else {
         output = Py_NewRef(input);
@@ -635,10 +637,15 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
         Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@getter
+_io.IncrementalNewlineDecoder.newlines
+[clinic start generated code]*/
+
 static PyObject *
-incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
+_io_IncrementalNewlineDecoder_newlines_get_impl(nldecoder_object *self)
+/*[clinic end generated code: output=4370cf5202a83d08 input=040f9a26aef317a8]*/
 {
-    nldecoder_object *self = nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -723,8 +730,6 @@ struct textio
     /* Cache raw object if it's a FileIO object */
     PyObject *raw;
 
-    PyObject *weakreflist;
-    PyObject *dict;
 
     _PyIO_State *state;
 };
@@ -753,10 +758,8 @@ buffer_access_safe(textio *self)
         return NULL;
     }
 
-    /* Returning a borrowed reference is safe since TextIOWrapper methods are
-       protected by critical sections. */
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    return self->buffer;
+    return Py_NewRef(self->buffer);
 }
 
 static PyObject *
@@ -767,7 +770,9 @@ buffer_getattr(textio *self, PyObject *attr_name)
         return NULL;
     }
 
-    return PyObject_GetAttr(buffer, attr_name);
+    PyObject *res = PyObject_GetAttr(buffer, attr_name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -778,7 +783,9 @@ buffer_callmethod_noargs(textio *self, PyObject *name)
         return NULL;
     }
 
-    return PyObject_CallMethodNoArgs(buffer, name);
+    PyObject *res = PyObject_CallMethodNoArgs(buffer, name);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static PyObject *
@@ -789,7 +796,9 @@ buffer_callmethod_onearg(textio *self, PyObject *name, PyObject *arg)
         return NULL;
     }
 
-    return PyObject_CallMethodOneArg(buffer, name, arg);
+    PyObject *res = PyObject_CallMethodOneArg(buffer, name, arg);
+    Py_DECREF(buffer);
+    return res;
 }
 
 static void
@@ -997,11 +1006,17 @@ _textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
 {
     PyObject *chars;
 
+    if (decoder == NULL) {
+        return _unsupported(state, "not readable");
+    }
+    /* A codec callback may replace the wrapper's decoder. */
+    Py_INCREF(decoder);
     if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, &_Py_ID(decode), bytes,
                                            eof ? Py_True : Py_False, NULL);
+    Py_DECREF(decoder);
 
     if (check_decoded(chars) < 0)
         // check_decoded already decreases refcount
@@ -1524,7 +1539,7 @@ textiowrapper_clear(PyObject *op)
     Py_CLEAR(self->errors);
     Py_CLEAR(self->raw);
 
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1538,7 +1553,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1560,8 +1575,7 @@ textiowrapper_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->errors);
     Py_VISIT(self->raw);
 
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static PyObject *
@@ -1639,7 +1653,7 @@ _io_TextIOWrapper_detach_impl(textio *self)
     if (buffer == NULL) {
         return NULL;
     }
-    self->buffer = NULL;
+    Py_CLEAR(self->buffer);
     self->detached = 1;
     return buffer;
 }
@@ -1671,17 +1685,17 @@ _textiowrapper_writeflush(textio *self)
     }
     else {
         assert(PyList_Check(pending));
-        b = PyBytes_FromStringAndSize(NULL, self->pending_bytes_count);
-        if (b == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(self->pending_bytes_count);
+        if (writer == NULL) {
             return -1;
         }
 
-        char *buf = PyBytes_AsString(b);
+        char *buf = PyBytesWriter_GetData(writer);
         Py_ssize_t pos = 0;
 
         for (Py_ssize_t i = 0; i < PyList_GET_SIZE(pending); i++) {
             PyObject *obj = PyList_GET_ITEM(pending, i);
-            char *src;
+            const char *src;
             Py_ssize_t len;
             if (PyUnicode_Check(obj)) {
                 assert(PyUnicode_IS_ASCII(obj));
@@ -1690,15 +1704,18 @@ _textiowrapper_writeflush(textio *self)
             }
             else {
                 assert(PyBytes_Check(obj));
-                if (PyBytes_AsStringAndSize(obj, &src, &len) < 0) {
-                    Py_DECREF(b);
-                    return -1;
-                }
+                src = PyBytes_AS_STRING(obj);
+                len = PyBytes_GET_SIZE(obj);
             }
             memcpy(buf + pos, src, len);
             pos += len;
         }
         assert(pos == self->pending_bytes_count);
+
+        b = PyBytesWriter_Finish(writer);
+        if (b == NULL) {
+            return -1;
+        }
     }
 
     self->pending_bytes_count = 0;
@@ -1718,29 +1735,123 @@ _textiowrapper_writeflush(textio *self)
     return 0;
 }
 
-/*[clinic input]
-@critical_section
-_io.TextIOWrapper.write
-    text: unicode
-    /
-[clinic start generated code]*/
-
+/* Return borrowed Py_None on success, or NULL on error. */
 static PyObject *
-_io_TextIOWrapper_write_impl(textio *self, PyObject *text)
-/*[clinic end generated code: output=d2deb0d50771fcec input=73ec95c5c4a3489c]*/
+textiowrapper_check_write(textio *self)
 {
-    PyObject *ret;
-    PyObject *b;
-    Py_ssize_t textlen;
-    int haslf = 0;
-    int needflush = 0, text_needflush = 0;
-
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
 
     if (self->encoder == NULL) {
         return _unsupported(self->state, "not writable");
     }
+    return Py_None;
+}
+
+/* Consume b, which is either bytes or an ASCII string. */
+static int
+textiowrapper_write_bytes(textio *self, PyObject *b,
+                          int needflush, int text_needflush)
+{
+    Py_ssize_t bytes_len;
+    if (PyUnicode_Check(b)) {
+        assert(PyUnicode_IS_ASCII(b));
+        bytes_len = PyUnicode_GET_LENGTH(b);
+    }
+    else {
+        bytes_len = PyBytes_GET_SIZE(b);
+    }
+
+    // We should avoid concatenating huge data.
+    // Flush the buffer before adding b to the buffer if b is not small.
+    // https://github.com/python/cpython/issues/87426
+    if (bytes_len >= self->chunk_size) {
+        // _textiowrapper_writeflush() calls buffer.write().
+        // self->pending_bytes can be appended during buffer->write()
+        // or other thread.
+        // We need to loop until buffer becomes empty.
+        // https://github.com/python/cpython/issues/118138
+        // https://github.com/python/cpython/issues/119506
+        while (self->pending_bytes != NULL) {
+            if (_textiowrapper_writeflush(self) < 0) {
+                Py_DECREF(b);
+                return -1;
+            }
+        }
+    }
+
+    if (bytes_len > 0) {
+        if (self->pending_bytes == NULL) {
+            assert(self->pending_bytes_count == 0);
+            self->pending_bytes = b;
+        }
+        else if (!PyList_CheckExact(self->pending_bytes)) {
+            PyObject *list = PyList_New(2);
+            if (list == NULL) {
+                Py_DECREF(b);
+                return -1;
+            }
+            // Since Python 3.12, allocating GC object won't trigger GC and release
+            // GIL. See https://github.com/python/cpython/issues/97922
+            assert(!PyList_CheckExact(self->pending_bytes));
+            PyList_SET_ITEM(list, 0, self->pending_bytes);
+            PyList_SET_ITEM(list, 1, b);
+            self->pending_bytes = list;
+        }
+        else {
+            if (PyList_Append(self->pending_bytes, b) < 0) {
+                Py_DECREF(b);
+                return -1;
+            }
+            Py_DECREF(b);
+        }
+
+        self->pending_bytes_count += bytes_len;
+    }
+    else {
+        Py_DECREF(b);
+    }
+
+    if (self->pending_bytes_count >= self->chunk_size || needflush ||
+        text_needflush) {
+        if (_textiowrapper_writeflush(self) < 0)
+            return -1;
+    }
+
+    if (needflush) {
+        PyObject *buffer = buffer_access_safe(self);
+        if (buffer == NULL) {
+            return -1;
+        }
+        int res = _PyFile_Flush(buffer);
+        Py_DECREF(buffer);
+        if (res < 0) {
+            return -1;
+        }
+    }
+
+    if (self->snapshot != NULL) {
+        textiowrapper_set_decoded_chars(self, NULL);
+        Py_CLEAR(self->snapshot);
+    }
+
+    if (self->decoder) {
+        PyObject *ret = PyObject_CallMethodNoArgs(self->decoder, &_Py_ID(reset));
+        if (ret == NULL)
+            return -1;
+        Py_DECREF(ret);
+    }
+
+    return 0;
+}
+
+static PyObject *
+textiowrapper_write_text(textio *self, PyObject *text)
+{
+    PyObject *b;
+    Py_ssize_t textlen;
+    int haslf = 0;
+    int needflush = 0, text_needflush = 0;
 
     Py_INCREF(text);
 
@@ -1756,6 +1867,17 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(text);
         if (newtext == NULL)
             return NULL;
+        if (!PyUnicode_Check(newtext)) {
+            PyErr_Format(PyExc_TypeError,
+                         "replace() should return a str, not %T", newtext);
+            Py_DECREF(newtext);
+            return NULL;
+        }
+        /* replace() may have closed, detached or reinitialized the stream. */
+        if (textiowrapper_check_write(self) == NULL) {
+            Py_DECREF(newtext);
+            return NULL;
+        }
         text = newtext;
     }
 
@@ -1780,7 +1902,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->encoding_start_of_stream = 0;
     }
     else {
-        b = PyObject_CallMethodOneArg(self->encoder, &_Py_ID(encode), text);
+        /* A codec callback may reconfigure the stream. */
+        PyObject *encoder = Py_NewRef(self->encoder);
+        b = PyObject_CallMethodOneArg(encoder, &_Py_ID(encode), text);
+        Py_DECREF(encoder);
     }
 
     Py_DECREF(text);
@@ -1794,90 +1919,27 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         return NULL;
     }
 
-    Py_ssize_t bytes_len;
-    if (b == text) {
-        bytes_len = PyUnicode_GET_LENGTH(b);
+    if (textiowrapper_write_bytes(self, b, needflush, text_needflush) < 0) {
+        return NULL;
     }
-    else {
-        bytes_len = PyBytes_GET_SIZE(b);
-    }
-
-    // We should avoid concatenating huge data.
-    // Flush the buffer before adding b to the buffer if b is not small.
-    // https://github.com/python/cpython/issues/87426
-    if (bytes_len >= self->chunk_size) {
-        // _textiowrapper_writeflush() calls buffer.write().
-        // self->pending_bytes can be appended during buffer->write()
-        // or other thread.
-        // We need to loop until buffer becomes empty.
-        // https://github.com/python/cpython/issues/118138
-        // https://github.com/python/cpython/issues/119506
-        while (self->pending_bytes != NULL) {
-            if (_textiowrapper_writeflush(self) < 0) {
-                Py_DECREF(b);
-                return NULL;
-            }
-        }
-    }
-
-    if (bytes_len > 0) {
-        if (self->pending_bytes == NULL) {
-            assert(self->pending_bytes_count == 0);
-            self->pending_bytes = b;
-        }
-        else if (!PyList_CheckExact(self->pending_bytes)) {
-            PyObject *list = PyList_New(2);
-            if (list == NULL) {
-                Py_DECREF(b);
-                return NULL;
-            }
-            // Since Python 3.12, allocating GC object won't trigger GC and release
-            // GIL. See https://github.com/python/cpython/issues/97922
-            assert(!PyList_CheckExact(self->pending_bytes));
-            PyList_SET_ITEM(list, 0, self->pending_bytes);
-            PyList_SET_ITEM(list, 1, b);
-            self->pending_bytes = list;
-        }
-        else {
-            if (PyList_Append(self->pending_bytes, b) < 0) {
-                Py_DECREF(b);
-                return NULL;
-            }
-            Py_DECREF(b);
-        }
-
-        self->pending_bytes_count += bytes_len;
-    }
-    else {
-        Py_DECREF(b);
-    }
-
-    if (self->pending_bytes_count >= self->chunk_size || needflush ||
-        text_needflush) {
-        if (_textiowrapper_writeflush(self) < 0)
-            return NULL;
-    }
-
-    if (needflush) {
-        PyObject *buffer = buffer_access_safe(self);
-        if (buffer == NULL || _PyFile_Flush(buffer) < 0) {
-            return NULL;
-        }
-    }
-
-    if (self->snapshot != NULL) {
-        textiowrapper_set_decoded_chars(self, NULL);
-        Py_CLEAR(self->snapshot);
-    }
-
-    if (self->decoder) {
-        ret = PyObject_CallMethodNoArgs(self->decoder, &_Py_ID(reset));
-        if (ret == NULL)
-            return NULL;
-        Py_DECREF(ret);
-    }
-
     return PyLong_FromSsize_t(textlen);
+}
+
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.write
+    text: unicode
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_io_TextIOWrapper_write_impl(textio *self, PyObject *text)
+/*[clinic end generated code: output=d2deb0d50771fcec input=73ec95c5c4a3489c]*/
+{
+    if (textiowrapper_check_write(self) == NULL) {
+        return NULL;
+    }
+    return textiowrapper_write_text(self, text);
 }
 
 /* Steal a reference to chars and store it in the decoded_char buffer;
@@ -2015,8 +2077,9 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     if (decoded_chars == NULL)
         goto fail;
 
-    textiowrapper_set_decoded_chars(self, decoded_chars);
+    /* The old chunk's finalizer can clear the new chunk. */
     nchars = PyUnicode_GET_LENGTH(decoded_chars);
+    textiowrapper_set_decoded_chars(self, decoded_chars);
     if (nchars > 0)
         self->b2cratio = (double) nbytes / nchars;
     else
@@ -2088,15 +2151,9 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
             return NULL;
         }
 
-        _PyIO_State *state = self->state;
-        if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
-            decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
-                                                          bytes, 1);
-        else
-            decoded = PyObject_CallMethodObjArgs(
-                self->decoder, &_Py_ID(decode), bytes, Py_True, NULL);
+        decoded = _textiowrapper_decode(self->state, self->decoder, bytes, 1);
         Py_DECREF(bytes);
-        if (check_decoded(decoded) < 0)
+        if (decoded == NULL)
             goto fail;
 
         result = textiowrapper_get_decoded_chars(self, -1);
@@ -2679,6 +2736,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
         res = _PyObject_CallMethod(buf, &_Py_ID(seek), "ii", 0, 2);
+        Py_DECREF(buf);
         Py_CLEAR(cookieObj);
         if (res == NULL)
             goto fail;
@@ -2823,7 +2881,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     PyObject *res;
     PyObject *posobj = NULL;
     cookie_type cookie = {0,0,0,0,0};
-    PyObject *next_input;
+    PyObject *next_input = NULL;
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
@@ -2875,11 +2933,15 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     assert (PyBytes_Check(next_input));
 
+    /* Own next_input: a reentrant or concurrent seek can drop the snapshot. */
+    Py_INCREF(next_input);
+
     cookie.start_pos -= PyBytes_GET_SIZE(next_input);
 
     /* How many decoded characters have been used up since the snapshot? */
     if (self->decoded_chars_used == 0)  {
         /* We haven't moved from the snapshot point. */
+        Py_DECREF(next_input);
         return textiowrapper_build_cookie(&cookie);
     }
 
@@ -2932,9 +2994,16 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     /* Fast search for an acceptable start point, close to our
        current pos */
-    skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
+    double skip_estimate = self->b2cratio * chars_to_skip;
+    if (skip_estimate >= 0 &&
+        skip_estimate <= PyBytes_GET_SIZE(next_input))
+    {
+        skip_bytes = (Py_ssize_t)skip_estimate;
+    }
+    else {
+        skip_bytes = 0;
+    }
     skip_back = 1;
-    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */
@@ -3020,6 +3089,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     }
 
 finally:
+    Py_XDECREF(next_input);
     res = PyObject_CallMethodOneArg(
             self->decoder, &_Py_ID(setstate), saved_state);
     Py_DECREF(saved_state);
@@ -3032,6 +3102,7 @@ finally:
     return textiowrapper_build_cookie(&cookie);
 
 fail:
+    Py_XDECREF(next_input);
     if (saved_state) {
         PyObject *exc = PyErr_GetRaisedException();
         res = PyObject_CallMethodOneArg(
@@ -3263,12 +3334,17 @@ _io_TextIOWrapper_close_impl(textio *self)
     }
 }
 
+/*[clinic input]
+@critical_section
+_io.TextIOWrapper.__next__ as textiowrapper_iternext
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_iternext_lock_held(PyObject *op)
+textiowrapper_iternext_impl(textio *self)
+/*[clinic end generated code: output=f365c4287cd43a1f input=c5b4c79faf0c98cb]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyObject *line;
-    textio *self = textio_CAST(op);
 
     CHECK_ATTACHED(self);
 
@@ -3278,7 +3354,7 @@ textiowrapper_iternext_lock_held(PyObject *op)
         line = _textiowrapper_readline(self, -1);
     }
     else {
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -3300,16 +3376,6 @@ textiowrapper_iternext_lock_held(PyObject *op)
     }
 
     return line;
-}
-
-static PyObject *
-textiowrapper_iternext(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = textiowrapper_iternext_lock_held(op);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 /*[clinic input]
@@ -3385,42 +3451,35 @@ _io_TextIOWrapper_errors_get_impl(textio *self)
 /*[clinic input]
 @critical_section
 @getter
-_io.TextIOWrapper._CHUNK_SIZE
+_io.TextIOWrapper._CHUNK_SIZE -> Py_ssize_t
 [clinic start generated code]*/
 
-static PyObject *
+static Py_ssize_t
 _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
-/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
+/*[clinic end generated code: output=3fe34b873b6b2c8c input=cae767b74b6b46bd]*/
 {
-    CHECK_ATTACHED(self);
-    return PyLong_FromSsize_t(self->chunk_size);
+    CHECK_ATTACHED_INT(self);
+    return self->chunk_size;
 }
 
 /*[clinic input]
 @critical_section
 @setter
 _io.TextIOWrapper._CHUNK_SIZE
+    value: Py_ssize_t
 [clinic start generated code]*/
 
 static int
-_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, Py_ssize_t value)
+/*[clinic end generated code: output=5170a93dd4d74917 input=ede7bae6145f941b]*/
 {
-    Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
-        return -1;
-    }
-    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
-    if (n == -1 && PyErr_Occurred())
-        return -1;
-    if (n <= 0) {
+    if (value <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "a strictly positive integer is required");
         return -1;
     }
-    self->chunk_size = n;
+    self->chunk_size = value;
     return 0;
 }
 
@@ -3434,7 +3493,11 @@ static PyObject *
 _io_TextIOWrapper_buffer_get_impl(textio *self)
 /*[clinic end generated code: output=d265a34555aa5d4b input=5951cfa148f7350a]*/
 {
-    return Py_XNewRef(buffer_access_safe(self));
+    /* gh-160427: None once detached, matching the former member descriptor. */
+    if (self->buffer == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->buffer);
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
@@ -3446,7 +3509,7 @@ static PyMethodDef incrementalnewlinedecoder_methods[] = {
 };
 
 static PyGetSetDef incrementalnewlinedecoder_getset[] = {
-    {"newlines", incrementalnewlinedecoder_newlines_get, NULL, NULL},
+    _IO_INCREMENTALNEWLINEDECODER_NEWLINES_GETSETDEF
     {NULL}
 };
 
@@ -3498,8 +3561,6 @@ static PyMemberDef textiowrapper_members[] = {
     {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(textio, dict), Py_READONLY},
     {NULL}
 };
 

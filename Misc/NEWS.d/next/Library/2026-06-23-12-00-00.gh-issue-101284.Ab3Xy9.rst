@@ -1,2 +1,0 @@
-:class:`tkinter.OptionMenu` now accepts arbitrary :class:`!tkinter.Menubutton`
-options as keyword arguments and uses them to override its default appearance.

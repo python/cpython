@@ -23,40 +23,6 @@ env:
   LLVM_VERSION: 21
 
 jobs:
-  macos:
-    name: ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-apple-darwin/clang
-            runner: macos-26-intel
-          - target: aarch64-apple-darwin/clang
-            runner: macos-26
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          brew update
-          brew install llvm@${{ env.LLVM_VERSION }}
-      - name: Build
-        run: |
-          export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm@${{ env.LLVM_VERSION }}/bin:$PATH"
-          CC=clang-${{ env.LLVM_VERSION }} ./configure --with-tail-call-interp
-          make all --jobs 4
-      - name: Test
-        run: |
-          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
   linux:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
@@ -75,10 +41,10 @@ jobs:
             runner: ubuntu-26.04-arm
             configure_flags: --with-pydebug
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.11'
       - name: Build

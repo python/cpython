@@ -1311,9 +1311,9 @@ atan2pi20000 atan2pi inf 0 -> 0.5
 atan2pi20001 atan2pi -inf 0 -> -0.5
 atan2pi20002 atan2pi nan 0 -> nan
 
-atan2pi20000 atan2pi inf -0 -> 0.5
-atan2pi20001 atan2pi -inf -0 -> -0.5
-atan2pi20002 atan2pi nan -0 -> nan
+atan2pi21000 atan2pi inf -0 -> 0.5
+atan2pi21001 atan2pi -inf -0 -> -0.5
+atan2pi21002 atan2pi nan -0 -> nan
 
 atan2pi20003 atan2pi inf 1 -> 0.5
 atan2pi20004 atan2pi -inf 1 -> -0.5
@@ -1339,9 +1339,9 @@ atan2pi30000 atan2pi 0 inf -> 0.0
 atan2pi30001 atan2pi 0 -inf -> 1.0
 atan2pi30002 atan2pi 0 nan -> nan
 
-atan2pi30000 atan2pi -0 inf -> -0.0
-atan2pi30001 atan2pi -0 -inf -> -1.0
-atan2pi30002 atan2pi -0 nan -> nan
+atan2pi31000 atan2pi -0 inf -> -0.0
+atan2pi31001 atan2pi -0 -inf -> -1.0
+atan2pi31002 atan2pi -0 nan -> nan
 
 atan2pi30003 atan2pi 1 inf -> 0.0
 atan2pi30004 atan2pi 1 -inf -> 1.0
@@ -2247,3 +2247,8 @@ tanpi10275 tanpi -1.6591963470121216 -> 1.829921944286168
 tanpi20001 tanpi inf -> nan invalid
 tanpi20002 tanpi -inf -> nan invalid
 tanpi20003 tanpi nan -> nan
+
+tanpi30001 tanpi 0.5 -> inf divide-by-zero
+tanpi30002 tanpi -0.5 -> -inf divide-by-zero
+tanpi30003 tanpi 1.5 -> -inf divide-by-zero
+tanpi30004 tanpi -1.5 -> inf divide-by-zero

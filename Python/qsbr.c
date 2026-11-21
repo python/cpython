@@ -85,10 +85,10 @@ grow_thread_array(struct _qsbr_shared *shared)
         new_size = MIN_ARRAY_SIZE;
     }
 
-    // Overallocate by 63 bytes so we can align to a 64-byte boundary.
+    // Overallocate so we can align to a cache line boundary.
     // This avoids potential false sharing between the first entry and other
     // allocations.
-    size_t alignment = 64;
+    size_t alignment = _Py_QSBR_CACHE_LINE_SIZE;
     size_t alloc_size = (size_t)new_size * sizeof(struct _qsbr_pad) + alignment - 1;
     void *raw = PyMem_RawCalloc(1, alloc_size);
     if (raw == NULL) {

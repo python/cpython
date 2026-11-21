@@ -14,20 +14,22 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
 #define PyLazyImport_CheckExact(op) Py_IS_TYPE((op), &PyLazyImport_Type)
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *lz_builtins;
-    PyObject *lz_from;
-    PyObject *lz_attr;
-    // Frame information for the original import location.
-    PyCodeObject *lz_code;     // Code object where the lazy import was created.
-    int lz_instr_offset;       // Instruction offset where the lazy import was created.
-} PyLazyImportObject;
-
-
-PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
 PyAPI_FUNC(PyObject *) _PyLazyImport_New(
-    struct _PyInterpreterFrame *frame, PyObject *import_func, PyObject *from, PyObject *attr);
+    struct _PyInterpreterFrame *frame, PyObject *builtins,
+    PyObject *name, PyObject *fromlist);
+
+extern PyObject *_PyLazyImport_LoadChild(
+    PyThreadState *tstate, PyObject *declaration, PyObject *name);
+extern int _PyLazyImport_IsActive(PyObject *declaration);
+
+extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
+
+// Resolve a placeholder and replace its binding if it is unchanged or holds
+// the child module published by the normal importer during resolution.
+// namespace is the source captured during lookup, before resolution runs.
+PyAPI_FUNC(PyObject *) _PyLazyImport_Reify(
+    PyThreadState *tstate, PyObject *placeholder,
+    PyObject *name, PyObject *ns);
 
 #ifdef __cplusplus
 }

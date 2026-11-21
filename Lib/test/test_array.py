@@ -12,6 +12,7 @@ from test.support import subTests
 import weakref
 import pickle
 import operator
+import re
 import struct
 import sys
 
@@ -109,6 +110,25 @@ class MiscTest(unittest.TestCase):
         for typecode in array.typecodes:
             self.assertIsInstance(typecode, str)
             self.assertGreaterEqual(len(typecode), 1)
+
+    @support.cpython_only
+    @support.requires_docstrings
+    def test_typecodes_documented(self):
+        # The type code table in the array.array docstring must list every
+        # supported type code, and nothing else, and the minimum size it
+        # gives for each of them must be one the implementation meets.
+        row = re.compile(r"^ {4}'(\w+)' +\S.*? +(\d+)(?: \(see note\))?$")
+        documented = {}
+        for line in array.array.__doc__.splitlines():
+            match = row.match(line)
+            if match is not None:
+                documented[match.group(1)] = int(match.group(2))
+
+        self.assertEqual(sorted(documented), sorted(array.typecodes))
+        for typecode, minimum_size in documented.items():
+            with self.subTest(typecode=typecode):
+                self.assertGreaterEqual(array.array(typecode).itemsize,
+                                        minimum_size)
 
 
 # Machine format codes.
@@ -1583,6 +1603,22 @@ class CFPTest(NumberTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+    def test_byteswap_single_call_result(self):
+        # A single byteswap() must swap each item's two halves (real,
+        # imag) independently. test_byteswap above only checks that
+        # byteswap() twice round-trips to the original, which passes
+        # even if a single call scrambles multi-item arrays.
+        a = array.array(self.typecode, self.example)
+        original = a.tobytes()
+        a.byteswap()
+        itemsize = a.itemsize
+        half = itemsize // 2
+        expected = bytearray()
+        for i in range(0, len(original), itemsize):
+            item = original[i:i + itemsize]
+            expected += item[half - 1::-1] + item[itemsize - 1:half - 1:-1]
+        self.assertEqual(a.tobytes(), bytes(expected))
+
 
 class HalfFloatTest(FPTest, unittest.TestCase):
     example = [-42.0, 0, 42, 1e2, -1e4]
@@ -1591,9 +1627,18 @@ class HalfFloatTest(FPTest, unittest.TestCase):
     typecode = 'e'
     minitemsize = 2
 
+    def test_overflows(self):
+        # Overflows half-float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [123456])
+        # Overflows also float type:
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+
 class FloatTest(FPTest, unittest.TestCase):
     typecode = 'f'
     minitemsize = 4
+
+    def test_overflows(self):
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
 
 class DoubleTest(FPTest, unittest.TestCase):
     typecode = 'd'
@@ -1620,6 +1665,10 @@ class DoubleTest(FPTest, unittest.TestCase):
 class ComplexFloatTest(CFPTest, unittest.TestCase):
     typecode = 'Zf'
     minitemsize = 8
+
+    def test_overflows(self):
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300])
+        self.assertRaises(OverflowError, array.array, self.typecode, [1e300j])
 
 class ComplexDoubleTest(CFPTest, unittest.TestCase):
     typecode = 'Zd'

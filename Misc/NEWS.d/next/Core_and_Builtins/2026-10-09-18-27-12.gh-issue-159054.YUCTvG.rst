@@ -1,0 +1,2 @@
+Fixed a crash when an allocation failure occurred while compiling code
+containing cold blocks.

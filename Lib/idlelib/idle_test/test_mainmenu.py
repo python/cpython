@@ -22,6 +22,7 @@ class MainMenuTest(unittest.TestCase):
         # On failure, change pattern here and in function(s).
         # Patterns here have '.*' for re instead of '*' for tcl.
         for menu, pattern in (
+            ('debug', '.*ebugger'),  # PyShell.debug_menu_postcommand
             ('debug', '.*tack.*iewer'),  # PyShell.debug_menu_postcommand
             ('options', '.*ode.*ontext'),  # EW.__init__, CodeContext.toggle...
             ('options', '.*ine.*umbers'),  # EW.__init__, EW.toggle...event.

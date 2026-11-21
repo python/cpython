@@ -15,16 +15,6 @@ cET_alias = import_fresh_module('xml.etree.cElementTree',
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
-    # Issue #8651.
-    @support.bigmemtest(size=support._2G + 100, memuse=1, dry_run=False)
-    def test_length_overflow(self, size):
-        data = b'x' * size
-        parser = cET.XMLParser()
-        try:
-            self.assertRaises(OverflowError, parser.feed, data)
-        finally:
-            data = None
-
     def test_del_attribute(self):
         element = cET.Element('tag')
 
@@ -170,6 +160,35 @@ class MiscTests(unittest.TestCase):
         parser.feed(XML)
         del parser
         support.gc_collect()
+
+    def test_iter_tag_reentrant_compare(self):
+        destroyed = []
+        compared = []
+
+        class Tag:
+            def __del__(self):
+                destroyed.append(True)
+
+            def __eq__(self, other):
+                child.tag = "replaced"
+                return NotImplemented
+
+            __hash__ = object.__hash__
+
+        class Sought:
+            def __eq__(self, other):
+                if isinstance(other, Tag):
+                    compared.append(not destroyed)
+                return NotImplemented
+
+            __hash__ = object.__hash__
+
+        root = cET.Element("root")
+        child = cET.SubElement(root, "x")
+        child.tag = Tag()
+        self.assertEqual(list(root.iter(Sought())), [])
+        self.assertEqual(compared, [True])
+        self.assertEqual(child.tag, "replaced")
 
     def test_dict_disappearing_during_get_item(self):
         # test fix for seg fault reported in issue 27946

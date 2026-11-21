@@ -609,11 +609,11 @@ class HTMLCalendar(Calendar):
         content = self.formatyear(theyear, width)
         return self._format_html_page(theyear, content, css, encoding)
 
-    def formatmonthpage(self, theyear, themonth, width=3, css='calendar.css', encoding=None):
+    def formatmonthpage(self, theyear, themonth, *, css='calendar.css', encoding=None):
         """
         Return a formatted month as a complete HTML page.
         """
-        content = self.formatmonth(theyear, themonth, width)
+        content = self.formatmonth(theyear, themonth)
         return self._format_html_page(theyear, content, css, encoding)
 
 

@@ -205,7 +205,7 @@ _PyLocals_GetKind(PyObject *kinds, int i)
 {
     assert(PyBytes_Check(kinds));
     assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
-    char *ptr = PyBytes_AS_STRING(kinds);
+    const char *ptr = PyBytes_AS_STRING(kinds);
     return (_PyLocals_Kind)(ptr[i]);
 }
 
@@ -698,6 +698,10 @@ PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
  * depending on the type and the value. The type is the first item to not
  * compare bytes and str which can raise a BytesWarning exception. */
 extern PyObject* _PyCode_ConstantKey(PyObject *obj);
+
+// Return true if the string constant *o* gets interned when it is stored in
+// the co_consts of a code object. *o* must be an exact str.
+extern int _PyCode_ShouldInternString(PyObject *o);
 
 
 #ifdef __cplusplus

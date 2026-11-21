@@ -1,3 +1,0 @@
-Add ``show_jit`` option to ``dis.dis`` to show JIT entry points in the
-bytecode. This is useful for visualizing where JIT traces are entered from
-the interpreter.

@@ -753,8 +753,16 @@ set_dealloc(PyObject *self)
     Py_TYPE(so)->tp_free(so);
 }
 
+/*[clinic input]
+@critical_section
+set.__repr__
+
+    so: setobject
+[clinic start generated code]*/
+
 static PyObject *
-set_repr_lock_held(PySetObject *so)
+set_repr_impl(PySetObject *so)
+/*[clinic end generated code: output=5dfbb5e7f7c947ad input=f6743ec76163d7b3]*/
 {
     PyObject *result=NULL, *keys, *listrepr, *tmp;
     int status = Py_ReprEnter((PyObject*)so);
@@ -804,17 +812,6 @@ set_repr_lock_held(PySetObject *so)
     Py_DECREF(listrepr);
 done:
     Py_ReprLeave((PyObject*)so);
-    return result;
-}
-
-static PyObject *
-set_repr(PyObject *self)
-{
-    PySetObject *so = _PySet_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    result = set_repr_lock_held(so);
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 
@@ -1030,7 +1027,10 @@ frozenset_hash(PyObject *self)
 
 typedef struct {
     PyObject_HEAD
-    PySetObject *si_set; /* Set to NULL when iterator is exhausted */
+    /* Set to NULL when the iterator is exhausted, except in the free-threaded
+       build, where the reference is kept until the iterator is deallocated
+       (see setiter_set_exhausted()). */
+    PySetObject *si_set;
     Py_ssize_t si_used;
     Py_ssize_t si_pos;
     Py_ssize_t len;
@@ -1059,8 +1059,14 @@ setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
-    if (si->si_set != NULL && si->si_used == si->si_set->used)
-        len = si->len;
+    PySetObject *so = si->si_set;
+    if (so != NULL) {
+        Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
+        Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
+        if (si_used == so_used) {
+            len = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->len);
+        }
+    }
     return PyLong_FromSsize_t(len);
 }
 
@@ -1092,6 +1098,25 @@ static PyMethodDef setiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+/* Mark the iterator as exhausted.  In the free-threaded build an iterator
+   may be advanced by several threads at once, each holding a borrowed
+   pointer to si_set, so the iterator keeps its reference to the set until
+   it is deallocated (as list and tuple iterators do) and records exhaustion
+   by setting si_pos to SETITER_EXHAUSTED. */
+#define SETITER_EXHAUSTED (-1)
+
+static void
+setiter_set_exhausted(setiterobject *si, PySetObject *so)
+{
+#ifdef Py_GIL_DISABLED
+    FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, SETITER_EXHAUSTED);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(si->len, 0);
+#else
+    si->si_set = NULL;
+    Py_DECREF(so);
+#endif
+}
+
 static PyObject *setiter_iternext(PyObject *self)
 {
     setiterobject *si = (setiterobject*)self;
@@ -1104,34 +1129,43 @@ static PyObject *setiter_iternext(PyObject *self)
         return NULL;
     assert (PyAnySet_Check(so));
 
+#ifdef Py_GIL_DISABLED
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_pos) == SETITER_EXHAUSTED) {
+        return NULL;
+    }
+#endif
+
     Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
     Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE_RELAXED(si->si_used);
     if (si_used != so_used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Set changed size during iteration");
-        si->si_used = -1; /* Make this state sticky */
+        /* Make this state sticky */
+        FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_used, -1);
         return NULL;
     }
 
+    /* si_pos and len are only written with the set locked, so that an
+       iterator marked as exhausted by another thread stays exhausted. */
     Py_BEGIN_CRITICAL_SECTION(so);
     i = si->si_pos;
-    assert(i>=0);
-    entry = so->table;
-    mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
-        i++;
-    }
-    if (i <= mask) {
-        key = Py_NewRef(entry[i].key);
+    if (i != SETITER_EXHAUSTED) {
+        assert(i >= 0);
+        entry = so->table;
+        mask = so->mask;
+        while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy)) {
+            i++;
+        }
+        if (i <= mask) {
+            key = Py_NewRef(entry[i].key);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(si->si_pos, i + 1);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(si->len, si->len - 1);
+        }
+        else {
+            setiter_set_exhausted(si, so);
+        }
     }
     Py_END_CRITICAL_SECTION();
-    si->si_pos = i+1;
-    if (key == NULL) {
-        si->si_set = NULL;
-        Py_DECREF(so);
-        return NULL;
-    }
-    si->len--;
     return key;
 }
 
@@ -1351,19 +1385,20 @@ static PyObject *
 make_new_set_untracked(PyTypeObject *type, PyObject *iterable)
 {
     assert(PyType_Check(type));
-    PySetObject *so;
 
-    so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
-    if (so == NULL)
+    // fields are zero-initialized by _PyType_AllocNoTrack
+    PySetObject *so = (PySetObject *)_PyType_AllocNoTrack(type, 0);
+    if (so == NULL) {
         return NULL;
+    }
 
-    so->fill = 0;
-    so->used = 0;
+    assert(so->fill == 0);
+    assert(so->used == 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
     so->hash = -1;
-    so->finger = 0;
-    so->weakreflist = NULL;
+    assert(so->finger == 0);
+    assert(so->weakreflist == NULL);
 
     if (iterable != NULL) {
         if (set_update_local(so, iterable)) {
@@ -1574,6 +1609,7 @@ _PySet_Freeze(PyObject *set)
     assert(PySet_CheckExact(set));
     assert(_PyObject_IsUniquelyReferenced(set));
     set->ob_type = &PyFrozenSet_Type;
+    _PyFrozenSet_MaybeUntrack(set);
     return Py_NewRef(set);
 }
 
