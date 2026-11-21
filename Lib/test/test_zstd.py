@@ -2712,7 +2712,7 @@ class OpenTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             open(TESTFN, "")
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "Invalid mode: 'rbt'"):
             open(TESTFN, "rbt")
         with self.assertRaises(ValueError):
             open(TESTFN, "rb", encoding="utf-8")

@@ -1,0 +1,2 @@
+Fix :func:`compression.zstd.open` naming the wrong mode in the error message
+for an invalid mode that contains both ``'t'`` and ``'b'``.
