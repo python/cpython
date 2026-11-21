@@ -1,0 +1,4 @@
+Fix silent input loss in :meth:`!zlib._ZlibDecompressor.decompress` when one
+call receives more than 4 GiB of input and reaches *max_length*: the
+unconsumed remainder of an internal input chunk was dropped from the
+bookkeeping, so decompression continued at the wrong stream position.
