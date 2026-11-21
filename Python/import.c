@@ -4547,7 +4547,9 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             }
         }
     }
-    else if (register_lazy_on_parent(tstate, abs_name, res) < 0) {
+    else if (register_lazy_on_parent(tstate, abs_name,
+                                    builtins == tstate->interp->builtins
+                                        ? res : Py_None) < 0) {
         goto error;
     }
 

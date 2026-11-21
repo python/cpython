@@ -551,17 +551,41 @@ class IndependentSubmoduleTests(LazyImportTestCase):
             assert callable(test.test_lazy_import.data.pkg.b.foo)
         """)
 
-    def test_namespace_import_hooks(self):
-        self.check("""
+    @support.subTests('copied_builtins', (False, True))
+    @support.subTests('reverse', (False, True))
+    def test_namespace_import_hooks(self, copied_builtins, reverse):
+        self.check(f"""
             import builtins
-            first = {'__builtins__': vars(builtins).copy()}
-            second = {'__builtins__': vars(builtins).copy()}
-            exec('lazy import xml.dom', first)
-            exec('lazy import xml.dom', second)
+            first = {{'__builtins__': vars(builtins)}}
+            if {copied_builtins!r}:
+                first['__builtins__'] = vars(builtins).copy()
+            second = {{'__builtins__': vars(builtins).copy()}}
+            for namespace in (first, second)[::{-1 if reverse else 1}]:
+                exec('lazy import xml.dom', namespace)
             def denied(*args):
-                raise AssertionError('used another namespace import hook')
+                raise RuntimeError('private import hook')
             second['__builtins__']['__import__'] = denied
             exec('assert xml.dom.__name__ == "xml.dom"', first)
+            try:
+                exec('xml.dom', second)
+            except RuntimeError as exc:
+                assert str(exc) == 'private import hook', exc
+            else:
+                raise AssertionError('private import hook was not called')
+        """)
+
+    @support.subTests('statement', (
+        'lazy import xml.dom',
+        'lazy from xml import dom',
+    ))
+    def test_shared_child_ignores_private_import_hook(self, statement):
+        self.check(f"""
+            import builtins, sys, xml
+            def denied(*args):
+                raise AssertionError('used a private namespace import hook')
+            namespace = {{'__builtins__': dict(vars(builtins), __import__=denied)}}
+            exec({statement!r}, namespace)
+            assert xml.dom is sys.modules['xml.dom']
         """)
 
     def test_retry_after_recursive_access(self):
