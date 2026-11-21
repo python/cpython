@@ -195,8 +195,10 @@ class WaveLowLevelTest(unittest.TestCase):
 
         with wave.open(filename, 'wb') as w:
             w.setformat(wave.WAVE_FORMAT_IEEE_FLOAT)
+            w.setsampwidth(8)
             w.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+            self.assertEqual(w.getsampwidth(), 2)
 
     def test_setparams_7_tuple_uses_format(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
@@ -218,6 +220,58 @@ class WaveLowLevelTest(unittest.TestCase):
                          wave.WAVE_FORMAT_IEEE_FLOAT))
             self.assertEqual(w.getformat(), wave.WAVE_FORMAT_IEEE_FLOAT)
             self.assertEqual(w.getsampwidth(), 8)
+
+    @support.subTests(('old_format', 'old_width'), (
+        (wave.WAVE_FORMAT_PCM, 1),
+        (wave.WAVE_FORMAT_PCM, 2),
+        (wave.WAVE_FORMAT_PCM, 3),
+        (wave.WAVE_FORMAT_PCM, 4),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 4),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 8),
+    ))
+    @support.subTests(('format', 'width'), (
+        (wave.WAVE_FORMAT_PCM, 1),
+        (wave.WAVE_FORMAT_PCM, 2),
+        (wave.WAVE_FORMAT_PCM, 3),
+        (wave.WAVE_FORMAT_PCM, 4),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 4),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 8),
+    ))
+    def test_setparams_change_format(self, old_format, old_width, format, width):
+        stream = io.BytesIO()
+        frames = bytes(width * 2)
+        with wave.open(stream, 'wb') as w:
+            w.setparams((1, old_width, 8000, 0, 'NONE', 'not compressed',
+                         old_format))
+            w.setparams((1, width, 22050, 0, 'NONE', 'not compressed', format))
+            self.assertEqual(w.getformat(), format)
+            self.assertEqual(w.getsampwidth(), width)
+            w.writeframes(frames)
+        stream.seek(0)
+        with wave.open(stream, 'rb') as r:
+            self.assertEqual(r.getformat(), format)
+            self.assertEqual(r.getsampwidth(), width)
+            self.assertEqual(r.getframerate(), 22050)
+            self.assertEqual(r.getnframes(), 2)
+            self.assertEqual(r.readframes(2), frames)
+
+    @support.subTests(('format', 'width', 'message'), (
+        (0x1234, 4, 'unsupported wave format'),
+        (wave.WAVE_FORMAT_PCM, 0, 'bad sample width'),
+        (wave.WAVE_FORMAT_PCM, 8, 'bad sample width'),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 0,
+         'unsupported sample width for IEEE float format'),
+        (wave.WAVE_FORMAT_IEEE_FLOAT, 2,
+         'unsupported sample width for IEEE float format'),
+    ))
+    def test_setparams_invalid_format_and_width(self, format, width, message):
+        with wave.open(io.BytesIO(), 'wb') as w:
+            w.setparams((1, 4, 8000, 0, 'NONE', 'not compressed'))
+            with self.assertRaisesRegex(wave.Error, message):
+                w.setparams((1, width, 8000, 0, 'NONE', 'not compressed',
+                             format))
+            self.assertEqual(w.getformat(), wave.WAVE_FORMAT_PCM)
+            self.assertEqual(w.getsampwidth(), 4)
 
     def test_getparams_backward_compatible_shape(self):
         with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
