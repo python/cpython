@@ -650,7 +650,7 @@ Glossary
       collector that is able to detect and break reference cycles.  The
       garbage collector can be controlled using the :mod:`gc` module.
 
-      .. index:: single: generator
+   .. index:: single: generator
 
    generator
       Informally used to mean either a :term:`generator function` or a
@@ -658,17 +658,17 @@ Glossary
       :term:`generator function` and :term:`generator iterator` are uncommon
       in practice; "generator" alone is almost always sufficient.
 
-      .. index:: single: generator function
+   .. index:: single: generator function
 
    generator function
-      A function which returns a :term:`generator` object.  It looks like a
+      A function which returns a :term:`generator iterator`.  It looks like a
       normal function except that it contains :keyword:`yield` expressions
       for producing a series of values usable in a :keyword:`for`\-loop or
       that can be retrieved one at a time with the :func:`next` function.
       See :ref:`yieldexpr`.
 
    generator iterator
-      An object created by a :term:`generator function` or a
+      An :term:`iterator` created by a :term:`generator function` or a
       :term:`generator expression`.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
@@ -681,7 +681,7 @@ Glossary
       :meth:`~generator.throw` method to raise an exception at the point
       where the generator was paused.  See :ref:`generator-methods`.
 
-      .. index:: single: generator expression
+   .. index:: single: generator expression
 
    generator expression
       An :term:`expression` that returns an :term:`iterator`.  It looks like a normal expression
