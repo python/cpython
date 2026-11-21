@@ -1,0 +1,2 @@
+Add the required ``MIME-Version`` header when converting an
+:class:`email.message.EmailMessage` to a multipart message.
