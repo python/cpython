@@ -257,11 +257,7 @@ class SMTP:
         self.source_address = source_address
         self._auth_challenge_count = 0
 
-        if host:
-            (code, msg) = self.connect(host, port)
-            if code != 220:
-                self.close()
-                raise SMTPConnectError(code, msg)
+        self._find_local_hostname = False
         if local_hostname is not None:
             self.local_hostname = local_hostname
         else:
@@ -273,12 +269,19 @@ class SMTP:
                 self.local_hostname = fqdn
             else:
                 # We can't find an fqdn hostname, so use a domain literal
+                self._find_local_hostname = True
                 addr = '127.0.0.1'
                 try:
                     addr = socket.gethostbyname(socket.gethostname())
                 except socket.gaierror:
                     pass
                 self.local_hostname = '[%s]' % addr
+
+        if host:
+            (code, msg) = self.connect(host, port)
+            if code != 220:
+                self.close()
+                raise SMTPConnectError(code, msg)
 
     def __enter__(self):
         return self
@@ -348,6 +351,12 @@ class SMTP:
         self.sock = self._get_socket(host, port, self.timeout)
         self.file = None
         (code, msg) = self.getreply()
+        if code == 220 and self._find_local_hostname:
+            addr = self.sock.getsockname()[0]
+            if self.sock.family == socket.AF_INET6:
+                # RFC 5321 section 4.1.3 requires the IPv6 tag and excludes scope IDs.
+                addr = f"IPv6:{addr.split('%', 1)[0]}"
+            self.local_hostname = '[%s]' % addr
         if self.debuglevel > 0:
             self._print_debug('connect:', repr(msg))
         return (code, msg)
