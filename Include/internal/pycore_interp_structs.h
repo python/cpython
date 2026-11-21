@@ -861,6 +861,11 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        /* The linked list of thread states that have been created but are
+           not bound to an OS thread yet.  They are moved to `head` once
+           they are bound, so that `head` only lists fully initialized
+           thread states.  Protected by HEAD_LOCK. */
+        PyThreadState *pending;
         _PyThreadStateImpl *preallocated;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
