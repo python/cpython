@@ -125,6 +125,23 @@ class SemLock(object):
         return '%s-%s' % (process.current_process()._config['semprefix'],
                           next(SemLock._rand))
 
+    def _get_procname_and_count(self):
+        try:
+            if self._semlock._is_mine():
+                name = process.current_process().name
+                if threading.current_thread().name != 'MainThread':
+                    name += '|' + threading.current_thread().name
+                count = self._semlock._count()
+            elif not self._semlock._is_zero():
+                name, count = 'None', 0
+            elif self._semlock._count() > 0:
+                name, count = 'SomeOtherThread', 'nonzero'
+            else:
+                name, count = 'SomeOtherProcess', 'nonzero'
+        except Exception:
+            name, count = 'unknown', 'unknown'
+        return name, count
+
 #
 # Semaphore
 #
@@ -143,11 +160,12 @@ class Semaphore(SemLock):
         return self._semlock._get_value()
 
     def __repr__(self):
+        res = super().__repr__()
         try:
             value = self.get_value()
         except Exception:
             value = 'unknown'
-        return '<%s(value=%s)>' % (self.__class__.__name__, value)
+        return f'<{res[1:-1]} (value={value})>'
 
 #
 # Bounded semaphore
@@ -159,12 +177,13 @@ class BoundedSemaphore(Semaphore):
         SemLock.__init__(self, SEMAPHORE, value, value, ctx=ctx)
 
     def __repr__(self):
+        res = object.__repr__(self)
         try:
             value = self.get_value()
         except Exception:
             value = 'unknown'
-        return '<%s(value=%s, maxvalue=%s)>' % \
-               (self.__class__.__name__, value, self._semlock.maxvalue)
+        return f'<{res[1:-1]} (value={value}, ' \
+               f'maxvalue={self._semlock.maxvalue})>'
 
 #
 # Non-recursive lock
@@ -176,20 +195,9 @@ class Lock(SemLock):
         SemLock.__init__(self, SEMAPHORE, 1, 1, ctx=ctx)
 
     def __repr__(self):
-        try:
-            if self._semlock._is_mine():
-                name = process.current_process().name
-                if threading.current_thread().name != 'MainThread':
-                    name += '|' + threading.current_thread().name
-            elif not self._semlock._is_zero():
-                name = 'None'
-            elif self._semlock._count() > 0:
-                name = 'SomeOtherThread'
-            else:
-                name = 'SomeOtherProcess'
-        except Exception:
-            name = 'unknown'
-        return '<%s(owner=%s)>' % (self.__class__.__name__, name)
+        res = super().__repr__()
+        name, _ = self._get_procname_and_count()
+        return f'<{res[1:-1]} (owner={name})>'
 
 #
 # Recursive lock
@@ -201,21 +209,9 @@ class RLock(SemLock):
         SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1, ctx=ctx)
 
     def __repr__(self):
-        try:
-            if self._semlock._is_mine():
-                name = process.current_process().name
-                if threading.current_thread().name != 'MainThread':
-                    name += '|' + threading.current_thread().name
-                count = self._semlock._count()
-            elif not self._semlock._is_zero():
-                name, count = 'None', 0
-            elif self._semlock._count() > 0:
-                name, count = 'SomeOtherThread', 'nonzero'
-            else:
-                name, count = 'SomeOtherProcess', 'nonzero'
-        except Exception:
-            name, count = 'unknown', 'unknown'
-        return '<%s(%s, %s)>' % (self.__class__.__name__, name, count)
+        res = super().__repr__()
+        name, count = self._get_procname_and_count()
+        return f'<{res[1:-1]} (owner={name}, count={count})>'
 
 #
 # Condition variable
@@ -251,12 +247,15 @@ class Condition(object):
         self.release = self._lock.release
 
     def __repr__(self):
+        res = super().__repr__()
         try:
             num_waiters = (self._sleeping_count.get_value() -
                            self._woken_count.get_value())
         except Exception:
             num_waiters = 'unknown'
-        return '<%s(%s, %s)>' % (self.__class__.__name__, self._lock, num_waiters)
+
+        lock_repr, _ = self._lock._get_procname_and_count()
+        return f'<{res[1:-1]} (lock={lock_repr}, waiters={num_waiters})>'
 
     def wait(self, timeout=None):
         assert self._lock._semlock._is_mine(), \
@@ -368,8 +367,10 @@ class Event(object):
             return False
 
     def __repr__(self):
+        res = super().__repr__()
         set_status = 'set' if self.is_set() else 'unset'
-        return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
+        return f'<{res[1:-1]} ({set_status})>'
+
 #
 # Barrier
 #
@@ -409,3 +410,9 @@ class Barrier(threading.Barrier):
     @_count.setter
     def _count(self, value):
         self._array[1] = value
+
+    def __repr__(self):
+        res = object.__repr__(self)
+        if self.broken:
+            return f'<{res[1:-1]} (broken)>'
+        return f'<{res[1:-1]} (waiters={self.n_waiting}/{self.parties})>'
