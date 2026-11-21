@@ -66,10 +66,14 @@ class CompatibilityFiles:
 
         is_dir = is_file
 
-        def joinpath(self, other):
+        def joinpath(self, *descendants):
+            if not descendants:
+                return self
             if not self._reader:
-                return CompatibilityFiles.OrphanPath(other)
-            return CompatibilityFiles.ChildPath(self._reader, other)
+                return CompatibilityFiles.OrphanPath(*descendants)
+            first, *rest = descendants
+            child = CompatibilityFiles.ChildPath(self._reader, first)
+            return child.joinpath(*rest)
 
         @property
         def name(self):
@@ -97,8 +101,10 @@ class CompatibilityFiles:
         def is_dir(self):
             return not self.is_file()
 
-        def joinpath(self, other):
-            return CompatibilityFiles.OrphanPath(self.name, other)
+        def joinpath(self, *descendants):
+            if not descendants:
+                return self
+            return CompatibilityFiles.OrphanPath(self.name, *descendants)
 
         @property
         def name(self):
@@ -128,8 +134,10 @@ class CompatibilityFiles:
 
         is_dir = is_file
 
-        def joinpath(self, other):
-            return CompatibilityFiles.OrphanPath(*self._path, other)
+        def joinpath(self, *descendants):
+            if not descendants:
+                return self
+            return CompatibilityFiles.OrphanPath(*self._path, *descendants)
 
         @property
         def name(self):
