@@ -406,6 +406,20 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
                 _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
+    def test_log_zero_with_base(self):
+        # gh-161972: cmath.log(0, base) must raise ValueError, like
+        # cmath.log(0) and math.log(0, base) do.
+        with self.assertRaises(ValueError):
+            cmath.log(0)
+        for base in (2, -1, 0, 1, 10):
+            with self.assertRaises(ValueError, msg=f"base={base}"):
+                cmath.log(0, base)
+        # A base of 0 or 1 still raises for a nonzero argument.
+        with self.assertRaises(ValueError):
+            cmath.log(2, 0)
+        with self.assertRaises(ValueError):
+            cmath.log(2, 1)
+
     @unittest.skipIf(sys.platform.startswith("sunos"),
                      "skipping, see gh-138573")
     def test_phase(self):
