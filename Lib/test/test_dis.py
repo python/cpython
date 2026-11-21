@@ -474,7 +474,7 @@ dis_traceback = """\
                NOT_TAKEN
                STORE_FAST               0 (e)
 
-%4d   L4:     LOAD_FAST                0 (e)
+%4d   L4:     LOAD_FAST_BORROW         0 (e)
                LOAD_ATTR                2 (__traceback__)
                STORE_FAST               1 (tb)
        L5:     POP_EXCEPT
@@ -482,7 +482,7 @@ dis_traceback = """\
                STORE_FAST               0 (e)
                DELETE_FAST              0 (e)
 
-%4d           LOAD_FAST                1 (tb)
+%4d           LOAD_FAST_BORROW         1 (tb)
                RETURN_VALUE
 
   --   L6:     LOAD_COMMON_CONSTANT     7 (None)
@@ -725,7 +725,7 @@ dis_tryfinally = """\
 
   --   L3:     PUSH_EXC_INFO
 
-%4d           LOAD_FAST                1 (b)
+%4d           LOAD_FAST_BORROW         1 (b)
                PUSH_NULL
                CALL                     0
                POP_TOP

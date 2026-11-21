@@ -1156,6 +1156,56 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             print(heapify_max)
         self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
+    def test_load_fast_borrow_in_exception_handlers(self):
+        def f(x, g, h):
+            try:
+                return g(x)
+            except Exception:
+                return h(x)
+        self.assertNotInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW", "h")
+
+        def g(x, k):
+            try:
+                k()
+            finally:
+                k(x)
+        self.assertNotInBytecode(g, "LOAD_FAST")
+        self.assertInBytecode(g, "LOAD_FAST_BORROW", "x")
+
+        def h(x, k):
+            try:
+                k()
+            except ValueError:
+                try:
+                    k(x)
+                except TypeError:
+                    k(x, x)
+        self.assertNotInBytecode(h, "LOAD_FAST")
+
+        async def coro(it, k):
+            async for v in it:
+                k(v)
+        self.assertNotInBytecode(coro, "LOAD_FAST")
+
+        def killed(x, k):
+            try:
+                k()
+            except ValueError:
+                # x is rebound while its reference is still on the stack
+                k(x, (x := None))
+        self.assertInBytecode(killed, "LOAD_FAST", "x")
+        self.assertNotInBytecode(killed, "LOAD_FAST_BORROW", "x")
+
+        def stored(x, k):
+            try:
+                k()
+            except ValueError:
+                k(x)
+                y = x
+        self.assertInBytecode(stored, "LOAD_FAST_BORROW", "x")
+        self.assertInBytecode(stored, "LOAD_FAST", "x")
+
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
     def test_optimize_cfg_const_index_out_of_range(self):
