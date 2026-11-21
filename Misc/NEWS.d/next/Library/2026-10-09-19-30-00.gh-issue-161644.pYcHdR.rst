@@ -1,0 +1,6 @@
+Modules imported from bytecode in ZIP archives are no longer unmarshalled
+twice: :meth:`zipimport.zipimporter.get_filename`, and therefore
+:meth:`~zipimport.zipimporter.find_spec`, now only read and validate the
+header of the ``.pyc`` file, decompressing just its first bytes. A ``.pyc``
+file with a valid header but a corrupt body is now reported when the module
+is executed rather than when it is found.

@@ -128,6 +128,11 @@ zipimporter Objects
 
       .. versionadded:: 3.1
 
+      .. versionchanged:: next
+         Only the header of a bytecode file is validated to determine the
+         file name; errors in the marshalled code are now raised when the
+         code is loaded rather than by this method.
+
 
    .. method:: get_source(fullname)
 
