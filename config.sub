@@ -1769,7 +1769,7 @@ case $os in
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
-	     | fiwix* | mlibc* | cos* | mbr* | ironclad* )
+	     | fiwix* | mlibc* | cos* | mbr* | ironclad* | ohos* )
 		;;
 	# This one is extra strict with allowed versions
 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
@@ -1830,7 +1830,7 @@ esac
 case $kernel-$os-$obj in
 	linux-gnu*- | linux-android*- | linux-dietlibc*- | linux-llvm*- \
 		    | linux-mlibc*- | linux-musl*- | linux-newlib*- \
-		    | linux-relibc*- | linux-uclibc*- )
+		    | linux-relibc*- | linux-uclibc*- | linux-ohos*- )
 		;;
 	uclinux-uclibc*- )
 		;;

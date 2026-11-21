@@ -392,6 +392,14 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                                 '#1 Tue Jan 9 20:35:43 UTC 2018', machine))
                 self.assertEqual(get_platform(), f'android-9-{abi}')
 
+        # OpenHarmony
+        os.name = 'posix'
+        sys.platform = 'ohos'
+        self._set_uname(('Linux', 'localhost', '5.10.43', '#1 SMP', 'aarch64'))
+        self.assertEqual(get_platform(), 'ohos-aarch64')
+        with patch.dict(os.environ, {'_PYTHON_HOST_PLATFORM': 'ohos-aarch64'}):
+            self.assertEqual(get_platform(), 'ohos-aarch64')
+
         # XXX more platforms to tests here
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
@@ -613,6 +621,17 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             "x86_64": "x86_64-linux-android",
         }[machine]
         self.assertEndsWith(suffix, f"-{expected_triplet}.so")
+
+    @unittest.skipUnless(sys.platform == 'ohos', 'OpenHarmony-specific test')
+    def test_ohos_ext_suffix(self):
+        machine = platform.machine()
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        expected_triplet = {
+            'aarch64': 'aarch64-linux-ohos',
+            'arm': 'arm-linux-ohos',
+            'x86_64': 'x86_64-linux-ohos',
+        }[machine]
+        self.assertEndsWith(suffix, f'-{expected_triplet}.so')
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):

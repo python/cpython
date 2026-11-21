@@ -26,6 +26,17 @@ PLATFORM_TRIPLET=arm-linux-androideabi
 #    error unknown Android platform
 #  endif
 
+#elif defined(__OHOS__)
+# if defined(__aarch64__)
+PLATFORM_TRIPLET=aarch64-linux-ohos
+# elif defined(__arm__)
+PLATFORM_TRIPLET=arm-linux-ohos
+# elif defined(__x86_64__)
+PLATFORM_TRIPLET=x86_64-linux-ohos
+# else
+#  error unknown OpenHarmony platform
+# endif
+
 #elif defined(__linux__)
 /*
  * BEGIN of Linux block

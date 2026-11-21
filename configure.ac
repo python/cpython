@@ -340,6 +340,9 @@ then
 	*-*-linux-android*)
 		ac_sys_system=Linux-android
 		;;
+	*-*-linux-ohos*)
+		ac_sys_system=Linux-ohos
+		;;
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
@@ -380,7 +383,14 @@ then
 	esac
 	ac_sys_release=
     else
-	ac_sys_system=`uname -s`
+	case "$host" in
+	*-*-linux-ohos*)
+	    ac_sys_system=Linux-ohos
+	    ;;
+	*)
+	    ac_sys_system=`uname -s`
+	    ;;
+	esac
 	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
@@ -397,6 +407,7 @@ then
 	aix*) MACHDEP="aix";;
 	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
+	linux-ohos*) MACHDEP="ohos";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;

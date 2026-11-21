@@ -723,6 +723,8 @@ def get_platform():
             "i686": "x86",
             "x86_64": "x86_64",
         }[machine]
+    elif sys.platform == "ohos":
+        return f"ohos-{machine}"
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
