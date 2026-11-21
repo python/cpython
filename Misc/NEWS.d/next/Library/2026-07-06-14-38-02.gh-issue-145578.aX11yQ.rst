@@ -1,0 +1,9 @@
+Added :mod:`tkinter` support for the Tk 9.1 accessibility API: the
+``tk_set_acc_*`` and ``tk_get_acc_*`` families of methods which set and
+return the accessible attributes of a widget, the
+:meth:`~tkinter.Misc.tk_add_acc_object`,
+:meth:`~tkinter.Misc.tk_emit_selection_change` and
+:meth:`~tkinter.Misc.tk_emit_focus_change` methods which register custom
+widgets with the platform accessibility API, and the
+:meth:`~tkinter.Misc.tk_check_screenreader` method which reports whether a
+screen reader is running.
