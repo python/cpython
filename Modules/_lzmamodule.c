@@ -959,7 +959,8 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         lzret = lzma_code(lzs, LZMA_RUN);
         Py_END_ALLOW_THREADS
 
-        if (lzret == LZMA_BUF_ERROR && lzs->avail_in == 0 && lzs->avail_out > 0) {
+        if (lzret == LZMA_BUF_ERROR &&
+            (lzs->avail_in == 0 || lzs->avail_out == 0)) {
             lzret = LZMA_OK; /* That wasn't a real error */
         }
         if (catch_lzma_error(state, lzret)) {
