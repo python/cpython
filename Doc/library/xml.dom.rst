@@ -787,6 +787,8 @@ inherits properties from :class:`Node`.
 
    Raise :exc:`WrongDocumentErr` if *n* was created by another document,
    and :exc:`NotSupportedErr` if it is neither an element nor an attribute.
+   Raise :exc:`InvalidCharacterErr` if *name* is not a valid XML name,
+   and :exc:`NamespaceErr` if it is not valid for *namespaceURI*.
 
 
 .. _dom-element-objects:

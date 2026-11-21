@@ -1,0 +1,3 @@
+Make :meth:`~xml.dom.Document.renameNode` validate qualified names against
+their namespace URI, raising :exc:`~xml.dom.InvalidCharacterErr` or
+:exc:`~xml.dom.NamespaceErr` for invalid input. Patch by tonghuaroot.
