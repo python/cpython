@@ -541,19 +541,21 @@ groupby_step(groupbyobject *gbo)
 }
 
 static PyObject *
-groupby_next(PyObject *op)
+groupby_next_lock_held(PyObject *op)
 {
     PyObject *grouper;
     groupbyobject *gbo = groupbyobject_CAST(op);
 
+    PyObject *key = NULL;
     gbo->currgrouper = NULL;
     /* skip to next iteration group */
     for (;;) {
-        if (gbo->currkey == NULL)
+        if (gbo->currkey == NULL) {
             /* pass */;
-        else if (gbo->tgtkey == NULL)
+        } else if (gbo->tgtkey == NULL) {
+            key = Py_NewRef(gbo->currkey);
             break;
-        else {
+        } else {
             /* A user-defined __eq__ can re-enter groupby and advance the iterator,
                mutating gbo->tgtkey / gbo->currkey while we are comparing them.
                Take local snapshots and hold strong references so INCREF/DECREF
@@ -565,25 +567,40 @@ groupby_next(PyObject *op)
             Py_INCREF(currkey);
             int rcmp = PyObject_RichCompareBool(tgtkey, currkey, Py_EQ);
             Py_DECREF(tgtkey);
-            Py_DECREF(currkey);
 
-            if (rcmp == -1)
+            if (rcmp == -1) {
+                Py_DECREF(currkey);
                 return NULL;
-            else if (rcmp == 0)
+            } else if (rcmp == 0) {
+                key = currkey;
                 break;
+            }
+            Py_DECREF(currkey);
         }
 
-        if (groupby_step(gbo) < 0)
+        if (groupby_step(gbo) < 0) {
             return NULL;
+        }
     }
-    Py_INCREF(gbo->currkey);
-    Py_XSETREF(gbo->tgtkey, gbo->currkey);
+    Py_XSETREF(gbo->tgtkey, Py_NewRef(key));
 
-    grouper = _grouper_create(gbo, gbo->tgtkey);
-    if (grouper == NULL)
+    grouper = _grouper_create(gbo, key);
+    if (grouper == NULL) {
+        Py_DECREF(key);
         return NULL;
+    }
 
-    return _PyTuple_FromPairSteal(Py_NewRef(gbo->currkey), grouper);
+    return _PyTuple_FromPairSteal(key, grouper);
+}
+
+static PyObject *
+groupby_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = groupby_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot groupby_slots[] = {
@@ -671,15 +688,17 @@ _grouper_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-_grouper_next(PyObject *op)
+_grouper_next_lock_held(PyObject *op)
 {
     _grouperobject *igo = _grouperobject_CAST(op);
     groupbyobject *gbo = groupbyobject_CAST(igo->parent);
     PyObject *r;
     int rcmp;
 
-    if (gbo->currgrouper != igo)
+    if (gbo->currgrouper != igo) {
         return NULL;
+    }
+
     if (gbo->currvalue == NULL) {
         if (groupby_step(gbo) < 0)
             return NULL;
@@ -696,15 +715,26 @@ _grouper_next(PyObject *op)
     Py_DECREF(tgtkey);
     Py_DECREF(currkey);
 
-    if (rcmp <= 0)
+    if (rcmp <= 0) {
         /* got any error or current group is end */
         return NULL;
+    }
 
     r = gbo->currvalue;
     gbo->currvalue = NULL;
     Py_CLEAR(gbo->currkey);
 
     return r;
+}
+
+static PyObject *
+_grouper_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(_grouperobject_CAST(op)->parent);
+    result = _grouper_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyType_Slot _grouper_slots[] = {
