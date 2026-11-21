@@ -4311,6 +4311,21 @@ class FastWaitTestCase(BaseTestCase):
             self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
         self.assertTrue(m.called)
 
+    @unittest.skipIf(not CAN_USE_KQUEUE, reason="needs kqueue() for proc")
+    def test_kqueue_control_interrupted_error(self):
+        p = subprocess.Popen(self.COMMAND)
+        kq_mock = mock.Mock()
+        kq_mock.control.side_effect = InterruptedError
+        kq_mock.close = mock.Mock()
+        try:
+            with mock.patch("select.kqueue", return_value=kq_mock):
+                with self.assertRaises(InterruptedError):
+                    p.wait(self.WAIT_TIMEOUT)
+        finally:
+            p.kill()
+            p.wait()
+        self.assertTrue(kq_mock.control.called)
+
     def assert_wait_race_condition(self, patch_target, real_func):
         # Call pidfd_open() / kqueue(), then terminate the process.
         # Make sure that the wait call (poll() / kqueue.control())
