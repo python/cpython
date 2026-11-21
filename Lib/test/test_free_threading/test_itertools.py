@@ -4,6 +4,7 @@ from itertools import (
     batched,
     chain,
     combinations_with_replacement,
+    count,
     cycle,
     permutations,
     tee,
@@ -140,6 +141,33 @@ class TestTeeConcurrent(unittest.TestCase):
             )
 
         self.assertEqual(errors, [], msg=f"unexpected errors: {errors}")
+
+
+class TestCountConcurrent(unittest.TestCase):
+    @staticmethod
+    def _spin_next(it, n=2000):
+        for _ in range(n):
+            next(it)
+
+    @staticmethod
+    def _spin_repr(it, n=2000):
+        for _ in range(n):
+            repr(it)
+
+    @threading_helper.reap_threads
+    def test_repr_racing_next_fast_mode(self):
+        for _ in range(10):
+            it = count()
+            workers = [self._spin_next] * 2 + [self._spin_repr] * 4
+            threading_helper.run_concurrently(workers, args=(it,))
+
+    @threading_helper.reap_threads
+    def test_repr_racing_next_slow_mode(self):
+        for _ in range(10):
+            # Large count to trigger "slow mode"
+            it = count(10**18, 2)
+            workers = [self._spin_next] * 2 + [self._spin_repr] * 4
+            threading_helper.run_concurrently(workers, args=(it,))
 
 
 if __name__ == "__main__":
