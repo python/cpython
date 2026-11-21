@@ -25,6 +25,7 @@
 #endif
 
 int _PyTestLimitedCAPI_Init_Abstract(PyObject *module);
+int _PyTestLimitedCAPI_Init_Buffer(PyObject *module);
 int _PyTestLimitedCAPI_Init_ByteArray(PyObject *module);
 int _PyTestLimitedCAPI_Init_Bytes(PyObject *module);
 int _PyTestLimitedCAPI_Init_Capsule(PyObject *module);
