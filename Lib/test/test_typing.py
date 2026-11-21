@@ -53,7 +53,7 @@ import types
 from test.support import (
     captured_stderr, cpython_only, requires_docstrings, import_helper, run_code,
     subTests, EqualToForwardRef,
-    exceeds_recursion_limit, run_with_limited_c_stack,
+    run_with_limited_c_stack,
     skip_wasi_stack_overflow, skip_emscripten_stack_overflow,
 )
 from test.typinganndata import (
@@ -5097,12 +5097,14 @@ class GenericTests(BaseTestCase):
         self.assertEqual(MM2.__bases__, (collections.abc.MutableMapping, Generic))
 
     @cpython_only
-    @run_with_limited_c_stack()
+    @run_with_limited_c_stack(500_000)
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_parameters_deep_recursion(self):
+        # _Py_make_parameters() has small C frames (48 bytes per level
+        # on 32-bit ARM), so 150_000 levels can fit in the limited C stack.
         x = [0]
-        for _ in range(exceeds_recursion_limit()):
+        for _ in range(500_000):
             x = [x]
         with self.assertRaisesRegex(RecursionError, "in __parameter__ calculation"):
             list[x].__parameters__
