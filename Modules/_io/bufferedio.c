@@ -2315,8 +2315,9 @@ static int
 bufferedrwpair_clear(PyObject *op)
 {
     rwpair *self = rwpair_CAST(op);
-    Py_CLEAR(self->reader);
+    /* Let the writer flush before the reader closes a shared raw stream. */
     Py_CLEAR(self->writer);
+    Py_CLEAR(self->reader);
     Py_CLEAR(self->dict);
     return 0;
 }
