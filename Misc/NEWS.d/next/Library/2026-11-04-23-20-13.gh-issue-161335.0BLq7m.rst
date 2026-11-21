@@ -1,0 +1,3 @@
+Speed up :mod:`re` matching of patterns that contain runs of literal
+characters, by matching consecutive literal characters in a single step of
+the regular expression engine.
