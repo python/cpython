@@ -91,6 +91,10 @@ class StackEffectTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0), 0)
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=True), 0)
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
+        END_AWAITED_CALL = dis.opmap['END_AWAITED_CALL']
+        self.assertEqual(stack_effect(END_AWAITED_CALL, 0), 1)
+        self.assertEqual(stack_effect(END_AWAITED_CALL, 0, jump=True), 1)
+        self.assertEqual(stack_effect(END_AWAITED_CALL, 0, jump=False), -1)
         # All defined opcodes
         has_arg = dis.hasarg
         has_exc = dis.hasexc

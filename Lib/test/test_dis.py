@@ -608,12 +608,17 @@ dis_asyncwith = """\
         L1:     RESUME                   0
 
 %4d            LOAD_FAST                0 (c)
+                PUSH_NULL
+                SWAP                     2
                 COPY                     1
                 LOAD_SPECIAL             3 (__aexit__)
                 SWAP                     2
                 SWAP                     3
+                PUSH_NULL
+                SWAP                     2
                 LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0
+                END_AWAITED_CALL         3 (to L3)
                 GET_AWAITABLE            1
         L2:     SEND                     4 (to L5)
         L3:     YIELD_VALUE              1
@@ -629,6 +634,7 @@ dis_asyncwith = """\
                 LOAD_COMMON_CONSTANT     7 (None)
                 LOAD_COMMON_CONSTANT     7 (None)
                 CALL                     3
+                END_AWAITED_CALL         3 (to L9)
                 GET_AWAITABLE            2
         L8:     SEND                     4 (to L11)
         L9:     YIELD_VALUE              1
@@ -643,7 +649,7 @@ dis_asyncwith = """\
                 RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-       L13:     JUMP_BACKWARD_NO_INTERRUPT 26 (to L5)
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 27 (to L5)
        L14:     CLEANUP_THROW
        L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
        L16:     PUSH_EXC_INFO
@@ -664,6 +670,7 @@ dis_asyncwith = """\
                 POP_TOP
                 POP_TOP
                 POP_TOP
+                POP_TOP
 
 %4d            LOAD_SMALL_INT           2
                 STORE_FAST               2 (y)
@@ -677,16 +684,16 @@ dis_asyncwith = """\
                 RERAISE                  1
 ExceptionTable:
   L1 to L3 -> L25 [0] lasti
-  L3 to L4 -> L12 [5]
+  L3 to L4 -> L12 [6]
   L4 to L6 -> L25 [0] lasti
-  L6 to L7 -> L16 [2] lasti
+  L6 to L7 -> L16 [3] lasti
   L7 to L9 -> L25 [0] lasti
   L9 to L10 -> L14 [3]
   L10 to L13 -> L25 [0] lasti
   L14 to L15 -> L25 [0] lasti
-  L16 to L18 -> L24 [4] lasti
-  L18 to L19 -> L20 [8]
-  L19 to L23 -> L24 [4] lasti
+  L16 to L18 -> L24 [5] lasti
+  L18 to L19 -> L20 [9]
+  L19 to L23 -> L24 [5] lasti
   L23 to L25 -> L25 [0] lasti
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
@@ -1307,6 +1314,23 @@ class DisTests(DisTestBase):
             self.fail("No END_ASYNC_FOR in disassembly of async for")
         self.assertNotIn("to", line)
         self.assertIn("from", line)
+
+    def test_awaited_call(self):
+
+        async def afunc():
+            await f(1)
+            await x
+
+        instrs = list(dis.get_instructions(afunc))
+        names = [i.opname for i in instrs]
+        start = names.index('END_AWAITED_CALL')
+        self.assertEqual(names[start - 2:start + 5], [
+            'LOAD_SMALL_INT', 'CALL', 'END_AWAITED_CALL', 'GET_AWAITABLE',
+            'SEND', 'YIELD_VALUE', 'RESUME'])
+        self.assertEqual(instrs[start].jump_target,
+                         instrs[start + 3].offset)
+        # Only `await <call>` gets END_AWAITED_CALL.
+        self.assertEqual(names.count('END_AWAITED_CALL'), 1)
 
 
     @staticmethod

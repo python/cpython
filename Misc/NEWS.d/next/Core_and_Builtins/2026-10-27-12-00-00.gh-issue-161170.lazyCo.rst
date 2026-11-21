@@ -1,0 +1,5 @@
+Make ``await`` of a coroutine that completes without suspending about twice as
+fast by running it without creating a coroutine object. This also applies to
+``async def`` :meth:`~object.__aenter__` and :meth:`~object.__aexit__` methods
+in :keyword:`async with`. Until such a coroutine
+first suspends, :attr:`frame.f_generator` is ``None``.

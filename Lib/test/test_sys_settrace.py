@@ -42,6 +42,9 @@ class asynctracecontext:
     async def __aexit__(self, *exc_info):
         self.output.append(-self.value)
 
+async def async_noop():
+    pass
+
 async def asynciter(iterable):
     """Convert an iterable to an asynchronous iterator."""
     for x in iterable:
@@ -2164,6 +2167,20 @@ class JumpTestCase(unittest.TestCase):
                 output.append(5)
             output.append(6)
         output.append(7)
+
+    @async_jump_test(3, 4, [1, 4])
+    async def test_jump_forwards_after_awaited_call(output):
+        output.append(1)
+        await async_noop()
+        output.append(3)
+        output.append(4)
+
+    @async_jump_test(4, 2, [1, 3, 3, 4])
+    async def test_jump_backwards_over_awaited_call(output):
+        output.append(1)
+        await async_noop()
+        output.append(3)
+        output.append(4)
 
     @async_jump_test(4, 5, [3, 5])
     @clean_asynciter

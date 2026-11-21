@@ -2005,10 +2005,9 @@ fail_post_args:
     return -1;
 }
 
-static void
-clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+static inline void
+clear_and_pop_thread_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
     assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
@@ -2017,6 +2016,35 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     _PyFrame_ClearExceptCode(frame);
     PyStackRef_CLEAR(frame->f_executable);
     _PyThreadState_PopFrame(tstate, frame);
+}
+
+static Py_NO_INLINE void
+clear_lazy_coro_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tstate->exc_info = exc_info->previous_item;
+    PyObject *exc_value = exc_info->exc_value;
+    _PyThreadState_PopFrame(tstate, (_PyInterpreterFrame *)exc_info);
+    frame->lazy_coro = 0;
+    _PyInterpreterFrame *caller = frame->previous;
+    assert(PyStackRef_IsNull(caller->stackpointer[-1]));
+    caller->stackpointer[-1] = PyStackRef_TagInt(0);
+    // Like clear_gen_frame(): a frame object that outlives the
+    // coroutine must not keep the caller's frame alive via f_back.
+    frame->previous = NULL;
+    clear_and_pop_thread_frame(tstate, frame);
+    Py_XDECREF(exc_value);
+}
+
+static void
+clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+        clear_lazy_coro_frame(tstate, frame);
+        return;
+    }
+    clear_and_pop_thread_frame(tstate, frame);
 }
 
 static void
@@ -3684,6 +3712,85 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
         PyStackRef_CLOSE(writeto[0]);
         *writeto = l_v == NULL ? PyStackRef_NULL : PyStackRef_FromPyObjectSteal(l_v);
     }
+}
+
+/* Suspend the lazy coroutine running in frame, leaving the frame and its
+ * exception state on the data stack for the caller's END_AWAITED_CALL. */
+_PyInterpreterFrame *
+_PyEval_SuspendLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tstate->exc_info = exc_info->previous_item;
+    exc_info->previous_item = NULL;
+    _Py_LeaveRecursiveCallPy(tstate);
+    _PyInterpreterFrame *caller = frame->previous;
+    _PyThreadState_UpdateLastProfiledFrame(tstate, frame, caller);
+    tstate->current_frame = caller;
+    frame->previous = NULL;
+    ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
+    assert(caller->return_offset == 0);
+    assert(PyStackRef_IsNull(caller->stackpointer[-1]));
+    caller->stackpointer[-1] = PyStackRef_Wrap(frame);
+    return caller;
+}
+
+PyGenObject *
+_PyEval_MaterializeLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(frame->previous == NULL);
+    const int item_slots = sizeof(_PyErr_StackItem) / sizeof(PyObject *);
+    _PyErr_StackItem *exc_info =
+        (_PyErr_StackItem *)(tstate->datastack_top - item_slots);
+    assert(exc_info->previous_item == NULL);
+    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
+           (PyObject **)exc_info);
+    PyGenObject *gen = (PyGenObject *)_PyCoro_MaterializeLazy(frame);
+    if (gen == NULL) {
+        return NULL;
+    }
+    gen->gi_exc_state.exc_value = exc_info->exc_value;
+    _PyThreadState_PopFrame(tstate, (_PyInterpreterFrame *)exc_info);
+    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+    _PyFrame_Copy(frame, gen_frame);
+    gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED_YIELD_FROM);
+    PyFrameObject *f = gen_frame->frame_obj;
+    if (f != NULL) {
+        Py_BEGIN_CRITICAL_SECTION(f);
+        f->f_frame = gen_frame;
+        Py_END_CRITICAL_SECTION();
+    }
+    _PyThreadState_PopFrame(tstate, frame);
+    return gen;
+}
+
+/* Resume the frame of a lazy coroutine that could not be materialized, raising
+ * the current exception at its suspension point, so its handlers run. */
+_PyInterpreterFrame *
+_PyEval_ThrowIntoLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                          _PyStackRef value)
+{
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(_PyErr_Occurred(tstate));
+    const int item_slots = sizeof(_PyErr_StackItem) / sizeof(PyObject *);
+    _PyErr_StackItem *exc_info =
+        (_PyErr_StackItem *)(tstate->datastack_top - item_slots);
+    exc_info->previous_item = tstate->exc_info;
+    tstate->exc_info = exc_info;
+    _PyInterpreterFrame *caller = tstate->current_frame;
+    assert(caller->return_offset == 0);
+    frame->previous = caller;
+    tstate->current_frame = frame;
+    int too_deep = _Py_EnterRecursivePy(tstate);
+    assert(!too_deep);
+    (void)too_deep;
+    // Stands in for the value sent on resumption, like gen_send_ex2().
+    _PyFrame_StackPush(frame, value);
+    return frame;
 }
 
 PyObject *
