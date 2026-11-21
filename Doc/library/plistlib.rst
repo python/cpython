@@ -40,7 +40,7 @@ or :class:`datetime.datetime` objects.
 .. versionchanged:: 3.9
    Old API removed.
 
-.. versionchanged:: 3.13
+.. versionchanged:: 3.16
    Support added for reading and writing :class:`UID` tokens in XML
    plists.
 
@@ -48,8 +48,6 @@ or :class:`datetime.datetime` objects.
 
    `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
-   `Property list <https://en.wikipedia.org/wiki/Property_list>`_
-      Wikipedia's description of the format and archivers.
 
 
 This module defines the following functions:
@@ -147,7 +145,10 @@ The following classes are available:
 .. class:: UID(data)
 
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
-   encoded data, which contains UID (see Swift foundation source).
+   encoded data, which contains UID (see PList manual).
+
+   In XML plists, a UID is written as a dictionary with a single
+   :data:`CFUID_KEY` key.
 
    .. attribute:: data
 
@@ -174,9 +175,10 @@ The following constants are available:
 
 .. data:: CFUID_KEY
 
-   The dictionary key used to represent a UID in XML-format plist files.
+   The dictionary key used to represent a :class:`UID` in XML-format plist
+   files.
 
-   .. versionadded :: 3.13
+   .. versionadded:: 3.16
 
 The module defines the following exceptions:
 

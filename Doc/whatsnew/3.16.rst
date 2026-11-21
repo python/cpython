@@ -618,6 +618,15 @@ pickle
   :class:`!WeakMethod` and :class:`!WeakSet` can now also be copied.
   (Contributed by Serhiy Storchaka in :gh:`74876`.)
 
+plistlib
+--------
+
+* :mod:`plistlib` now supports reading and writing :class:`plistlib.UID`
+  tokens in XML plists.  In XML, a UID is represented as a dictionary with a
+  single :data:`plistlib.CFUID_KEY` key, matching the format written by
+  Apple's ``NSKeyedArchiver``.
+  (Contributed by Mingye Wang in :gh:`83913`.)
+
 quopri
 ------
 

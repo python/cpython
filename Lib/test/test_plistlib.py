@@ -17,6 +17,7 @@ import zoneinfo
 from test import support
 from test.support import os_helper
 from io import BytesIO
+from xml.etree import ElementTree
 
 from plistlib import UID
 
@@ -613,6 +614,39 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=fmt)), dict_data)
 
+    def test_uid_xml_format(self):
+        # XML plists encode a UID as a dict with a single CFUID_KEY key.
+        data = plistlib.dumps({'uid': UID(42)}, fmt=plistlib.FMT_XML)
+        root = ElementTree.fromstring(data)
+        uid_dict = root.find('dict/dict')
+        self.assertIsNotNone(uid_dict)
+        self.assertEqual(uid_dict.find('key').text, plistlib.CFUID_KEY)
+        self.assertEqual(uid_dict.find('integer').text, '42')
+
+    def test_uid_xml_parse(self):
+        uid_xml = b'<dict><key>CF$UID</key><integer>1</integer></dict>'
+
+        def wrap(body):
+            return b'<plist version="1.0">' + body + b'</plist>'
+
+        self.assertEqual(plistlib.loads(wrap(uid_xml)), UID(1))
+        self.assertEqual(plistlib.loads(wrap(b'<array>' + uid_xml + b'</array>')),
+                         [UID(1)])
+        self.assertEqual(
+            plistlib.loads(wrap(b'<dict><key>a</key><dict><key>b</key>'
+                                + uid_xml + b'</dict></dict>')),
+            {'a': {'b': UID(1)}})
+        self.assertEqual(
+            plistlib.loads(wrap(b'<dict><key></key>' + uid_xml + b'</dict>')),
+            {'': UID(1)})
+        # Only dicts with a single integer CF$UID key are UIDs.
+        self.assertEqual(
+            plistlib.loads(wrap(b'<dict><key>CF$UID</key><integer>1</integer>'
+                                b'<key>x</key><true/></dict>')),
+            {'CF$UID': 1, 'x': True})
+        self.assertEqual(
+            plistlib.loads(wrap(b'<dict><key>CF$UID</key><true/></dict>')),
+            {'CF$UID': True})
 
     def test_uid_data(self):
         uid = UID(1)

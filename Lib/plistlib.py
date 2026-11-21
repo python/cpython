@@ -198,7 +198,8 @@ class _PlistParser:
         self.stack = []
         self.current_key = None
         self.root = None
-        self.previous_dict_key = None
+        # Key under which each dict was added to its parent.
+        self._dict_keys = []
         self._dict_type = dict_type
         self._aware_datetime = aware_datetime
 
@@ -256,7 +257,7 @@ class _PlistParser:
 
     def begin_dict(self, attrs):
         d = self._dict_type()
-        self.previous_dict_key = self.current_key
+        self._dict_keys.append(self.current_key)
         self.add_object(d)
         self.stack.append(d)
 
@@ -265,15 +266,16 @@ class _PlistParser:
             raise ValueError("missing value for key '%s' at line %d" %
                              (self.current_key,self.parser.CurrentLineNumber))
         d = self.stack.pop()
-        # Unmarshal CF$UID to UID and replace the dict node
-        if len(d) == 1 and CFUID_KEY in d and isinstance(d[CFUID_KEY], int):
+        key = self._dict_keys.pop()
+        # A dict with a single CF$UID key is how XML plists encode a UID.
+        if (len(d) == 1 and CFUID_KEY in d
+                and type(d[CFUID_KEY]) is int):
             uid = UID(d[CFUID_KEY])
-            if self.previous_dict_key:
-                self.stack[-1][self.previous_dict_key] = uid
-            elif not self.stack:
+            if not self.stack:
                 self.root = uid
+            elif isinstance(self.stack[-1], dict):
+                self.stack[-1][key] = uid
             else:
-                # self.stack[-1] can only be a list
                 self.stack[-1][-1] = uid
 
     def end_key(self):
@@ -405,7 +407,7 @@ class _PlistWriter(_DumbXMLWriter):
             self.write_array(value)
 
         elif isinstance(value, UID):
-            self.write_dict({"CF$UID": int(value.data)})
+            self.write_dict({CFUID_KEY: int(value.data)})
 
         else:
             raise TypeError("unsupported type: %s" % type(value))
