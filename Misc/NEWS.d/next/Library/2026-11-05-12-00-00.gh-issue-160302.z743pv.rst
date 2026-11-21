@@ -1,0 +1,5 @@
+The ``iso2022_*`` codecs no longer encode U+001B ESCAPE, and ``iso2022_kr``
+no longer encodes U+000E SHIFT OUT and U+000F SHIFT IN. Written as bare
+bytes, they start an escape or shift sequence, so decoders misread the
+result. Encoding them now raises :exc:`UnicodeEncodeError` or calls the
+error handler.
