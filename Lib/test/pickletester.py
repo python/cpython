@@ -1866,6 +1866,17 @@ class AbstractPicklingErrorTests:
         obj2, wr2 = pickle.loads(f.getvalue())
         self.assertIs(wr2(), obj2)
 
+    def test_proxy_without_strong_ref(self):
+        obj = Object()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, self.dumps,
+                                  copyreg.Proxy(obj), proto)
+                # Another Proxy is not a strong reference.
+                self.assertRaises(pickle.PicklingError, self.dumps,
+                                  [copyreg.Proxy(obj), copyreg.Proxy(obj)],
+                                  proto)
+
     def test_bad_reduce_result(self):
         obj = REX([print, ()])
         for proto in protocols:
@@ -3683,6 +3694,23 @@ class AbstractPickleTests:
                 self.assertIs(a, b)
                 support.gc_collect()
                 self.assertIsNone(a())
+
+    def test_proxy(self):
+        # A Proxy is unpickled as the wrapped object.
+        obj = Object()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                x, y = self.loads(self.dumps([obj, copyreg.Proxy(obj)], proto))
+                self.assertIs(type(x), Object)
+                self.assertIs(y, x)
+                # Identity holds regardless of pickling order.
+                x, y = self.loads(self.dumps([copyreg.Proxy(obj), obj], proto))
+                self.assertIs(type(x), Object)
+                self.assertIs(y, x)
+                # Objects which are not memoized need no strong reference.
+                x = self.loads(self.dumps([copyreg.Proxy(None),
+                                           copyreg.Proxy(42)], proto))
+                self.assertEqual(x, [None, 42])
 
     def test_newobj_overridden_new(self):
         # Test that Python class with C implemented __new__ is pickleable

@@ -4,7 +4,7 @@ This is only useful to add pickle support for extension types defined in
 C, not for instances of user-defined classes.
 """
 
-__all__ = ["pickle", "constructor",
+__all__ = ["pickle", "constructor", "Proxy",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
@@ -23,6 +23,36 @@ def constructor(object):
     if not callable(object):
         raise TypeError("constructors must be callable")
 
+class Proxy:
+    """Wrapper for an object that is pickled as a weak reference.
+
+    Pickling a Proxy pickles the wrapped object, which is unpickled in
+    its place.  Like the referent of a weak reference, the wrapped object
+    must also be strongly referenced elsewhere in the same pickle,
+    otherwise pickling fails.  This lets a reduction function pickle
+    objects that the reconstructed object will only refer to weakly.
+    """
+
+    __slots__ = ('obj',)
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __repr__(self):
+        return f'{self.__class__.__qualname__}({self.obj!r})'
+
+class _Reducer:
+    # An object that is pickled and copied as the result of a call:
+    # reduce is a (callable, args) pair returned from __reduce__().
+
+    __slots__ = ('_reduce',)
+
+    def __init__(self, reduce):
+        self._reduce = reduce
+
+    def __reduce__(self):
+        return self._reduce
+
 # Example: provide pickling support for complex numbers.
 
 def pickle_complex(c):
@@ -40,6 +70,21 @@ def pickle_super(obj):
     return super, (obj.__thisclass__, obj.__self__)
 
 pickle(super, pickle_super)
+
+from _weakref import ref as _ref
+
+# All dead weak references are interchangeable, so they are pickled as
+# references to this set.  It is unpickled as a new set which dies with
+# the unpickler's memo, and all dead references as the same reference.
+_dead_referent = set()
+
+def pickle_weakref(r):
+    obj = r()
+    if obj is None:
+        return _ref, (_dead_referent,)
+    return _ref, (Proxy(obj),)
+
+pickle(_ref, pickle_weakref)
 
 # Support for pickling new-style objects
 
