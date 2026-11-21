@@ -342,9 +342,11 @@ def unmatched(match):
     start, end = match.span(0)
     return match.string[:start]+match.string[end:]
 
-HEADER_TOKEN_RE =        re.compile(r"^\s*([^=\s;,]+)")
-HEADER_QUOTED_VALUE_RE = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
-HEADER_VALUE_RE =        re.compile(r"^\s*=\s*([^\s;,]*)")
+HEADER_TOKEN_RE =        re.compile(r"\s*([^=\s;,]+)")
+HEADER_QUOTED_VALUE_RE = re.compile(r"\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
+HEADER_VALUE_RE =        re.compile(r"\s*=\s*([^\s;,]*)")
+HEADER_COMMA_RE =        re.compile(r"\s*,")
+HEADER_JUNK_RE =         re.compile(r"[=\s;]*")
 HEADER_ESCAPE_RE = re.compile(r"\\(.)")
 def split_header_words(header_values):
     r"""Parse header values into a list of lists containing key,value pairs.
@@ -394,40 +396,40 @@ def split_header_words(header_values):
     assert not isinstance(header_values, str)
     result = []
     for text in header_values:
-        orig_text = text
         pairs = []
-        while text:
-            m = HEADER_TOKEN_RE.search(text)
+        pos = 0
+        while pos < len(text):
+            m = HEADER_TOKEN_RE.match(text, pos)
             if m:
-                text = unmatched(m)
+                pos = m.end()
                 name = m.group(1)
-                m = HEADER_QUOTED_VALUE_RE.search(text)
+                m = HEADER_QUOTED_VALUE_RE.match(text, pos)
                 if m:  # quoted value
-                    text = unmatched(m)
+                    pos = m.end()
                     value = m.group(1)
                     value = HEADER_ESCAPE_RE.sub(r"\1", value)
                 else:
-                    m = HEADER_VALUE_RE.search(text)
+                    m = HEADER_VALUE_RE.match(text, pos)
                     if m:  # unquoted value
-                        text = unmatched(m)
+                        pos = m.end()
                         value = m.group(1)
                         value = value.rstrip()
                     else:
                         # no value, a lone token
                         value = None
                 pairs.append((name, value))
-            elif text.lstrip().startswith(","):
+            elif m := HEADER_COMMA_RE.match(text, pos):
                 # concatenated headers, as per RFC 2616 section 4.2
-                text = text.lstrip()[1:]
+                pos = m.end()
                 if pairs: result.append(pairs)
                 pairs = []
             else:
                 # skip junk
-                non_junk, nr_junk_chars = re.subn(r"^[=\s;]*", "", text)
-                assert nr_junk_chars > 0, (
+                m = HEADER_JUNK_RE.match(text, pos)
+                assert m.end() > pos, (
                     "split_header_words bug: '%s', '%s', %s" %
-                    (orig_text, text, pairs))
-                text = non_junk
+                    (text, text[pos:], pairs))
+                pos = m.end()
         if pairs: result.append(pairs)
     return result
 
