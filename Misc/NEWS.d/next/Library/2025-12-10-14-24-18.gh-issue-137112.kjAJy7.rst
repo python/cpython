@@ -1,0 +1,3 @@
+Updated ``str()`` help text to show the default ``encoding`` and ``errors``
+values and to describe decoding input as a bytes-like object, matching the
+documentation signature.
