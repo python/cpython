@@ -1,2 +1,2 @@
-Apply the existing ``unicodectype.c`` optimization workaround to Windows
-ARM64 release builds using MSVC 14.52.
+Disable ``unicodectype.c`` optimization in regular Windows ARM64 Release
+builds due to a compiler bug in MSVC 14.50, 14.51, and 14.52.
