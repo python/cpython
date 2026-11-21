@@ -945,13 +945,8 @@ set_traverse(PyObject *self, visitproc visit, void *arg)
 /* Work to increase the bit dispersion for closely spaced hash values.
    This is important because some use cases have many combinations of a
    small number of elements with nearby hashes so that many distinct
-   combinations collapse to only a handful of distinct hash values. */
-
-static Py_uhash_t
-_shuffle_bits(Py_uhash_t h)
-{
-    return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
-}
+   combinations collapse to only a handful of distinct hash values.
+   See _PySet_ShuffleHashBits() in pycore_setobject.h. */
 
 /* Most of the constants in this hash algorithm are randomly chosen
    large primes with "interesting bit patterns" and that passed tests
@@ -984,15 +979,15 @@ frozenset_hash_impl(PyObject *self)
        entries on every iteration. */
 
     for (entry = so->table; entry <= &so->table[so->mask]; entry++)
-        hash ^= _shuffle_bits(entry->hash);
+        hash ^= _PySet_ShuffleHashBits(entry->hash);
 
     /* Remove the effect of an odd number of NULL entries */
     if ((so->mask + 1 - so->fill) & 1)
-        hash ^= _shuffle_bits(0);
+        hash ^= _PySet_ShuffleHashBits(0);
 
     /* Remove the effect of an odd number of dummy entries */
     if ((so->fill - so->used) & 1)
-        hash ^= _shuffle_bits(-1);
+        hash ^= _PySet_ShuffleHashBits(-1);
 
     /* Factor in the number of active entries */
     hash ^= ((Py_uhash_t)PySet_GET_SIZE(self) + 1) * 1927868237UL;
