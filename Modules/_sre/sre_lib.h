@@ -89,7 +89,7 @@ SRE(at)(SRE_STATE* state, const SRE_CHAR* ptr, SRE_CODE at)
 }
 
 LOCAL(int)
-SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
+SRE(charset_match)(const SRE_CODE* set, SRE_CODE ch, SRE_CODE category_ch)
 {
     /* check if character is a member of the given set */
 
@@ -109,8 +109,8 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             break;
 
         case SRE_OP_CATEGORY:
-            /* <CATEGORY> <code> */
-            if (sre_category(set[0], (int) ch))
+            /* <CATEGORY> <code>, matched against the original character */
+            if (sre_category(set[0], (int) category_ch))
                 return ok;
             set++;
             break;
@@ -173,6 +173,12 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             return 0;
         }
     }
+}
+
+LOCAL(int)
+SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
+{
+    return SRE(charset_match)(set, ch, ch);
 }
 
 /* Like SRE(charset), but matches both locale cases of ch against every set
@@ -878,8 +884,8 @@ dispatch:
         TARGET(SRE_OP_IN_IGNORE):
             TRACE(("|%p|%p|IN_IGNORE\n", pattern, ptr));
             if (ptr >= end
-                || !SRE(charset)(state, pattern+1,
-                                 (SRE_CODE)sre_lower_ascii(*ptr)))
+                || !SRE(charset_match)(pattern + 1,
+                                       sre_lower_ascii(*ptr), *ptr))
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
@@ -888,8 +894,8 @@ dispatch:
         TARGET(SRE_OP_IN_UNI_IGNORE):
             TRACE(("|%p|%p|IN_UNI_IGNORE\n", pattern, ptr));
             if (ptr >= end
-                || !SRE(charset)(state, pattern+1,
-                                 (SRE_CODE)sre_lower_unicode(*ptr)))
+                || !SRE(charset_match)(pattern + 1,
+                                       sre_lower_unicode(*ptr), *ptr))
                 RETURN_FAILURE;
             pattern += pattern[0];
             ptr++;
