@@ -69,7 +69,7 @@ def method_cache(method, cache_wrapper=None):
     as ``@property``, which changes the semantics of the function.
 
     See also
-    http://code.activestate.com/recipes/577452-a-memoize-decorator-for-instance-methods/
+    https://github.com/ActiveState/code/tree/master/recipes/Python/577452_memoize_decorator_instance/
     for another implementation and additional justification.
     """
     cache_wrapper = cache_wrapper or functools.lru_cache()

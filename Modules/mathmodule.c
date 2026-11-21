@@ -1349,7 +1349,7 @@ FUNC1D(tanpi, m_tanpi, 0,
       "expected a finite input not equal to a half-integer, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
-   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
+   <https://github.com/ActiveState/code/tree/master/recipes/Python/393090_Binary_floating_point_summatiaccurate_full/>,
    enhanced with the exact partials sum and roundoff from Mark
    Dickinson's post at <http://bugs.python.org/file10357/msum4.py>.
    See those links for more details, proofs and other references.

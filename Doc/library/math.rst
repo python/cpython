@@ -533,7 +533,7 @@ Summation and product functions
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
    recipes for accurate floating-point summation
-   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
+   <https://github.com/ActiveState/code/tree/master/recipes/Python/393090_Binary_floating_point_summatiaccurate_full/>`_\.
 
 
 .. function:: hypot(*coordinates)
