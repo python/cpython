@@ -114,9 +114,9 @@ import sys
 import functools
 import itertools
 lazy import warnings
-try:
-    import _wmi
-except ImportError:
+if sys.platform == 'win32':
+    lazy import _wmi
+else:
     _wmi = None
 
 ### Globals & Constants
@@ -331,8 +331,10 @@ def _syscmd_ver(system='', release='', version='',
 
 
 def _wmi_query(table, *keys):
-    global _wmi
-    if not _wmi:
+    try:
+        if _wmi is None:  # Also forces the deferred import.
+            raise OSError("not supported")
+    except ImportError:
         raise OSError("not supported")
     table = {
         "OS": "Win32_OperatingSystem",
@@ -344,7 +346,6 @@ def _wmi_query(table, *keys):
             table,
         )).split("\0")
     except OSError:
-        _wmi = None
         raise OSError("not supported")
     split_data = (i.partition("=") for i in data)
     dict_data = {i[0]: i[2] for i in split_data}
