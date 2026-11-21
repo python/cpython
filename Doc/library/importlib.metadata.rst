@@ -58,7 +58,9 @@ anywhere.
       for this module's classes and functions,
       as well as a `migration guide
       <https://importlib-metadata.readthedocs.io/en/latest/migration.html>`__
-      for existing users of ``pkg_resources``.
+      for existing users of ``pkg_resources``
+      and `Caveats <https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__
+      on supplying and consuming metadata objects across the two libraries.
 
 
 Overview
@@ -237,11 +239,11 @@ Distribution metadata
 
 .. class:: PackageMetadata
 
-   A concrete implementation of the
-   `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
+   A protocol describing the interface distribution metadata presents. The
+   :pypi:`importlib_metadata` backport presents the same protocol.
 
-   In addition to providing the defined protocol methods and attributes, subscripting
-   the instance is equivalent to calling the :meth:`!get` method.
+   In addition to the protocol methods and attributes, subscripting an
+   instance is equivalent to calling the :meth:`!get` method.
 
 Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 includes some metadata, which you can extract using the :func:`!metadata` function::
@@ -331,6 +333,12 @@ Distribution files
     A protocol representing a minimal subset of :class:`pathlib.Path` that allows to
     check if it ``exists()``, to traverse using ``joinpath()`` and ``parent``,
     and to retrieve data using ``read_text()`` and ``read_bytes()``.
+
+.. class:: IPackagePath
+
+    A protocol describing the interface a :class:`PackagePath` presents.
+
+    .. versionadded:: 3.16
 
 The :func:`!files` function takes a
 `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
@@ -544,6 +552,18 @@ The same applies for :func:`entry_points` and :func:`files`.
 
       A shortcut for ``distribution.locate_file(filename).read_text()``.
 
+.. class:: IDistribution
+
+   A protocol describing the interface a :class:`Distribution` presents.
+
+   A consumer that targets this protocol, rather than a concrete class, works
+   with distributions from either this module or the
+   :pypi:`importlib_metadata` backport, however they were supplied. See
+   `Caveats <https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__
+   in the backport's documentation.
+
+   .. versionadded:: 3.16
+
 .. _distribution-discovery:
 
 Distribution Discovery
@@ -735,3 +755,8 @@ packages served by the ``DatabaseImporter``, assuming that the
 The ``DatabaseDistribution`` may also provide other metadata files, like
 ``RECORD`` (required for :attr:`!Distribution.files`) or override the
 implementation of :attr:`!Distribution.files`. See the source for more inspiration.
+
+``DatabaseDistribution`` derives from :class:`Distribution` as defined here,
+which has consequences for consumers that use the :pypi:`importlib_metadata`
+backport instead of this module. See `Caveats
+<https://importlib-metadata.readthedocs.io/en/latest/caveats.html>`__ in the backport's documentation.
