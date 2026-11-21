@@ -1232,11 +1232,13 @@ class StressTest(unittest.TestCase):
         self.addCleanup(signal.signal, signum, old_handler)
 
     def wait_for_signals(self, sigs, expected_sigs, deadline):
-        # Wait for handlers to run and try to avoid timer coalescing on macOS.
+        # Wait for the handlers to run, so that pending signals are not
+        # coalesced.
         #
         # Signals normally arrive within microseconds, so poll with a short
-        # sleep rather than sleeping_retry() whose 10 ms minimum delay dominates
-        # the runtime.
+        # sleep rather than sleeping_retry() whose 10 ms minimum delay
+        # dominates the runtime (and is stretched by timer coalescing on
+        # macOS).
         while len(sigs) < expected_sigs and time.monotonic() < deadline:
             time.sleep(1e-5)
 
