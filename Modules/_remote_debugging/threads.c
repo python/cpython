@@ -36,6 +36,7 @@ enum {
 int
 iterate_threads(
     RemoteUnwinderObject *unwinder,
+    uintptr_t interpreter_addr,
     thread_processor_func processor,
     void *context
 ) {
@@ -46,7 +47,7 @@ iterate_threads(
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
-                unwinder->interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
+                interpreter_addr + (uintptr_t)unwinder->debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
     {
