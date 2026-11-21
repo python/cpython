@@ -40,6 +40,11 @@ class frame "PyFrameObject *" "&PyFrame_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d1dbf2e06cf351f]*/
 
+/*[clinic input]
+class FrameLocalsProxy "PyFrameLocalsProxyObject *" "&PyFrameLocalsProxy_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b877b1c7551e6925]*/
+
 
 // Returns new reference or NULL
 static PyObject *
@@ -452,36 +457,32 @@ framelocalsproxy_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+/*[clinic input]
+@vectorcall
+@classmethod
+FrameLocalsProxy.__new__ as framelocalsproxy_new
+    frame: object
+    /
+
+Create a write-through view of the locals dictionary for a frame.
+
+  frame
+    the frame object to wrap.
+[clinic start generated code]*/
+
 static PyObject *
-framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+framelocalsproxy_new_impl(PyTypeObject *type, PyObject *frame)
+/*[clinic end generated code: output=803b377132a928b9 input=5ab4ffd26ec8e290]*/
 {
-    if (PyTuple_GET_SIZE(args) != 1) {
-        PyErr_Format(PyExc_TypeError,
-                     "FrameLocalsProxy expected 1 argument, got %zd",
-                     PyTuple_GET_SIZE(args));
+    if (!PyFrame_Check(frame)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", frame);
         return NULL;
     }
-    PyObject *item = PyTuple_GET_ITEM(args, 0);
-
-    if (!PyFrame_Check(item)) {
-        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
-        return NULL;
-    }
-    PyFrameObject *frame = (PyFrameObject*)item;
-
-    if (kwds != NULL && PyDict_Size(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError,
-                        "FrameLocalsProxy takes no keyword arguments");
-        return 0;
-    }
-
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
-
+    self->frame = (PyFrameObject *)Py_NewRef(frame);
     return (PyObject *)self;
 }
 
@@ -988,15 +989,6 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {NULL, NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(framelocalsproxy_doc,
-"FrameLocalsProxy($frame)\n"
-"--\n"
-"\n"
-"Create a write-through view of the locals dictionary for a frame.\n"
-"\n"
-"  frame\n"
-"    the frame object to wrap.");
-
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "FrameLocalsProxy",
@@ -1017,7 +1009,8 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = framelocalsproxy_new,
     .tp_free = PyObject_GC_Del,
-    .tp_doc = framelocalsproxy_doc,
+    .tp_doc = framelocalsproxy_new__doc__,
+    .tp_vectorcall = framelocalsproxy_vectorcall,
 };
 
 PyObject *
