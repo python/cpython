@@ -5298,9 +5298,9 @@ version supported.  The higher the protocol used, the more recent the
 version of Python needed to read the pickle produced.
 
 The *file* argument must have a write() method that accepts a single
-bytes argument. It can thus be a file object opened for binary
-writing, an io.BytesIO instance, or any other custom object that meets
-this interface.
+bytes-like object argument. It can thus be a file object opened for
+binary writing, an io.BytesIO instance, or any other custom object that
+meets this interface.
 
 If *fix_imports* is True and protocol is less than 3, pickle will try
 to map the new Python 3 names to the old module names used in Python
@@ -5323,7 +5323,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=cddc50f66b770002]*/
+/*[clinic end generated code: output=0abedc50590d259b input=fe16061a9f3ae4c3]*/
 {
     BEGIN_USING_PICKLER(self, -1);
     /* In case of multiple __init__() calls, clear previous content. */
@@ -8230,9 +8230,9 @@ version supported.  The higher the protocol used, the more recent the
 version of Python needed to read the pickle produced.
 
 The *file* argument must have a write() method that accepts a single
-bytes argument.  It can thus be a file object opened for binary
-writing, an io.BytesIO instance, or any other custom object that meets
-this interface.
+bytes-like object argument.  It can thus be a file object opened for
+binary writing, an io.BytesIO instance, or any other custom object that
+meets this interface.
 
 If *fix_imports* is True and protocol is less than 3, pickle will try
 to map the new Python 3 names to the old module names used in Python
@@ -8248,7 +8248,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=b89ce8d0e911fd46]*/
+/*[clinic end generated code: output=706186dba996490c input=3172ad2215ef9472]*/
 {
     PickleState *state = _Pickle_GetState(module);
     PicklerObject *pickler = _Pickler_New(state);

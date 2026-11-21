@@ -449,9 +449,9 @@ class _Pickler:
         produced.
 
         The *file* argument must have a write() method that accepts a
-        single bytes argument. It can thus be a file object opened for
-        binary writing, an io.BytesIO instance, or any other custom
-        object that meets this interface.
+        single bytes-like object argument. It can thus be a file object
+        opened for binary writing, an io.BytesIO instance, or any other
+        custom object that meets this interface.
 
         If *fix_imports* is True and *protocol* is less than 3, pickle
         will try to map the new Python 3 names to the old module names

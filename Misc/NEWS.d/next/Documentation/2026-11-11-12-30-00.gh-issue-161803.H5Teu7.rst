@@ -1,0 +1,3 @@
+Clarify that the *file* argument of :class:`pickle.Pickler` and
+:func:`pickle.dump` must have a ``write()`` method accepting a
+:term:`bytes-like object`, not only :class:`bytes`.

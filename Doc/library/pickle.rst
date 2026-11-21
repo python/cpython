@@ -296,10 +296,19 @@ The :mod:`!pickle` module exports three classes, :class:`Pickler`,
    If not specified, the default is :data:`DEFAULT_PROTOCOL`.  If a negative
    number is specified, :data:`HIGHEST_PROTOCOL` is selected.
 
-   The *file* argument must have a write() method that accepts a single bytes
-   argument.  It can thus be an on-disk file opened for binary writing, an
-   :class:`io.BytesIO` instance, or any other custom object that meets this
-   interface.
+   The *file* argument must have a write() method that accepts a single
+   :term:`bytes-like object` argument.  It can thus be an on-disk file opened
+   for binary writing, an :class:`io.BytesIO` instance, or any other custom
+   object that meets this interface.
+
+   .. note::
+
+      Depending on the protocol and on the objects being pickled, *write()*
+      may be passed :class:`bytes`, :class:`bytearray`, :class:`memoryview`
+      or :class:`PickleBuffer` instances.  Not all of these support
+      :func:`len`, and for a non-byte-format buffer :func:`len` does not give
+      the size in bytes; use ``memoryview(data).nbytes`` if the number of
+      bytes is needed.
 
    If *fix_imports* is true and *protocol* is less than 3, pickle will try to
    map the new Python 3 names to the old module names used in Python 2, so

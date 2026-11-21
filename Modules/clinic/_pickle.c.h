@@ -108,9 +108,9 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "version of Python needed to read the pickle produced.\n"
 "\n"
 "The *file* argument must have a write() method that accepts a single\n"
-"bytes argument. It can thus be a file object opened for binary\n"
-"writing, an io.BytesIO instance, or any other custom object that meets\n"
-"this interface.\n"
+"bytes-like object argument. It can thus be a file object opened for\n"
+"binary writing, an io.BytesIO instance, or any other custom object that\n"
+"meets this interface.\n"
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
 "to map the new Python 3 names to the old module names used in Python\n"
@@ -583,9 +583,9 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "version of Python needed to read the pickle produced.\n"
 "\n"
 "The *file* argument must have a write() method that accepts a single\n"
-"bytes argument.  It can thus be a file object opened for binary\n"
-"writing, an io.BytesIO instance, or any other custom object that meets\n"
-"this interface.\n"
+"bytes-like object argument.  It can thus be a file object opened for\n"
+"binary writing, an io.BytesIO instance, or any other custom object that\n"
+"meets this interface.\n"
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
 "to map the new Python 3 names to the old module names used in Python\n"
@@ -1030,4 +1030,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=df810fb55415996f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de716c681a264068 input=a9049054013a1b77]*/
