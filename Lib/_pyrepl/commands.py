@@ -194,17 +194,20 @@ class yank(YankCommand):
         if not r.kill_ring:
             r.error("nothing to yank")
             return
+        start = r.pos
         r.insert(r.kill_ring[-1])
-
+        r.yank_span = (start, r.pos)
 
 class yank_pop(YankCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
         if not r.kill_ring:
+            r.yank_span = None
             r.error("nothing to yank")
             return
-        if not is_yank(r.last_command):
+        if not is_yank(r.last_command) or r.yank_span is None:
+            r.yank_span = None
             r.error("previous command was not a yank")
             return
         repl = len(r.kill_ring[-1])
@@ -213,6 +216,7 @@ class yank_pop(YankCommand):
         start = r.pos - repl
         b[r.pos - repl : r.pos] = t
         r.pos = r.pos - repl + len(t)
+        r.yank_span = (start, r.pos)
         r.invalidate_buffer(start)
 
 
