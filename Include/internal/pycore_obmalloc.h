@@ -263,7 +263,7 @@ typedef uint8_t pymem_block;
 /* Pool for small blocks. */
 struct pool_header {
     union { pymem_block *_padding;
-            uint count; } ref;          /* number of allocated blocks    */
+            uint count; } ref;          /* allocated or cached blocks    */
     pymem_block *freeblock;             /* pool's free list head         */
     struct pool_header *nextpool;       /* see "Pool table" for meaning  */
     struct pool_header *prevpool;       /* "                             */
@@ -353,13 +353,17 @@ used == partially used, neither empty nor full
     transition to the full state.  If all but one block is not currently
     allocated, a free can cause a transition to the empty state.
 
-full == all the pool's blocks are currently allocated
+full == all the pool's blocks are allocated or reserved for the block cache
     On transition to full, a pool is unlinked from its usedpools[] list.
-    It's not linked to from anything then anymore, and its nextpool and
-    prevpool members are meaningless until it transitions back to used.
-    A free of a block in a full pool puts the pool back in the used state.
-    Then it's linked in at the front of the appropriate usedpools[] list, so
-    that the next allocation for its size class will reuse the freed block.
+    Its nextpool and prevpool members are meaningless until it transitions
+    back to used.  A free can reserve one block in block_cache for its size
+    class, keeping the pool full and its ref.count unchanged.  Allocation
+    consumes this cached block before consulting usedpools.
+    A second free from that pool, or clearing the cache, returns the cached
+    block to the pool's free list and links the pool at the front of usedpools.
+    If another pool owns the cache slot, a free transitions this pool directly
+    to used.  A cached pool always has live blocks, since every pool holds
+    at least two blocks.
 
 empty == all the pool's blocks are currently available for allocation
     On transition to empty, a pool is unlinked from its usedpools[] list,
@@ -375,8 +379,9 @@ Block Management
 
 Blocks within pools are again carved out as needed.  pool->freeblock points to
 the start of a singly-linked list of free blocks within the pool.  When a
-block is freed, it's inserted at the front of its pool's freeblock list.  Note
-that the available blocks in a pool are *not* linked all together when a pool
+block is freed, it's cached as described above or inserted at the front of
+its pool's freeblock list.  Note that the available blocks in a pool are *not*
+linked all together when a pool
 is initialized.  Instead only "the first two" (lowest addresses) blocks are
 set up, returning the first such block, and setting pool->freeblock to a
 one-block list holding the second such block.  This is consistent with that
@@ -685,6 +690,11 @@ struct _obmalloc_global_state {
 };
 
 struct _obmalloc_state {
+    /* One block from a full pool per size class.  The cached block remains
+     * included in pool->ref.count, so a hit avoids count and list updates.
+     * Every pool holds more than one block: the cache cannot retain an
+     * otherwise empty pool. */
+    pymem_block *block_cache[NB_SMALL_SIZE_CLASSES];
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
 #if WITH_PYMALLOC_RADIX_TREE
@@ -712,6 +722,7 @@ extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
     _Py_GetGlobalAllocatedBlocks()
 extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
 extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
+extern void _PyMem_ClearBlockCaches(PyInterpreterState *);
 extern int _PyMem_init_obmalloc(PyInterpreterState *interp);
 extern bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp);
 
