@@ -782,6 +782,23 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                         'embedded null character'):
                 struct.calcsize(s)
 
+    def test_non_ascii_bytes_format(self):
+        calls = (
+            (struct.Struct, ()),
+            (struct.calcsize, ()),
+            (struct.pack, ()),
+            (struct.pack_into, (bytearray(), 0)),
+            (struct.unpack, (b'',)),
+            (struct.unpack_from, (b'',)),
+            (struct.iter_unpack, (b'',)),
+        )
+        for format in (b'\xc5', b'<\xc5'):
+            for func, args in calls:
+                with self.subTest(format=format, func=func):
+                    with self.assertRaisesRegex(struct.error,
+                                                'bad char in struct format'):
+                        func(format, *args)
+
     @support.cpython_only
     def test_issue98248(self):
         def test_error_msg(prefix, int_type, is_unsigned):
