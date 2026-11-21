@@ -1,0 +1,2 @@
+Fix :class:`fileinput.FileInput` to pass ``errors`` to an open hook when no
+``encoding`` is specified.
