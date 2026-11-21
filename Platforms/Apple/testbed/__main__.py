@@ -241,7 +241,7 @@ def expand_template(location: Path, abiflags: str) -> None:
     replacement = abiflags.upper()
     for path in location.rglob("*"):
         if (
-            path.suffix in {".m", ".pbxproj", ".plist"}
+            path.suffix in {".m", ".pbxproj", ".plist", ".sh"}
             and path.is_file()
             and not path.is_symlink()
         ):
@@ -330,6 +330,7 @@ def clone_testbed(
         "__main__.py",
         "TestbedTests",
         "Testbed.lldbinit",
+        "prepare_python_code.sh",
         f"{platform}Testbed",
         f"{platform}Testbed.xcodeproj",
         f"{platform}Testbed.xctestplan",

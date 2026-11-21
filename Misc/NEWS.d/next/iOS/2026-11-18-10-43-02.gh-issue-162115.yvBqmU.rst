@@ -1,0 +1,4 @@
+The iOS build utility script now contains better support for integrating
+third-party code into a project's site-packages folder. The testbed has
+been modified to use this script, ensuring that sub-interpreters can find
+all installed third-party dependencies.
