@@ -8,8 +8,8 @@ import warnings
 from _ctypes import CTYPES_MAX_ARGCOUNT
 from ctypes import (CDLL, cdll, Structure, Union, CFUNCTYPE,
                     ArgumentError, POINTER, sizeof,
-                    c_byte, c_ubyte, c_char, c_char_p,
-                    c_short, c_ushort, c_int, c_uint,
+                    c_byte, c_ubyte, c_char, c_char_p, c_void_p,
+                    c_short, c_ushort, c_int, c_uint, c_size_t,
                     c_long, c_longlong, c_ulonglong, c_ulong,
                     c_float, c_double, c_longdouble, py_object)
 from ctypes.util import find_library, struct, wrap_dll_function
@@ -197,6 +197,81 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
         libc.qsort(array, len(array), sizeof(c_int), cmp_func)
         self.assertEqual(array[:], [1, 5, 7, 33, 99])
+
+    def test_mismatched_callback_prototype(self):
+        # gh-125788: CFUNCTYPE and WINFUNCTYPE prototypes are distinct
+        # classes that share one type name, so a mismatch used to raise
+        # "expected CFunctionType instance instead of CFunctionType".
+        # Reproducer from the issue: qsort's comparator prototype does
+        # not match the callback that is passed.  Where c_int is an alias
+        # of c_long, those two prototypes are the same object; a shorter
+        # argument list keeps them distinct.
+        def signature(proto):
+            return (f"(restype={proto._restype_!r}, "
+                    f"argtypes={proto._argtypes_!r})")
+
+        def message(expected, actual):
+            return (
+                f"expected {expected.__name__} instance with signature "
+                f"{signature(expected)} instead of "
+                f"{actual.__name__} instance with signature "
+                f"{signature(actual)}"
+            )
+
+        def cmp(*args):
+            return 0
+
+        cmp_int = CFUNCTYPE(c_int, c_void_p, c_void_p)
+        cmp_long = CFUNCTYPE(c_long, c_void_p, c_void_p)
+        if cmp_int is cmp_long:
+            cmp_long = CFUNCTYPE(c_long, c_void_p)
+
+        long_cb = cmp_long(cmp)
+        mismatch = message(cmp_int, cmp_long)
+        with self.assertRaises(TypeError) as cm:
+            cmp_int.from_param(long_cb)
+        self.assertEqual(str(cm.exception), mismatch)
+
+        # A matching callback is still accepted unchanged.
+        good = cmp_int(cmp)
+        self.assertIs(cmp_int.from_param(good), good)
+
+        # Values that are not callbacks keep the generic message.
+        with self.assertRaises(TypeError) as cm:
+            cmp_int.from_param(object())
+        self.assertEqual(str(cm.exception),
+                         "expected CFunctionType instance instead of object")
+
+        # Argument types differ, so each side of the message is checked
+        # independently of the result type.
+        cmp_chars = CFUNCTYPE(c_int, c_char_p)
+        with self.assertRaises(TypeError) as cm:
+            cmp_int.from_param(cmp_chars(cmp))
+        self.assertEqual(str(cm.exception), message(cmp_int, cmp_chars))
+
+        if hasattr(ctypes, 'WINFUNCTYPE'):
+            win_int = ctypes.WINFUNCTYPE(c_int, c_void_p, c_void_p)
+            win_long = ctypes.WINFUNCTYPE(c_long, c_void_p, c_void_p)
+            if win_int is win_long:
+                win_long = ctypes.WINFUNCTYPE(c_long, c_void_p)
+            with self.assertRaises(TypeError) as cm:
+                win_int.from_param(win_long(cmp))
+            self.assertEqual(str(cm.exception), message(win_int, win_long))
+
+        libc_path = find_library("c")
+        if not libc_path:
+            return
+        libc = CDLL(libc_path)
+        try:
+            qsort = libc.qsort
+        except (AttributeError, OSError, ValueError):
+            return
+        qsort.restype = None
+        qsort.argtypes = [c_void_p, c_size_t, c_size_t, cmp_int]
+        with self.assertRaises(ArgumentError) as cm:
+            qsort(None, 0, sizeof(c_int), long_cb)
+        self.assertEqual(str(cm.exception),
+                         f"argument 4: TypeError: {mismatch}")
 
     @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
                          'ctypes.WINFUNCTYPE is required')
