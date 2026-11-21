@@ -1,0 +1,4 @@
+:mod:`socketserver` servers no longer set ``SO_REUSEADDR`` when binding
+port 0, so another process cannot claim the port between ``bind()`` and
+``listen()``. This fixes :class:`http.server.HTTPServer` failing with
+``EADDRINUSE`` when started on port 0.
