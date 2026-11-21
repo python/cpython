@@ -2113,9 +2113,10 @@ def _find_incompatible_extension_module(module_name):
     if parent:
         traversable = importlib.resources.files(parent)
     else:
-        traversable = importlib.resources.readers.MultiplexedPath(
-            *map(pathlib.Path, filter(os.path.isdir, sys.path))
-        )
+        paths = list(map(pathlib.Path, filter(os.path.isdir, sys.path)))
+        if not paths:
+            return
+        traversable = importlib.resources.readers.MultiplexedPath(*paths)
 
     for entry in traversable.iterdir():
         if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
