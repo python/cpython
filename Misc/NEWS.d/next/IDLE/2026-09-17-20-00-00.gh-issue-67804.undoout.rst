@@ -1,0 +1,2 @@
+Undo in the IDLE Shell no longer deletes the output and the executed
+statement while the statement is running.
