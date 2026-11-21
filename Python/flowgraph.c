@@ -1278,6 +1278,28 @@ inline_small_or_no_lineno_blocks(basicblock *entryblock) {
     return changes;
 }
 
+/* Merge an exit block into its fallthrough predecessor when it is the sole
+ * predecessor (requires b_predecessors to be up to date).
+ */
+static int
+merge_single_predecessor_exit_blocks(basicblock *entryblock)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        cfg_instr *last = basicblock_last_instr(b);
+        basicblock *next = b->b_next;
+        if (last == NULL || next == NULL || is_jump(last) ||
+            !BB_HAS_FALLTHROUGH(b) || next->b_predecessors != 1 ||
+            !basicblock_exits_scope(next))
+        {
+            continue;
+        }
+        RETURN_IF_ERROR(basicblock_append_instructions(b, next));
+        next->b_iused = 0;
+        next->b_predecessors = 0;
+    }
+    return SUCCESS;
+}
+
 // Attempt to eliminate jumps to jumps by updating inst to jump to
 // target->i_target using the provided opcode. Return whether or not the
 // optimization was successful.
@@ -2677,6 +2699,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(check_cfg(g));
     RETURN_IF_ERROR(inline_small_or_no_lineno_blocks(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
+    RETURN_IF_ERROR(merge_single_predecessor_exit_blocks(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts, consts_index));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {

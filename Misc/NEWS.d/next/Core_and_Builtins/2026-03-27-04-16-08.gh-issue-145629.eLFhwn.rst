@@ -1,0 +1,1 @@
+Use ``LOAD_FAST_BORROW`` in both branches of a returned conditional expression by merging single-predecessor exit blocks in the CFG optimizer.
