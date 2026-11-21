@@ -2485,9 +2485,13 @@ bytearray_strip_impl_helper(PyByteArrayObject* self, PyObject* bytes, int stript
         } while (right >= left && memchr(bytesptr, (unsigned char)myptr[right], byteslen));
         right++;
     }
+
+
+    PyObject *res = PyByteArray_FromStringAndSize(myptr + left, right - left);
+
     if (bytes != Py_None)
         PyBuffer_Release(&vbytes);
-    return PyByteArray_FromStringAndSize(myptr + left, right - left);
+    return res;
 }
 
 /*[clinic input]
