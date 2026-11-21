@@ -917,6 +917,13 @@ If an error occurs during module loading (such as :exc:`ImportError` or
 :exc:`SyntaxError`), it is raised at the point where the lazy import is first
 used, not at the import statement itself.
 
+For ordinary packages, plain dotted lazy imports resolve the root first and
+then import each requested submodule through its declaring namespace's current
+:func:`__import__` hook. A shared package selects the declaration with matching
+builtins, or the first declaring namespace if none matches. Hooks that return
+objects outside :data:`sys.modules` retain full-path import behavior.
+Unresolved plain-import placeholders retain their declaring namespace.
+
 See :pep:`810` for the full specification of lazy imports.
 
 .. versionadded:: 3.15
