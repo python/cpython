@@ -1811,17 +1811,18 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
         ident = PyLong_FromVoidPtr(dct);
         if (ident == NULL)
             goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+        PyObject *existing = NULL;
+        int res = PyDict_SetDefaultRef(s->markers, ident, dct, &existing);
+        if (res < 0) {
             goto bail;
         }
-        if (PyDict_SetItem(s->markers, ident, dct)) {
+        Py_DECREF(existing);
+        if (res > 0) {
+            /* The key was already present: circular reference. */
+            PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
         }
     }
@@ -1931,17 +1932,18 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->markers != Py_None) {
-        int has_key;
         ident = PyLong_FromVoidPtr(seq);
         if (ident == NULL)
             goto bail;
-        has_key = PyDict_Contains(s->markers, ident);
-        if (has_key) {
-            if (has_key != -1)
-                PyErr_SetString(PyExc_ValueError, "Circular reference detected");
+        PyObject *existing = NULL;
+        int res = PyDict_SetDefaultRef(s->markers, ident, seq, &existing);
+        if (res < 0) {
             goto bail;
         }
-        if (PyDict_SetItem(s->markers, ident, seq)) {
+        Py_DECREF(existing);
+        if (res > 0) {
+            /* The key was already present: circular reference. */
+            PyErr_SetString(PyExc_ValueError, "Circular reference detected");
             goto bail;
         }
     }
