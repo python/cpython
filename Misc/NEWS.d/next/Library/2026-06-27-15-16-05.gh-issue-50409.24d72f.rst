@@ -1,0 +1,4 @@
+Many :mod:`tkinter` and :mod:`tkinter.ttk` methods that merely perform an
+action no longer return the empty string or empty tuple produced by the
+underlying Tcl command; they now return ``None``.  This also affects the
+setting form of several get/set methods (their querying form is unchanged).
