@@ -4,16 +4,24 @@ After tooltip.py, which uses ideas gleaned from PySol.
 Used by calltip.py.
 """
 from tkinter import Label, LEFT, SOLID, TclError
+from tkinter.scrolledtext import ScrolledText
 
 from idlelib.tooltip import TooltipBase
 
 HIDE_EVENT = "<<calltipwindow-hide>>"
-HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
+HIDE_SEQUENCES = ("<Key-Escape>",)
 CHECKHIDE_EVENT = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
 CHECKHIDE_TIME = 100  # milliseconds
 
 MARK_RIGHT = "calltipwindowregion_right"
+
+
+def _widget_size(widget):
+    widget.update()
+    width = widget.winfo_width()
+    height = widget.winfo_height()
+    return width, height
 
 
 class CalltipWindow(TooltipBase):
@@ -74,16 +82,31 @@ class CalltipWindow(TooltipBase):
             int, self.anchor_widget.index(parenleft).split("."))
 
         super().showtip()
+        self.tipwindow.wm_attributes("-topmost", 1)
 
         self._bind_events()
 
     def showcontents(self):
         """Create the call-tip widget."""
-        self.label = Label(self.tipwindow, text=self.text, justify=LEFT,
+        self.label = Label(self.tipwindow, text=self.text, font=self.anchor_widget['font'])
+        self.label.pack()
+        old_w, old_h = _widget_size(self.label)
+        self.label.forget()
+
+        self.label = ScrolledText(self.tipwindow, wrap="word",
                            background="#ffffd0", foreground="black",
                            relief=SOLID, borderwidth=1,
                            font=self.anchor_widget['font'])
+        self.label.insert("1.0", self.text)
+        self.label.config(state="disabled")
         self.label.pack()
+        new_w, new_h = _widget_size(self.label)
+
+        if self.label.yview()[1] == 1:  # already shown entire text
+            self.label.vbar.forget()
+
+        w, h = min(old_w, new_w), min(old_h, new_h)
+        self.tipwindow.geometry("%dx%d" % (w, h))
 
     def checkhide_event(self, event=None):
         """Handle CHECK_HIDE_EVENT: call hidetip or reschedule."""
@@ -156,6 +179,8 @@ class CalltipWindow(TooltipBase):
                                               self.hide_event)
         for seq in HIDE_SEQUENCES:
             self.anchor_widget.event_add(HIDE_EVENT, seq)
+        if self.tipwindow:
+            self.tipwindow.bind("<Key-Escape>", self.hide_event)
 
     def _unbind_events(self):
         """Unbind event handlers."""
