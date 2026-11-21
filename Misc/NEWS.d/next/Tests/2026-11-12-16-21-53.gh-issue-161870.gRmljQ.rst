@@ -1,0 +1,1 @@
+Skip test_build_details.test_platform when a 32-bit build runs on a machine whose kernel reports a different machine name.
