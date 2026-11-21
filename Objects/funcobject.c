@@ -1096,6 +1096,7 @@ static PyGetSetDef func_getsetlist[] = {
 */
 
 /*[clinic input]
+@vectorcall
 @classmethod
 function.__new__ as func_new
     code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
@@ -1118,7 +1119,7 @@ static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
               PyObject *name, PyObject *defaults, PyObject *closure,
               PyObject *kwdefaults)
-/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
+/*[clinic end generated code: output=de72f4c22ac57144 input=264767a5dc845c90]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
@@ -1326,6 +1327,7 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     func_new,                                   /* tp_new */
+    .tp_vectorcall = func_vectorcall,
 };
 
 
