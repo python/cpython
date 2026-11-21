@@ -1409,8 +1409,13 @@ encodings.
 | palmos             |         | Encoding of PalmOS 3.5.   |
 +--------------------+---------+---------------------------+
 | punycode           |         | Implement :rfc:`3492`.    |
-|                    |         | Stateful codecs are not   |
-|                    |         | supported.                |
+|                    |         | The incremental encoder   |
+|                    |         | and decoder buffer the    |
+|                    |         | input until the final     |
+|                    |         | call. Stream readers and  |
+|                    |         | writers, and text files   |
+|                    |         | opened for writing, are   |
+|                    |         | not supported.            |
 |                    |         |                           |
 |                    |         | .. warning::              |
 |                    |         |                           |

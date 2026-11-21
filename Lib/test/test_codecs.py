@@ -1358,7 +1358,7 @@ for i in punycode_testcases:
         print(repr(i))
 
 
-class PunycodeTest(unittest.TestCase):
+class PunycodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_encode(self):
         for uni, puny in punycode_testcases:
             # Need to convert both strings to lower case, since
@@ -1377,26 +1377,27 @@ class PunycodeTest(unittest.TestCase):
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
 
+    invalid_decode_testcases = [
+        (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"", 5, 6, "")),
+        (b"&egbpdaj6bu4bxfgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+        (b"egbpdaj6bu&4bx&fgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 10, 11, "")),
+        (b"egbpdaj6bu4bxfgehfvwxn&", "strict", UnicodeDecodeError("punycode", b"", 22, 23, "")),
+        (b"\xFFProprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 0, 1, "")),
+        (b"Pro\xFFprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 3, 4, "")),
+        (b"Proprost&nemluvesky-uyb24&dma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
+        (b"Proprostnemluvesky&-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 20, 21, "")),
+        (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
+        (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
+        (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
+        # A delimiter not preceded by any basic code point (RFC 3492, 6.2)
+        (b"-", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+        (b"-80a1acny", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+        (b"xn--w&", "ignore", "xn-"),
+        (b"-80a1acny", "ignore", ""),
+    ]
+
     def test_decode_invalid(self):
-        testcases = [
-            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"", 5, 6, "")),
-            (b"&egbpdaj6bu4bxfgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
-            (b"egbpdaj6bu&4bx&fgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 10, 11, "")),
-            (b"egbpdaj6bu4bxfgehfvwxn&", "strict", UnicodeDecodeError("punycode", b"", 22, 23, "")),
-            (b"\xFFProprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 0, 1, "")),
-            (b"Pro\xFFprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 3, 4, "")),
-            (b"Proprost&nemluvesky-uyb24&dma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
-            (b"Proprostnemluvesky&-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 20, 21, "")),
-            (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
-            (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
-            (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
-            # A delimiter not preceded by any basic code point (RFC 3492, 6.2)
-            (b"-", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
-            (b"-80a1acny", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
-            (b"xn--w&", "ignore", "xn-"),
-            (b"-80a1acny", "ignore", ""),
-        ]
-        for puny, errors, expected in testcases:
+        for puny, errors, expected in self.invalid_decode_testcases:
             with self.subTest(puny=puny, errors=errors):
                 if isinstance(expected, Exception):
                     with self.assertRaises(UnicodeDecodeError) as cm:
@@ -1408,6 +1409,58 @@ class PunycodeTest(unittest.TestCase):
                     self.assertEqual(exc.end, expected.end)
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
+
+    def test_incremental_encode(self):
+        for uni, puny in punycode_testcases:
+            with self.subTest(uni=uni):
+                expected = uni.encode("punycode")
+                encoder = codecs.getincrementalencoder("punycode")()
+                result = b"".join(encoder.encode(c) for c in uni)
+                result += encoder.encode("", True)
+                self.assertEqual(encoder.getstate(), 0)
+                self.assertEqual(result, expected)
+                self.assertEqual(
+                    b"".join(codecs.iterencode(uni, "punycode")), expected)
+
+    def test_incremental_decode(self):
+        for uni, puny in punycode_testcases:
+            with self.subTest(puny=puny):
+                chunks = [bytes([c]) for c in puny]
+                decoder = codecs.getincrementaldecoder("punycode")()
+                result = "".join(decoder.decode(c) for c in chunks)
+                result += decoder.decode(b"", True)
+                self.assertEqual(decoder.getstate(), (b"", 0))
+                self.assertEqual(result, uni)
+                self.assertEqual(
+                    "".join(codecs.iterdecode(chunks, "punycode")), uni)
+
+    def test_incremental_decode_invalid(self):
+        for puny, errors, expected in self.invalid_decode_testcases:
+            with self.subTest(puny=puny, errors=errors):
+                chunks = (bytes([c]) for c in puny)
+                if isinstance(expected, Exception):
+                    with self.assertRaises(UnicodeDecodeError) as cm:
+                        list(codecs.iterdecode(chunks, "punycode", errors))
+                    exc = cm.exception
+                    self.assertEqual(exc.encoding, expected.encoding)
+                    self.assertEqual(exc.object, puny)
+                    self.assertEqual(exc.start, expected.start)
+                    self.assertEqual(exc.end, expected.end)
+                else:
+                    self.assertEqual(
+                        "".join(codecs.iterdecode(chunks, "punycode", errors)),
+                        expected)
+
+        decoder = codecs.getincrementaldecoder("punycode")("surrogateescape")
+        with self.assertRaises(UnicodeError):
+            decoder.decode(b"abc")
+
+    def test_incremental_state(self):
+        for uni, puny in punycode_testcases:
+            with self.subTest(uni=uni):
+                self.check_state_handling_decode("punycode", uni, puny)
+                self.check_state_handling_encode(
+                    "punycode", uni, uni.encode("punycode"))
 
 
 utf_7_imap_testcases = [
@@ -2292,7 +2345,7 @@ if hasattr(codecs, "oem_encode"):
 # to work:
 #    "undefined"
 
-# The following encodings don't work in stateful mode
+# The following encodings don't work with stream readers and writers
 broken_unicode_with_stateful = [
     "punycode",
 ]
@@ -2335,88 +2388,86 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "encoding=%r" % encoding)
 
-            if encoding not in broken_unicode_with_stateful:
-                # check incremental decoder/encoder and iterencode()/iterdecode()
+            # check incremental decoder/encoder and iterencode()/iterdecode()
+            try:
+                encoder = codecs.getincrementalencoder(encoding)()
+            except LookupError:  # no IncrementalEncoder
+                pass
+            else:
+                # check incremental decoder/encoder
+                encodedresult = b""
+                for c in s:
+                    encodedresult += encoder.encode(c)
+                encodedresult += encoder.encode("", True)
+                decoder = codecs.getincrementaldecoder(encoding)()
+                decodedresult = ""
+                for c in encodedresult:
+                    decodedresult += decoder.decode(bytes([c]))
+                decodedresult += decoder.decode(b"", True)
+                self.assertEqual(decodedresult, s,
+                                 "encoding=%r" % encoding)
+
+                # check iterencode()/iterdecode()
+                result = "".join(codecs.iterdecode(
+                        codecs.iterencode(s, encoding), encoding))
+                self.assertEqual(result, s, "encoding=%r" % encoding)
+
+                # check iterencode()/iterdecode() with empty string
+                result = "".join(codecs.iterdecode(
+                        codecs.iterencode("", encoding), encoding))
+                self.assertEqual(result, "")
+
+            if encoding not in ("idna", "mbcs", "punycode"):
+                # check incremental decoder/encoder with errors argument
                 try:
-                    encoder = codecs.getincrementalencoder(encoding)()
+                    encoder = codecs.getincrementalencoder(encoding)("ignore")
                 except LookupError:  # no IncrementalEncoder
                     pass
                 else:
-                    # check incremental decoder/encoder
-                    encodedresult = b""
-                    for c in s:
-                        encodedresult += encoder.encode(c)
-                    encodedresult += encoder.encode("", True)
-                    decoder = codecs.getincrementaldecoder(encoding)()
-                    decodedresult = ""
-                    for c in encodedresult:
-                        decodedresult += decoder.decode(bytes([c]))
-                    decodedresult += decoder.decode(b"", True)
+                    encodedresult = b"".join(encoder.encode(c) for c in s)
+                    decoder = codecs.getincrementaldecoder(encoding)("ignore")
+                    decodedresult = "".join(decoder.decode(bytes([c]))
+                                            for c in encodedresult)
                     self.assertEqual(decodedresult, s,
                                      "encoding=%r" % encoding)
-
-                    # check iterencode()/iterdecode()
-                    result = "".join(codecs.iterdecode(
-                            codecs.iterencode(s, encoding), encoding))
-                    self.assertEqual(result, s, "encoding=%r" % encoding)
-
-                    # check iterencode()/iterdecode() with empty string
-                    result = "".join(codecs.iterdecode(
-                            codecs.iterencode("", encoding), encoding))
-                    self.assertEqual(result, "")
-
-                if encoding not in ("idna", "mbcs"):
-                    # check incremental decoder/encoder with errors argument
-                    try:
-                        encoder = codecs.getincrementalencoder(encoding)("ignore")
-                    except LookupError:  # no IncrementalEncoder
-                        pass
-                    else:
-                        encodedresult = b"".join(encoder.encode(c) for c in s)
-                        decoder = codecs.getincrementaldecoder(encoding)("ignore")
-                        decodedresult = "".join(decoder.decode(bytes([c]))
-                                                for c in encodedresult)
-                        self.assertEqual(decodedresult, s,
-                                         "encoding=%r" % encoding)
 
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_basics_capi(self):
         s = "abc123"  # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
-            if encoding not in broken_unicode_with_stateful:
-                # check incremental decoder/encoder (fetched via the C API)
+            # check incremental decoder/encoder (fetched via the C API)
+            try:
+                cencoder = _testlimitedcapi.codec_incrementalencoder(encoding)
+            except LookupError:  # no IncrementalEncoder
+                pass
+            else:
+                # check C API
+                encodedresult = b""
+                for c in s:
+                    encodedresult += cencoder.encode(c)
+                encodedresult += cencoder.encode("", True)
+                cdecoder = _testlimitedcapi.codec_incrementaldecoder(encoding)
+                decodedresult = ""
+                for c in encodedresult:
+                    decodedresult += cdecoder.decode(bytes([c]))
+                decodedresult += cdecoder.decode(b"", True)
+                self.assertEqual(decodedresult, s,
+                                 "encoding=%r" % encoding)
+
+            if encoding not in ("idna", "mbcs", "punycode"):
+                # check incremental decoder/encoder with errors argument
                 try:
-                    cencoder = _testlimitedcapi.codec_incrementalencoder(encoding)
+                    cencoder = _testlimitedcapi.codec_incrementalencoder(encoding, "ignore")
                 except LookupError:  # no IncrementalEncoder
                     pass
                 else:
-                    # check C API
-                    encodedresult = b""
-                    for c in s:
-                        encodedresult += cencoder.encode(c)
-                    encodedresult += cencoder.encode("", True)
-                    cdecoder = _testlimitedcapi.codec_incrementaldecoder(encoding)
-                    decodedresult = ""
-                    for c in encodedresult:
-                        decodedresult += cdecoder.decode(bytes([c]))
-                    decodedresult += cdecoder.decode(b"", True)
+                    encodedresult = b"".join(cencoder.encode(c) for c in s)
+                    cdecoder = _testlimitedcapi.codec_incrementaldecoder(encoding, "ignore")
+                    decodedresult = "".join(cdecoder.decode(bytes([c]))
+                                            for c in encodedresult)
                     self.assertEqual(decodedresult, s,
                                      "encoding=%r" % encoding)
-
-                if encoding not in ("idna", "mbcs"):
-                    # check incremental decoder/encoder with errors argument
-                    try:
-                        cencoder = _testlimitedcapi.codec_incrementalencoder(encoding, "ignore")
-                    except LookupError:  # no IncrementalEncoder
-                        pass
-                    else:
-                        encodedresult = b"".join(cencoder.encode(c) for c in s)
-                        cdecoder = _testlimitedcapi.codec_incrementaldecoder(encoding, "ignore")
-                        decodedresult = "".join(cdecoder.decode(bytes([c]))
-                                                for c in encodedresult)
-                        self.assertEqual(decodedresult, s,
-                                         "encoding=%r" % encoding)
 
     def test_seek(self):
         # all codecs should be able to encode these
@@ -2455,9 +2506,8 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
         # Check that getstate() and setstate() handle the state properly
         u = "abc123"
         for encoding in all_unicode_encodings:
-            if encoding not in broken_unicode_with_stateful:
-                self.check_state_handling_decode(encoding, u, u.encode(encoding))
-                self.check_state_handling_encode(encoding, u, u.encode(encoding))
+            self.check_state_handling_decode(encoding, u, u.encode(encoding))
+            self.check_state_handling_encode(encoding, u, u.encode(encoding))
 
 
 class CharmapTest(unittest.TestCase):
