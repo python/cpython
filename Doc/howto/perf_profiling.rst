@@ -30,7 +30,8 @@ relationship between this piece of code and the associated Python function using
     samply support on macOS is available starting from Python 3.15.
     Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
-    to see if your system is supported.
+    to see if your system is supported. Building the perf trampoline needs a
+    Python interpreter, found by ``configure`` as ``PYTHON_FOR_REGEN``.
 
 For example, consider the following script:
 
