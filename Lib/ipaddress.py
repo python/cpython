@@ -1538,6 +1538,9 @@ class IPv4Interface(IPv4Address):
     def ip(self):
         return IPv4Address(self._ip)
 
+    def _reverse_pointer(self):
+        return self.ip.reverse_pointer
+
     @property
     def with_prefixlen(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
@@ -2342,6 +2345,9 @@ class IPv6Interface(IPv6Address):
     @property
     def ip(self):
         return IPv6Address(self._ip)
+
+    def _reverse_pointer(self):
+        return self.ip.reverse_pointer
 
     @property
     def with_prefixlen(self):
