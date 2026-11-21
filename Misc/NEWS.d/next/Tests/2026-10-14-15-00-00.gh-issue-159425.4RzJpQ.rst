@@ -1,0 +1,2 @@
+Fix ``test_free_threading.test_zlib`` to accept intermediate compressed output,
+including when using the s390x hardware accelerator.

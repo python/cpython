@@ -15,22 +15,39 @@ NTHREADS = 10
 @threading_helper.requires_working_threading()
 class TestZlib(unittest.TestCase):
     def test_compressor(self):
-        comp = zlib.compressobj()
+        # Also exercise intermediate output with large uncompressed blocks.
+        for level, input_data in (
+            (zlib.Z_DEFAULT_COMPRESSION, HAMLET_SCENE),
+            (zlib.Z_NO_COMPRESSION, HAMLET_SCENE * 100),
+        ):
+            with self.subTest(level=level):
+                comp = zlib.compressobj(level)
+                compressed_parts = []
 
-        # First compress() outputs zlib header
-        header = comp.compress(HAMLET_SCENE)
-        self.assertGreater(len(header), 0)
+                def worker():
+                    compressed_parts.append(comp.compress(input_data))
 
-        def worker():
-            # it should return empty bytes as it buffers data internally
-            data = comp.compress(HAMLET_SCENE)
-            self.assertEqual(data, b"")
+                # Calls are serialized by the compressor, but threads may
+                # append their output in a different order. Use two threads
+                # so that both possible output orders can be checked.
+                nthreads = 2
+                run_concurrently(worker_func=worker, nthreads=nthreads)
+                self.assertEqual(len(compressed_parts), nthreads)
+                final_part = comp.flush()
+                expected_data = input_data * nthreads
 
-        run_concurrently(worker_func=worker, nthreads=NTHREADS - 1)
-        full_compressed = header + comp.flush()
-        decompressed = zlib.decompress(full_compressed)
-        # The decompressed data should be HAMLET_SCENE repeated NTHREADS times
-        self.assertEqual(decompressed, HAMLET_SCENE * NTHREADS)
+                for parts in itertools.permutations(compressed_parts):
+                    full_compressed = b"".join(parts) + final_part
+                    decomp = zlib.decompressobj()
+                    try:
+                        decompressed = decomp.decompress(full_compressed)
+                    except zlib.error:
+                        continue
+                    if (decomp.eof and not decomp.unused_data
+                            and decompressed == expected_data):
+                        break
+                else:
+                    self.fail("No output order reproduces the input")
 
     def test_decompressor_concurrent_attribute_reads(self):
         input_data = HAMLET_SCENE * NTHREADS
