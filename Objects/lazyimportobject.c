@@ -567,7 +567,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     return lazy_import_resolve_impl(tstate, lazy_import, NULL);
 }
 
-// Resolve a pending child as an aliased import, preserving its declaration.
+// Resolve a pending child as an aliased import. The shared source can belong
+// to another namespace, so leave the declaration location unset.
 PyObject *
 _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
                         PyObject *name)
@@ -596,9 +597,6 @@ _PyLazyImport_LoadChild(PyThreadState *tstate, PyObject *declaration,
     if (lz == NULL) {
         return NULL;
     }
-    PyLazyImportObject *child = PyLazyImportObject_CAST(lz);
-    child->lz_code = (PyCodeObject *)Py_XNewRef(source->lz_code);
-    child->lz_instr_offset = source->lz_instr_offset;
     PyObject *result = _PyImport_LoadLazyImportTstate(tstate, lz);
     Py_DECREF(lz);
     if (result != NULL && PyModule_Check(result) &&

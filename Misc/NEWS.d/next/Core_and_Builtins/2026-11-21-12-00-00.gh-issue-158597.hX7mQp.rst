@@ -1,0 +1,3 @@
+Lazy imports no longer report a potentially incorrect declaration location
+when a package attribute triggers a submodule import. The traceback
+still shows the access and the import failure.
