@@ -1,0 +1,4 @@
+Fixed :meth:`multiprocessing.Queue.empty` to use semaphore-based size
+accounting on platforms that support ``sem_getvalue()``, making its behavior
+consistent with :meth:`multiprocessing.Queue.qsize` and
+:meth:`multiprocessing.Queue.full`.
