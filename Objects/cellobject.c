@@ -5,7 +5,14 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 
+#include "clinic/cellobject.c.h"
+
 #define _PyCell_CAST(op) _Py_CAST(PyCellObject*, (op))
+
+/*[clinic input]
+class cell "PyCellObject *" "&PyCell_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3d6baba8cf810af0]*/
 
 PyObject *
 PyCell_New(PyObject *obj)
@@ -21,35 +28,27 @@ PyCell_New(PyObject *obj)
     return (PyObject *)op;
 }
 
-PyDoc_STRVAR(cell_new_doc,
-"cell([contents])\n"
-"--\n"
-"\n"
-"Create a new cell object.\n"
-"\n"
-"  contents\n"
-"    the contents of the cell. If not specified, the cell will be empty,\n"
-"    and further attempts to access its cell_contents attribute will\n"
-"    raise a ValueError.");
+/*[clinic input]
+@vectorcall
+@classmethod
+cell.__new__ as cell_new
 
+    contents: object(c_default="NULL") = None
+    /
+
+Create a new cell object.
+
+  contents
+    the contents of the cell. If not specified, the cell will be empty,
+    and further attempts to access its cell_contents attribute will
+    raise a ValueError.
+[clinic start generated code]*/
 
 static PyObject *
-cell_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+cell_new_impl(PyTypeObject *type, PyObject *contents)
+/*[clinic end generated code: output=0b7db264f0621bb4 input=98ef2b18af28df93]*/
 {
-    PyObject *return_value = NULL;
-    PyObject *obj = NULL;
-
-    if (!_PyArg_NoKeywords("cell", kwargs)) {
-        goto exit;
-    }
-    /* min = 0: we allow the cell to be empty */
-    if (!PyArg_UnpackTuple(args, "cell", 0, 1, &obj)) {
-        goto exit;
-    }
-    return_value = PyCell_New(obj);
-
-exit:
-    return return_value;
+    return PyCell_New(contents);
 }
 
 PyObject *
@@ -190,7 +189,7 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    cell_new_doc,                               /* tp_doc */
+    cell_new__doc__,                            /* tp_doc */
     cell_traverse,                              /* tp_traverse */
     cell_clear,                                 /* tp_clear */
     cell_richcompare,                           /* tp_richcompare */
@@ -209,4 +208,5 @@ PyTypeObject PyCell_Type = {
     0,                                          /* tp_alloc */
     cell_new,                                   /* tp_new */
     0,                                          /* tp_free */
+    .tp_vectorcall = cell_vectorcall,
 };
