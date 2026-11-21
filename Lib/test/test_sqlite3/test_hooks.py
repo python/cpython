@@ -148,6 +148,251 @@ class CollationTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(str(cm.exception), 'no such collation sequence: mycoll')
 
 
+class CollationErrorTests(MemoryDatabaseMixin, unittest.TestCase):
+    # gh-161837: A collation callback cannot report an error to SQLite, so
+    # the exception stays set while SQLite continues the step. The module
+    # must propagate that exception, and it must not call other Python code
+    # while the exception is set.
+
+    # When the collation raises, it returns 0 ("equal"). Thus the comparison
+    # is true, and abs() of the smallest 64-bit integer makes the step fail.
+    step_fails = """
+        select case when y = 'q' collate mycoll then abs(x) else 0 end
+        from t order by rowid
+        """
+    step_succeeds = "select x, y = 'q' collate mycoll from t order by rowid"
+
+    def setUp(self):
+        super().setUp()
+        self.events = []
+        self.setUp_collation()
+        self.con.execute("create table t(x, y)")
+        self.con.executemany("insert into t values (?, ?)",
+                             [(1, "a"), (-2**63, "boom")])
+
+    def setUp_collation(self):
+        def mycoll(x, y):
+            if "boom" in (x, y):
+                self.events.append("collation raised")
+                raise KeyError("collation raised")
+            return (x > y) - (x < y)
+        self.con.create_collation("mycoll", mycoll)
+
+    def assertCollationRaises(self):
+        return self.assertRaisesRegex(KeyError, "collation raised")
+
+    def events_after_exception(self):
+        return self.events[self.events.index("collation raised") + 1:]
+
+    def test_execute(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql), self.assertCollationRaises():
+                self.con.execute(sql + " desc")
+
+    def test_fetchone(self):
+        # The cursor reads one row ahead, so the first fetch steps to the
+        # row that makes the collation raise.
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                cur = self.con.execute(sql)
+                with self.assertCollationRaises():
+                    cur.fetchone()
+                self.assertIsNone(cur.fetchone())
+                self.assertEqual(cur.execute("select 1").fetchone(), (1,))
+
+    def test_iteration(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                rows = []
+                with self.assertCollationRaises():
+                    for row in self.con.execute(sql):
+                        rows.append(row)
+                self.assertEqual(rows, [])
+
+    def test_executemany(self):
+        def params():
+            yield ("boom",)
+            self.fail("executemany() continued after the exception")
+        with self.assertCollationRaises():
+            self.con.executemany(
+                "insert into t(y) values (? = 'q' collate mycoll)", params())
+
+    def test_executescript(self):
+        for sql in self.step_fails, self.step_succeeds:
+            with self.subTest(sql=sql):
+                with self.assertCollationRaises():
+                    self.con.executescript(sql + "; create table u(x)")
+                # The script stops after the statement with the exception.
+                with self.assertRaisesRegex(sqlite.OperationalError,
+                                            "no such table"):
+                    self.con.execute("select * from u")
+
+    def test_converter_not_called(self):
+        calls = []
+        sqlite.register_converter("COLLTEST", calls.append)
+        self.addCleanup(sqlite.converters.pop, "COLLTEST", None)
+        with memory_database(detect_types=sqlite.PARSE_COLNAMES) as con:
+            con.create_collation("mycoll", lambda x, y: 1 / 0)
+            with self.assertRaises(ZeroDivisionError):
+                con.execute("""
+                    select 'a' = 'b' collate mycoll as "x [colltest]"
+                    """)
+        self.assertEqual(calls, [])
+
+    def test_function_not_called(self):
+        def f(value):
+            self.events.append("function")
+        self.con.create_function("f", 1, f)
+        with self.assertCollationRaises():
+            self.con.execute("select f(y = 'q' collate mycoll) from t "
+                             "order by rowid desc")
+        self.assertEqual(self.events, ["collation raised"])
+
+    def test_aggregate_step_not_called(self):
+        events = self.events
+        class Agg:
+            def step(self, value):
+                events.append("step")
+            def finalize(self):
+                events.append("finalize")
+        self.con.create_aggregate("agg", 1, Agg)
+        with self.assertCollationRaises():
+            self.con.execute("select agg(y = 'q' collate mycoll) from t")
+        # SQLite calls finalize() to release the aggregate.
+        self.assertEqual(self.events_after_exception(), ["finalize"])
+
+    @with_tracebacks(ZeroDivisionError)
+    def test_aggregate_finalize_error(self):
+        class Agg:
+            def step(self, value):
+                pass
+            def finalize(self):
+                1 / 0
+        self.con.create_aggregate("agg", 1, Agg)
+        with self.assertCollationRaises():
+            self.con.execute("select agg(y = 'q' collate mycoll) from t")
+
+    def test_window_function_value_not_called(self):
+        events = self.events
+        class Window:
+            def step(self, value):
+                events.append("step")
+            def inverse(self, value):
+                events.append("inverse")
+            def value(self):
+                events.append("value")
+                return 0
+            def finalize(self):
+                return 0
+        self.con.create_window_function("win", 1, Window)
+        # For this query, SQLite evaluates the filter for all rows before it
+        # calls the window function. The filter is false for the first row,
+        # so the first call after the exception is value(), before step().
+        with self.assertCollationRaises():
+            self.con.execute("""
+                select win(x) filter (where y = 'q' collate mycoll)
+                over (order by rowid) from t
+                """)
+        self.assertEqual(self.events_after_exception(), [])
+
+    def test_window_function_inverse_not_called(self):
+        events = self.events
+        class Window:
+            def step(self, value):
+                events.append("step")
+            def inverse(self, value):
+                events.append("inverse")
+            def value(self):
+                events.append("value")
+                return 0
+            def finalize(self):
+                return 0
+        self.con.create_window_function("win", 1, Window)
+        self.con.executemany("insert into t values (?, ?)",
+                             [(3, "c"), (4, "d")])
+        self.con.execute("create table u(w, y)")
+        # SQLite uses the collation when it adds a row to the index. For the
+        # next row, the first call is inverse().
+        self.con.execute("create index u_y on u(y collate mycoll)")
+        with self.assertCollationRaises():
+            self.con.execute("""
+                insert into u
+                select win(x) over (order by rowid
+                                    rows between 1 preceding and current row),
+                       y
+                from t order by rowid
+                """)
+        self.assertEqual(self.events_after_exception(), [])
+
+    def test_authorizer_not_called(self):
+        def authorizer(action, *args):
+            self.events.append(action)
+            return sqlite.SQLITE_OK
+        sql = """
+            select t.x, p.name from t join pragma_table_info('t') p
+            where t.y = 'q' collate mycoll
+            """
+        self.con.executemany("insert into t values (?, ?)", [(3, "c")])
+        self.con.set_authorizer(authorizer)
+        # Control: if the comparison is true, SQLite prepares a statement for
+        # pragma_table_info() during the step, and it calls the authorizer.
+        self.con.create_collation("mycoll", lambda x, y: 0)
+        self.con.execute(sql).fetchall()
+        self.assertIn(sqlite.SQLITE_PRAGMA, self.events)
+        self.events.clear()
+        self.setUp_collation()
+        with self.assertCollationRaises():
+            self.con.execute(sql)
+        self.con.set_authorizer(None)
+        self.assertEqual(self.events_after_exception(), [])
+
+    def test_prepare(self):
+        # With STAT4, the query planner calls the collation when SQLite
+        # prepares the statement.
+        options = [o for (o,) in self.con.execute("pragma compile_options")]
+        if "ENABLE_STAT4" not in options:
+            self.skipTest("requires SQLite with SQLITE_ENABLE_STAT4")
+        fail = False
+        def statcoll(x, y):
+            if fail:
+                raise KeyError("collation raised")
+            return (x > y) - (x < y)
+        self.con.create_collation("statcoll", statcoll)
+        self.con.execute("create table s(v text collate statcoll)")
+        self.con.execute("create index s_v on s(v)")
+        self.con.executemany("insert into s values (?)",
+                             [(str(i % 7),) for i in range(200)])
+        self.con.execute("analyze")
+        fail = True
+        with self.assertCollationRaises():
+            self.con.execute("select * from s where v = '3'")
+
+    def test_progress_handler_not_called(self):
+        def progress():
+            self.events.append("progress")
+            return 0
+        self.con.set_progress_handler(progress, 1)
+        with self.assertCollationRaises():
+            self.con.execute(self.step_succeeds + " desc")
+        self.con.set_progress_handler(None, 1)
+        self.assertIn("progress", self.events)
+        self.assertEqual(self.events_after_exception(), [])
+
+    def test_trace_callback_not_called(self):
+        self.con.execute("create table u(x)")
+        # SQLite calls the trace callback again for each trigger program.
+        self.con.execute("create trigger u_tr after insert on u "
+                         "begin select 1; end")
+        traced = []
+        sql = ("insert into u select y = 'q' collate mycoll from t "
+               "order by rowid desc")
+        self.con.set_trace_callback(traced.append)
+        with self.assertCollationRaises():
+            self.con.execute(sql)
+        self.con.set_trace_callback(None)
+        self.assertEqual(traced, [sql])
+
+
 class AuthorizerTests(MemoryDatabaseMixin, unittest.TestCase):
 
     def assert_not_authorized(self, func, /, *args, **kwargs):
