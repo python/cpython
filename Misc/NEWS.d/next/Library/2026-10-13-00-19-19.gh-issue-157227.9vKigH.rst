@@ -1,0 +1,3 @@
+Fix crashes in the Tachyon sampling profiler when writing samples with
+invalid container types or tuple sizes. Patch by Maurycy
+Pawłowski-Wieroński.
