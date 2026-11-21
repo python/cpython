@@ -595,6 +595,38 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_allow_missing_not_a_directory(self):
+        # gh-135122: A file used as an intermediate directory is an error in
+        # ALLOW_MISSING mode, as on POSIX, not a missing path.
+        realpath = ntpath.realpath
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        ABSTFNb = os.fsencode(ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
+        os.mkdir(ABSTFN)
+        os.mkdir(ABSTFN + "\\dir")
+        open(ABSTFN + "\\file", "wb").close()
+
+        for path in (ABSTFN + "\\file\\file2",
+                     ABSTFN + "\\file\\file2\\file3",
+                     ABSTFNb + b"\\file\\file2",
+                     ABSTFNb + b"\\file\\file2\\file3"):
+            with self.subTest(path=path):
+                self.assertRaises(NotADirectoryError, realpath, path,
+                                  strict=ALLOW_MISSING)
+                self.assertRaises(FileNotFoundError, realpath, path,
+                                  strict=ALL_BUT_LAST)
+                self.assertRaises(FileNotFoundError, realpath, path,
+                                  strict=True)
+                self.assertPathEqual(realpath(path, strict=False), path)
+
+        # Missing paths under an existing directory are still allowed.
+        for path in (ABSTFN + "\\dir\\file2\\file3",
+                     ABSTFNb + b"\\dir\\file2\\file3",
+                     ABSTFN + "\\nonexistent\\file2"):
+            with self.subTest(path=path):
+                self.assertPathEqual(realpath(path, strict=ALLOW_MISSING), path)
+
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_invalid_paths(self):
         realpath = ntpath.realpath
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
@@ -1083,7 +1115,8 @@ class TestNtpath(NtpathTestCase):
         all_modes = [False, ALLOW_MISSING, ALL_BUT_LAST, True]
         check("file", all_modes, "/file")
         check("file/", all_modes, "/file")
-        check("file/file2", [False, ALLOW_MISSING], "/file/file2")
+        check("file/file2", [False], "/file/file2")
+        check("file/file2", [ALLOW_MISSING], NotADirectoryError)
         check("file/file2", [ALL_BUT_LAST, True], FileNotFoundError)
         check("file/.", all_modes, "/file")
         check("file/../link2", all_modes, "/dir")
@@ -1094,7 +1127,8 @@ class TestNtpath(NtpathTestCase):
 
         check("link", all_modes, "/file")
         check("link/", all_modes, "/file")
-        check("link/file2", [False, ALLOW_MISSING], "/file/file2")
+        check("link/file2", [False], "/file/file2")
+        check("link/file2", [ALLOW_MISSING], NotADirectoryError)
         check("link/file2", [ALL_BUT_LAST, True], FileNotFoundError)
         check("link/.", all_modes, "/file")
         check("link/../link", all_modes, "/file")

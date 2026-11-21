@@ -17,6 +17,7 @@ altsep = '/'
 defpath = '.;C:\\bin'
 devnull = 'nul'
 
+import errno
 import os
 import sys
 import genericpath
@@ -613,7 +614,7 @@ else:
                 break
         return path
 
-    def _getfinalpathname_nonstrict(path, ignored_error=OSError):
+    def _getfinalpathname_nonstrict(path, ignored_error=OSError, strict=False):
         # These error codes indicate that we should stop resolving the path
         # and return the value we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -650,8 +651,13 @@ else:
         tail = path[:0]
         while path:
             try:
-                path = _getfinalpathname(path)
-                return join(path, tail)
+                final_path = _getfinalpathname(path)
+                # gh-135122: Windows reports ERROR_PATH_NOT_FOUND when a
+                # non-final component is a file, as if it were missing.
+                if strict and tail and not isdir(final_path):
+                    raise NotADirectoryError(errno.ENOTDIR,
+                                             os.strerror(errno.ENOTDIR), path)
+                return join(final_path, tail)
             except ignored_error as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
@@ -735,7 +741,8 @@ else:
                     raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path,
-                                               ignored_error=ignored_error)
+                                               ignored_error=ignored_error,
+                                               strict=strict)
         # The path returned by _getfinalpathname will always start with \\?\ -
         # strip off that prefix unless it was already provided on the original
         # path.
