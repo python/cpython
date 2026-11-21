@@ -1,0 +1,1 @@
+Doc: Clarify inspect.getsource behavior regarding shared lines (GH-143299)
