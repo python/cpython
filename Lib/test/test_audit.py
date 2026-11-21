@@ -7,6 +7,7 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
@@ -51,6 +52,10 @@ class AuditTest(unittest.TestCase):
 
     def test_basic(self):
         self.do_test("test_basic")
+
+    @threading_helper.requires_working_threading()
+    def test_concurrent_add_hook(self):
+        self.do_test("test_concurrent_add_hook")
 
     def test_block_add_hook(self):
         self.do_test("test_block_add_hook")
