@@ -121,7 +121,7 @@ DECODER(euc_kr)
         if (c == EUCKR_JAMO_FIRSTBYTE &&
             INBYTE2 == EUCKR_JAMO_FILLER) {
             /* KS X 1001:1998 make-up sequence */
-            DBCHAR cho, jung, jong;
+            DBCHAR cho, jung, jong, code;
 
             REQUIRE_INBUF(8);
             if ((*inbuf)[2] != EUCKR_JAMO_FIRSTBYTE ||
@@ -149,7 +149,14 @@ DECODER(euc_kr)
             if (cho == NONE || jung == NONE || jong == NONE)
                 return 1;
 
-            OUTCHAR(0xac00 + cho*588 + jung*28 + jong);
+            decoded = 0xac00 + cho*588 + jung*28 + jong;
+            /* Reject syllables in KS X 1001; the encoder writes those as
+               2 bytes, so the sequence would not round-trip. */
+            if (!TRYMAP_ENC(cp949, code, decoded) || (code & 0x8000) == 0) {
+                return 8;
+            }
+
+            OUTCHAR(decoded);
             NEXT_IN(8);
         }
         else if (TRYMAP_DEC(ksx1001, decoded, c ^ 0x80, INBYTE2 ^ 0x80)) {
