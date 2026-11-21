@@ -80,6 +80,61 @@ PyObject_Length(PyObject *o)
 }
 #define PyObject_Length PyObject_Size
 
+static PyObject *
+object_length_from_special(PyObject *o)
+{
+    PyObject *meth = _PyObject_LookupSpecial(o, &_Py_ID(__len__));
+    if (meth == NULL) {
+        if (!PyErr_Occurred()) {
+            type_error("object of type '%.200s' has no len()", o);
+        }
+        return NULL;
+    }
+
+    PyObject *len = _PyObject_CallNoArgs(meth);
+    Py_DECREF(meth);
+    if (len == NULL) {
+        return NULL;
+    }
+
+    Py_SETREF(len, PyNumber_Index(len));
+    if (len == NULL) {
+        return NULL;
+    }
+
+    assert(PyLong_Check(len));
+    if (_PyLong_IsNegative((PyLongObject *)len)) {
+        Py_DECREF(len);
+        PyErr_SetString(PyExc_ValueError,
+                        "__len__() should return >= 0");
+        return NULL;
+    }
+    return len;
+}
+
+PyObject *
+_PyObject_LengthAsPyLong(PyObject *o)
+{
+    /* Heap types use the generic slot wrapper, which would discard a large
+       Python integer after calling __len__.  Call the special method directly
+       so it is evaluated exactly once. */
+    if (PyType_HasFeature(Py_TYPE(o), Py_TPFLAGS_HEAPTYPE)) {
+        return object_length_from_special(o);
+    }
+
+    Py_ssize_t res = PyObject_Size(o);
+    if (res >= 0) {
+        return PyLong_FromSsize_t(res);
+    }
+    assert(PyErr_Occurred());
+    if (!PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        return NULL;
+    }
+
+    PyErr_Clear();
+    return object_length_from_special(o);
+}
+
 int
 _PyObject_HasLen(PyObject *o) {
     return (Py_TYPE(o)->tp_as_sequence && Py_TYPE(o)->tp_as_sequence->sq_length) ||
