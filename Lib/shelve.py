@@ -176,9 +176,11 @@ class Shelf(collections.abc.MutableMapping):
     def sync(self):
         if self.writeback and self.cache:
             self.writeback = False
-            for key, entry in self.cache.items():
-                self[key] = entry
-            self.writeback = True
+            try:
+                for key, entry in self.cache.items():
+                    self[key] = entry
+            finally:
+                self.writeback = True
             self.cache = {}
         if hasattr(self.dict, 'sync'):
             self.dict.sync()

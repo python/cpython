@@ -1,0 +1,2 @@
+Fix :meth:`shelve.Shelf.sync` leaving *writeback* disabled when writing back
+a cached entry raises an exception. Patch by Christian Aurich Zanettini Martins.
