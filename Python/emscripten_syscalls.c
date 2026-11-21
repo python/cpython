@@ -54,6 +54,7 @@ __attribute__((constructor)) void __syscall_init_umask(void) {
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
+#ifdef __wasm_reference_types__
 EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
     if (!WebAssembly.promising) {
         // No stack switching support =(
@@ -80,6 +81,12 @@ EM_JS(void, _PyEmscripten_BeforeMain_js, (void), {
 })
 
 EM_JS_DEPS(_PyEmscripten_BeforeMain, "emscripten_exit_with_live_runtime");
+#else
+void
+_PyEmscripten_BeforeMain_js(void)
+{
+}
+#endif
 
 // Define FS.createAsyncInputDevice(), This is quite similar to
 // FS.createDevice() defined here:
@@ -138,6 +145,8 @@ __attribute__((constructor)) void __fs_init_async_input_device(void) {
     __fs_init_async_input_device_js();
 }
 
+// JSPI syscall wrappers require reference types even when unused at runtime.
+#ifdef __wasm_reference_types__
 #define IOVEC_T_BUF_OFFSET 0
 #define IOVEC_T_BUF_LEN_OFFSET 4
 #define IOVEC_T_SIZE 8
@@ -304,6 +313,7 @@ int __syscall_poll(intptr_t fds, int nfds, int timeout) {
     }
     return __block_for_int(p);
 }
+#endif  // __wasm_reference_types__
 
 #include <sys/ioctl.h>
 
