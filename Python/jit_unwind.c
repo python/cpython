@@ -31,6 +31,18 @@
  */
 void __register_frame(const void *);
 void __deregister_frame(const void *);
+
+#  if defined(__linux__) && defined(__clang__) && \
+        (__clang_major__ >= 22) && (__clang_major__ <= 23)
+#    define PY_JIT_GNU_BACKTRACE_REGISTER_FDE
+#  endif
+
+#  if defined(PY_JIT_GNU_BACKTRACE_REGISTER_FDE)
+typedef struct JitGnuBacktraceRegistration {
+    uint8_t *eh_frame;
+    const void *registered_frame;
+} JitGnuBacktraceRegistration;
+#  endif
 #endif
 #include <stdio.h>
 #include <string.h>
@@ -1008,6 +1020,50 @@ _PyJitUnwind_GdbUnregisterCode(void *handle)
 }
 
 #if defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
+#if defined(PY_JIT_GNU_BACKTRACE_REGISTER_FDE)
+static const void *
+gnu_backtrace_registration_frame(const uint8_t *eh_frame, size_t eh_frame_size)
+{
+    /*
+     * LLVM libunwind 22 and 23 implement __register_frame as a single-FDE
+     * registration API. The compiler-version check above is intentionally a
+     * narrow toolchain guard requested for those releases; it is not a
+     * general runtime unwinder capability probe.
+     */
+    uint32_t cie_length;
+    if (eh_frame == NULL || eh_frame_size < 2 * sizeof(uint32_t)) {
+        return NULL;
+    }
+    memcpy(&cie_length, eh_frame, sizeof(cie_length));
+    if (cie_length == 0 || cie_length == UINT32_MAX) {
+        return NULL;
+    }
+
+    size_t fde_offset = sizeof(uint32_t) + (size_t)cie_length;
+    if (fde_offset > eh_frame_size - 2 * sizeof(uint32_t)) {
+        return NULL;
+    }
+
+    uint32_t fde_length;
+    memcpy(&fde_length, eh_frame + fde_offset, sizeof(fde_length));
+    if (fde_length == 0 || fde_length == UINT32_MAX) {
+        return NULL;
+    }
+    if ((size_t)fde_length > eh_frame_size - fde_offset - sizeof(uint32_t)) {
+        return NULL;
+    }
+
+    uint32_t cie_pointer;
+    memcpy(&cie_pointer, eh_frame + fde_offset + sizeof(fde_length),
+           sizeof(cie_pointer));
+    if (cie_pointer == 0) {
+        return NULL;
+    }
+
+    return eh_frame + fde_offset;
+}
+#endif
+
 void *
 _PyJitUnwind_GnuBacktraceRegisterCode(const void *code_addr, size_t code_size)
 {
@@ -1044,8 +1100,29 @@ _PyJitUnwind_GnuBacktraceRegisterCode(const void *code_addr, size_t code_size)
         return NULL;
     }
 
+#if defined(PY_JIT_GNU_BACKTRACE_REGISTER_FDE)
+    const void *registered_frame = gnu_backtrace_registration_frame(
+        eh_frame, eh_frame_size);
+    if (registered_frame == NULL) {
+        PyMem_RawFree(eh_frame);
+        return NULL;
+    }
+
+    JitGnuBacktraceRegistration *registration =
+        PyMem_RawMalloc(sizeof(*registration));
+    if (registration == NULL) {
+        PyMem_RawFree(eh_frame);
+        return NULL;
+    }
+    registration->eh_frame = eh_frame;
+    registration->registered_frame = registered_frame;
+
+    __register_frame(registered_frame);
+    return registration;
+#else
     __register_frame(eh_frame);
     return eh_frame;
+#endif
 }
 
 void
@@ -1054,8 +1131,16 @@ _PyJitUnwind_GnuBacktraceUnregisterCode(void *handle)
     if (handle == NULL) {
         return;
     }
+#if defined(PY_JIT_GNU_BACKTRACE_REGISTER_FDE)
+    JitGnuBacktraceRegistration *registration =
+        (JitGnuBacktraceRegistration *)handle;
+    __deregister_frame(registration->registered_frame);
+    PyMem_RawFree(registration->eh_frame);
+    PyMem_RawFree(registration);
+#else
     __deregister_frame(handle);
     PyMem_RawFree(handle);
+#endif
 }
 #endif  // defined(PY_HAVE_JIT_GNU_BACKTRACE_UNWIND)
 
