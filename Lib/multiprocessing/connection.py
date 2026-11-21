@@ -286,13 +286,13 @@ if _winapi:
         _got_empty_message = False
 
         def __init__(self, handle, readable=True, writable=True):
-            super().__init__(handle, readable, writable)
             # Several threads may write to the same connection. Keep track of
             # all pending overlapped operations so that close() can cancel
             # them.
             self._send_ov = []
             self._send_ov_lock = threading.Lock()
             self._closing = False
+            super().__init__(handle, readable, writable)
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
             with self._send_ov_lock:
