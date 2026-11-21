@@ -1,7 +1,9 @@
 import importlib
 from importlib import abc
 from importlib import util
+import pathlib
 import sys
+import tempfile
 import time
 import threading
 import types
@@ -177,6 +179,69 @@ class LazyLoaderTests(unittest.TestCase):
 
             # Or multiple load attempts
             self.assertEqual(loader.load_count, 1)
+
+    @threading_helper.requires_working_threading()
+    def test_lazy_circular_import_no_deadlock(self):
+        # gh-161962: two threads first-touching two lazily loaded modules
+        # that import each other must not deadlock. The import system's
+        # module lock detects the deadlock and one thread proceeds with the
+        # partially initialized module, as with eager circular imports.
+        # The barrier makes the timing deterministic: both threads are
+        # inside a module load before either touches the other module.
+        sources = {
+            "sync": "import threading\nbarrier = threading.Barrier(2)\n",
+            "mod_a": (
+                "import sys, sync\n"
+                "A = 1\n"
+                "sync.barrier.wait()\n"
+                "FROM_B = sys.modules['mod_b'].B\n"
+            ),
+            "mod_b": (
+                "import sys, sync\n"
+                "B = 2\n"
+                "sync.barrier.wait()\n"
+                "FROM_A = sys.modules['mod_a'].A\n"
+            ),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            for name, source in sources.items():
+                pathlib.Path(directory, f"{name}.py").write_text(source)
+            sys.path.insert(0, directory)
+            try:
+                with test_util.uncache("sync", "mod_a", "mod_b"):
+                    mod_a = self._lazy_import("mod_a")
+                    mod_b = self._lazy_import("mod_b")
+                    results = {}
+                    threads = [
+                        threading.Thread(
+                            target=lambda i=i, f=f: results.__setitem__(i, f()),
+                            daemon=True,
+                        )
+                        for i, f in enumerate(
+                            [lambda: mod_a.FROM_B, lambda: mod_b.FROM_A]
+                        )
+                    ]
+                    for thread in threads:
+                        thread.start()
+                    for thread in threads:
+                        thread.join(timeout=10)
+                    self.assertFalse(
+                        any(thread.is_alive() for thread in threads),
+                        "threads deadlocked",
+                    )
+                    self.assertEqual(results, {0: 2, 1: 1})
+            finally:
+                sys.path.remove(directory)
+
+    def _lazy_import(self, name):
+        # The recipe from the importlib docs.
+        spec = util.find_spec(name)
+        loader = util.LazyLoader(spec.loader)
+        spec.loader = loader
+        module = util.module_from_spec(spec)
+        sys.modules[name] = module
+        loader.exec_module(module)
+        return module
 
     def test_lazy_self_referential_modules(self):
         # Directory modules with submodules that reference the parent can attempt to access
