@@ -669,6 +669,44 @@ class TestRawDataManager(TestEmailBase):
                 self.assertEqual(m.get_payload(decode=True), content)
                 self.assertEqual(m.get_content(), content)
 
+    def test_set_text_encoded_body_line_length(self):
+        content = "é" * 100 + "\n"
+        for cte in ('base64', 'quoted-printable'):
+            for max_line_length in (60, 78, 100):
+                with self.subTest(cte=cte,
+                                  max_line_length=max_line_length):
+                    m = self.message(policy=self.policy.clone(
+                        max_line_length=max_line_length))
+                    raw_data_manager.set_content(m, content, cte=cte)
+                    lines = m.get_payload().splitlines()
+                    self.assertTrue(lines)
+                    self.assertLessEqual(max(map(len, lines)),
+                                         min(max_line_length, 76))
+                    self.assertEqual(m.get_content(), content)
+
+    def test_set_bytes_base64_body_line_length(self):
+        data = b'\xff' * 150
+        for content in (data, bytearray(data), memoryview(data)):
+            for max_line_length in (60, 78, 100):
+                with self.subTest(content_type=type(content).__name__,
+                                  max_line_length=max_line_length):
+                    m = self.message(policy=self.policy.clone(
+                        max_line_length=max_line_length))
+                    raw_data_manager.set_content(
+                        m, content, 'application', 'octet-stream')
+                    lines = m.get_payload().splitlines()
+                    self.assertTrue(lines)
+                    self.assertLessEqual(max(map(len, lines)),
+                                         min(max_line_length, 76))
+                    self.assertEqual(m.get_payload(decode=True), data)
+
+        # A zero policy limit explicitly disables wrapping.
+        m = self.message(policy=self.policy.clone(max_line_length=0))
+        raw_data_manager.set_content(
+            m, data, 'application', 'octet-stream')
+        self.assertEqual(len(m.get_payload().splitlines()), 1)
+        self.assertEqual(m.get_payload(decode=True), data)
+
     def test_set_audio_aif_with_quoted_printable_cte(self):
         # Why you would use qp, I don't know, but it is technically supported.
         # XXX: the incorrect line length is because binascii.b2a_qp doesn't

@@ -1,0 +1,2 @@
+Fix :mod:`email` to limit base64 and quoted-printable encoded message body
+lines to 76 characters when the email policy allows longer header lines.
