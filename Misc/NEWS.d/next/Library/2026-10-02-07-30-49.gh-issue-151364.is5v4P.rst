@@ -1,0 +1,2 @@
+Fix data races on the file descriptor of :func:`select.kqueue` objects in
+the :term:`free-threaded build`. Based on a patch by Victor Stinner.
