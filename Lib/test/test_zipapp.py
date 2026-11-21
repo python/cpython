@@ -1,6 +1,7 @@
 """Test harness for the zipapp module."""
 
 import io
+import os
 import pathlib
 import stat
 import sys
@@ -169,6 +170,64 @@ class ZipAppTest(unittest.TestCase):
             for name in ('__main__.py', 'test.py'):
                 self.assertEqual(z.getinfo(name).compress_type,
                                  zipfile.ZIP_DEFLATED)
+
+    @requires_zlib()
+    def test_create_archive_with_compression_method(self):
+        # Test selecting the compression method by name.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').write_bytes(b'print("hello")' * 100)
+        for method, compress_type in [
+                ('store', zipfile.ZIP_STORED),
+                ('deflate', zipfile.ZIP_DEFLATED),
+        ]:
+            with self.subTest(method=method):
+                target = self.tmpdir / f'{method}.pyz'
+                zipapp.create_archive(source, target, compression=method)
+                with zipfile.ZipFile(target, 'r') as z:
+                    self.assertEqual(z.getinfo('test.py').compress_type,
+                                     compress_type)
+
+    @requires_zlib()
+    def test_create_archive_with_compression_level(self):
+        # Test that the compression level is passed to zipfile.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').write_bytes(b'abcd' * 25000)
+        sizes = {}
+        for level in (1, 9):
+            target = self.tmpdir / f'level{level}.pyz'
+            zipapp.create_archive(source, target, compression='deflate',
+                                  compresslevel=level)
+            sizes[level] = target.stat().st_size
+        self.assertLess(sizes[9], sizes[1])
+
+    def test_create_archive_with_strict_timestamps(self):
+        # Test passing the ZipFile timestamp option through.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        old_file = source / 'test.py'
+        old_file.touch()
+        os.utime(old_file, (0, 0))
+        target = self.tmpdir / 'source.pyz'
+        with self.assertRaises(ValueError):
+            zipapp.create_archive(source, target)
+        zipapp.create_archive(source, target, strict_timestamps=False)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(z.getinfo('test.py').date_time[:3], (1980, 1, 1))
+
+    def test_create_archive_with_unknown_compression(self):
+        # Test that an unknown compression method is rejected.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        target = self.tmpdir / 'source.pyz'
+        with self.assertRaisesRegex(zipapp.ZipAppError,
+                                    'Unsupported compression method'):
+            zipapp.create_archive(source, target, compression='brotli')
 
     def test_no_main(self):
         # Test that packing a directory with no __main__.py fails.
@@ -423,6 +482,20 @@ class ZipAppCmdlineTest(unittest.TestCase):
         zipapp.main(args)
         target = source.with_suffix('.pyz')
         self.assertTrue(target.is_file())
+
+    @requires_zlib()
+    def test_cmdline_compression(self):
+        # Test the compression command line options.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').write_bytes(b'abcd' * 25000)
+        target = self.tmpdir / 'source.pyz'
+        zipapp.main([str(source), '-o', str(target),
+                     '--compression', 'deflate', '--level', '9'])
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(z.getinfo('test.py').compress_type,
+                             zipfile.ZIP_DEFLATED)
 
     def test_cmdline_copy(self):
         # Test copying an archive.

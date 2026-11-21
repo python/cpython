@@ -88,6 +88,24 @@ The following options are understood:
 
    .. versionadded:: 3.7
 
+.. option:: --compression <method>
+
+   Compress files with the given method.  The supported methods are
+   ``store``, ``deflate``, ``bzip2``, ``lzma`` and ``zstd``.  This option
+   takes precedence over :option:`--compress`.
+
+   :option:`--compression` has no effect when copying an archive.
+
+   .. versionadded:: 3.16
+
+.. option:: -l <level>, --level=<level>
+
+   Set the compression level for :option:`--compress` or
+   :option:`--compression`.  The supported range depends on the compression
+   method.
+
+   .. versionadded:: 3.16
+
 .. option:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
@@ -107,7 +125,7 @@ Python API
 The module defines two convenience functions:
 
 
-.. function:: create_archive(source, target=None, interpreter=None, main=None, filter=None, compressed=False)
+.. function:: create_archive(source, target=None, interpreter=None, main=None, filter=None, compressed=False, compression=None, compresslevel=None)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -162,6 +180,16 @@ The module defines two convenience functions:
    with the deflate method; otherwise, files are stored uncompressed.
    This argument has no effect when copying an existing archive.
 
+   The optional *compression* argument selects the compression method by
+   name: one of ``'store'``, ``'deflate'``, ``'bzip2'``, ``'lzma'`` or
+   ``'zstd'``.  It takes precedence over *compressed*.  The optional
+   *compresslevel* argument sets the compression level for the selected
+   method.  Both arguments have no effect when copying an existing archive.
+
+   The *allowZip64* and *strict_timestamps* arguments are passed on to
+   :class:`zipfile.ZipFile`.  In particular, pass ``strict_timestamps=False``
+   to archive files with timestamps before 1980.
+
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
 
@@ -173,6 +201,10 @@ The module defines two convenience functions:
 
    .. versionchanged:: 3.7
       Added the *filter* and *compressed* parameters.
+
+   .. versionchanged:: 3.16
+      Added the *compression*, *compresslevel*, *allowZip64* and
+      *strict_timestamps* parameters.
 
 .. function:: get_interpreter(archive)
 

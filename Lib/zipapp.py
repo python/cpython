@@ -9,6 +9,17 @@ import zipfile
 __all__ = ['ZipAppError', 'create_archive', 'get_interpreter']
 
 
+# Maps the compression methods accepted by create_archive() and the command
+# line to the corresponding :mod:`zipfile` constants.
+_COMPRESS_METHODS = {
+    'store': zipfile.ZIP_STORED,
+    'deflate': zipfile.ZIP_DEFLATED,
+    'bzip2': zipfile.ZIP_BZIP2,
+    'lzma': zipfile.ZIP_LZMA,
+    'zstd': zipfile.ZIP_ZSTANDARD,
+}
+
+
 # The __main__.py used if the users specifies "-m module:fn".
 # Note that this will always be written as UTF-8 (module and
 # function names can be non-ASCII in Python 3).
@@ -74,7 +85,9 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False):
+                   filter=None, compressed=False, compression=None,
+                   compresslevel=None, allowZip64=True,
+                   strict_timestamps=True):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -92,6 +105,11 @@ def create_archive(source, target=None, interpreter=None, main=None,
     to specify MAIN for anything other than a directory source with no
     __main__.py, and it is an error to omit MAIN if the directory has no
     __main__.py.
+
+    The optional COMPRESSION argument selects the compression method, by
+    name (see _COMPRESS_METHODS).  The optional COMPRESSLEVEL argument sets
+    the compression level for the selected method.  The optional ALLOWZIP64
+    and STRICT_TIMESTAMPS arguments are passed on to zipfile.ZipFile.
     """
     # Are we copying an existing archive?
     source_is_file = False
@@ -158,11 +176,22 @@ def create_archive(source, target=None, interpreter=None, main=None,
         raise ZipAppError(
             f"The target archive {target} overwrites one of the source files.")
 
-    with _maybe_open(target, 'wb') as fd:
-        _write_file_prefix(fd, interpreter)
+    if compression is None:
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
-        with zipfile.ZipFile(fd, 'w', compression=compression) as z:
+    else:
+        try:
+            compression = _COMPRESS_METHODS[compression]
+        except KeyError:
+            raise ZipAppError(
+                f"Unsupported compression method: {compression!r}") from None
+
+    with _maybe_open(target, 'wb') as fd:
+        _write_file_prefix(fd, interpreter)
+        with zipfile.ZipFile(fd, 'w', compression=compression,
+                             compresslevel=compresslevel,
+                             allowZip64=allowZip64,
+                             strict_timestamps=strict_timestamps) as z:
             for path, relative_path in files_to_add.items():
                 z.write(path, relative_path.as_posix())
             if main_py:
@@ -200,6 +229,14 @@ def main(args=None):
     parser.add_argument('--compress', '-c', action='store_true',
             help="Compress files with the deflate method. "
                  "Files are stored uncompressed by default.")
+    parser.add_argument('--compression', choices=_COMPRESS_METHODS,
+            metavar='METHOD', default=None,
+            help="Compress files with the given method. "
+                 "Supported methods: " +
+                 ", ".join(_COMPRESS_METHODS) + ".")
+    parser.add_argument('--level', '-l', type=int, metavar='LEVEL',
+            default=None,
+            help="Compression level for --compress or --compression.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
     parser.add_argument('source',
@@ -224,7 +261,8 @@ def main(args=None):
 
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress)
+                   compressed=args.compress, compression=args.compression,
+                   compresslevel=args.level)
 
 
 if __name__ == '__main__':
