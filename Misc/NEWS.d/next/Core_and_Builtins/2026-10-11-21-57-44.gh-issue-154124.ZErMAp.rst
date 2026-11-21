@@ -1,0 +1,1 @@
+Reserve frame pointer on :option:`--with-tail-call-interp` builds using Clang 21 or newer. This recovers most of the performance hit for those builds.

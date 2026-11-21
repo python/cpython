@@ -1040,8 +1040,8 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 #if _Py_TIER2
 // 0 for success, -1  for error.
-static int
-stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
+int
+_PyEval_StopTracingAndJit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
     int err = 0;
@@ -1068,7 +1068,10 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 
 #if _Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
+/* Give start_frame its own frame pointer, independently of the handlers. */
+#define _Py_CEVAL_START_FRAME
 #include "generated_cases.c.h"
+#undef _Py_CEVAL_START_FRAME
 #endif
 
 
@@ -1153,8 +1156,8 @@ int _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyOb
 #endif
 
 #ifdef WITH_DTRACE
-static void
-dtrace_function_entry(_PyInterpreterFrame *frame)
+void
+_PyEval_DTraceFunctionEntry(_PyInterpreterFrame *frame)
 {
     const char *filename;
     const char *funcname;
@@ -1176,8 +1179,8 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
-static void
-dtrace_function_return(_PyInterpreterFrame *frame)
+void
+_PyEval_DTraceFunctionReturn(_PyInterpreterFrame *frame)
 {
     const char *filename;
     const char *funcname;
@@ -1303,9 +1306,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _PyFrame_StackPointerInvalidate(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
+        return _Py_TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0);
+        return _Py_TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0);
 #   endif
 #else
         goto error;
@@ -1314,9 +1317,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0, lastopcode);
+        return _Py_TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0);
+        return _Py_TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0);
 #   endif
 #else
     goto start_frame;

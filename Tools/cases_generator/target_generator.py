@@ -43,28 +43,40 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     out.emit(f"#endif\n")
     out.emit("#else /* _Py_TAIL_CALL_INTERP */\n")
 
-def function_proto(name: str) -> str:
-    return f"static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
+def function_signature(name: str) -> str:
+    return f"PyObject *Py_PRESERVE_NONE_CC _Py_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
 
 
-def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("static py_tail_call_funcptr instruction_funcptr_handler_table[256];\n")
+def write_tailcall_dispatch_table(
+    analysis: Analysis, out: CWriter, *, static_linkage: bool
+) -> None:
+    declaration = "static" if static_linkage else "extern"
+    definition_prefix = "static " if static_linkage else ""
+    shared_labels = ("error", "start_frame", "exit_unwind", "exit_unwind_notrace")
+    out.emit(f"{declaration} py_tail_call_funcptr instruction_funcptr_handler_table[256];\n")
     out.emit("\n")
-    out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256];\n")
+    out.emit(f"{declaration} py_tail_call_funcptr instruction_funcptr_tracing_table[256];\n")
     out.emit("\n")
+
+    if not static_linkage:
+        for name in shared_labels:
+            out.emit(f"extern {function_signature(name)};\n")
+        out.emit("\n")
+        out.emit("#ifdef _Py_CEVAL_OPCODE_TARGETS_DEFINE\n")
 
     # Emit function prototypes for labels.
     for name in analysis.labels:
-        out.emit(f"{function_proto(name)};\n")
+        if static_linkage or name not in shared_labels:
+            out.emit(f"{declaration} {function_signature(name)};\n")
     out.emit("\n")
 
     # Emit function prototypes for opcode handlers.
     for name in sorted(analysis.instructions.keys()):
-        out.emit(f"{function_proto(name)};\n")
+        out.emit(f"{declaration} {function_signature(name)};\n")
     out.emit("\n")
 
     # Emit unknown opcode handler.
-    out.emit(function_proto("UNKNOWN_OPCODE"))
+    out.emit(definition_prefix + function_signature("UNKNOWN_OPCODE"))
     out.emit(" {\n")
     out.emit("int opcode = next_instr->op.code;\n")
     out.emit(UNKNOWN_OPCODE_HANDLER)
@@ -72,24 +84,26 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("\n")
 
     # Emit the dispatch table.
-    out.emit("static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {\n")
+    out.emit(f"{definition_prefix}py_tail_call_funcptr instruction_funcptr_handler_table[256] = {{\n")
     for name in sorted(analysis.instructions.keys()):
-        out.emit(f"[{name}] = _TAIL_CALL_{name},\n")
+        out.emit(f"[{name}] = _Py_TAIL_CALL_{name},\n")
     named_values = analysis.opmap.values()
     for rest in range(256):
         if rest not in named_values:
-            out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
+            out.emit(f"[{rest}] = _Py_TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
 
     # Emit the tracing dispatch table.
-    out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {\n")
+    out.emit(f"{definition_prefix}py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {{\n")
     for name in sorted(analysis.instructions.keys()):
-        out.emit(f"[{name}] = _TAIL_CALL_TRACE_RECORD,\n")
+        out.emit(f"[{name}] = _Py_TAIL_CALL_TRACE_RECORD,\n")
     named_values = analysis.opmap.values()
     for rest in range(256):
         if rest not in named_values:
-            out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
+            out.emit(f"[{rest}] = _Py_TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
+    if not static_linkage:
+        out.emit("#endif /* _Py_CEVAL_OPCODE_TARGETS_DEFINE */\n")
     outfile.write("#endif /* _Py_TAIL_CALL_INTERP */\n")
 
 arg_parser = argparse.ArgumentParser(
@@ -99,6 +113,9 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
+arg_parser.add_argument(
+    "--static", action="store_true", help="Give tail-call targets internal linkage"
 )
 
 arg_parser.add_argument(
@@ -113,4 +130,4 @@ if __name__ == "__main__":
     with open(args.output, "w") as outfile:
         out = CWriter(outfile, 0, False)
         write_opcode_targets(data, out)
-        write_tailcall_dispatch_table(data, out)
+        write_tailcall_dispatch_table(data, out, static_linkage=args.static)
