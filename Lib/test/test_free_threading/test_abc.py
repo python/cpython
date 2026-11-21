@@ -2,7 +2,7 @@ import gc
 import os
 import threading
 import unittest
-from abc import ABC, ABCMeta
+from abc import ABC
 
 from test.support import threading_helper
 
