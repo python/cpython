@@ -199,12 +199,10 @@ xibufferview_dealloc(PyObject *op)
 static int
 xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
-    /* Only PyMemoryView_FromObject() should ever call this,
-       via _memoryview_from_xid() below. */
     xibufferview *self = (xibufferview *)op;
     *view = *self->view;
     /* This is the workaround mentioned earlier. */
-    view->obj = op;
+    view->obj = Py_NewRef(op);
     // XXX Should we leave it alone?
     view->internal = NULL;
     return 0;
@@ -254,8 +252,8 @@ _memoryview_from_xid(_PyXIData_t *data)
         return NULL;
     }
     PyObject *res = PyMemoryView_FromObject(obj);
+    Py_DECREF(obj);
     if (res == NULL) {
-        Py_DECREF(obj);
         return NULL;
     }
     view->used = 1;
