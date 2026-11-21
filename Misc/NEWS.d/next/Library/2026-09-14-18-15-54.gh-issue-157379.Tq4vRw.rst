@@ -1,0 +1,2 @@
+Fix a crash in :mod:`csv` reader when a re-entrant iterator reaches the end
+of input while a quoted field is still open.
