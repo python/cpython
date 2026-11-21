@@ -1150,7 +1150,10 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getencoding().
+decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is
+disabled, the encoding returned by locale.getencoding() is used
+instead.  See the codecs module for the list of supported
+encodings.
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
