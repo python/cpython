@@ -1,0 +1,2 @@
+Fix a bug where importing :mod:`ctypes.util` on macOS could load
+``libc.dylib`` from the current working directory.
