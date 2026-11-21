@@ -12,6 +12,23 @@ NTHREADS = 10
 
 @threading_helper.requires_working_threading()
 class TestOs(unittest.TestCase):
+    def test_listdir_during_gc(self):
+        import gc
+        from pathlib import Path
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            expected = {f"entry_{n}" for n in range(32)}
+            for name in expected:
+                Path(directory, name).touch()
+
+            def worker():
+                for _ in range(256):
+                    gc.collect()
+                    self.assertEqual(set(os.listdir(directory)), expected)
+
+            run_concurrently(worker, nthreads=4)
+
     @unittest.skipUnless(sysconfig.get_config_var('_Py_HAVE_STRERROR_R'),
                          'need _Py_HAVE_STRERROR_R macro')
     def test_strerror(self):
