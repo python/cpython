@@ -12681,40 +12681,43 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
         }
     }
 
+#ifdef __APPLE__
+    // macOS uses the same argument for the requested and the sent byte count.
+    const off_t nbytes = sbytes;
+#endif
+    int saved_errno;
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
 #ifdef __APPLE__
+        sbytes = nbytes;
         ret = sendfile(in_fd, out_fd, offset, &sbytes, &sf, flags);
 #else
         ret = sendfile(in_fd, out_fd, offset, count, &sf, &sbytes, flags);
 #endif
+        saved_errno = errno;
         Py_END_ALLOW_THREADS
-    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    } while (ret < 0 && saved_errno == EINTR &&
+             !(async_err = PyErr_CheckSignals()) && sbytes == 0);
     _Py_END_SUPPRESS_IPH
 
-    int saved_errno = errno;
     if (sf.headers != NULL)
         iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
     if (sf.trailers != NULL)
         iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
 
     if (ret < 0) {
-        if ((saved_errno == EAGAIN) || (saved_errno == EBUSY)) {
-            if (sbytes != 0) {
-                // some data has been sent
-                goto done;
-            }
-            // no data has been sent; upper application is supposed
-            // to retry on EAGAIN or EBUSY
+        if (async_err) {
+            return NULL;
         }
-        if (!async_err) {
-            errno = saved_errno;
-            posix_error();
+        if ((saved_errno == EINTR || saved_errno == EAGAIN ||
+             saved_errno == EBUSY) && sbytes != 0) {
+            // Return the partial byte count so the caller can resume.
+            goto done;
         }
-        return NULL;
+        errno = saved_errno;
+        return posix_error();
     }
-    goto done;
 
 done:
     #if !defined(HAVE_LARGEFILE_SUPPORT)
