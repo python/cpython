@@ -387,24 +387,22 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
          * Will resize later to [<positionals>, <merged_kwds>] */
         PyObject *key, *val;
 
+        pto_kw_merged = PyDict_Copy(partial_keywords);
+        if (pto_kw_merged == NULL) {
+            goto clean_stack;
+        }
+
         /* Merge kw to pto_kw or add to tail (if not duplicate) */
         Py_ssize_t n_tail = 0;
         for (Py_ssize_t i = 0; i < nkwds; ++i) {
             key = PyTuple_GET_ITEM(kwnames, i);
             val = args[nargs + i];
-            int contains = PyDict_Contains(partial_keywords, key);
+            int contains = PyDict_Contains(pto_kw_merged, key);
             if (contains < 0) {
                 goto clean_stack;
             }
             else if (contains == 1) {
-                if (pto_kw_merged == NULL) {
-                    pto_kw_merged = PyDict_Copy(partial_keywords);
-                    if (pto_kw_merged == NULL) {
-                        goto clean_stack;
-                    }
-                }
                 if (PyDict_SetItem(pto_kw_merged, key, val) < 0) {
-                    Py_DECREF(pto_kw_merged);
                     goto clean_stack;
                 }
             }
@@ -420,7 +418,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Create total kwnames */
         tot_kwnames = PyTuple_New(tot_nkwds - n_merges);
         if (tot_kwnames == NULL) {
-            Py_XDECREF(pto_kw_merged);
             goto clean_stack;
         }
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
@@ -431,17 +428,14 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
-        PyObject *keyword_dict = n_merges ? pto_kw_merged : partial_keywords;
-        Py_BEGIN_CRITICAL_SECTION(keyword_dict);
-        while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
+        while (PyDict_Next(pto_kw_merged, &pos, &key, &val)) {
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
-        Py_END_CRITICAL_SECTION();
         assert(i == pto_nkwds);
-        Py_XDECREF(pto_kw_merged);
+        Py_CLEAR(pto_kw_merged);
 
         /* Resize Stack if the removing overallocation saves some noticable memory
          * NOTE: This whole block can be removed without breaking anything */
@@ -487,6 +481,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     }
 
  clean_stack:
+    Py_XDECREF(pto_kw_merged);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
