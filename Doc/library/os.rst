@@ -4313,9 +4313,11 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
    no effect on the behavior of the walk, because in bottom-up mode the directories
    in *dirnames* are generated before *dirpath* itself is generated.
 
-   By default, errors from the :func:`scandir` call are ignored.  If optional
-   argument *onerror* is specified, it should be a function; it will be called with
-   one argument, an :exc:`OSError` instance.  It can report the error to continue
+   By default, errors from the :func:`scandir` call are ignored, except that
+   :exc:`NotADirectoryError` is raised if *top* exists but is not a directory.
+   If optional argument *onerror* is specified, it should be a function; it will
+   be called with one argument, an :exc:`OSError` instance (including the error
+   for a *top* that is not a directory).  It can report the error to continue
    with the walk, or raise the exception to abort the walk.  Note that the filename
    is available as the ``filename`` attribute of the exception object.
 
@@ -4372,6 +4374,10 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      :exc:`NotADirectoryError` is now raised (or passed to *onerror*) if *top*
+      exists but is not a directory, instead of silently yielding nothing.
 
 
 .. function:: fwalk(top='.', topdown=True, onerror=None, *, follow_symlinks=False, dir_fd=None)
@@ -4436,6 +4442,12 @@ The following flags are used in :attr:`statvfs_result.f_flag`.
 
    .. versionchanged:: 3.7
       Added support for :class:`bytes` paths.
+
+   .. versionchanged:: next
+      :exc:`NotADirectoryError` is now raised if *top* is not a directory,
+      instead of silently yielding nothing when *follow_symlinks* is false.
+      The ``filename`` attribute of the exception is now *top* instead of
+      a file descriptor.
 
 
 .. function:: memfd_create(name[, flags=os.MFD_CLOEXEC])

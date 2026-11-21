@@ -24,7 +24,6 @@ and opendir), and leave all pathname manipulation to os.path
 #'
 import abc
 import sys
-import stat as st
 
 from _collections_abc import _check_methods
 
@@ -347,7 +346,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     topdown, the list of subdirectories is retrieved before the tuples for
     the directory and its subdirectories are generated.
 
-    By default errors from the os.scandir() call are ignored.  If
+    By default errors from the os.scandir() call are ignored, except that
+    NotADirectoryError is raised if top exists but is not a directory.  If
     optional arg 'onerror' is specified, it should be a function; it
     will be called with one argument, an OSError instance.  It can
     report the error to continue with the walk, or raise the exception
@@ -379,6 +379,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     stack = [fspath(top)]
     islink, join = path.islink, path.join
+    is_top = True
     while stack:
         top = stack.pop()
         if isinstance(top, tuple):
@@ -432,7 +433,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         except OSError as error:
             if onerror is not None:
                 onerror(error)
+            elif is_top and isinstance(error, NotADirectoryError):
+                # Don't silently ignore a non-directory top.
+                raise
+            is_top = False
             continue
+        is_top = False
 
         if topdown:
             # Yield before sub-directory traversal if going top down
@@ -542,12 +548,15 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             return
         stack.append((_fwalk_close, topfd))
         if not follow_symlinks:
-            if isroot and not st.S_ISDIR(orig_st.st_mode):
-                return
             if not path.samestat(orig_st, stat(topfd)):
                 return
 
-        scandir_it = scandir(topfd)
+        try:
+            scandir_it = scandir(topfd)
+        except NotADirectoryError as error:
+            # Report the path instead of the file descriptor.
+            error.filename = toppath
+            raise
         dirs = []
         nondirs = []
         entries = None if topdown or follow_symlinks else []
