@@ -3927,7 +3927,8 @@ class TestDateTime(TestDate):
                            tzinfo=timezone(timedelta(seconds=10)))),
             ('2025-01-02T24:00:00', self.theclass(2025, 1, 3, 0, 0, 0)),
             ('2025-01-31T24:00:00', self.theclass(2025, 2, 1, 0, 0, 0)),
-            ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0))
+            ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0)),
+            ('0000-12-31T24:00:00', self.theclass(1, 1, 1, 0, 0, 0)),
         ]
 
         for input_str, expected in examples:
