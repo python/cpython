@@ -678,6 +678,7 @@ class IdleConf:
             '<<smart-backspace>>': ['<Key-BackSpace>'],
             '<<newline-and-indent>>': ['<Key-Return>', '<Key-KP_Enter>'],
             '<<smart-indent>>': ['<Key-Tab>'],
+            '<<smart-dedent>>': ['<Shift-Key-Tab>', '<Shift-ISO_Left_Tab>'],
             '<<indent-region>>': ['<Control-Key-bracketright>'],
             '<<dedent-region>>': ['<Control-Key-bracketleft>'],
             '<<comment-region>>': ['<Alt-Key-3>'],
