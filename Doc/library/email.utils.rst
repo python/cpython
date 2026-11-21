@@ -203,9 +203,11 @@ of the new API.
 .. function:: encode_rfc2231(s, charset=None, language=None)
 
    Encode the string *s* according to :rfc:`2231`.  Optional *charset* and
-   *language*, if given, are the character set name and language name to use.  If
-   neither is given, *s* is returned as-is.  If *charset* is given but *language*
-   is not, the string is encoded using the empty string for *language*.
+   *language*, if given, are the character set name and language name to use.
+   The string is always percent-encoded.  If neither is given, the encoded
+   string is returned without the character set and language prefix.  If
+   *charset* is given but *language* is not, the string is encoded using the
+   empty string for *language*.
 
 
 .. function:: collapse_rfc2231_value(value, errors='replace', fallback_charset='us-ascii')
