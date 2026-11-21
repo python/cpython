@@ -401,3 +401,29 @@ def func400():
     return 401
 
 pass # end of file
+
+# line 405
+string_then_lambda = (
+    """text
+""", lambda: None
+)
+
+def after_string_then_lambda():
+    """A docstring after the lambda."""
+
+# line 414
+string_then_multiline_lambda = (
+    '''text
+''', lambda: [1,
+              2]
+)
+
+string_then_fstring_lambda = (
+    f"""text
+{1}""", lambda: None
+)
+
+string_then_genexpr = (
+    """text
+""", (i for i in range(3))
+)
