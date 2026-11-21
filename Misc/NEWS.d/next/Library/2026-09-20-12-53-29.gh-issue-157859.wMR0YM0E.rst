@@ -1,0 +1,2 @@
+Fix :func:`cmath.atanh` and :func:`cmath.atan` returning an infinite
+component instead of a finite result for certain inputs near their poles.
