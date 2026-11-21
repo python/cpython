@@ -117,6 +117,12 @@ PyAPI_FUNC(_PyStackRef) _PyCompactLong_Add(PyLongObject *left, PyLongObject *rig
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(_PyStackRef) _PyCompactLong_Subtract(PyLongObject *left, PyLongObject *right);
 
+// Add or subtract two int objects, calling the long implementation directly
+// instead of going through the number protocol. Used by the BINARY_OP_EXTEND
+// specialization for operands that are not both compact.
+extern PyObject* _PyLong_Add(PyObject *left, PyObject *right);
+extern PyObject* _PyLong_Subtract(PyObject *left, PyObject *right);
+
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
