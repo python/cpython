@@ -1,0 +1,1 @@
+Fix process crash and assertion failure in :mod:`datetime` by validating year and day bounds when unpickling :class:`~datetime.date` and :class:`~datetime.datetime` objects.

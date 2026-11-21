@@ -968,22 +968,25 @@ class date:
         year, month, day (required, base 1)
         """
         if (month is None and
-            isinstance(year, (bytes, str)) and len(year) == 4 and
-            1 <= ord(year[2:3]) <= 12):
+            isinstance(year, (bytes, str)) and len(year) == 4):
             # Pickle support
-            if isinstance(year, str):
+            raw = year
+            if isinstance(raw, str):
                 try:
-                    year = year.encode('latin1')
+                    raw = raw.encode('latin1')
                 except UnicodeEncodeError:
                     # More informative error message.
                     raise ValueError(
                         "Failed to encode latin1 string when unpickling "
                         "a date object. "
                         "pickle.load(data, encoding='latin1') is assumed.")
-            self = object.__new__(cls)
-            self.__setstate(year)
-            self._hashcode = -1
-            return self
+            yhi, ylo, m, d = raw
+            y = yhi * 256 + ylo
+            if MINYEAR <= y <= MAXYEAR and 1 <= m <= 12 and 1 <= d <= _days_in_month(y, m):
+                self = object.__new__(cls)
+                self.__setstate(raw)
+                self._hashcode = -1
+                return self
         year, month, day = _check_date_fields(year, month, day)
         self = object.__new__(cls)
         self._year = year
@@ -1758,22 +1761,28 @@ class datetime(date):
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
-        if (isinstance(year, (bytes, str)) and len(year) == 10 and
-            1 <= ord(year[2:3])&0x7F <= 12):
+        if (isinstance(year, (bytes, str)) and len(year) == 10):
             # Pickle support
-            if isinstance(year, str):
+            raw = year
+            if isinstance(raw, str):
                 try:
-                    year = bytes(year, 'latin1')
+                    raw = bytes(raw, 'latin1')
                 except UnicodeEncodeError:
                     # More informative error message.
                     raise ValueError(
                         "Failed to encode latin1 string when unpickling "
                         "a datetime object. "
                         "pickle.load(data, encoding='latin1') is assumed.")
-            self = object.__new__(cls)
-            self.__setstate(year, month)
-            self._hashcode = -1
-            return self
+            yhi, ylo, m, d, hh, mm, ss, us1, us2, us3 = raw
+            y = yhi * 256 + ylo
+            m = m & 0x7F
+            us = (((us1 << 8) | us2) << 8) | us3
+            if (MINYEAR <= y <= MAXYEAR and 1 <= m <= 12 and 1 <= d <= _days_in_month(y, m)
+                and 0 <= hh < 24 and 0 <= mm < 60 and 0 <= ss < 60 and 0 <= us < 1000000):
+                self = object.__new__(cls)
+                self.__setstate(raw, month)
+                self._hashcode = -1
+                return self
         year, month, day = _check_date_fields(year, month, day)
         hour, minute, second, microsecond, fold = _check_time_fields(
             hour, minute, second, microsecond, fold)
