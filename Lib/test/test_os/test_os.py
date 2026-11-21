@@ -3918,6 +3918,18 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(hash(self.server_buffer), hash(expected_data))
 
     @requires_headers_trailers
+    async def test_headers_with_zero_count(self):
+        offset = len(self.DATA) - 2
+        sent = await self.async_sendfile(self.sockno, self.fileno, offset, 0,
+                                         headers=[b"H"])
+        self.client.close()
+        await self.server.wait_closed()
+
+        expected = b"H" + self.DATA[offset:]
+        self.assertEqual(self.server_buffer, expected)
+        self.assertEqual(sent, len(expected))
+
+    @requires_headers_trailers
     async def test_trailers(self):
         TESTFN2 = os_helper.TESTFN + "2"
         file_data = b"abcdef"
