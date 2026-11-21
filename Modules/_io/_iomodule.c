@@ -119,9 +119,7 @@ even when the underlying operating system doesn't.  Files opened in
 binary mode (appending 'b' to the mode argument) return contents as
 bytes objects without any decoding.  In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
-returned as strings, the bytes having been first decoded using a
-'t' is appended to the mode argument), the contents of the file are
-decoded using the encoding described above and returned as strings.
+decoded using the encoding described below and returned as strings.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to
@@ -138,9 +136,6 @@ argument is given, the default buffering policy works as follows:
   use line buffering.  Other text files use the policy described above
   for binary files.
 
-encoding is the name of the encoding used to decode or encode the
-file.  This should only be used in text mode.  The default encoding is
-platform dependent, but any encoding supported by Python can be
 encoding is the name of the encoding used to decode or encode the file.
 This should only be used in text mode.  The default encoding is UTF-8;
 if UTF-8 Mode is disabled, the encoding returned by
