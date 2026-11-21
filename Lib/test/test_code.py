@@ -630,6 +630,25 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
 
+    def test_code_equality_uses_consts(self):
+        c = compile("0.0", "example.py", "eval")
+        self.assertEqual(c.co_consts, (0.0,))
+        self.assertEqual(c, c.replace(co_consts=(0.0,)))
+        for consts in [(-0.0,), (0,), (False,), ((0.0,),), (0.0, None)]:
+            with self.subTest(consts=consts):
+                self.assertNotEqual(c, c.replace(co_consts=consts))
+
+    def test_code_equality_nested(self):
+        # gh-160788: this took time exponential in the nesting depth.
+        depth = 30
+        source = "".join(" " * i + f"class C{i}:\n" for i in range(depth))
+        indent = " " * depth
+        code1 = compile(source + indent + "pass\n", "example.py", "exec")
+        code2 = compile(source + indent + "pass\n", "example.py", "exec")
+        code3 = compile(source + indent + "x = 1\n", "example.py", "exec")
+        self.assertEqual(code1, code2)
+        self.assertNotEqual(code1, code3)
+
     @cpython_only
     def test_code_equal_with_instrumentation(self):
         """ GH-109052
