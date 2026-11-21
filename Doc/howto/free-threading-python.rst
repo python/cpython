@@ -96,12 +96,13 @@ This section describes known limitations of the free-threaded CPython build.
 Immortalization
 ---------------
 
-In the free-threaded build, some objects are :term:`immortal`.
-Immortal objects are not deallocated and have reference counts that are
-never modified.  This is done to avoid reference count contention that would
-prevent efficient multi-threaded scaling.
+The free-threaded build makes more objects :term:`immortal` than the default
+GIL-enabled build.  Immortal objects are not deallocated and have reference
+counts that are never modified.  This is done to avoid reference count
+contention that would prevent efficient multi-threaded scaling.
 
-As of the 3.14 release, immortalization is limited to:
+As of the 3.14 release, the following objects are immortalized in addition to
+those immortalized by the default build:
 
 * Code constants: numeric literals, string literals, and tuple literals
   composed of other constants.
@@ -174,11 +175,10 @@ build.  There are multiple reasons for this, mostly due to design decisions.
 All interned strings are immortal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For modern Python versions (since version 2.3), interning a string (e.g. with
-:func:`sys.intern`) does not cause it to become immortal.  Instead, if the last
-reference to that string disappears, it will be removed from the interned
-string table.  This is not the case for the free-threaded build and any interned
-string will become immortal, surviving until interpreter shutdown.
+In the default GIL-enabled build, mortal interned strings are removed from the
+interned string table when their last reference disappears.  In the
+free-threaded build, all interned strings are immortal and remain alive until
+interpreter shutdown.
 
 
 Non-GC objects have a larger object header
