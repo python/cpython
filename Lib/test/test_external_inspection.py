@@ -1391,11 +1391,14 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     relationships = self._get_awaited_by_relationships(
                         stack_trace
                     )
+                    future_name, = (node.task_name for node in stack_trace[0].awaited_by
+                                    if node.is_future)
                     self.assertEqual(
                         relationships,
                         {
                             "Task-1": set(),
-                            "Task-2": {"Task-1"},
+                            "Task-2": {future_name},
+                            future_name: {"Task-1"},
                         },
                     )
 
@@ -1409,6 +1412,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         coroutine_stacks,
                         {
                             "Task-1": [((script_name, 21, "main", None),)],
+                            future_name: [()],
                             "Task-2": [
                                 (
                                     (script_name, 11, "deep", None),
@@ -1436,7 +1440,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         awaited_by_coroutine_stacks,
                         {
                             "Task-1": [],
-                            "Task-2": [
+                            "Task-2": [(future_name, ())],
+                            future_name: [
                                 ("Task-1", ((script_name, 21, "main", None),))
                             ],
                         },
