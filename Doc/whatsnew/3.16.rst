@@ -1181,6 +1181,16 @@ uuid
   (Contributed by Yury Selivanov in :gh:`139123`.)
 
 
+zipapp
+------
+
+* :mod:`zipapp` now exposes the :class:`zipfile.ZipFile` write options.
+  :func:`zipapp.create_archive` gained *compression*, *compresslevel*,
+  *allowZip64* and *strict_timestamps*, and the command line gained
+  ``--compression`` and ``--level``.
+  (Contributed by Mingye Wang in :gh:`162354`.)
+
+
 Removed
 ========
 
