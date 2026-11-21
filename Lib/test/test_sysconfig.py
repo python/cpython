@@ -709,6 +709,28 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertNotEqual(data['prefix'], data['base_prefix'])
         self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
 
+    @unittest.skipIf(os.name != 'posix', 'pkg-config files are only installed on POSIX')
+    @unittest.skipIf(is_wasi or is_android or is_apple_mobile,
+                     'no pkg-config files on this platform')
+    def test_pkgconfig_prefix(self):
+        if get_config_var('RELOCATABLE') != 'yes':
+            self.skipTest('requires --enable-relocatable')
+        if is_python_build():
+            self.skipTest('pkg-config files are only installed by make install')
+        libpc = os.path.join(os.path.dirname(sys._stdlib_dir), 'pkgconfig')
+        ldversion = get_config_var('LDVERSION')
+        for name in (f'python-{ldversion}.pc', f'python-{ldversion}-embed.pc'):
+            path = os.path.join(libpc, name)
+            if not os.path.exists(path):
+                self.skipTest(f'{path} not found')
+            with self.subTest(file=name), open(path, encoding='utf-8') as f:
+                prefix = next(line.removeprefix('prefix=').rstrip('\n')
+                              for line in f if line.startswith('prefix='))
+                self.assertStartsWith(prefix, '${pcfiledir}/')
+                resolved = prefix.replace('${pcfiledir}', libpc)
+                self.assertEqual(os.path.realpath(resolved),
+                                 os.path.realpath(sys.base_prefix))
+
     @unittest.skipIf(os.name != 'posix', '_sysconfig-vars JSON file is only available on POSIX')
     @unittest.skipIf(is_wasi, "_sysconfig-vars JSON file currently isn't available on WASI")
     @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS change the prefix')
