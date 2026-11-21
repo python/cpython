@@ -12644,15 +12644,18 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
                               headers, sf.hdr_cnt, PyBUF_SIMPLE) < 0)
                     return NULL;
 #ifdef __APPLE__
-                for (i = 0; i < sf.hdr_cnt; i++) {
-                    Py_ssize_t blen = sf.headers[i].iov_len;
+                // Positive limits include headers. Zero means send to EOF.
+                if (sbytes != 0) {
+                    for (i = 0; i < sf.hdr_cnt; i++) {
+                        Py_ssize_t blen = sf.headers[i].iov_len;
 # define OFF_T_MAX 0x7fffffffffffffff
-                    if (sbytes >= OFF_T_MAX - blen) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "sendfile() header is too large");
-                        return NULL;
+                        if (sbytes >= OFF_T_MAX - blen) {
+                            PyErr_SetString(PyExc_OverflowError,
+                                "sendfile() header is too large");
+                            return NULL;
+                        }
+                        sbytes += blen;
                     }
-                    sbytes += blen;
                 }
 #endif
             }
