@@ -4,6 +4,7 @@ import unittest
 from ctypes import CDLL
 import ctypes.util
 from test.support import import_helper
+from unittest.mock import patch
 
 
 WINDOWS = os.name == "nt"
@@ -53,6 +54,12 @@ class ListSharedLibraries(unittest.TestCase):
 
         self.assertGreater(dlls2, dlls1, f"newly loaded libraries: {dlls2 - dlls1}")
         self.assertTrue(any("_ctypes_test" in dll for dll in dlls2), f"loaded={dlls2}")
+
+    @unittest.skipUnless(APPLE, "requires an Apple platform")
+    def test_import_does_not_search_for_libc(self):
+        with patch("ctypes.macholib.dyld.dyld_find", return_value=None) as find:
+            import_helper.import_fresh_module("ctypes.util")
+        find.assert_not_called()
 
 
 if __name__ == "__main__":
