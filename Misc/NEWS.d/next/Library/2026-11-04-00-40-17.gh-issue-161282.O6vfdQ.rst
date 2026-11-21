@@ -1,0 +1,2 @@
+Fix quadratic time complexity in :meth:`optparse.OptionParser.parse_args`
+when parsing many positional arguments.
