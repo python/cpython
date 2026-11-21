@@ -3390,13 +3390,12 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
 #ifdef AF_VSOCK
-    if (s->sock_family == AF_VSOCK) {
+    if (s->sock_family == AF_VSOCK && level == AF_VSOCK) {
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
             return NULL;
         }
-        // level should always be set to AF_VSOCK
         res = setsockopt(get_sock_fd(s), level, optname,
                          (void*)&vflag, sizeof vflag);
         goto done;
@@ -3508,7 +3507,7 @@ _socket_socket_getsockopt_impl(PySocketSockObject *s, int level, int optname,
 
     if (buflen == 0) {
 #ifdef AF_VSOCK
-        if (s->sock_family == AF_VSOCK) {
+        if (s->sock_family == AF_VSOCK && level == AF_VSOCK) {
             uint64_t vflag = 0; // Must be set width of 64 bits
             flagsize = sizeof vflag;
             res = getsockopt(get_sock_fd(s), level, optname,
@@ -3531,11 +3530,11 @@ _socket_socket_getsockopt_impl(PySocketSockObject *s, int level, int optname,
         return PyLong_FromLong(flag);
     }
 #ifdef AF_VSOCK
-    if (s->sock_family == AF_VSOCK) {
+    if (s->sock_family == AF_VSOCK && level == AF_VSOCK) {
         PyErr_SetString(PyExc_OSError,
                         "getsockopt string buffer not allowed");
         return NULL;
-        }
+    }
 #endif
     if (buflen <= 0 || buflen > 1024) {
         PyErr_SetString(PyExc_OSError,
