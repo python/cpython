@@ -1,6 +1,7 @@
 /* Function object implementation */
 
 #include "Python.h"
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_code.h"          // _PyCode_VerifyStateless()
 #include "pycore_dict.h"          // _Py_INCREF_DICT()
 #include "pycore_function.h"      // _PyFunction_Vectorcall
