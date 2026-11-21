@@ -11,6 +11,7 @@
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_pystate.h"       // _PyInterpreterGuard_GetInterpreter()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_setobject.h"     // _PySet_NextEntry()
@@ -2556,6 +2557,10 @@ struct xi_session {
     // once the session exits.  Do not access this directly; use
     // _PyXI_Preserve() and _PyXI_GetPreserved() instead;
     PyObject *_preserved;
+
+    // PEP 788 finalization guard to prevent the interpreter from being
+    // destroyed/finalized while this session is active.
+    PyInterpreterGuard *guard;
 };
 
 _PyXI_session *
@@ -2616,6 +2621,7 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
         .init_tstate = tstate,
         .prev_tstate = prev,
         .own_init_tstate = !same_interp,
+        .guard = session->guard,
     };
 }
 
@@ -2651,6 +2657,12 @@ _exit_session(_PyXI_session *session)
         assert(!session->own_init_tstate);
     }
 
+    // Release PEP 788 finalization guard after thread state cleanup & swap back.
+    if (session->guard != NULL) {
+        PyInterpreterGuard_Close(session->guard);
+        session->guard = NULL;
+    }
+
     *session = (_PyXI_session){0};
 }
 
@@ -2680,7 +2692,7 @@ static const char * capture_session_error(_PyXI_session *, _PyXI_error *,
 
 int
 _PyXI_Enter(_PyXI_session *session,
-            PyInterpreterState *interp, PyObject *nsupdates,
+            PyInterpreterView *view, PyObject *nsupdates,
             _PyXI_session_result *result)
 {
 #ifndef NDEBUG
@@ -2723,6 +2735,18 @@ _PyXI_Enter(_PyXI_session *session,
             }
         }
     }
+
+    // Acquire PEP 788 finalization guard before switching or running.
+    session->guard = PyInterpreterGuard_FromView(view);
+    if (session->guard == NULL) {
+        if (sharedns != NULL) {
+            _destroy_sharedns(sharedns);
+        }
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "cannot enter an interpreter that is being finalized");
+        return -1;
+    }
+    PyInterpreterState *interp = _PyInterpreterGuard_GetInterpreter(session->guard);
 
     // Switch to the requested interpreter (if necessary).
     _enter_session(session, interp);

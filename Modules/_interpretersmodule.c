@@ -655,7 +655,7 @@ _run_result_clear(struct run_result *runres)
 }
 
 static int
-_run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
+_run_in_interpreter(PyThreadState *tstate, PyInterpreterView *view,
                      _PyXIData_t *script, struct interp_call *call,
                      PyObject *shareables, struct run_result *runres)
 {
@@ -673,7 +673,7 @@ _run_in_interpreter(PyThreadState *tstate, PyInterpreterState *interp,
     _PyXI_session_result result = {0};
 
     // Prep and switch interpreters.
-    if (_PyXI_Enter(session, interp, shareables, &result) < 0) {
+    if (_PyXI_Enter(session, view, shareables, &result) < 0) {
         // If an error occurred at this step, it means that interp
         // was not prepared and switched.
         _PyXI_FreeSession(session);
@@ -782,6 +782,71 @@ resolve_interp(PyObject *idobj, int restricted, int reqready, const char *op)
     }
 
     return interp;
+}
+
+static PyInterpreterView *
+resolve_interp_view(PyObject *idobj, int restricted, int reqready,
+                    const char *op)
+{
+    PyInterpreterView *view;
+    if (idobj == NULL) {
+        view = PyInterpreterView_FromCurrent();
+        if (view == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        int64_t id = _PyInterpreterState_ObjectToID(idobj);
+        if (id < 0) {
+            return NULL;
+        }
+        view = _PyInterpreterView_FromID(id);
+        if (view == NULL) {
+            return NULL;
+        }
+    }
+
+    PyInterpreterGuard *guard = PyInterpreterGuard_FromView(view);
+    if (guard == NULL) {
+        PyInterpreterView_Close(view);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(PyExc_InterpreterNotFoundError,
+                         "unrecognized interpreter ID %R", idobj);
+        }
+        return NULL;
+    }
+    PyInterpreterState *interp = _PyInterpreterGuard_GetInterpreter(guard);
+
+    if (reqready && !_PyInterpreterState_IsReady(interp)) {
+        PyInterpreterGuard_Close(guard);
+        PyInterpreterView_Close(view);
+        if (idobj == NULL) {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s current interpreter (not ready)", op);
+        }
+        else {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s interpreter %R (not ready)", op, idobj);
+        }
+        return NULL;
+    }
+
+    if (restricted && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
+        PyInterpreterGuard_Close(guard);
+        PyInterpreterView_Close(view);
+        if (idobj == NULL) {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s unrecognized current interpreter", op);
+        }
+        else {
+            PyErr_Format(PyExc_InterpreterError,
+                         "cannot %s unrecognized interpreter %R", op, idobj);
+        }
+        return NULL;
+    }
+
+    PyInterpreterGuard_Close(guard);
+    return view;
 }
 
 
@@ -1043,18 +1108,20 @@ _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
 {
     // Look up the interpreter.
     int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "update __main__ for");
-    if (interp == NULL) {
+    PyInterpreterView *view = \
+            resolve_interp_view(id, restricted, reqready, "update __main__ for");
+    if (view == NULL) {
         return NULL;
     }
 
     // Check the updates.
     Py_ssize_t size = PyDict_Size(updates);
     if (size < 0) {
+        PyInterpreterView_Close(view);
         return NULL;
     }
     if (size == 0) {
+        PyInterpreterView_Close(view);
         PyErr_SetString(PyExc_ValueError,
                         "arg 2 must be a non-empty dict");
         return NULL;
@@ -1062,11 +1129,14 @@ _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
 
     _PyXI_session *session = _PyXI_NewSession();
     if (session == NULL) {
+        PyInterpreterView_Close(view);
         return NULL;
     }
 
     // Prep and switch interpreters, including apply the updates.
-    if (_PyXI_Enter(session, interp, updates, NULL) < 0) {
+    int entered = _PyXI_Enter(session, view, updates, NULL);
+    PyInterpreterView_Close(view);
+    if (entered < 0) {
         _PyXI_FreeSession(session);
         return NULL;
     }
@@ -1131,9 +1201,9 @@ _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "exec code for");
-    if (interp == NULL) {
+    PyInterpreterView *view = \
+            resolve_interp_view(id, restricted, reqready, "exec code for");
+    if (view == NULL) {
         return NULL;
     }
 
@@ -1141,13 +1211,15 @@ _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
     // global variables.  They will be resolved against __main__.
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
+        PyInterpreterView_Close(view);
         unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1178,26 +1250,29 @@ _interpreters_run_string_impl(PyObject *module, PyObject *id,
 #define FUNCNAME MODULE_NAME_STR ".run_string"
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "run a string in");
-    if (interp == NULL) {
+    PyInterpreterView *view = \
+            resolve_interp_view(id, restricted, reqready, "run a string in");
+    if (view == NULL) {
         return NULL;
     }
 
     if (PyFunction_Check(script) || PyCode_Check(script)) {
+        PyInterpreterView_Close(view);
         _PyArg_BadArgument(FUNCNAME, "argument 2", "a string", script);
         return NULL;
     }
 
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, script, &xidata) < 0) {
+        PyInterpreterView_Close(view);
         unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1232,9 +1307,9 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
 #define FUNCNAME MODULE_NAME_STR ".run_func"
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "run a function in");
-    if (interp == NULL) {
+    PyInterpreterView *view = \
+            resolve_interp_view(id, restricted, reqready, "run a function in");
+    if (view == NULL) {
         return NULL;
     }
 
@@ -1248,19 +1323,22 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
         code = func;
     }
     else {
+        PyInterpreterView_Close(view);
         _PyArg_BadArgument(FUNCNAME, "argument 2", "a function", func);
         return NULL;
     }
 
     _PyXIData_t xidata = {0};
     if (_PyCode_GetScriptXIData(tstate, code, &xidata) < 0) {
+        PyInterpreterView_Close(view);
         unwrap_not_shareable(tstate, NULL);
         return NULL;
     }
 
     struct run_result runres = {0};
     int res = _run_in_interpreter(
-                    tstate, interp, &xidata, NULL, shared, &runres);
+                    tstate, view, &xidata, NULL, shared, &runres);
+    PyInterpreterView_Close(view);
     _PyXIData_Release(&xidata);
     if (res < 0) {
         return _handle_script_error(&runres);
@@ -1293,20 +1371,23 @@ _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "make a call in");
-    if (interp == NULL) {
+    PyInterpreterView *view = \
+            resolve_interp_view(id, restricted, reqready, "make a call in");
+    if (view == NULL) {
         return NULL;
     }
 
     struct interp_call call = {0};
     if (_interp_call_pack(tstate, &call, callable, args, kwargs) < 0) {
+        PyInterpreterView_Close(view);
         return NULL;
     }
 
     PyObject *res_and_exc = NULL;
     struct run_result runres = {0};
-    if (_run_in_interpreter(tstate, interp, NULL, &call, NULL, &runres) < 0) {
+    int res = _run_in_interpreter(tstate, view, NULL, &call, NULL, &runres);
+    PyInterpreterView_Close(view);
+    if (res < 0) {
         if (runres.excinfo == NULL) {
             assert(_PyErr_Occurred(tstate));
             goto finally;

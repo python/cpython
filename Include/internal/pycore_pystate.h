@@ -387,6 +387,9 @@ extern int _PyInterpreterGuard_TryAcquire(PyInterpreterState *interp,
                                           PyInterpreterGuard *guard);
 extern void _PyInterpreterGuard_Release(PyInterpreterGuard *guard);
 
+// Export for '_interpreters' shared extension
+PyAPI_FUNC(PyInterpreterView *) _PyInterpreterView_FromID(int64_t interp_id);
+
 #ifdef __cplusplus
 }
 #endif
