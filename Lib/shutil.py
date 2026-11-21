@@ -80,9 +80,6 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
 class Error(OSError):
     pass
 
-class ErrorGroup(Error):
-    """Raised when multiple exceptions have been caught."""
-
 class SameFileError(Error):
     """Raised when source and destination are the same file."""
 
@@ -612,9 +609,16 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                          ignore_dangling_symlinks, dirs_exist_ok,
                          copy_dir_stat=copy_dir_stat)
             else:
+                # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
-        except ErrorGroup as err_group:
-            errors.extend(err_group.args[0])
+        # catch the Error from the recursive copytree (or any other
+        # shutil.Error that copytree raises, e.g. SameFileError)
+        # so that we can continue with other files
+        except Error as err:
+            if err.args and isinstance(err.args[0], list):
+                errors.extend(err.args[0])
+            else:
+                errors.append((srcname, dstname, str(err)))
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
@@ -625,7 +629,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
         if getattr(why, 'winerror', None) is None:
             errors.append((src, dst, str(why)))
     if errors:
-        raise ErrorGroup(errors)
+        raise Error(errors)
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
