@@ -1,5 +1,6 @@
-"""Nullable and left-recursion analysis for source grammar rules."""
+"""Nullable, first set and left-recursion analysis for source grammar rules."""
 
+import ast
 from collections.abc import Iterable, Set
 from typing import Any
 
@@ -13,11 +14,14 @@ from pegen.grammar import (
     Group,
     NamedItem,
     NameLeaf,
+    NegativeLookahead,
     Opt,
+    PositiveLookahead,
     Repeat0,
     Repeat1,
     Rhs,
     Rule,
+    RuleKind,
     StringLeaf,
 )
 
@@ -104,6 +108,77 @@ class InitialNamesVisitor(GrammarVisitor):
                 return {name}
             case _:
                 return self.generic_visit(node, *args, **kwargs)
+
+
+# A set of terminals (token names, quoted keywords and quoted exact tokens)
+# such that an item may only match, or have any effect, if the next token is in
+# it. None if the item may match whatever the next token is, or have an effect
+# (commit to a cut, raise for a forced token or in an action) before it fails.
+FirstSet = frozenset[str] | None
+
+
+class FirstSetVisitor(GrammarVisitor):
+
+    def __init__(self, rules: dict[str, Rule]) -> None:
+        self.rules = rules
+        self.first_sets: dict[str, FirstSet] = {name: frozenset() for name in rules}
+        # Grow the first sets until they cover each other's in recursive rules.
+        changed = True
+        while changed:
+            changed = False
+            for name, rule in rules.items():
+                first = None if rule.kind is RuleKind.LOOP0 else self.visit(rule.rhs)
+                if first != self.first_sets[name]:
+                    self.first_sets[name] = first
+                    changed = True
+
+    def visit(self, node: Any, *args: Any, **kwargs: Any) -> FirstSet:
+        match node:
+            case Rhs(alts=alts):
+                result: set[str] = set()
+                for alt in alts:
+                    if (first := self.visit(alt)) is None:
+                        return None
+                    result |= first
+                return frozenset(result)
+            case Alt(items=items):
+                result = set()
+                for item in items:
+                    match item.item:
+                        case Cut() | Forced():
+                            return None
+                        case NegativeLookahead() | Opt() | Repeat0() as optional:
+                            # Matches whatever the next token is, but only has
+                            # an effect when it's in its own first set.
+                            if (first := self.visit(optional.node)) is None:
+                                return None
+                            result |= first
+                        case required:
+                            if (first := self.visit(required)) is None:
+                                return None
+                            return frozenset(result | first)
+                return None
+            case NamedItem(item=item):
+                return self.visit(item)
+            case Group(rhs=rhs):
+                return self.visit(rhs)
+            case Repeat1(node=child) | Gather(node=child) | PositiveLookahead(node=child):
+                return self.visit(child)
+            case Opt() | Repeat0() | NegativeLookahead() | Cut() | Forced():
+                return None
+            case NameLeaf(value=name):
+                if name in self.rules:
+                    return self.first_sets[name]
+                # Soft keywords are NAME tokens.
+                return frozenset({"NAME" if name == "SOFT_KEYWORD" else name})
+            case StringLeaf(value=value):
+                if not ast.literal_eval(value):
+                    return None
+                if value.startswith('"') and value[1:-1].isidentifier():
+                    return frozenset({"NAME"})
+                return frozenset({value})
+            case _:
+                raise TypeError(f"Unexpected grammar node {node!r}")
 
 
 def compute_left_recursives(

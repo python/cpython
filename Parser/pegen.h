@@ -194,6 +194,24 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p);
 expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
+
+// Return whether the type of the next token is in a first set, given as masks
+// of the token types below 64 and of the keyword types (numbered from 500).
+static inline int
+_PyPegen_next_token_in(Parser *p, uint64_t token_mask, uint64_t keyword_mask)
+{
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        return 0;
+    }
+    int type = p->tokens[p->mark]->type;
+    if (type < 64) {
+        return (token_mask >> type) & 1;
+    }
+    type -= 500;
+    return 0 <= type && type < 64 && ((keyword_mask >> type) & 1);
+}
+
 // Return -1 on failure, leaving the buffer and capacity unchanged.
 int _PyPegen_grow_loop_buffer(void ***buffer, Py_ssize_t *capacity);
 int _PyPegen_atom_fast_path(Parser *p, void *result);
