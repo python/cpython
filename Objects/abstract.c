@@ -719,6 +719,23 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 
     /* Otherwise a more elaborate copy scheme is needed */
 
+    if (view_dest.ndim != view_src.ndim) {
+        PyErr_SetString(PyExc_BufferError,
+                        "destination and source buffers must have the same shape");
+        PyBuffer_Release(&view_dest);
+        PyBuffer_Release(&view_src);
+        return -1;
+    }
+    for (k = 0; k < view_src.ndim; k++) {
+        if (view_dest.shape[k] != view_src.shape[k]) {
+            PyErr_SetString(PyExc_BufferError,
+                            "destination and source buffers must have the same shape");
+            PyBuffer_Release(&view_dest);
+            PyBuffer_Release(&view_src);
+            return -1;
+        }
+    }
+
     /* XXX(nnorwitz): need to check for overflow! */
     indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
     if (indices == NULL) {

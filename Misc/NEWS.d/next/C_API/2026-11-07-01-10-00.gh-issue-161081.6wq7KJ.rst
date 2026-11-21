@@ -1,0 +1,2 @@
+Fix :c:func:`PyObject_CopyData` corrupting memory when copying between
+non-contiguous buffers with different shapes.
