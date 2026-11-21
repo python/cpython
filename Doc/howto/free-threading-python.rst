@@ -62,8 +62,12 @@ at runtime using the environment variable :envvar:`PYTHON_GIL` or
 the command-line option :option:`-X gil`.
 
 The GIL may also automatically be enabled when importing a C-API extension
-module that is not explicitly marked as supporting free threading.  A warning
-will be printed in this case.
+module that is not explicitly marked as supporting free threading.  A
+:exc:`RuntimeWarning` is emitted in this case, and the GIL then remains
+enabled for the rest of the process.  Setting :envvar:`PYTHON_GIL` to ``0``
+(or using ``-X gil=0``) keeps the GIL disabled regardless of the extension's
+declaration, at the risk of data races if the extension is not thread-safe.
+See :ref:`freethreading-extensions-howto` for how extensions declare support.
 
 In addition to individual package documentation, the following websites track
 the status of popular packages support for free threading:
@@ -103,8 +107,8 @@ prevent efficient multi-threaded scaling.
 
 As of the 3.14 release, immortalization is limited to:
 
-* Code constants: numeric literals, string literals, and tuple literals
-  composed of other constants.
+* Code constants: numeric, string, and bytes literals, and tuple, frozenset,
+  and slice constants composed of other constants.
 * Strings interned by :func:`sys.intern`.
 
 
