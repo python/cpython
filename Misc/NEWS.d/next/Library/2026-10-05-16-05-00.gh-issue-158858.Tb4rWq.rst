@@ -1,0 +1,2 @@
+Speed up writing :mod:`tarfile` streams (``w|`` modes) with a large
+*copybufsize*: each chunk is no longer re-copied once per output block.
