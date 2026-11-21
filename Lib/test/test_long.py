@@ -316,6 +316,44 @@ class LongTest(unittest.TestCase):
                 self.check_bitop_identities_2(x, y)
                 self.check_bitop_identities_3(x, y, self.getran((lenx + leny)//2))
 
+    def test_bitwise_cancellation(self):
+        for ndigits in (3, 4, 8, 16):
+            high = BASE ** ndigits
+            for low in (0, 1, 256, 257, BASE - 1, BASE, BASE + 1,
+                        BASE ** 2 - 1, BASE ** 2):
+                with self.subTest(ndigits=ndigits, low=low):
+                    self.assertEqual((high + low) ^ high, low)
+                    self.assertEqual(high ^ (high + low), low)
+                    self.assertEqual((high + low) & (2 * high + low), low)
+                    self.assertEqual((2 * high + low) & (high + low), low)
+                    self.assertEqual((high + low) & (BASE * high + low), low)
+                    self.assertEqual((BASE * high + low) & (high + low), low)
+
+    def test_bitwise_digit_boundaries(self):
+        values = {0, 1, -1}
+        for ndigits in (1, 2, 3, 4, 8):
+            power = BASE ** ndigits
+            for value in (power - 1, power, power + 1, power + BASE - 1,
+                          power + BASE, 2 * power - 1):
+                values.update((value, -value))
+
+        values = sorted(values)
+        for x in values:
+            for y in values:
+                with self.subTest(x=x, y=y):
+                    nbytes = (max(x.bit_length(), y.bit_length()) + 8) // 8
+                    a = x.to_bytes(nbytes, 'little', signed=True)
+                    b = y.to_bytes(nbytes, 'little', signed=True)
+                    self.assertEqual(x & y, int.from_bytes(
+                        bytes(u & v for u, v in zip(a, b)),
+                        'little', signed=True))
+                    self.assertEqual(x | y, int.from_bytes(
+                        bytes(u | v for u, v in zip(a, b)),
+                        'little', signed=True))
+                    self.assertEqual(x ^ y, int.from_bytes(
+                        bytes(u ^ v for u, v in zip(a, b)),
+                        'little', signed=True))
+
     def slow_format(self, x, base):
         digits = []
         sign = 0
