@@ -2416,14 +2416,17 @@ are always available.  They are listed here in alphabetical order.
       This is an advanced function that is not needed in everyday Python
       programming, unlike :func:`importlib.import_module`.
 
-   This function is invoked by the :keyword:`import` statement.  It can be
-   replaced (by importing the :mod:`builtins` module and assigning to
-   ``builtins.__import__``) in order to change semantics of the
-   :keyword:`!import` statement, but doing so is **strongly** discouraged as it
-   is usually simpler to use import hooks (see :pep:`302`) to attain the same
-   goals and does not cause issues with code which assumes the default import
-   implementation is in use.  Direct use of :func:`__import__` is also
-   discouraged in favor of :func:`importlib.import_module`.
+   Eager :keyword:`import` statements call this function.
+   For :ref:`lazy imports <lazy-imports>`, Python calls this function at
+   resolution.
+
+   You can replace :func:`__import__` through an assignment to
+   ``builtins.__import__``. Import hooks (see :pep:`302`) usually provide a
+   simpler way to customize imports. A replacement can cause problems for code
+   that expects the default import implementation.
+   Do not replace :func:`__import__` unless import hooks cannot supply the
+   required behavior.
+   To import a module by name, use :func:`importlib.import_module`.
 
    The function imports the module *name*, potentially using the given *globals*
    and *locals* to determine how to interpret the name in a package context.

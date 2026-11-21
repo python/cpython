@@ -457,7 +457,8 @@ Some names are only reserved under specific contexts. These are known as
 
 - ``match``, ``case``, and ``_``, when used in the :keyword:`match` statement.
 - ``type``, when used in the :keyword:`type` statement.
-- ``lazy``, when used before an :keyword:`import` statement.
+- ``lazy``, when used before :keyword:`import` or :keyword:`from` in a
+  :ref:`lazy import <lazy-imports>` statement.
 
 These syntactically act as keywords in their specific contexts,
 but this distinction is done at the parser level, not when tokenizing.

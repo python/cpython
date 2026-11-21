@@ -13,9 +13,9 @@ the most common way of invoking the import machinery, but it is not the only
 way.  Functions such as :func:`importlib.import_module` and built-in
 :func:`__import__` can also be used to invoke the import machinery.
 
-The :keyword:`import` statement combines two operations; it searches for the
-named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`!import` statement is defined as
+An eager :keyword:`import` statement performs two operations.
+It searches for the named module, then binds the result to a name in the local
+scope. The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
 binding operation of the :keyword:`!import` statement.  See the
@@ -28,8 +28,8 @@ such as the importing of parent packages, and the updating of various caches
 (including :data:`sys.modules`), only the :keyword:`import` statement performs
 a name binding operation.
 
-When an :keyword:`import` statement is executed, the standard builtin
-:func:`__import__` function is called. Other mechanisms for invoking the
+When an eager :keyword:`import` statement executes, Python calls the standard
+built-in :func:`__import__` function. Other mechanisms for invoking the
 import system (such as :func:`importlib.import_module`) may choose to bypass
 :func:`__import__` and use their own solutions to implement import semantics.
 
@@ -45,6 +45,13 @@ described in the sections below.
    of :pep:`302`. There is no longer any implicit import machinery - the full
    import system is exposed through :data:`sys.meta_path`. In addition,
    native namespace package support has been implemented (see :pep:`420`).
+
+With :ref:`lazy imports <lazy-imports>`, an import statement can bind a proxy
+before the module search and execution occur. The first use of the imported
+name resolves the proxy through the import system.
+The sections below describe the module search and execution at that point.
+Direct calls to :func:`__import__` and :func:`importlib.import_module`
+remain eager in both lazy import modes.
 
 
 :mod:`importlib`
