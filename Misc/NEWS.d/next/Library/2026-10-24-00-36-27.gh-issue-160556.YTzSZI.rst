@@ -1,0 +1,2 @@
+Fix quadratic time in :meth:`csv.Sniffer.sniff` for samples with long runs
+of spaces.  The regression was introduced in 3.16.0a1.
