@@ -1251,7 +1251,11 @@ def _find_and_load_unlocked(name, import_, *, lazy_submodule=False):
                 parent_spec._uninitialized_submodules.pop()
     if parent:
         # Set the module as an attribute on its parent.
-        parent_module = sys.modules[parent]
+        try:
+            parent_module = sys.modules[parent]
+        except KeyError:
+            _call_with_frames_removed(import_, parent)
+            parent_module = sys.modules[parent]
         try:
             setattr(parent_module, child, module)
         except AttributeError:

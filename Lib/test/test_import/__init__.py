@@ -1642,6 +1642,17 @@ class RelativeImportTests(unittest.TestCase):
             import package2.submodule1
             package2.submodule1.submodule2
 
+    def test_lazy_import_from_unloaded_package(self):
+        old_mode = sys.get_lazy_imports()
+        self.addCleanup(sys.set_lazy_imports, old_mode)
+        self.addCleanup(sys.lazy_modules.difference_update, {
+            'package2', 'package2.submodule1', 'package2.submodule2'})
+        sys.set_lazy_imports('all')
+        with uncache('package2', 'package2.submodule1', 'package2.submodule2'), \
+             DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
+            import package2.submodule1
+            package2.submodule1.submodule2
+
     def test_rebinding(self):
         # The same data is also used for testing pkgutil.resolve_name()
         # in test_pkgutil and mock.patch in test_unittest.
