@@ -31,7 +31,7 @@ except ImportError:
 
 from pathlib._os import (
     vfsopen, vfspath,
-    ensure_different_files, ensure_distinct_paths,
+    ensure_different_files, ensure_distinct_paths, is_case_only_rename,
     copyfile2, copyfileobj,
 )
 
@@ -1381,7 +1381,11 @@ class Path(PurePath):
         except TypeError:
             pass
         else:
-            ensure_different_files(self, target)
+            # On a case-insensitive filesystem, changing only the case of
+            # the name refers to the same file. Rename it anyway, as
+            # shutil.move() does.
+            if not is_case_only_rename(self, target):
+                ensure_different_files(self, target)
             try:
                 os.replace(self, target)
             except OSError as err:

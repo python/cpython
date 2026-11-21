@@ -1684,6 +1684,43 @@ class PathTest(PurePathTest):
         source = base / 'fileA'
         self.assertRaises(OSError, source.move, source)
 
+    def test_move_file_change_case(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'FILEA'
+        if not target.exists():
+            self.skipTest('requires a case-insensitive filesystem')
+        source_text = source.read_text()
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertIn('FILEA', os.listdir(base))
+        self.assertNotIn('fileA', os.listdir(base))
+        self.assertEqual(source_text, target.read_text())
+
+    def test_move_dir_change_case(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'DIRC'
+        if not target.exists():
+            self.skipTest('requires a case-insensitive filesystem')
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertIn('DIRC', os.listdir(base))
+        self.assertNotIn('dirC', os.listdir(base))
+        self.assertTrue(target.joinpath('fileC').is_file())
+
+    @os_helper.skip_unless_hardlink
+    def test_move_file_to_hardlink_differing_in_case(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'FILEA'
+        if target.exists():
+            self.skipTest('requires a case-sensitive filesystem')
+        target.hardlink_to(source)
+        self.assertRaises(OSError, source.move, target)
+        self.assertTrue(source.exists())
+        self.assertTrue(target.exists())
+
     def test_move_dir(self):
         base = self.cls(self.base)
         source = base / 'dirC'
