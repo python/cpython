@@ -1748,6 +1748,18 @@ class LongTest(unittest.TestCase):
         self.assertEqual(a * b, (1 << (SHIFT * 139)) + (1 << (SHIFT * 209)))
         self.assertEqual(b * a, a * b)
 
+    def test_karatsuba_zero_parts(self):
+        # gh-100687: k_lopsided_mul() passes slices of the larger operand
+        # to k_mul(), and such a slice can consist of zero digits only.
+        n = KARATSUBA_CUTOFF + 30
+        a = (1 << (SHIFT * n)) - 1
+        b = 1 << (SHIFT * n * 3)
+        self.assertEqual(a * b, a << (SHIFT * n * 3))
+        self.assertEqual(b * a, a * b)
+        # Only the high half of a slice is zero.
+        b += 1 << (SHIFT * (n + 1))
+        self.assertEqual(a * b, (a << (SHIFT * n * 3)) + (a << (SHIFT * (n + 1))))
+
     def test_hash(self):
         # gh-136599
         self.assertEqual(hash(-1), -2)
