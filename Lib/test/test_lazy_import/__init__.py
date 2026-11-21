@@ -862,6 +862,34 @@ class SysLazyImportsAPITests(LazyImportTestCase):
 class ErrorHandlingTests(LazyImportTestCase):
     """Tests for error handling during lazy import reification."""
 
+    def test_shared_submodule_omits_declaration(self):
+        code = textwrap.dedent("""
+            import traceback
+
+            namespaces = {'A': {}, 'B': {}, 'helper': {}}
+            for name in 'AB':
+                exec(compile('lazy import xml.missing', name + '.py', 'exec'),
+                     namespaces[name])
+            exec('import xml', namespaces['helper'])
+
+            for namespace in namespaces.values():
+                for _ in range(2):
+                    try:
+                        exec(compile('xml.missing', 'access.py', 'exec'),
+                             namespace)
+                    except ModuleNotFoundError as exc:
+                        assert exc.name == 'xml.missing', exc.name
+                        assert exc.__cause__ is None, exc.__cause__
+                        assert exc.__context__ is None, exc.__context__
+                        assert not getattr(exc, '__notes__', ()), exc.__notes__
+                        frames = traceback.extract_tb(exc.__traceback__)
+                        assert frames[-1].filename == 'access.py', frames
+                        assert frames[-1].lineno == 1, frames
+                    else:
+                        raise AssertionError('ModuleNotFoundError was not raised')
+        """)
+        assert_python_ok("-c", code)
+
     def test_missing_lazy_submodule_raises_module_not_found_error(self):
         """Accessing a nonexistent lazy submodule via parent attr raises ModuleNotFoundError."""
         code = textwrap.dedent("""
@@ -938,20 +966,33 @@ class ErrorHandlingTests(LazyImportTestCase):
         'test.test_lazy_import.data.broken_module_chained_context',
         'test.test_lazy_import.data.broken_module_chained_suppressed',
     ))
-    def test_chained_exception_import_shows_notes(self, name):
-        """Accessing missing attribute from lazy from-import should chain errors."""
+    @support.subTests('aliased', (False, True))
+    def test_chained_exception_import_preserves_chain(self, name, aliased):
+        statement = f'lazy import {name}' + (' as target' if aliased else '')
+        access = 'target' if aliased else name
         code = textwrap.dedent(f"""
-            lazy import {name}
+            {statement}
 
             try:
-                _ = {name}
+                _ = {access}
             except ValueError as e:
-                assert any(
-                    note.startswith("lazy import of '{name}' declared in ")
-                    for note in e.__notes__
-                ), e.__notes__
+                assert str(e) == 'This module always fails to import', e
+                notes = getattr(e, '__notes__', ())
+                if {aliased!r}:
+                    assert any(
+                        note.startswith("lazy import of '{name}' declared in ")
+                        for note in notes
+                    ), notes
+                else:
+                    assert not notes, notes
+                assert (e.__cause__ is not None) is {name.endswith('_cause')}
+                assert (e.__context__ is not None) is {name.endswith('_context')}
+                assert e.__suppress_context__ is {not name.endswith('_context')}
+                original = e.__cause__ or e.__context__
+                if original is not None:
+                    assert str(original) == 'Cause of failure', original
             else:
-                raise AssertionError("ImportError was not raised")
+                raise AssertionError("ValueError was not raised")
         """)
         assert_python_ok("-c", code)
 
@@ -997,6 +1038,8 @@ class ErrorHandlingTests(LazyImportTestCase):
                 assert [frame.name for frame in frames] == ["<module>", "<module>"], frames
                 assert frames[0].filename == "<string>", frames
                 assert frames[1].filename.endswith("broken_module.py"), frames
+                assert exc.__cause__ is None, exc.__cause__
+                assert not getattr(exc, '__notes__', ()), exc.__notes__
             else:
                 raise AssertionError("ValueError was not raised")
         """)

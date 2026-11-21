@@ -199,9 +199,10 @@ restructuring or conditional imports scattered throughout the codebase.
 
 In the case where loading a lazily imported module fails (for example, if
 the module does not exist), Python raises the exception at the point of
-first use rather than at import time. The associated traceback includes both
-the location where the name was accessed and the original import statement,
-making it straightforward to diagnose and debug the failure.
+first use rather than at import time. The traceback shows the access and the
+import failure. It can also identify the original import statement. Python
+omits this extra location when an attribute access on a package triggers a
+submodule import, since several declarations can refer to the same submodule.
 
 For cases where you want to enable lazy loading globally without modifying
 source code, Python provides the :option:`-X lazy_imports <-X>` command-line
