@@ -1,6 +1,7 @@
 import builtins
 import locale
 import os
+import signal
 import sys
 import threading
 
@@ -72,7 +73,7 @@ class saved_test_environment:
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._local._loop',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
-                 'stty_echo',
+                 'stty_echo', 'signal_handlers',
                 )
 
     def get_module(self, name):
@@ -317,6 +318,14 @@ class saved_test_environment:
             # Turn echo off.
             attrs[3] &= ~termios.ECHO
         termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
+
+    def get_signal_handlers(self):
+        # The two signals which are the most likely to be overridden
+        signums = [signal.SIGINT, signal.SIGTERM]
+        return {signum: signal.getsignal(signum) for signum in signums}
+    def restore_signal_handlers(self, handlers):
+        for signum, handler in handlers.items():
+            signal.signal(signum, handler)
 
     def resource_info(self):
         for name in self.resources:
