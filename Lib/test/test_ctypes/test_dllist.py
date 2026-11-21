@@ -57,6 +57,7 @@ class ListSharedLibraries(unittest.TestCase):
 
     @unittest.skipUnless(APPLE, "requires an Apple platform")
     def test_import_does_not_search_for_libc(self):
+        self.addCleanup(setattr, ctypes, "util", ctypes.util)
         with patch("ctypes.macholib.dyld.dyld_find", return_value=None) as find:
             import_helper.import_fresh_module("ctypes.util")
         find.assert_not_called()
