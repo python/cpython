@@ -553,6 +553,11 @@ extern void _ctypes_init_fielddesc(void);
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+#if defined(MS_WIN32) && !defined(MS_WINDOWS_DESKTOP)
+  /* Make a closure written by ffi_prep_closure_loc() executable (UWP only).
+     Return 0 on success, or set an exception and return -1 on error. */
+  int Py_ffi_closure_make_executable(void* p, size_t size);
+#endif
 #else
 #define Py_ffi_closure_free ffi_closure_free
 #define Py_ffi_closure_alloc ffi_closure_alloc

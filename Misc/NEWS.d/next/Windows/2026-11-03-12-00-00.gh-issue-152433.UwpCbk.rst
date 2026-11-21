@@ -1,0 +1,3 @@
+:mod:`ctypes` callbacks now work on Windows UWP builds. Closure memory is
+allocated writable and switched to executable once the closure is prepared,
+since UWP does not allow memory that is writable and executable at once.
