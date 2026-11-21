@@ -2100,8 +2100,9 @@ class TextIOWrapper(TextIOBase):
     instead.  See the codecs module for the list of supported
     encodings.
 
-    errors determines the strictness of encoding and decoding (see the
-    codecs.register) and defaults to "strict".
+    errors determines the strictness of encoding and decoding (see
+    help(codecs.Codec) or the documentation for codecs.register) and
+    defaults to "strict".
 
     newline can be None, '', '\n', '\r', or '\r\n'.  It controls the
     handling of line endings. If it is None, universal newlines is
