@@ -1,0 +1,1 @@
+Fix Argument Clinic to initialize the string length to match the default value when an optional string argument is omitted.

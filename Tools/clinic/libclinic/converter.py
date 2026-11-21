@@ -286,6 +286,13 @@ class CConverter(metaclass=CConverterAutoRegister):
     def c_default_init(self) -> None:
         return
 
+    def length_c_default(self) -> str | None:
+        """
+        The C expression the associated "length" variable is initialized
+        with, or None if the converter cannot compute it.
+        """
+        return None
+
     # An alternative name of a preceding parameter: they share
     # the same C variable.
     alias_of: Parameter | None = None
@@ -445,7 +452,17 @@ class CConverter(metaclass=CConverterAutoRegister):
         declaration.append(";")
         if self.length:
             declaration.append('\n')
-            declaration.append(f"Py_ssize_t {self.length_name};")
+            declaration.append(f"Py_ssize_t {self.length_name}")
+            # The parser only writes the length when the argument is
+            # passed, so an optional parameter needs its length
+            # initialized from the default value.
+            if self.is_optional():
+                length_c_default = self.length_c_default()
+                if length_c_default is None:
+                    fail(f"{self.__class__.__name__}: cannot compute "
+                         f"the default value for {self.length_name!r}")
+                declaration.append(f" = {length_c_default}")
+            declaration.append(";")
         return "".join(declaration)
 
     def initialize(self) -> str:
