@@ -18,7 +18,14 @@ import sys
 
 lazy from _colorize import decolor, get_theme
 
-__all__ = ['dis', 'genops', 'optimize']
+__all__ = [
+    'dis',
+    'genops',
+    'optimize',
+    'ArgumentDescriptor',
+    'StackObject',
+    'OpcodeInfo',
+]
 
 bytes_types = pickle.bytes_types
 
