@@ -306,12 +306,18 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(b, b"gf")
         self.assertEqual(bufio.readinto(b), 0)
         self.assertEqual(b, b"gf")
-        rawio = self.MockRawIO((b"abc", None))
-        bufio = self.tp(rawio)
+        rawio = self.MockRawIO((b"abc", None, None, None, None, None))
+        bufio = self.tp(rawio, buffer_size=4)
         self.assertEqual(bufio.readinto(b), 2)
         self.assertEqual(b, b"ab")
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
+        # Larger than buffer_size: read directly into b
+        b = bytearray(5)
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
 
     def test_readinto1(self):
         buffer_size = 10
@@ -1109,6 +1115,15 @@ class BufferedRWPairTest:
         buffer[:] = b"***"  # Overwrite our copy of the data
         pair.flush()
         self.assertEqual(w._write_stack, [b"abc", b"def"])
+
+    def test_destructor_flushes_shared_stream(self):
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        self.assertEqual(raw._write_stack, [])
+        del pair
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
 
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())

@@ -1,0 +1,2 @@
+For the :term:`free-threaded build`, avoid an assertion failure when an object
+becomes immortal while queued for biased reference counting (BRC) merging.

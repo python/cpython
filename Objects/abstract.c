@@ -2600,6 +2600,28 @@ check_class(PyObject *cls, const char *error)
     return -1;
 }
 
+/* Return 1 if inst.__class__ would resolve to object's own getset descriptor,
+   i.e. evaluate to Py_TYPE(inst).  Types with a custom tp_getattro or an
+   overridden __class__ return 0 and take the generic lookup. */
+static inline int
+class_attr_is_type(PyObject *inst)
+{
+    PyTypeObject *tp = Py_TYPE(inst);
+    if (tp->tp_getattro != PyObject_GenericGetAttr) {
+        return 0;
+    }
+    _PyStackRef cref;
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__class__), &cref);
+    if (PyStackRef_IsNull(cref)) {
+        return 0;
+    }
+    PyObject *descr = PyStackRef_AsPyObjectBorrow(cref);
+    int res = (Py_IS_TYPE(descr, &PyGetSetDescr_Type)
+               && PyDescr_TYPE(descr) == &PyBaseObject_Type);
+    PyStackRef_CLOSE(cref);
+    return res;
+}
+
 static int
 object_isinstance(PyObject *inst, PyObject *cls)
 {
@@ -2608,6 +2630,9 @@ object_isinstance(PyObject *inst, PyObject *cls)
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
+            if (class_attr_is_type(inst)) {
+                return 0;
+            }
             retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
