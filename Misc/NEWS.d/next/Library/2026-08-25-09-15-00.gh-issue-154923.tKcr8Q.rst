@@ -1,0 +1,2 @@
+Fix a data race when creating Tcl interpreters concurrently via
+``_tkinter.create()`` on the :term:`free-threaded build`.
