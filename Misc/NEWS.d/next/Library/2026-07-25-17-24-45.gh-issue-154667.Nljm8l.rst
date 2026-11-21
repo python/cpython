@@ -1,0 +1,2 @@
+Improve :mod:`zipfile` timestamp validation. Reject years after 2107 and
+clamp out-of-range filesystem timestamps when ``strict_timestamps`` is false.
