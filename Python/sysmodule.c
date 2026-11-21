@@ -2778,18 +2778,20 @@ sys.set_lazy_imports_filter
 
 Set the lazy imports filter callback.
 
-The filter is a callable which disables lazy imports when they
-would otherwise be enabled. Returns True if the import is still enabled
-or False to disable it. The callable is called with:
+The filter receives three positional arguments:
 
-(importing_module_name, resolved_imported_module_name, [fromlist])
+(importing_module_name, resolved_imported_module_name, fromlist)
+
+The filter returns True to allow a lazy import, or False to force an
+eager import.
+The filter runs when the import statement executes.
 
 Pass None to clear the filter.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
-/*[clinic end generated code: output=10251d49469c278c input=fd51ed8df6ab54b7]*/
+/*[clinic end generated code: output=10251d49469c278c input=c19391861fdd55d5]*/
 {
     if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;
@@ -2823,21 +2825,19 @@ sys.set_lazy_imports
 
     mode: object
 
-Sets the global lazy imports mode.
+Set the lazy import mode for the current interpreter.
 
-The mode parameter must be one of the following strings:
-- "all": All top-level imports become potentially lazy
-- "normal": Only explicitly marked imports (with 'lazy' keyword) are
-  lazy
+The mode parameter must be one of these strings:
+- "all": Make eligible module-scope imports potentially lazy.
+- "normal": Respect the 'lazy' keyword and __lazy_modules__.
 
-In addition to the mode, lazy imports can be controlled via the filter
-provided to sys.set_lazy_imports_filter
+The filter from sys.set_lazy_imports_filter can force an eager import.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
-/*[clinic end generated code: output=1ff34ba6c4feaf73 input=db3242f0ff6e5dcc]*/
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=b8d9528c12efa7f0]*/
 {
     PyImport_LazyImportsMode lazy_mode;
     if (!PyUnicode_Check(mode)) {
@@ -2866,16 +2866,17 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
 /*[clinic input]
 sys.get_lazy_imports
 
-Gets the global lazy imports mode.
+Return the lazy import mode for the current interpreter.
 
-Returns "all" if all top level imports are potentially lazy.
-Returns "normal" if only explicitly marked imports are lazy.
+The mode is "all" if eligible module-scope imports are potentially lazy.
+The default mode, "normal", respects the 'lazy' keyword and
+__lazy_modules__.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_imports_impl(PyObject *module)
-/*[clinic end generated code: output=4147dec48c51ae99 input=6f8dd4f2c82893f2]*/
+/*[clinic end generated code: output=4147dec48c51ae99 input=ca95d71297deea55]*/
 {
     switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_NORMAL:

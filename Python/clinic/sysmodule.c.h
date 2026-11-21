@@ -1927,11 +1927,13 @@ PyDoc_STRVAR(sys_set_lazy_imports_filter__doc__,
 "\n"
 "Set the lazy imports filter callback.\n"
 "\n"
-"The filter is a callable which disables lazy imports when they\n"
-"would otherwise be enabled. Returns True if the import is still enabled\n"
-"or False to disable it. The callable is called with:\n"
+"The filter receives three positional arguments:\n"
 "\n"
-"(importing_module_name, resolved_imported_module_name, [fromlist])\n"
+"(importing_module_name, resolved_imported_module_name, fromlist)\n"
+"\n"
+"The filter returns True to allow a lazy import, or False to force an\n"
+"eager import.\n"
+"The filter runs when the import statement executes.\n"
 "\n"
 "Pass None to clear the filter.");
 
@@ -2011,15 +2013,13 @@ PyDoc_STRVAR(sys_set_lazy_imports__doc__,
 "set_lazy_imports($module, /, mode)\n"
 "--\n"
 "\n"
-"Sets the global lazy imports mode.\n"
+"Set the lazy import mode for the current interpreter.\n"
 "\n"
-"The mode parameter must be one of the following strings:\n"
-"- \"all\": All top-level imports become potentially lazy\n"
-"- \"normal\": Only explicitly marked imports (with \'lazy\' keyword) are\n"
-"  lazy\n"
+"The mode parameter must be one of these strings:\n"
+"- \"all\": Make eligible module-scope imports potentially lazy.\n"
+"- \"normal\": Respect the \'lazy\' keyword and __lazy_modules__.\n"
 "\n"
-"In addition to the mode, lazy imports can be controlled via the filter\n"
-"provided to sys.set_lazy_imports_filter");
+"The filter from sys.set_lazy_imports_filter can force an eager import.");
 
 #define SYS_SET_LAZY_IMPORTS_METHODDEF    \
     {"set_lazy_imports", _PyCFunction_CAST(sys_set_lazy_imports), METH_FASTCALL|METH_KEYWORDS, sys_set_lazy_imports__doc__},
@@ -2077,10 +2077,11 @@ PyDoc_STRVAR(sys_get_lazy_imports__doc__,
 "get_lazy_imports($module, /)\n"
 "--\n"
 "\n"
-"Gets the global lazy imports mode.\n"
+"Return the lazy import mode for the current interpreter.\n"
 "\n"
-"Returns \"all\" if all top level imports are potentially lazy.\n"
-"Returns \"normal\" if only explicitly marked imports are lazy.");
+"The mode is \"all\" if eligible module-scope imports are potentially lazy.\n"
+"The default mode, \"normal\", respects the \'lazy\' keyword and\n"
+"__lazy_modules__.");
 
 #define SYS_GET_LAZY_IMPORTS_METHODDEF    \
     {"get_lazy_imports", (PyCFunction)sys_get_lazy_imports, METH_NOARGS, sys_get_lazy_imports__doc__},
@@ -2217,4 +2218,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=dbca81c5072bd0e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f64e1143b0add69 input=a9049054013a1b77]*/

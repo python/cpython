@@ -1607,9 +1607,11 @@ PyConfig
 
       Control :ref:`lazy imports <lazy-imports>`.
 
-      A value of ``-1`` keeps the default behaviour, where only imports marked
-      with the ``lazy`` keyword are lazy. A value of ``1`` makes every import
-      lazy. ``0`` is rejected.
+      A value of ``-1`` selects the default behavior, which respects
+      :keyword:`lazy` and :attr:`module.__lazy_modules__`.
+      A value of ``1`` makes eligible module-scope imports lazy by default.
+      The :ref:`lazy import restrictions <lazy-imports>` apply in both modes.
+      A value of ``0`` is invalid.
 
       Configured by the :option:`-X lazy_imports <-X>` command line option or
       the :envvar:`PYTHON_LAZY_IMPORTS` environment variable.

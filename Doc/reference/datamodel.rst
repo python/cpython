@@ -1158,6 +1158,11 @@ Module objects also have the following special read-only attribute:
    listed here, :attr:`!__dict__` cannot be accessed as a global variable from
    within a module; it can only be accessed as an attribute on module objects.
 
+   Dictionary access does not resolve :ref:`lazy import proxies <lazy-imports>`.
+   This also applies to the dictionary that :func:`globals` returns.
+   See :class:`types.LazyImportType` for proxy detection and explicit
+   resolution.
+
    .. impl-detail::
 
       Because of the way CPython clears module dictionaries, the module

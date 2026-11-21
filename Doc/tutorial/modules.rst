@@ -74,9 +74,20 @@ More on Modules
 ===============
 
 A module can contain executable statements as well as function definitions.
-These statements are intended to initialize the module. They are executed only
-the *first* time the module name is encountered in an import statement. [#]_
+These statements initialize the module. Python executes them only the
+*first* time it loads the module. [#]_
 (They are also run if the file is executed as a script.)
+
+A :ref:`lazy import <lazy-imports>` delays this execution until the first
+use of the imported name. For example, in a new interpreter session::
+
+   >>> lazy import fibo
+   >>> fibo.fib(10)  # Loads the module, then calls fib().
+   0 1 1 2 3 5 8
+
+The ``lazy`` keyword is available in Python 3.15 and later.
+Lazy imports are permitted only at module scope and outside
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks.
 
 Each module has its own private namespace, which is used as the global namespace
 by all functions defined in the module. Thus, the author of a module can

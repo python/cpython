@@ -950,9 +950,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Returns the current lazy imports mode as a string.
 
-   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
-     are lazy
-   * ``"all"``: All top-level imports are potentially lazy
+   * ``"normal"``: Respect :keyword:`lazy` and
+     :attr:`module.__lazy_modules__`. This is the default mode.
+   * ``"all"``: Make all eligible module-scope imports potentially lazy.
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -1829,12 +1829,16 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: set_lazy_imports(mode)
 
-   Sets the global lazy imports mode. The *mode* parameter must be one of
-   the following strings:
+   Set the lazy import mode for the current interpreter.
+   The *mode* parameter must be one of these strings:
 
-   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
-     are lazy
-   * ``"all"``: All top-level imports become potentially lazy
+   * ``"normal"``: Respect :keyword:`lazy` and
+     :attr:`module.__lazy_modules__`. This is the default mode.
+   * ``"all"``: Make all eligible module-scope imports potentially lazy.
+
+   The :ref:`lazy import restrictions <lazy-imports>` also apply in
+   ``"all"`` mode. A mode change applies to subsequent import statements.
+   It does not resolve lazy import proxies from earlier statements.
 
    This function is intended for advanced users who need to control lazy
    imports across their entire application. Library developers should
@@ -1858,12 +1862,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    determine whether it should actually be lazy. It should have the following
    signature::
 
-      def filter(importing_module: str, imported_module: str,
+      def filter(importing_module: str | None, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool
 
    The function is called with three positional arguments:
 
-   * *importing_module* is the name of the module doing the import
+   * *importing_module* is the name of the module that executes the import,
+     or ``None`` if its globals do not contain ``__name__``
    * *imported_module* is the resolved name of the module being imported
      (for example, ``lazy from .spam import eggs`` passes
      ``package.spam``)
@@ -1872,6 +1877,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The filter should return ``True`` to allow the import to be lazy, or
    ``False`` to force an eager import.
+
+   The filter runs when the import statement executes, before proxy creation.
+   If the filter raises an exception, the exception propagates from that
+   statement. The filter cannot make an otherwise eager import lazy.
 
    This is an advanced feature intended for specialized users who need
    fine-grained control over lazy import behavior.

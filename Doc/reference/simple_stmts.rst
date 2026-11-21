@@ -893,13 +893,16 @@ Lazy imports are only permitted at module scope. Using :keyword:`lazy`
 inside a function, class body, or
 :keyword:`try`/:keyword:`except`/:keyword:`finally` block raises a
 :exc:`SyntaxError`. Star imports cannot be lazy (``lazy from module import
-*`` is a syntax error), and :ref:`future statements <future>` cannot be
-lazy.
+*`` is a syntax error). Explicit :keyword:`lazy` syntax is also invalid for
+:ref:`future statements <future>`.
 
-When using ``lazy from ... import``, each imported name is bound to a lazy
-proxy object. The first access to any of these names triggers loading of the
-entire module and resolves only that specific name to its actual value.
-Other names remain as lazy proxies until they are accessed.
+With ``lazy from ... import``, each imported name can have its own proxy.
+If the module is already initialized, Python can bind an attribute without
+a proxy.
+Otherwise, the first access loads the module and resolves the requested name.
+Other names remain unresolved until access.
+If a name refers to a submodule, access loads that submodule and its
+dependencies.
 
 Example::
 
@@ -917,9 +920,64 @@ If an error occurs during module loading (such as :exc:`ImportError` or
 :exc:`SyntaxError`), it is raised at the point where the lazy import is first
 used, not at the import statement itself.
 
+The sections below describe name resolution and runtime controls.
 See :pep:`810` for the full specification of lazy imports.
 
 .. versionadded:: 3.15
+
+Resolution and side effects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Python resolves a proxy when code reads the imported name or accesses that
+name as a module attribute. After resolution, Python replaces the proxy if
+the namespace permits writes and the entry still contains that proxy.
+
+Direct access through :func:`globals` or a module's :attr:`~module.__dict__`
+returns the proxy without resolution. The same applies to dictionary
+iteration. :func:`dir` lists the names of a module and does not resolve
+its lazy imports.
+Use :class:`types.LazyImportType` to identify a proxy.
+Its :meth:`~types.LazyImportType.resolve` method returns the imported object.
+
+The module search occurs at resolution time. Changes to :data:`sys.path`
+or import hooks before resolution can change which module Python imports.
+Direct calls to :func:`__import__` and :func:`importlib.import_module`
+are eager.
+
+Module code executes when resolution loads the module.
+Side effects, such as plugin registration, occur at that time.
+If a program needs these side effects before the first use of an imported
+name, use an eager import.
+In the default ``"normal"`` mode, omit :keyword:`lazy` and exclude the module
+from :attr:`~module.__lazy_modules__`.
+
+An import failure leaves the proxy available for a later attempt.
+If resolution recursively accesses the same unresolved proxy, Python raises
+:exc:`ImportCycleError`.
+
+Runtime controls
+^^^^^^^^^^^^^^^^
+
+The default ``"normal"`` mode respects explicit :keyword:`lazy` statements
+and :attr:`~module.__lazy_modules__`.
+The ``"all"`` mode also makes other eligible module-scope imports lazy.
+Imports inside functions, class bodies, and
+:keyword:`try`/:keyword:`except`/:keyword:`finally` blocks remain eager.
+Star imports also remain eager.
+
+Set the mode with :option:`-X lazy_imports <-X>`,
+:envvar:`PYTHON_LAZY_IMPORTS`, or :func:`sys.set_lazy_imports`.
+:func:`sys.get_lazy_imports` returns the current mode.
+A mode change applies to subsequent import statements.
+It does not resolve proxies from earlier statements.
+
+:func:`sys.set_lazy_imports_filter` supplies a filter that can force any
+potentially lazy import to be eager. This also applies to explicit
+:keyword:`lazy` statements. The filter runs when the import statement executes.
+A filter exception therefore occurs at the import statement.
+The filter cannot make an otherwise eager import lazy.
+
+See also :data:`sys.lazy_modules`.
 
 .. _lazy-modules-compat:
 

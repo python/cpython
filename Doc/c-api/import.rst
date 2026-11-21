@@ -371,12 +371,13 @@ Importing Modules
 
 .. c:function:: int PyImport_SetLazyImportsFilter(PyObject *filter)
 
-   Sets the current lazy imports filter. The *filter* should be a callable that
-   will receive ``(importing_module_name, imported_module_name, [fromlist])``
-   when an import can potentially be lazy. The ``imported_module_name`` value
-   is the resolved module name, so ``lazy from .spam import eggs`` passes
-   ``package.spam``. The callable must return ``True`` if the import should be
-   lazy and ``False`` otherwise.
+   Set the lazy import filter for the current interpreter.
+   The *filter* must be a callable, ``NULL``, or :c:data:`Py_None`.
+   Use ``NULL`` or :c:data:`Py_None` to clear the filter.
+   The callable receives three positional arguments:
+   ``(importing_module_name, imported_module_name, fromlist)``.
+   See :func:`sys.set_lazy_imports_filter` for the arguments and filter
+   behavior.
 
    Return ``0`` on success and ``-1`` with an exception set otherwise.
 
@@ -388,11 +389,13 @@ Importing Modules
 
    .. c:enumerator:: PyImport_LAZY_NORMAL
 
-      Respect the ``lazy`` keyword in source code. This is the default mode.
+      Respect :keyword:`lazy` and :attr:`module.__lazy_modules__`.
+      This is the default mode.
 
    .. c:enumerator:: PyImport_LAZY_ALL
 
-      Make all imports lazy by default.
+      Make eligible module-scope imports lazy by default.
+      See the :ref:`lazy import restrictions <lazy-imports>`.
 
    .. versionadded:: 3.15
 

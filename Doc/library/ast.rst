@@ -1128,9 +1128,11 @@ described in other sections.
 Imports
 ~~~~~~~
 
-.. class:: Import(names)
+.. class:: Import(names, is_lazy)
 
    An import statement. ``names`` is a list of :class:`alias` nodes.
+   ``is_lazy`` is ``1`` for ``lazy import`` and ``0`` for ``import``.
+   The field records the source syntax and does not reflect runtime controls.
 
    .. doctest::
 
@@ -1145,12 +1147,22 @@ Imports
                     is_lazy=0)])
 
 
-.. class:: ImportFrom(module, names, level)
+   .. versionchanged:: 3.15
+      Added ``is_lazy`` for :ref:`lazy imports <lazy-imports>`.
+
+
+.. class:: ImportFrom(module, names, level, is_lazy)
 
    Represents ``from x import y``. ``module`` is a raw string of the 'from' name,
    without any leading dots, or ``None`` for statements such as ``from . import foo``.
    ``level`` is an integer holding the level of the relative import (0 means
    absolute import).
+   ``is_lazy`` is ``1`` for ``lazy from ... import`` and ``0`` for
+   ``from ... import``.
+
+   The ``is_lazy`` field records the source syntax. It does not reflect
+   runtime controls such as :func:`sys.set_lazy_imports` or
+   :attr:`module.__lazy_modules__`.
 
    .. doctest::
 
@@ -1165,6 +1177,10 @@ Imports
                         alias(name='z')],
                     level=0,
                     is_lazy=0)])
+
+
+   .. versionchanged:: 3.15
+      Added ``is_lazy`` for :ref:`lazy imports <lazy-imports>`.
 
 
 .. class:: alias(name, asname)
