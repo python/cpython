@@ -3333,20 +3333,6 @@ features:
       String that uniquely identifies the type of the filesystem that
       contains the file.
 
-   On macOS systems, the following attributes may also be available:
-
-   .. attribute:: st_rsize
-
-      Real size of the file.
-
-   .. attribute:: st_creator
-
-      Creator of the file.
-
-   .. attribute:: st_type
-
-      File type.
-
    On Windows systems, the following attributes are also available:
 
    .. attribute:: st_file_attributes
