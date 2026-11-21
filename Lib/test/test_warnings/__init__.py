@@ -1915,6 +1915,7 @@ a=A()
         self.assertStartsWith(err, expected)
 
 
+@support.requires_working_socket()
 class AsyncTests(BaseTest):
     """Verifies that the catch_warnings() context manager behaves
     as expected when used inside async co-routines.  This requires
@@ -2009,6 +2010,7 @@ class PyAsyncTests(AsyncTests, unittest.TestCase):
     module = py_warnings
 
 
+@threading_helper.requires_working_threading()
 class ThreadTests(BaseTest):
     """Verifies that the catch_warnings() context manager behaves as
     expected when used within threads.  This requires that both the
