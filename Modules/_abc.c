@@ -83,13 +83,13 @@ typedef struct {
 
 // Shared empty table, so that lookups don't need a NULL check.
 // It is never modified or freed.
-static abc_table empty_table_struct = {
+static const abc_table empty_table_struct = {
     0,              /* mask */
     0,              /* used */
     {{NULL, NULL}}, /* entries */
 };
 
-#define EMPTY_TABLE (&empty_table_struct)
+#define EMPTY_TABLE ((abc_table *)&empty_table_struct)
 
 static inline size_t
 abc_table_nbytes(size_t size)
