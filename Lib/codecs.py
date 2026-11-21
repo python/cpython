@@ -526,6 +526,15 @@ class StreamReader(Codec):
             self.charbuffer += newchars
             # there was no data available
             if not newdata:
+                # The stream is exhausted.  If there are leftover bytes in
+                # bytebuffer, they form an incomplete character.  Decode them
+                # now so that the error handler is applied (strict raises,
+                # replace emits the replacement character, ignore drops them).
+                if self.bytebuffer:
+                    newchars, decodedbytes = self.decode(
+                        self.bytebuffer, self.errors)
+                    self.bytebuffer = self.bytebuffer[decodedbytes:]
+                    self.charbuffer += newchars
                 break
         if chars < 0:
             # Return everything we've got
