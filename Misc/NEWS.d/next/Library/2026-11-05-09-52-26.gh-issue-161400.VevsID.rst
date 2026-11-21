@@ -1,0 +1,3 @@
+Fix :meth:`csv.Sniffer.sniff` returning ``skipinitialspace=True``
+for a space-delimited sample with an unquoted empty field,
+which made the sniffed dialect lose the field.
