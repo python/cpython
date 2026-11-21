@@ -1,0 +1,3 @@
+Fix assigning a dictionary or another unpickler's memo to
+:class:`pickle.Unpickler`. Preserve the memo entries and the index used for
+subsequent memoization.

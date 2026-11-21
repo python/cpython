@@ -5363,6 +5363,55 @@ class AbstractPicklerUnpicklerObjectTests:
         self.assertEqual(unpickled_data2, data)
         self.assertTrue(unpickled_data2 is unpickled_data1)
 
+    def test_assign_unpickler_memo_dict(self):
+        value = []
+        for index in (0, 1, 1000):
+            with self.subTest(index=index):
+                unpickler = self.unpickler_class(
+                    io.BytesIO(f'g{index}\n.'.encode()))
+                memo = {index: value}
+                unpickler.memo = memo
+                self.assertIs(unpickler.load(), value)
+
+    def test_assign_unpickler_memo_continuation(self):
+        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+            for copy_memo in (False, True):
+                with self.subTest(proto=proto, copy_memo=copy_memo):
+                    stream = io.BytesIO()
+                    pickler = self.pickler_class(stream, protocol=proto)
+                    pickler.dump(['first'])
+                    value = ['second']
+                    pickler.dump([value, value])
+                    stream.seek(0)
+                    unpickler = self.unpickler_class(stream)
+                    unpickler.load()
+                    primed = self.unpickler_class(stream)
+                    memo = unpickler.memo
+                    primed.memo = memo.copy() if copy_memo else memo
+                    result = primed.load()
+                    self.assertEqual(result, [value, value])
+                    self.assertIs(result[0], result[1])
+
+    def test_assign_unpickler_memo_sparse(self):
+        source = self.unpickler_class(io.BytesIO(b']p1000\n.'))
+        value = source.load()
+        unpickler = self.unpickler_class(io.BytesIO(b'g1000\n.'))
+        unpickler.memo = source.memo
+        self.assertIs(unpickler.load(), value)
+
+    def test_assign_empty_unpickler_memo(self):
+        unpickler = self.unpickler_class(io.BytesIO(b']p1000\n.g1000\n.'))
+        unpickler.load()
+        unpickler.memo = {}
+        with self.assertRaises(pickle.UnpicklingError):
+            unpickler.load()
+
+    def test_assign_unpickler_own_memo(self):
+        unpickler = self.unpickler_class(io.BytesIO(b']q\x00.h\x00.'))
+        value = unpickler.load()
+        unpickler.memo = unpickler.memo
+        self.assertIs(unpickler.load(), value)
+
     def test_reusing_unpickler_objects(self):
         data1 = ["abcdefg", "abcdefg", 44]
         f = io.BytesIO()
