@@ -42,6 +42,7 @@ def _build_graph_for_future(
     future: futures.Future,
     *,
     limit: int | None = None,
+    seen: set[futures.Future] | None = None,
 ) -> FutureCallGraph:
     if not isinstance(future, futures.Future):
         raise TypeError(
@@ -77,9 +78,15 @@ def _build_graph_for_future(
         else:
             break
 
-    if future._asyncio_awaited_by:
+    if seen is None:
+        seen = set()
+
+    # gh-156860: "awaited by" is a DAG, not a tree. Expand each future once
+    if future._asyncio_awaited_by and future not in seen:
+        seen.add(future)
         for parent in future._asyncio_awaited_by:
-            awaited_by.append(_build_graph_for_future(parent, limit=limit))
+            awaited_by.append(
+                _build_graph_for_future(parent, limit=limit, seen=seen))
 
     if limit is not None:
         if limit > 0:
@@ -184,8 +191,10 @@ def capture_call_graph(
 
     awaited_by = []
     if future._asyncio_awaited_by:
+        seen = {future}
         for parent in future._asyncio_awaited_by:
-            awaited_by.append(_build_graph_for_future(parent, limit=limit))
+            awaited_by.append(
+                _build_graph_for_future(parent, limit=limit, seen=seen))
 
     if limit is not None:
         limit *= -1
