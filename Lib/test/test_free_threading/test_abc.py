@@ -1,4 +1,5 @@
 import gc
+import os
 import threading
 import unittest
 from abc import ABC, ABCMeta
@@ -90,7 +91,7 @@ class TestABC(unittest.TestCase):
                     issubclass(cls, A)
                 A._abc_registry_clear()
                 A._abc_caches_clear()
-                with open('/dev/null', 'w') as f:
+                with open(os.devnull, 'w') as f:
                     A._dump_registry(f)
 
         threads = [threading.Thread(target=worker) for _ in range(4)]
