@@ -3,9 +3,16 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 import os.path
+import sys
+import tempfile
+import textwrap
 import unittest
+import zipfile
+from unittest import mock
 
-from test.support import import_helper, REPO_ROOT, STDLIB_DIR
+from test import support
+from test.support import (import_helper, os_helper, script_helper,
+                          REPO_ROOT, STDLIB_DIR)
 
 
 def resolve_stdlib_file(name, ispkg=False):
@@ -177,6 +184,65 @@ class FindSpecTests(abc.FinderTests):
 (Frozen_FindSpecTests,
  Source_FindSpecTests
  ) = util.test_both(FindSpecTests, machinery=machinery)
+
+
+class PackagePathTests(unittest.TestCase):
+
+    """Test __path__ of frozen packages."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, self.tmpdir)
+        self.missing_dir = os.path.join(self.tmpdir, 'does-not-exist')
+
+    def import_phello(self):
+        with (mock.patch.dict(sys.modules),
+              import_helper.frozen_modules(),
+              support.captured_stdout()):
+            sys.modules.pop('__phello__', None)
+            import __phello__
+        self.assertEqual(__phello__.__spec__.origin, 'frozen')
+        return __phello__
+
+    def test_not_in_stdlib(self):
+        # A frozen package which is not a standard library package
+        # is not looked up on sys.path.
+        os.mkdir(os.path.join(self.tmpdir, '__phello__'))
+        with open(os.path.join(self.tmpdir, '__phello__', '__init__.py'), 'wb'):
+            pass
+        for stdlib_dir, expected in [
+            (self.missing_dir, [os.path.join(self.missing_dir, '__phello__')]),
+            (None, []),
+        ]:
+            with (self.subTest(stdlib_dir=stdlib_dir),
+                  support.swap_attr(sys, 'path', [self.tmpdir, *sys.path]),
+                  support.swap_attr(sys, '_stdlib_dir', stdlib_dir)):
+                module = self.import_phello()
+                self.assertEqual(module.__path__, expected)
+
+    @support.requires_subprocess()
+    def test_zipped_stdlib(self):
+        # gh-148750: The codecs which are not frozen can be imported
+        # if the standard library is not available as a directory.
+        zipname = os.path.join(self.tmpdir, 'stdlib.zip')
+        with zipfile.ZipFile(zipname, 'w') as zf:
+            for name in ('__init__', 'cp437'):
+                zf.write(os.path.join(STDLIB_DIR, 'encodings', f'{name}.py'),
+                         f'encodings/{name}.py')
+        code = textwrap.dedent("""
+            import encodings
+            print(encodings.__spec__.origin)
+            print(encodings.__path__[0])
+            import encodings.cp437
+            print(encodings.cp437.__spec__.origin)
+            """)
+        # PYTHONHOME is a directory without a standard library.
+        proc = script_helper.assert_python_ok(
+            '-S', '-X', 'frozen_modules=on', '-c', code,
+            PYTHONHOME=self.tmpdir, PYTHONPATH=zipname)
+        pkgdir = os.path.join(zipname, 'encodings')
+        self.assertEqual(proc.out.decode().splitlines(),
+                         ['frozen', pkgdir, os.path.join(pkgdir, 'cp437.py')])
 
 
 if __name__ == '__main__':
