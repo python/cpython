@@ -77,7 +77,7 @@ if hasattr(os, 'copy_file_range'):
             sent = os.copy_file_range(source_fd, target_fd, blocksize,
                                       offset_dst=offset)
             if sent == 0:
-                break  # EOF
+                return offset != 0  # Initial zero may be a failed copy.
             offset += sent
 else:
     _copy_file_range = None
@@ -94,7 +94,7 @@ if hasattr(os, 'sendfile'):
         while True:
             sent = os.sendfile(target_fd, source_fd, offset, blocksize)
             if sent == 0:
-                break  # EOF
+                return offset != 0  # Initial zero may be a failed copy.
             offset += sent
 else:
     _sendfile = None
@@ -140,15 +140,15 @@ def copyfileobj(source_f, target_f):
                         raise err
             if _copy_file_range:
                 try:
-                    _copy_file_range(source_fd, target_fd)
-                    return
+                    if _copy_file_range(source_fd, target_fd):
+                        return
                 except OSError as err:
                     if err.errno not in (ETXTBSY, EXDEV):
                         raise err
             if _sendfile:
                 try:
-                    _sendfile(source_fd, target_fd)
-                    return
+                    if _sendfile(source_fd, target_fd):
+                        return
                 except OSError as err:
                     if err.errno != ENOTSOCK:
                         raise err
