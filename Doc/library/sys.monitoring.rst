@@ -54,12 +54,16 @@ Registering and using tools
 
    Unregister all events and callback functions associated with *tool_id*.
 
+   .. audit-event:: sys.monitoring.clear_tool_id tool_id sys.monitoring.clear_tool_id
+
    .. versionadded:: 3.14
 
 .. function:: free_tool_id(tool_id: int, /) -> None
 
    Should be called once a tool no longer requires *tool_id*.
    Will call :func:`clear_tool_id` before releasing *tool_id*.
+
+   .. audit-event:: sys.monitoring.free_tool_id tool_id sys.monitoring.free_tool_id
 
    .. versionchanged:: 3.14
       Now calls :func:`clear_tool_id` before releasing *tool_id*.
