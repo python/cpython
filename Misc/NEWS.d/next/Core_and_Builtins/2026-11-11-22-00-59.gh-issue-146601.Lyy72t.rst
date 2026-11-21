@@ -1,0 +1,3 @@
+Improve the :exc:`SyntaxError` message for an unparenthesized assignment
+expression used as the value of a keyword argument, such as
+``f(a=x := 1)``.
