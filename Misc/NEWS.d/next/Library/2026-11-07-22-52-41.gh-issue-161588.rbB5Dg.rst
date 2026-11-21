@@ -1,0 +1,2 @@
+Allow complete extraction of all records in a tar archive when the PAX
+header 'size' is invalid in :mod:`tarfile`.
