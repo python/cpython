@@ -614,3 +614,686 @@ resizing, remain in effect until then.
 For read-heavy workloads that share an underlying object across threads,
 creating a separate memoryview of that object in each thread may improve
 performance.
+
+
+.. _threadsafety-memory-ordering:
+
+Memory ordering
+===============
+
+.. impl-detail::
+
+   The guarantees in this section apply to CPython's free-threaded build.
+   The default build, which serializes execution with the :term:`GIL`,
+   also satisfies them.  They are not a memory model for other Python
+   implementations, and they apply to third-party extension types only if
+   those types document them.
+
+The sections above describe which operations are atomic.  Memory ordering
+is a separate question: when does a change made by one thread become
+visible to another?  Without a rule for that, a thread that receives an
+object from another thread could see it partly initialized, or could see
+stale values of other variables.
+
+CPython provides *release-acquire* ordering for object references stored in
+shared locations.  In short: if a thread loads a reference that another
+thread stored, it sees everything that thread did before the store.  The
+rest of this section makes that precise.
+
+
+Definitions
+-----------
+
+Memory action
+   A single load or store of a shared location, or a synchronization action
+   such as acquiring a lock or starting a thread.  One Python statement may
+   perform several memory actions.  ``x.a += 1`` loads ``x.a``, adds, and
+   stores ``x.a``; another thread's actions can come between the load and
+   the store.
+
+Shared location
+   Storage that holds a reference to an object and can be reached by more
+   than one thread: list items, dict keys and values, set elements, instance
+   attributes (including attributes in :attr:`~object.__slots__`), class
+   attributes, closure cells, and module globals.  Scalar attributes
+   implemented by C member descriptors are shared locations too.
+
+   The length and other structural state of a container, the contents of
+   buffers such as :class:`bytearray`, and local variables are not shared
+   locations.
+
+Reads-from
+   Every load reads from exactly one store to the same location, or from
+   its initial value.  Deleting an item or attribute is a store.
+
+:term:`Sequenced-before <sequenced-before>`
+   The order of memory actions within one thread.  This is the evaluation
+   order defined in :ref:`evalorder`, together with the order in which
+   statements execute.
+
+:term:`Synchronizes-with <synchronizes-with>`
+   An ordering edge between memory actions in different threads.  The
+   edges CPython provides are listed in the rules below.
+
+:term:`Happens-before <happens-before>`
+   The transitive closure of sequenced-before and synchronizes-with.  If
+   action A happens-before action B, the effects of A are visible to B.
+   Running earlier in time does not by itself make A happen-before B.
+   Happens-before has no cycles: no action happens-before itself.
+
+Coherence
+   The stores to one location occur in a single total order that is
+   consistent with happens-before.  As a result:
+
+   * if a store happens-before a load of the same location, the load reads
+     from that store or a later one, never an older value;
+   * if one load of a location happens-before another, the second reads
+     from the same store as the first or a later one, so values do not go
+     backwards;
+   * a load never reads from a store that it happens-before;
+   * a load never returns a value that was not stored.
+
+   Coherence applies to every load, including the observations of
+   container structure described in rule 2.
+
+
+Rules
+-----
+
+1. **Publication.**  A store of an object reference to a shared location
+   synchronizes-with every load that reads from that store.  A thread that
+   obtains an object from a shared location therefore sees it fully
+   initialized, and also sees everything else the storing thread did
+   before the store.
+
+   A load here is an operation that hands the stored object to the thread:
+   reading a variable or attribute, ``lst[i]``, ``d[k]``, a
+   :meth:`~dict.get` that finds the key, an iterator producing the item,
+   or :meth:`~list.pop` returning it.
+
+   The rule applies to storage locations, not syntax.  The default
+   attribute machinery (:meth:`object.__setattr__`,
+   :meth:`object.__getattribute__`, type and module attribute access,
+   member descriptors) uses the shared locations above, so ordinary
+   attribute access is covered.  A custom :meth:`~object.__setattr__`,
+   :meth:`~object.__getattr__`, :meth:`~object.__getattribute__`,
+   descriptor, property, or module ``__getattr__`` provides whatever its
+   body does.  For example, if it stores into a dict, the guarantee
+   follows from the dict store.
+
+2. **Container structure is not a synchronization point.**  An operation
+   that reports on the shape of a container, rather than returning one of
+   its elements, creates no synchronizes-with edge.  This includes:
+
+   * :func:`len`, truth testing, and :meth:`~object.__len__`;
+   * ``in`` and ``not in``, and comparing containers;
+   * a failed lookup: :exc:`KeyError`, :exc:`IndexError`,
+     :exc:`AttributeError`, :exc:`NameError`, the default returned by
+     :meth:`~dict.get` or :func:`getattr`, or :func:`hasattr` returning
+     false;
+   * an iterator finishing.
+
+   These are still loads, so coherence applies.  A thread that is already
+   ordered after a mutation (through a lock, :meth:`~threading.Thread.join`,
+   a queue, or a reference load under rule 1) sees it: the length includes
+   the appended item, the lookup finds the key, the deleted item is gone.
+   Without such ordering the observation may be stale, and it says nothing
+   about other locations.  The length of a container and its elements are
+   separate state: a thread may see a new length before it can see the
+   element counted by it, or the reverse.
+
+3. **Synchronization primitives.**  The following are synchronizes-with
+   edges:
+
+   * releasing a lock, and the next successful acquisition of it
+     (:class:`~threading.Lock`, :class:`~threading.RLock`, and the locks
+     used by :class:`~threading.Condition` and
+     :class:`~threading.Semaphore`);
+   * :meth:`threading.Thread.start`, and the first action of the new
+     thread;
+   * the last action of a thread, and a :meth:`~threading.Thread.join`
+     that returns because the thread finished, or an
+     :meth:`~threading.Thread.is_alive` that returns false;
+   * :meth:`threading.Event.set`, and a :meth:`~threading.Event.wait` or
+     :meth:`~threading.Event.is_set` that returns true;
+   * :meth:`threading.Condition.notify` or
+     :meth:`~threading.Condition.notify_all`, and the return of a
+     :meth:`~threading.Condition.wait` that it wakes;
+   * :meth:`queue.Queue.put`, and the :meth:`~queue.Queue.get` that
+     returns that item;
+   * completing a :class:`concurrent.futures.Future`, and a
+     :meth:`~concurrent.futures.Future.result`,
+     :meth:`~concurrent.futures.Future.exception`, or true
+     :meth:`~concurrent.futures.Future.done` on it;
+   * dropping the last reference to an object, and its
+     :meth:`~object.__del__` method and :mod:`weakref` callbacks, in
+     whichever thread they run;
+   * similar edges for the other primitives in :mod:`threading`,
+     :mod:`queue` and :mod:`concurrent.futures`.
+
+   A ``join()`` or ``wait()`` that times out creates no edge.
+
+4. **Single mutating operations are atomic.**  The mutating operations
+   documented as atomic in the sections above (such as
+   :meth:`list.append`, :meth:`list.pop`, :meth:`dict.setdefault`,
+   :meth:`dict.pop`, ``del d[k]``, :meth:`set.add` and
+   :meth:`set.discard`) take effect in a single total order per object.
+   That order is consistent with happens-before, and each operation sees
+   the effects of every operation before it in the order and none after
+   it.  So *N* concurrent appends add *N* items, and of *N* concurrent
+   ``d.pop(k)`` calls, exactly one returns the value.
+
+   This order covers only the mutating operations on one object.  It is
+   not a synchronizes-with edge: two threads that append to the same list
+   are not ordered with respect to anything else by doing so.  Readers
+   that do not take the object's lock are not part of the order; they get
+   coherence and rule 1.  Where an operation calls Python code, such as
+   :meth:`~object.__hash__` or :meth:`~object.__eq__`, other operations on
+   the container may run in between, as documented above.
+
+5. **Visibility.**  A store becomes visible in finite time: a thread that
+   keeps loading a location eventually reads from that store or a later
+   one.  The interpreter does not hoist a load of a shared location out of
+   a loop or serve it from a cache indefinitely.
+
+6. **What is not guaranteed.**
+
+   * Sequences of operations are not atomic.  Each load and store is a
+     separate memory action, so ``x.a += 1`` or
+     ``d[k] = d.get(k, 0) + 1`` can lose updates.
+   * There is no single order of memory actions across independent
+     objects (*sequential consistency*).  Two threads that each store to
+     one object and then load from another may both see the old value.
+     Two threads may disagree about the order of two stores made by two
+     other threads.
+   * Readers that do not take the object's lock may see intermediate
+     states of mutations that change several elements, as documented for
+     each type above.
+   * An iterator shared between threads may produce duplicate items, skip
+     items, and produce items after another thread got
+     :exc:`StopIteration`.
+   * Buffer contents, such as bytes written through a :class:`memoryview`,
+     :class:`bytearray`, :mod:`array`, :mod:`mmap` or :mod:`ctypes`
+     object, are not covered by rule 1.  They are visible to a thread that
+     is ordered after the write some other way, but reading them creates
+     no ordering.
+   * Another thread's local variables, reached through
+     :attr:`frame.f_locals` or :func:`sys._current_frames`.
+
+   Use a lock or another synchronization primitive when any of these
+   matter.
+
+
+Examples
+--------
+
+Handing over an object through a shared container works, because the
+consumer loads the reference the producer stored (rule 1):
+
+.. code-block::
+   :class: good
+
+   # Producer thread
+   data = {"answer": 42}
+   shared["result"] = data
+
+   # Consumer thread
+   result = shared.get("result")
+   if result is not None:
+       assert result["answer"] == 42
+
+A flag works for the same reason.  Suppose ``data`` and ``ready`` are
+module globals, ``ready`` is initially false, and nothing else modifies
+them:
+
+.. code-block::
+   :class: good
+
+   # Thread 1
+   data = 42
+   ready = True
+
+   # Thread 2
+   while not ready:
+       pass
+   assert data == 42
+
+In thread 1, the store to ``data`` is sequenced before the store to
+``ready``.  Thread 2 eventually loads the new value of ``ready`` (rule 5),
+and that load synchronizes-with the store (rule 1).  So the store to
+``data`` happens-before thread 2's load of ``data``, which by coherence
+returns 42.  (A busy loop wastes CPU time; :class:`threading.Event` is the
+better tool for this.)
+
+Polling the length of a container does not work, because ``len()`` creates
+no ordering (rule 2):
+
+.. code-block::
+   :class: bad
+
+   # Worker threads
+   totals[i] = compute()
+   done.append(i)
+
+   # Main thread
+   while len(done) < N:
+       time.sleep(0.01)
+   use(totals)  # may see stale items in totals
+
+The main thread never loads a reference that a worker stored, so it is not
+ordered after the workers' stores to ``totals``.  Use
+:meth:`~threading.Thread.join`, a :class:`~threading.Event`, a
+:class:`~queue.Queue`, or a lock instead.  The same applies to loops such as
+``while not items: ...`` and ``while key not in d: ...``.
+
+For the same reason, ``lst[len(lst) - 1]`` without other synchronization
+can raise :exc:`IndexError` or return an older item even if the list is
+only ever appended to.
+
+
+Litmus tests
+------------
+
+Each test below is a small program with two or more threads, followed by a
+question: can the program end with a particular result?  The answer says
+whether the rules above allow that result, and why.
+
+Unless stated otherwise, ``x``, ``y`` and ``flag`` are module globals (or
+attributes of one shared object) that start as ``0``; ``lst`` is a shared
+list that starts empty; ``d`` is a shared dict that starts empty; ``m`` is
+a shared :class:`threading.Lock`.  Names starting with ``r`` are local
+variables of the thread that assigns them.  Results are examined after all
+threads have finished.
+
+Every Python value is an object, so ``x = 1`` stores a reference to the
+object ``1``, and rule 1 applies to it like any other reference.
+
+"Yes" means the rules permit the result.  It does not mean the result is
+common: some permitted results appear only on some hardware, such as
+ARM64, and only rarely.  The default build, which runs one thread at a
+time, can show only two of them: check-then-act and lost update.  Code
+that relies on the others not happening is correct only on that build.
+
+
+Message passing and publication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Message passing.**  Can this program end with ``r1 == 1`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = y
+   y = 1              r2 = x
+
+No.  If ``r1 == 1``, thread 2's load of ``y`` read from thread 1's store, so
+the store synchronizes-with the load (rule 1).  The store to ``x`` is
+sequenced before the store to ``y``, so it happens-before thread 2's load
+of ``x``, which by coherence reads ``1``.
+
+**Initialization.**  ``s.obj`` starts as ``None`` and ``C`` is a class
+whose instances have no attribute ``v`` until one is set.  Can thread 2
+raise :exc:`AttributeError`?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   o = C()            r1 = s.obj
+   o.v = 1            if r1 is not None:
+   s.obj = o              r2 = r1.v
+
+No.  A thread that loads a reference sees everything the storing thread did
+before the store, including the initialization of the object.
+
+**Message passing through a dict.**  Can this program end with ``r1 == 1``
+and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = d.get("k")
+   d["k"] = 1         r2 = x
+
+No.  A :meth:`~dict.get` that finds the key loads the stored reference
+(rule 1), so this is the same as message passing.
+
+**Message passing through iteration.**  Can thread 2 set ``r2`` to ``0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              for r1 in lst:
+   lst.append(1)          r2 = x
+
+No.  The loop body runs only if the iterator produces the appended item,
+and producing it is a load of the reference thread 1 stored (rule 1).
+
+
+Container structure
+^^^^^^^^^^^^^^^^^^^
+
+**Message passing through a length.**  Can this program end with
+``r1 == 1`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = len(lst)
+   lst.append(1)      r2 = x
+
+Yes.  :func:`len` creates no synchronizes-with edge (rule 2), so thread 2
+is not ordered after thread 1's store to ``x``.
+
+**Message passing through membership.**  Can this program end with
+``r1 == True`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = "k" in d
+   d["k"] = 1         r2 = x
+
+Yes.  ``in`` reports on the structure of the dict and does not load the
+stored value (rule 2).
+
+**Message passing through deletion.**  Here ``d`` starts as ``{"k": 1}``.
+Can this program end with ``r1 is None`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = d.get("k")
+   del d["k"]         r2 = x
+
+Yes.  A failed lookup, including the default returned by
+:meth:`~dict.get`, creates no ordering (rule 2).
+
+**Length, then element.**  Can thread 2 raise :exc:`IndexError`?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   lst.append(1)      r1 = len(lst)
+                      if r1 > 0:
+                          r2 = lst[r1 - 1]
+
+Yes.  The length and the element are separate state.  Thread 2 can see the
+new length before it can see the element.
+
+**Length under a lock.**  Can this program end with ``r1 == 1`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              with m:
+   with m:                r1 = len(lst)
+       lst.append(1)  r2 = x
+
+No.  If ``r1 == 1``, thread 2 acquired ``m`` after thread 1 released it,
+and that is a synchronizes-with edge (rule 3).  Using the same lock on both
+sides is what turns the length into a usable signal.
+
+
+Coherence and visibility
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Values do not go backwards.**  Can this program end with ``r1 == 1`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = x
+                      r2 = x
+
+No.  The second load is sequenced after the first, so by coherence it reads
+from the same store or a later one.
+
+**Stores to one location have one order.**  Can this program end with
+``r1 == 2`` and ``r2 == 1``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = x
+   x = 2              r2 = x
+
+No.  The stores to ``x`` are in one order, ``1`` then ``2``, and thread 2's
+loads cannot go backwards in that order.
+
+**Coherence of lengths.**  Can this program end with ``r1 == 1`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   lst.append(1)      r1 = len(lst)
+                      r2 = len(lst)
+
+No.  :func:`len` creates no ordering with other locations, but it is still
+a load, so coherence applies to it.
+
+**Visibility.**  Can thread 2 loop forever?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              while x == 0:
+                          pass
+
+No.  Thread 1's store becomes visible to thread 2 in finite time (rule 5).
+
+
+Causality
+^^^^^^^^^
+
+**Write-to-read causality.**  Can this program end with ``r1 == 1``,
+``r2 == 1`` and ``r3 == 0``?
+
+.. code-block:: text
+
+   # Thread 1     # Thread 2     # Thread 3
+   x = 1          r1 = x         r2 = y
+                  y = 1          r3 = x
+
+No.  Happens-before is transitive.  Thread 1's store to ``x``
+happens-before thread 2's store to ``y``, which happens-before thread 3's
+load of ``x``.
+
+**Load buffering.**  Can this program end with ``r1 == 1`` and ``r2 == 1``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   r1 = x             r2 = y
+   y = 1              x = 1
+
+No.  If ``r1 == 1``, thread 2's store to ``x`` happens-before thread 1's
+store to ``y``.  Thread 2's load of ``y`` happens-before its own store to
+``x``, so ``r2 == 1`` would need a load to read from a store that happens
+after it.
+
+
+No single order
+^^^^^^^^^^^^^^^
+
+**Store buffering.**  Can this program end with ``r1 == 0`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              y = 1
+   r1 = y             r2 = x
+
+Yes.  Each thread stores to one location and then loads another.  The rules
+give no order between the two threads here, so each load may read the
+initial value (rule 6).  In any single interleaving of the four statements
+one of the loads would see ``1``, so this result shows that there is no
+such interleaving.
+
+**Store buffering with a lock.**  Can this program end with ``r1 == 0`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   with m:            with m:
+       x = 1              y = 1
+       r1 = y             r2 = x
+
+No.  The two critical sections run one after the other.  The second to
+acquire ``m`` is ordered after the first, and sees its store.
+
+**Independent reads of independent writes (IRIW).**  Can this program end
+with ``r1 == 1``, ``r2 == 0``, ``r3 == 1`` and ``r4 == 0``?
+
+.. code-block:: text
+
+   # Thread 1   # Thread 2   # Thread 3   # Thread 4
+   x = 1        y = 1        r1 = x       r3 = y
+                             r2 = y       r4 = x
+
+Yes.  Thread 3 sees the store to ``x`` first and thread 4 sees the store to
+``y`` first.  Stores to independent locations are not seen in one global
+order (rule 6).
+
+
+Atomic operations
+^^^^^^^^^^^^^^^^^
+
+**Concurrent appends.**  Can ``lst`` end up with one item?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   lst.append(1)      lst.append(2)
+
+No.  :meth:`list.append` is atomic (rule 4), so both appends take effect
+and ``lst`` ends with two items, in either order.
+
+**Concurrent pops.**  Here ``d`` starts as ``{"k": 1}``.  Can this program
+end with ``r1 == 1`` and ``r2 == 1``?
+
+.. code-block:: text
+
+   # Thread 1               # Thread 2
+   r1 = d.pop("k", None)    r2 = d.pop("k", None)
+
+No.  The two pops take effect in some order.  The first removes the key and
+returns ``1``; the second sees the key gone and returns ``None``.
+
+**Concurrent setdefault.**  Can this program end with ``r1 != r2``?
+
+.. code-block:: text
+
+   # Thread 1                    # Thread 2
+   r1 = d.setdefault("k", 1)     r2 = d.setdefault("k", 2)
+
+No.  Whichever call takes effect second finds the value stored by the
+first and returns it.
+
+**Check, then act.**  Can this program end with ``r1 == 1`` and ``r2 == 2``?
+
+.. code-block:: text
+
+   # Thread 1               # Thread 2
+   if "k" not in d:         if "k" not in d:
+       d["k"] = 1               d["k"] = 2
+   r1 = d["k"]              r2 = d["k"]
+
+Yes.  Each statement is a separate operation.  Both threads can find the key
+missing before either stores it.  Use :meth:`~dict.setdefault` or a lock.
+
+**Lost update.**  Can ``x`` end up as ``1``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x += 1             x += 1
+
+Yes.  ``x += 1`` is a load, an addition and a store.  Both threads can load
+``0`` before either stores.  With ``with m: x += 1`` in both threads, ``x``
+always ends as ``2``.
+
+
+Synchronization primitives
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Thread start.**  Can ``r1 == 0``?
+
+.. code-block:: text
+
+   # Main thread      # Thread t
+   x = 1              r1 = x
+   t.start()
+
+No.  :meth:`~threading.Thread.start` synchronizes-with the first action of
+the new thread (rule 3).
+
+**Thread join.**  Can ``r1 == 0``?
+
+.. code-block:: text
+
+   # Main thread      # Thread t
+   t.start()          x = 1
+   t.join()
+   r1 = x
+
+No.  The last action of a thread synchronizes-with the return of
+:meth:`~threading.Thread.join` (rule 3).  The same holds if the main thread
+waits with ``while t.is_alive(): pass`` instead.
+
+**Event.**  ``e`` is a :class:`threading.Event`.  Can this program end with
+``r1 == True`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = e.is_set()
+   e.set()            r2 = x
+
+No.  :meth:`~threading.Event.set` synchronizes-with an
+:meth:`~threading.Event.is_set` that returns true (rule 3).  The same holds
+for a :meth:`~threading.Event.wait` that returns true.
+
+**Queue.**  ``q`` is a :class:`queue.Queue`.  Can ``r1 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              q.get()
+   q.put(None)        r1 = x
+
+No.  :meth:`~queue.Queue.put` synchronizes-with the
+:meth:`~queue.Queue.get` that returns the item (rule 3).
+
+
+Buffers
+^^^^^^^
+
+In these tests ``buf`` is a shared ``bytearray(1)``.
+
+**Buffer published by a reference.**  Can this program end with
+``r1 == 1`` and ``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   buf[0] = 1         r1 = flag
+   flag = 1           r2 = buf[0]
+
+No.  The load of ``flag`` synchronizes-with the store (rule 1), so the
+write to the buffer happens-before the read.
+
+**Buffer used as a flag.**  Can this program end with ``r1 == 1`` and
+``r2 == 0``?
+
+.. code-block:: text
+
+   # Thread 1         # Thread 2
+   x = 1              r1 = buf[0]
+   buf[0] = 1         r2 = x
+
+Yes.  Reading buffer contents creates no ordering (rule 6).
