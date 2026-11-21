@@ -2417,6 +2417,11 @@ class MinidomTest(unittest.TestCase):
             ("http://xml.python.org/ns", "p:1e"),
             ("http://xml.python.org/ns", "xml:e"),   # the xml prefix
         ]:
+            for node in (doc.createElement("e"), doc.createAttribute("a")):
+                with self.subTest(namespaceURI=namespaceURI, qname=qname,
+                                  nodeType=node.nodeType):
+                    self.assertRaises(xml.dom.NamespaceErr,
+                                      doc.renameNode, node, namespaceURI, qname)
             with self.subTest(namespaceURI=namespaceURI, qname=qname):
                 self.assertRaises(xml.dom.NamespaceErr,
                                   doc.createElementNS, namespaceURI, qname)
@@ -2433,6 +2438,10 @@ class MinidomTest(unittest.TestCase):
             (XMLNS_NS, "p:a"),              # and it allows nothing else
             (XMLNS_NS, "a"),
         ]:
+            with self.subTest(namespaceURI=namespaceURI, qname=qname,
+                              method="renameNode"):
+                self.assertRaises(xml.dom.NamespaceErr, doc.renameNode,
+                                  doc.createAttribute("a"), namespaceURI, qname)
             with self.subTest(namespaceURI=namespaceURI, qname=qname):
                 self.assertRaises(xml.dom.NamespaceErr,
                                   doc.createAttributeNS, namespaceURI, qname)
@@ -2471,6 +2480,10 @@ class MinidomTest(unittest.TestCase):
         doc = parseString("<doc/>")
         impl = getDOMImplementation()
         for name in ("", "bad name", "1st", "-x", ".x", "a<b", "a&b", "a\tb"):
+            for node in (doc.createElement("e"), doc.createAttribute("a")):
+                with self.subTest(name=name, nodeType=node.nodeType):
+                    self.assertRaises(xml.dom.InvalidCharacterErr,
+                                      doc.renameNode, node, None, name)
             with self.subTest(name=name):
                 self.assertRaises(xml.dom.InvalidCharacterErr,
                                   doc.createElement, name)

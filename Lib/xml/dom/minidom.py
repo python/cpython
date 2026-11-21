@@ -2111,6 +2111,8 @@ class Document(Node, DocumentLS):
         if n.nodeType not in (Node.ELEMENT_NODE, Node.ATTRIBUTE_NODE):
             raise xml.dom.NotSupportedErr(
                 "renameNode() only applies to element and attribute nodes")
+        _check_qualified_name(
+            namespaceURI, name, n.nodeType == Node.ATTRIBUTE_NODE)
         if namespaceURI != EMPTY_NAMESPACE:
             if ':' in name:
                 prefix, localName = name.split(':', 1)
