@@ -11,8 +11,6 @@
 // _Py_STDC_VERSION: the version of the C standard.
 // gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
 // arbitrary value, which means we can't use __STDC_VERSION__ on C++.
-// gh-160719: Defined here, rather than in pymacro.h, because this file uses it
-// and is included before pymacro.h.
 #if !defined(__cplusplus) && defined(__STDC_VERSION__)
 #  define _Py_STDC_VERSION __STDC_VERSION__
 #endif

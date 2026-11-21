@@ -1,8 +1,6 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
-// _Py_STDC_VERSION is defined in pyport.h, which is included before this file.
-
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
 // the static_assert() macro.
