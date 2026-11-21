@@ -7,7 +7,7 @@ import textwrap
 import types
 import re
 from idlelib.idle_test.mock_tk import Text
-from test.support import MISSING_C_DOCSTRINGS
+from test.support import MISSING_C_DOCSTRINGS, requires_docstrings
 
 
 # Test Class TC is used in multiple get_argspec test methods
@@ -51,8 +51,7 @@ class Get_argspecTest(unittest.TestCase):
     # but a red buildbot is better than a user crash (as has happened).
     # For a simple mismatch, change the expected output to the actual.
 
-    @unittest.skipIf(MISSING_C_DOCSTRINGS,
-                     "Signature information for builtins requires docstrings")
+    @requires_docstrings
     def test_builtins(self):
 
         def tiptest(obj, out):
@@ -131,7 +130,9 @@ you\'ll probably have to override _wrap_chunks().''')
                "aaaaaaaaaa')"
         sbar = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
-               "aaaaaaaaaa')\nHello Guido"
+               "aaaaaaaaaa')"
+        if bar.__doc__ is not None:
+            sbar += "\nHello Guido"
         sbaz = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" + indent + "aaaaaaaaa"\
                "aaaaaaaaaa', z='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"\
@@ -188,20 +189,30 @@ bytes() -> empty bytes object''')
 
     def test_methods(self):
         doc = '\ndoc' if TC.__doc__ is not None else ''
-        for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.__call__):
+        for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6):
             with self.subTest(meth=meth):
                 self.assertEqual(get_spec(meth), meth.tip + doc)
         self.assertEqual(get_spec(TC.cm), "(a)" + doc)
         self.assertEqual(get_spec(TC.sm), "(b)" + doc)
+        # __call__ inherits object.__call__'s docstring when its own is
+        # missing (build without docstrings or run with -OO).
+        call_doc = doc or ('\n' + object.__call__.__doc__
+                           if object.__call__.__doc__ else '')
+        self.assertEqual(get_spec(TC.__call__), TC.__call__.tip + call_doc)
 
     def test_bound_methods(self):
         # test that first parameter is correctly removed from argspec
         doc = '\ndoc' if TC.__doc__ is not None else ''
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"),
-                            (tc.t6, "(self)"), (tc.__call__, '(ci)'),
+                            (tc.t6, "(self)"),
                             (tc, '(ci)'), (TC.cm, "(a)"),):
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip + doc)
+        # __call__ inherits object.__call__'s docstring when its own is
+        # missing (build without docstrings or run with -OO).
+        call_doc = doc or ('\n' + object.__call__.__doc__
+                           if object.__call__.__doc__ else '')
+        self.assertEqual(get_spec(tc.__call__), '(ci)' + call_doc)
 
     def test_starred_parameter(self):
         # test that starred first parameter is *not* removed from argspec
