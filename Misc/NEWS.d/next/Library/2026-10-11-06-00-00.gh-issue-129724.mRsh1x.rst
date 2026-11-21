@@ -1,0 +1,4 @@
+Make the output of :func:`marshal.dumps` and :func:`marshal.dump`, and so
+the content of :file:`.pyc` files, independent of the reference counts of
+the serialized objects.  The format is unchanged, but the data is not
+byte-for-byte identical to that written by previous Python versions.
