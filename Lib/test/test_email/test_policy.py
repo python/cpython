@@ -153,6 +153,44 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(p_ascii.fold('Subject', s), expected_ascii)
         self.assertEqual(p_utf8.fold('Subject', s), expected_utf8)
 
+    def test_smtputf8_round_trip_preserves_utf8_headers(self):
+        odata = textwrap.dedent("""\
+            From: Unicôde Nâme <example@example.com>
+            To: Name One <name-one@example.com>, Name Two <name-two@example.com>, Unicôde Nàme <unicode-name@example.com>
+            Subject: Unicôde Subjéct
+
+            This message contains Uniçôde Çôntent.
+            """)
+        msg = email.message_from_bytes(
+            odata.encode(), policy=email.policy.SMTPUTF8
+        )
+        output = msg.as_bytes(policy=email.policy.SMTPUTF8).decode()
+
+        self.assertNotIn("unknown-8bit", output)
+        self.assertIn(
+            "Unicôde Nàme <unicode-name@example.com>", output
+        )
+
+    def test_smtputf8_round_trip_preserves_invalid_header_bytes(self):
+        msg = email.message_from_bytes(
+            b"Subject: invalid \xff\n\n",
+            policy=email.policy.SMTPUTF8,
+        )
+        output = msg.as_bytes(policy=email.policy.SMTPUTF8)
+
+        self.assertIn(b"invalid \xff", output)
+
+    def test_smtputf8_parse_then_compat32_serialize_preserves_addresses(self):
+        # gh-99927: parsing with SMTPUTF8 and serializing with compat32 must
+        # keep address headers structured - regressing here encodes the
+        # whole header as one encoded word and destroys the addr-spec.
+        odata = (b"From: Sender <s@example.com>\n"
+                 + "To: J\xf6rg <a@b>\n".encode("utf-8")
+                 + b"Subject: test\n\nbody\n")
+        msg = email.message_from_bytes(odata, policy=email.policy.SMTPUTF8)
+        out = msg.as_bytes(policy=email.policy.compat32)
+        self.assertIn(b"<a@b>", out)
+
     def test_fold_zero_max_line_length(self):
         expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
 
