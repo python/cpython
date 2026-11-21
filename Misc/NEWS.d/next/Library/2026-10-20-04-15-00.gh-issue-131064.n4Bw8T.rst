@@ -1,0 +1,3 @@
+Make :meth:`subprocess.Popen.communicate` consistently handle pipes closed
+before the call. Closed output pipes produce empty output. Sending nonempty
+input to a closed input pipe raises :exc:`ValueError`.
