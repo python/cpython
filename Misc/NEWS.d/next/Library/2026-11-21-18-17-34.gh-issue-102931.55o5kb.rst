@@ -1,2 +1,3 @@
-Make exception from :func:`shutil.copytree` readable when a
-:exc:`shutil.SameFileError` is raised.
+Fix :func:`shutil.copytree` splitting the message of a non-list
+:exc:`shutil.Error`, such as :exc:`shutil.SameFileError`,
+into single characters in the collected error list.
