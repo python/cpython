@@ -1,0 +1,4 @@
+:meth:`socket.socket.recv` and :meth:`socket.socket.recvfrom` no longer
+raise :exc:`ValueError` and lose the datagram when called with
+``MSG_TRUNC`` and the datagram is longer than *bufsize*. Only the bytes
+actually received are returned now.
