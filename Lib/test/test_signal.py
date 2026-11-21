@@ -1231,6 +1231,15 @@ class StressTest(unittest.TestCase):
         old_handler = signal.signal(signum, handler)
         self.addCleanup(signal.signal, signum, old_handler)
 
+    def wait_for_signals(self, sigs, expected_sigs, deadline):
+        # Wait for handlers to run and try to avoid timer coalescing on macOS.
+        #
+        # Signals normally arrive within microseconds, so poll with a short
+        # sleep rather than sleeping_retry() whose 10 ms minimum delay dominates
+        # the runtime.
+        while len(sigs) < expected_sigs and time.monotonic() < deadline:
+            time.sleep(1e-5)
+
     def measure_itimer_resolution(self):
         N = 20
         times = []
@@ -1302,14 +1311,11 @@ class StressTest(unittest.TestCase):
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
             expected_sigs += 1
-            # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.monotonic() < deadline:
-                time.sleep(1e-5)
+            self.wait_for_signals(sigs, expected_sigs, deadline)
 
             os.kill(os.getpid(), signal.SIGUSR1)
             expected_sigs += 1
-            while len(sigs) < expected_sigs and time.monotonic() < deadline:
-                time.sleep(1e-5)
+            self.wait_for_signals(sigs, expected_sigs, deadline)
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
@@ -1334,6 +1340,8 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
+
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
             # initial processing of SIGUSR2.
@@ -1341,10 +1349,7 @@ class StressTest(unittest.TestCase):
             os.kill(os.getpid(), signal.SIGUSR2)
 
             expected_sigs += 2
-            # Wait for handlers to run to avoid signal coalescing
-            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
-                if len(sigs) >= expected_sigs:
-                    break
+            self.wait_for_signals(sigs, expected_sigs, deadline)
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
