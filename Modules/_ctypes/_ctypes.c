@@ -5725,14 +5725,21 @@ Pointer_item_impl(PyObject *myself, Py_ssize_t index)
     assert(stginfo); /* Cannot be NULL for pointer object instances */
 
     proto = stginfo->proto;
-    assert(proto);
+    if (proto == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Cannot access items: has no _type_");
+        return NULL;
+    }
 
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
         return NULL;
     }
-    assert(iteminfo); /* proto is the item type of the pointer, a ctypes
-                         type, so this cannot be NULL */
+    if (iteminfo == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "pointer _type_ has no storage info");
+        return NULL;
+    }
 
     size = iteminfo->size;
     offset = index * iteminfo->size;
@@ -5782,14 +5789,21 @@ Pointer_ass_item_impl(PyObject *myself, Py_ssize_t index, PyObject *value)
     assert(stginfo); /* Cannot be NULL for pointer instances */
 
     proto = stginfo->proto;
-    assert(proto);
+    if (proto == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Cannot access items: has no _type_");
+        return -1;
+    }
 
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
         return -1;
     }
-    assert(iteminfo); /* Cannot be NULL because the itemtype of a pointer
-                         is always a ctypes type */
+    if (iteminfo == NULL) {
+        PyErr_SetString(PyExc_SystemError,
+                        "pointer _type_ has no storage info");
+        return -1;
+    }
 
     size = iteminfo->size;
     offset = index * iteminfo->size;
@@ -6017,12 +6031,20 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         }
         assert(stginfo); /* Cannot be NULL for pointer instances */
         proto = stginfo->proto;
-        assert(proto);
+        if (proto == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "Cannot access items: has no _type_");
+            return NULL;
+        }
         StgInfo *iteminfo;
         if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
             return NULL;
         }
-        assert(iteminfo);
+        if (iteminfo == NULL) {
+            PyErr_SetString(PyExc_SystemError,
+                            "pointer _type_ has no storage info");
+            return NULL;
+        }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
