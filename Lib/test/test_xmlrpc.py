@@ -252,6 +252,16 @@ class XMLRPCTestCase(unittest.TestCase):
                 '</struct></value></param></params>')
         self.assertRaises(ResponseError, xmlrpclib.loads, data)
 
+    def test_loads_nested_scalars(self):
+        template = '<params><param><value>%s</value></param></params>'
+        data = template % '<string><string>a<![CDATA[b]]></string></string>'
+        values, _ = xmlrpclib.loads(data)
+        self.assertEqual(values, ('ab', ''))
+
+        data = template % '<int><int>1</int>2</int>'
+        values, _ = xmlrpclib.loads(data)
+        self.assertEqual(values, (1, 2))
+
     def check_loads(self, s, value, **kwargs):
         dump = '<params><param><value>%s</value></param></params>' % s
         result, m = xmlrpclib.loads(dump, **kwargs)

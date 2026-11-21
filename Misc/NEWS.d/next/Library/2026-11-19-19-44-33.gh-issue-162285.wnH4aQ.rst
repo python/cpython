@@ -1,0 +1,2 @@
+Fix quadratic memory use in :mod:`xmlrpc.client` when decoding malformed
+XML-RPC packets containing nested string elements.

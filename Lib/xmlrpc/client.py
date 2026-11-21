@@ -677,7 +677,9 @@ class Unmarshaller:
                 f = self.dispatch[tag.split(':')[-1]]
             except KeyError:
                 return # unknown tag ?
-        return f(self, "".join(self._data))
+        data = "".join(self._data)
+        self._data.clear()
+        return f(self, data)
 
     #
     # accelerator support
