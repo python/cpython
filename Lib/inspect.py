@@ -2487,8 +2487,17 @@ def _signature_from_callable(obj, *,
         else:
             return sig
 
+    singledispatch_func = None
+
     # Was this function wrapped by a decorator?
     if follow_wrapper_chains:
+        # Only account for binding on the original callable.
+        if (type(obj) is functools._singledispatchmethod_get
+                and obj._obj is not None):
+            func = obj.__wrapped__
+            if isfunction(func):
+                singledispatch_func = func
+
         # Unwrap until we find an explicit signature or a MethodType (which will be
         # handled explicitly below).
         obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")
@@ -2551,10 +2560,18 @@ def _signature_from_callable(obj, *,
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython and Mock functions, for instance), then:
-        return _signature_from_function(sigcls, obj,
-                                        skip_bound_arg=skip_bound_arg,
-                                        globals=globals, locals=locals, eval_str=eval_str,
-                                        annotation_format=annotation_format)
+        skip_singledispatch_self = (
+            obj is singledispatch_func and skip_bound_arg
+            and not getattr(obj, "__text_signature__", None)
+            and obj.__code__.co_argcount > 0
+        )
+        sig = _signature_from_function(sigcls, obj,
+                                       skip_bound_arg=skip_bound_arg,
+                                       globals=globals, locals=locals, eval_str=eval_str,
+                                       annotation_format=annotation_format)
+        if skip_singledispatch_self:
+            sig = _signature_bound_method(sig)
+        return sig
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
