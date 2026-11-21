@@ -1,0 +1,2 @@
+Relax conditions in ``test_ctx_mgr_rollback_if_commit_failed`` to make the
+test pass with SQLite 3.45 and later. Patch by Bénédikt Tran.
