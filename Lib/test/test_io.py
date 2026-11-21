@@ -2296,6 +2296,15 @@ class BufferedRWPairTest(unittest.TestCase):
         pair.flush()
         self.assertEqual(w._write_stack, [b"abc", b"def"])
 
+    def test_destructor_flushes_shared_stream(self):
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        self.assertEqual(raw._write_stack, [])
+        del pair
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
+
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
 
