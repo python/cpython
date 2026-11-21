@@ -1,0 +1,4 @@
+Fix :mod:`email` header parsing to record an
+:class:`~email.errors.UndecodableBytesDefect` instead of raising
+:exc:`UnicodeDecodeError` when an RFC 2231 parameter cannot be decoded with
+``surrogateescape``.
