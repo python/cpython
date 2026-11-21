@@ -1,0 +1,5 @@
+Keep the interrupt channel of a remote debugging session open.
+
+Half-closing it left the connection in FIN_WAIT_2, which Windows resets
+after 120 seconds, so an idle session silently lost the ability to
+interrupt the debuggee.
