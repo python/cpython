@@ -1,0 +1,3 @@
+Fix :meth:`array.array.append`, :meth:`~array.array.insert` and
+:meth:`~array.array.extend` leaving an extra item in the array when they
+raise :exc:`OverflowError` for the ``'e'``, ``'f'`` or ``'Zf'`` type code.
