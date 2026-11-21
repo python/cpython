@@ -19,10 +19,12 @@ import bdb
 import os
 
 from tkinter import *
-from tkinter.ttk import Frame, Scrollbar
+from tkinter.font import Font
+from tkinter.ttk import Frame
 
 from idlelib import macosx
-from idlelib.scrolledlist import ScrolledList
+from idlelib.config import idleConf
+from idlelib.tree import ScrolledTreeview
 from idlelib.window import ListedToplevel
 
 
@@ -421,76 +423,161 @@ class Debugger:
                 continue
 
 
-class StackViewer(ScrolledList):
+class StackViewer(ScrolledTreeview):
     "Code stack viewer for debugger GUI."
 
+    # Shown while there is no stack to show.
+    default = "(None)"
+
+    # The row of the frame that the debugger stopped in, and the rest.
+    CURRENT = "current"
+    PLAIN = "plain"
+
     def __init__(self, master, flist, gui):
-        if macosx.isAquaTk():
-            # At least on with the stock AquaTk version on OSX 10.4 you'll
-            # get a shaking GUI that eventually kills IDLE if the width
-            # argument is specified.
-            ScrolledList.__init__(self, master)
-        else:
-            ScrolledList.__init__(self, master, width=80)
+        super().__init__(master,
+                         columns=("module", "function", "line", "source"),
+                         headings=("", "Module", "Function", "Line",
+                                   "Source"))
+        self.pack(expand=1, fill="both")  # As the list did before.
         self.flist = flist
         self.gui = gui
         self.stack = []
+        self.selected = None  # Index of the entry whose frame is shown.
+        self.menu = None
+        self.tree.bind("<<TreeviewSelect>>", self.select_event)
+        self.tree.bind("<Double-Button-1>", self.double_click_event, add="+")
+        self.tree.bind("<Return>", self.double_click_event)
+        if macosx.isAquaTk():
+            self.tree.bind("<ButtonPress-2>", self.popup_event)
+            self.tree.bind("<Control-Button-1>", self.popup_event)
+        else:
+            self.tree.bind("<ButtonPress-3>", self.popup_event)
+
+    def configure_style(self):
+        """Mark the row of the current frame with an arrow, in bold.
+
+        The arrow is drawn here, not read from a file, so that it takes
+        its size from the font and its color from the theme.  Rows
+        without it get a transparent image, as ttk indents the text of a
+        row with an image and they would not line up otherwise.
+        """
+        super().configure_style()
+        color = idleConf.GetHighlight(idleConf.CurrentTheme(),
+                                      'normal')['foreground']
+        size = max(7, self.font.metrics("linespace") * 2 // 3) | 1
+        self.arrow = PhotoImage(master=self, width=size, height=size)
+        for y in range(size):
+            half = min(y, size - 1 - y)  # Widest in the middle row.
+            self.arrow.put(color, to=(1, y, half + 2, y + 1))
+        self.blank = PhotoImage(master=self, width=size, height=size)
+        self.bold = Font(root=self, font=self.font)
+        self.bold.configure(weight="bold")
+        self.tree.tag_configure(self.CURRENT, font=self.bold,
+                                image=self.arrow)
+        self.tree.tag_configure(self.PLAIN, image=self.blank)
+        # The tree column holds the arrow alone; the source takes what
+        # the names and the line numbers leave over.
+        ch = self.font.measure("n")      # Names, mostly lowercase.
+        digit = self.font.measure("0")   # Line numbers.
+        self.tree.column("#0", width=size + 6, stretch=False)
+        self.tree.column("module", width=ch * 12, stretch=False)
+        self.tree.column("function", width=ch * 12, stretch=False)
+        self.tree.column("line", width=digit * 4, stretch=False, anchor="e")
+        self.tree.column("source", stretch=True)
+
+    def close(self):
+        self.destroy()
+
+    def get(self, index):
+        "Return the module, function, line and source of the stack entry."
+        return self.tree.item(self.tree.get_children()[index], "values")
 
     def load_stack(self, stack, index=None):
         self.stack = stack
         self.clear()
-        for i in range(len(stack)):
-            frame, lineno = stack[i]
+        self.selected = None
+        if not stack:
+            self.add_row(values=(self.default, "", "", ""),
+                         tags=(self.PLAIN,))
+        for i, (frame, lineno) in enumerate(stack):
             try:
                 modname = frame.f_globals["__name__"]
             except:
                 modname = "?"
             code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
             import linecache
-            sourceline = linecache.getline(filename, lineno)
-            sourceline = sourceline.strip()
-            if funcname in ("?", "", None):
-                item = "%s, line %d: %s" % (modname, lineno, sourceline)
-            else:
-                item = "%s.%s(), line %d: %s" % (modname, funcname,
-                                                 lineno, sourceline)
-            if i == index:
-                item = "> " + item
-            self.append(item)
+            sourceline = linecache.getline(code.co_filename, lineno).strip()
+            self.add_row(values=(modname, code.co_name, lineno, sourceline),
+                         tags=(self.CURRENT if i == index else self.PLAIN,))
         if index is not None:
             self.select(index)
 
-    def popup_event(self, event):
-        "Override base method."
-        if self.stack:
-            return ScrolledList.popup_event(self, event)
+    def select(self, index):
+        "Select the row of the stack entry, without telling the debugger."
+        self.selected = index
+        iid = self.tree.get_children()[index]
+        self.tree.focus_set()
+        self.tree.focus(iid)
+        self.tree.selection_set(iid)
+        self.tree.see(iid)
 
-    def fill_menu(self):
-        "Override base method."
-        menu = self.menu
+    def index(self):
+        "Return the index of the selected stack entry, or None."
+        selection = self.tree.selection()
+        if selection:
+            index = self.tree.index(selection[0])
+            if index < len(self.stack):
+                return index
+        return None
+
+    def select_event(self, event=None):
+        """Show the frame of the row that the user has selected.
+
+        The <<TreeviewSelect>> event is queued, so it also arrives for
+        the selection that select() sets; showing only a frame that is
+        not shown already keeps that from calling the debugger back.
+        """
+        index = self.index()
+        if index is None or index == self.selected:
+            return
+        self.selected = index
+        self.gui.show_frame(self.stack[index])
+
+    def double_click_event(self, event=None):
+        "Open the source of the current row."
+        index = self.index()
+        if index is not None:
+            self.show_source(index)
+        return "break"
+
+    def popup_event(self, event):
+        "Pop up the menu for the row under the pointer."
+        if not self.stack:
+            return None
+        iid = self.tree.identify_row(event.y)
+        if not iid:
+            return None
+        self.select(self.tree.index(iid))
+        if self.menu is None:
+            self.make_menu()
+        self.menu.tk_popup(event.x_root, event.y_root)
+        return "break"
+
+    def make_menu(self):
+        self.menu = menu = Menu(self.tree, tearoff=0)
         menu.add_command(label="Go to source line",
                          command=self.goto_source_line)
         menu.add_command(label="Show stack frame",
                          command=self.show_stack_frame)
 
-    def on_select(self, index):
-        "Override base method."
-        if 0 <= index < len(self.stack):
-            self.gui.show_frame(self.stack[index])
-
-    def on_double(self, index):
-        "Override base method."
-        self.show_source(index)
-
     def goto_source_line(self):
-        index = self.listbox.index("active")
-        self.show_source(index)
+        index = self.index()
+        if index is not None:
+            self.show_source(index)
 
     def show_stack_frame(self):
-        index = self.listbox.index("active")
-        if 0 <= index < len(self.stack):
+        index = self.index()
+        if index is not None:
             self.gui.show_frame(self.stack[index])
 
     def show_source(self, index):
@@ -508,11 +595,10 @@ class StackViewer(ScrolledList):
 class NamespaceViewer:
     "Global/local namespace viewer for debugger GUI."
 
+    # The pane shows at most this many rows and scrolls beyond that.
+    maxrows = 15
+
     def __init__(self, master, title, odict=None):  # XXX odict never passed.
-        width = 0
-        height = 40
-        if odict:
-            height = 20*len(odict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
         import reprlib
@@ -523,16 +609,12 @@ class NamespaceViewer:
         self.frame.pack(expand=1, fill="both")
         self.label = Label(frame, text=title, borderwidth=2, relief="groove")
         self.label.pack(fill="x")
-        self.vbar = vbar = Scrollbar(frame, name="vbar")
-        vbar.pack(side="right", fill="y")
-        self.canvas = canvas = Canvas(frame,
-                                      height=min(300, max(40, height)),
-                                      scrollregion=(0, 0, width, height))
-        canvas.pack(side="left", fill="both", expand=1)
-        vbar["command"] = canvas.yview
-        canvas["yscrollcommand"] = vbar.set
-        self.subframe = subframe = Frame(canvas)
-        self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
+        # A table, not the entries of before: editing them never had any
+        # effect, as the objects live in the user process.
+        self.treeview = ScrolledTreeview(frame, columns=("name", "value"),
+                                         show="",
+                                         headings=("", "Name", "Value"))
+        self.treeview.pack(expand=1, fill="both")
         self.load_dict(odict)
 
     prev_odict = -1  # Needed for initial comparison below.
@@ -540,14 +622,11 @@ class NamespaceViewer:
     def load_dict(self, odict, force=0, rpc_client=None):
         if odict is self.prev_odict and not force:
             return
-        subframe = self.subframe
-        frame = self.frame
-        for c in list(subframe.children.values()):
-            c.destroy()
+        self.treeview.clear()
         self.prev_odict = None
         if not odict:
-            l = Label(subframe, text="None")
-            l.grid(row=0, column=0)
+            self.treeview.add_row(values=("None", ""))
+            rows = 1
         else:
             #names = sorted(dict)
             #
@@ -563,7 +642,6 @@ class NamespaceViewer:
             keys_list = odict.keys()
             names = sorted(keys_list)
 
-            row = 0
             for name in names:
                 value = odict[name]
                 svalue = self.repr.repr(value) # repr(value)
@@ -571,25 +649,11 @@ class NamespaceViewer:
                 # repr'd value sent across the RPC interface:
                 if rpc_client:
                     svalue = svalue[1:-1]
-                l = Label(subframe, text=name)
-                l.grid(row=row, column=0, sticky="nw")
-                l = Entry(subframe, width=0, borderwidth=0)
-                l.insert(0, svalue)
-                l.grid(row=row, column=1, sticky="nw")
-                row = row+1
+                self.treeview.add_row(values=(name, svalue))
+            rows = len(names)
         self.prev_odict = odict
-        # XXX Could we use a <Configure> callback for the following?
-        subframe.update_idletasks() # Alas!
-        width = subframe.winfo_reqwidth()
-        height = subframe.winfo_reqheight()
-        canvas = self.canvas
-        self.canvas["scrollregion"] = (0, 0, width, height)
-        if height > 300:
-            canvas["height"] = 300
-            frame.pack(expand=1)
-        else:
-            canvas["height"] = height
-            frame.pack(expand=0)
+        self.treeview.tree['height'] = min(rows, self.maxrows)
+        self.frame.pack(expand=rows > self.maxrows)
 
     def close(self):
         self.frame.destroy()
