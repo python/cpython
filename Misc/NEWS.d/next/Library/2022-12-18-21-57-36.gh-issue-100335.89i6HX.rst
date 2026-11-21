@@ -1,0 +1,2 @@
+Set the attribute values of :class:`csv.Dialect` to their documented
+defaults, see :ref:`csv-fmt-params`.
