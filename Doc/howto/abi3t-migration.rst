@@ -256,7 +256,7 @@ See the :ref:`PyInit documentation <extension-pyinit>` for related information.
 The function references a ``PyModuleDef`` object (``<moddef>`` in the code
 above).
 Its definition should be similar to the following, with different values
-and perhaps some fields unnnamed or left out:
+and perhaps some fields unnamed or left out:
 
 .. code-block::
    :class: bad
