@@ -1,0 +1,3 @@
+The exception raised by :mod:`marshal` for an unsupported object now carries
+notes naming each enclosing container item and code object field on the path
+to that object, innermost first.
