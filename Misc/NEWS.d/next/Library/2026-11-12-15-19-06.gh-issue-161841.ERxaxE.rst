@@ -1,0 +1,2 @@
+Fixes a possible crash when comparing channel ids from
+:mod:`concurrent.interpreters` under an unusual ``sys.modules`` setup.
