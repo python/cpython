@@ -1,0 +1,2 @@
+Fix data race when calling :func:`repr` on a :class:`threading.RLock` while
+another thread changes its recursion count in the :term:`free-threaded build`.
