@@ -1,0 +1,2 @@
+Add type check in :mod:`zoneinfo` to handle custom types that implement
+``toordinal``.
