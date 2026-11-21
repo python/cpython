@@ -130,7 +130,12 @@ Running and stopping the loop
    the loop will run the current batch of callbacks and then exit.
    Note that new callbacks scheduled by callbacks will not run in this
    case; instead, they will run the next time :meth:`run_forever` or
-   :meth:`run_until_complete` is called.
+   :meth:`run_until_complete` is called.  If
+   :ref:`eager callback processing <asyncio-eager-callbacks>` ran in
+   the current or the previous iteration of the loop, the loop runs one
+   more iteration after :meth:`stop` is called, which polls for I/O and
+   runs all ready callbacks, including those scheduled after
+   :meth:`stop`.
 
 .. method:: loop.stop()
 
@@ -213,7 +218,10 @@ Scheduling callbacks
 .. method:: loop.call_soon(callback, *args, context=None)
 
    Schedule the *callback* :term:`callback` to be called with
-   *args* arguments at the next iteration of the event loop.
+   *args* arguments after the callbacks that are already scheduled.
+   If it is scheduled by another callback, it may run in the same
+   iteration of the event loop, see
+   :ref:`eager callback processing <asyncio-eager-callbacks>`.
 
    Return an instance of :class:`asyncio.Handle`,
    which can be used later to cancel the callback.
@@ -1576,6 +1584,94 @@ Enabling debug mode
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
+
+
+.. _asyncio-eager-callbacks:
+
+Eager callback processing
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each iteration of the event loop polls for I/O events and then runs the
+callbacks that are ready.  Callbacks scheduled by these callbacks, for
+example tasks woken up by a completed future, do not have to wait for
+the next I/O poll: the loop keeps running them, in the order they were
+scheduled, for a short time.  This saves one I/O poll per hop and speeds
+up code that runs many short callbacks.
+
+Eager processing in the current iteration ends when:
+
+* there are no more ready callbacks;
+* *eager_max_callbacks* additional callbacks have run;
+* more than *eager_max_time* seconds have passed; the time is checked
+  between batches of callbacks, and a batch ends at the latest where the
+  callbacks scheduled while it runs begin;
+* :func:`asyncio.sleep` is called with a delay of 0 or less; the rest of
+  the current batch then runs after the next I/O poll; or
+* :meth:`loop.stop` is called; the loop then runs one more iteration,
+  which polls for I/O and runs the remaining ready callbacks without
+  eager processing, before :meth:`loop.run_forever` returns.
+
+I/O events and timers are not processed while eager processing runs,
+so larger limits can delay them.
+
+.. note::
+
+   Eager processing can end before all ready callbacks have run: when
+   ``asyncio.sleep(0)`` is called or a limit is reached, the callbacks
+   still queued are postponed to the next iteration of the loop, after
+   the I/O poll.  How far a chain of callbacks gets before pending I/O
+   events and timers are handled therefore depends on its position in
+   the queue and on timing.  Application code should not rely on this
+   order, but some unit tests do.  Such tests can disable eager
+   processing::
+
+      loop.set_settings(asyncio.EventLoopSettings(eager_max_time=0,
+                                                  eager_max_callbacks=0))
+
+.. class:: EventLoopSettings(*, eager_max_time, eager_max_callbacks)
+
+   Immutable settings of an event loop.
+
+   *eager_max_time* is the time in seconds after which eager processing
+   in one iteration of the loop stops.  It is checked between batches of
+   callbacks, so eager processing can take longer if the callbacks are
+   slow.  It must be a non-negative finite :class:`int` or :class:`float`;
+   ``0`` disables eager processing.
+
+   *eager_max_callbacks* is the maximum number of callbacks run eagerly
+   in one iteration of the loop.  It must be a non-negative integer;
+   ``0`` disables eager processing.
+
+   :exc:`TypeError` is raised if a value has a wrong type and
+   :exc:`ValueError` if it is out of range.
+
+   .. attribute:: DEFAULT
+
+      The default settings of a new event loop:
+      ``EventLoopSettings(eager_max_time=0.0001, eager_max_callbacks=100)``.
+
+   .. versionadded:: next
+
+.. method:: loop.get_settings()
+
+   Return the :class:`EventLoopSettings` of the event loop.
+
+   The default value is :attr:`EventLoopSettings.DEFAULT`.
+
+   .. versionadded:: next
+
+.. method:: loop.set_settings(settings)
+
+   Set the :class:`EventLoopSettings` of the event loop.
+
+   The new settings are used starting from the next iteration of the loop.
+
+   To change a single setting, use :func:`copy.replace`::
+
+      loop.set_settings(copy.replace(asyncio.EventLoopSettings.DEFAULT,
+                                     eager_max_callbacks=1000))
+
+   .. versionadded:: next
 
 
 Running subprocesses
