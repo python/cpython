@@ -1,6 +1,8 @@
+import logging
+import sys
 import unittest
 import tkinter
-from tkinter.systray import SysTrayIcon, notify
+from tkinter.systray import SysTrayIcon, notify, NotificationHandler
 from test.support import requires
 from test.test_tkinter.support import (AbstractTkTest,
                                        AbstractDefaultRootTest,
@@ -110,6 +112,95 @@ class SysTrayIconTest(AbstractTkTest, unittest.TestCase):
         # Sends a real desktop notification.
         icon.notify('Python test', 'tkinter.systray test notification')
 
+    @requires_tk(8, 7)
+    def test_notification_handler(self):
+        # All real notifications are sent from the same Tcl interpreter.
+        # Sending a notification after the interpreter which sent
+        # the previous one was deleted crashes Tk on X11 with libnotify.
+        if self.root._windowingsystem != 'x11':
+            self.skipTest('cannot safely send a native notification')
+        self.create()
+        handler = NotificationHandler('Python test', master=self.root)
+        record = logging.LogRecord('test', logging.INFO, __file__, 0,
+                                   'tkinter.systray test notification',
+                                   None, None)
+        # Sends a real desktop notification.
+        handler.emit(record)
+
+
+class FakeTk:
+    # Records the calls of "tk sysnotify" instead of sending
+    # real notifications.
+
+    def __init__(self):
+        self.calls = []
+
+    def call(self, *args):
+        if args[:2] != ('tk', 'sysnotify'):
+            raise tkinter.TclError(f'unexpected call: {args}')
+        self.calls.append(args[2:])
+
+
+class FakeMaster:
+    def __init__(self):
+        self.tk = FakeTk()
+
+
+class NotificationHandlerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.master = FakeMaster()
+        self.calls = self.master.tk.calls
+        self.logger = logging.getLogger('test.tkinter.systray')
+        self.logger.propagate = False
+        self.logger.setLevel(logging.DEBUG)
+        self.addCleanup(self.logger.setLevel, logging.NOTSET)
+        self.addCleanup(setattr, self.logger, 'propagate', True)
+
+    def add_handler(self, *args, **kwargs):
+        handler = NotificationHandler(*args, master=self.master, **kwargs)
+        self.logger.addHandler(handler)
+        self.addCleanup(self.logger.removeHandler, handler)
+        return handler
+
+    def test_emit(self):
+        self.add_handler()
+        self.logger.warning('spam %s', 'eggs')
+        self.logger.error('ham')
+        self.assertEqual(self.calls, [('WARNING', 'spam eggs'),
+                                      ('ERROR', 'ham')])
+
+    def test_title(self):
+        self.add_handler('Python')
+        self.logger.warning('spam')
+        self.assertEqual(self.calls, [('Python', 'spam')])
+
+    def test_formatter(self):
+        handler = self.add_handler()
+        handler.setFormatter(logging.Formatter('%(name)s: %(message)s'))
+        self.logger.info('spam')
+        self.assertEqual(self.calls,
+                         [('INFO', 'test.tkinter.systray: spam')])
+
+    def test_level(self):
+        handler = self.add_handler()
+        handler.setLevel(logging.WARNING)
+        self.logger.info('spam')
+        self.logger.warning('eggs')
+        self.assertEqual(self.calls, [('WARNING', 'eggs')])
+
+    def test_error(self):
+        # Errors in sending a notification are handled by handleError().
+        handler = self.add_handler()
+        errors = []
+        handler.handleError = errors.append
+        def call(*args):
+            raise tkinter.TclError('no notifications')
+        self.master.tk.call = call
+        self.logger.warning('spam')
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0].getMessage(), 'spam')
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
@@ -128,6 +219,19 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, SysTrayIcon, image='none')
         self.assertRaises(RuntimeError, notify, 'title', 'message')
+
+    def test_notification_handler(self):
+        # The default root window is looked up when a record is emitted.
+        handler = NotificationHandler()
+        self.assertIsNone(handler.master)
+        errors = []
+        handler.handleError = lambda record: errors.append(sys.exception())
+        record = logging.LogRecord('test', logging.INFO, __file__, 0,
+                                   'message', None, None)
+        tkinter.NoDefaultRoot()
+        handler.emit(record)
+        self.assertEqual(len(errors), 1)
+        self.assertIsInstance(errors[0], RuntimeError)
 
 
 if __name__ == "__main__":
