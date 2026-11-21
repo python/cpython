@@ -332,6 +332,7 @@ HOSTRUNNER= @HOSTRUNNER@
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+MODULE_CHECK_COMMAND=@MODULE_CHECK_COMMAND@
 # Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
 # external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
 PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
@@ -1605,11 +1606,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 .PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@if [ -n "@MISSING_STDLIB_CONFIG@" ]; then \
-		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
+		$(RUNSHARED_FOR_BUILD) $(MODULE_CHECK_COMMAND) --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
 	else \
-		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
+		$(RUNSHARED_FOR_BUILD) $(MODULE_CHECK_COMMAND) --generate-missing-stdlib-info; \
 	fi
-	@$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
+	@$(RUNSHARED_FOR_BUILD) $(MODULE_CHECK_COMMAND)
 
 .PHONY: rundsymutil
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)

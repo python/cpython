@@ -549,9 +549,24 @@ jobs:
         run: |
           "$BUILD_DIR/host-python/bin/python3" -m test test_sysconfig test_site test_embed
       - name: Configure cross build
-        run: ./configure --prefix="$BUILD_DIR/cross-python" --with-build-python="$BUILD_DIR/host-python/bin/python3"
+        run: |
+          # Exercise a native build whose builtin modules differ from the build Python.
+          echo '_bisect _bisectmodule.c' > Modules/Setup.local
+          ./configure --prefix="$BUILD_DIR/cross-python" --with-build-python="$BUILD_DIR/host-python/bin/python3"
       - name: Install cross Python
         run: make -j8 install
+      - name: Check native extension modules with a build Python
+        run: |
+          "$BUILD_DIR/host-python/bin/python3" -c "import sys; assert '_bisect' not in sys.builtin_module_names"
+          "$BUILD_DIR/cross-python/bin/python3" -c "import _bisect, sys; assert '_bisect' in sys.builtin_module_names"
+          # checksharedmods must use the newly built target interpreter and enforce native import checks
+          recipe=$(make -n checksharedmods)
+          echo "$recipe" | grep -F -- '--no-cross-compiling'
+          if echo "$recipe" | grep -F "$BUILD_DIR/host-python"; then
+            echo "Error: checksharedmods incorrectly invoked the build Python" >&2
+            exit 1
+          fi
+          PYTHONSTRICTEXTENSIONBUILD=1 make checksharedmods
       - name: Display build info
         run: |
           "$BUILD_DIR/cross-python/bin/python3" -m test.pythoninfo

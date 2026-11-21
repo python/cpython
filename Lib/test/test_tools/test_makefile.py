@@ -82,3 +82,42 @@ class TestMakefile(unittest.TestCase):
         unique_test_dirs = set(test_dirs)
         self.assertSetEqual(unique_test_dirs, used)
         self.assertEqual(len(test_dirs), len(unique_test_dirs))
+
+    def test_makefile_module_check_command(self):
+        vars = {}
+        with open(MAKEFILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                if '=' in line and not line.startswith(('\t', ' ', '#')):
+                    key, _, val = line.partition('=')
+                    vars[key.strip()] = val.strip()
+
+        self.assertIn('MODULE_CHECK_COMMAND', vars)
+        cmd = vars['MODULE_CHECK_COMMAND']
+        tokens = cmd.split()
+        if vars.get('_PYTHON_HOST_PLATFORM'):
+            self.assertIn('--cross-compiling', tokens)
+            self.assertNotIn('--no-cross-compiling', tokens)
+            self.assertIn('PYTHON_FOR_BUILD', cmd)
+        else:
+            self.assertIn('--no-cross-compiling', tokens)
+            self.assertNotIn('--cross-compiling', tokens)
+            self.assertIn('BUILDPYTHON', cmd)
+
+    def test_makefile_checksharedmods_recipe(self):
+        """Ensure checksharedmods recipe uses $(RUNSHARED_FOR_BUILD) $(MODULE_CHECK_COMMAND)."""
+        found_target = False
+        found_recipe = False
+        with open(MAKEFILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('checksharedmods:'):
+                    found_target = True
+                elif found_target:
+                    if line.startswith(('\t', ' ')):
+                        if 'MODULE_CHECK_COMMAND' in line:
+                            found_recipe = True
+                            self.assertIn('$(RUNSHARED_FOR_BUILD) $(MODULE_CHECK_COMMAND)', line)
+                            self.assertNotIn('$(RUNSHARED) $(MODULE_CHECK_COMMAND)', line)
+                    else:
+                        break
+        self.assertTrue(found_target, "checksharedmods target not found in Makefile")
+        self.assertTrue(found_recipe, "MODULE_CHECK_COMMAND not invoked in checksharedmods recipe")
