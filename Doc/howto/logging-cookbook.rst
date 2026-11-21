@@ -4,8 +4,6 @@
 Logging Cookbook
 ================
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 This page contains a number of recipes related to logging, which have been found
 useful in the past. For links to tutorial and reference information, please see
 :ref:`cookbook-ref-links`.
@@ -332,11 +330,10 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
-of severity ``ERROR`` and only events of this severity and higher will be tracked
-as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
-excludes those messages and add it to the relevant handler. This can be configured by
-adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
+This configuration does *almost* what we want, except that ``sys.stdout`` would
+also show messages of severity ``ERROR`` and above. To exclude those messages,
+we can add a filter to the stdout handler. This can be configured by adding a
+``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
 
@@ -564,9 +561,9 @@ One solution is to use a two-part approach. For the first part, attach only a
 :class:`QueueHandler` to those loggers which are accessed from
 performance-critical threads. They simply write to their queue, which can be
 sized to a large enough capacity or initialized with no upper bound to their
-size. The write to the queue will typically be accepted quickly, though you
-will probably need to catch the :exc:`queue.Full` exception as a precaution
-in your code. If you are a library developer who has performance-critical
+size. The write to the queue will typically be accepted quickly. If a bounded
+queue is full, :class:`QueueHandler` calls :meth:`~logging.Handler.handleError`
+with the record. If you are a library developer who has performance-critical
 threads in their code, be sure to document this (together with a suggestion to
 attach only ``QueueHandlers`` to your loggers) for the benefit of other
 developers who will use your code.
@@ -1087,7 +1084,7 @@ each request is handled by a thread:
 
     # A dummy set of requests which will be used in the simulation - we'll just pick
     # from this list randomly. Note that all GET requests are from 192.168.2.XXX
-    # addresses, whereas POST requests are from 192.16.3.XXX addresses. Three users
+    # addresses, whereas POST requests are from 192.168.3.XXX addresses. Three users
     # are represented in the sample requests.
 
     REQUESTS = [
@@ -1610,8 +1607,8 @@ application:
 
 The most current file is always :file:`logging_rotatingfile_example.out`,
 and each time it reaches the size limit it is renamed with the suffix
-``.1``. Each of the existing backup files is renamed to increment the suffix
-(``.1`` becomes ``.2``, etc.)  and the ``.6`` file is erased.
+``.1``. Before this happens, the oldest backup (``.5``), if present, is
+deleted and the remaining backups are renamed (``.4`` becomes ``.5``, etc.).
 
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
@@ -1803,7 +1800,7 @@ Before Python 3.2, there were only two places where this creation was done:
 * :func:`makeLogRecord`, which is called with a dictionary containing
   attributes to be added to the LogRecord. This is typically invoked when a
   suitable dictionary has been received over the network (e.g. in pickle form
-  via a :class:`~handlers.SocketHandler`, or in JSON form via an
+  via a :class:`~handlers.SocketHandler`, or as URL-encoded data via an
   :class:`~handlers.HTTPHandler`).
 
 This has usually meant that if you need to do anything special with a
@@ -1829,11 +1826,7 @@ do simply by adding new packages or modules and doing ::
 
    logger = logging.getLogger(__name__)
 
-at module level). It's probably one too many things to think about. Developers
-could also add the filter to a :class:`~logging.NullHandler` attached to their
-top-level logger, but this would not be invoked if an application developer
-attached a handler to a lower-level library logger --- so output from that
-handler would not reflect the intentions of the library developer.
+at module level). It's probably one too many things to think about.
 
 In Python 3.2 and later, :class:`~logging.LogRecord` creation is done through a
 factory, which you can specify. The factory is just a callable you can set with
@@ -1915,15 +1908,15 @@ You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
 
     class ZeroMQSocketListener(QueueListener):
-        def __init__(self, uri, /, *handlers, **kwargs):
-            self.ctx = kwargs.get('ctx') or zmq.Context()
+        def __init__(self, uri, /, *handlers, ctx=None, **kwargs):
+            self.ctx = ctx or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
             socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
             socket.connect(uri)
             super().__init__(socket, *handlers, **kwargs)
 
-        def dequeue(self):
-            msg = self.queue.recv_json()
+        def dequeue(self, block):
+            msg = self.queue.recv_json(flags=0 if block else zmq.NOBLOCK)
             return logging.makeLogRecord(msg)
 
 .. _pynng-handlers:
@@ -1957,7 +1950,7 @@ Subclass ``QueueListener``
     class NNGSocketListener(logging.handlers.QueueListener):
 
         def __init__(self, uri, /, *handlers, **kwargs):
-            # Have a timeout for interruptability, and open a
+            # Have a timeout for interruptibility, and open a
             # subscriber socket
             socket = pynng.Sub0(listen=uri, recv_timeout=500)
             # The b'' subscription matches all topics
@@ -2247,7 +2240,7 @@ works::
     import logging.config
     import logging.handlers
     from multiprocessing import Process, Queue, Event, current_process
-    import os
+    from multiprocessing import get_start_method
     import random
     import time
 
@@ -2283,13 +2276,8 @@ works::
         logging.config.dictConfig(config)
         listener = logging.handlers.QueueListener(q, MyHandler())
         listener.start()
-        if os.name == 'posix':
-            # On POSIX, the setup logger will have been configured in the
-            # parent process, but should have been disabled following the
-            # dictConfig call.
-            # On Windows, since fork isn't used, the setup logger won't
-            # exist in the child, so it would be created and the message
-            # would appear - hence the "if posix" clause.
+        if get_start_method() == 'fork':
+            # dictConfig disables the setup logger inherited from the parent.
             logger = logging.getLogger('setup')
             logger.critical('Should not appear, because of disabled logger ...')
         stop_event.wait()
@@ -2314,13 +2302,8 @@ works::
                   logging.CRITICAL]
         loggers = ['foo', 'foo.bar', 'foo.bar.baz',
                    'spam', 'spam.ham', 'spam.ham.eggs']
-        if os.name == 'posix':
-            # On POSIX, the setup logger will have been configured in the
-            # parent process, but should have been disabled following the
-            # dictConfig call.
-            # On Windows, since fork isn't used, the setup logger won't
-            # exist in the child, so it would be created and the message
-            # would appear - hence the "if posix" clause.
+        if get_start_method() == 'fork':
+            # dictConfig disables the setup logger inherited from the parent.
             logger = logging.getLogger('setup')
             logger.critical('Should not appear, because of disabled logger ...')
         for i in range(100):
@@ -2347,9 +2330,7 @@ works::
         }
         # The worker process configuration is just a QueueHandler attached to the
         # root logger, which allows all messages to be sent to the queue.
-        # We disable existing loggers to disable the "setup" logger used in the
-        # parent process. This is needed on POSIX because the logger will
-        # be there in the child following a fork().
+        # Disable the parent's "setup" logger if it was inherited via fork.
         config_worker = {
             'version': 1,
             'disable_existing_loggers': True,
@@ -2367,9 +2348,7 @@ works::
         # The listener process configuration shows that the full flexibility of
         # logging configuration is available to dispatch events to handlers however
         # you want.
-        # We disable existing loggers to disable the "setup" logger used in the
-        # parent process. This is needed on POSIX because the logger will
-        # be there in the child following a fork().
+        # Disable the parent's "setup" logger if it was inherited via fork.
         config_listener = {
             'version': 1,
             'disable_existing_loggers': True,
@@ -3922,7 +3901,7 @@ subclassed handler which looks something like this::
 
 You'll need to be familiar with RFC 5424 to fully understand the above code, and it
 may be that you have slightly different needs (e.g. for how you pass structural data
-to the log). Nevertheless, the above should be adaptable to your speciric needs. With
+to the log). Nevertheless, the above should be adaptable to your specific needs. With
 the above handler, you'd pass structured data using something like this::
 
     sd = {
@@ -4079,11 +4058,9 @@ How to uniformly handle newlines in logging output
 
 Usually, messages that are logged (say to console or file) consist of a single
 line of text. However, sometimes there is a need to handle messages with
-multiple lines - whether because a logging format string contains newlines, or
-logged data contains newlines. If you want to handle such messages uniformly, so
-that each line in the logged message appears uniformly formatted as if it was
-logged separately, you can do this using a handler mixin, as in the following
-snippet:
+multiple lines because the message or its arguments contain newlines.
+To format each line as if it were logged separately, you can use a handler
+mixin, as in the following snippet:
 
 .. code-block:: python
 

@@ -17,20 +17,13 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-if support.check_sanitizer(address=True, memory=True, ub=True, function=True):
+if support.check_sanitizer(address=True, memory=True, function=False):
     # gh-109580: Skip the test because it does crash randomly if Python is
     # built with ASAN.
-    raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
+    raise unittest.SkipTest("test crash randomly on ASAN/MSAN build")
 
 
-def supports_trampoline_profiling():
-    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
-    if not perf_trampoline:
-        return False
-    return int(perf_trampoline) == 1
-
-
-if not supports_trampoline_profiling():
+if not support.supports_perf_trampoline_profiling():
     raise unittest.SkipTest("perf trampoline profiling not supported")
 
 
@@ -62,7 +55,6 @@ class TestPerfTrampoline(unittest.TestCase):
         for file in files_to_delete:
             file.unlink()
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
         code = """if 1:
                 def foo():
@@ -113,7 +105,15 @@ class TestPerfTrampoline(unittest.TestCase):
                 "Address should contain only hex characters",
             )
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
+    def test_trampoline_with_unencodable_name(self):
+        code = """if 1:
+                import sys
+
+                sys.activate_stack_trampoline("perf")
+                eval(compile("pass", "bad\\ud800file", "exec"))
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
     def test_trampoline_works_with_forks(self):
         code = """if 1:
                 import os, sys
@@ -183,7 +183,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertNotIn(f"py::bar:{script}", child_perf_file_contents)
         self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works_after_fork_with_many_code_objects(self):
         code = """if 1:
                 import gc, os, sys, signal
@@ -223,7 +222,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertEqual(process.returncode, 0, stderr)
         self.assertEqual(stderr, "")
 
-    @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
         for define_eval_hook in (False, True):
             code = """if 1:
@@ -317,6 +315,27 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf_jit")
                 """
         assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    @unittest.skipUnless(
+        "-D_Py_JIT" in (sysconfig.get_config_var("PY_CORE_CFLAGS") or "").split(),
+        "requires a real JIT (_Py_JIT)",
+    )
+    def test_sys_api_perf_jit_backend_in_subinterpreter(self):
+        # gh-157247: a subinterpreter must not bypass the JIT/perf exclusion.
+        code = """if 1:
+                import sys
+                from contextlib import closing
+                from concurrent import interpreters
+
+                assert sys._jit.is_enabled(), "expected the JIT to be enabled"
+
+                with closing(interpreters.create()) as interp:
+                    interp.exec(
+                        "import sys; sys.activate_stack_trampoline('perf_jit')")
+                """
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="1")
+        self.assertIn(
+            b"Cannot activate the perf trampoline if the JIT is active", err)
 
 
 def is_unwinding_reliable_with_frame_pointers():

@@ -4,9 +4,6 @@
   HOWTO Fetch Internet Resources Using The urllib Package
 ***********************************************************
 
-:Author: `Michael Foord <https://agileabstractions.com/>`_
-
-
 Introduction
 ============
 

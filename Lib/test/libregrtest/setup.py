@@ -11,7 +11,9 @@ from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 from _colorize import can_colorize  # type: ignore[import-not-found]
 
 from .filter import set_match_tests
+from .reporter import get_reporter
 from .runtests import RunTests
+from .testresult import RegressionTestResult
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)
@@ -49,6 +51,14 @@ def setup_process() -> None:
             signals.append(signal.SIGUSR1)
         for signum in signals:
             faulthandler.register(signum, chain=True, file=stderr_fd)
+
+    # Restore the default SIGINT handler if there is no Python-level
+    # handler.  Python inherits the SIG_IGN disposition when the test
+    # suite runs as a shell background job; then asyncio.Runner does not
+    # install its own handler and _thread.interrupt_main() is a no-op,
+    # which makes some tests in test_asyncio and test_threading hang.
+    if signal.getsignal(signal.SIGINT) in (signal.SIG_IGN, signal.SIG_DFL):
+        signal.signal(signal.SIGINT, signal.default_int_handler)
 
     adjust_rlimit_nofile()
 
@@ -104,9 +114,11 @@ def setup_tests(runtests: RunTests) -> None:
 
     set_match_tests(runtests.match_tests)
 
+    reporter = get_reporter()
+    reporter.run_started(runtests)
+    RegressionTestResult.reporter = reporter
     if runtests.use_junit:
         support.junit_xml_list = []
-        from .testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None

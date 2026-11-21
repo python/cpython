@@ -134,7 +134,7 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     pgid_to_set = PyLong_AsPid(args[16]);
-    if (pgid_to_set == -1 && PyErr_Occurred()) {
+    if (pgid_to_set == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
     gid_object = args[17];
@@ -150,4 +150,4 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=138941c284792aa1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59df66f994e6251d input=a9049054013a1b77]*/

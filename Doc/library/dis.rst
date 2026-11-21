@@ -139,7 +139,7 @@ code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
                     show_caches=False, adaptive=False, show_offsets=False,\
-                    show_positions=False)
+                    show_positions=False, show_jit=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
@@ -169,6 +169,9 @@ code.
 
    If *show_positions* is ``True``, :meth:`.dis` will include instruction
    source code positions in the output.
+
+   If *show_jit* is ``True``, :meth:`.dis` will show ``ENTER_EXECUTOR``
+   instructions, which mark JIT entry points and are hidden by default.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -204,6 +207,9 @@ code.
 
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
+
+   .. versionchanged:: 3.16
+      Added the *show_jit* parameter.
 
 Example:
 
@@ -259,7 +265,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 
 .. function:: dis(x=None, *, file=None, depth=None, show_caches=False,\
-                  adaptive=False, show_offsets=False, show_positions=False)
+                  adaptive=False, show_offsets=False, show_positions=False,\
+                  show_jit=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, an asynchronous generator, a coroutine,
@@ -286,6 +293,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    If *adaptive* is ``True``, this function will display specialized bytecode
    that may be different from the original bytecode.
 
+   If *show_jit* is ``True``, this function will show ``ENTER_EXECUTOR``
+   instructions, which mark JIT entry points and are hidden by default.
+
    .. versionchanged:: 3.4
       Added *file* parameter.
 
@@ -304,8 +314,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
+   .. versionchanged:: 3.16
+      Added the *show_jit* parameter.
+
 .. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
-                    show_offset=False, show_positions=False)
+                    show_offsets=False, show_positions=False, show_jit=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -326,10 +339,14 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
+   .. versionchanged:: 3.16
+      Added the *show_jit* parameter.
+
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
-                          adaptive=False, show_offsets=False, show_positions=False)
+                          adaptive=False, show_offsets=False, show_positions=False,\
+                          show_jit=False)
               disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
-                    show_offsets=False, show_positions=False)
+                    show_offsets=False, show_positions=False, show_jit=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -362,7 +379,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.14
       Added the *show_positions* parameter.
 
-.. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
+   .. versionchanged:: 3.16
+      Added the *show_jit* parameter.
+
+.. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False, show_jit=False)
 
    Return an iterator over the instructions in the supplied function, method,
    source code string or code object.
@@ -375,7 +395,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *adaptive* parameter works as it does in :func:`dis`.
+   The *adaptive* parameter works as it does in :func:`~dis.dis`.
+
+   The *show_jit* parameter works as it does in :func:`~dis.dis`.
 
    .. versionadded:: 3.4
 
@@ -387,6 +409,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       generates the :class:`Instruction` instances with the *cache_info*
       field populated (regardless of the value of *show_caches*) and it no longer
       generates separate items for the cache entries.
+
+   .. versionchanged:: 3.16
+      Added the *show_jit* parameter.
 
 .. function:: findlinestarts(code)
 
@@ -596,9 +621,13 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: POP_ITER
 
-   Removes the iterator from the top of the stack.
+   Removes the iterator and the value pushed with it by :opcode:`GET_ITER`
+   from the top of the stack.
 
    .. versionadded:: 3.14
+
+   .. versionchanged:: 3.15
+      Two values are now removed.
 
 
 .. opcode:: POP_TOP
@@ -619,10 +648,14 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_SEND
 
-   Implements ``del STACK[-2]``.
+   Implements ``del STACK[-3:-1]``.
    Used to clean up when a generator exits.
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.15
+      The receiver and the value pushed with it by :opcode:`GET_ITER` are
+      removed, instead of only the receiver.
 
 
 .. opcode:: COPY (i)
@@ -687,17 +720,23 @@ result back on the stack.
    Implements ``STACK[-1] = ~STACK[-1]``.
 
 
-.. opcode:: GET_ITER
+.. opcode:: GET_ITER (yield_from)
 
-   Implements ``STACK[-1] = iter(STACK[-1])``.
+   Replaces ``STACK[-1]`` with an iterator for it and pushes a second value,
+   which is used by :opcode:`FOR_ITER`, :opcode:`SEND` and :opcode:`POP_ITER`.
 
+   For some built-in sequence types, such as :class:`list` and :class:`tuple`,
+   the object itself is left on the stack as a "virtual iterator" and the
+   index to start iterating from is pushed.  Otherwise, implements
+   ``STACK[-1] = iter(STACK[-1])`` and pushes ``NULL``.
 
-.. opcode:: GET_YIELD_FROM_ITER
+   If *yield_from* is non-zero, the instruction is used for ``yield from``:
+   a :term:`coroutine` object is left as is, unless the current code is
+   a regular generator, in which case :exc:`TypeError` is raised.
 
-   If ``STACK[-1]`` is a :term:`generator iterator` or :term:`coroutine` object
-   it is left as is.  Otherwise, implements ``STACK[-1] = iter(STACK[-1])``.
-
-   .. versionadded:: 3.5
+   .. versionchanged:: 3.15
+      A second value is now pushed after the iterator.  The *yield_from*
+      argument was added, replacing the ``GET_YIELD_FROM_ITER`` instruction.
 
 
 .. opcode:: TO_BOOL
@@ -778,7 +817,8 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_AWAITABLE (where)
 
-   Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
+   Replaces ``STACK[-1]`` with ``get_awaitable(STACK[-1])``, ``NULL`` and
+   ``None``, ready for :opcode:`SEND`. ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
@@ -794,6 +834,10 @@ not have to be) the original ``STACK[-2]``.
    .. versionchanged:: 3.11
       Previously, this instruction did not have an oparg.
 
+   .. versionchanged:: next
+      Also pushes ``NULL`` and ``None``, which were previously pushed by
+      separate instructions.
+
 
 .. opcode:: GET_AITER
 
@@ -807,10 +851,15 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_ANEXT
 
-   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack.
+   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack,
+   then push ``NULL`` and ``None``, ready for :opcode:`SEND`.
    See ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: next
+      Also pushes ``NULL`` and ``None``, which were previously pushed by
+      separate instructions.
 
 
 .. opcode:: END_ASYNC_FOR
@@ -1031,12 +1080,6 @@ iterations of the loop.
    The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
-.. opcode:: DELETE_NAME (namei)
-
-   Implements ``del name``, where *namei* is the index into :attr:`~codeobject.co_names`
-   attribute of the :ref:`code object <code-objects>`.
-
-
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
@@ -1076,25 +1119,9 @@ iterations of the loop.
    where *namei* is the index of name in :attr:`~codeobject.co_names` of the
    :ref:`code object <code-objects>`.
 
-.. opcode:: DELETE_ATTR (namei)
-
-   Implements::
-
-      obj = STACK.pop()
-      del obj.name
-
-   where *namei* is the index of name into :attr:`~codeobject.co_names` of the
-   :ref:`code object <code-objects>`.
-
-
 .. opcode:: STORE_GLOBAL (namei)
 
    Works as :opcode:`STORE_NAME`, but stores the name as a global.
-
-
-.. opcode:: DELETE_GLOBAL (namei)
-
-   Works as :opcode:`DELETE_NAME`, but deletes a global name.
 
 
 .. opcode:: LOAD_CONST (consti)
@@ -1296,7 +1323,7 @@ iterations of the loop.
    * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
-   except that ``namei`` is shifted left by 2 bits instead of 1.
+   except that ``namei`` is shifted right by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
    :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
@@ -1422,21 +1449,32 @@ iterations of the loop.
 
 .. opcode:: FOR_ITER (delta)
 
-   ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
+   ``STACK[-2]`` is an :term:`iterator` (or a virtual iterator, see
+   :opcode:`GET_ITER`) and ``STACK[-1]`` is the value pushed with it by
+   :opcode:`GET_ITER`.  Get the next item, calling the iterator's
+   :meth:`~iterator.__next__` method if needed.
    If this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted then the byte code counter is
+   it).  If the iterator indicates it is :term:`exhausted` then the byte code counter is
    incremented by *delta*.
 
    .. versionchanged:: 3.12
       Up until 3.11 the iterator was popped when it was exhausted.
 
+   .. versionchanged:: 3.15
+      The iterator is now followed on the stack by the value pushed with it
+      by :opcode:`GET_ITER`.
+
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei>>1]`` onto the stack.
+   If the low bit of ``namei`` is set, a ``NULL`` is pushed onto the stack
+   after the global variable.
 
    .. versionchanged:: 3.11
-      If the low bit of ``namei`` is set, then a ``NULL`` is pushed to the
-      stack before the global variable.
+      The low bit of ``namei`` indicates whether a ``NULL`` is pushed.
+
+   .. versionchanged:: 3.13
+      The ``NULL`` is pushed after the global variable, rather than before it.
 
 .. opcode:: LOAD_FAST (var_num)
 
@@ -1803,14 +1841,20 @@ iterations of the loop.
 
 .. opcode:: SEND (delta)
 
-   Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
-   and ``await`` statements.
+   Equivalent to ``STACK[-1] = STACK[-3].send(STACK[-1])``. Used in ``yield from``
+   and ``await`` statements.  ``STACK[-2]`` is the value pushed with the
+   receiver by :opcode:`GET_ITER`; if the receiver is a virtual iterator,
+   it is advanced as by :opcode:`FOR_ITER`.
 
    If the call raises :exc:`StopIteration`, pop the top value from the stack,
    push the exception's ``value`` attribute, and increment the bytecode counter
    by *delta*.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.15
+      The receiver is now at ``STACK[-3]``, followed by the value pushed with
+      it by :opcode:`GET_ITER`.
 
 
 .. opcode:: HAVE_ARGUMENT
@@ -1896,27 +1940,37 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   +----------------------------------------+-----------------------------------+
-   | Operand                                | Description                       |
-   +========================================+===================================+
-   | ``INTRINSIC_2_INVALID``                | Not valid                         |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
-   |                                        | :exc:`ExceptionGroup` to raise    |
-   |                                        | from a ``try-except*``.           |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
-   |                                        | with a bound.                     |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
-   |                                        | :class:`typing.TypeVar` with      |
-   |                                        | constraints.                      |
-   +----------------------------------------+-----------------------------------+
-   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
-   |                                        | attribute of a function.          |
-   +----------------------------------------+-----------------------------------+
+   +------------------------------------------+-----------------------------------------+
+   | Operand                                  | Description                             |
+   +==========================================+=========================================+
+   | ``INTRINSIC_2_INVALID``                  | Not valid                               |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``          | Calculates the                          |
+   |                                          | :exc:`ExceptionGroup` to raise          |
+   |                                          | from a ``try-except*``.                 |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``         | Creates a :class:`typing.TypeVar`       |
+   |                                          | with a bound.                           |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS``   | Creates a                               |
+   |                                          | :class:`typing.TypeVar` with            |
+   |                                          | constraints.                            |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS``   | Sets the ``__type_params__``            |
+   |                                          | attribute of a function.                |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_ADD_CONDITIONAL_ANNOTATION`` | Adds an annotation index to the         |
+   |                                          | ``__conditional_annotations__``         |
+   |                                          | set.                                    |
+   +------------------------------------------+-----------------------------------------+
+   | ``INTRINSIC_MATCH_CLASS_ISINSTANCE``     | Do :func:`isinstance` checks for        |
+   |                                          | :ref:`Class patterns <class-patterns>`. |
+   +------------------------------------------+-----------------------------------------+
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.16
+      Added ``INTRINSIC_MATCH_CLASS_ISINSTANCE``.
 
 
 .. opcode:: LOAD_SPECIAL

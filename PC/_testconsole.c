@@ -35,21 +35,6 @@ PyModuleDef_Slot testconsole_slots[] = {
     {0, NULL},
 };
 
-/*[python input]
-class HANDLE_converter(CConverter):
-    type = 'void *'
-    format_unit = '"_Py_PARSE_UINTPTR"'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsVoidPtr({argname});
-            if (!{paramname} && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=380aa5c91076742b]*/
 /*[python end generated code:]*/
 
 /*[clinic input]

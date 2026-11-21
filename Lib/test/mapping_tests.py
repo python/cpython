@@ -629,6 +629,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
 
+    @support.run_with_limited_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     @support.skip_if_sanitizer("requires deep stack", ub=True)

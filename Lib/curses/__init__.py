@@ -11,11 +11,12 @@ the package, and perhaps a particular module inside it.
 """
 
 from _curses import *
+import _curses
 import os as _os
 import sys as _sys
 
-# Some constants, most notably the ACS_* ones, are only added to the C
-# _curses module's dictionary after initscr() is called.  (Some
+# Some constants, most notably the ACS_* and WACS_* ones, are only added
+# to the C _curses module's dictionary after initscr() is called.  (Some
 # versions of SGI's curses don't define values for those constants
 # until initscr() has been called.)  This wrapper function calls the
 # underlying C initscr(), and then copies the constants from the
@@ -30,9 +31,28 @@ def initscr():
               fd=_sys.__stdout__.fileno())
     stdscr = _curses.initscr()
     for key, value in _curses.__dict__.items():
-        if key.startswith('ACS_') or key in ('LINES', 'COLS'):
+        if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
             setattr(curses, key, value)
     return stdscr
+initscr.__doc__ = _curses.initscr.__doc__
+
+# newterm() is wrapped for the same reason as initscr(): the ACS_* and WACS_*
+# constants and LINES/COLS only become available once a terminal is
+# initialized, and are then copied to the curses package's dictionary.
+
+try:
+    newterm
+except NameError:
+    pass
+else:
+    def newterm(type=None, fd=None, infd=None, /):
+        import _curses, curses
+        screen = _curses.newterm(type, fd, infd)
+        for key, value in _curses.__dict__.items():
+            if key.startswith(('ACS_', 'WACS_')) or key in ('LINES', 'COLS'):
+                setattr(curses, key, value)
+        return screen
+    newterm.__doc__ = _curses.newterm.__doc__
 
 # This is a similar wrapper for start_color(), which adds the COLORS and
 # COLOR_PAIRS variables which are only available after start_color() is
@@ -43,6 +63,7 @@ def start_color():
     _curses.start_color()
     curses.COLORS = _curses.COLORS
     curses.COLOR_PAIRS = _curses.COLOR_PAIRS
+start_color.__doc__ = _curses.start_color.__doc__
 
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 

@@ -104,8 +104,9 @@ Tuple Objects
 
    .. note::
 
-      This function "steals" a reference to *o* and discards a reference to
-      an item already in the tuple at the affected position.
+      This function ":term:`steals <steal>`" a reference to *o* and discards
+      a reference to an item already in the tuple at the affected position
+      (unless it was NULL).
 
 
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -118,7 +119,7 @@ Tuple Objects
 
    .. note::
 
-      This function "steals" a reference to *o*, and, unlike
+      This function ":term:`steals <steal>`" a reference to *o*, and, unlike
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
@@ -132,16 +133,36 @@ Tuple Objects
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
 
-   Can be used to resize a tuple.  *newsize* will be the new length of the tuple.
-   Because tuples are *supposed* to be immutable, this should only be used if there
-   is only one reference to the object.  Do *not* use this if the tuple may already
-   be known to some other part of the code.  The tuple will always grow or shrink
-   at the end.  Think of this as destroying the old tuple and creating a new one,
-   only more efficiently.  Returns ``0`` on success. Client code should never
-   assume that the resulting value of ``*p`` will be the same as before calling
-   this function. If the object referenced by ``*p`` is replaced, the original
-   ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
-   raises :exc:`MemoryError` or :exc:`SystemError`.
+   Resize a tuple.
+   *newsize* will be the new length of the tuple.
+
+   Because tuples are *supposed* to be immutable, this should only be used if
+   there is only one reference to the object.
+   Do *not* use this if the tuple may already be known to some other part of
+   the code.
+   The tuple hash value must not be computed yet.
+
+   The tuple will always grow or shrink at the end.
+   Think of this as destroying the old tuple and creating a new one, only more
+   efficiently.
+
+   Returns ``0`` on success.
+   Client code should never assume that the resulting value of ``*p`` will be
+   the same as before calling this function.
+   If the object referenced by ``*p`` is replaced, the original ``*p`` is
+   destroyed.
+
+   On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and raises
+   :exc:`MemoryError` or :exc:`SystemError`.
+
+   While tuple objects are usually immutable in Python, this special C API
+   allows mutating a tuple object in-place.
+   The returned tuple object can still be mutated using
+   :c:func:`PyTuple_SetItem`; except if *newsize* is zero in which case it
+   returns the immutable empty tuple.
+
+   .. versionchanged:: 3.16
+      The function now fails if the tuple hash value was already computed.
 
 
 .. _struct-sequence-objects:
@@ -263,7 +284,7 @@ type.
 
    .. note::
 
-      This function "steals" a reference to *o*.
+      This function ":term:`steals <steal>`" a reference to *o*.
 
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)

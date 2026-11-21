@@ -815,6 +815,15 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class X(int(), C):
                 pass
 
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_type_with_null_new_metaclass(self):
+        metaclass = _testcapi.HeapCTypeMetaclassNullNew
+        base = _testcapi.pytype_fromspec_meta(metaclass)
+
+        # Exercise type_new's metaclass selection path, not a direct call.
+        with self.assertRaisesRegex(TypeError, r"cannot create '.*' instances"):
+            type("Derived", (base,), {})
+
     def test_module_subclasses(self):
         # Testing Python subclass of module...
         log = []
@@ -2222,10 +2231,22 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         def swallow(*args): pass
         def format_impl(self, spec):
             return "hello"
+        def do_eq(obj):
+            return obj == 1
+        def do_ne(obj):
+            return obj != 1
+        def do_lt(obj):
+            return obj < 1
+        def do_le(obj):
+            return obj <= 1
+        def do_gt(obj):
+            return obj > 1
+        def do_ge(obj):
+            return obj >= 1
 
-        # It would be nice to have every special method tested here, but I'm
-        # only listing the ones I can remember outside of typeobject.c, since it
-        # does it right.
+        # It would be nice to have every special method tested here.
+        # gh-131151: the rich comparison operators used to clear any exception
+        # raised by a descriptor's __get__.
         specials = [
             ("__bytes__", bytes, hello, set(), {}),
             ("__reversed__", reversed, empty_seq, set(), {}),
@@ -2246,6 +2267,12 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             ("__ceil__", math.ceil, zero, set(), {}),
             ("__dir__", dir, empty_seq, set(), {}),
             ("__round__", round, zero, set(), {}),
+            ("__eq__", do_eq, return_true, set(), {}),
+            ("__ne__", do_ne, return_true, set(), {}),
+            ("__lt__", do_lt, return_true, set(), {}),
+            ("__le__", do_le, return_true, set(), {}),
+            ("__gt__", do_gt, return_true, set(), {}),
+            ("__ge__", do_ge, return_true, set(), {}),
             ]
 
         class Checker(object):
@@ -3396,7 +3423,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         from _io import FileIO
         def check(descr, what):
             self.assertEqual(descr.__doc__, what)
-        check(FileIO.closed, "True if the file is closed") # getset descriptor
+        check(FileIO.closed, "True if the file is closed.") # getset descriptor
         check(complex.real, "the real part of a complex number") # member descriptor
 
     def test_doc_descriptor(self):
@@ -3765,6 +3792,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
@@ -4152,6 +4180,28 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertRaisesRegex(TypeError,
                                'expected 1 or 2 arguments, got 3',
                                int().__rpow__, 1, 2, 3)
+
+    def test_setattr_slot_update_error(self):
+        # An error raised while updating the slots of subclasses must be
+        # propagated by the attribute assignment.
+        class K:
+            def __hash__(self):
+                return hash('__repr__')
+            def __eq__(self, other):
+                raise ZeroDivisionError
+
+        class A:
+            pass
+
+        with self.assertWarns(RuntimeWarning):
+            B = type('B', (A,), {K(): 1})
+        if support.Py_GIL_DISABLED:
+            # The slot update skips non-str keys without comparing them.
+            A.__repr__ = lambda self: 'A'
+        else:
+            with self.assertRaises(ZeroDivisionError):
+                A.__repr__ = lambda self: 'A'
+        self.assertEqual(repr(A()), 'A')
 
     def test_mutable_bases(self):
         # Testing mutable bases...
@@ -5070,6 +5120,31 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
             MyClass = meta('MyClass', (), {})
 
+    def test_str_subclass_namespace_keys(self):
+        # Keys of the class namespace that are str subclasses are copied
+        # to exact str in the type's __dict__, like type.__setattr__ does.
+        class Key(str):
+            def __hash__(self):
+                # Collide with the slot name assigned below.
+                return hash('__hash__')
+            def __eq__(self, other):
+                # Must not be called by type dict lookups.
+                raise AssertionError('Key.__eq__ called')
+
+        ns = {Key('other'): 1, '__repr__': lambda self: 'r', 'c': 2}
+        C = type('C', (), ns)
+        for key in C.__dict__:
+            self.assertIs(type(key), str)
+        self.assertEqual([str(k) for k in ns], list(C.__dict__)[:3])
+        self.assertEqual(repr(C()), 'r')
+        self.assertEqual(C.other, 1)
+        # Lookups and slot updates that hash-collide with 'other' do not
+        # call Key.__eq__.
+        C.__hash__ = None
+        with self.assertRaises(TypeError):
+            hash(C())
+        del C.__hash__
+
     def test_proxy_call(self):
         class FakeStr:
             __class__ = str
@@ -5113,6 +5188,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
+    @support.skip_if_huge_c_stack()
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_repr_as_str(self):
