@@ -76,6 +76,7 @@ class SentinelTest(unittest.TestCase):
         self.assertEqual(marker.__name__, "CAPI_SENTINEL")
         self.assertEqual(marker.__module__, __name__)
         self.assertEqual(repr(marker), "CAPI_SENTINEL")
+        self.assertIsNone(marker.__doc__)
 
         no_module = _testcapi.pysentinel_new("NO_MODULE")
         self.assertIs(type(no_module), sentinel)
