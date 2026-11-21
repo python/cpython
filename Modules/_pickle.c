@@ -1445,26 +1445,40 @@ _Unpickler_ReadFromFile(PickleState *state, UnpicklerObject *self, Py_ssize_t n)
                     return n;
             }
         }
-        Py_ssize_t cursize = Py_MIN(n, MIN_READ_BUF_SIZE);
-        len = PyLong_FromSsize_t(cursize);
-        if (len == NULL)
-            return -1;
-        data = _Pickle_FastCall(self->read, len);
-        if (data == NULL) {
-            return -1;
-        }
-        while (cursize < n) {
-            Py_ssize_t prevsize = cursize;
-            // geometrically double the chunk size to avoid CPU DoS
-            cursize += Py_MIN(cursize, n - cursize);
-            if (_PyBytes_Resize(&data, cursize) < 0) {
+        if (n <= MIN_READ_BUF_SIZE) {
+            len = PyLong_FromSsize_t(n);
+            if (len == NULL)
+                return -1;
+            data = _Pickle_FastCall(self->read, len);
+            if (data == NULL) {
                 return -1;
             }
-            if (_Unpickler_ReadIntoFromFile(state, self,
-                    PyBytes_AS_STRING(data) + prevsize, cursize - prevsize) < 0)
-            {
-                Py_DECREF(data);
+        }
+        else {
+            // Read by chunks of increasing size to avoid memory DoS:
+            // do not preallocate memory for data which may be truncated.
+            Py_ssize_t cursize = MIN_READ_BUF_SIZE;
+            Py_ssize_t prevsize = 0;
+            data = PyBytes_FromStringAndSize(NULL, cursize);
+            if (data == NULL) {
                 return -1;
+            }
+            while (1) {
+                if (_Unpickler_ReadIntoFromFile(state, self,
+                        PyBytes_AS_STRING(data) + prevsize,
+                        cursize - prevsize) < 0)
+                {
+                    Py_DECREF(data);
+                    return -1;
+                }
+                if (cursize >= n) {
+                    break;
+                }
+                prevsize = cursize;
+                cursize += Py_MIN(cursize, n - cursize);
+                if (_PyBytes_Resize(&data, cursize) < 0) {
+                    return -1;
+                }
             }
         }
     }
