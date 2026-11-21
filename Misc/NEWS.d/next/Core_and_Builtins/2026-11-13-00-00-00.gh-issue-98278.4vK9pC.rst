@@ -1,0 +1,3 @@
+When mismatched brackets or parentheses are on the same line, the
+:exc:`SyntaxError` display now points to both the opening and closing
+delimiters.
