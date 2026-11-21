@@ -2393,6 +2393,21 @@ class TestRFC2047(TestEmailBase):
 Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
  =?mac-iceland?q?=9Arg=8Cs?=""")
 
+    def test_decode_header_linear_complexity(self):
+        # Ensure that decode_header() is fast for many encoded words.
+        # See https://github.com/python/cpython/issues/136063.
+        N = 100_000
+        # Whitespace between adjacent encoded words is dropped and runs
+        # with the same charset are collapsed.
+        dh = decode_header(' '.join(['=?us-ascii?q?a?='] * N))
+        self.assertEqual(dh, [(b'a' * N, 'us-ascii')])
+        dh = decode_header(' '.join(['=?us-ascii?q?a?= =?utf-8?q?b?='] * N))
+        self.assertEqual(len(dh), 2 * N)
+        self.assertEqual(dh[-2:], [(b'a', 'us-ascii'), (b'b', 'utf-8')])
+        dh = decode_header(' x '.join(['=?us-ascii?q?a?='] * N))
+        self.assertEqual(len(dh), 2 * N - 1)
+        self.assertEqual(dh[-2:], [(b' x ', None), (b'a', 'us-ascii')])
+
     def test_whitespace_keeper_unicode(self):
         eq = self.assertEqual
         s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'

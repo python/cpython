@@ -1,0 +1,2 @@
+Fix quadratic complexity in :func:`email.header.decode_header` for header
+values containing many :rfc:`2047` encoded words.
