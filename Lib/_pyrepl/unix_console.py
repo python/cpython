@@ -267,8 +267,6 @@ class UnixConsole(Console):
         )
         self.cursor_visible = True
 
-        signal.signal(signal.SIGCONT, self._sigcont_handler)
-
     def _sigcont_handler(self, signum, frame):
         self.restore()
         self.prepare()
@@ -505,6 +503,7 @@ class UnixConsole(Console):
 
         try:
             self.old_sigwinch = signal.signal(signal.SIGWINCH, self.__sigwinch)
+            signal.signal(signal.SIGCONT, self._sigcont_handler)
         except ValueError:
             pass
 
@@ -515,6 +514,9 @@ class UnixConsole(Console):
         Restore the console to the default state
         """
         trace("unix.restore")
+        if not hasattr(self, "_UnixConsole__svtermstate"):
+            # prepare() never ran, so there is nothing to restore
+            return
         self.__write(ANSIColors.RESET)
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
@@ -532,6 +534,11 @@ class UnixConsole(Console):
                 if threading.current_thread() is threading.main_thread():
                     raise e
             del self.old_sigwinch
+
+        try:
+            signal.signal(signal.SIGCONT, signal.SIG_DFL)
+        except ValueError:
+            pass
 
     def push_char(self, char: int | bytes) -> None:
         """
