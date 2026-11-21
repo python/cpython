@@ -1741,6 +1741,65 @@ class TestSSL(test_utils.TestCase):
         with self.tcp_server(server) as srv:
             loop.run_until_complete(client(srv.addr))
 
+    def test_close_after_eof_while_reading_paused(self):
+        # gh-161560: a peer that sends EOF while the app has paused reading
+        # must not leave close() and wait_closed() hanging.
+        loop = self.loop
+        sslctx = self._create_server_ssl_context(
+            test_utils.ONLYCERT,
+            test_utils.ONLYKEY
+        )
+
+        async def main():
+            handler_done = loop.create_future()
+
+            async def handler(reader, writer):
+                try:
+                    proto = writer.transport._ssl_protocol
+                    async with asyncio.timeout(support.SHORT_TIMEOUT):
+                        while not proto._eof_received:
+                            await asyncio.sleep(0)
+                    # The reader buffer is above the limit, so the transport
+                    # paused reading when the peer's EOF arrived.
+                    self.assertFalse(writer.transport.is_reading())
+                    writer.close()
+                    await writer.wait_closed()
+                except BaseException as exc:
+                    if not handler_done.done():
+                        handler_done.set_exception(exc)
+                    raise
+                else:
+                    handler_done.set_result(None)
+
+            server = await asyncio.start_server(
+                handler, '127.0.0.1', 0, ssl=sslctx, limit=1024)
+            try:
+                port = server.sockets[0].getsockname()[1]
+
+                def client():
+                    ctx = self._create_client_ssl_context()
+                    with socket.create_connection(('127.0.0.1', port)) as raw:
+                        with ctx.wrap_socket(raw) as s:
+                            s.sendall(b'x' * 8192)
+                            # Take in the TLS 1.3 session tickets so that
+                            # closing sends a FIN rather than a reset.
+                            s.settimeout(0.2)
+                            try:
+                                s.recv(1)
+                            except TimeoutError:
+                                pass
+                            # Give the server time to pause reading before
+                            # the FIN makes the EOF visible.
+                            time.sleep(0.1)
+
+                await asyncio.to_thread(client)
+                await asyncio.wait_for(handler_done, support.SHORT_TIMEOUT)
+            finally:
+                server.close()
+                await server.wait_closed()
+
+        loop.run_until_complete(main())
+
     def test_shutdown_timeout_after_eof_from_not_reading_peer(self):
         # ssl_shutdown_timeout also applies when the peer has sent EOF,
         # before or after close(), but does not read what is still queued.

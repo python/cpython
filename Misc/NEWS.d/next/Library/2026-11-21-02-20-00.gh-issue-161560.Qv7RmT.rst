@@ -1,0 +1,4 @@
+Fix :meth:`asyncio.StreamWriter.wait_closed` never returning when the transport
+was closed after the TLS peer had already sent EOF while the protocol had paused
+reading. The deferred SSL shutdown is now completed by ``close()`` instead of
+waiting for a ``resume_reading()`` that may never come.

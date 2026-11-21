@@ -126,6 +126,29 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionResetError)
 
+    def test_close_after_eof_while_reading_paused(self):
+        # gh-161560: when the peer has sent EOF while the app paused
+        # reading, a later close() must finish the shutdown instead of
+        # leaving the transport parked in FLUSHING forever.
+        waiter = self.loop.create_future()
+        ssl_proto = self.ssl_protocol(waiter=waiter)
+        transport = self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock()
+        )
+        self.assertEqual(ssl_proto._state, sslproto.SSLProtocolState.WRAPPED)
+
+        ssl_proto._pause_reading()
+        # EOF is deferred until the app reads; the transport must stay open.
+        self.assertTrue(ssl_proto.eof_received())
+        self.assertEqual(ssl_proto._state, sslproto.SSLProtocolState.FLUSHING)
+        transport.close.assert_not_called()
+
+        ssl_proto._start_shutdown()
+        self.assertEqual(ssl_proto._state, sslproto.SSLProtocolState.SHUTDOWN)
+        test_utils.run_briefly(self.loop)
+        transport.close.assert_called_once_with()
+
     def test_fatal_error_no_name_error(self):
         # From issue #363.
         # _fatal_error() generates a NameError if sslproto.py

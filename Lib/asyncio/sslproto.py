@@ -344,6 +344,10 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._incoming_low_water = 0
         self._set_read_buffer_limits()
         self._eof_received = False
+        # Set when a peer EOF could not be flushed yet because the app had
+        # paused reading; the flush completes when reading resumes or when
+        # the app closes the transport.
+        self._flush_deferred = False
 
         self._app_writing_paused = False
         self._outgoing_high_water = 0
@@ -489,6 +493,10 @@ class SSLProtocol(protocols.BufferedProtocol):
             elif self._state == SSLProtocolState.WRAPPED:
                 self._set_state(SSLProtocolState.FLUSHING)
                 if self._app_reading_paused:
+                    # Flushing would drop the data that arrived before the
+                    # EOF, and the app cannot receive it while reading is
+                    # paused.  Resume reading later, or finish from close().
+                    self._flush_deferred = True
                     return True
                 else:
                     self._do_flush()
@@ -636,20 +644,25 @@ class SSLProtocol(protocols.BufferedProtocol):
     # Shutdown flow
 
     def _start_shutdown(self):
-        if (
-            self._state in (
-                SSLProtocolState.FLUSHING,
-                SSLProtocolState.SHUTDOWN,
-                SSLProtocolState.UNWRAPPED
-            )
+        if self._state in (
+            SSLProtocolState.SHUTDOWN,
+            SSLProtocolState.UNWRAPPED
         ):
             return
+        if self._state == SSLProtocolState.FLUSHING:
+            if not self._flush_deferred:
+                return
+            # A peer EOF deferred the flush while reading was paused.  The
+            # app has now closed the transport, so the buffered data will
+            # not be read after all: finish the shutdown instead of waiting
+            # for a resume_reading() that may never come.
         if self._app_transport is not None:
             self._app_transport._closed = True
         if self._state == SSLProtocolState.DO_HANDSHAKE:
             self._abort(None)
         else:
-            self._set_state(SSLProtocolState.FLUSHING)
+            if self._state != SSLProtocolState.FLUSHING:
+                self._set_state(SSLProtocolState.FLUSHING)
             self._shutdown_timeout_handle = self._loop.call_later(
                 self._ssl_shutdown_timeout,
                 self._check_shutdown_timeout
@@ -667,6 +680,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                 exceptions.TimeoutError('SSL shutdown timed out'))
 
     def _do_flush(self):
+        self._flush_deferred = False
         self._do_read()
         self._set_state(SSLProtocolState.SHUTDOWN)
         self._do_shutdown()
