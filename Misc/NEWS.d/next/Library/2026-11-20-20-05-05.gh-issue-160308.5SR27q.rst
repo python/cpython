@@ -1,0 +1,6 @@
+Fix the ``punycode`` incremental encoder and decoder, which gave wrong
+results when the input was passed in more than one chunk, for example
+through :func:`codecs.iterencode` or :func:`codecs.iterdecode`. They now
+buffer the input until the final call, so text files opened for writing
+with this encoding no longer write any output. The incremental decoder no
+longer accepts :class:`str`.
