@@ -1,0 +1,4 @@
+Improve multi-threaded scaling of :func:`format`, f-strings and
+:meth:`str.format` with a format specification on the :term:`free-threaded
+build` by avoiding the creation of a temporary bound method and reference
+count contention on the shared ``__format__`` method.
