@@ -8,6 +8,13 @@
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
 #endif
 
+// _Py_STDC_VERSION: the version of the C standard.
+// gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
+// arbitrary value, which means we can't use __STDC_VERSION__ on C++.
+#if defined(__STDC_VERSION__) && !defined(__cplusplus)
+#  define _Py_STDC_VERSION __STDC_VERSION__
+#endif
+
 
 // Preprocessor check for a builtin preprocessor function. Always return 0
 // if __has_builtin() macro is not defined.
