@@ -1185,7 +1185,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=4f0bee5a0b2302fd]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
