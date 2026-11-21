@@ -1230,6 +1230,41 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # SpooledTemporaryFile should implement io.IOBase
         self.assertIsInstance(self.do_create(), io.IOBase)
 
+    def test_iteration_rollover(self):
+        for mode, data in [('w+b', b'first\nsecond\nthird\n'),
+                           ('w+', 'first\nsecond\nthird\n')]:
+            with self.subTest(mode=mode):
+                kwargs = {} if 'b' in mode else {'encoding': 'utf-8',
+                                                'newline': '\n'}
+                with tempfile.SpooledTemporaryFile(mode=mode, **kwargs) as f:
+                    f.write(data)
+                    f.seek(0)
+                    iterator = iter(f)
+                    self.assertEqual(next(iterator), data[:6])
+                    f.rollover()
+                    self.assertEqual(next(iterator), data[6:13])
+                    self.assertEqual(f.tell(), 13)
+                    self.assertEqual(f.read(), data[13:])
+                    self.assertRaises(StopIteration, next, iterator)
+
+    def test_iterator_identity(self):
+        for mode in ('w+b', 'w+'):
+            with self.subTest(mode=mode):
+                with tempfile.SpooledTemporaryFile(mode=mode) as f:
+                    self.assertIs(iter(f), f)
+                    f.rollover()
+                    self.assertIs(iter(f), f)
+
+    def test_iteration_closed(self):
+        for mode in ('w+b', 'w+'):
+            for rolled in (False, True):
+                with self.subTest(mode=mode, rolled=rolled):
+                    f = tempfile.SpooledTemporaryFile(mode=mode)
+                    if rolled:
+                        f.rollover()
+                    f.close()
+                    self.assertRaises(ValueError, iter, f)
+
     def test_iobase_interface(self):
         # SpooledTemporaryFile should implement the io.IOBase interface.
         # Ensure it has all the required methods and properties.
