@@ -1,0 +1,2 @@
+Fix :class:`io.BufferedRWPair` losing buffered writes on deallocation when the
+reader and writer share a raw stream.
