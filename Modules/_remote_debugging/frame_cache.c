@@ -167,10 +167,18 @@ read_last_profiled_anchor(RemoteUnwinderObject *unwinder,
     // remote-memory read.
     if (seq_offset == frame_offset + sizeof(uintptr_t)) {
         uintptr_t live_anchor[2];
-        if (_Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle,
-                                             thread_state_addr + frame_offset,
-                                             sizeof(live_anchor),
-                                             live_anchor) < 0) {
+        int rc = _Py_RemoteDebug_AliasedReadRemoteMemory(&unwinder->handle,
+                                                        thread_state_addr + frame_offset,
+                                                        sizeof(live_anchor),
+                                                        live_anchor);
+        if (rc < 0) {
+            return -1;
+        }
+        if (rc > 0
+            && _Py_RemoteDebug_ReadRemoteMemory(&unwinder->handle,
+                                                thread_state_addr + frame_offset,
+                                                sizeof(live_anchor),
+                                                live_anchor) < 0) {
             return -1;
         }
         anchor->frame = live_anchor[0];
