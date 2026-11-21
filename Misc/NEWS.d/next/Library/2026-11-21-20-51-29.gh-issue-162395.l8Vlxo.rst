@@ -1,2 +1,2 @@
 Fix the asyncio call graph to show which task awaits the future returned by
-:func:asyncio.shield. Patch by Timofei Ivankov.
+:func:`asyncio.shield`. Patch by Timofei Ivankov.
