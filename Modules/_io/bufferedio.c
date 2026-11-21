@@ -2287,20 +2287,25 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
         return -1;
     }
 
-    self->reader = (buffered *) PyObject_CallFunction(
+    buffered *new_reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
-    if (self->reader == NULL)
-        return -1;
-
-    self->writer = (buffered *) PyObject_CallFunction(
-            (PyObject *)state->PyBufferedWriter_Type,
-            "On", writer, buffer_size);
-    if (self->writer == NULL) {
-        Py_CLEAR(self->reader);
+    if (new_reader == NULL) {
         return -1;
     }
 
+    buffered *new_writer = (buffered *) PyObject_CallFunction(
+            (PyObject *)state->PyBufferedWriter_Type,
+            "On", writer, buffer_size);
+    if (new_writer == NULL) {
+        Py_DECREF(new_reader);
+        return -1;
+    }
+
+    /* Release a previous writer before a previous reader, see
+       bufferedrwpair_clear(). */
+    Py_XSETREF(self->writer, new_writer);
+    Py_XSETREF(self->reader, new_reader);
     return 0;
 }
 

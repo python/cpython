@@ -1,0 +1,2 @@
+Fix a reference leak in :class:`io.BufferedRWPair` when :meth:`~object.__init__`
+is called more than once: the previous reader and writer are now released.
