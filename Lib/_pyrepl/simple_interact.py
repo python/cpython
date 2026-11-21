@@ -159,7 +159,7 @@ def run_multiline_interactive_console(
                 warnings.warn(f"failed to open the history file for writing: {e}")
 
             input_n += 1
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as exc:
             r = _get_reader()
             r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
@@ -167,10 +167,12 @@ def run_multiline_interactive_console(
             r.pos = len(r.get_unicode())
             r.invalidate_full()
             r.refresh()
-            console.write("\nKeyboardInterrupt\n")
+            console.write("\n")
+            console._excepthook(type(exc), exc, tb=None)  # hide traceback
             console.resetbuffer()
-        except MemoryError:
-            console.write("\nMemoryError\n")
+        except MemoryError as exc:
+            console.write("\n")
+            console._excepthook(type(exc), exc, tb=None)  # hide traceback
             console.resetbuffer()
         except SystemExit:
             raise
