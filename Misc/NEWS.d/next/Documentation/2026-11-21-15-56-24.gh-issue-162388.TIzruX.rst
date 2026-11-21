@@ -1,0 +1,2 @@
+Use animated SVGs instead of GIFs for the two screenshots of the
+:mod:`profiling.sampling` documentation.
