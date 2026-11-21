@@ -1,0 +1,3 @@
+Reject encoding names in the :mod:`codecs` iconv search function when the
+charset portion before ``/`` or ``,`` contains no ASCII alphanumeric
+characters, preventing fallback to the current locale encoding on glibc.
