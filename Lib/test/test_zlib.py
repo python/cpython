@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from test.support import import_helper
+from test.support.hypothesis_helper import hypothesis
 import binascii
 import copy
 import pickle
@@ -182,20 +183,18 @@ class ChecksumTestCase(unittest.TestCase):
 class ChecksumCombineMixin:
     """Mixin class for testing checksum combination."""
 
-    N = 1000
     default_iv: int
+    # Initial values that are valid checksums for the algorithm.
+    iv_strategy: object
 
     def parse_iv(self, iv):
         """Parse an IV value.
 
         - The default IV is returned if *iv* is None.
-        - A random IV is returned if *iv* is -1.
         - Otherwise, *iv* is returned as is.
         """
         if iv is None:
             return self.default_iv
-        if iv == -1:
-            return random.randint(1, 0x80000000)
         return iv
 
     def checksum(self, data, init=None):
@@ -220,18 +219,24 @@ class ChecksumCombineMixin:
         checksum = self.checksum(data, init)
         return data, init, checksum
 
-    def test_combine_empty(self):
-        for _ in range(self.N):
-            a, iv, checksum = self.get_random_data(32, iv=-1)
-            res = self.combine(iv, self.checksum(a), len(a))
-            self.assertEqual(res, checksum)
+    @hypothesis.given(a=hypothesis.strategies.binary(max_size=256),
+                      iv=hypothesis.strategies.runner().flatmap(
+                          lambda self: self.iv_strategy))
+    @hypothesis.example(a=b'', iv=0)
+    @hypothesis.example(a=b'\x00' * 32, iv=1)
+    @hypothesis.example(a=bytes(range(256)), iv=0x7fffffff)
+    def test_combine_empty(self, a, iv):
+        res = self.combine(iv, self.checksum(a), len(a))
+        self.assertEqual(res, self.checksum(a, iv))
 
-    def test_combine_no_iv(self):
-        for _ in range(self.N):
-            a, _, chk_a = self.get_random_data(32)
-            b, _, chk_b = self.get_random_data(64)
-            res = self.combine(chk_a, chk_b, len(b))
-            self.assertEqual(res, self.checksum(a + b))
+    @hypothesis.given(a=hypothesis.strategies.binary(max_size=256),
+                      b=hypothesis.strategies.binary(max_size=256))
+    @hypothesis.example(a=b'', b=b'')
+    @hypothesis.example(a=b'\x00' * 32, b=b'\xff' * 64)
+    @hypothesis.example(a=bytes(range(256)), b=bytes(range(255, -1, -1)))
+    def test_combine_no_iv(self, a, b):
+        res = self.combine(self.checksum(a), self.checksum(b), len(b))
+        self.assertEqual(res, self.checksum(a + b))
 
     def test_combine_no_iv_invalid_length(self):
         a, _, chk_a = self.get_random_data(32)
@@ -246,31 +251,48 @@ class ChecksumCombineMixin:
         self.assertRaises(OverflowError, self.combine, 0, 0, 2**1000)
         self.assertRaises(OverflowError, self.combine, 0, 0, -2**1000)
 
-    def test_combine_with_iv(self):
-        for _ in range(self.N):
-            a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
-            chk_a_no_iv = self.checksum(a)
-            b, iv_b, chk_b_with_iv = self.get_random_data(64, iv=-1)
-            chk_b_no_iv = self.checksum(b)
+    @hypothesis.given(a=hypothesis.strategies.binary(max_size=256),
+                      b=hypothesis.strategies.binary(max_size=256),
+                      iv_a=hypothesis.strategies.runner().flatmap(
+                          lambda self: self.iv_strategy),
+                      iv_b=hypothesis.strategies.runner().flatmap(
+                          lambda self: self.iv_strategy))
+    @hypothesis.example(a=b'', b=b'', iv_a=0, iv_b=0)
+    @hypothesis.example(a=b'\x00' * 32, b=b'\xff' * 64, iv_a=1,
+                        iv_b=0x7fffffff)
+    @hypothesis.example(a=bytes(range(256)), b=bytes(range(255, -1, -1)),
+                        iv_a=0x12345678, iv_b=0x0badf00d)
+    def test_combine_with_iv(self, a, b, iv_a, iv_b):
+        chk_a_with_iv = self.checksum(a, iv_a)
+        chk_a_no_iv = self.checksum(a)
+        chk_b_with_iv = self.checksum(b, iv_b)
+        chk_b_no_iv = self.checksum(b)
 
-            # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
-            #
-            #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
-            #     = COMBINE(
-            #           COMBINE(CHK(b'', iv_a), CHK(a)),
-            #           COMBINE(CHK(b'', iv_b), CHK(b)),
-            #       )
-            #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
-            tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
-            tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
-            expected = self.combine(tmp0, tmp1, len(b))
-            checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
-            self.assertEqual(checksum, expected)
+        # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
+        #
+        #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
+        #     = COMBINE(
+        #           COMBINE(CHK(b'', iv_a), CHK(a)),
+        #           COMBINE(CHK(b'', iv_b), CHK(b)),
+        #       )
+        #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
+        tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
+        tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
+        expected = self.combine(tmp0, tmp1, len(b))
+        checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
+        self.assertEqual(checksum, expected)
+
+
+def _adler32_value(halves):
+    """Build a valid Adler-32 value from its two 16-bit sums."""
+    s1, s2 = halves
+    return (s2 << 16) | s1
 
 
 class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
 
     default_iv = 0
+    iv_strategy = hypothesis.strategies.integers(0, 0xffffffff)
 
     def _checksum(self, data, init):
         return zlib.crc32(data, init)
@@ -282,6 +304,12 @@ class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
 class Adler32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
 
     default_iv = 1
+    # Both 16-bit sums of an Adler-32 value are reduced modulo 65521, and
+    # adler32_combine() is only defined on such values.
+    iv_strategy = hypothesis.strategies.tuples(
+        hypothesis.strategies.integers(0, 65520),
+        hypothesis.strategies.integers(0, 65520),
+    ).map(_adler32_value)
 
     def _checksum(self, data, init):
         return zlib.adler32(data, init)
