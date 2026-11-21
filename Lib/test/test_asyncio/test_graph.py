@@ -866,6 +866,28 @@ class CallStackTestBase:
                 self.assertEqual(asyncio.capture_call_graph(task).call_stack, ())
                 self.assertIn(f"name={task.get_name()!r}", buf.getvalue())
 
+    async def test_call_graph_finished_anext_task(self):
+        # gh-162235
+        async def gen():
+            yield 1
+            await asyncio.sleep(0)
+            yield 2
+
+        agen = gen()
+        done = asyncio.create_task(anext(agen), name='done')
+        await done
+
+        other = asyncio.create_task(anext(agen), name='other')
+        await asyncio.sleep(0)
+        done_graph = asyncio.capture_call_graph(done)
+
+        await other
+        await agen.aclose()
+        other_graph = asyncio.capture_call_graph(other)
+
+        self.assertEqual(done_graph.call_stack, ())
+        self.assertEqual(other_graph.call_stack, ())
+
     async def test_capture_call_graph_no_current_task(self):
         results = []
 
