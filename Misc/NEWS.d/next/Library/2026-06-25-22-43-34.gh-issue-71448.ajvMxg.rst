@@ -1,0 +1,2 @@
+Update :class:`io.BytesIO` implementation of :meth:`io.IOBase.truncate` to
+support extension on truncate to larger size than allocated.
