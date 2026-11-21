@@ -1,0 +1,3 @@
+Stop synchronizing the file with the physical backing store every time a
+file-backed :class:`mmap.mmap` is created on macOS, which blocks other
+threads for several milliseconds.
