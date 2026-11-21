@@ -2138,17 +2138,21 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   Static subtypes inherit this slot, which will be
+   Subtypes inherit this slot, which will be
    :c:func:`PyType_GenericAlloc` if inherited from :class:`object`.
 
-   :ref:`Heap subtypes <heap-types>` do not inherit this slot.
+   Exception: Subtypes created using the :keyword:`class` statement or
+   calling :py:class:`type() <type>` do not inherit this slot.
 
    **Default:**
 
-   For heap subtypes, this field is always set to
+   For subtypes created using the :keyword:`class` statement or
+   calling :py:class:`type() <type>`, this field is always set to
    :c:func:`PyType_GenericAlloc`.
 
-   For static subtypes, this slot is inherited (see above).
+   For other subtypes (including :ref:`static types <static-types>` and
+   :ref:`heap types <heap-types>` created via :c:func:`PyType_FromSpec`),
+   this slot is inherited (see above).
 
 
 .. c:member:: newfunc PyTypeObject.tp_new
@@ -2205,22 +2209,25 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   Static subtypes inherit this slot, which will be :c:func:`PyObject_Free` if
+   Subtypes inherit this slot, which will be :c:func:`PyObject_Free` if
    inherited from :class:`object`.  Exception: If the type supports garbage
    collection (i.e., the :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set in
    :c:member:`~PyTypeObject.tp_flags`) and it would inherit
    :c:func:`PyObject_Free`, then this slot is not inherited but instead defaults
    to :c:func:`PyObject_GC_Del`.
 
-   :ref:`Heap subtypes <heap-types>` do not inherit this slot.
+   Exception: Subtypes created using the :keyword:`class` statement or
+   calling :py:class:`type() <type>` do not inherit this slot.
 
    **Default:**
 
-   For :ref:`heap subtypes <heap-types>`, this slot defaults to a deallocator suitable to match
-   :c:func:`PyType_GenericAlloc` and the value of the
-   :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
+   For subtypes created using the :keyword:`class` statement or
+   calling :py:class:`type() <type>`, this field is always set to
+   :c:func:`PyObject_GC_Del`.
 
-   For static subtypes, this slot is inherited (see above).
+   For other subtypes (including :ref:`static types <static-types>` and
+   :ref:`heap types <heap-types>` created via :c:func:`PyType_FromSpec`),
+   this slot is inherited (see above).
 
 
 .. c:member:: inquiry PyTypeObject.tp_is_gc
