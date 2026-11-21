@@ -263,7 +263,9 @@ def copyfileobj(fsrc, fdst, length=0):
 
 def _samefile(src, dst):
     # Macintosh, Unix.
-    if isinstance(src, os.DirEntry) and hasattr(os.path, 'samestat'):
+    # DirEntry.stat() omits st_dev and st_ino on Windows.
+    if (not _WINDOWS and isinstance(src, os.DirEntry)
+            and hasattr(os.path, 'samestat')):
         try:
             return os.path.samestat(src.stat(), os.stat(dst))
         except OSError:
