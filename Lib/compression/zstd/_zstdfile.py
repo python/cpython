@@ -54,6 +54,7 @@ class ZstdFile(_streams.BaseStream):
         self._close_fp = False
         self._mode = _MODE_CLOSED
         self._buffer = None
+        self._write_started = False
 
         if not isinstance(mode, str):
             raise ValueError('mode must be a str')
@@ -83,6 +84,18 @@ class ZstdFile(_streams.BaseStream):
         else:
             raise TypeError('file must be a file-like object '
                             'or a str, bytes, or PathLike object')
+
+        if mode == 'a':
+            # Preserve no-op appends unless the target is known to be empty.
+            # Only files opened here are known to be positioned at EOF;
+            # do not probe or reposition caller-supplied file-like objects.
+            self._write_started = True
+            if self._close_fp:
+                try:
+                    self._write_started = self._fp.tell() != 0
+                except OSError:
+                    # The position may be unavailable, e.g. for a FIFO.
+                    pass
 
         if self._mode == _MODE_READ:
             raw = _streams.DecompressReader(
@@ -131,6 +144,7 @@ class ZstdFile(_streams.BaseStream):
         length = _nbytes(data)
 
         compressed = self._compressor.compress(data)
+        self._write_started = True
         self._fp.write(compressed)
         self._pos += length
         return length
@@ -153,10 +167,11 @@ class ZstdFile(_streams.BaseStream):
             raise ValueError('Invalid mode argument, expected either '
                              'ZstdFile.FLUSH_FRAME or '
                              'ZstdFile.FLUSH_BLOCK')
-        if self._compressor.last_mode == mode:
+        if self._compressor.last_mode == mode and self._write_started:
             return
         # Flush zstd block/frame, and write.
         data = self._compressor.flush(mode)
+        self._write_started = True
         self._fp.write(data)
         if hasattr(self._fp, 'flush'):
             self._fp.flush()
