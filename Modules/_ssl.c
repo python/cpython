@@ -2297,7 +2297,9 @@ static PyObject *
 _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 /*[clinic end generated code: output=3d174ead2e42c4fd input=869645271e3bc6d0]*/
 {
-    STACK_OF(SSL_CIPHER) *server_ciphers;
+    const STACK_OF(SSL_CIPHER) *server_ciphers;
+    // Should be made const, but OpenSSL's sk_SSL_CIPHER_find() still takes a
+    // non-const stack. See https://github.com/openssl/openssl/issues/33707.
     STACK_OF(SSL_CIPHER) *client_ciphers;
     int i, len;
     PyObject *res;
@@ -3953,7 +3955,7 @@ _ssl__SSLContext_get_ciphers_impl(PySSLContext *self)
 /*[clinic end generated code: output=a56e4d68a406dfc4 input=d7fff51631a260ae]*/
 {
     SSL *ssl = NULL;
-    STACK_OF(SSL_CIPHER) *sk = NULL;
+    const STACK_OF(SSL_CIPHER) *sk = NULL;
     const SSL_CIPHER *cipher;
     int i=0;
     PyObject *result = NULL, *dct;
