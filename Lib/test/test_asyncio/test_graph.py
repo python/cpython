@@ -575,9 +575,30 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_shield'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_shield'], []],
+                ]],
             ]
         ])
+
+    async def test_shield_awaited_by_different_task(self):
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        shielded = asyncio.shield(child)
+        consumer = asyncio.create_task(consume(shielded), eager_start=True)
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await consumer
+        self.assertFalse(asyncio.capture_call_graph(child, limit=0).awaited_by)
+
+        waiter, = graph.awaited_by
+        self.assertIs(waiter.future, shielded)
+        parent, = waiter.awaited_by
+        self.assertIs(parent.future, consumer)
+        self.assertFalse(parent.awaited_by)
 
     async def test_stack_timeout(self):
 
@@ -602,7 +623,9 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_timeout'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_timeout'], []],
+                ]],
             ]
         ])
 
