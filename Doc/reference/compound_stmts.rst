@@ -25,11 +25,13 @@ also syntactically compound statements.
 
 A compound statement consists of one or more 'clauses.'  A clause consists of a
 header and a 'suite.'  The clause headers of a particular compound statement are
-all at the same indentation level. Each clause header begins with a uniquely
-identifying keyword and ends with a colon.  A suite is a group of statements
-controlled by a clause.  A suite can be one or more semicolon-separated simple
-statements on the same line as the header, following the header's colon, or it
-can be one or more indented statements on subsequent lines.  Only the latter
+all at the same indentation level (with the exception of the :keyword:`match`
+statement, whose :keyword:`case` headers are indented). Each clause header
+begins with a uniquely identifying keyword (or keywords) and ends with a colon.
+A suite is a group of statements controlled by a clause.  A suite can be one or
+more semicolon-separated simple statements on the same line as the header,
+following the header's colon, or it can be one or more indented statements on
+subsequent lines.  Only the latter
 form of a suite can contain nested compound statements; the following is illegal,
 mostly because it wouldn't be clear to which :keyword:`if` clause a following
 :keyword:`else` clause would belong::
