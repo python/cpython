@@ -397,28 +397,6 @@ _multiprocessing_SemLock__is_mine(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #if defined(HAVE_MP_SEMAPHORE)
 
-PyDoc_STRVAR(_multiprocessing_SemLock__get_value__doc__,
-"_get_value($self, /)\n"
-"--\n"
-"\n"
-"Get the value of the semaphore.");
-
-#define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF    \
-    {"_get_value", (PyCFunction)_multiprocessing_SemLock__get_value, METH_NOARGS, _multiprocessing_SemLock__get_value__doc__},
-
-static PyObject *
-_multiprocessing_SemLock__get_value_impl(SemLockObject *self);
-
-static PyObject *
-_multiprocessing_SemLock__get_value(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _multiprocessing_SemLock__get_value_impl((SemLockObject *)self);
-}
-
-#endif /* defined(HAVE_MP_SEMAPHORE) */
-
-#if defined(HAVE_MP_SEMAPHORE)
-
 PyDoc_STRVAR(_multiprocessing_SemLock__is_zero__doc__,
 "_is_zero($self, /)\n"
 "--\n"
@@ -434,7 +412,41 @@ _multiprocessing_SemLock__is_zero_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__is_zero(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__is_zero_impl((SemLockObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock__is_zero_impl((SemLockObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MP_SEMAPHORE) */
+
+#if defined(HAVE_MP_SEMAPHORE)
+
+PyDoc_STRVAR(_multiprocessing_SemLock__get_value__doc__,
+"_get_value($self, /)\n"
+"--\n"
+"\n"
+"Get the value of the semaphore.");
+
+#define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF    \
+    {"_get_value", (PyCFunction)_multiprocessing_SemLock__get_value, METH_NOARGS, _multiprocessing_SemLock__get_value__doc__},
+
+static PyObject *
+_multiprocessing_SemLock__get_value_impl(SemLockObject *self);
+
+static PyObject *
+_multiprocessing_SemLock__get_value(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _multiprocessing_SemLock__get_value_impl((SemLockObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -559,13 +571,13 @@ exit:
     #define _MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF) */
 
-#ifndef _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
-    #define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
-#endif /* !defined(_MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF) */
-
 #ifndef _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF
     #define _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF) */
+
+#ifndef _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
+    #define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF
+#endif /* !defined(_MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF) */
 
 #ifndef _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF
     #define _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF
