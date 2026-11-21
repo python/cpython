@@ -157,8 +157,8 @@
        *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
-       When opening as text, accepts encoding parameters such as those
-       accepted by :class:`io.TextIOWrapper`.
+       When opening as text, accepts the *encoding*, *errors*, and *newline*
+       keyword arguments with the same meanings as in :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
