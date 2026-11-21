@@ -483,19 +483,29 @@ class Sniffer:
         If the sample cannot be parsed to the end (for example it is
         cut off in the middle of a quoted field, or the combination
         does not fit the sample), the rows parsed so far are counted.
+        Rows exceeding the field size limit are skipped so that later
+        rows can still contribute to the guess.
         The last row is not counted if *cut* is true: the sample can
         be cut off in the middle of it.
         """
         rows = []
-        try:
-            rows.extend(map(len, self._make_reader(lines, delimiter,
-                                                   quotechar, escapechar)))
-        except Error:
-            # The row which failed to parse is not counted.
-            pass
-        else:
-            if cut and len(rows) > 1:
-                rows.pop()
+        reader = iter(self._make_reader(lines, delimiter, quotechar, escapechar))
+        parse_error = False
+        while True:
+            try:
+                row = next(reader)
+            except StopIteration:
+                break
+            except Error as error:
+                if not str(error).startswith("field larger than field limit"):
+                    # The sample doesn't fit this dialect.
+                    parse_error = True
+                    break
+                # Skip the oversized row and let later rows provide evidence.
+                continue
+            rows.append(len(row))
+        if not parse_error and cut and len(rows) > 1:
+            rows.pop()
         if 0 in rows:
             # Blank lines produce empty rows.
             rows = [nfields for nfields in rows if nfields]
