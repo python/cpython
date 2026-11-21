@@ -407,7 +407,9 @@ class Element:
 
         """
         tag = self.tag
-        if not isinstance(tag, str) and tag is not None:
+        if callable(tag):
+            # Comments, processing instructions and elements created by
+            # custom factories use a callable as their tag.
             return
         t = self.text
         if t:

@@ -2380,7 +2380,9 @@ elementiter_next(PyObject *op)
             return NULL;
         }
         if (it->gettext) {
-            if (elem->tag != Py_None && !PyUnicode_Check(elem->tag)) {
+            /* Comments, processing instructions and elements created by
+             * custom factories use a callable as their tag. */
+            if (PyCallable_Check(elem->tag)) {
                 Py_DECREF(elem);
                 continue;
             }
