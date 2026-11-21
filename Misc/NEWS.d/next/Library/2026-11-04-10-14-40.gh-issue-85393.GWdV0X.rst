@@ -1,0 +1,2 @@
+Fix :class:`io.TextIOWrapper` silently losing data when the underlying
+binary stream only writes part of the data.
