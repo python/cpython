@@ -629,7 +629,8 @@ class WindowsConsole(Console):
         """
         Push a character to the console event queue.
         """
-        raise NotImplementedError("push_char not supported on Windows")
+        trace("push char {char!r}", char=char)
+        self.event_queue.push(char)
 
     def beep(self) -> None:
         self.__write("\x07")
@@ -673,24 +674,36 @@ class WindowsConsole(Console):
             e2 = self.event_queue.get()
             if e2:
                 e.data += e2.data
+                e.raw += e2.raw
 
-        recs, rec_count = self._read_input_bulk(1024)
-        for i in range(rec_count):
-            rec = recs[i]
-            # In case of a legacy console, we do not only receive a keydown
-            # event, but also a keyup event - and for uppercase letters
-            # an additional SHIFT_PRESSED event.
-            if rec and rec.EventType == KEY_EVENT:
-                key_event = rec.Event.KeyEvent
-                if not key_event.bKeyDown:
-                    continue
-                ch = key_event.uChar.UnicodeChar
-                if ch == "\x00":
-                    # ignore SHIFT_PRESSED and special keys
-                    continue
-                if ch == "\r":
-                    ch = "\n"
-                e.data += ch
+        text = ""
+        while True:
+            recs, rec_count = self._read_input_bulk(1024)
+            for i in range(rec_count):
+                rec = recs[i]
+                # In case of a legacy console, we do not only receive a keydown
+                # event, but also a keyup event - and for uppercase letters
+                # an additional SHIFT_PRESSED event.
+                if rec and rec.EventType == KEY_EVENT:
+                    key_event = rec.Event.KeyEvent
+                    if not key_event.bKeyDown:
+                        continue
+                    ch = key_event.uChar.UnicodeChar
+                    if ch == "\x00":
+                        # ignore SHIFT_PRESSED and special keys
+                        continue
+                    if ch == "\r":
+                        ch = "\n"
+                    text += ch
+            # Read again while the text ends with a high surrogate.
+            if not "\ud800" <= text[-1:] <= "\udbff":
+                break
+        # Each record on Windows holds a UTF-16 code unit.
+        # A surrogate pair must be joined before encoding,
+        # an unpaired half becomes U+FFFD.
+        text = text.encode("utf-16-le", "surrogatepass").decode("utf-16-le", "replace")
+        e.data += text
+        e.raw += text.encode(self.event_queue.encoding, "replace")
         return e
 
     def wait_for_event(self, timeout: float | None) -> bool:
