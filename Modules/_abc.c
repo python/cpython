@@ -595,8 +595,8 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
 
     /* Set Py_TPFLAGS_SEQUENCE or Py_TPFLAGS_MAPPING flag */
     if (PyType_Check(self)) {
-        unsigned long collection_flag =
-            PyType_GetFlags((PyTypeObject *)self) & COLLECTION_FLAGS;
+        uint64_t collection_flag =
+            PyType_GetFlags64((PyTypeObject *)self) & COLLECTION_FLAGS;
         if (collection_flag) {
             _PyType_SetFlagsRecursive((PyTypeObject *)subclass,
                                       COLLECTION_FLAGS,

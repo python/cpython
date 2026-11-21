@@ -340,10 +340,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(type(version_tag), int)
         self.assertGreaterEqual(version_tag, 0)
 
-    def test_type_getflags(self):
-        # Test PyType_GetFlags()
-        type_getflags = _testlimitedcapi.type_getflags
-
+    def check_type_getflags(self, get_flags):
         from _testlimitedcapi import (
             Py_TPFLAGS_HEAPTYPE,
             Py_TPFLAGS_HAVE_GC,
@@ -400,7 +397,7 @@ class TypeTests(unittest.TestCase):
                        match_self=True, items_at_end=False):
             heap_type = not static_type
 
-            flags = type_getflags(test_type)
+            flags = get_flags(test_type)
             check_flag(flags, _Py_TPFLAGS_STATIC_BUILTIN, static_type)
             check_flag(flags, Py_TPFLAGS_HEAPTYPE, heap_type)
             check_flag(flags, Py_TPFLAGS_HAVE_GC, have_gc)
@@ -465,6 +462,14 @@ class TypeTests(unittest.TestCase):
         check_type(HeapType, static_type=False, have_gc=True, match_self=False)
 
         # CRASHES type_getflags(NULL)
+
+    def test_type_getflags(self):
+        # Test PyType_GetFlags()
+        self.check_type_getflags(_testlimitedcapi.type_getflags)
+
+    def test_type_getflags64(self):
+        # Test PyType_GetFlags64()
+        self.check_type_getflags(_testlimitedcapi.type_getflags64)
 
     def test_type_issubtype(self):
         # Test PyType_IsSubtype()

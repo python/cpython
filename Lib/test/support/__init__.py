@@ -1083,16 +1083,21 @@ if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
     _header = 'nP'
-_align = '0n'
 _vheader = _header + 'n'
 
-def calcobjsize(fmt):
+def _calcobjsize(fmt):
     import struct
-    return struct.calcsize(_header + fmt + _align)
+    if 'Q' in fmt:
+        align = '0Q'
+    else:
+        align = '0n'
+    return struct.calcsize(fmt + align)
+
+def calcobjsize(fmt):
+    return _calcobjsize(_header + fmt)
 
 def calcvobjsize(fmt):
-    import struct
-    return struct.calcsize(_vheader + fmt + _align)
+    return _calcobjsize(_vheader + fmt)
 
 
 _TPFLAGS_STATIC_BUILTIN = 1<<1
