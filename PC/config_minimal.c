@@ -14,7 +14,7 @@ void *PyWin_DLLhModule = NULL;
 extern PyObject* PyInit_faulthandler(void);
 extern PyObject* PyInit__tracemalloc(void);
 extern PyObject* PyInit_gc(void);
-extern PyObject* PyInit_nt(void);
+extern PyObject* PyInit__os(void);
 extern PyObject* PyInit__signal(void);
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_winreg(void);
@@ -34,7 +34,8 @@ struct _inittab _PyImport_Inittab[] = {
     {"_ast", PyInit__ast},
     {"faulthandler", PyInit_faulthandler},
     {"gc", PyInit_gc},
-    {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
+    {"_os", PyInit__os},
+    {"nt", PyInit__os},
     {"_signal", PyInit__signal},
     {"_tokenize", PyInit__tokenize},
     {"_tracemalloc", PyInit__tracemalloc},
