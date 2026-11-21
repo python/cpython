@@ -1453,6 +1453,49 @@ class PathTest(PurePathTest):
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
         self.assertFalse(target.exists())
 
+    def test_copy_dir_into_itself_relative_source_absolute_target(self):
+        with os_helper.change_cwd(self.base):
+            source = self.cls('dirC')
+            target = source.resolve() / 'copyC'
+            self.assertRaises(OSError, source.copy, target)
+            self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
+            self.assertFalse(target.exists())
+
+    def test_copy_dir_into_itself_absolute_source_relative_target(self):
+        with os_helper.change_cwd(self.base):
+            source = self.cls(self.base) / 'dirC'
+            target = self.cls('dirC') / 'copyC'
+            self.assertRaises(OSError, source.copy, target)
+            self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
+            self.assertFalse((source / 'copyC').exists())
+
+    @needs_symlinks
+    def test_copy_dir_into_itself_via_symlink(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        link = base / 'linkToDirC'
+        link.symlink_to(source, target_is_directory=True)
+        target = link / 'copyC'
+        self.assertRaises(OSError, source.copy, target)
+        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
+        self.assertFalse((source / 'copyC').exists())
+
+    def test_copy_dir_into_itself_when_no_resolve(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = source / 'copyC'
+        with mock.patch.object(self.cls, 'resolve', side_effect=AttributeError):
+            self.assertRaises(OSError, source.copy, target)
+            self.assertFalse(target.exists())
+
+    def test_copy_dir_into_itself_when_resolve_raises_oserror(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = source / 'copyC'
+        with mock.patch.object(self.cls, 'resolve', side_effect=OSError):
+            self.assertRaises(OSError, source.copy, target)
+            self.assertFalse(target.exists())
+
     @needs_symlinks
     def test_copy_directory_symlink_to_existing_symlink(self):
         base = self.cls(self.base)
