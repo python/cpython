@@ -814,6 +814,11 @@ class MimeParameters(TokenList):
                             import codecs
                             codecs.lookup(charset)
                             value = value.decode(charset, 'surrogateescape')
+                        except UnicodeDecodeError:
+                            # Some codecs reject incomplete sequences of ASCII bytes,
+                            # which surrogateescape cannot handle.
+                            value = value.decode(charset, 'replace')
+                            param.defects.append(errors.UndecodableBytesDefect())
                         except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
                             # unknown character set to make it easy to find,
