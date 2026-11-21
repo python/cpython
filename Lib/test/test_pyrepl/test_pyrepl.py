@@ -2335,6 +2335,39 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl(commands, env=env)
         check(output, exit_code)
 
+    def test_keyboard_interrupt_color(self):
+        for color in (False, True):
+            with self.subTest(color=color):
+                env = os.environ.copy()
+                env["PYTHON_COLORS"] = str(int(color))
+                output, exit_code = self.run_repl(
+                    "unfinished\x03print(42)\nexit()\n", env=env,
+                )
+                self.assertEqual(exit_code, 0)
+                error = "KeyboardInterrupt"
+                if color:
+                    theme = get_theme(force_color=True).traceback
+                    error = f"{theme.type}{error}{theme.reset}"
+                self.assertIn(f"\r\n{error}\r\n", output)
+                self.assertNotIn("Traceback", output)
+                self.assertIn("42\r\n", output)
+
+    def test_keyboard_interrupt_preserves_last_exception(self):
+        commands = (
+            "import sys\n"
+            "1/0\n"
+            "saved = sys.last_exc\n"
+            "unfinished\x03"
+            "print('preserved:', sys.last_exc is saved)\n"
+            "exit()\n"
+        )
+        env = os.environ.copy()
+        env["PYTHON_COLORS"] = "0"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("\r\nKeyboardInterrupt\r\n", output)
+        self.assertIn("preserved: True\r\n", output)
+
     def test_not_wiping_history_file(self):
         # skip, if readline module is not available
         import_module('readline')
