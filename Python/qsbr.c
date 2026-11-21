@@ -35,6 +35,7 @@
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 #include "pycore_qsbr.h"
+#include "pycore_runtime.h"         // _PyRuntimeState
 #include "pycore_tstate.h"          // _PyThreadStateImpl
 #include "pycore_stats.h"           // FT_STAT_QSBR_POLL_INC()
 
@@ -200,11 +201,20 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
     // If there are no free entries, we pause all threads, grow the array,
     // and update the pointers in PyThreadState to entries in the new array.
     if (qsbr == NULL) {
-        _PyEval_StopTheWorld(interp);
+        // After fork(), thread states may be created during a global pause.
+        PyThreadState *tstate = _PyThreadState_GET();
+        int world_stopped = tstate != NULL
+            && interp->runtime->stoptheworld.requester == tstate
+            && interp->runtime->stoptheworld.world_stopped;
+        if (!world_stopped) {
+            _PyEval_StopTheWorld(interp);
+        }
         if (grow_thread_array(shared) == 0) {
             qsbr = qsbr_allocate(shared);
         }
-        _PyEval_StartTheWorld(interp);
+        if (!world_stopped) {
+            _PyEval_StartTheWorld(interp);
+        }
     }
 
     // Return an index rather than the pointer because the array may be
@@ -272,16 +282,18 @@ _Py_qsbr_fini(PyInterpreterState *interp)
 }
 
 void
-_Py_qsbr_after_fork(_PyThreadStateImpl *tstate)
+_Py_qsbr_after_fork(PyInterpreterState *interp)
 {
-    struct _qsbr_thread_state *this_qsbr = tstate->qsbr;
-    struct _qsbr_shared *shared = this_qsbr->shared;
+    unsigned long thread_id = _PyThreadState_GET()->thread_id;
+    struct _qsbr_shared *shared = &interp->qsbr;
 
     _PyMutex_at_fork_reinit(&shared->mutex);
 
     for (Py_ssize_t i = 0; i != shared->size; i++) {
         struct _qsbr_thread_state *qsbr = &shared->array[i].qsbr;
-        if (qsbr != this_qsbr && qsbr->allocated) {
+        if (qsbr->allocated &&
+            (qsbr->tstate == NULL || qsbr->tstate->thread_id != thread_id)) {
+            qsbr->seq = QSBR_OFFLINE;
             qsbr->tstate = NULL;
             qsbr->allocated = false;
             qsbr->freelist_next = shared->freelist;

@@ -22,8 +22,9 @@ extern "C" {
 // transitions between "attached" and "detached" on its own PyThreadState.
 //
 // The "suspended" states are used to implement stop-the-world pauses and to
-// merge biased reference counts on behalf of detached threads. They are only
-// used in `--disable-gil` builds.
+// merge biased reference counts on behalf of detached threads. They are
+// used for global pauses in all builds and per-interpreter pauses in
+// `--disable-gil` builds.
 // They are similar to the "detached" state in that the thread is not allowed
 // to call most Python APIs. A suspended thread trying to attach marks itself
 // as "suspended-waiting". Only the thread responsible for suspending it may
@@ -161,12 +162,12 @@ extern void _PyThreadState_Suspend(PyThreadState *tstate);
 // stop the world while holding the thread in the suspended state.
 // Returns 1 on success, 0 if the thread was not in the "detached" state.
 extern int _PyThreadState_TrySuspendDetached(PyThreadState *tstate);
+#endif
 
 // Resume a thread suspended by _PyThreadState_TrySuspendDetached() or a
 // stop-the-world pause: switch it back to "detached" or "detached-waiting"
 // and wake it if it is waiting to attach.
 extern void _PyThreadState_ResumeDetached(PyThreadState *tstate);
-#endif
 
 // Mark the thread state as "shutting down". This is used during interpreter
 // and runtime finalization. The thread may no longer attach to the
@@ -245,7 +246,9 @@ extern void _PyThreadState_Bind(PyThreadState *tstate);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_NewBound(
     PyInterpreterState *interp,
     int whence);
-extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
+extern PyThreadState * _PyThreadState_RemoveExcept(
+    PyThreadState *tstate,
+    int is_after_fork);
 extern void _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
 
@@ -267,7 +270,6 @@ extern PyThreadState * _PyThreadState_Swap(
 extern PyStatus _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
-extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
 
