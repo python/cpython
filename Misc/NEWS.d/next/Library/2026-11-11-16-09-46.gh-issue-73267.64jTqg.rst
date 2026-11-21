@@ -1,0 +1,3 @@
+Fix :func:`time.strptime` returning a ``tm_yday`` that did not match the
+date when a week number (``%U`` or ``%W``) and a weekday resolved to a date
+in the next year.

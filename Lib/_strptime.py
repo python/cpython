@@ -777,6 +777,11 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             year -= 1
             yday = 366 if calendar.isleap(year) else 365
             julian += yday
+        elif julian is not None:
+            yday = 366 if calendar.isleap(year) else 365
+            if julian > yday:
+                year += 1
+                julian -= yday
 
     if julian is None:
         # Cannot pre-calculate datetime_date() since can change in Julian
