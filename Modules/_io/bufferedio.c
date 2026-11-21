@@ -340,27 +340,29 @@ _enter_buffered_busy(buffered *self)
         PyThread_release_lock(self->lock); \
     } while(0);
 
+static inline int
+buffered_check_initialized(buffered *self)
+{
+    if (self->ok > 0) {
+        return 0;
+    }
+    if (self->detached) {
+        PyErr_SetString(PyExc_ValueError, "raw stream has been detached");
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "I/O operation on uninitialized object");
+    }
+    return -1;
+}
+
 #define CHECK_INITIALIZED(self) \
-    if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "raw stream has been detached"); \
-        } else { \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
+    if (buffered_check_initialized(self) < 0) { \
         return NULL; \
     }
 
 #define CHECK_INITIALIZED_INT(self) \
-    if (self->ok <= 0) { \
-        if (self->detached) { \
-            PyErr_SetString(PyExc_ValueError, \
-                 "raw stream has been detached"); \
-        } else { \
-            PyErr_SetString(PyExc_ValueError, \
-                "I/O operation on uninitialized object"); \
-        } \
+    if (buffered_check_initialized(self) < 0) { \
         return -1; \
     }
 
@@ -589,6 +591,11 @@ _io__Buffered_close_impl(buffered *self)
     if (r < 0) {
         exc = PyErr_GetRaisedException();
     }
+    /* flush() ran without the lock and may have detached raw. */
+    if (buffered_check_initialized(self) < 0) {
+        _PyErr_ChainExceptions1(exc);
+        goto end;
+    }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
 
@@ -624,10 +631,21 @@ _io__Buffered_detach_impl(buffered *self)
     if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
     }
+    /* Operations on raw hold the lock, so a reentrant detach() raises
+       instead of clearing self->raw under them. */
+    if (!ENTER_BUFFERED(self)) {
+        return NULL;
+    }
+    /* flush() may have detached raw. */
+    if (buffered_check_initialized(self) < 0) {
+        LEAVE_BUFFERED(self)
+        return NULL;
+    }
     raw = self->raw;
     self->raw = NULL;
     self->detached = 1;
     self->ok = 0;
+    LEAVE_BUFFERED(self)
     return raw;
 }
 
