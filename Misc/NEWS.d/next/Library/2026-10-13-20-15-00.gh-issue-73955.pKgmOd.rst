@@ -1,0 +1,2 @@
+Fix :func:`pkgutil.iter_modules` incorrectly reporting directories whose names
+end with a Python module suffix as modules.
