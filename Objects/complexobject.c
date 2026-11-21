@@ -1176,10 +1176,13 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         /* The argument really is entirely real, and contributes
            nothing in the imaginary direction.
            Just treat it as a double. */
-        double r = PyFloat_AsDouble(arg);
-        if (r != -1.0 || !PyErr_Occurred()) {
-            res = complex_subtype_from_doubles(type, r, 0);
+        tmp = PyNumber_Float(arg);
+        if (tmp == NULL) {
+            return NULL;
         }
+        double r = PyFloat_AS_DOUBLE(tmp);
+        Py_DECREF(tmp);
+        res = complex_subtype_from_doubles(type, r, 0);
     }
     else {
         PyErr_Format(PyExc_TypeError,
