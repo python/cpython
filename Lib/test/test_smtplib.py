@@ -1265,6 +1265,40 @@ class SMTPSimTests(unittest.TestCase):
         self.assertIn('size', smtp.esmtp_features)
         smtp.quit()
 
+    def test_close_resets_greeting(self):
+        smtp = smtplib.SMTP(HOST, self.port,
+                            local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        code, _ = smtp.ehlo()
+        self.assertEqual(code, 250)
+        self.assertIn('size', smtp.esmtp_features)
+        smtp.close()
+        self.assertNotIn('size', smtp.esmtp_features)
+        smtp.connect(HOST, self.port)
+        self.assertNotIn('size', smtp.esmtp_features)
+        smtp.ehlo_or_helo_if_needed()
+        self.assertIn('size', smtp.esmtp_features)
+        smtp.quit()
+
+    def test_with_statement_resets_greeting(self):
+        with smtplib.SMTP(HOST, self.port,
+                          local_hostname='localhost',
+                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+            smtp.ehlo()
+            self.assertIn('size', smtp.esmtp_features)
+
+        self.assertNotIn('size', smtp.esmtp_features)
+
+        msg = EmailMessage()
+        msg['From'] = 'test_from'
+        msg['To'] = 'test_to'
+        msg['Subject'] = 'test_subject'
+
+        smtp.connect(HOST, self.port)
+        smtp.send_message(msg)
+        self.assertIn('size', smtp.esmtp_features)
+        smtp.quit()
+
     def test_with_statement(self):
         with smtplib.SMTP(HOST, self.port) as smtp:
             code, message = smtp.noop()
