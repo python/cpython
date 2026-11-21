@@ -1,0 +1,2 @@
+Prevent deallocation of a :mod:`profiling.tracing` profiler from disabling an
+unrelated :func:`sys.setprofile` callback.
