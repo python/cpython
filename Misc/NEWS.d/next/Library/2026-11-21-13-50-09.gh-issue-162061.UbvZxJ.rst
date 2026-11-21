@@ -1,0 +1,2 @@
+Fix the asyncio call graph to show which task awaits :func:`asyncio.gather`.
+Patch by Timofei Ivankov.

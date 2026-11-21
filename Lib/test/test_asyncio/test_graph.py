@@ -1,4 +1,5 @@
 import asyncio
+import importlib.util
 import io
 import sys
 import types
@@ -526,9 +527,31 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_gather'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_gather'], []],
+                ]],
             ]
         ])
+
+    async def test_gather_awaited_by_different_task(self):
+        # gh-162061
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        gathered = asyncio.gather(child)
+        consumer = asyncio.create_task(consume(gathered), eager_start=True)
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await consumer
+        self.assertFalse(asyncio.capture_call_graph(child, limit=0).awaited_by)
+
+        waiter, = graph.awaited_by
+        self.assertIs(waiter.future, gathered)
+        parent, = waiter.awaited_by
+        self.assertIs(parent.future, consumer)
+        self.assertFalse(parent.awaited_by)
 
     async def test_stack_gather_survivor(self):
         # gh-157213: a child that outlives gather() must not be shown as awaited
@@ -1047,6 +1070,11 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
 
         self._Future = asyncio.Future
         asyncio.Future = futures.Future = futures._PyFuture
+
+        py_tasks = importlib.util.module_from_spec(tasks.__spec__)
+        tasks.__spec__.loader.exec_module(py_tasks)
+        self.enterContext(mock.patch.object(tasks, '_GatheringFuture',
+                                           py_tasks._GatheringFuture))
 
         self._Task = asyncio.Task
         asyncio.Task = tasks.Task = tasks._PyTask
