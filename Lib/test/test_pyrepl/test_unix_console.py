@@ -259,6 +259,20 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"2")
         con.restore()
 
+    def test_write_to_last_column_records_pending_wrap_position(self, _os_write):
+        # gh-145448: after writing into the last column the terminal is in
+        # "pending wrap" state and the cursor stays at width - 1.
+        from _pyrepl.render import LineUpdate, RenderCell
+        con = unix_console(iter([]), width=5)
+        cells = tuple(RenderCell(ch, 1) for ch in "abcde")
+        update = LineUpdate(
+            kind="replace_span", y=0, start_cell=0, start_x=0,
+            cells=cells, char_width=5,
+        )
+        con._UnixConsole__apply_line_update(update)
+        self.assertEqual(con.posxy, (4, 0))
+        con.restore()
+
     def test_multiline_function_move_up_short_terminal(self, _os_write):
         # fmt: off
         code = (
