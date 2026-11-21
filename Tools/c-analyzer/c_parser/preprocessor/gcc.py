@@ -56,7 +56,7 @@ COMPILER_DIRECTIVE_RE = re.compile(r'''
 
 POST_ARGS = (
     '-pthread',
-    '-std=c99',
+    '-std=c11',
     #'-g',
     #'-Og',
     #'-Wno-unused-result',
