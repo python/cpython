@@ -71,6 +71,74 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
+    def test_killed_child_during_submit(self):
+        context = self.get_context()
+        if context.get_start_method() == "fork":
+            self.skipTest("Incompatible with the fork start method.")
+
+        started = self.manager.Queue()
+        gate = self.manager.Event()
+        second_submit = threading.Event()
+        wakeup_sent = threading.Event()
+        manager_waiting = threading.Event()
+        executor = self.executor
+        process_module = futures.process
+        original_wakeup = executor._executor_manager_thread_wakeup.wakeup
+        original_spawn_process = executor._spawn_process
+        original_connection_wait = process_module.mp.connection.wait
+
+        # With the old submit ordering, let the manager rebuild its wait set
+        # after the wakeup but before the new process is registered.
+        def wakeup():
+            if second_submit.is_set():
+                wakeup_sent.set()
+            original_wakeup()
+
+        def spawn_process():
+            if second_submit.is_set() and wakeup_sent.is_set():
+                self.assertTrue(manager_waiting.wait(support.SHORT_TIMEOUT))
+            original_spawn_process()
+
+        def connection_wait(object_list, timeout=None):
+            if (second_submit.is_set() and wakeup_sent.is_set()
+                    and threading.current_thread()
+                    is executor._executor_manager_thread
+                    and len(executor._processes) == 1):
+                manager_waiting.set()
+            return original_connection_wait(object_list, timeout)
+
+        worker_process = None
+        try:
+            with unittest.mock.patch.object(
+                    executor._executor_manager_thread_wakeup, "wakeup",
+                    wakeup), \
+                    unittest.mock.patch.object(
+                        executor, "_spawn_process", spawn_process), \
+                    unittest.mock.patch.object(
+                        process_module.mp.connection, "wait",
+                        connection_wait):
+                future1 = executor.submit(
+                    _report_wait_return, started, gate, 1)
+                self.assertEqual(
+                    started.get(timeout=support.SHORT_TIMEOUT), 1)
+
+                second_submit.set()
+                future2 = executor.submit(
+                    _report_wait_return, started, gate, 2)
+                self.assertEqual(
+                    started.get(timeout=support.SHORT_TIMEOUT), 2)
+                self.assertTrue(future1.running())
+
+                worker_process = list(executor._processes.values())[-1]
+                worker_process.terminate()
+                worker_process.join(support.SHORT_TIMEOUT)
+                with self.assertRaises(BrokenProcessPool):
+                    future2.result(timeout=support.SHORT_TIMEOUT)
+        finally:
+            gate.set()
+            if worker_process is not None:
+                worker_process.join(support.SHORT_TIMEOUT)
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_broken_process_pool_traceback(self):
         # When a child process is abruptly terminated, the whole pool gets
