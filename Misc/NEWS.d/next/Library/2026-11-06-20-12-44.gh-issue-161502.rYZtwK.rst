@@ -1,0 +1,3 @@
+Fix missing tasks in ``python -m asyncio pstree`` output when tasks are
+connected through an intermediate :class:`asyncio.Future`. Patch by Timofei
+Ivankov

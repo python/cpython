@@ -795,6 +795,34 @@ class WeirdZoneTest(ZoneInfoTestBase):
         with self.assertRaises(ValueError):
             self.klass.from_file(f)
 
+    def test_invalid_charcnt(self):
+        # 128 local time types whose abbreviations are the suffixes of a
+        # single long abbreviation spanning the entire block: every index
+        # would get its own copy of most of the block.
+        types = b"".join(struct.pack(">lbb", 3600, 0, i) for i in range(128))
+        chars = b"A" * 65535 + b"\x00"
+
+        # With a negative charcnt the block would be the rest of the file
+        for charcnt in (len(chars), -1):
+            with self.subTest(charcnt=charcnt):
+                header = b"TZif" + b"\x00" * 16
+                header += struct.pack(">6l", 0, 0, 0, 0, 128, charcnt)
+                f = io.BytesIO(header + types + chars)
+
+                with self.assertRaises(ValueError):
+                    self.klass.from_file(f)
+
+    def test_abbreviation_index_above_127(self):
+        chars = b"X" * 129 + b"\x00" + b"ABC\x00"
+        header = b"TZif" + b"\x00" * 16
+        header += struct.pack(">6l", 0, 0, 0, 0, 1, len(chars))
+        types = struct.pack(">lbB", 3600, 0, 130)
+        zi = self.klass.from_file(io.BytesIO(header + types + chars))
+
+        dt = datetime(2026, 1, 1, tzinfo=zi)
+        self.assertEqual(dt.tzname(), "ABC")
+        self.assertEqual(dt.utcoffset(), ONE_H)
+
     def test_transition_lookahead_out_of_bounds(self):
         STD = ZoneOffset("STD", ZERO)
         DST = ZoneOffset("DST", ONE_H, ONE_H)
@@ -1695,6 +1723,13 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    def test_clear_cache_non_string_keys(self):
+        la0 = self.klass("America/Los_Angeles")
+        self.klass.clear_cache(only_keys=[None, 1])
+        la1 = self.klass("America/Los_Angeles")
+
+        self.assertIs(la0, la1)
+
     def test_weak_cache_descriptor_use_after_free(self):
         class BombDescriptor:
             def __get__(self, obj, owner):
@@ -1718,6 +1753,70 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
+
+    def test_strong_cache_path_like_key(self):
+        # A non-str key is matched by identity, and comparing it against a
+        # str key must not raise TypeError.
+        class Key:
+            def __fspath__(self):
+                return "UTC"
+
+            def __len__(self):
+                return 3
+
+            def split(self, sep):
+                return ["UTC"]
+
+        key = Key()
+        original = self.klass(key)
+        self.assertIs(self.klass(key), original)
+        self.assertIsNot(self.klass("UTC"), original)
+        self.klass.clear_cache(only_keys=(key,))
+        self.assertIsNot(self.klass(key), original)
+
+    def test_strong_cache_str_subclass(self):
+        class Stringy(str):
+            def __eq__(self, other):
+                raise CustomError
+
+            __hash__ = str.__hash__
+
+        for cached_type, lookup_type in ((str, Stringy), (Stringy, str),
+                                         (Stringy, Stringy)):
+            with self.subTest(cached_type=cached_type, lookup_type=lookup_type):
+                self.klass.clear_cache()
+                original = self.klass(cached_type("America/Los_Angeles"))
+                self.assertIs(
+                    self.klass(lookup_type("America/Los_Angeles")), original
+                )
+
+    def test_strong_cache_reentrant_clear(self):
+        self._test_strong_cache_reentrant_clear("lookup")
+
+    def test_strong_cache_reentrant_clear_only_keys(self):
+        self._test_strong_cache_reentrant_clear("clear")
+
+    def _test_strong_cache_reentrant_clear(self, operation):
+        klass = self.klass
+
+        class Stringy(str):
+            cleared = False
+
+            def __eq__(self, other):
+                if not self.cleared:
+                    self.cleared = True
+                    klass.clear_cache(only_keys=(self,))
+                return super().__eq__(other)
+
+            __hash__ = str.__hash__
+
+        original = klass(Stringy("America/Los_Angeles"))
+        key = Stringy("America/Los_Angeles")
+        if operation == "lookup":
+            self.assertIs(klass(key), original)
+        else:
+            klass.clear_cache(only_keys=(key,))
+            self.assertIsNot(klass("America/Los_Angeles"), original)
 
     def test_inconsistent_weak_cache_get(self):
         class Cache:

@@ -15,7 +15,12 @@ typedef struct {
     } _type;
     const char *func;
     const char *err_msg;
+#if defined(__cplusplus) && defined(__clang__) && __clang_major__ < 22
+    // gh-160436: clang < 22 warns in the implicit copy/move members
+    int exitcode;
+#else
     Py_DEPRECATED(3.16) int exitcode;
+#endif
 } PyStatus;
 
 PyAPI_FUNC(PyStatus) PyStatus_Ok(void);

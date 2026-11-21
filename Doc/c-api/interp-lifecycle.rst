@@ -48,7 +48,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetVersion`
-  * :c:func:`Py_IsInitialized`
 
 * Utilities:
 
@@ -491,7 +490,7 @@ deleted. This can be done using interpreter views.
 
    An opaque view of an interpreter.
 
-   This is a thread-safe way to access an interpreter that may have be
+   This is a thread-safe way to access an interpreter that may be
    finalizing or already destroyed.
 
    .. versionadded:: 3.15
@@ -576,9 +575,9 @@ Process-wide parameters
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
    also known as SunOS 5.x, the value is ``'sunos5'``.  On macOS, it is
-   ``'darwin'``.  On Windows, it is ``'win'``.  The returned string points into
-   static storage; the caller should not modify its value.  The value is available
-   to Python code as ``sys.platform``.
+   ``'darwin'``.  On Windows, it is ``'win32'``.  The returned string points
+   into static storage; the caller should not modify its value.  The value is
+   available to Python code as ``sys.platform``.
 
 
 .. c:function:: const char* Py_GetCopyright()

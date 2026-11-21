@@ -1804,6 +1804,21 @@ class ExceptionTests(unittest.TestCase):
         exc = LeakingOSError(1, "some message", "filename.py", "filename2.py")
         exc.__init__(2, "another message", "filename3.py", "filename4.py")
 
+    def test_oserror_str_evil_mutation(self):
+        # gh-160773: str(OSError) must not crash when formatting one
+        # attribute clears the others.
+        class Evil:
+            def __repr__(self):
+                exc.filename = None
+                exc.filename2 = None
+                return 'evil'
+
+        exc = OSError(2, Evil(), Evil())
+        self.assertEqual(str(exc), "[Errno 2] evil: evil")
+        exc = OSError(2, Evil(), Evil())
+        exc.filename2 = Evil()
+        self.assertEqual(str(exc), "[Errno 2] evil: evil -> evil")
+
     def test_errno_ENOTDIR(self):
         # Issue #12802: "not a directory" errors are ENOTDIR even on Windows
         with self.assertRaises(OSError) as cm:

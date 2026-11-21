@@ -29,9 +29,10 @@ Glossary
       Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
       :func:`hasattr` would be clumsy or subtly wrong (for example with
-      :ref:`magic methods <special-lookup>`).  ABCs introduce virtual
-      subclasses, which are classes that don't inherit from a class but are
-      still recognized by :func:`isinstance` and :func:`issubclass`; see the
+      :ref:`magic methods <special-lookup>`).  ABCs introduce
+      :term:`virtual subclasses <virtual subclass>`, which are classes that
+      don't inherit from a class but are still recognized by
+      :func:`isinstance` and :func:`issubclass`; see the
       :mod:`abc` module documentation.  Python comes with many built-in ABCs for
       data structures (in the :mod:`collections.abc` module), numbers (in the
       :mod:`numbers` module), streams (in the :mod:`io` module), import finders
@@ -727,9 +728,7 @@ Glossary
       when doing I/O.
 
       As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
-      build configuration. After building Python with this option, code must be
-      run with :option:`-X gil=0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
-      environment variable. This feature enables improved performance for
+      build configuration. This feature enables improved performance for
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
 
@@ -1728,6 +1727,12 @@ Glossary
    virtual machine
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.
+
+   virtual subclass
+      A class that :func:`issubclass` and :func:`isinstance` treat as a
+      subclass of an :term:`abstract base class` even though it does not
+      inherit from it.  A class is made a virtual subclass by registering
+      it with the ABC's :meth:`~abc.ABCMeta.register` method.
 
    walrus operator
       A light-hearted way to refer to the :ref:`assignment expression

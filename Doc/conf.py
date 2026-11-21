@@ -319,7 +319,7 @@ if any('htmlhelp' in arg for arg in sys.argv):
     print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = f'{release} Documentation'
+html_short_title = f'{release} documentation'
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
@@ -607,6 +607,11 @@ linkcheck_ignore = [
     # SSLError CertificateError, even though it is valid
     r'https://unix.org/version2/whatsnew/lp64_wp.html',
 ]
+
+# Options to adjust search results sorting
+# ----------------------------------------
+
+html_search_scorer = "tools/static/search_scorer.js"
 
 
 # Options for sphinx.ext.extlinks

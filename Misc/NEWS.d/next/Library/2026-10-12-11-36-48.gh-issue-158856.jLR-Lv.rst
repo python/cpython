@@ -1,1 +1,0 @@
-Improve large Enum creation performance.
