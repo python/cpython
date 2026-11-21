@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 import unittest
+import weakref
 from test import support
 from test.support import (
     force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
@@ -1440,6 +1441,42 @@ class RaiseSignalTest(unittest.TestCase):
 
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
+
+    def test_handler_replacing_itself_stays_alive(self):
+        events = []
+        def handler(signum, frame):
+            events.append("enter")
+            signal.signal(signum, signal.SIG_DFL)
+            support.gc_collect()
+            events.append("exit")
+        handler = functools.partial(handler)
+        wr = weakref.ref(handler, lambda ref: events.append("freed"))
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+        del handler
+
+        signal.raise_signal(signal.SIGINT)
+        support.gc_collect()
+        self.assertEqual(events, ["enter", "exit", "freed"])
+
+    def test_handler_replacing_itself_and_raising_is_freed(self):
+        events = []
+        def handler(signum, frame):
+            events.append("enter")
+            signal.signal(signum, signal.SIG_DFL)
+            support.gc_collect()
+            events.append("exit")
+            raise ZeroDivisionError
+        handler = functools.partial(handler)
+        wr = weakref.ref(handler, lambda ref: events.append("freed"))
+        old_signal = signal.signal(signal.SIGINT, handler)
+        self.addCleanup(signal.signal, signal.SIGINT, old_signal)
+        del handler
+
+        with self.assertRaises(ZeroDivisionError):
+            signal.raise_signal(signal.SIGINT)
+        support.gc_collect()
+        self.assertEqual(events, ["enter", "exit", "freed"])
 
     def test__thread_interrupt_main(self):
         # See https://github.com/python/cpython/issues/102397
