@@ -4064,6 +4064,34 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(root.findall(".//{}b")),
                          summarize_list(root.findall(".//b")))
 
+    def do_test_find_empty_path(self, m):
+        # This tests the pure-Python ElementPath implementation; the C
+        # accelerator already returned the same results for most cases before
+        # gh-161807.  After the fix both implementations agree.
+
+        # Without namespaces
+        self.assertIsNone(m.find(""))
+        self.assertEqual(m.findall(""), [])
+        self.assertIsNone(m.findtext(""))
+        self.assertEqual(m.findtext("", "default"), "default")
+        self.assertEqual(list(m.iterfind("")), [])
+
+        # With namespaces — the dict must not be altered by any of the calls
+        ns = {"ns": "http://example.com"}
+        ns_before = dict(ns)
+        self.assertIsNone(m.find("", ns))
+        self.assertEqual(m.findall("", ns), [])
+        self.assertIsNone(m.findtext("", namespaces=ns))
+        self.assertEqual(m.findtext("", "default", namespaces=ns), "default")
+        self.assertEqual(list(m.iterfind("", ns)), [])
+        self.assertEqual(ns, ns_before)
+
+    def test_find_empty_path(self):
+        # gh-161807: empty path must not raise TypeError
+        e = ET.XML(SAMPLE_XML)
+        self.do_test_find_empty_path(e)
+        self.do_test_find_empty_path(ET.ElementTree(e))
+
     def test_bad_find(self):
         e = ET.XML(SAMPLE_XML)
         with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
