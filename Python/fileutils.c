@@ -3309,9 +3309,8 @@ _Py_IsValidFD(int fd)
 //
 // On success, return a Unicode string. On error, set an exception and return
 // NULL.
-PyObject*
-_Py_strerror(int code)
-/*[clinic end generated code: output=baebf09fa02a78f2 input=75a8673d97915a91]*/
+static PyObject *
+_Py_strerror_uncached(int code)
 {
     const char *errors = "surrogateescape";
 
@@ -3395,4 +3394,102 @@ _Py_strerror(int code)
     }
     return PyUnicode_DecodeLocale(message, errors);
 #endif
+}
+
+
+// Return a strong reference to the tuple (codeset, LC_MESSAGES, LANGUAGE,
+// {code: message}) of the current locale, replacing it if the locale changed.
+static PyObject *
+strerror_ensure_cache(struct _Py_exc_state *state)
+{
+    // C code can change the locale without calling Python locale.setlocale().
+    // Messages depend on LC_MESSAGES (language), the LC_CTYPE codeset
+    // (decoding) and, for glibc's gettext, the LANGUAGE priority list unless
+    // LC_MESSAGES is "C". Windows has none, and _Py_FORCE_UTF8_LOCALE ignores
+    // the codeset, see _Py_GetLocaleEncoding().
+#if defined(_Py_FORCE_UTF8_LOCALE) || defined(MS_WINDOWS)
+    const char *codeset = "";
+    const char *messages = "";
+    const char *language = "";
+#else
+    const char *codeset = nl_langinfo(CODESET);
+    const char *messages = setlocale(LC_MESSAGES, NULL);
+    const char *language = getenv("LANGUAGE");
+    if (codeset == NULL) {
+        codeset = "";
+    }
+    if (messages == NULL) {
+        messages = "";
+    }
+    if (language == NULL) {
+        language = "";
+    }
+#endif
+    // Py_SETREF() isn't atomic.
+    PyObject *cache;
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->strerror_lock);
+    cache = Py_NewRef(state->strerror_cache);
+    Py_END_CRITICAL_SECTION();
+    if (cache != Py_None
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 0)), codeset) == 0
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 1)), messages) == 0
+        && strcmp(PyBytes_AS_STRING(PyTuple_GET_ITEM(cache, 2)), language) == 0)
+    {
+        return cache;
+    }
+    Py_DECREF(cache);
+    cache = PyTuple_New(4);
+    if (cache == NULL) {
+        return NULL;
+    }
+    PyTuple_SET_ITEM(cache, 0, PyBytes_FromString(codeset));
+    PyTuple_SET_ITEM(cache, 1, PyBytes_FromString(messages));
+    PyTuple_SET_ITEM(cache, 2, PyBytes_FromString(language));
+    PyTuple_SET_ITEM(cache, 3, PyDict_New());
+    if (PyTuple_GET_ITEM(cache, 0) == NULL
+        || PyTuple_GET_ITEM(cache, 1) == NULL
+        || PyTuple_GET_ITEM(cache, 2) == NULL
+        || PyTuple_GET_ITEM(cache, 3) == NULL)
+    {
+        Py_DECREF(cache);
+        return NULL;
+    }
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&state->strerror_lock);
+    Py_SETREF(state->strerror_cache, Py_NewRef(cache));
+    Py_END_CRITICAL_SECTION();
+    return cache;
+}
+
+// os.strerror() takes any int, lets not cache INT_MAX.
+#define STRERROR_CACHE_MAX 5000
+
+// _Py_strerror_uncached() with the messages cached per locale: decoding is a
+// large part of the cost of raising OSError.
+PyObject*
+_Py_strerror(int code)
+{
+    struct _Py_exc_state *state = &_PyInterpreterState_GET()->exc_state;
+    PyObject *cache = strerror_ensure_cache(state);
+    if (cache == NULL) {
+        return NULL;
+    }
+    PyObject *dict = PyTuple_GET_ITEM(cache, 3);
+    PyObject *key = PyLong_FromLong(code);
+    if (key == NULL) {
+        Py_DECREF(cache);
+        return NULL;
+    }
+    PyObject *message;
+    if (PyDict_GetItemRef(dict, key, &message) == 0) {
+        message = _Py_strerror_uncached(code);
+        if (message != NULL
+            && PyDict_GET_SIZE(dict) < STRERROR_CACHE_MAX
+            && PyDict_SetItem(dict, key, message) < 0)
+        {
+            Py_CLEAR(message);
+        }
+    }
+    Py_DECREF(key);
+    Py_DECREF(cache);
+    return message;
 }
