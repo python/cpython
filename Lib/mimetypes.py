@@ -109,7 +109,7 @@ class MimeTypes:
         if not type:
             return
         self.types_map[strict][ext] = type
-        exts = self.types_map_inv[strict].setdefault(type, [])
+        exts = self.types_map_inv[strict].setdefault(type.lower(), [])
         if ext not in exts:
             exts.append(ext)
 
