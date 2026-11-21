@@ -2791,6 +2791,66 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 self.assertEqual(sign(actual), sign(expected))
 
     @requires_IEEE_754
+    def test_sqrtprod_helper_function_subnormal_products(self):
+        # gh-161259: accuracy was lost when the product or the correction
+        # term was subnormal. The reference scales the inputs by an exact
+        # power of two so that the product is a normal float.
+        scale = 2.0 ** 600
+        for x, y in [
+            (2e-200, 2e-124),
+            (1e-160, 3e-150),
+            (3e-170, 7e-140),
+            (1e-160, 1e-135),
+        ]:
+            expected = math.sqrt((scale * x) * (scale * y)) / scale
+            actual = statistics._sqrtprod(x, y)
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                self.assertAlmostEqual(actual / expected, 1.0, delta=2**-50)
+
+    @requires_IEEE_754
+    def test_sqrtprod_helper_function_subnormal_boundary(self):
+        # sqrt(3 * 7) * 2**e straddles the 2**-485 cutoff where the
+        # correction term can become subnormal.
+        scale = 2.0 ** 600
+        for e in (-488, -487):
+            x = 3.0 * 2.0 ** e
+            y = 7.0 * 2.0 ** e
+            expected = math.sqrt((scale * x) * (scale * y)) / scale
+            actual = statistics._sqrtprod(x, y)
+            with self.subTest(e=e, expected=expected, actual=actual):
+                self.assertAlmostEqual(actual / expected, 1.0, delta=2**-50)
+
+        cutoff = 2.0 ** -485
+        self.assertEqual(statistics._sqrtprod(cutoff, cutoff), cutoff)
+
+    @requires_IEEE_754
+    def test_correlation_tiny_inputs(self):
+        # gh-161259: correlation() is scale-invariant, even when the
+        # intermediate sums of squares are tiny.
+        x = [1e-100, 2e-100, 3e-100]
+        y = [1e-62, 2e-62, 3e-62]
+        self.assertAlmostEqual(statistics.correlation(x, y), 1.0)
+
+    @requires_IEEE_754
+    def test_correlation_asymmetric_scales(self):
+        for a, b in [
+            (2.0 ** 50, 2.0 ** -537),
+            (1.3 * 2.0 ** -260, 2.7 * 2.0 ** -270),
+        ]:
+            x = [-a, 0.0, a]
+            y = [0.0, -b, b]
+            with self.subTest(a=a, b=b):
+                self.assertAlmostEqual(statistics.correlation(x, y), 0.5,
+                                       delta=2**-50)
+
+    @requires_IEEE_754
+    def test_correlation_tiny_products_max_recursion(self):
+        # Make both sums of squares round to the smallest subnormal.
+        a = 2.0 ** -537
+        x = [0.0, 0.0, 0.0, a]
+        self.assertEqual(statistics.correlation(x, x), 1.0)
+
+    @requires_IEEE_754
     @skip_if_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
     @skip_on_newlib

@@ -198,6 +198,9 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -206,6 +209,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
@@ -213,6 +217,7 @@ AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
+AC_SUBST([RUNSHARED_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
@@ -2218,6 +2223,32 @@ if test "$Py_LTO" = 'true' ; then
             AX_CHECK_COMPILE_FLAG([-flto=thin],[LTOFLAGS="-flto=thin"],[LTOFLAGS="-flto"])
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
+          fi
+          LTOCFLAGS="$LTOFLAGS"
+          # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
+          # cannot link LTO objects, try lld, which does not need that plugin.
+          WITH_SAVE_ENV([
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            AC_MSG_CHECKING([whether Clang LTO works with the configured linker])
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+            AC_MSG_RESULT([$clang_lto_link])
+          ])
+          if test "$clang_lto_link" = no; then
+            WITH_SAVE_ENV([
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              AC_MSG_CHECKING([whether Clang LTO works with lld])
+              AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+              AC_MSG_RESULT([$clang_lto_link])
+            ])
+            if test "$clang_lto_link" = no; then
+              AC_MSG_ERROR([m4_normalize([
+                Clang LTO requires a working LTO-aware linker.
+                Install lld or the LLVMgold.so plugin, select a linker
+                with LDFLAGS, or disable LTO with --without-lto.
+              ])])
+            fi
+            LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
+            LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
           fi
           ;;
       esac
@@ -5730,15 +5761,15 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dladdr dup explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fpathconf fstatat ftruncate futimens futimes futimesat \
-  gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
-  gettid getuid grantpt if_indextoname if_nameindex \
-  if_nametoindex initgroups kill killpg lchown linkat \
+  getuid grantpt if_nameindex \
+  initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
-  pidfd_open pidfd_getfd pidfd_send_signal pipe \
+  pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5761,7 +5792,13 @@ PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 # FreeBSD pthread_attr_get_np()
 PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
-
+PY_CHECK_FUNC_PRIVATE([getdents64], [@%:@include <dirent.h>])
+PY_CHECK_FUNC_PRIVATE([gettid], [@%:@include <unistd.h>])
+PY_CHECK_FUNC_PRIVATE([if_indextoname], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([if_nametoindex], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_open], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_getfd], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_send_signal], [@%:@include <sys/pidfd.h>])
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
@@ -7228,7 +7265,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
-      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+      AC_DEFINE([_Py_HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
     ])
 
     # check for readline 4.2
@@ -7633,6 +7670,7 @@ dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_CURSES_]m4_toupper($1)], [$3]))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
@@ -7651,6 +7689,13 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
+])
+
+dnl PY_CHECK_CURSES_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_CURSES_FUNC but define macro _Py_HAVE_CURSES_xxx,
+dnl instead of HAVE_CURSES_xxx
+AC_DEFUN([PY_CHECK_CURSES_FUNC_PRIVATE],
+[ PY_CHECK_CURSES_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_CURSES_]m4_toupper($1)], [$3]))
 ])
 
 dnl PY_CHECK_CURSES_VAR(VARIABLE)
@@ -7685,35 +7730,36 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
-PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
-PY_CHECK_CURSES_FUNC([has_mouse])
-PY_CHECK_CURSES_FUNC([is_keypad])
-PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
-PY_CHECK_CURSES_FUNC([new_prescr])
-PY_CHECK_CURSES_FUNC([use_screen])
-PY_CHECK_CURSES_FUNC([use_window])
-PY_CHECK_CURSES_FUNC([key_defined])
-PY_CHECK_CURSES_FUNC([term_attrs])
-PY_CHECK_CURSES_FUNC([define_key])
-PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 dnl The X/Open attr_t and soft-label attribute functions are absent on old
 dnl SVr4 curses (e.g. illumos).
-PY_CHECK_CURSES_FUNC([wattr_get])
-PY_CHECK_CURSES_FUNC([wattr_set])
-PY_CHECK_CURSES_FUNC([wattr_on])
-PY_CHECK_CURSES_FUNC([wattr_off])
-PY_CHECK_CURSES_FUNC([wcolor_set])
-PY_CHECK_CURSES_FUNC([slk_attr_on])
-PY_CHECK_CURSES_FUNC([slk_attr_off])
-PY_CHECK_CURSES_FUNC([slk_attr_set])
-PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+PY_CHECK_CURSES_FUNC_PRIVATE([define_key])
+PY_CHECK_CURSES_FUNC_PRIVATE([has_mouse])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_keypad])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_leaveok])
+PY_CHECK_CURSES_FUNC_PRIVATE([key_defined])
+PY_CHECK_CURSES_FUNC_PRIVATE([keyok])
+PY_CHECK_CURSES_FUNC_PRIVATE([new_prescr])
+PY_CHECK_CURSES_FUNC_PRIVATE([nofilter])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_color])
+PY_CHECK_CURSES_FUNC_PRIVATE([term_attrs])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_screen])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_window])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_get])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([wcolor_set])
 
 dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
 dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
@@ -7729,8 +7775,9 @@ AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
 
 dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
 dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
-PY_CHECK_CURSES_FUNC([scr_dump])
-PY_CHECK_CURSES_FUNC([scr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_dump])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_set])
+
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

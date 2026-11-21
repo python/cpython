@@ -450,6 +450,45 @@ class TupleTest(seq_tests.CommonTest):
         self.assertLess(a, b)
         self.assertLess(b, c)
 
+    def test_hash_unhashable_note(self):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash(("alice", []))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1"])
+
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'list'") as cm:
+            hash((("alice", []), 42))
+        self.assertEqual(cm.exception.__notes__,
+                         ["when hashing tuple item 1",
+                          "when hashing tuple item 0"])
+
+        class BrokenHash:
+            def __hash__(self):
+                raise TypeError("custom failure")
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHash(),))
+        self.assertEqual(cm.exception.__notes__, ["when hashing tuple item 0"])
+
+        class BrokenHashNote:
+            def __hash__(self):
+                exc = TypeError("custom failure")
+                exc.add_note("from custom hash")
+                raise exc
+
+        with self.assertRaisesRegex(TypeError, "custom failure") as cm:
+            hash((BrokenHashNote(),))
+        self.assertEqual(cm.exception.__notes__,
+                         ["from custom hash", "when hashing tuple item 0"])
+
+        class BrokenHashValueError:
+            def __hash__(self):
+                raise ValueError("custom failure")
+
+        with self.assertRaisesRegex(ValueError, "custom failure") as cm:
+            hash((BrokenHashValueError(),))
+        self.assertFalse(hasattr(cm.exception, "__notes__"))
+
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
 # very regular when possible, so that the low-order bits are as evenly

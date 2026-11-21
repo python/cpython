@@ -4181,6 +4181,28 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                                'expected 1 or 2 arguments, got 3',
                                int().__rpow__, 1, 2, 3)
 
+    def test_setattr_slot_update_error(self):
+        # An error raised while updating the slots of subclasses must be
+        # propagated by the attribute assignment.
+        class K:
+            def __hash__(self):
+                return hash('__repr__')
+            def __eq__(self, other):
+                raise ZeroDivisionError
+
+        class A:
+            pass
+
+        with self.assertWarns(RuntimeWarning):
+            B = type('B', (A,), {K(): 1})
+        if support.Py_GIL_DISABLED:
+            # The slot update skips non-str keys without comparing them.
+            A.__repr__ = lambda self: 'A'
+        else:
+            with self.assertRaises(ZeroDivisionError):
+                A.__repr__ = lambda self: 'A'
+        self.assertEqual(repr(A()), 'A')
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 

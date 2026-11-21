@@ -1,3 +1,0 @@
-Fix a crash in the perf trampoline (:option:`-X perf <-X>`) on builds with
-clang's ``-fsanitize=function``, which ``-fsanitize=undefined`` enables
-since clang 17.

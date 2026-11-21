@@ -1,8 +1,8 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
+#include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_object.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -42,8 +42,6 @@ typedef struct {
     PyObject *readnl;
     PyObject *writenl;
 
-    PyObject *dict;
-    PyObject *weakreflist;
     _PyIO_State *module_state;
 } stringio;
 
@@ -675,8 +673,7 @@ stringio_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->readnl);
     Py_VISIT(self->writenl);
     Py_VISIT(self->decoder);
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
@@ -686,7 +683,7 @@ stringio_clear(PyObject *op)
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -703,7 +700,7 @@ stringio_dealloc(PyObject *op)
     }
     PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(op);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -930,11 +927,16 @@ _io_StringIO___getstate___impl(stringio *self)
 
     if (initvalue == NULL)
         return NULL;
-    if (self->dict == NULL) {
+    if (_PyObject_IsInstanceDictEmpty((PyObject *)self)) {
         dict = Py_NewRef(Py_None);
     }
     else {
-        dict = PyDict_Copy(self->dict);
+        dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
+        Py_SETREF(dict, PyDict_Copy(dict));
         if (dict == NULL) {
             Py_DECREF(initvalue);
             return NULL;
@@ -1045,14 +1047,16 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
                          Py_TYPE(dict)->tp_name);
             return NULL;
         }
-        if (self->dict) {
-            /* Alternatively, we could replace the internal dictionary
-               completely. However, it seems more practical to just update it. */
-            if (PyDict_Update(self->dict, dict) < 0)
-                return NULL;
+        /* Alternatively, we could replace the internal dictionary
+           completely. However, it seems more practical to just update it. */
+        PyObject *self_dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (self_dict == NULL) {
+            return NULL;
         }
-        else {
-            self->dict = Py_NewRef(dict);
+        int rc = PyDict_Update(self_dict, dict);
+        Py_DECREF(self_dict);
+        if (rc < 0) {
+            return NULL;
         }
     }
 
@@ -1138,12 +1142,6 @@ static PyGetSetDef stringio_getset[] = {
     {NULL}
 };
 
-static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
-    {NULL},
-};
-
 static PyType_Slot stringio_slots[] = {
     {Py_tp_dealloc, stringio_dealloc},
     {Py_tp_doc, (void *)_io_StringIO___init____doc__},
@@ -1151,7 +1149,6 @@ static PyType_Slot stringio_slots[] = {
     {Py_tp_clear, stringio_clear},
     {Py_tp_iternext, stringio_iternext},
     {Py_tp_methods, stringio_methods},
-    {Py_tp_members, stringio_members},
     {Py_tp_getset, stringio_getset},
     {Py_tp_init, _io_StringIO___init__},
     {Py_tp_new, stringio_new},

@@ -1,0 +1,4 @@
+``build-details.json`` now takes ``language.version_info``,
+``implementation.version`` and ``implementation.hexversion`` from
+:file:`Include/patchlevel.h` instead of the interpreter running the generator,
+which can be a different patch release under :option:`--with-build-python`.

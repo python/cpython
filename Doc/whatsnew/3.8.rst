@@ -2082,7 +2082,7 @@ Changes in the C API
                 return NULL;
         #if PY_VERSION_HEX < 0x03080000
             // Workaround for Python issue 35810; no longer necessary in Python 3.8
-            PY_INCREF(type)
+            Py_INCREF(type);
         #endif
             return foo;
         }

@@ -828,7 +828,7 @@ _interpreters_new_config_impl(PyObject *module, const char *name,
         return NULL;
     }
 
-    if (PyDict_GET_SIZE(overrides) > 0) {
+    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
         if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
             return NULL;
         }

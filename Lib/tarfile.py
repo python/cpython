@@ -594,6 +594,8 @@ class _Stream:
             else:
                 # Other decompressors have needs_input.
                 # decompress() can buffer data internally.
+                if self.cmp.eof:
+                    break
                 if self.cmp.needs_input:
                     cbuf = self.fileobj.read(self.bufsize)
                     if not cbuf:
@@ -2552,7 +2554,7 @@ class TarFile(object):
                     continue
                 dirpath = os.path.join(path, tarinfo.name)
                 try:
-                    lstat = os.lstat(dirpath)
+                    lstat = os.lstat(dirpath.replace(r'/', os.sep))
                 except FileNotFoundError:
                     self._log_no_directory_fixup(tarinfo, 'missing')
                     continue
@@ -3172,6 +3174,10 @@ open = TarFile.open
 
 def main():
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for tarfile module.'
     parser = argparse.ArgumentParser(description=description)

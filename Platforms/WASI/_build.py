@@ -1,22 +1,16 @@
 __lazy_modules__ = [
-    "contextlib",
-    "functools",
     "os",
     "pathlib",
     "shutil",
     "subprocess",
     "sys",
-    "tempfile",
 ]
 
-import contextlib
-import functools
 import os
 import pathlib
 import shutil
 import subprocess
 import sys
-import tempfile
 
 try:
     from os import process_cpu_count as cpu_count
@@ -29,131 +23,19 @@ WASMTIME_VAR_NAME = "WASMTIME"
 WASMTIME_HOST_RUNNER_VAR = f"{{{WASMTIME_VAR_NAME}}}"
 
 
-def separator():
-    """Print a separator line across the terminal width."""
-    try:
-        tput_output = subprocess.check_output(
-            ["tput", "cols"], encoding="utf-8"
-        )
-    except subprocess.CalledProcessError:
-        terminal_width = 80
-    else:
-        terminal_width = int(tput_output.strip())
-    print("⎯" * terminal_width)
-
-
-def updated_env(updates={}):
-    """Create a new dict representing the environment to use.
-
-    The changes made to the execution environment are printed out.
-    """
-    env_defaults = {}
-    # https://reproducible-builds.org/docs/source-date-epoch/
-    git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
-    try:
-        epoch = subprocess.check_output(
-            git_epoch_cmd, encoding="utf-8"
-        ).strip()
-        env_defaults["SOURCE_DATE_EPOCH"] = epoch
-    except subprocess.CalledProcessError:
-        pass  # Might be building from a tarball.
-    # This layering lets SOURCE_DATE_EPOCH from os.environ takes precedence.
-    environment = env_defaults | os.environ | updates
-
-    env_diff = {}
-    for key, value in environment.items():
-        if os.environ.get(key) != value:
-            env_diff[key] = value
-
-    env_vars = [
-        f"\n     {key}={item}" for key, item in sorted(env_diff.items())
-    ]
-    _shared.log("🌎", f"Environment changes:{''.join(env_vars)}")
-
-    return environment
-
-
-def subdir(context_attr, *, clean_ok=False):
-    """Decorator to change to a working directory."""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(context):
-            nonlocal context_attr
-
-            working_dir = getattr(context, context_attr)
-            separator()
-            _shared.log("📁", os.fsdecode(working_dir))
-            if clean_ok and context.clean and working_dir.exists():
-                _shared.log("🚮", "Deleting directory (--clean)...")
-                shutil.rmtree(working_dir)
-
-            working_dir.mkdir(parents=True, exist_ok=True)
-
-            with contextlib.chdir(working_dir):
-                return func(context, working_dir)
-
-        return wrapper
-
-    return decorator
-
-
-def call(command, *, context=None, quiet=False, **kwargs):
-    """Execute a command.
-
-    If 'quiet' is true, then redirect stdout and stderr to a temporary file.
-    """
-    if context is not None:
-        quiet = context.quiet
-
-    _shared.log("❯", " ".join(map(str, command)), spacing="  ")
-    if not quiet:
-        stdout = None
-        stderr = None
-    else:
-        if (log_path := getattr(context, "log_path", None)) is None:
-            log_path = pathlib.Path(tempfile.gettempdir())
-        log_path.mkdir(parents=True, exist_ok=True)
-        stdout = tempfile.NamedTemporaryFile(
-            "w",
-            encoding="utf-8",
-            delete=False,
-            dir=log_path,
-            prefix="cpython-wasi-",
-            suffix=".log",
-        )
-        stderr = subprocess.STDOUT
-        _shared.log("📝", f"Logging output to {stdout.name} (--quiet)...")
-
-    try:
-        subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
-    except subprocess.CalledProcessError as error:
-        if quiet:
-            _shared.log("❌", f"Exit code {error.returncode}")
-            separator()
-            with open(stdout.name, encoding="utf-8") as file:
-                lines = file.readlines()
-                # Inefficient, but the log shouldn't be dramatically large.
-                print("".join(lines[-10:]), end="")
-                if not lines[-1].endswith("\n"):
-                    print()
-        sys.exit(error.returncode)
-
-
-@subdir("build_python_path", clean_ok=True)
+@_shared.subdir("build_python_path", clean_ok=True)
 def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
     configure = [os.path.relpath(context.checkout / "configure", working_dir)]
-    if context.args:
-        configure.extend(context.args)
+    configure.extend(context.configure_args)
 
-    call(configure, context=context)
+    context.call(configure)
 
 
-@subdir("build_python_path")
+@_shared.subdir("build_python_path")
 def make_build_python(context, _working_dir):
     """Make/build the build Python."""
-    call(["make", "--jobs", str(cpu_count()), "all"], context=context)
+    context.call(["make", "--jobs", str(cpu_count()), "all"])
 
     binary = context.build_python_interpreter
     cmd = [
@@ -206,7 +88,7 @@ def wasi_sdk_env(context):
     return env
 
 
-@subdir("wasi_build_path", clean_ok=True)
+@_shared.subdir("wasi_build_path", clean_ok=True)
 def configure_wasi_python(context, working_dir):
     """Configure the WASI/host build."""
     config_site = os.fsdecode(context.here / "config.site-wasm32-wasi")
@@ -247,12 +129,10 @@ def configure_wasi_python(context, working_dir):
     ]
     if context.is_debug:
         configure.append("--with-pydebug")
-    if context.args:
-        configure.extend(context.args)
-    call(
+    configure.extend(context.configure_args)
+    context.call(
         configure,
-        env=updated_env(env_additions | wasi_sdk_env(context)),
-        context=context,
+        env=_shared.updated_env(env_additions | wasi_sdk_env(context)),
     )
 
     python_wasm = working_dir / "python.wasm"
@@ -264,17 +144,18 @@ def configure_wasi_python(context, working_dir):
     sys.stdout.flush()
 
 
-@subdir("wasi_build_path")
+@_shared.subdir("wasi_build_path")
 def make_wasi_python(context, working_dir):
     """Run `make` for the WASI/host build."""
-    call(
+    context.call(
         ["make", "--jobs", str(cpu_count()), "all"],
-        env=updated_env(),
-        context=context,
+        env=_shared.updated_env(),
     )
 
     exec_script = working_dir / "python.sh"
-    call([exec_script, "-c", "import sys; print(sys.version)"], quiet=False)
+    context.call(
+        [exec_script, "-c", "import sys; print(sys.version)"], quiet=False
+    )
     _shared.log(
         "🎉",
         f"Use `{exec_script.relative_to(pathlib.Path().absolute())}` "
@@ -291,13 +172,13 @@ def clean_contents(context):
             shutil.rmtree(path)
 
 
-@subdir("build_python_path")
+@_shared.subdir("build_python_path")
 def pythoninfo_build_python(context, working_dir):
     """Display build info of the build Python."""
-    call(["make", "pythoninfo"], context=context)
+    context.call(["make", "pythoninfo"])
 
 
-@subdir("wasi_build_path")
+@_shared.subdir("wasi_build_path")
 def pythoninfo_wasi_python(context, working_dir):
     """Display build info of the host/WASI Python."""
-    call(["make", "pythoninfo"], context=context)
+    context.call(["make", "pythoninfo"])

@@ -1,2 +1,0 @@
-Fix :meth:`asyncio.Task.print_stack` to include frames from async generator
-operations. Patch by Timofei Ivankov

@@ -1,2 +1,0 @@
-Fix a ``configure`` probe that could omit functions such
-as :func:`os.fchdir` from builds using ``-Wall -Werror``.
