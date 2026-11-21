@@ -1256,5 +1256,109 @@ def tearDownModule():
     os_helper.unlink(TESTMOD)
 
 
+class EocdCommentSizeTests(unittest.TestCase):
+    """gh-103051: validate the EOCD archive-comment-length field."""
+
+    def _make_zip(self, files, comment=b"", prepend=b""):
+        import io
+        import zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
+            for name, data in files:
+                zf.writestr(name, data)
+            zf.comment = comment
+        return prepend + buf.getvalue()
+
+    def _write_tmp(self, data, suffix=".zip"):
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=suffix)
+        self.addCleanup(os.unlink, path)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        return path
+
+    # -- valid ZIPs that must continue to work --------------------------------
+
+    def test_plain_zip_accepted(self):
+        """Plain ZIP with comment_size=0 must be accepted."""
+        path = self._write_tmp(self._make_zip([("hello.py", b"x = 1\n")]))
+        zipimport.zipimporter(path)  # must not raise
+
+    def test_zip_with_archive_comment_accepted(self):
+        """ZIP with a non-empty archive comment must be accepted."""
+        path = self._write_tmp(
+            self._make_zip([("hello.py", b"x = 1\n")], comment=b"my comment"))
+        zipimport.zipimporter(path)
+
+    def test_zip_with_max_comment_accepted(self):
+        """ZIP with a maximum-length (65535-byte) archive comment must be accepted."""
+        path = self._write_tmp(
+            self._make_zip([("hello.py", b"x = 1\n")], comment=b"z" * 65535))
+        zipimport.zipimporter(path)
+
+    def test_pex_style_zip_accepted(self):
+        """ZIP with prepended bytes (PEX-style shebang) must be accepted."""
+        path = self._write_tmp(
+            self._make_zip([("hello.py", b"x = 1\n")],
+                           prepend=b"#!/usr/bin/env python3\n"))
+        zipimport.zipimporter(path)
+
+    def test_pex_with_archive_comment_accepted(self):
+        """PEX-style ZIP that also carries an archive comment must work."""
+        path = self._write_tmp(
+            self._make_zip([("hello.py", b"x = 1\n")],
+                           comment=b"pex metadata",
+                           prepend=b"#!/usr/bin/env python3\n"))
+        zipimport.zipimporter(path)
+
+    # -- attack variants that must be rejected --------------------------------
+
+    def test_polyglot_pyc_zip_rejected(self):
+        """gh-103051: pyc/zip polyglot must be rejected."""
+        inner_zip = self._make_zip([("__main__.py", b"print('hacked')\n")])
+        fake_pyc_header = b"\x6f\x0d\x0d\x0a" + b"\x00" * 12
+        trailing_bytecode = b"\x00" * 50
+        path = self._write_tmp(
+            fake_pyc_header + inner_zip + trailing_bytecode, suffix=".pyc")
+        with self.assertRaises(zipimport.ZipImportError):
+            zipimport.zipimporter(path)
+
+    def test_trailing_garbage_after_eocd_rejected(self):
+        """ZIP with bytes appended after the EOCD must be rejected."""
+        data = self._make_zip([("hello.py", b"x = 1\n")]) + b"\xde\xad" * 20
+        path = self._write_tmp(data)
+        with self.assertRaises(zipimport.ZipImportError):
+            zipimport.zipimporter(path)
+
+    def test_wrong_comment_size_field_rejected(self):
+        """ZIP with EOCD comment_size patched to a wrong value must be
+        rejected."""
+        import struct
+        data = bytearray(self._make_zip([("hello.py", b"x = 1\n")]))
+        eocd_pos = data.rfind(b"PK\x05\x06")
+        struct.pack_into("<H", data, eocd_pos + 20, 10)
+        path = self._write_tmp(bytes(data))
+        with self.assertRaises(zipimport.ZipImportError):
+            zipimport.zipimporter(path)
+
+    def test_comment_size_exceeds_file_rejected(self):
+        """ZIP with comment_size that extends past EOF must be rejected."""
+        import struct
+        data = bytearray(self._make_zip([("hello.py", b"x = 1\n")]))
+        eocd_pos = data.rfind(b"PK\x05\x06")
+        struct.pack_into("<H", data, eocd_pos + 20, 999)
+        path = self._write_tmp(bytes(data))
+        with self.assertRaises(zipimport.ZipImportError):
+            zipimport.zipimporter(path)
+
+    def test_junk_after_real_comment_rejected(self):
+        """ZIP with extra bytes after a real archive comment must be rejected."""
+        data = self._make_zip([("hello.py", b"x = 1\n")], comment=b"real comment")
+        data += b"\xff" * 30
+        path = self._write_tmp(data)
+        with self.assertRaises(zipimport.ZipImportError):
+            zipimport.zipimporter(path)
+
+
 if __name__ == "__main__":
     unittest.main()
