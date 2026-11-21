@@ -28,10 +28,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "it already exists), \'x\' for creating and writing to a new file, and\n"
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
-"In text mode, if encoding is not specified UTF-8 is used by default;\n"
-"if Python UTF-8 Mode is disabled, locale.getencoding() is called to get\n"
-"the current locale encoding.  (For reading and writing raw bytes use\n"
-"binary mode and leave encoding unspecified.)  The available modes are:\n"
+"The available modes are:\n"
 "\n"
 "========= ==========================================================\n"
 "Character Meaning\n"
@@ -56,8 +53,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "binary mode (appending \'b\' to the mode argument) return contents as\n"
 "bytes objects without any decoding.  In text mode (the default, or when\n"
 "\'t\' is appended to the mode argument), the contents of the file are\n"
-"returned as strings, the bytes having been first decoded using a\n"
-"platform-dependent encoding or using the specified encoding if given.\n"
+"decoded using the encoding described below and returned as strings.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to\n"
@@ -74,10 +70,11 @@ PyDoc_STRVAR(_io_open__doc__,
 "  use line buffering.  Other text files use the policy described above\n"
 "  for binary files.\n"
 "\n"
-"encoding is the name of the encoding used to decode or encode the\n"
-"file.  This should only be used in text mode.  The default encoding is\n"
-"platform dependent, but any encoding supported by Python can be\n"
-"passed.  See the codecs module for the list of supported encodings.\n"
+"encoding is the name of the encoding used to decode or encode the file.\n"
+"This should only be used in text mode.  The default encoding is UTF-8;\n"
+"if UTF-8 Mode is disabled, the encoding returned by\n"
+"locale.getencoding() is used instead.  See the codecs module for the\n"
+"list of supported encodings.\n"
 "\n"
 "errors is an optional string that specifies how encoding errors are to\n"
 "be handled---this argument should not be used in binary mode.  Pass\n"
@@ -392,4 +389,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e46243250c504342 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=517d977e17d38fce input=a9049054013a1b77]*/
