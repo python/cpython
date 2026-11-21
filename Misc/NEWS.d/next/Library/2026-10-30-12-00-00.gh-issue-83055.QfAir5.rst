@@ -1,0 +1,5 @@
+:meth:`asyncio.Queue.get` and :meth:`asyncio.Queue.get_nowait` now reserve
+the freed slot for the longest waiting :meth:`asyncio.Queue.put` call, so a
+later :meth:`~asyncio.Queue.put` or :meth:`~asyncio.Queue.put_nowait` can no
+longer take it and put items out of order. :meth:`asyncio.Queue.full` counts
+reserved slots.
