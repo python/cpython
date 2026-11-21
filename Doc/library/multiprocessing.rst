@@ -942,8 +942,7 @@ For an example of the usage of queues for interprocess communication see
    standard library's :mod:`queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`queue.Queue` except for
-   :meth:`~queue.Queue.task_done`, :meth:`~queue.Queue.join`, and
-   :meth:`~queue.Queue.shutdown`.
+   :meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join`.
 
    .. method:: qsize()
 
@@ -980,6 +979,11 @@ For an example of the usage of queues for interprocess communication see
          If the queue is closed, :exc:`ValueError` is raised instead of
          :exc:`AssertionError`.
 
+      Raises :exc:`queue.ShutDown` if the queue has been shut down.
+
+      .. versionchanged:: next
+         :exc:`queue.ShutDown` is raised if the queue has been shut down.
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -998,9 +1002,64 @@ For an example of the usage of queues for interprocess communication see
          If the queue is closed, :exc:`ValueError` is raised instead of
          :exc:`OSError`.
 
+      Raises :exc:`queue.ShutDown` if the queue has been shut down and is
+      empty, or if the queue has been shut down immediately.
+
+      .. versionchanged:: next
+         :exc:`queue.ShutDown` is raised if the queue has been shut down.
+
    .. method:: get_nowait()
 
       Equivalent to ``get(False)``.
+
+   .. method:: shutdown(immediate=False)
+
+      Put the queue into a shutdown mode, in every process which uses it.
+
+      The queue can no longer grow.
+      Future calls to :meth:`put` raise :exc:`queue.ShutDown`.
+      Currently blocked callers of :meth:`put` will be unblocked
+      and will raise :exc:`queue.ShutDown` in the formerly blocked process.
+
+      If *immediate* is false (the default), the queue can be wound
+      down normally with :meth:`get` calls to extract the items which have
+      already been put, including those which a process has put but which
+      its feeder thread has not yet written to the pipe.
+
+      Once the queue is empty, future calls to :meth:`get` will raise
+      :exc:`queue.ShutDown`.  Currently blocked callers of :meth:`get` are
+      unblocked and raise :exc:`queue.ShutDown` as well.
+
+      If *immediate* is true, the items remaining in the queue are discarded
+      instead, including those which other processes have put but not yet
+      written to the pipe.  All callers of :meth:`get` are unblocked.
+
+      Calling :meth:`shutdown` more than once is allowed.  A queue which has
+      been shut down cannot be put back into service.
+
+      Raises :exc:`ValueError` if the queue has been closed in this process
+      with :meth:`close`.
+
+      .. note::
+
+         A getter is woken up by the getter woken before it, so the
+         :exc:`queue.ShutDown` exception can only reach all of the blocked
+         processes as long as none of them is killed, or exits without
+         flushing its feeder thread (see :meth:`cancel_join_thread`), as it
+         is being woken.
+
+         Similarly, if a process is killed or exits without flushing its
+         feeder thread after putting items on the queue, the queue may never
+         be considered empty and :meth:`get` may block instead of raising
+         :exc:`queue.ShutDown`.
+
+      .. note::
+
+         On Windows, an item which another process is writing to the pipe
+         while ``shutdown(immediate=True)`` is running may still be returned
+         by a later :meth:`get`.
+
+      .. versionadded:: next
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
    :class:`queue.Queue`.  These methods are usually unnecessary for most
@@ -1103,6 +1162,10 @@ For an example of the usage of queues for interprocess communication see
 
       Raises a :exc:`ValueError` if called more times than there were items
       placed in the queue.
+
+      .. versionchanged:: next
+         Items discarded by ``shutdown(immediate=True)`` count as processed:
+         :meth:`task_done` must not be called for them.
 
 
    .. method:: join()
