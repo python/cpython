@@ -2,7 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
-from functools import partial
+from functools import partial, wraps
 from test import support, test_tools
 from test.support import force_not_colorized_test_class
 from test.support import os_helper
@@ -4621,6 +4621,16 @@ try:
 except ImportError:
     ac_tester = None
 
+def static_and_heap(test):
+    # Run test with both a static type and a heap type.
+    @wraps(test)
+    def wrapper(self):
+        for cls in ac_tester.TestClass, ac_tester.HeapTestClass:
+            with self.subTest(cls=cls):
+                test(self, cls)
+    return wrapper
+
+
 @unittest.skipIf(ac_tester is None, "_testclinic is missing")
 class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
@@ -5295,43 +5305,46 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
-    def test_get_defining_class(self):
-        obj = ac_tester.TestClass()
+    @static_and_heap
+    def test_get_defining_class(self, cls):
+        obj = cls()
         meth = obj.get_defining_class
-        self.assertIs(obj.get_defining_class(), ac_tester.TestClass)
+        self.assertIs(obj.get_defining_class(), cls)
 
         # 'defining_class' argument is a positional only argument
         with self.assertRaises(TypeError):
-            obj.get_defining_class_arg(cls=ac_tester.TestClass)
+            obj.get_defining_class_arg(cls=cls)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
 
-    def test_get_defining_class_capi(self):
+    @static_and_heap
+    def test_get_defining_class_capi(self, cls):
         from _testcapi import pyobject_vectorcall
-        obj = ac_tester.TestClass()
+        obj = cls()
         meth = obj.get_defining_class
         pyobject_vectorcall(meth, None, None)
         pyobject_vectorcall(meth, (), None)
         pyobject_vectorcall(meth, (), ())
         pyobject_vectorcall(meth, None, ())
-        self.assertIs(pyobject_vectorcall(meth, (), ()), ac_tester.TestClass)
+        self.assertIs(pyobject_vectorcall(meth, (), ()), cls)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(pyobject_vectorcall, meth, (1,), None)
         check(pyobject_vectorcall, meth, (1,), ("a",))
 
-    def test_get_defining_class_arg(self):
-        obj = ac_tester.TestClass()
+    @static_and_heap
+    def test_get_defining_class_arg(self, cls):
+        obj = cls()
         self.assertEqual(obj.get_defining_class_arg("arg"),
-                         (ac_tester.TestClass, "arg"))
+                         (cls, "arg"))
         self.assertEqual(obj.get_defining_class_arg(arg=123),
-                         (ac_tester.TestClass, 123))
+                         (cls, 123))
 
         # 'defining_class' argument is a positional only argument
         with self.assertRaises(TypeError):
-            obj.get_defining_class_arg(cls=ac_tester.TestClass, arg="arg")
+            obj.get_defining_class_arg(cls=cls, arg="arg")
 
         # wrong number of arguments
         with self.assertRaises(TypeError):
@@ -5339,9 +5352,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             obj.get_defining_class_arg("arg1", "arg2")
 
-    def test_defclass_varpos(self):
+    @static_and_heap
+    def test_defclass_varpos(self, cls):
         # fn(*args)
-        cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_varpos
         self.assertEqual(fn(), (cls, ()))
@@ -5351,9 +5364,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(obj), (cls, ()))
         self.assertEqual(fn(obj, 1, 2), (cls, (1, 2)))
 
-    def test_defclass_posonly_varpos(self):
+    @static_and_heap
+    def test_defclass_posonly_varpos(self, cls):
         # fn(a, b, /, *args)
-        cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
         errmsg = 'expected at least 2 arguments'
