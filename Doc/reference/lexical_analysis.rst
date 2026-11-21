@@ -676,6 +676,8 @@ sequences, and more details.
    single: """; string literal
    single: '''; string literal
 
+.. _triple-quoted-strings:
+
 Triple-quoted strings
 ---------------------
 
@@ -838,8 +840,10 @@ A backslash can be added at the end of a line to ignore the newline::
    ... backslashes or newline characters.'
    'This string will not include backslashes or newline characters.'
 
-The same result can be achieved using :ref:`triple-quoted strings <strings>`,
-or parentheses and :ref:`string literal concatenation <string-concatenation>`.
+The same escape sequence can be used in non-raw
+:ref:`triple-quoted strings <triple-quoted-strings>`.
+Alternatively, the same result can be achieved using parentheses and
+:ref:`string literal concatenation <string-concatenation>`.
 
 .. _string-escape-escaped-char:
 
