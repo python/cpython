@@ -300,6 +300,63 @@ Examples::
    array('d', [1.0, 2.0, 3.14, -inf, nan])
 
 
+.. _array-thread-safety:
+
+Thread safety
+-------------
+
+In the :term:`free-threaded build`, array operations are safe to call from
+multiple threads and will not corrupt the array.  Most operations hold the
+:term:`per-object lock`.  Operations that take a second array, such as
+:meth:`~array.array.extend`, concatenation, comparison and slice assignment,
+lock both arrays.
+
+The :func:`len` function is :term:`lock-free` and
+:term:`atomic <atomic operation>`.
+
+The following operations are also :term:`lock-free`.  They do not block
+concurrent modifications and may observe intermediate states from
+operations that hold the :term:`per-object lock`:
+
+.. code-block::
+   :class: maybe
+
+   a[i]          # read a single item
+   a[i] = x      # write a single item
+   for x in a:   # iteration
+       ...
+
+These operations have the following limitations:
+
+* Reading a single item uses an :term:`atomic <atomic operation>` read,
+  except for type code ``'Zd'``.  The read may observe intermediate states
+  from concurrent modifications, such as :meth:`~array.array.reverse` or
+  :meth:`~array.array.insert`.
+
+* Writing a single item is not :term:`atomic <atomic operation>` with
+  respect to concurrent operations that resize or rearrange the array
+  (for example :meth:`~array.array.append`, :meth:`~array.array.extend`,
+  :meth:`~array.array.insert`, :meth:`~array.array.pop`,
+  :meth:`~array.array.reverse` or slice assignment).  The write can be
+  lost: ``a[i] = x`` returns normally but the array may keep the previous
+  item.  Writes are not lost if the other threads only read the array or
+  write single items.
+
+* Reading or writing an item of type code ``'Zd'`` is not
+  :term:`atomic <atomic operation>`.  The real and imaginary parts are
+  accessed separately, so a concurrent read and write of the same item
+  may return the real part of one value and the imaginary part of the other.
+
+Operations that involve multiple accesses, as well as iteration, are not
+:term:`atomic <atomic operation>`.  Use external synchronization, such as a
+:class:`threading.Lock`, when these operations must be atomic or to avoid
+the limitations above.
+
+Objects that use the buffer interface of an array, such as
+:class:`memoryview`, access its memory without holding the array's
+:term:`per-object lock`.  Concurrent reads and writes to the same memory
+region through the buffer interface require external synchronization.
+
 .. seealso::
 
    Module :mod:`struct`
