@@ -6323,8 +6323,12 @@ def _parse_format_specifier(format_spec, _localeconv=None):
 
     # minimumwidth defaults to 0; precision remains None if not given
     format_dict['minimumwidth'] = int(format_dict['minimumwidth'] or '0')
+    if format_dict['minimumwidth'] > MAX_PREC:
+        raise ValueError("format specification exceeds internal limits of _decimal")
     if format_dict['precision'] is not None:
         format_dict['precision'] = int(format_dict['precision'])
+        if format_dict['precision'] > MAX_PREC:
+            raise ValueError("format specification exceeds internal limits of _decimal")
 
     # if format type is 'g' or 'G' then a precision of 0 makes little
     # sense; convert it to 1.  Same if format type is unspecified.
@@ -6424,6 +6428,12 @@ def _insert_thousands_sep(digits, spec, min_width=1):
     """
 
     sep = spec['thousands_sep']
+    if not sep:
+        pad = max(min_width, 1 if not digits else 0) - len(digits)
+        if pad > 0:
+            return '0' * pad + digits
+        return digits
+
     grouping = spec['grouping']
 
     groups = []

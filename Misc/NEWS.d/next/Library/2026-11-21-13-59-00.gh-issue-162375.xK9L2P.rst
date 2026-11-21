@@ -1,0 +1,2 @@
+Enforce format specification width and precision limits in :mod:`_pydecimal`
+to match :mod:`_decimal` and avoid excessive resource consumption on huge widths.
