@@ -1,0 +1,2 @@
+Improve the :exc:`SyntaxError` message for an unparenthesized assignment
+expression in the body of a :keyword:`lambda`.
