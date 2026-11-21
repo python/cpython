@@ -369,6 +369,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
             selector_events = ((events & EVENT_READ and self._EVENT_READ)
                                | (events & EVENT_WRITE and self._EVENT_WRITE))
             try:
+                if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
+                    raise ValueError("Invalid events: {!r}".format(events))
                 self._selector.modify(key.fd, selector_events)
             except:
                 super().unregister(fileobj)
