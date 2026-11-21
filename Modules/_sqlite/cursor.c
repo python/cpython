@@ -141,7 +141,7 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 }
 
 static inline int
-stmt_reset(pysqlite_Statement *self)
+stmt_reset(pysqlite_Statement *self, int keep_in_use)
 {
     int rc = SQLITE_OK;
 
@@ -149,6 +149,10 @@ stmt_reset(pysqlite_Statement *self)
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
+
+        if (rc == SQLITE_OK && !keep_in_use) {
+            pysqlite_statement_mark_in_use(self, 0);
+        }
     }
 
     return rc;
@@ -179,7 +183,7 @@ cursor_clear(PyObject *op)
     pysqlite_set_ref(op, &self->row_factory, NULL);
     if (self->statement) {
         /* Reset the statement if the user has not closed the cursor */
-        int rc = stmt_reset(self->statement);
+        int rc = stmt_reset(self->statement, 0);
         Py_CLEAR(self->statement);
         if (rc != SQLITE_OK) {
             cursor_cannot_reset_stmt_error(self, 0);
@@ -854,7 +858,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement) {
         // Reset pending statements on this cursor.
-        if (stmt_reset(self->statement) != SQLITE_OK) {
+        if (stmt_reset(self->statement, 0) != SQLITE_OK) {
             goto reset_failure;
         }
     }
@@ -872,15 +876,18 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (sqlite3_stmt_busy(self->statement->st)) {
+    /* Reserve cached statements before releasing the GIL. SQLite only marks
+       a statement busy once sqlite3_step() starts, leaving a race window. */
+    if (!pysqlite_statement_try_mark_in_use(self->statement)) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
         if (self->statement == NULL) {
             goto error;
         }
+        pysqlite_statement_mark_in_use(self->statement, 1);
     }
 
-    if (stmt_reset(self->statement) != SQLITE_OK) {
+    if (stmt_reset(self->statement, 1) != SQLITE_OK) {
         goto reset_failure;
     }
     self->rowcount = self->statement->is_dml ? 0L : -1L;
@@ -966,7 +973,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             if (self->statement->is_dml) {
                 self->rowcount += (long)sqlite3_changes(self->connection->db);
             }
-            if (stmt_reset(self->statement) != SQLITE_OK) {
+            if (stmt_reset(self->statement, 0) != SQLITE_OK) {
                 goto reset_failure;
             }
         }
@@ -1001,7 +1008,7 @@ error:
             int sqlite3_state = sqlite3_errcode(db);
             // stmt_reset() may return a previously set exception,
             // either triggered because of Python or sqlite3.
-            rc = stmt_reset(self->statement);
+            rc = stmt_reset(self->statement, 0);
             Py_CLEAR(self->statement);
             if (sqlite3_state == SQLITE_OK && rc != SQLITE_OK) {
                 cursor_cannot_reset_stmt_error(self, 1);
@@ -1170,7 +1177,7 @@ pysqlite_cursor_iternext(PyObject *op)
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
         }
-        rc = stmt_reset(self->statement);
+        rc = stmt_reset(self->statement, 0);
         Py_CLEAR(self->statement);
         if (rc != SQLITE_OK) {
             goto reset_failure;
@@ -1178,7 +1185,7 @@ pysqlite_cursor_iternext(PyObject *op)
     }
     else if (rc != SQLITE_ROW) {
         rc = set_error_from_db(self->connection->state, self->connection->db);
-        int reset_rc = stmt_reset(self->statement);
+        int reset_rc = stmt_reset(self->statement, 0);
         Py_CLEAR(self->statement);
         Py_DECREF(row);
         if (rc == SQLITE_OK && reset_rc != SQLITE_OK) {
@@ -1352,7 +1359,7 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
     }
 
     if (self->statement) {
-        int rc = stmt_reset(self->statement);
+        int rc = stmt_reset(self->statement, 0);
         // Force self->statement to be NULL even if stmt_reset() may have
         // failed to avoid a possible double-free if someone calls close()
         // twice as a leak here would be better than a double-free.
