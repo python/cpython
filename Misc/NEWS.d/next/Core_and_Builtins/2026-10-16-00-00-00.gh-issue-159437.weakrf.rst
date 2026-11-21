@@ -1,0 +1,1 @@
+Garbage collection in builds with the GIL now reuses the initial garbage count and skips late weakref cleanup when no weakrefs need clearing and the unreachable set remains valid.
