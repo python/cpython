@@ -354,6 +354,36 @@ class CAPITest(unittest.TestCase):
         lst = _testlimitedcapi.list_new(3)
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
 
+    def test_as_tuple_and_clear(self):
+        list_as_tuple_and_clear = _testcapi.list_as_tuple_and_clear
+
+        lst = list("abc")
+        self.assertEqual(list_as_tuple_and_clear(lst), ('a', 'b', 'c'))
+        self.assertEqual(lst, [])
+        self.assertEqual(type(lst), list)
+
+        expected = tuple(object() for _ in range(10))
+        sub = ListSubclass(expected)
+        self.assertEqual(list_as_tuple_and_clear(sub), expected)
+        self.assertEqual(sub, [])
+        self.assertEqual(type(sub), ListSubclass)
+
+        lst = list(range(4096))  # test larger list
+        self.assertEqual(list_as_tuple_and_clear(lst), tuple(range(4096)))
+        self.assertEqual(lst, [])
+
+        # Get the empty tuple singleton if the list is empty
+        lst = []
+        self.assertIs(list_as_tuple_and_clear(lst), ())
+        self.assertEqual(lst, [])
+
+        # CRASHES list_as_tuple_and_clear(NULL)
+
+        # Wrong type
+        for obj in (tuple("abc"), {'key': 'value'}, 123):
+            with self.subTest(obj=obj):
+                self.assertRaises(TypeError, list_as_tuple_and_clear, obj)
+
 
 if __name__ == "__main__":
     unittest.main()

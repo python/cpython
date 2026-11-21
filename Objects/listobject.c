@@ -3347,8 +3347,14 @@ PyList_AsTuple(PyObject *v)
 }
 
 PyObject *
-_PyList_AsTupleAndClear(PyListObject *self)
+PyList_AsTupleAndClear(PyObject *v)
 {
+    if (!PyList_Check(v)) {
+        PyErr_Format(PyExc_TypeError, "expected a list, got %T", v);
+        return NULL;
+    }
+    PyListObject* self = (PyListObject*)v;
+
     assert(self != NULL);
     PyObject *ret;
     if (self->ob_item == NULL) {
