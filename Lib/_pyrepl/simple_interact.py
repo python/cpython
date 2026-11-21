@@ -33,6 +33,11 @@ import warnings
 from .readline import _get_reader, multiline_input, append_history_file
 
 
+# Called with submitted input before execution, except for REPL commands.
+# Exceptions (not KeyboardInterrupt or SystemExit) raised in the hook are displayed but do not prevent execution.
+input_submitted_hook = None
+
+
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import _error
@@ -150,8 +155,17 @@ def run_multiline_interactive_console(
             if maybe_run_command(statement):
                 continue
 
+            statement_with_final_indent = _strip_final_indent(statement)
+
+            if input_submitted_hook is not None:
+                try:
+                    input_submitted_hook(statement_with_final_indent)
+                except Exception as exc:
+                    console.write("Error in input_submitted_hook:\n")
+                    console._excepthook(type(exc), exc, exc.__traceback__)
+
             input_name = f"<python-input-{input_n}>"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            more = console.push(statement_with_final_indent, filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             try:
                 append_history_file()
