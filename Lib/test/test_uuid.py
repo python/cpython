@@ -495,6 +495,26 @@ class BaseTestUUID:
                     with self.subTest(protocol=proto):
                         check(pickle.loads(pickle.dumps(u, proto)), u)
 
+    def test_pickle_roundtrip_default_is_safe(self):
+        def check(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertEqual(actual.is_safe, expected.is_safe)
+
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            uuids = [
+                self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5'),
+                self.uuid.UUID(int=1),
+                self.uuid.uuid4(),
+                self.uuid.uuid7(),
+            ]
+            for u in uuids:
+                with self.subTest(u=u):
+                    self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+                    check(copy.copy(u), u)
+                    check(copy.deepcopy(u), u)
+                    for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                        check(pickle.loads(pickle.dumps(u, proto)), u)
+
     def test_setstate_mapping(self):
         # State restoration accepts mappings and decodes serialized safety values.
         safety_states = [({}, self.uuid.SafeUUID.unknown)]
