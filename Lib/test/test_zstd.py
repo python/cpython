@@ -953,6 +953,29 @@ class DecompressorTestCase(unittest.TestCase):
         self.assertEqual(d.unused_data, b'')
         self.assertEqual(d.unused_data, b'') # twice
 
+    def test_decompressor_max_length_zero(self):
+        # max_length=0 buffers the input and never produces output,
+        # however many times it is repeated.
+        d = ZstdDecompressor()
+        for _ in range(20):
+            self.assertEqual(d.decompress(b'', max_length=0), b'')
+        self.assertEqual(d.decompress(COMPRESSED_100_PLUS_32KB, max_length=0), b'')
+        for _ in range(20):
+            self.assertEqual(d.decompress(b'', max_length=0), b'')
+        self.assertFalse(d.needs_input)
+        self.assertFalse(d.eof)
+        self.assertEqual(d.decompress(b''), DECOMPRESSED_100_PLUS_32KB)
+        self.assertTrue(d.eof)
+
+        # Output pending from an earlier call is kept for later.
+        d = ZstdDecompressor()
+        out = d.decompress(COMPRESSED_100_PLUS_32KB, max_length=1)
+        for _ in range(20):
+            self.assertEqual(d.decompress(b'', max_length=0), b'')
+        self.assertFalse(d.needs_input)
+        self.assertEqual(out + d.decompress(b''), DECOMPRESSED_100_PLUS_32KB)
+        self.assertTrue(d.eof)
+
 class DecompressorFlagsTestCase(unittest.TestCase):
 
     @classmethod
@@ -1266,6 +1289,18 @@ class DecompressorFlagsTestCase(unittest.TestCase):
         # 1 skippable, max_length=0
         d = ZstdDecompressor()
         dat = d.decompress(SKIPPABLE_FRAME, 0)
+
+        self.assertEqual(dat, b'')
+        self.assertFalse(d.eof)
+        self.assertFalse(d.needs_input)
+
+        dat = d.decompress(b'', 0)
+
+        self.assertEqual(dat, b'')
+        self.assertFalse(d.eof)
+        self.assertFalse(d.needs_input)
+
+        dat = d.decompress(b'')
 
         self.assertEqual(dat, b'')
         self.assertTrue(d.eof)

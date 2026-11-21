@@ -226,6 +226,12 @@ decompress_lock_held(ZstdDecompressor *self, ZSTD_inBuffer *in,
     }
     assert(out.pos == 0);
 
+    /* With max_length == 0 there is no room for output.  Don't call into
+       libzstd: any input is kept in the input buffer for the next call. */
+    if (max_length == 0) {
+        goto finish;
+    }
+
     while (1) {
         /* Decompress */
         Py_BEGIN_ALLOW_THREADS
@@ -269,6 +275,7 @@ decompress_lock_held(ZstdDecompressor *self, ZSTD_inBuffer *in,
         }
     }
 
+finish:
     /* Return a bytes object */
     ret = _OutputBuffer_Finish(&buffer, &out);
     if (ret != NULL) {
