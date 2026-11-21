@@ -50,7 +50,9 @@ def function_proto(name: str) -> str:
 def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("static py_tail_call_funcptr instruction_funcptr_handler_table[256];\n")
     out.emit("\n")
+    out.emit("#if _Py_TIER2\n")
     out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256];\n")
+    out.emit("#endif\n")
     out.emit("\n")
 
     # Emit function prototypes for labels.
@@ -82,6 +84,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n")
 
     # Emit the tracing dispatch table.
+    out.emit("#if _Py_TIER2\n")
     out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
         out.emit(f"[{name}] = _TAIL_CALL_TRACE_RECORD,\n")
@@ -90,6 +93,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
         if rest not in named_values:
             out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
+    out.emit("#endif\n")
     outfile.write("#endif /* _Py_TAIL_CALL_INTERP */\n")
 
 arg_parser = argparse.ArgumentParser(
