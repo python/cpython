@@ -1535,7 +1535,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
-   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+   .. availability:: Unix.
 
       Using flags requires Linux >= 4.6.
 
@@ -1620,7 +1620,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+   .. availability:: Unix.
 
       Using flags requires Linux >= 4.6.
 
