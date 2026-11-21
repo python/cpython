@@ -29,11 +29,13 @@ extern void _Py_bytes_swapcase(char *result, const char *s, Py_ssize_t len);
 extern PyObject *_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
                                 Py_ssize_t start, Py_ssize_t end);
 extern PyObject *_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
-                                 Py_ssize_t start, Py_ssize_t end);
+                                 Py_ssize_t start, Py_ssize_t end,
+                                 const char *classname);
 extern PyObject *_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
                                  Py_ssize_t start, Py_ssize_t end);
 extern PyObject *_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *sub,
-                                 Py_ssize_t start, Py_ssize_t end);
+                                 Py_ssize_t start, Py_ssize_t end,
+                                 const char *classname);
 extern PyObject *_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *sub,
                                  Py_ssize_t start, Py_ssize_t end);
 extern int _Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg);
