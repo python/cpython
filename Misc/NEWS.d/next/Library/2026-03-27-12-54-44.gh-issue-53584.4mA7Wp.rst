@@ -1,0 +1,3 @@
+Fix :mod:`argparse` options with variable :ref:`nargs <nargs>` (``'?'``,
+``'*'``, ``'+'``) greedily consuming argument strings that should be
+reserved for required positional arguments.
