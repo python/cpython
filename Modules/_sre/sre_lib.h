@@ -134,7 +134,7 @@ SRE(charset)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
             /* <RANGE_UNI_IGNORE> <lower> <upper> */
         {
             SRE_CODE uch;
-            /* ch is already lower cased */
+            /* ch is already case folded (see sre_lower_unicode) */
             if (set[0] <= ch && ch <= set[1])
                 return ok;
             uch = sre_upper_unicode(ch);
