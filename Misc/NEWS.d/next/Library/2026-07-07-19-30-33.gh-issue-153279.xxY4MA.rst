@@ -1,0 +1,6 @@
+Fix :class:`multiprocessing.shared_memory.SharedMemory` destroying another
+process's shared memory block when attaching to it fails.  A failure to
+:func:`~mmap.mmap` while attaching (``create=False``) no longer unlinks the
+block, which is owned by another process; the file descriptor is simply
+closed.  The block is now unlinked only when it was created in the failing
+call.
