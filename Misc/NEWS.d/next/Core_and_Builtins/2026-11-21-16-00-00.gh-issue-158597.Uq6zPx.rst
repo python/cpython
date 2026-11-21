@@ -1,0 +1,3 @@
+Prevent a lazy import from using another namespace's ``__import__`` hook
+when it resolves a submodule through a shared package attribute. Private
+hooks remain attached to their own lazy bindings.
