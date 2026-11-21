@@ -422,6 +422,26 @@ class TestContentTypeHeader(TestHeaderBase):
             'text/plain; title="foo"',
             ),
 
+        'unquoted_param_value_with_apostrophe_and_asterisk': (
+            "text/plain; title=O'Brien*notes.txt",
+            'text/plain',
+            'text',
+            'plain',
+            {'title': "O'Brien*notes.txt"},
+            [],
+            'text/plain; title="O\'Brien*notes.txt"',
+            ),
+
+        'unquoted_boundary_with_apostrophe': (
+            "multipart/mixed; boundary=abc'def",
+            'multipart/mixed',
+            'multipart',
+            'mixed',
+            {'boundary': "abc'def"},
+            [],
+            'multipart/mixed; boundary="abc\'def"',
+            ),
+
         'param_value_with_tspecials': (
             'text/plain; title="(bar)foo blue"',
             'text/plain',
@@ -932,6 +952,15 @@ class TestContentDisposition(TestHeaderBase):
             ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
             ('Content-Disposition: attachment;\n'
              ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
+            ),
+
+        'unquoted_filename_with_apostrophe': (
+            "attachment; filename=O'Brien.pdf",
+            'attachment',
+            {'filename': "O'Brien.pdf"},
+            [],
+            'attachment; filename="O\'Brien.pdf"',
+            'Content-Disposition: attachment; filename="O\'Brien.pdf"\n',
             ),
 
         'parameter_value_with_fws_between_tokens': (
