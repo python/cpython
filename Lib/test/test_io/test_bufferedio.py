@@ -1522,6 +1522,30 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest, CTestCase):
         with self.assertRaisesRegex(TypeError, "BufferedRandom"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
 
+    def test_reentrant_detach(self):
+        # gh-154997: detach() from a raw callback used to crash.
+        def detach(*args):
+            bufio.detach()
+            return 1  # partial, so the operation calls raw again
+        rawio = self.MockRawIO()
+        rawio.readinto = rawio.write = detach
+        bufio = self.tp(rawio, buffer_size=4)
+        bufio.flush = lambda: None  # don't fail in detach()'s flush
+        self.assertRaisesRegex(RuntimeError, "reentrant", bufio.read, 8)
+        self.assertRaisesRegex(RuntimeError, "reentrant", bufio.write, b"x" * 8)
+        self.assertIs(bufio.raw, rawio)
+        del rawio.readinto, rawio.write
+
+    def test_detach_during_close(self):
+        def flush():
+            del bufio.flush
+            bufio.detach()
+        rawio = self.MockRawIO()
+        bufio = self.tp(rawio)
+        bufio.flush = flush
+        self.assertRaisesRegex(ValueError, "detached", bufio.close)
+        self.assertFalse(rawio.closed)
+
 
 class PyBufferedRandomTest(BufferedRandomTest, PyTestCase):
     tp = pyio.BufferedRandom
