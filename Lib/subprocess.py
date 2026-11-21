@@ -685,7 +685,13 @@ def run(*popenargs,
             raise
         except:  # Including KeyboardInterrupt, communicate handled that.
             process.kill()
-            # We don't call process.wait() as .__exit__ does that for us.
+            # .__exit__ does not wait after a KeyboardInterrupt once the SIGINT
+            # grace period has been used, so reap the killed child here.  It
+            # exits promptly; the timeout avoids hanging if it does not.
+            try:
+                process._wait(timeout=1)
+            except TimeoutExpired:
+                pass
             raise
         retcode = process.poll()
         if check and retcode:
