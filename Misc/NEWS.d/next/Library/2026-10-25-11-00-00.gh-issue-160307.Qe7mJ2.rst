@@ -1,0 +1,4 @@
+Fix incomplete final decoding with the ``surrogateescape`` error handler in
+the ``euc_jp``, ``euc_jis_2004``, ``euc_jisx0213`` and ``gb18030`` codecs.
+Trailing input after an escaped byte is now decoded instead of remaining
+buffered, including when reading through :class:`io.TextIOWrapper`.
