@@ -1610,8 +1610,13 @@ def _get_code_position_from_tb(tb):
     return _get_code_position(code, instruction_index)
 
 def _get_code_position(code, instruction_index):
+    # Keep this in sync with traceback._get_code_position.
+    # The offset is a byte offset. Real code objects look it up directly.
+    # Duck-typed code objects only implement co_positions().
     if instruction_index < 0:
         return (None, None, None, None)
+    if isinstance(code, types.CodeType):
+        return code._co_position_at(instruction_index)
     positions_gen = code.co_positions()
     # The nth entry in code.co_positions() corresponds to instruction (2*n)th since Python 3.10+
     return next(itertools.islice(positions_gen, instruction_index // 2, None))
