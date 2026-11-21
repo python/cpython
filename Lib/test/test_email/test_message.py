@@ -1132,6 +1132,45 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
 
+    def test_fold_mime_parameters_long_name(self):
+        # gh-138223: _fold_mime_parameters() used to loop forever when the
+        # parameter name left no room for even one (encoded) character of
+        # the value.  How long the name must be depends on the value.
+        name = 'x' * 62
+        m = self._make_message()
+        m.set_content('hi')
+        m.set_param(name, '\U0001F600')
+        self.assertEqual(
+            m['Content-Type'].fold(policy=m.policy),
+            'Content-Type: text/plain; charset="utf-8";\n'
+            f" {name}*0*=utf-8''%F0%9F%98%80\n")
+
+        name = 'x' * 66
+        m = self._make_message()
+        m.set_content('hi')
+        m.set_param(name, 'abcdefgh')
+        self.assertEqual(
+            m['Content-Type'].fold(policy=m.policy),
+            'Content-Type: text/plain; charset="utf-8";\n'
+            f" {name}*0*=us-ascii''a;\n"
+            f" {name}*1*=bcdefg;\n"
+            f" {name}*2*=h\n")
+
+    def test_fold_mime_parameters_long_name_round_trip(self):
+        # gh-138223
+        values = ['abcdefgh', 'abc def 123', 'b' * 100,
+                  '\xe9', '\u65e5', '\U0001F600',
+                  '\u65e5' * 20, '\U0001F600' * 20]
+        for name_len in (40, 60, 61, 62, 63, 64, 66, 70, 80, 100, 120):
+            for value in values:
+                with self.subTest(name_len=name_len, value=value):
+                    name = 'x' * name_len
+                    m = self._make_message()
+                    m.set_content('hi')
+                    m.set_param(name, value)
+                    m2 = message_from_string(
+                        m.as_string(), policy=policy.default)
+                    self.assertEqual(m2['Content-Type'].params[name], value)
 
 if __name__ == '__main__':
     unittest.main()
