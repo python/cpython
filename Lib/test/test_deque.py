@@ -8,6 +8,7 @@ import copy
 import pickle
 import random
 import struct
+import sys
 
 BIG = 100000
 
@@ -797,6 +798,128 @@ class TestVariousIteratorArgs(unittest.TestCase):
         it = iter(d)
         d.append(10)
         self.assertRaises(RuntimeError, next, it)
+
+class TestBulkMaterialization(unittest.TestCase):
+    # list(), list.extend(), [*d] and str.join() copy a deque (or a forward
+    # deque iterator) into a list in one step.  The result must be identical
+    # to element-by-element iteration, which a comprehension still uses.
+
+    def check(self, d):
+        expected = [x for x in d]
+        self.assertEqual(list(d), expected)
+        self.assertEqual([*d], expected)
+        lst = ['head']
+        lst.extend(d)
+        self.assertEqual(lst, ['head'] + expected)
+        self.assertEqual(list(iter(d)), expected)
+
+    def test_block_boundaries(self):
+        for n in (0, 1, 2, 31, 32, 33, 63, 64, 65, 127, 128, 129, 1000):
+            for shift in (0, 1, 31, 32, 63, 64, 65, 100):
+                d = deque(range(n + shift))
+                for _ in range(shift):
+                    d.popleft()
+                self.check(d)
+                d.rotate(shift)
+                self.check(d)
+                d.appendleft(-1)
+                self.check(d)
+
+    def test_partially_consumed_iterator(self):
+        for n in (0, 1, 63, 64, 65, 200):
+            for k in sorted(k for k in {0, 1, n // 2, n - 1, n} if 0 <= k <= n):
+                d = deque(range(n))
+                it = iter(d)
+                for _ in range(k):
+                    next(it)
+                self.assertEqual(list(it), list(range(k, n)))
+                self.assertEqual(it.__length_hint__(), 0)
+                self.assertEqual(list(it), [])
+                self.assertRaises(StopIteration, next, it)
+                # __reduce__ reports the iterator as exhausted
+                self.assertEqual(it.__reduce__()[1][1], n)
+
+    def test_reverse_iterator(self):
+        d = deque(range(300))
+        it = reversed(d)
+        next(it)
+        self.assertEqual(list(it), list(range(298, -1, -1)))
+
+    def test_join(self):
+        items = [str(i) for i in range(500)]
+        d = deque(items)
+        self.assertEqual(''.join(d), ''.join(items))
+        self.assertEqual(', '.join(d), ', '.join(items))
+        self.assertRaises(TypeError, ''.join, deque(['a', 1]))
+
+    def test_mutation_during_iteration(self):
+        d = deque(range(10))
+        it = iter(d)
+        next(it)
+        d.append(10)
+        self.assertRaises(RuntimeError, list, it)
+        # Like next(), the error exhausts the iterator.
+        self.assertEqual(it.__length_hint__(), 0)
+        self.assertRaises(RuntimeError, next, it)
+
+        d = deque()
+        it = iter(d)
+        d.append(1)
+        self.assertRaises(RuntimeError, list, it)
+
+        # The state is checked before exhaustion, as in next().
+        d = deque([1])
+        it = iter(d)
+        self.assertEqual(list(it), [1])
+        d.append(2)
+        self.assertRaises(RuntimeError, list, it)
+
+        lst = [0]
+        d = deque(range(5))
+        it = iter(d)
+        d.pop()
+        self.assertRaises(RuntimeError, lst.extend, it)
+        self.assertEqual(lst, [0])
+
+    def test_subclasses(self):
+        class D(deque):
+            pass
+        self.check(D(range(200)))
+
+        calls = []
+        class WithLen(deque):
+            def __len__(self):
+                calls.append(1)
+                return deque.__len__(self)
+        self.assertEqual(list(WithLen(range(5))), list(range(5)))
+        self.assertTrue(calls)
+
+        class WithIter(deque):
+            def __iter__(self):
+                return iter(['x'])
+        self.assertEqual(list(WithIter(range(5))), ['x'])
+        self.assertEqual(''.join(WithIter('abc')), 'x')
+
+    def test_allocation_matches_generic_path(self):
+        for n in (1, 2, 5, 64, 65, 129):
+            self.assertEqual(sys.getsizeof(list(deque(range(n)))),
+                             sys.getsizeof(list(iter(range(n)))))
+            a = list(range(3))
+            a.extend(deque(range(n)))
+            b = list(range(3))
+            b.extend(iter(range(n)))
+            self.assertEqual(a, b)
+            self.assertEqual(sys.getsizeof(a), sys.getsizeof(b))
+
+    def test_refcounts(self):
+        obj = object()
+        before = sys.getrefcount(obj)
+        d = deque([obj] * 200)
+        lst = list(d)
+        lst2 = list(iter(d))
+        self.assertEqual(sys.getrefcount(obj), before + 600)
+        del d, lst, lst2
+        self.assertEqual(sys.getrefcount(obj), before)
 
 class Deque(deque):
     pass

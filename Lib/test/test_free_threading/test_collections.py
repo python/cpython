@@ -87,5 +87,92 @@ class TestOrderedDict(unittest.TestCase):
         )
 
 
+    def test_shared_iterator(self):
+        # Deque iterators are advanced under the deque's lock, so threads
+        # sharing one iterator must together see every item exactly once.
+        n = 20000
+        for make_iter in (iter, reversed):
+            with self.subTest(make_iter=make_iter.__name__):
+                d = deque(range(n))
+                it = make_iter(d)
+                results = []
+
+                def consume():
+                    results.append(list(x for x in it))
+
+                threading_helper.run_concurrently([consume] * 4)
+                self.assertEqual(sorted(x for r in results for x in r),
+                                 list(range(n)))
+
+    def test_iterate_while_mutating(self):
+        d = deque(range(100))
+
+        def mutate():
+            for i in range(5000):
+                d.append(i)
+                d.popleft()
+
+        def iterate():
+            for _ in range(500):
+                it = iter(d)
+                try:
+                    for _ in it:
+                        pass
+                except RuntimeError:
+                    pass
+                it.__length_hint__()
+                it.__reduce__()
+
+        threading_helper.run_concurrently([mutate, iterate, iterate])
+
+    def test_bulk_materialize_race(self):
+        # list(d), list(iter(d)) and str.join(d) copy the deque in chunks
+        # under its critical section while another thread mutates it.
+        d = deque(str(i) for i in range(200))
+
+        def mutate():
+            for i in range(5000):
+                d.append(str(i))
+                d.popleft()
+                if i % 64 == 0:
+                    d.rotate(7)
+
+        def materialize():
+            # The copy holds the deque's lock for at most one chunk at a
+            # time, so, as with next(), a mutation between chunks raises
+            # RuntimeError; a completed copy is consistent.
+            for _ in range(2000):
+                for func in (list, ''.join):
+                    for arg in (d, iter(d)):
+                        try:
+                            res = func(arg)
+                        except RuntimeError:
+                            continue
+                        if func is list:
+                            self.assertIn(len(res), (200, 201))
+
+        threading_helper.run_concurrently([mutate, materialize, materialize])
+
+    def test_shared_iterator_bulk_and_next(self):
+        # list.extend(it) and next(it) both advance a shared iterator while
+        # holding the deque's lock: every item is produced exactly once.
+        n = 20000
+        for _ in range(5):
+            d = deque(range(n))
+            it = iter(d)
+            results = []
+
+            def bulk():
+                got = []
+                got.extend(it)
+                results.append(got)
+
+            def step():
+                results.append([x for x in it])
+
+            threading_helper.run_concurrently([step, bulk, step, step])
+            self.assertEqual(sorted(x for r in results for x in r),
+                             list(range(n)))
+
 if __name__ == "__main__":
     unittest.main()
