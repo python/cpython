@@ -1,0 +1,3 @@
+Fix an issue in :mod:`imaplib` where a rejected :meth:`~imaplib.IMAP4.append`
+command left its message literal pending, causing it to be sent with the
+subsequent command.
