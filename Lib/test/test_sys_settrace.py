@@ -2113,6 +2113,16 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         output.append(2)
 
+    def test_backward_jump_deep_stack(self):
+        src = ["def f(output):"]
+        src += [" " * (i + 1) + f"for a{i} in [0]:" for i in range(6)]
+        src += [" " * 7 + "output.append(1)",
+                " " * 7 + "output[0], a5 = a5, output[0]",
+                " " * 7 + "output.append(2)"]
+        ns = {}
+        exec("\n".join(src), ns)
+        self.run_test(ns["f"], 9, 7, [1, 1, 2])
+
     @jump_test(1, 4, [5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_is_none_forwards(output):
         x = None

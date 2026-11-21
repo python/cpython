@@ -1313,14 +1313,15 @@ peek(int64_t stack, int n)
     return (stack>>(BITS_PER_BLOCK*(n-1))) & MASK;
 }
 
-static Kind
+static int64_t
 stack_swap(int64_t stack, int n)
 {
     assert(n >= 1);
     Kind to_swap = peek(stack, n);
     Kind top = top_of_stack(stack);
     int shift = BITS_PER_BLOCK*(n-1);
-    int64_t replaced_low = (stack & ~(MASK << shift)) | (top << shift);
+    int64_t replaced_low = (stack & ~((int64_t)MASK << shift))
+                           | ((int64_t)top << shift);
     int64_t replaced_top = (replaced_low & ~MASK) | to_swap;
     return replaced_top;
 }
