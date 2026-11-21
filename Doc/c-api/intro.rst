@@ -227,6 +227,10 @@ The following macros are for common tasks not specific to Python.
    Use this for unused arguments in a function definition to silence compiler
    warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
+   The macro mangles *name* so that it cannot be used, and when possible,
+   applies the C23/C++17 attribute ``[[maybe_unused]]`` or a compiler-specific
+   equivalent.
+
    .. versionadded:: 3.4
 
 .. c:macro:: Py_GCC_ATTRIBUTE(name)
