@@ -75,6 +75,13 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    arguments of the ``p`` command.
 
 
+.. versionadded:: 3.16
+   When using PyREPL, debugger commands are saved in ``.python_history.pdb`` in the
+   user's home directory and loaded for subsequent sessions. If
+   :envvar:`PYTHON_HISTORY` is set, its value with ``.pdb`` appended is used
+   instead. Set :envvar:`PYTHON_HISTORY_PDB` to use a different history file.
+
+
 .. _pdb-cli:
 
 Command-line interface

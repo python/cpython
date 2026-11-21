@@ -568,6 +568,10 @@ on. Setting it to 0 forces the GIL off. Only available in builds configured
 with \fB\-\-disable\-gil\fP.
 .IP
 This is equivalent to the \fB\-X gil\fR option.
+.IP PYTHON_HISTORY_PDB
+Set the location of the pdb command history file when using PyREPL
+(by default, PYTHON_HISTORY with .pdb appended, or .python_history.pdb in
+the user's home directory).
 .IP PYTHON_HISTORY
 This environment variable can be used to set the location of a history file
 (on Unix, it is \fI~/.python_history\fP by default).
