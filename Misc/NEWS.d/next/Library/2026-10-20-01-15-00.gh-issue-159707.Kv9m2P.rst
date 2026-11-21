@@ -1,0 +1,3 @@
+Fix the pure-Python :class:`zoneinfo.ZoneInfo` implementation to detect folds
+introduced by the last explicit transition before recurring TZ string rules
+take over.
