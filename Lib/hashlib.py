@@ -53,6 +53,8 @@ More condensed:
     '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 """
 
+lazy import io
+
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
 __always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
@@ -231,9 +233,10 @@ def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     else:
         digestobj = digest()
 
-    if hasattr(fileobj, "getbuffer"):
+    if isinstance(fileobj, io.BytesIO):
         # io.BytesIO object, use zero-copy buffer
-        digestobj.update(fileobj.getbuffer())
+        with fileobj.getbuffer() as buf:
+            digestobj.update(buf[fileobj.tell():])
         return digestobj
 
     # Only binary files implement readinto().
