@@ -898,6 +898,51 @@ class GeneratorThrowTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             gen.throw(ValueError)
 
+    def test_throw_stopiteration_not_started(self):
+        # Throwing StopIteration into a not-yet-started generator must be
+        # wrapped in a RuntimeError, the same as for a started one
+        # (PEP 479, gh-152685).
+        def g():
+            yield
+
+        for started in (False, True):
+            with self.subTest(started=started):
+                gen = g()
+                if started:
+                    next(gen)
+                with self.assertRaisesRegex(RuntimeError,
+                                            'generator raised StopIteration'):
+                    gen.throw(StopIteration)
+                # The generator is finished afterwards.
+                self.assertRaises(StopIteration, next, gen)
+
+        # A StopIteration subclass is wrapped too.
+        class MyStop(StopIteration):
+            pass
+        with self.assertRaises(RuntimeError):
+            g().throw(MyStop)
+
+        # The original StopIteration is kept as cause and context.
+        try:
+            g().throw(StopIteration)
+        except RuntimeError as exc:
+            self.assertIs(type(exc.__cause__), StopIteration)
+            self.assertIs(type(exc.__context__), StopIteration)
+            self.assertTrue(exc.__suppress_context__)
+        else:
+            self.fail('RuntimeError not raised')
+
+        # A non-StopIteration exception is still propagated unchanged.
+        with self.assertRaises(ValueError):
+            g().throw(ValueError)
+
+    def test_throw_stopiteration_not_started_genexpr(self):
+        # Same as test_throw_stopiteration_not_started, for a generator
+        # expression (gh-152685).
+        with self.assertRaisesRegex(RuntimeError,
+                                    'generator raised StopIteration'):
+            (x for x in ()).throw(StopIteration)
+
 
 class GeneratorStackTraceTest(unittest.TestCase):
 
