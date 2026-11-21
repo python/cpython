@@ -90,7 +90,8 @@ class TestABC(unittest.TestCase):
                     issubclass(cls, A)
                 A._abc_registry_clear()
                 A._abc_caches_clear()
-                A._dump_registry(open('/dev/null', 'w'))
+                with open('/dev/null', 'w') as f:
+                    A._dump_registry(f)
 
         threads = [threading.Thread(target=worker) for _ in range(4)]
         with threading_helper.start_threads(threads):
