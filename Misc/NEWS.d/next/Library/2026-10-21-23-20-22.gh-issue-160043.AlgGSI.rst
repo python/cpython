@@ -1,0 +1,4 @@
+:func:`textwrap.shorten` and :func:`textwrap.wrap` with *max_lines* no longer
+raise :exc:`ValueError` for text that fits in *width* when the *placeholder* is
+wider than *width*.  The placeholder is only required when the text is actually
+truncated.
