@@ -1154,7 +1154,7 @@ mmap
   the file with the physical backing store, which could take several
   milliseconds and blocked other threads. Code that relied on this can call
   :func:`fcntl.fcntl` with :const:`!fcntl.F_FULLFSYNC` before mapping.
-  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`162356`.)
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`113861`.)
 
 re
 --
