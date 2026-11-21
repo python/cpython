@@ -368,14 +368,18 @@ class Condition:
                 else:
                     # A NaN timeout is rejected by acquire().
                     gotit = waiter.acquire(True, timeout)
-            return gotit
         finally:
             self._acquire_restore(saved_state)
             if not gotit:
-                try:
-                    self._waiters.remove(waiter)
-                except ValueError:
-                    pass
+                if waiter.acquire(False):
+                    # gh-160414: notified after the timeout; pass it on.
+                    self.notify()
+                else:
+                    try:
+                        self._waiters.remove(waiter)
+                    except ValueError:
+                        pass
+        return gotit
 
     def wait_for(self, predicate, timeout=None):
         """Wait until a condition evaluates to True.
