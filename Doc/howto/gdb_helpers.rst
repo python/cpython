@@ -6,6 +6,8 @@ Debugging C API extensions and CPython Internals with GDB
 
 .. highlight:: none
 
+For LLDB, see :ref:`lldb`.
+
 This document explains how the Python GDB extension, ``python-gdb.py``, can
 be used with the GDB debugger to debug CPython extensions and the
 CPython interpreter itself.

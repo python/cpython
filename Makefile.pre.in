@@ -823,7 +823,7 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
+		gdbhooks lldbhooks Programs/_testembed scripts checksharedmods rundsymutil $(BUILD_DETAILS)
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -1076,6 +1076,14 @@ gdbhooks: $(BUILDPYTHON)-gdb.py
 SRC_GDB_HOOKS=$(srcdir)/Tools/gdb/libpython.py
 $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 	$(INSTALL_DATA) $(SRC_GDB_HOOKS) $(BUILDPYTHON)-gdb.py
+
+# python_lldb.py loads the GDB helpers from $(BUILDPYTHON)-gdb.py.
+.PHONY: lldbhooks
+lldbhooks: python_lldb.py $(BUILDPYTHON)-gdb.py
+
+SRC_LLDB_HOOKS=$(srcdir)/Tools/lldb/libpython.py
+python_lldb.py: $(SRC_LLDB_HOOKS)
+	$(INSTALL_DATA) $(SRC_LLDB_HOOKS) python_lldb.py
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
@@ -2749,6 +2757,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_interpreters \
 		test/test_io \
 		test/test_json \
+		test/test_lldb \
 		test/test_lazy_import \
 		test/test_lazy_import/data \
 		test/test_lazy_import/data/pkg \
@@ -3428,6 +3437,7 @@ distclean: clobber docclean
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
+	-rm -f python_lldb.py
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
 	# arguments are passed to find. So LC_ALL=C must be set as a separate
