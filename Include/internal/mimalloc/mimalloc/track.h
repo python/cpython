@@ -43,7 +43,7 @@ defined, undefined, or not accessible at all:
 
 -------------------------------------------------------------------------------------------------------*/
 
-#if MI_TRACK_VALGRIND
+#if defined(MI_TRACK_VALGRIND)
 // valgrind tool
 
 #define MI_TRACK_ENABLED      1
@@ -60,7 +60,7 @@ defined, undefined, or not accessible at all:
 #define mi_track_mem_undefined(p,size)            VALGRIND_MAKE_MEM_UNDEFINED(p,size)
 #define mi_track_mem_noaccess(p,size)             VALGRIND_MAKE_MEM_NOACCESS(p,size)
 
-#elif MI_TRACK_ASAN
+#elif defined(MI_TRACK_ASAN)
 // address sanitizer
 
 #define MI_TRACK_ENABLED      1
@@ -75,7 +75,7 @@ defined, undefined, or not accessible at all:
 #define mi_track_mem_undefined(p,size)            ASAN_UNPOISON_MEMORY_REGION(p,size)
 #define mi_track_mem_noaccess(p,size)             ASAN_POISON_MEMORY_REGION(p,size)
 
-#elif MI_TRACK_ETW
+#elif defined(MI_TRACK_ETW)
 // windows event tracing
 
 #define MI_TRACK_ENABLED      1

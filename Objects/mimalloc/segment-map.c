@@ -17,7 +17,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "mimalloc/atomic.h"
 
 // Reduce total address space to reduce .bss  (due to the `mi_segment_map`)
-#if (MI_INTPTR_SIZE > 4) && MI_TRACK_ASAN
+#if (MI_INTPTR_SIZE > 4) && defined(MI_TRACK_ASAN)
 #define MI_SEGMENT_MAP_MAX_ADDRESS    (128*1024ULL*MI_GiB)  // 128 TiB  (see issue #881)
 #elif (MI_INTPTR_SIZE > 4)
 #define MI_SEGMENT_MAP_MAX_ADDRESS    (48*1024ULL*MI_GiB)   // 48 TiB

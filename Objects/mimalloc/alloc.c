@@ -86,7 +86,7 @@ extern inline void* _mi_page_malloc_zero(mi_heap_t* heap, mi_page_t* page, size_
     }
   }
 
-  #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !MI_TSAN
+  #if (MI_DEBUG>0) && !MI_TRACK_ENABLED && !defined(MI_TSAN)
   if (!zero && !mi_page_is_huge(page)) {
     mi_debug_fill(page, block, MI_DEBUG_UNINIT, mi_page_usable_block_size(page));
   }
