@@ -40,6 +40,10 @@ or :class:`datetime.datetime` objects.
 .. versionchanged:: 3.9
    Old API removed.
 
+.. versionchanged:: 3.16
+   Support added for reading and writing :class:`UID` tokens in XML
+   plists.
+
 .. seealso::
 
    `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
@@ -143,6 +147,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
+   In XML plists, a UID is written as a dictionary with a single
+   :data:`CFUID_KEY` key.
+
    .. attribute:: data
 
       Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
@@ -161,10 +168,17 @@ The following constants are available:
 
 .. data:: FMT_BINARY
 
-   The binary format for plist files
+   The binary format for plist files.
 
    .. versionadded:: 3.4
 
+
+.. data:: CFUID_KEY
+
+   The dictionary key used to represent a :class:`UID` in XML-format plist
+   files.
+
+   .. versionadded:: 3.16
 
 The module defines the following exceptions:
 
