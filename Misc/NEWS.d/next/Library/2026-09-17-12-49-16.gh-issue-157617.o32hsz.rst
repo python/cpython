@@ -1,0 +1,2 @@
+Add a ``overwrite`` parameter to :meth:`pathlib.Path.symlink_to` to allow
+overwriting an existing path instead of raising :exc:`FileExistsError`.
