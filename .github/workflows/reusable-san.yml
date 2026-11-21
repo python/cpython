@@ -17,7 +17,6 @@ permissions:
 
 env:
   FORCE_COLOR: 1
-  OPENSSL_VER: 3.5.9
 
 jobs:
   build-san-reusable:
@@ -43,6 +42,8 @@ jobs:
         # please update the versions in `Tools/pixi-packages/variants.yaml` too.
         echo "CC=clang" >> "$GITHUB_ENV"
         echo "CXX=clang++" >> "$GITHUB_ENV"
+    - name: Configure OpenSSL version
+      run: echo "OPENSSL_VER=$(cat Tools/ssl/openssl-version.txt)" >> "$GITHUB_ENV"
     - name: ASan option setup
       if: inputs.sanitizer == 'ASan'
       run: |

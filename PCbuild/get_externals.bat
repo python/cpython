@@ -51,10 +51,13 @@ if NOT DEFINED PYTHON (
 
 echo.Fetching external libraries...
 
+rem Shared with CI and build scripts for other platforms
+set /p OPENSSL_VER=<"%PCBUILD%\..\Tools\ssl\openssl-version.txt"
+
 set libraries=
 set libraries=%libraries%                                       bzip2-1.0.8
 if NOT "%IncludeLibffiSrc%"=="false" set libraries=%libraries%  libffi-3.4.4
-if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-3.5.9
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-%OPENSSL_VER%
 set libraries=%libraries%                                       mpdecimal-4.0.0
 set libraries=%libraries%                                       sqlite-3.53.4.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-9.0.4.0
@@ -79,7 +82,7 @@ echo.Fetching external binaries...
 
 set binaries=
 if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.5.9
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-%OPENSSL_VER%
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-9.0.4.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-21.1.4.0
