@@ -658,6 +658,55 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__lazily_binds_child__doc__,
+"_lazily_binds_child($module, parent, child, name, /)\n"
+"--\n"
+"\n"
+"Return whether the module parent binds child to a lazy import of name.\n"
+"\n"
+"A lazy import of a module inside name counts too: resolving either one\n"
+"imports name.");
+
+#define _IMP__LAZILY_BINDS_CHILD_METHODDEF    \
+    {"_lazily_binds_child", _PyCFunction_CAST(_imp__lazily_binds_child), METH_FASTCALL, _imp__lazily_binds_child__doc__},
+
+static int
+_imp__lazily_binds_child_impl(PyObject *module, PyObject *parent,
+                              PyObject *child, PyObject *name);
+
+static PyObject *
+_imp__lazily_binds_child(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *parent;
+    PyObject *child;
+    PyObject *name;
+    int _return_value;
+
+    if (!_PyArg_CheckPositional("_lazily_binds_child", nargs, 3, 3)) {
+        goto exit;
+    }
+    parent = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("_lazily_binds_child", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    child = args[1];
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("_lazily_binds_child", "argument 3", "str", args[2]);
+        goto exit;
+    }
+    name = args[2];
+    _return_value = _imp__lazily_binds_child_impl(module, parent, child, name);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef _IMP_CREATE_DYNAMIC_METHODDEF
     #define _IMP_CREATE_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
@@ -665,4 +714,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=ae9cf67e39955555 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0053acd7ab6241c input=a9049054013a1b77]*/

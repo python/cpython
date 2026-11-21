@@ -1,0 +1,1 @@
+from .thing import thing
