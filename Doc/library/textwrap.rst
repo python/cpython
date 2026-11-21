@@ -19,7 +19,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, max_lines=None, \
-                   placeholder=' [...]')
+                   placeholder=' [...]', text_len=len)
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -37,7 +37,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   max_lines=None, placeholder=' [...]')
+                   max_lines=None, placeholder=' [...]', text_len=len)
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -50,7 +50,7 @@ functions should be good enough; otherwise, you should use an instance of
 
 .. function:: shorten(text, width, *, fix_sentence_endings=False, \
                       break_long_words=True, break_on_hyphens=True, \
-                      placeholder=' [...]')
+                      placeholder=' [...]', text_len=len)
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
@@ -291,6 +291,31 @@ hyphenated words; only then will long words be broken if necessary, unless
       text if it has been truncated.
 
       .. versionadded:: 3.4
+
+
+   .. attribute:: text_len
+
+      (default: :func:`len`) Callable used to measure the width of a string
+      when deciding where to wrap.  Override the default to account for
+      characters that are not a single column wide, such as double-width East
+      Asian characters or zero-width combining characters::
+
+         >>> import textwrap, unicodedata
+         >>> def display_width(text):
+         ...     return sum(
+         ...         2 if unicodedata.east_asian_width(char) in 'FW' else 1
+         ...         for char in text)
+         ...
+         >>> textwrap.wrap('東京 大阪 京都 札幌', width=10)
+         ['東京 大阪 京都', '札幌']
+         >>> textwrap.wrap('東京 大阪 京都 札幌', width=10, text_len=display_width)
+         ['東京 大阪', '京都 札幌']
+
+      The callable must return a non-negative integer, and it must be
+      additive: the width of a string is the sum of the widths of its
+      characters.
+
+      .. versionadded:: next
 
 
    :class:`TextWrapper` also provides some public methods, analogous to the

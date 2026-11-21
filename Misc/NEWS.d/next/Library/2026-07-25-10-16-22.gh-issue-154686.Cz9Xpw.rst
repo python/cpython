@@ -1,0 +1,4 @@
+Add a *text_len* parameter to :func:`textwrap.wrap`, :func:`textwrap.fill`,
+:func:`textwrap.shorten`, and :class:`textwrap.TextWrapper`.  It customizes how
+the width of a string is measured, so that text containing double-width or
+zero-width characters can be wrapped correctly.
