@@ -19,6 +19,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_dict.h"          // _PyDict_CopyAsDict()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
@@ -377,7 +378,7 @@ static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
     PyObject *attrib;
-    if (PyDict_PopString(kwds, "attrib", &attrib) < 0) {
+    if (PyDict_Pop(kwds, &_Py_ID(attrib), &attrib) < 0) {
         return NULL;
     }
 
@@ -393,16 +394,16 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         Py_SETREF(attrib, _PyDict_CopyAsDict(attrib));
+        if (attrib == NULL) {
+            return NULL;
+        }
+        if (PyDict_Update(attrib, kwds) < 0) {
+            Py_DECREF(attrib);
+            return NULL;
+        }
+        return attrib;
     }
-    else {
-        attrib = PyDict_New();
-    }
-
-    if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
-        Py_DECREF(attrib);
-        return NULL;
-    }
-    return attrib;
+    return PyDict_Copy(kwds);
 }
 
 /*[clinic input]
@@ -413,15 +414,37 @@ class _elementtree.XMLParser "XMLParserObject *" "clinic_state()->XMLParser_Type
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6c83ea832d2b0ef1]*/
 
-static int
-element_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyObject *tag;
-    PyObject *attrib = NULL;
-    ElementObject *self_elem;
+/*[clinic input]
+@vectorcall
+@text_signature "(tag, /, attrib={}, **extra)"
+_elementtree.Element.__init__
 
-    if (!PyArg_ParseTuple(args, "O|O:Element", &tag, &attrib))
-        return -1;
+    tag: object
+    attrib: object(c_default="NULL") = {}
+    /
+    **extra: dict
+
+An XML element.
+
+This class is the reference implementation of the Element interface.
+
+An element's length is its number of subelements.  That means if you
+want to check if an element is truly empty, you should check BOTH
+its length AND its text attribute.
+
+*tag* is the element name.  *attrib* is an optional dictionary
+containing element attributes. *extra* are additional element
+attributes given as keyword arguments.
+
+Example form:
+    <tag attrib>text<child/>...</tag>tail
+[clinic start generated code]*/
+
+static int
+_elementtree_Element___init___impl(ElementObject *self, PyObject *tag,
+                                   PyObject *attrib, PyObject *extra)
+/*[clinic end generated code: output=d10be095275d5d1a input=a66a3eacbc30aa64]*/
+{
     if (attrib != NULL && !PyAnyDict_Check(attrib)) {
         PyErr_Format(PyExc_TypeError,
                      "Element() argument 2 must be dict or frozendict, not %T",
@@ -434,23 +457,21 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
         attrib = _PyDict_CopyAsDict(attrib);
         if (!attrib)
             return -1;
-        if (kwds) {
-            if (PyDict_Update(attrib, kwds) < 0) {
+        if (extra) {
+            if (PyDict_Update(attrib, extra) < 0) {
                 Py_DECREF(attrib);
                 return -1;
             }
         }
-    } else if (kwds) {
+    } else if (extra) {
         /* have keywords args */
-        attrib = get_attrib_from_keywords(kwds);
+        attrib = get_attrib_from_keywords(extra);
         if (!attrib)
             return -1;
     }
 
-    self_elem = (ElementObject *)self;
-
     if (attrib != NULL && !is_empty_dict(attrib)) {
-        if (create_extra(self_elem, attrib) < 0) {
+        if (create_extra(self, attrib) < 0) {
             Py_DECREF(attrib);
             return -1;
         }
@@ -460,10 +481,10 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(attrib);
 
     /* Replace the objects already pointed to by tag, text and tail. */
-    Py_XSETREF(self_elem->tag, Py_NewRef(tag));
+    Py_XSETREF(self->tag, Py_NewRef(tag));
 
-    _set_joined_ptr(&self_elem->text, Py_NewRef(Py_None));
-    _set_joined_ptr(&self_elem->tail, Py_NewRef(Py_None));
+    _set_joined_ptr(&self->text, Py_NewRef(Py_None));
+    _set_joined_ptr(&self->tail, Py_NewRef(Py_None));
 
     return 0;
 }
@@ -4453,27 +4474,8 @@ static PyGetSetDef element_getsetlist[] = {
     {NULL},
 };
 
-PyDoc_STRVAR(element_doc,
-"Element(tag, attrib={}, **extra)\n"
-"--\n"
-"\n"
-"An XML element.\n"
-"\n"
-"This class is the reference implementation of the Element interface.\n"
-"\n"
-"An element's length is its number of subelements.  That means if you\n"
-"want to check if an element is truly empty, you should check BOTH\n"
-"its length AND its text attribute.\n"
-"\n"
-"*tag* is the element name.  *attrib* is an optional dictionary\n"
-"containing element attributes. *extra* are additional element\n"
-"attributes given as keyword arguments.\n"
-"\n"
-"Example form:\n"
-"    <tag attrib>text<child/>...</tag>tail");
-
 static PyType_Slot element_slots[] = {
-    {Py_tp_doc, (void *)element_doc},
+    {Py_tp_doc, (void *)_elementtree_Element___init____doc__},
     {Py_tp_dealloc, element_dealloc},
     {Py_tp_repr, element_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -4482,7 +4484,8 @@ static PyType_Slot element_slots[] = {
     {Py_tp_methods, element_methods},
     {Py_tp_members, element_members},
     {Py_tp_getset, element_getsetlist},
-    {Py_tp_init, element_init},
+    {Py_tp_init, _elementtree_Element___init__},
+    {Py_tp_vectorcall, _elementtree_Element_vectorcall},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, element_new},
     {Py_sq_length, element_length},

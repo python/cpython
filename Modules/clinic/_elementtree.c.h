@@ -4,11 +4,111 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
+
+PyDoc_STRVAR(_elementtree_Element___init____doc__,
+"Element(tag, /, attrib={}, **extra)\n"
+"--\n"
+"\n"
+"An XML element.\n"
+"\n"
+"This class is the reference implementation of the Element interface.\n"
+"\n"
+"An element\'s length is its number of subelements.  That means if you\n"
+"want to check if an element is truly empty, you should check BOTH\n"
+"its length AND its text attribute.\n"
+"\n"
+"*tag* is the element name.  *attrib* is an optional dictionary\n"
+"containing element attributes. *extra* are additional element\n"
+"attributes given as keyword arguments.\n"
+"\n"
+"Example form:\n"
+"    <tag attrib>text<child/>...</tag>tail");
+
+static int
+_elementtree_Element___init___impl(ElementObject *self, PyObject *tag,
+                                   PyObject *attrib, PyObject *extra);
+
+static int
+_elementtree_Element___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    PyObject *tag;
+    PyObject *attrib = NULL;
+    PyObject *extra = NULL;
+
+    if (!_PyArg_CheckPositional("Element", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    tag = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    attrib = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    extra = Py_XNewRef(kwargs);
+    return_value = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, extra);
+
+exit:
+    /* Cleanup for extra */
+    Py_XDECREF(extra);
+
+    return return_value;
+}
+
+static PyObject *
+_elementtree_Element_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+    PyObject *tag;
+    PyObject *attrib = NULL;
+    PyObject *extra = NULL;
+
+    assert(_PyType_CAST(type)->tp_init == _elementtree_Element___init__);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_CheckPositional("Element", nargs, 1, 2)) {
+        goto exit;
+    }
+    tag = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attrib = args[1];
+skip_optional:
+    if (kwnames != NULL) {
+        extra = _PyStack_AsDict(args + nargs, kwnames);
+        if (extra == NULL) {
+            goto exit;
+        }
+    }
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    _result = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, extra);
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
+
+exit:
+    /* Cleanup for extra */
+    Py_XDECREF(extra);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_SubElement__doc__,
 "SubElement($module, parent, tag, attrib={}, /, **extra)\n"
@@ -1474,4 +1574,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d454d27e90eb399e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e018eb31bcaee24f input=a9049054013a1b77]*/

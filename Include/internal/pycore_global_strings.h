@@ -327,6 +327,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(ast)
         STRUCT_FOR_ID(athrow)
         STRUCT_FOR_ID(attr)
+        STRUCT_FOR_ID(attrib)
         STRUCT_FOR_ID(attribute)
         STRUCT_FOR_ID(autocommit)
         STRUCT_FOR_ID(backtick)

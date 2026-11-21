@@ -315,6 +315,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(ast), "ast", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(athrow), "athrow", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(attr), "attr", 4);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(attrib), "attrib", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(attribute), "attribute", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(autocommit), "autocommit", 10);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(backtick), "backtick", 8);

@@ -1,0 +1,3 @@
+Calling :class:`xml.etree.ElementTree.Element` with non-string keys in
+*extra* now raises :exc:`TypeError`, as the Python implementation already
+did. Pass such keys in *attrib* instead.
