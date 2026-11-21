@@ -1,5 +1,6 @@
 import collections
 import collections.abc
+import functools
 import gc
 import pickle
 import random
@@ -19,6 +20,13 @@ class CustomHash:
         return self.hash
     def __repr__(self):
         return f'<CustomHash {self.hash} at {id(self):#x}>'
+
+
+class HashError:
+    def __init__(self, exc):
+        self.exc = exc
+    def __hash__(self):
+        raise self.exc
 
 
 class DictTest(unittest.TestCase):
@@ -1680,6 +1688,117 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertEqual(holds_reference.ref['data'], 42)
         self.assertEqual(holds_reference.attr, "whatever")
+
+    def test_unhashable_key_chained(self):
+        # gh-149313: A traceback or a cause is preserved by chaining.
+        exc = TypeError('error')
+        exc.add_note('note')
+
+        with self.assertRaisesRegex(TypeError, 'as a dict key') as cm:
+            {HashError(exc): 1}
+        cause = cm.exception.__cause__
+        self.assertEqual(str(cause), 'error')
+        self.assertIsNotNone(cause.__traceback__)
+        self.assertEqual(cause.__notes__, ['note'])
+        self.assertNotHasAttr(cm.exception, '__notes__')
+
+    def test_unhashable_key_format_error_badstr(self):
+        # gh-149313: If formatting the message fails, the error
+        # is reported as unraisable and the original exception is raised.
+        class BadStr:
+            def __str__(self):
+                raise RuntimeError('format') from ValueError('root')
+
+        with support.catch_unraisable_exception() as ucm:
+            with self.assertRaises(TypeError) as cm:
+                {HashError(TypeError(BadStr())): 1}
+            self.assertIsInstance(cm.exception.args[0], BadStr)
+            self.assertIs(ucm.unraisable.exc_type, RuntimeError)
+            self.assertIsInstance(
+                ucm.unraisable.exc_value.__cause__, ValueError
+            )
+            self.assertEqual(
+                ucm.unraisable.err_msg,
+                'Exception ignored while formatting the TypeError message',
+            )
+
+    def test_unhashable_key_format_error_reraise(self):
+        # gh-149313: If formatting the message fails, the error
+        # is reported as unraisable and the original exception is raised.
+        class Reraise:
+            def __str__(self):
+                raise exc
+
+        exc = TypeError(Reraise())
+
+        with support.catch_unraisable_exception() as ucm:
+            with self.assertRaises(TypeError) as cm:
+                {HashError(exc): 1}
+            self.assertIs(cm.exception, exc)
+            self.assertIsNone(exc.__cause__)
+            self.assertIs(ucm.unraisable.exc_value, exc)
+            self.assertEqual(
+                ucm.unraisable.err_msg,
+                'Exception ignored while formatting the TypeError message',
+            )
+
+    def test_unhashable_key_not_chained(self):
+        # gh-149313: Chaining would only repeat the message.
+        with self.assertRaisesRegex(TypeError, "cannot use 'list'") as cm:
+            {[]: 1}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertNotHasAttr(cm.exception, '__notes__')
+
+        try:
+            1/0
+        except ZeroDivisionError as exc:
+            handled = exc
+            with self.assertRaisesRegex(TypeError, "cannot use 'list'") as cm:
+                {[]: 1}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertIs(cm.exception.__context__, handled)
+
+    def test_unhashable_key_notes_copied(self):
+        # gh-149313: Without a traceback or a cause, only notes are preserved.
+        with self.assertRaisesRegex(TypeError, 'as a dict key') as cm:
+            {([1],): 1}
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertEqual(cm.exception.__notes__, ['when hashing tuple item 0'])
+
+    def test_unhashable_key_notes_list_subclass(self):
+        # gh-149313: A list subclass is copied without calling its methods.
+        _testcapi = import_helper.import_module('_testcapi')
+        exc = TypeError('error')
+
+        class Key:
+            __hash__ = staticmethod(
+                functools.partial(_testcapi.err_set_raised, exc)
+            )
+
+        class Notes(list):
+            def __iter__(self):
+                raise RuntimeError
+
+        exc.__notes__ = Notes(['note2'])
+        with self.assertRaisesRegex(TypeError, 'as a dict key') as cm:
+            {Key(): 1}
+        self.assertIsNot(cm.exception.__notes__, exc.__notes__)
+        self.assertEqual(cm.exception.__notes__, ['note2'])
+
+    def test_unhashable_key_cause_only(self):
+        # gh-149313: A cause alone is preserved by chaining.
+        _testcapi = import_helper.import_module('_testcapi')
+        exc = TypeError('error')
+        exc.__cause__ = ValueError('cause')
+
+        class Key:
+            __hash__ = staticmethod(
+                functools.partial(_testcapi.err_set_raised, exc)
+            )
+
+        with self.assertRaisesRegex(TypeError, 'as a dict key') as cm:
+            {Key(): 1}
+        self.assertIs(cm.exception.__cause__, exc)
 
     def test_unhashable_key(self):
         d = {'a': 1}
