@@ -1,0 +1,2 @@
+Fix an :exc:`IndexError` in :mod:`email` when folding address headers
+containing empty comments.
