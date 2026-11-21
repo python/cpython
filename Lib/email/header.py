@@ -546,24 +546,31 @@ class _Accumulator(list):
 
     def __init__(self, initial_size=0):
         self._initial_size = initial_size
+        # The value of len(): _initial_size plus the length of all the
+        # parts, kept up to date by push(), pop(), pop_from() and reset().
+        # Summing the parts on every call makes folding quadratic.
+        self._len = initial_size
         super().__init__()
 
     def push(self, fws, string):
         self.append((fws, string))
+        self._len += len(fws) + len(string)
 
     def pop_from(self, i=0):
         popped = self[i:]
         self[i:] = []
+        self._len -= sum(len(fws) + len(part) for fws, part in popped)
         return popped
 
     def pop(self):
         if self.part_count()==0:
             return ('', '')
-        return super().pop()
+        fws, part = super().pop()
+        self._len -= len(fws) + len(part)
+        return fws, part
 
     def __len__(self):
-        return sum((len(fws)+len(part) for fws, part in self),
-                   self._initial_size)
+        return self._len
 
     def __str__(self):
         return EMPTYSTRING.join((EMPTYSTRING.join((fws, part))
@@ -574,6 +581,7 @@ class _Accumulator(list):
             startval = []
         self[:] = startval
         self._initial_size = 0
+        self._len = sum(len(fws) + len(part) for fws, part in self)
 
     def is_onlyws(self):
         return self._initial_size==0 and (not self or str(self).isspace())
