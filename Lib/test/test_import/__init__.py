@@ -2594,8 +2594,8 @@ class SubinterpImportTests(unittest.TestCase):
             _interpreters.destroy(interp)
 
         self.assertIsNotNone(exception)
-        self.assertIsNotNone(exception.type.__name__, "ImportError")
-        self.assertIsNotNone(exception.msg, "failed to import from subinterpreter due to exception")
+        self.assertEqual(exception.type.__name__, "ImportError")
+        self.assertEqual(exception.msg, "failed to import from subinterpreter due to exception")
         self.assertIsNotNone(unraisable)
         self.assertIs(unraisable.exc_type, RuntimeError)
         self.assertEqual(str(unraisable.exc_value), "evil")
