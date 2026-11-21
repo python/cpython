@@ -1,0 +1,3 @@
+Fix an assertion failure in the lexer, and a wrong line number in the
+error message, for an unclosed f-string replacement field that contains a
+nested f-string which itself ends with an unclosed replacement field.

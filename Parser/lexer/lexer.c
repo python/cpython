@@ -1082,6 +1082,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->string_kind = string_kind;
         the_current_tok->curly_bracket_depth = 0;
         the_current_tok->curly_bracket_expr_start_depth = -1;
+        the_current_tok->paren_level = tok->level;
         return string_kind == TSTRING ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
     }
 
@@ -1144,7 +1145,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->quote == quote &&
                         the_current_tok->quote_size == quote_size) {
-                        int level = tok->level - the_current_tok->curly_bracket_depth
+                        int level = the_current_tok->paren_level
                                     + the_current_tok->curly_bracket_expr_start_depth;
                         assert(level >= 0 && level < tok->level);
                         assert(tok->parenstack[level] == '{');

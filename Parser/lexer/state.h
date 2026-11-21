@@ -50,6 +50,8 @@ typedef struct _tokenizer_mode {
 
     int curly_bracket_depth;
     int curly_bracket_expr_start_depth;
+    /* Value of tok->level when the f-string started. */
+    int paren_level;
 
     char quote;
     int quote_size;
