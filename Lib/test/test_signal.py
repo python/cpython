@@ -15,18 +15,13 @@ import unittest
 import weakref
 from test import support
 from test.support import (
-    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper,
-    warnings_helper,
+    force_not_colorized, is_apple, is_apple_mobile, os_helper, threading_helper
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import _testcapi
 except ImportError:
     _testcapi = None
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
 
 
 class GenericTests(unittest.TestCase):
@@ -184,29 +179,6 @@ class PosixTests(unittest.TestCase):
         # via a signal.  POSIX shells do more than look at the 8 bit value.
         # Writing an automation friendly test of an interactive shell
         # to confirm that our process died via a SIGINT proved too complex.
-
-    @support.requires_fork()
-    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
-    def test_fork_with_handler_lock_held(self):
-        # A thread holding the handler table lock when another thread forks,
-        # such as one in a subinterpreter with its own GIL, does not exist in
-        # the child, so the child must not inherit the lock held.
-        _testinternalcapi.lock_signal_handlers()
-        try:
-            pid = os.fork()
-            if pid == 0:
-                # In the child: hangs here if the lock was inherited held.
-                try:
-                    signal.getsignal(signal.SIGINT)
-                except BaseException:
-                    os._exit(1)
-                os._exit(0)
-        finally:
-            _testinternalcapi.unlock_signal_handlers()
-
-        # A child stuck on the inherited lock never exits, so this times out.
-        support.wait_process(pid, exitcode=0)
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")

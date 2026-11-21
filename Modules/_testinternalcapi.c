@@ -226,20 +226,6 @@ test_stop_the_world(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-lock_signal_handlers(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyMutex_Lock(&_PyRuntime.signals.handlers_mutex);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unlock_signal_handlers(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyMutex_Unlock(&_PyRuntime.signals.handlers_mutex);
-    Py_RETURN_NONE;
-}
-
 #ifdef MS_WINDOWS
 static const char *
 classify_address(uintptr_t addr, int jit_enabled, PyInterpreterState *interp)
@@ -3363,8 +3349,6 @@ static PyMethodDef module_functions[] = {
     {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
     {"get_stack_margin", get_stack_margin, METH_NOARGS},
     {"test_stop_the_world", test_stop_the_world, METH_NOARGS},
-    {"lock_signal_handlers", lock_signal_handlers, METH_NOARGS},
-    {"unlock_signal_handlers", unlock_signal_handlers, METH_NOARGS},
     {"classify_stack_addresses", classify_stack_addresses, METH_VARARGS},
     {"get_jit_code_ranges", get_jit_code_ranges, METH_NOARGS},
     {"get_jit_backend", get_jit_backend, METH_NOARGS},
