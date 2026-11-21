@@ -1659,6 +1659,9 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 {
     assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
+    if (Py_TYPE(tp) != &PyType_Type) {
+        goto generic;
+    }
     if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         int oparg = instr->op.arg;
         if (nargs == 1 && oparg == 1) {
@@ -1679,9 +1682,6 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             specialize(instr, CALL_BUILTIN_CLASS);
             return 0;
         }
-        goto generic;
-    }
-    if (Py_TYPE(tp) != &PyType_Type) {
         goto generic;
     }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
