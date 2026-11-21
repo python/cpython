@@ -143,7 +143,7 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None, target_time=None)
+   .. method:: Timer.autorange(callback=None, target_time=0.2)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
