@@ -1735,7 +1735,9 @@ _Unpickler_MemoPut(UnpicklerObject *self, size_t idx, PyObject *value)
             Py_DECREF(key);
             return 0;
         }
-        if (_Unpickler_ResizeMemoList(self, idx * 2) < 0)
+        /* idx is 0 if the memo is empty, e.g. after "memo = {}" (gh-162334);
+           start again from the initial memo size then. */
+        if (_Unpickler_ResizeMemoList(self, idx ? idx * 2 : 32) < 0)
             return -1;
         assert(idx < self->memo_size);
     }
