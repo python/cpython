@@ -799,8 +799,9 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
         return 0;
     }
     if (opcode == END_AWAITED_CALL && jump) {
-        // The jump to YIELD_VALUE leaves (coroutine, NULL, value) in place
-        // of (lazy_outcome, value).
+        // When the body suspends, the jump to YIELD_VALUE replaces
+        // (lazy_outcome, value) with (coroutine, NULL, value), where value
+        // is what the body yielded.
         effects->net = 1;
         return 0;
     }

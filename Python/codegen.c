@@ -496,7 +496,6 @@ codegen_call_exit_with_nones(compiler *c, location loc)
     return SUCCESS;
 }
 
-/* If `yield` is a valid label, it is placed on the YIELD_VALUE. */
 static int
 codegen_add_yield_from_impl(compiler *c, location loc, int await,
                             jump_target_label yield)
@@ -532,8 +531,6 @@ codegen_add_yield_from(compiler *c, location loc, int await)
     return codegen_add_yield_from_impl(c, loc, await, NO_LABEL);
 }
 
-/* Await the result of a call made with a NULL `lazy_outcome` below the
- * callable. */
 static int
 codegen_await_call_result(compiler *c, location loc, int oparg)
 {
@@ -635,7 +632,6 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
-                    /* Also below the lazy_outcome of __aexit__() */
                     ADDOP_I(c, *ploc, SWAP, 4);
                 }
                 ADDOP_I(c, *ploc, SWAP, 3);
@@ -4291,8 +4287,6 @@ codegen_call(compiler *c, expr_ty e)
     return ret;
 }
 
-/* `await <call>` pushes a NULL `lazy_outcome` below the callable, and
- * END_AWAITED_CALL after the call marks it as awaited. */
 static int
 codegen_await(compiler *c, expr_ty e)
 {
@@ -5292,7 +5286,6 @@ codegen_with_except_finish(compiler *c, jump_target_label cleanup,
     ADDOP(c, NO_LOCATION, POP_TOP);
     ADDOP(c, NO_LOCATION, POP_TOP);
     if (is_async) {
-        /* The lazy_outcome of __aexit__() */
         ADDOP(c, NO_LOCATION, POP_TOP);
     }
     NEW_JUMP_TARGET_LABEL(c, exit);
@@ -5345,14 +5338,12 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     loc = LOC(item->context_expr);
-    /* The lazy_outcome of __aexit__() */
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, COPY, 1);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
-    /* The lazy_outcome of __aenter__() */
     ADDOP(c, loc, PUSH_NULL);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
