@@ -875,5 +875,20 @@ class NetworkTestCase(unittest.TestCase):
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
 
+
+class RepeatedUserAgentTest(unittest.TestCase):
+
+    def test_many_duplicate_user_agents(self):
+        # gh-162282: a User-agent repeated within one group must not be
+        # merged into that group once per repetition (quadratic time).
+        body = "User-agent: evil\n" * 1000 + "Disallow: /\n"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        entry = parser.groups["evil"]
+        self.assertIs(entry, parser.entries[0])
+        self.assertEqual(len(entry.rulelines), 1)
+        self.assertFalse(parser.can_fetch("evil", "/"))
+
+
 if __name__=='__main__':
     unittest.main()
