@@ -1,0 +1,2 @@
+Fix :mod:`platform` to accept :data:`sys.version` strings without compiler
+identification, returning an empty string from :func:`platform.python_compiler`.
