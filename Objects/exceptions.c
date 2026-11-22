@@ -1166,12 +1166,13 @@ exceptiongroup_subset(
     /* Now we hold a reference to the new eg */
 
     PyObject *tb = PyException_GetTraceback(orig);
-    if (tb) {
-        int res = PyException_SetTraceback(eg, tb);
-        Py_DECREF(tb);
-        if (res < 0) {
-            goto error;
-        }
+    /* Copy the traceback even when the original has none, so the parts
+     * do not keep whatever traceback derive() gave them. Passing
+     * Py_None clears the traceback (SetTraceback rejects NULL). */
+    int res = PyException_SetTraceback(eg, tb ? tb : Py_None);
+    Py_XDECREF(tb);
+    if (res < 0) {
+        goto error;
     }
     PyException_SetContext(eg, PyException_GetContext(orig));
     PyException_SetCause(eg, PyException_GetCause(orig));
