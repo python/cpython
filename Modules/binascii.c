@@ -1774,6 +1774,8 @@ fastpath:
             goto error;
         }
 
+        pads = 0;
+
         switch (octa_pos) {
             case 0:
                 octa_pos = 1;

@@ -1259,6 +1259,14 @@ class BinASCIITest(unittest.TestCase):
         eq(a2b_base32(b'A1B3C5W7Z9', ignorechars=b'19WZ'), b'\x00v.\xdb\xf9')
         eq(a2b_base32(b'A1B3C5W7Z9', ignorechars=b'19WZ',
                       alphabet=binascii.BASE32HEX_ALPHABET), b'PV6\x14\xe9')
+        # Ignored pad characters do not count as trailing padding.
+        eq(a2b_base32(b'=MF=RA====', ignorechars=b'='), b'ab')
+
+        for data in (b'======ME', b'=ME=====', b'M======E', b'ME==FR==',
+                    b'=MFRGG43'):
+            with self.subTest(data=data):
+                with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
+                    a2b_base32(data, ignorechars=b'=')
 
     def test_base32_alphabet(self):
         alphabet = b'0Aa1Bb2Cc3Dd4Ee5Ff6Gg7Hh8Ii9JjKk'
