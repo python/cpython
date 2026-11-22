@@ -126,3 +126,8 @@ library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
 
 # Removed footnote
 c-api/exceptions.html: win
+
+# Classic Mac OS attributes that 'os.stat_result' does not have
+library/os.html: os.stat_result.st_creator
+library/os.html: os.stat_result.st_rsize
+library/os.html: os.stat_result.st_type
