@@ -5063,6 +5063,16 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
         }
 #endif
 
+        // Long ASCII runs: test eight words per branch.
+        for (; end - p >= 8 * SIZEOF_SIZE_T; p += 8 * SIZEOF_SIZE_T) {
+            const size_t *w = (const size_t *)p;
+            if ((w[0] | w[1] | w[2] | w[3] |
+                 w[4] | w[5] | w[6] | w[7]) & ASCII_CHAR_MASK)
+            {
+                break;
+            }
+        }
+
         const unsigned char *e = end - SIZEOF_SIZE_T;
         while (p <= e) {
             size_t u = (*(const size_t *)p) & ASCII_CHAR_MASK;
@@ -14727,7 +14737,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Statically allocated strings must be already interned. */
     assert(!_PyUnicode_STATE(s).statically_allocated);
 
-#if Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
 #endif

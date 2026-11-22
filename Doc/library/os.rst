@@ -1576,7 +1576,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
-   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+   .. availability:: Unix.
 
       Using flags requires Linux >= 4.6.
 
@@ -1682,7 +1682,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
-   .. availability:: Linux >= 2.6.30, FreeBSD >= 6.0, OpenBSD >= 2.7, AIX >= 7.1.
+   .. availability:: Unix.
 
       Using flags requires Linux >= 4.6.
 
@@ -3447,20 +3447,6 @@ features:
 
       String that uniquely identifies the type of the filesystem that
       contains the file.
-
-   On macOS systems, the following attributes may also be available:
-
-   .. attribute:: st_rsize
-
-      Real size of the file.
-
-   .. attribute:: st_creator
-
-      Creator of the file.
-
-   .. attribute:: st_type
-
-      File type.
 
    On Windows systems, the following attributes are also available:
 
@@ -6466,9 +6452,12 @@ Random numbers
    random bytes in non-blocking mode (using the :data:`GRND_NONBLOCK` flag) or
    to poll until the system urandom entropy pool is initialized.
 
-   On a Unix-like system, random bytes are read from the ``/dev/urandom``
-   device. If the ``/dev/urandom`` device is not available or not readable, the
-   :exc:`NotImplementedError` exception is raised.
+   On other Unix-like systems, the C ``getrandom()`` function is used if it is
+   available, otherwise the C ``getentropy()`` function.
+
+   If none of these functions can be used, random bytes are read from the
+   ``/dev/urandom`` device. If the ``/dev/urandom`` device is not available or
+   not readable, the :exc:`NotImplementedError` exception is raised.
 
    On Windows, it will use ``BCryptGenRandom()``.
 

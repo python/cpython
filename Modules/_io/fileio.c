@@ -5,7 +5,6 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>              // bool
 #ifdef HAVE_UNISTD_H
@@ -81,8 +80,6 @@ typedef struct {
        modified outside of the fileio object / Python (ex. gh-90102, GH-121941,
        gh-109523). */
     struct _Py_stat_struct *stat_atopen;
-    PyObject *weakreflist;
-    PyObject *dict;
 } fileio;
 
 #define PyFileIO_Check(state, op) (PyObject_TypeCheck((op), state->PyFileIO_Type))
@@ -221,7 +218,6 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->truncate = 0;
     self->stat_atopen = NULL;
     self->closefd = 1;
-    self->weakreflist = NULL;
     return (PyObject *) self;
 }
 
@@ -562,15 +558,13 @@ fileio_traverse(PyObject *op, visitproc visit, void *arg)
 {
     fileio *self = PyFileIO_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
 fileio_clear(PyObject *op)
 {
-    fileio *self = PyFileIO_CAST(op);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -588,7 +582,7 @@ fileio_dealloc(PyObject *op)
         PyMem_Free(self->stat_atopen);
         self->stat_atopen = NULL;
     }
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     (void)fileio_clear(op);
 
     PyTypeObject *tp = Py_TYPE(op);
@@ -1370,8 +1364,6 @@ static PyGetSetDef fileio_getsetlist[] = {
 
 static PyMemberDef fileio_members[] = {
     {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},
     {NULL}
 };
 
