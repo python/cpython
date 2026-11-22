@@ -872,6 +872,7 @@ future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
 }
 
 /*[clinic input]
+@vectorcall
 _asyncio.Future.__init__
 
     *
@@ -893,7 +894,7 @@ This class is *almost* compatible with concurrent.futures.Future.
 
 static int
 _asyncio_Future___init___impl(FutureObj *self, PyObject *loop)
-/*[clinic end generated code: output=9ed75799eaccb5d6 input=89af317082bc0bf8]*/
+/*[clinic end generated code: output=9ed75799eaccb5d6 input=28ff6d3b6c3aa828]*/
 
 {
     return future_init(self, loop);
@@ -1734,6 +1735,7 @@ static PyType_Slot Future_slots[] = {
     {Py_tp_methods, FutureType_methods},
     {Py_tp_getset, FutureType_getsetlist},
     {Py_tp_init, _asyncio_Future___init__},
+    {Py_tp_vectorcall, _asyncio_Future_vectorcall},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, FutureObj_finalize},
 
@@ -2290,6 +2292,7 @@ swap_current_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
 /* ----- Task */
 
 /*[clinic input]
+@vectorcall
 _asyncio.Task.__init__
 
     coro: object
@@ -2306,7 +2309,7 @@ static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
                             PyObject *name, PyObject *context,
                             int eager_start)
-/*[clinic end generated code: output=7aced2d27836f1a1 input=18e3f113a51b829d]*/
+/*[clinic end generated code: output=7aced2d27836f1a1 input=de87c52b0800ab4b]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -2952,6 +2955,7 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
     {Py_tp_init, _asyncio_Task___init__},
+    {Py_tp_vectorcall, _asyncio_Task_vectorcall},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, TaskObj_finalize},
 

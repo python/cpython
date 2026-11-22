@@ -90,8 +90,12 @@ class RobotFileParser:
 
     def _add_entry(self, entry):
         self.entries.append(entry)
+        seen = set()
         for agent in entry.useragents:
             agent = agent.lower()
+            if agent in seen:
+                continue
+            seen.add(agent)
             if agent not in self.groups:
                 self.groups[agent] = entry
             else:
