@@ -387,8 +387,11 @@ def iterfind(elem, path, namespaces=None):
             return
         selector = []
         while 1:
+            prepare = ops.get(token[0])
+            if prepare is None:
+                raise SyntaxError("invalid path") from None
             try:
-                selector.append(ops[token[0]](next, token))
+                selector.append(prepare(next, token))
             except StopIteration:
                 raise SyntaxError("invalid path") from None
             try:
