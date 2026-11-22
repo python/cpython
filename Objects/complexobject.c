@@ -1214,6 +1214,12 @@ complex_new_impl(PyTypeObject *type, PyObject *real_pos, PyObject *imag_pos,
     int ci_is_complex = 0;
 
     /* See the comment before complex_from_arg(). */
+    int nargs = (real_pos != NULL) + (imag_pos != NULL) + (r != NULL) + (i != NULL);
+    if (nargs > 2) {
+        PyErr_Format(PyExc_TypeError,
+                     "complex() takes at most 2 arguments (%d given)", nargs);
+        return NULL;
+    }
     if (real_pos != NULL) {
         if (r != NULL) {
             PyErr_SetString(PyExc_TypeError, "argument for complex() given "
@@ -1226,11 +1232,6 @@ complex_new_impl(PyTypeObject *type, PyObject *real_pos, PyObject *imag_pos,
         r = real_pos;
     }
     if (imag_pos != NULL) {
-        if (i != NULL) {
-            PyErr_SetString(PyExc_TypeError, "argument for complex() given "
-                            "by name ('imag') and position (2)");
-            return NULL;
-        }
         i = imag_pos;
     }
     if (r == NULL) {
