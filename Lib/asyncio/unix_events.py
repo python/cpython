@@ -781,7 +781,8 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         except BlockingIOError:
             # A full pipe can keep polling as writable on macOS (gh-162016).
             self._loop._remove_writer(self._fileno)
-            self._loop.call_later(0.01, self._resume_write_polling)
+            self._loop.call_later(constants.PIPE_WRITE_RETRY_DELAY,
+                                  self._resume_write_polling)
         except InterruptedError:
             pass
         except (SystemExit, KeyboardInterrupt):
