@@ -857,6 +857,18 @@ builtin_id(PyObject *self, PyObject *v)
     return return_value;
 }
 
+PyDoc_STRVAR(map_new__doc__,
+"map(function, iterable, /, *iterables, strict=False)\n"
+"--\n"
+"\n"
+"Make an iterator that applies function to items of the iterables.\n"
+"\n"
+"The function is called with one argument from each of the iterables.\n"
+"Stops when the shortest iterable is exhausted.\n"
+"\n"
+"If strict is true and one of the arguments is exhausted before the\n"
+"others, raise a ValueError.");
+
 static PyObject *
 map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
              PyObject * const *iterables, Py_ssize_t iterables_length,
@@ -1754,4 +1766,4 @@ zip_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=5d5ebfb0a3e33097 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f6bdf6537550b8a input=a9049054013a1b77]*/

@@ -1437,13 +1437,21 @@ map.__new__ as map_new
     /
     *iterables: array
     strict: bool = False
+
+Make an iterator that applies function to items of the iterables.
+
+The function is called with one argument from each of the iterables.
+Stops when the shortest iterable is exhausted.
+
+If strict is true and one of the arguments is exhausted before the
+others, raise a ValueError.
 [clinic start generated code]*/
 
 static PyObject *
 map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
              PyObject * const *iterables, Py_ssize_t iterables_length,
              int strict)
-/*[clinic end generated code: output=de1354b02d08604b input=5fbe90bd74aaa2e2]*/
+/*[clinic end generated code: output=de1354b02d08604b input=d3bf952f6bb775c8]*/
 {
     PyObject *iters = PyTuple_New(iterables_length + 1);
     if (iters == NULL) {
@@ -1629,16 +1637,6 @@ static PyMethodDef map_methods[] = {
 };
 
 
-PyDoc_STRVAR(map_doc,
-"map(function, iterable, /, *iterables, strict=False)\n\
---\n\
-\n\
-Make an iterator that computes the function using arguments from\n\
-each of the iterables.  Stops when the shortest iterable is exhausted.\n\
-\n\
-If strict is true and one of the arguments is exhausted before the\n\
-others, raise a ValueError.");
-
 PyTypeObject PyMap_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "map",                              /* tp_name */
@@ -1662,7 +1660,7 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    map_doc,                            /* tp_doc */
+    map_new__doc__,                     /* tp_doc */
     map_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
