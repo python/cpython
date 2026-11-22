@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 
 #include "clinic/cellobject.c.h"
