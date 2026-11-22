@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(batched_new__doc__,
 "batched(iterable, n, *, strict=False)\n"
@@ -487,6 +488,54 @@ exit:
     return return_value;
 }
 
+static PyObject *
+chain_new_impl(PyTypeObject *type, PyObject * const *iterables,
+               Py_ssize_t iterables_length);
+
+static PyObject *
+chain_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->chain_type;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("chain", kwargs)) {
+        goto exit;
+    }
+    iterables = _PyTuple_ITEMS(args);
+    iterables_length = PyTuple_GET_SIZE(args);
+    return_value = chain_new_impl(type, iterables, iterables_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+chain_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+
+    assert(_PyType_CAST(type)->tp_new == chain_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("chain", kwnames)) {
+        goto exit;
+    }
+    iterables = args;
+    iterables_length = nargs;
+    return_value = chain_new_impl(_PyType_CAST(type), iterables, iterables_length);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 "from_iterable($type, iterable, /)\n"
 "--\n"
@@ -522,6 +571,102 @@ chain_next(PyObject *self)
     Py_END_CRITICAL_SECTION();
 
     return return_value;
+}
+
+static PyObject *
+product_new_impl(PyTypeObject *type, PyObject * const *iterables,
+                 Py_ssize_t iterables_length, Py_ssize_t repeat);
+
+static PyObject *
+product_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(repeat), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"repeat", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "product",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+    Py_ssize_t repeat = 1;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(fastargs[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        repeat = ival;
+    }
+skip_optional_kwonly:
+    iterables = args;
+    iterables_length = nargs;
+    return_value = product_new_impl(type, iterables, iterables_length, repeat);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+product_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return product_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+product_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == product_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return product_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
 
 static PyObject *
@@ -1073,6 +1218,91 @@ exit:
 }
 
 static PyObject *
+zip_longest_new_impl(PyTypeObject *type, PyObject * const *iterables,
+                     Py_ssize_t iterables_length, PyObject *fillvalue);
+
+static PyObject *
+zip_longest_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(fillvalue), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"fillvalue", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "zip_longest",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+    PyObject *fillvalue = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    fillvalue = fastargs[0];
+skip_optional_kwonly:
+    iterables = args;
+    iterables_length = nargs;
+    return_value = zip_longest_new_impl(type, iterables, iterables_length, fillvalue);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return zip_longest_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+zip_longest_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == zip_longest_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return zip_longest_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+
+static PyObject *
 zip_longest_next_impl(ziplongestobject *self);
 
 static PyObject *
@@ -1086,4 +1316,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=4b55088ac24582b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f34b36ad77235cf3 input=a9049054013a1b77]*/
