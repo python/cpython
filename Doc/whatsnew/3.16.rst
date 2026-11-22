@@ -1137,6 +1137,15 @@ ast
   in :gh:`153568`.)
 
 
+base64 and binascii
+-------------------
+
+* Base64 encoding and decoding use NEON instructions on AArch64.  For inputs
+  of 64 KiB, :func:`base64.b64encode` is about 5x faster and
+  :func:`base64.b64decode` about 3x faster on an Apple M5.
+  (Contributed by Justin Bennington in :gh:`124951`.)
+
+
 datetime and time
 -----------------
 

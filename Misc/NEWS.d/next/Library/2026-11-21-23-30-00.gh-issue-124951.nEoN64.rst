@@ -1,0 +1,2 @@
+Base64 encoding and decoding in :mod:`binascii` and :mod:`base64` now use
+NEON instructions on AArch64 and are up to 5x faster for large inputs.

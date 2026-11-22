@@ -403,6 +403,7 @@
     <ClInclude Include="..\Include\unicodeobject.h" />
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
+    <ClInclude Include="..\Modules\binascii_neon.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
