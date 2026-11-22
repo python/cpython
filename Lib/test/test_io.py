@@ -2230,6 +2230,21 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertEqual(pair.read(0), b'')
         self.assertEqual(pair.write(b''), 0)
 
+    def test_reinit(self):
+        # gh-162246: Calling __init__() again must release the previous
+        # reader and writer, the writer first so it flushes before the
+        # reader closes a shared raw stream.
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        ref = weakref.ref(raw)
+        pair.__init__(self.MockRawIO(), self.MockRawIO())
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
+        del raw
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_detach(self):
         pair = self.tp(self.MockRawIO(), self.MockRawIO())
         self.assertRaises(self.UnsupportedOperation, pair.detach)
@@ -2284,6 +2299,10 @@ class BufferedRWPairTest(unittest.TestCase):
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 
+        # gh-138720: C BufferedRWPair would destruct in a bad order resulting in
+        # an unraisable exception.
+        support.gc_collect()
+
     def test_write(self):
         w = self.MockRawIO()
         pair = self.tp(self.MockRawIO(), w)
@@ -2295,6 +2314,15 @@ class BufferedRWPairTest(unittest.TestCase):
         buffer[:] = b"***"  # Overwrite our copy of the data
         pair.flush()
         self.assertEqual(w._write_stack, [b"abc", b"def"])
+
+    def test_destructor_flushes_shared_stream(self):
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        self.assertEqual(raw._write_stack, [])
+        del pair
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
 
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
@@ -3373,6 +3401,23 @@ class TextIOWrapperTest(unittest.TestCase):
             remaining = f.read()
             self.assertEqual(remaining, "")
 
+    def test_tell_after_seek_past_cr(self):
+        # tell() must tolerate a stale bytes-per-char ratio after seek().
+        for data in (b'one\rtwo\rthree\r',
+                     ('ab\r' + '\u20ac' * 15).encode()):
+            expected = data.decode().replace('\r', '\n')
+            for i in range(len(expected)):
+                with self.subTest(data=data, i=i):
+                    f = self.TextIOWrapper(self.BytesIO(data),
+                                           encoding='utf-8')
+                    f.read(i)
+                    pos = f.tell()
+                    f.read(1)
+                    f.seek(pos)
+                    self.assertEqual(f.read(1), expected[i])
+                    f.seek(f.tell())
+                    self.assertEqual(f.read(), expected[i + 1:])
+
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
         f.write("\u00e6\u0300")
@@ -4379,6 +4424,17 @@ class CTextIOWrapperTest(TextIOWrapperTest):
             wrapper.write('x')
             self.assertRaisesRegex(ValueError, "detached", wrapper.read)
 
+    def test_read_reinitialized_as_write_only(self):
+        class Buffer(self.BytesIO):
+            def read(self, size=-1):
+                stream.__init__(writer, encoding="ascii")
+                return b"a"
+
+        with (self.BufferedWriter(self.BytesIO()) as writer,
+              self.TextIOWrapper(Buffer(), encoding="ascii") as stream):
+            with self.assertRaises(self.UnsupportedOperation):
+                stream.read()
+
     def test_reentrant_detach_during_read(self):
         # gh-157363, gh-157364: The buffer must stay alive until its active
         # read operation returns.
@@ -4411,6 +4467,17 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_tell_with_invalid_b2cratio(self):
+        for ratio in (float('nan'), float('inf'), -float('inf'), 1e100):
+            with self.subTest(ratio=ratio):
+                with self.TextIOWrapper(self.BytesIO(b'abc'),
+                                        encoding='utf-8') as f:
+                    self.assertEqual(f.read(1), 'a')
+                    f._b2cratio = ratio
+                    position = f.tell()
+                    f.seek(position)
+                    self.assertEqual(f.read(), 'bc')
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):

@@ -695,6 +695,11 @@ def decompress(data):
 
 def main():
     from argparse import ArgumentParser
+    import runpy
+
+    # Prevent shadowing a stdlib module from the extracted file
+    runpy._remove_sys_path0()
+
     parser = ArgumentParser(description=
         "A simple command line interface for the gzip module: act like gzip, "
         "but do not delete the input file.",

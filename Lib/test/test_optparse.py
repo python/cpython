@@ -1011,7 +1011,7 @@ class TestOptionGroup(BaseTest):
                                              description="Some more options")
         group.set_title("Bacon")
         group.add_option("--bacon", type="int")
-        self.assertTrue(self.parser.get_option_group("--bacon"), group)
+        self.assertIs(self.parser.get_option_group("--bacon"), group)
 
 # -- Test extending and parser.parse_args() ----------------------------
 

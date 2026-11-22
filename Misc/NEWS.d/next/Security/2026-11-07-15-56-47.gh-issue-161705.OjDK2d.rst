@@ -1,0 +1,6 @@
+.. cve: CVE-2026-115791
+
+Remove ``sys.path[0]`` in :mod:`gzip`, :mod:`tarfile` and :mod:`zipfile`
+command line interface to prevent shadowing standard library modules from
+extracted files. Issue reported by Jelle Zijlstra, patch by Gregory P.
+Smith and Victor Stinner.

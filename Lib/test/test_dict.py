@@ -996,6 +996,26 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(b), ['x', 'y', 'z', 'b', 'a'])
 
     @support.cpython_only
+    def test_splittable_setdefault_str_subclass(self):
+        class C:
+            pass
+
+        class S(str):
+            pass
+
+        a = C()
+        a.x = 1
+        b = C()
+        b.y = 2
+        d = b.__dict__
+
+        self.assertEqual(d.setdefault(S('x'), 5), 5)
+        self.assertEqual(d, {'y': 2, 'x': 5})
+        self.assertEqual(d.setdefault(S('x'), 6), 5)
+        self.assertEqual(list(d), ['y', 'x'])
+        self.assertEqual(a.__dict__, {'x': 1})
+
+    @support.cpython_only
     def test_splittable_del(self):
         """split table must be combined when del d[k]"""
         a, b = self.make_shared_key_dict(2)

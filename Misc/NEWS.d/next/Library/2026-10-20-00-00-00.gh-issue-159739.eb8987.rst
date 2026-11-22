@@ -1,0 +1,2 @@
+Avoid undefined behavior when :func:`struct.pack_into` copies a bytearray into
+overlapping output.

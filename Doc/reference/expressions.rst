@@ -1034,8 +1034,8 @@ which are used to control the execution of a generator function.
    If the asynchronous generator function then exits gracefully, is already
    closed, or raises :exc:`GeneratorExit` (by not catching the exception),
    then the returned awaitable will raise a :exc:`StopIteration` exception.
-   Any further awaitables returned by subsequent calls to the asynchronous
-   generator will raise a :exc:`StopAsyncIteration` exception.  If the
+   Awaitables returned by subsequent calls to :meth:`~agen.__anext__`
+   or :meth:`~agen.asend` will raise a :exc:`StopAsyncIteration` exception.  If the
    asynchronous generator yields a value, a :exc:`RuntimeError` is raised
    by the awaitable.  If the asynchronous generator raises any other exception,
    it is propagated to the caller of the awaitable.  If the asynchronous

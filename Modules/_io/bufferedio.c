@@ -552,8 +552,8 @@ _io__Buffered_close_impl(buffered *self)
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
-
-    r = buffered_closed(self);
+    /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
+    r = IS_CLOSED(self);
     if (r < 0)
         goto end;
     if (r > 0) {
@@ -2270,20 +2270,25 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
         return -1;
     }
 
-    self->reader = (buffered *) PyObject_CallFunction(
+    buffered *new_reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
-    if (self->reader == NULL)
-        return -1;
-
-    self->writer = (buffered *) PyObject_CallFunction(
-            (PyObject *)state->PyBufferedWriter_Type,
-            "On", writer, buffer_size);
-    if (self->writer == NULL) {
-        Py_CLEAR(self->reader);
+    if (new_reader == NULL) {
         return -1;
     }
 
+    buffered *new_writer = (buffered *) PyObject_CallFunction(
+            (PyObject *)state->PyBufferedWriter_Type,
+            "On", writer, buffer_size);
+    if (new_writer == NULL) {
+        Py_DECREF(new_reader);
+        return -1;
+    }
+
+    /* Release a previous writer before a previous reader, see
+       bufferedrwpair_clear(). */
+    Py_XSETREF(self->writer, new_writer);
+    Py_XSETREF(self->reader, new_reader);
     return 0;
 }
 
@@ -2302,8 +2307,9 @@ static int
 bufferedrwpair_clear(PyObject *op)
 {
     rwpair *self = rwpair_CAST(op);
-    Py_CLEAR(self->reader);
+    /* Let the writer flush before the reader closes a shared raw stream. */
     Py_CLEAR(self->writer);
+    Py_CLEAR(self->reader);
     Py_CLEAR(self->dict);
     return 0;
 }

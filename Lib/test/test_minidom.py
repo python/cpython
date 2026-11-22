@@ -1086,7 +1086,7 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(len(clone.childNodes), 1)
         self.assertEqual(clone.childNodes.length, 1)
         self.assertIsNone(clone.parentNode)
-        self.assertTrue(clone.toxml(), '<doc attr="value"><foo/></doc>')
+        self.assertEqual(clone.toxml(), '<doc attr="value"><foo/></doc>')
         dom.unlink()
 
     def testCloneDocumentShallow(self):

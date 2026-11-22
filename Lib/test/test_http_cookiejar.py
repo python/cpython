@@ -743,6 +743,55 @@ class CookieTests(unittest.TestCase):
 
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
+    def test_expired_cookie_from_other_domain_is_ignored(self):
+        c = CookieJar()
+        interact_netscape(c, "http://www.victim.test/",
+                          'session=secret; Domain=.victim.test; Path=/')
+
+        for domain in ('.victim.test', 'victim.test'):
+            for expires in (
+                'Max-Age=0',
+                'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+            ):
+                hdr = f'session=x; Domain={domain}; Path=/; {expires}'
+                with self.subTest(hdr=hdr):
+                    interact_netscape(c, "http://www.attacker.test/", hdr)
+                    self.assertEqual(len(c), 1)
+                    self.assertIn(
+                        'session=secret',
+                        interact_netscape(c, "http://www.victim.test/"))
+
+        interact_netscape(c, "http://www.victim.test/",
+                          'session=x; Domain=.victim.test; Path=/; Max-Age=0')
+        self.assertEqual(len(c), 0)
+
+    def test_expired_cookie_from_other_path_is_ignored(self):
+        pol = DefaultCookiePolicy(strict_ns_set_path=True)
+        c = CookieJar(pol)
+        interact_netscape(c, "http://www.acme.com/a/",
+                          'token=secret; Path=/a')
+        self.assertEqual(len(c), 1)
+        interact_netscape(c, "http://www.acme.com/b/",
+                          'token=x; Path=/a; Max-Age=0')
+        self.assertEqual(len(c), 1)
+        interact_netscape(c, "http://www.acme.com/a/",
+                          'token=x; Path=/a; Max-Age=0')
+        self.assertEqual(len(c), 0)
+
+    def test_expired_cookie_for_blocked_domain_is_ignored(self):
+        c = CookieJar()
+        interact_netscape(c, "http://www.victim.test/",
+                          'session=secret; Domain=.victim.test; Path=/')
+        self.assertEqual(len(c), 1)
+        c.set_policy(DefaultCookiePolicy(blocked_domains=[".victim.test"]))
+        interact_netscape(c, "http://www.victim.test/",
+                          'session=x; Domain=.victim.test; Path=/; Max-Age=0')
+        self.assertEqual(len(c), 1)
+        c.set_policy(DefaultCookiePolicy())
+        interact_netscape(c, "http://www.victim.test/",
+                          'session=x; Domain=.victim.test; Path=/; Max-Age=0')
+        self.assertEqual(len(c), 0)
+
     def test_default_path(self):
         # RFC 2965
         pol = DefaultCookiePolicy(rfc2965=True)

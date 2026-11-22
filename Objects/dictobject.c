@@ -4548,7 +4548,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || value == NULL) {
         value = default_value;
 
         // See comment to this function in insertdict.
@@ -7602,6 +7602,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 Py_BEGIN_CRITICAL_SECTION(dict);
                 PyInterpreterState *interp = _PyInterpreterState_GET();
                 PyDictKeysObject *oldkeys = dict->ma_keys;
+                ensure_shared_on_resize(dict);
                 set_keys(dict, Py_EMPTY_KEYS);
                 dict->ma_values = NULL;
                 dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));

@@ -568,11 +568,11 @@ class ZipInfo:
 
     def _encodeFilenameFlags(self):
         if self.flag_bits & _MASK_UTF_FILENAME:
-            encoding = 'ascii'
+            encoding = 'utf-8'
         else:
             encoding = 'cp437'
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode(encoding), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -1842,7 +1842,9 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = _MASK_UTF_FILENAME
+        zinfo.flag_bits &= _MASK_UTF_FILENAME
+        if not zinfo.filename.isascii():
+            zinfo.flag_bits |= _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -2413,6 +2415,10 @@ class PyZipFile(ZipFile):
 
 def main(args=None):
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description, color=True)

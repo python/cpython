@@ -30,6 +30,11 @@ import http.client
 
 support.requires_working_socket(module=True)
 
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
 # XXX
 # Request
 # CacheFTPHandler (hard to write)
@@ -1734,6 +1739,7 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_proxy_digest_auth(self):
         # gh-60299: ProxyDigestAuthHandler must look up credentials using
         # the proxy's authority
@@ -1797,6 +1803,7 @@ class HandlerTests(unittest.TestCase):
         auth = http_handler.requests[1].get_header("Proxy-authorization")
         self.assertIn('uri="%s"' % request_url, auth)
 
+    @skip_libssl_fips_mode  # Uses MD5 algorithm in challenge
     def test_digest_auth_uses_full_url(self):
         # The non-proxy case must keep using the full request URL (not
         # just the host) for the password lookup, so that sub-URI realm
@@ -1838,6 +1845,37 @@ class HandlerTests(unittest.TestCase):
                      "abcdef0123456789:%s" % H("GET:/"))
         self.assertIn('uri="/"', auth)
         self.assertIn('response="%s"' % respdig, auth)
+
+    def test_proxy_auth_ignores_direct_407(self):
+        # gh-158907: a direct HTTP origin that returns 407 must not receive
+        # credentials registered for the same authority over HTTPS.
+        realm = "test-realm"
+        cases = [
+            (urllib.request.ProxyBasicAuthHandler,
+             'Basic realm="%s"' % realm),
+            (urllib.request.ProxyDigestAuthHandler,
+             'Digest realm="%s", nonce="abc", qop="auth"' % realm),
+        ]
+        for handler_class, challenge in cases:
+            with self.subTest(handler=handler_class.__name__):
+                opener = OpenerDirector()
+                opener.add_handler(urllib.request.ProxyHandler({}))
+                password_manager = urllib.request.HTTPPasswordMgr()
+                auth_handler = handler_class(password_manager)
+                http_handler = MockHTTPHandlerRedirect(
+                    407, 'Proxy-Authenticate: %s\r\n\r\n' % challenge)
+                opener.add_handler(auth_handler)
+                opener.add_handler(http_handler)
+
+                password_manager.add_password(
+                    realm, "https://example.com/",
+                    "victim-user", "victim-secret")
+                opener.open("http://example.com/resource")
+
+                self.assertEqual(len(http_handler.requests), 1)
+                self.assertFalse(
+                    http_handler.requests[0].has_header(
+                        "Proxy-authorization"))
 
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
@@ -1919,6 +1957,7 @@ class HandlerTests(unittest.TestCase):
             self.assertIn('nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093"', auth)
             self.assertIn('opaque="5ccc069c403ebaf9f0171e9517f40e41"', auth)
 
+    @skip_libssl_fips_mode
     def test_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
@@ -1984,6 +2023,7 @@ class HandlerTests(unittest.TestCase):
             [('Negotiate', 'Negotiate'), ('Bearer', 'Bearer abc=='),
              ('Digest', 'Digest realm="a"')])
 
+    @skip_libssl_fips_mode
     def test_proxy_digest_auth_multiple_challenges(self):
         realm = "digest@example.com"
         digest = (f'Digest realm="{realm}", '
@@ -2305,12 +2345,6 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
-
-
-skip_libssl_fips_mode = unittest.skipIf(
-    support.is_libssl_fips_mode(),
-    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
-)
 
 
 class TestDigestAuthAlgorithms(unittest.TestCase):

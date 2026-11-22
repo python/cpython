@@ -2202,7 +2202,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                 if (n > code->size)
                     n = code->size;
                 if (n > 0)
-                    memcpy(res, p, n);
+                    memmove(res, p, n);
             } else if (e->format == 'p') {
                 Py_ssize_t n;
                 int isstring;
@@ -2228,7 +2228,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = code->size - 1;
                 }
                 if (n > 0)
-                    memcpy(res + 1, p, n);
+                    memmove(res + 1, p, n);
                 if (n > 255)
                     n = 255;
                 if (n > 0) {
