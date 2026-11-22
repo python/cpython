@@ -146,13 +146,16 @@ class Callbacks(unittest.TestCase):
     def test_argument_conversion_error_does_not_leak(self):
         import weakref
 
-        class PoisonedKey(str):
-            __hash__ = str.__hash__
+        marker = '_needs_com_addref_'
+
+        class PoisonedKey:
+            def __hash__(self):
+                return hash(marker)
 
             def __eq__(self, other):
-                if str(other) == '_needs_com_addref_':
+                if type(other) is str and other == marker:
                     raise RuntimeError('injected lookup failure')
-                return str.__eq__(self, other)
+                return NotImplemented
 
         refs = []
         finalized_values = []
@@ -167,15 +170,16 @@ class Callbacks(unittest.TestCase):
             if getattr(arg, 'temporary', False):
                 finalized_values.append(arg.value)
 
-        Arg = type('Arg', (ctypes.c_void_p,), {
-            '__init__': init,
-            '__del__': finalize,
-            PoisonedKey('_needs_com_addref_'): True,
-        })
+        with self.assertWarnsRegex(RuntimeWarning, 'non-string key'):
+            Arg = type('Arg', (ctypes.c_void_p,), {
+                '__init__': init,
+                '__del__': finalize,
+                PoisonedKey(): True,
+            })
 
         # Verify that the COM marker lookup can fail.
         with self.assertRaises(RuntimeError):
-            '_needs_com_addref_' in vars(Arg)
+            marker in vars(Arg)
 
         calls = 0
 
