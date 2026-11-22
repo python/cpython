@@ -6334,7 +6334,6 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_no_signature, methods_unsupported_signature)
 
     def test_types_module_has_signatures(self):
-        unsupported_signature = {'CellType'}
         methods_no_signature = {
             'AsyncGeneratorType': {'athrow'},
             'CoroutineType': {'throw'},
@@ -6342,7 +6341,6 @@ class TestSignatureDefinitions(unittest.TestCase):
             'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
         self._test_module_has_signatures(types,
-                unsupported_signature=unsupported_signature,
                 methods_no_signature=methods_no_signature)
 
     def test_sys_module_has_signatures(self):
