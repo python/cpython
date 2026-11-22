@@ -83,22 +83,13 @@ PyType_Spec cthunk_spec = {
  * slower.
  */
 static int
-TryAddRef(PyObject *cnv, CDataObject *obj)
+NeedsComAddRef(PyObject *cnv)
 {
-    IUnknown *punk;
     PyObject *attrdict = _PyType_GetDict((PyTypeObject *)cnv);
     if (!attrdict) {
         return 0;
     }
-    int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
-    if (r <= 0) {
-        return r;
-    }
-
-    punk = *(IUnknown **)obj->b_ptr;
-    if (punk)
-        punk->lpVtbl->AddRef(punk);
-    return 0;
+    return PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
 }
 #endif
 
@@ -177,14 +168,25 @@ static void _CallPythonObject(ctypes_state *st,
                 Py_DECREF(obj);
                 goto Error;
             }
-            memcpy(obj->b_ptr, *pArgs, info->size);
-            args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            if (TryAddRef(cnv, obj) < 0) {
+            // Look up the marker before exposing the borrowed pointer to
+            // the wrapper's finalizer.
+            int needs_addref = NeedsComAddRef(cnv);
+            if (needs_addref < 0) {
                 Py_DECREF(obj);
                 goto Error;
             }
 #endif
+            memcpy(obj->b_ptr, *pArgs, info->size);
+#ifdef MS_WIN32
+            if (needs_addref) {
+                IUnknown *punk = *(IUnknown **)obj->b_ptr;
+                if (punk) {
+                    punk->lpVtbl->AddRef(punk);
+                }
+            }
+#endif
+            args[i] = (PyObject *)obj;
         } else {
             PyErr_Format(PyExc_TypeError,
                          "cannot build parameter of type %R", cnv);

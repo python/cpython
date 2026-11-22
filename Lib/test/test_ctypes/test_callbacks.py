@@ -142,7 +142,7 @@ class Callbacks(unittest.TestCase):
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
     @unittest.skipUnless(sys.platform == 'win32',
-                         'TryAddRef() is only used on Windows')
+                         'COM callback argument handling is Windows-only')
     def test_argument_conversion_error_does_not_leak(self):
         import weakref
 
@@ -155,18 +155,25 @@ class Callbacks(unittest.TestCase):
                 return str.__eq__(self, other)
 
         refs = []
+        finalized_values = []
         track = False
 
         def init(arg):
             if track:
                 refs.append(weakref.ref(arg))
+                arg.temporary = True
+
+        def finalize(arg):
+            if getattr(arg, 'temporary', False):
+                finalized_values.append(arg.value)
 
         Arg = type('Arg', (ctypes.c_void_p,), {
             '__init__': init,
+            '__del__': finalize,
             PoisonedKey('_needs_com_addref_'): True,
         })
 
-        # Verify that the dictionary lookup in TryAddRef() can fail.
+        # Verify that the COM marker lookup can fail.
         with self.assertRaises(RuntimeError):
             '_needs_com_addref_' in vars(Arg)
 
@@ -178,6 +185,8 @@ class Callbacks(unittest.TestCase):
 
         c_callback = CFUNCTYPE(None, Arg)(callback)
         source = Arg()
+        # The finalizer records the pointer without dereferencing it.
+        source.value = 1
         old_hook = sys.unraisablehook
         try:
             sys.unraisablehook = lambda unraisable: None
@@ -192,6 +201,7 @@ class Callbacks(unittest.TestCase):
         self.assertEqual(calls, 0)
         self.assertEqual(len(refs), 32)
         self.assertTrue(all(ref() is None for ref in refs))
+        self.assertEqual(finalized_values, [None] * 32)
 
     @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
                          'ctypes.WINFUNCTYPE is required')
