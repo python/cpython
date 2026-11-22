@@ -2942,7 +2942,7 @@ array.array.__new__ as array_new
 Create array object.
 
 Return a new array whose items are restricted by typecode, and
-initialized from the optional initializer value, which must be a list
+initialized from the optional initializer value, which must be a list,
 string or iterable over elements of the appropriate type.
 
 Arrays represent basic values and behave very much like lists, except
