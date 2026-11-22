@@ -182,8 +182,9 @@ method_getattro(PyObject *obj, PyObject *name)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
-method.__new__ as method_new
+method.__new__ as method_type_new
     function: object
     instance: object
     /
@@ -192,8 +193,9 @@ Create a bound instance method object.
 [clinic start generated code]*/
 
 static PyObject *
-method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
-/*[clinic end generated code: output=d33ef4ebf702e1f7 input=4e32facc3c3108ae]*/
+method_type_new_impl(PyTypeObject *type, PyObject *function,
+                     PyObject *instance)
+/*[clinic end generated code: output=e9877864a8bfdf70 input=70c1e0da5d6267f5]*/
 {
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError,
@@ -323,7 +325,7 @@ PyTypeObject PyMethod_Type = {
     .tp_setattro = PyObject_GenericSetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
                 Py_TPFLAGS_HAVE_VECTORCALL,
-    .tp_doc = method_new__doc__,
+    .tp_doc = method_type_new__doc__,
     .tp_traverse = method_traverse,
     .tp_richcompare = method_richcompare,
     .tp_weaklistoffset = offsetof(PyMethodObject, im_weakreflist),
@@ -331,7 +333,8 @@ PyTypeObject PyMethod_Type = {
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
     .tp_descr_get = method_descr_get,
-    .tp_new = method_new,
+    .tp_new = method_type_new,
+    .tp_vectorcall = method_type_vectorcall,
 };
 
 /* ------------------------------------------------------------------------
