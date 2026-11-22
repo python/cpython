@@ -1426,104 +1426,49 @@ typedef struct {
 
 #define _mapobject_CAST(op)     ((mapobject *)(op))
 
+/*[clinic input]
+class map "mapobject *" "&PyMap_Type"
+@vectorcall
+@classmethod
+map.__new__ as map_new
+
+    *args: array
+    strict: bool = False
+[clinic start generated code]*/
+
 static PyObject *
-map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+map_new_impl(PyTypeObject *type, PyObject * const *args,
+             Py_ssize_t args_length, int strict)
+/*[clinic end generated code: output=a42e882981848ca5 input=f037decab456747b]*/
 {
-    PyObject *it, *iters, *func;
-    mapobject *lz;
-    Py_ssize_t numargs, i;
-    int strict = 0;
-
-    if (kwds) {
-        PyObject *empty = PyTuple_New(0);
-        if (empty == NULL) {
-            return NULL;
-        }
-        static char *kwlist[] = {"strict", NULL};
-        int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:map", kwlist, &strict);
-        Py_DECREF(empty);
-        if (!parsed) {
-            return NULL;
-        }
-    }
-
-    numargs = PyTuple_Size(args);
-    if (numargs < 2) {
+    if (args_length < 2) {
         PyErr_SetString(PyExc_TypeError,
            "map() must have at least two arguments.");
         return NULL;
     }
 
-    iters = PyTuple_New(numargs-1);
-    if (iters == NULL)
-        return NULL;
-
-    for (i=1 ; i<numargs ; i++) {
-        /* Get iterator. */
-        it = PyObject_GetIter(PyTuple_GET_ITEM(args, i));
-        if (it == NULL) {
-            Py_DECREF(iters);
-            return NULL;
-        }
-        PyTuple_SET_ITEM(iters, i-1, it);
-    }
-
-    /* create mapobject structure */
-    lz = (mapobject *)type->tp_alloc(type, 0);
-    if (lz == NULL) {
-        Py_DECREF(iters);
-        return NULL;
-    }
-    lz->iters = iters;
-    func = PyTuple_GET_ITEM(args, 0);
-    lz->func = Py_NewRef(func);
-    lz->strict = strict;
-
-    return (PyObject *)lz;
-}
-
-static PyObject *
-map_vectorcall(PyObject *type, PyObject * const*args,
-                size_t nargsf, PyObject *kwnames)
-{
-    PyTypeObject *tp = _PyType_CAST(type);
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
-        // Fallback to map_new()
-        PyThreadState *tstate = _PyThreadState_GET();
-        return _PyObject_MakeTpCall(tstate, type, args, nargs, kwnames);
-    }
-
-    if (nargs < 2) {
-        PyErr_SetString(PyExc_TypeError,
-           "map() must have at least two arguments.");
-        return NULL;
-    }
-
-    PyObject *iters = PyTuple_New(nargs-1);
+    PyObject *iters = PyTuple_New(args_length - 1);
     if (iters == NULL) {
         return NULL;
     }
 
-    for (int i=1; i<nargs; i++) {
+    for (Py_ssize_t i = 1; i < args_length; i++) {
         PyObject *it = PyObject_GetIter(args[i]);
         if (it == NULL) {
             Py_DECREF(iters);
             return NULL;
         }
-        PyTuple_SET_ITEM(iters, i-1, it);
+        PyTuple_SET_ITEM(iters, i - 1, it);
     }
 
-    mapobject *lz = (mapobject *)tp->tp_alloc(tp, 0);
+    mapobject *lz = (mapobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(iters);
         return NULL;
     }
     lz->iters = iters;
     lz->func = Py_NewRef(args[0]);
-    lz->strict = 0;
+    lz->strict = strict;
 
     return (PyObject *)lz;
 }
