@@ -1016,14 +1016,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
 PyObject *
 _PyFrameLocalsProxy_New(PyFrameObject *frame)
 {
-    PyObject* args = PyTuple_Pack(1, frame);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    PyObject* proxy = framelocalsproxy_new(&PyFrameLocalsProxy_Type, args, NULL);
-    Py_DECREF(args);
-    return proxy;
+    return framelocalsproxy_new_impl(&PyFrameLocalsProxy_Type, (PyObject *)frame);
 }
 
 static PyMemberDef frame_memberlist[] = {
