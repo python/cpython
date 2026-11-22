@@ -889,6 +889,66 @@ class RepeatedUserAgentTest(unittest.TestCase):
         self.assertEqual(len(entry.rulelines), 1)
         self.assertFalse(parser.can_fetch("evil", "/"))
 
+    def test_many_groups_for_same_user_agent(self):
+        body = "User-agent: evil\nDisallow: /x\n\n" * 999
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        entry = parser.groups["evil"]
+        self.assertEqual(len(entry.rulelines), 999)
+        # The merged entry is extended in place rather than copied.
+        parser.parse("User-agent: evil\nDisallow: /x\nCrawl-delay: 5".splitlines())
+        self.assertIs(parser.groups["evil"], entry)
+        self.assertEqual(len(entry.rulelines), 1000)
+        self.assertEqual(entry.delay, 5)
+        # The original entries are left intact.
+        self.assertEqual([len(e.rulelines) for e in parser.entries], [1] * 1000)
+        self.assertIsNone(parser.entries[-2].delay)
+
+    def test_merged_group_shared_by_user_agents(self):
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse("""\
+User-agent: a
+User-agent: b
+User-agent: c
+Disallow: /x
+
+User-agent: a
+User-agent: b
+Disallow: /y
+
+User-agent: a
+Disallow: /z
+""".splitlines())
+        groups = parser.groups
+        self.assertIs(groups["c"], parser.entries[0])
+        self.assertEqual(list(map(str, groups["a"].rulelines)),
+                         ["Disallow: /x", "Disallow: /y", "Disallow: /z"])
+        self.assertEqual(list(map(str, groups["b"].rulelines)),
+                         ["Disallow: /x", "Disallow: /y"])
+        self.assertEqual(list(map(str, groups["c"].rulelines)),
+                         ["Disallow: /x"])
+        self.assertFalse(parser.can_fetch("a", "/z"))
+        self.assertTrue(parser.can_fetch("b", "/z"))
+        self.assertTrue(parser.can_fetch("c", "/y"))
+
+    def test_many_user_agents_in_one_group(self):
+        body = "".join(f"User-agent: bot{i}\n" for i in range(1000))
+        body += "Disallow: /\n\nUser-agent: other\nDisallow: /x\n"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        self.assertIs(parser.groups["bot0"], parser.groups["bot999"])
+        calls = []
+        orig = urllib.robotparser.Entry.applies_to
+        def applies_to(entry, useragent):
+            calls.append(entry)
+            return orig(entry, useragent)
+        with support.swap_attr(urllib.robotparser.Entry, "applies_to",
+                               applies_to):
+            self.assertTrue(parser.can_fetch("unknown", "/"))
+            self.assertFalse(parser.can_fetch("xbot5x", "/"))
+        # Each distinct entry is checked at most once per lookup.
+        self.assertEqual(len(calls), 2 + 1)
+
 
 if __name__=='__main__':
     unittest.main()
