@@ -2168,47 +2168,6 @@ typecode_to_mformat_code(const char *typecode)
     }
 }
 
-/* Forward declaration. */
-static PyObject *array_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-
-/*
- * Internal: This function wraps the array constructor--i.e., array_new()--to
- * allow the creation of array objects from C code without having to deal
- * directly the tuple argument of array_new(). The typecode argument is a
- * string, like "i" or "f" for example, representing an array
- * type code. The items argument is a bytes or a list object from which
- * contains the initial value of the array.
- *
- * On success, this functions returns the array object created. Otherwise,
- * NULL is returned to indicate a failure.
- */
-static PyObject *
-make_array(PyTypeObject *arraytype, const char *typecode, PyObject *items)
-{
-    PyObject *new_args;
-    PyObject *array_obj;
-    PyObject *typecode_obj;
-
-    assert(arraytype != NULL);
-    assert(items != NULL);
-
-    typecode_obj = PyUnicode_FromString(typecode);
-    if (typecode_obj == NULL)
-        return NULL;
-
-    new_args = _PyTuple_FromPairSteal(typecode_obj, Py_NewRef(items));
-    if (new_args == NULL) {
-        return NULL;
-    }
-
-    array_obj = array_new(arraytype, new_args, NULL);
-    Py_DECREF(new_args);
-    if (array_obj == NULL)
-        return NULL;
-
-    return array_obj;
-}
-
 /*
  * This functions is a special constructor used when unpickling an array. It
  * provides a portable way to rebuild an array from its memory representation.
@@ -2275,7 +2234,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     /* Fast path: No decoding has to be done. */
     if (mformat_code == typecode_to_mformat_code(typecode) ||
         mformat_code == UNKNOWN_FORMAT) {
-        return make_array(arraytype, typecode, items);
+        return array_new_impl(arraytype, typecode, items);
     }
 
     /* Slow path: Decode the byte string according to the given machine
@@ -2488,7 +2447,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         return NULL;
     }
 
-    result = make_array(arraytype, typecode, converted_items);
+    result = array_new_impl(arraytype, typecode, converted_items);
     Py_DECREF(converted_items);
     return result;
 }
