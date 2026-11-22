@@ -559,11 +559,13 @@ class TestSelfStackTrace(RemoteInspectionTestBase):
             for i in range(depth):
                 top = asyncio.create_task(link(top), name=f"a{i}")
             second = asyncio.create_task(link(first), name="b")
-            return (await top), asyncio.current_task().get_name()
+            await asyncio.wait((top, second))
+            second.exception()
+            return top.result(), asyncio.current_task().get_name()
 
         names, main_name = asyncio.run(main())
-        self.assertEqual(len(names), depth + 3)
-        self.assertIn(main_name, names)
+        expected_names = ["root", "b", main_name] + [f"a{i}" for i in range(depth)]
+        self.assertCountEqual(names, expected_names)
 
     @skip_if_not_supported
     def test_future_waiter_has_empty_stack(self):
