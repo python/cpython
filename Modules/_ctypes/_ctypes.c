@@ -5327,6 +5327,9 @@ Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
             stop = start;
 
         otherlen = PySequence_Length(value);
+        if (otherlen < 0) {
+            return -1;
+        }
         if (otherlen != slicelen) {
             PyErr_SetString(PyExc_ValueError,
                 "Can only assign sequence of same size");
