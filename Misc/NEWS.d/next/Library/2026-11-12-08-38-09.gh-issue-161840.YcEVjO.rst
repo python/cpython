@@ -1,0 +1,3 @@
+Propagate exceptions raised while getting the length of the assigned value
+in :mod:`ctypes` array slice assignment instead of replacing them with a
+:exc:`ValueError`.
