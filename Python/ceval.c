@@ -3783,6 +3783,10 @@ _PyEval_ThrowIntoLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame,
     tstate->exc_info = exc_info;
     _PyInterpreterFrame *caller = tstate->current_frame;
     assert(caller->return_offset == 0);
+    // The value moves to the body, leaving the caller as while the body runs.
+    assert(PyStackRef_IsNull(caller->stackpointer[-1]));
+    caller->stackpointer--;
+    assert(PyStackRef_IsNull(caller->stackpointer[-1]));
     frame->previous = caller;
     tstate->current_frame = frame;
     int too_deep = _Py_EnterRecursivePy(tstate);
@@ -3790,6 +3794,7 @@ _PyEval_ThrowIntoLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame,
     (void)too_deep;
     // Stands in for the value sent on resumption, like gen_send_ex2().
     _PyFrame_StackPush(frame, value);
+    monitor_throw(tstate, frame, frame->instr_ptr);
     return frame;
 }
 

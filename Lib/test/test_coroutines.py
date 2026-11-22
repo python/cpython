@@ -3134,12 +3134,45 @@ class LazyCoroutineTest(unittest.TestCase):
         self.assertIs(frame.f_code, inner.__code__)
         self.assertIsNone(frame.f_back)
 
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
-    def test_memory_error_at_first_suspension(self):
+    def run_failing_first_suspension(self, make_outer):
+        """Drive the coroutine returned by make_outer(awaitable, fail, failed).
+
+        fail() makes allocation number *start* fail; failed() stops that
+        and records the state of the awaitable.  Retry with a later *start*
+        until the allocation that fails creates a coroutine object when its
+        body first suspends at "await awaitable".
+        """
         @types.coroutine
         def suspend():
-            yield 1
+            yield "suspended"
 
+        for start in range(20):
+            awaitable = suspend()
+            states = []
+            def fail():
+                _testcapi.set_nomemory(start, start + 1)
+            def failed():
+                _testcapi.remove_mem_hooks()
+                states.append(inspect.getgeneratorstate(awaitable))
+            coro = make_outer(awaitable, fail, failed)
+            yields = []
+            try:
+                try:
+                    while True:
+                        yields.append(coro.send(None))
+                except BaseException as e:
+                    outcome = e
+            finally:
+                _testcapi.remove_mem_hooks()
+                awaitable.close()
+            if (states[:1] == [inspect.GEN_SUSPENDED]
+                    and "suspended" not in yields):
+                return yields, outcome
+            coro.close()
+        self.fail("no allocation failed at the first suspension")
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_memory_error_at_first_suspension(self):
         class CM:
             async def __aenter__(self):
                 log.append("enter")
@@ -3147,29 +3180,87 @@ class LazyCoroutineTest(unittest.TestCase):
                 log.append(("exit", typ))
 
         log = []
-        awaitable = suspend()
+        def make_outer(awaitable, fail, failed):
+            async def inner():
+                async with CM():
+                    fail()
+                    try:
+                        await awaitable
+                    finally:
+                        failed()
+                        log.append("finally")
+                return "resumed"
 
-        async def inner():
-            async with CM():
-                _testcapi.set_nomemory(0, 1)
+            async def outer():
+                return await inner()
+
+            log.clear()
+            return outer()
+
+        yields, outcome = self.run_failing_first_suspension(make_outer)
+        self.assertEqual(yields, [])
+        self.assertIsInstance(outcome, MemoryError)
+        self.assertEqual(log, ["enter", "finally", ("exit", MemoryError)])
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_memory_error_at_first_suspension_caught(self):
+        @types.coroutine
+        def suspend_again():
+            yield "again"
+
+        def make_outer(awaitable, fail, failed):
+            async def inner():
+                fail()
+                try:
+                    await awaitable
+                except MemoryError:
+                    failed()
+                    await suspend_again()
+                    return "caught"
+                finally:
+                    failed()
+
+            async def outer():
+                # The list checks the stack of outer() after the await.
+                return ["x", await inner(), "y"]
+
+            return outer()
+
+        yields, outcome = self.run_failing_first_suspension(make_outer)
+        self.assertEqual(yields, ["again"])
+        self.assertIsInstance(outcome, StopIteration)
+        self.assertEqual(outcome.value, ["x", "caught", "y"])
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_memory_error_at_first_suspension_monitoring(self):
+        events = []
+        tool = 2
+        E = sys.monitoring.events
+        sys.monitoring.use_tool_id(tool, "test_coroutines")
+        self.addCleanup(sys.monitoring.free_tool_id, tool)
+        sys.monitoring.register_callback(
+            tool, E.PY_THROW,
+            lambda code, offset, exc: events.append((code.co_name, type(exc))))
+        sys.monitoring.set_events(tool, E.PY_THROW)
+        self.addCleanup(sys.monitoring.set_events, tool, 0)
+
+        def make_outer(awaitable, fail, failed):
+            async def inner():
+                fail()
                 try:
                     await awaitable
                 finally:
-                    _testcapi.remove_mem_hooks()
-                    log.append("finally")
-            return "resumed"
+                    failed()
 
-        async def outer():
-            return await inner()
+            async def outer():
+                return await inner()
 
-        coro = outer()
-        try:
-            with self.assertRaises(MemoryError):
-                coro.send(None)
-        finally:
-            _testcapi.remove_mem_hooks()
-            awaitable.close()
-        self.assertEqual(log, ["enter", "finally", ("exit", MemoryError)])
+            events.clear()
+            return outer()
+
+        _, outcome = self.run_failing_first_suspension(make_outer)
+        self.assertIsInstance(outcome, MemoryError)
+        self.assertEqual(events[0], ("inner", MemoryError))
 
     def test_recursion_error_before_body_runs(self):
         async def f():

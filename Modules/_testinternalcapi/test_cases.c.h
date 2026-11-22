@@ -6006,7 +6006,8 @@
             sub_iter = stack_pointer[-4];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             #if !_Py_TAIL_CALL_INTERP
-            assert(throwflag);
+
+            assert(throwflag || frame->lazy_coro == LAZY_CORO_RUNNING);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             _PyFrame_SetStackPointer(frame, stack_pointer);
