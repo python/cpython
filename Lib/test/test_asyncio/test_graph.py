@@ -1,6 +1,7 @@
 import asyncio
 import io
 import unittest
+from unittest import mock
 
 
 # To prevent a warning "test altered the execution environment"
