@@ -1,3 +1,0 @@
-The :class:`venv.EnvBuilder` and :func:`venv.create` APIs now use the
-platform-dependent default for symlinks from :mod:`venv`'s command-line
-interface.

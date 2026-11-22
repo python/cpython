@@ -4,7 +4,7 @@
 .. module:: tkinter.fontchooser
    :synopsis: Font selection dialog
 
-.. versionadded:: next
+.. versionadded:: 3.16
 
 **Source code:** :source:`Lib/tkinter/fontchooser.py`
 

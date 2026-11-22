@@ -1,3 +1,0 @@
-Add :func:`locale.localize`, :func:`locale.delocalize`
-and platform-specific locale constants
-from the :mod:`!_locale` module to ``locale.__all__``.
