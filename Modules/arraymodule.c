@@ -82,7 +82,6 @@ get_array_state(PyObject *module)
     (get_array_state(PyType_GetModuleByDef(tp, &arraymodule)))
 #define get_array_state_by_class(cls) \
     (get_array_state(PyType_GetModule(cls)))
-#define clinic_state() (find_array_state_by_type(type))
 
 #define arrayobject_CAST(op)        ((arrayobject *)(op))
 #define arrayiterobject_CAST(op)    ((arrayiterobject *)(op))
@@ -134,7 +133,9 @@ enum machine_format_code {
  * Must come after arrayobject, arrayiterobject,
  * and enum machine_code_type definitions.
  */
+#define clinic_state() (find_array_state_by_type(type))
 #include "clinic/arraymodule.c.h"
+#undef clinic_state
 
 #define array_Check(op, state) PyObject_TypeCheck(op, state->ArrayType)
 
