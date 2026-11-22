@@ -565,6 +565,65 @@ class TclTest(unittest.TestCase):
         self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
         self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
+    def test_passing_deeply_nested(self):
+        call = self.interp.tk.call
+        setvar = self.interp.tk.setvar
+        for wrap in (lambda x: [x]), (lambda x: (x,)):
+            value = 'a'
+            for i in range(1001):
+                value = wrap(value)
+            self.assertEqual(int(call('string', 'length', value)), 1)
+            value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+            for i in range(support.exceeds_recursion_limit()):
+                value = wrap(value)
+            self.assertRaises(ValueError, call, 'set', '_', value)
+            self.assertRaises(ValueError, setvar, '_', value)
+        value = ['a', 1]
+        value.append(value)
+        self.assertRaises(ValueError, call, 'set', '_', value)
+        self.assertRaises(ValueError, setvar, '_', value)
+
+    @support.run_with_limited_c_stack()
+    def test_returning_deeply_nested(self):
+        if not self.wantobjects:
+            self.skipTest('requires wantobjects')
+        # run_with_limited_c_stack() runs the test in a new thread, and a
+        # Tcl interpreter can only be used in the thread that created it.
+        interp = Tcl()
+        interp.eval('set x a; for {set i 0} {$i < %d} {incr i} {set x [list $x]}'
+                    % support.exceeds_recursion_limit())
+        self.assertRaises(RecursionError, interp.getvar, 'x')
+        interp = None
+
+        # gh-161353: Clean up explicitly per-thread state to avoid leaking an
+        # event handle on Windows when test_tcl is run with -R 3:3 option.
+        _tkinter._finalize_thread()
+
+    def test_setvar_evil(self):
+        # gh-161388
+        class StrRaises:
+            def __str__(self):
+                raise RuntimeError("setvar evil")
+
+        value = StrRaises()
+        tk = self.interp.tk
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name1", value)
+        self.assertRaises(TclError, tk.getvar, "local_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.setvar("local_name2", "local_name3", value)
+        self.assertRaises(TclError, tk.getvar, "local_name2", "local_name3")
+
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name1", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name1")
+        with self.assertRaisesRegex(RuntimeError, "setvar evil"):
+            tk.globalsetvar("global_name2", "global_name3", value)
+        self.assertRaises(TclError, tk.globalgetvar, "global_name2", "global_name3")
+
     def test_user_command(self):
         result = None
         def testfunc(arg):
@@ -649,6 +708,22 @@ class TclTest(unittest.TestCase):
             self.assertEqual(a.typename, 'regexp')
         else:
             self.assertEqual(a, expected)
+
+    def test_return_dict_object(self):
+        # A dict is returned as a Tcl_Obj to preserve its structure.
+        tcl = self.interp.tk
+        a = tcl.call('dict', 'create', 'a', 1, 'b', 2)
+        if self.wantobjects:
+            self.assertIsInstance(a, _tkinter.Tcl_Obj)
+            self.assertEqual(a.typename, 'dict')
+        self.assertEqual(str(a), 'a 1 b 2')
+
+    def test_return_nsname_object(self):
+        # An "nsName" object is returned as a str, not wrapped in a Tcl_Obj.
+        tcl = self.interp.tk
+        a = tcl.call('namespace', 'current')
+        self.assertIsInstance(a, str)
+        self.assertEqual(a, '::')
 
     def test_splitlist(self):
         splitlist = self.interp.tk.splitlist
@@ -789,7 +864,7 @@ class BigmemTclTest(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=3, dry_run=False)
     def test_huge_string_builtins(self, size):
         tk = self.interp.tk
         value = '1' + ' ' * size

@@ -1,0 +1,2 @@
+#!/bin/sh
+xcrun --sdk xrsimulator${XROS_SDK_VERSION} strip -arch arm64 "$@"

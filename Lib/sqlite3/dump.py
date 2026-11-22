@@ -11,8 +11,12 @@ def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
 
 
+def _escape_single_quotes(value):
+    return value.replace("'", "''")
+
+
 def _quote_value(value):
-    return "'{0}'".format(value.replace("'", "''"))
+    return "'{0}'".format(_escape_single_quotes(value))
 
 
 def _iterdump(connection, *, filter=None):
@@ -80,11 +84,12 @@ def _iterdump(connection, *, filter=None):
         table_name_ident = _quote_name(table_name)
         res = cu.execute(f'PRAGMA table_info({table_name_ident})')
         column_names = [str(table_info[1]) for table_info in res.fetchall()]
-        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {0};".format(
-            table_name_ident,
+        q = "SELECT 'INSERT INTO {0} VALUES('{1}')' FROM {2};".format(
+            _escape_single_quotes(table_name_ident),
             "','".join(
                 "||quote({0})||".format(_quote_name(col)) for col in column_names
-            )
+            ),
+            table_name_ident,
         )
         query_res = cu.execute(q)
         for row in query_res:

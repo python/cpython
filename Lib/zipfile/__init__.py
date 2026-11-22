@@ -12,6 +12,7 @@ import struct
 import sys
 import threading
 import time
+import warnings  # must stay eager to support finalization
 
 try:
     import zlib # We may need its compression method
@@ -239,8 +240,9 @@ def _check_zipfile(fp):
                 return True     # Empty zipfiles are still zipfiles
             elif endrec[_ECD_DISK_NUMBER] == endrec[_ECD_DISK_START]:
                 # Central directory is on the same disk
-                fp.seek(sum(_handle_prepended_data(endrec)))
-                if endrec[_ECD_SIZE] >= sizeCentralDir:
+                start_dir = sum(_handle_prepended_data(endrec))
+                if start_dir >= 0 and endrec[_ECD_SIZE] >= sizeCentralDir:
+                    fp.seek(start_dir)
                     data = fp.read(sizeCentralDir)   # CD is where we expect it to be
                     if len(data) == sizeCentralDir:
                         centdir = struct.unpack(structCentralDir, data) # CD is the right size
@@ -418,6 +420,15 @@ def _sanitize_filename(filename):
         filename = filename.replace(os.altsep, "/")
     return filename
 
+def _read_local_file_header(fp):
+    fheader = fp.read(sizeFileHeader)
+    if len(fheader) != sizeFileHeader:
+        raise BadZipFile("Truncated file header")
+    fheader = struct.unpack(structFileHeader, fheader)
+    if fheader[_FH_SIGNATURE] != stringFileHeader:
+        raise BadZipFile("Bad magic number for file header")
+    return fheader
+
 
 class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
@@ -566,11 +577,11 @@ class ZipInfo:
 
     def _encodeFilenameFlags(self):
         if self.flag_bits & _MASK_UTF_FILENAME:
-            encoding = 'ascii'
+            encoding = 'utf-8'
         else:
             encoding = 'cp437'
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode(encoding), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -610,7 +621,6 @@ class ZipInfo:
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
                         else:
-                            import warnings
                             warnings.warn("Empty unicode path extra field (0x7075)", stacklevel=2)
                 except struct.error as e:
                     raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
@@ -680,7 +690,7 @@ class ZipInfo:
             self.external_attr = 0o40775 << 16  # drwxrwxr-x
             self.external_attr |= 0x10  # MS-DOS directory flag
         else:
-            self.external_attr = 0o600 << 16  # ?rw-------
+            self.external_attr = 0o100600 << 16  # -rw-------
         return self
 
     def is_dir(self):
@@ -792,7 +802,16 @@ class LZMADecompressor:
         except AttributeError:
             return b''
 
-    def decompress(self, data):
+    @property
+    def needs_input(self):
+        # While the LZMA properties header is still being buffered, more input
+        # is required; afterwards defer to the wrapped decompressor so a bounded
+        # decompress() call can be drained across reads.
+        if self._decomp is None:
+            return True
+        return self._decomp.needs_input
+
+    def decompress(self, data, max_length=-1):
         if self._decomp is None:
             self._unconsumed += data
             if len(self._unconsumed) <= 4:
@@ -808,7 +827,7 @@ class LZMADecompressor:
             data = self._unconsumed[4 + psize:]
             del self._unconsumed
 
-        result = self._decomp.decompress(data)
+        result = self._decomp.decompress(data, max_length)
         self.eof = self._decomp.eof
         return result
 
@@ -1177,8 +1196,15 @@ class ZipExtFile(io.BufferedIOBase):
             data = self._decompressor.unconsumed_tail
             if n > len(data):
                 data += self._read2(n - len(data))
-        else:
+        elif self._compress_type == ZIP_STORED:
             data = self._read2(n)
+        else:
+            # bzip2/lzma/zstd: a bounded decompress() call may leave input
+            # buffered inside the decompressor; drain that before reading more.
+            if getattr(self._decompressor, "needs_input", True):
+                data = self._read2(n)
+            else:
+                data = b''
 
         if self._compress_type == ZIP_STORED:
             self._eof = self._compress_left <= 0
@@ -1191,8 +1217,26 @@ class ZipExtFile(io.BufferedIOBase):
             if self._eof:
                 data += self._decompressor.flush()
         else:
-            data = self._decompressor.decompress(data)
-            self._eof = self._decompressor.eof or self._compress_left <= 0
+            # Bound the output of a single decompress() call (mirroring the
+            # DEFLATE path above) so that a small compressed member cannot
+            # expand into one unbounded read.
+            try:
+                data = self._decompressor.decompress(data, max(n, self.MIN_READ_SIZE))
+            except TypeError:
+                # See MonkeypatchedDecompressorTests in test_core.py
+                warnings._deprecated(
+                    'one-argument decompress()',
+                    'The decompress() method of '
+                    + type(self._decompressor).__name__
+                    + ' should take two arguments, data and max_length.'
+                    + ' One-argument calls will stop working before'
+                    + ' Python 3.21.',
+                    remove=(3, 21),
+                    stacklevel=4)
+                data = self._decompressor.decompress(data)
+            self._eof = (self._decompressor.eof or
+                         self._compress_left <= 0 and
+                         getattr(self._decompressor, "needs_input", True))
 
         data = data[:self._left]
         self._left -= len(data)
@@ -1514,7 +1558,7 @@ class _ZipRepacker:
                         zinfo.header_offset, entry_size, used_entry_size)
             if used_entry_size > entry_size:
                 raise BadZipFile(
-                    f"Overlapped entries: {zinfo.orig_filename!r} ")
+                    f"Overlapped entries: {zinfo.orig_filename!r}")
 
             if removed is not None and zinfo not in removed_zinfos:
                 used_entry_size = entry_size
@@ -1648,7 +1692,7 @@ class _ZipRepacker:
     def _validate_local_file_entry(self, fp, offset, end_offset):
         fp.seek(offset)
         try:
-            fheader = self._read_local_file_header(fp)
+            fheader = _read_local_file_header(fp)
         except BadZipFile:
             return None
 
@@ -1713,15 +1757,6 @@ class _ZipRepacker:
             return None
 
         return entry_size
-
-    def _read_local_file_header(self, fp):
-        fheader = fp.read(sizeFileHeader)
-        if len(fheader) != sizeFileHeader:
-            raise BadZipFile("Truncated file header")
-        fheader = struct.unpack(structFileHeader, fheader)
-        if fheader[_FH_SIGNATURE] != stringFileHeader:
-            raise BadZipFile("Bad magic number for file header")
-        return fheader
 
     def _scan_data_descriptor(self, fp, offset, end_offset, zip64):
         dd_fmt = '<LLQQ' if zip64 else '<LLLL'
@@ -1825,7 +1860,7 @@ class _ZipRepacker:
 
     def _calc_local_file_entry_size(self, fp, zinfo):
         fp.seek(zinfo.header_offset)
-        fheader = self._read_local_file_header(fp)
+        fheader = _read_local_file_header(fp)
 
         if zinfo.flag_bits & _MASK_USE_DATA_DESCRIPTOR:
             zip64 = fheader[_FH_UNCOMPRESSED_SIZE] == 0xffffffff
@@ -2152,7 +2187,6 @@ class ZipFile:
             raise TypeError("comment: expected bytes, got %s" % type(comment).__name__)
         # check for valid comment length
         if len(comment) > ZIP_MAX_COMMENT:
-            import warnings
             warnings.warn('Archive comment is too long; truncating to %d bytes'
                           % ZIP_MAX_COMMENT, stacklevel=2)
             comment = comment[:ZIP_MAX_COMMENT]
@@ -2215,12 +2249,7 @@ class ZipFile:
                                self._fpclose, self._lock, lambda: self._writing)
         try:
             # Skip the file header:
-            fheader = zef_file.read(sizeFileHeader)
-            if len(fheader) != sizeFileHeader:
-                raise BadZipFile("Truncated file header")
-            fheader = struct.unpack(structFileHeader, fheader)
-            if fheader[_FH_SIGNATURE] != stringFileHeader:
-                raise BadZipFile("Bad magic number for file header")
+            fheader = _read_local_file_header(zef_file)
 
             fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
@@ -2248,7 +2277,6 @@ class ZipFile:
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
                 if zinfo._end_offset == zinfo.header_offset:
-                    import warnings
                     warnings.warn(
                         f"Overlapped entries: {zinfo.orig_filename!r} "
                         f"(possible zip bomb)",
@@ -2291,7 +2319,9 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = _MASK_UTF_FILENAME
+        zinfo.flag_bits &= _MASK_UTF_FILENAME
+        if not zinfo.filename.isascii():
+            zinfo.flag_bits |= _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -2402,15 +2432,16 @@ class ZipFile:
         truncation."""
         if self.mode != 'a':
             raise ValueError("repack() requires mode 'a'")
-        if not self.fp:
-            raise ValueError(
-                "Attempt to write to ZIP archive that was already closed")
-        if self._writing:
-            raise ValueError(
-                "Can't write to ZIP archive while an open writing handle exists"
-            )
 
         with self._lock:
+            if not self.fp:
+                raise ValueError(
+                    "Attempt to write to ZIP archive that was already closed")
+            if self._writing or self._fileRefCnt > 1:
+                raise ValueError(
+                    "Can't repack ZIP archive while an open handle exists"
+                )
+
             self._writing = True
             try:
                 repacker = _ZipRepacker(
@@ -2498,7 +2529,6 @@ class ZipFile:
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""
         if zinfo.filename in self.NameToInfo:
-            import warnings
             warnings.warn('Duplicate name: %r' % zinfo.filename, stacklevel=3)
         if self.mode not in ('w', 'x', 'a'):
             raise ValueError("write() requires mode 'w', 'x', or 'a'")
@@ -2603,6 +2633,15 @@ class ZipFile:
         else:
             raise TypeError("Expected type str or ZipInfo")
 
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed"
+            )
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists."
+            )
+
         with self._lock:
             if self._seekable:
                 self.fp.seek(self.start_dir)
@@ -2619,9 +2658,18 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader(False))
             self.start_dir = self.fp.tell()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         """Call the "close()" method in case the user forgot."""
-        self.close()
+        # gh-81954: Warn if writable ZipFile is implicitly closed.
+        # GC cleanup order is non-deterministic and can result in data loss.
+        try:
+            # Wrap within a try to ensure the file is closed even if
+            # warnings raises.
+            if self.fp is not None and self.mode in ('w', 'x', 'a'):
+                _warn(f"unclosed ZipFile {self!r}",
+                      ResourceWarning, source=self, stacklevel=2)
+        finally:
+            self.close()
 
     def close(self):
         """Close the file, and for mode 'w', 'x' and 'a' write the ending
@@ -2880,6 +2928,10 @@ class PyZipFile(ZipFile):
 
 def main(args=None):
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)

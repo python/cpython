@@ -1,7 +1,6 @@
 import unittest
 import subprocess
 import sys
-import sysconfig
 import os
 import pathlib
 from test import support
@@ -14,29 +13,17 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-if support.check_sanitizer(address=True, memory=True, ub=True, function=True):
+if support.check_sanitizer(address=True, memory=True, function=False):
     # gh-109580: Skip the test because it does crash randomly if Python is
     # built with ASAN.
-    raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
+    raise unittest.SkipTest("test crash randomly on ASAN/MSAN build")
 
 
-def supports_trampoline_profiling():
-    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
-    if not perf_trampoline:
-        return False
-    return int(perf_trampoline) == 1
-
-
-if not supports_trampoline_profiling():
+if not support.supports_perf_trampoline_profiling():
     raise unittest.SkipTest("perf trampoline profiling not supported")
 
 
-def samply_command_works():
-    try:
-        cmd = ["samply", "--help"]
-    except (subprocess.SubprocessError, OSError):
-        return False
-
+def _samply_command_works():
     # Check that we can run a simple samply run
     with temp_dir() as script_dir:
         try:
@@ -90,8 +77,10 @@ def run_samply(cwd, *args, **env_vars):
     with gzip.open(output_file, mode="rt", encoding="utf-8") as f:
         return f.read()
 
+SAMPLY_COMMAND_WORKS = _samply_command_works()
 
-@unittest.skipUnless(samply_command_works(), "samply command doesn't work")
+
+@unittest.skipUnless(SAMPLY_COMMAND_WORKS, "samply command doesn't work")
 class TestSamplyProfilerMixin:
     def run_samply(self, script_dir, perf_mode, script):
         raise NotImplementedError()
@@ -145,7 +134,7 @@ class TestSamplyProfilerMixin:
             self.assertNotIn(f"py::baz:{script}", output)
 
 
-@unittest.skipUnless(samply_command_works(), "samply command doesn't work")
+@unittest.skipUnless(SAMPLY_COMMAND_WORKS, "samply command doesn't work")
 class TestSamplyProfiler(unittest.TestCase, TestSamplyProfilerMixin):
     def run_samply(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
@@ -240,7 +229,7 @@ class TestSamplyProfiler(unittest.TestCase, TestSamplyProfilerMixin):
                 self.assertIn(line, child_perf_file_contents)
 
 
-@unittest.skipUnless(samply_command_works(), "samply command doesn't work")
+@unittest.skipUnless(SAMPLY_COMMAND_WORKS, "samply command doesn't work")
 class TestSamplyProfilerWithJitDump(unittest.TestCase, TestSamplyProfilerMixin):
     # Regression test for gh-150723: exercises the binary jitdump backend
     # (-Xperf_jit) end to end through samply, unlike TestSamplyProfiler which

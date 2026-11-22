@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_critical_section.h" // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
+#include "pycore_dict.h"          // _PyDict_GetItemRef_KnownHash_LockHeld()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -512,7 +513,6 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque_append_lock_held(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
             Py_DECREF(it);
             return NULL;
         }
@@ -649,7 +649,7 @@ deque_copy_impl(dequeobject *deque)
         result = PyObject_CallOneArg((PyObject *)(Py_TYPE(deque)),
                                      (PyObject *)deque);
     else
-        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
+        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "On",
                                        deque, old_deque->maxlen, NULL);
     if (result != NULL && !PyObject_TypeCheck(result, state->deque_type)) {
         PyErr_Format(PyExc_TypeError,
@@ -675,8 +675,18 @@ deque___copy___impl(dequeobject *deque)
     return deque_copy_impl(deque);
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__add__ as deque_concat
+
+    deque: dequeobject
+    other: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_concat_lock_held(dequeobject *deque, PyObject *other)
+deque_concat_impl(dequeobject *deque, PyObject *other)
+/*[clinic end generated code: output=fa6c28f7752f0b28 input=1816c51a4c6c4f05]*/
 {
     PyObject *new_deque, *result;
     int rv;
@@ -705,17 +715,6 @@ deque_concat_lock_held(dequeobject *deque, PyObject *other)
     }
     Py_DECREF(result);
     return new_deque;
-}
-
-static PyObject *
-deque_concat(PyObject *self, PyObject *other)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_concat_lock_held(deque, other);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
@@ -820,8 +819,18 @@ deque_clearmethod_impl(dequeobject *deque)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__imul__ as deque_inplace_repeat
+
+    deque: dequeobject
+    n: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
+deque_inplace_repeat_impl(dequeobject *deque, Py_ssize_t n)
+/*[clinic end generated code: output=e9052495a8eb46f9 input=0ebbaedad03b8abf]*/
 {
     Py_ssize_t i, m, size;
     PyObject *seq;
@@ -898,17 +907,6 @@ deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
 }
 
 static PyObject *
-deque_inplace_repeat(PyObject *self, Py_ssize_t n)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_inplace_repeat_lock_held(deque, n);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
-static PyObject *
 deque_repeat(PyObject *self, Py_ssize_t n)
 {
     dequeobject *deque = dequeobject_CAST(self);
@@ -922,7 +920,7 @@ deque_repeat(PyObject *self, Py_ssize_t n)
         return NULL;
     // It's safe to not acquire the per-object lock for new_deque; it's
     // invisible to other threads.
-    rv = deque_inplace_repeat_lock_held(new_deque, n);
+    rv = deque_inplace_repeat_impl(new_deque, n);
     Py_DECREF(new_deque);
     return rv;
 }
@@ -1193,8 +1191,17 @@ deque_count_impl(dequeobject *deque, PyObject *v)
     return PyLong_FromSsize_t(count);
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__contains__ as deque_contains
+    deque: dequeobject
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-deque_contains_lock_held(dequeobject *deque, PyObject *v)
+deque_contains_impl(dequeobject *deque, PyObject *v)
+/*[clinic end generated code: output=5e7718757d3063bf input=8dd115a2cdaf0f23]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1223,17 +1230,6 @@ deque_contains_lock_held(dequeobject *deque, PyObject *v)
         }
     }
     return 0;
-}
-
-static int
-deque_contains(PyObject *self, PyObject *v)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_contains_lock_held(deque, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static Py_ssize_t
@@ -1381,8 +1377,17 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__getitem__ as deque_item
+    deque: dequeobject
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
+deque_item_impl(dequeobject *deque, Py_ssize_t i)
+/*[clinic end generated code: output=52e62af1427d61ef input=89f14f06b29122a1]*/
 {
     block *b;
     PyObject *item;
@@ -1418,17 +1423,6 @@ deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
     }
     item = b->data[i];
     return Py_NewRef(item);
-}
-
-static PyObject *
-deque_item(PyObject *self, Py_ssize_t i)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_item_lock_held(deque, i);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
@@ -1500,8 +1494,19 @@ deque_remove_impl(dequeobject *deque, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__setitem__ as deque_ass_item
+
+    deque: dequeobject
+    i: Py_ssize_t
+    v: object
+    /
+[clinic start generated code]*/
+
 static int
-deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
+deque_ass_item_impl(dequeobject *deque, Py_ssize_t i, PyObject *v)
+/*[clinic end generated code: output=28739a830dc69ab1 input=b767e1a4972fa537]*/
 {
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
@@ -1530,17 +1535,6 @@ deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
     }
     Py_SETREF(b->data[i], Py_NewRef(v));
     return 0;
-}
-
-static int
-deque_ass_item(PyObject *self, Py_ssize_t i, PyObject *v)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    int result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_ass_item_lock_held(deque, i, v);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static void
@@ -2532,6 +2526,66 @@ static PyType_Spec defdict_spec = {
 
 /* helper function for Counter  *********************************************/
 
+/* Fast path advantages:
+       1. Eliminate double hashing
+          (by re-using the same hash for both the get and set)
+       2. Avoid argument overhead of PyObject_CallFunctionObjArgs
+          (argument tuple creation and parsing)
+       3. Avoid indirection through a bound method object
+          (creates another argument tuple)
+       4. Avoid initial increment from zero
+          (reuse an existing one-object instead)
+*/
+static int
+_count_elements_dict_lock_held(PyDictObject *mapping, PyObject *it)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mapping);
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
+
+    while (1) {
+        Py_hash_t hash;
+        PyObject *oldval;
+        int status;
+
+        PyObject *key = PyIter_Next(it);
+        if (key == NULL) {
+            return PyErr_Occurred() ? -1 : 0;
+        }
+
+        hash = _PyObject_HashDictKey(key);
+        if (hash == -1) {
+            Py_DECREF(key);
+            return -1;
+        }
+
+        int found = _PyDict_GetItemRef_KnownHash_LockHeld(mapping, key, hash,
+                                                          &oldval);
+        if (found < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (found == 0) {
+            status = _PyDict_SetItem_KnownHash_LockHeld(mapping, key, one,
+                                                        hash);
+        }
+        else {
+            PyObject *newval = PyNumber_Add(oldval, one);
+            Py_DECREF(oldval);
+            if (newval == NULL) {
+                Py_DECREF(key);
+                return -1;
+            }
+            status = _PyDict_SetItem_KnownHash_LockHeld(mapping, key, newval,
+                                                        hash);
+            Py_DECREF(newval);
+        }
+        Py_DECREF(key);
+        if (status < 0) {
+            return -1;
+        }
+    }
+}
+
 /*[clinic input]
 _collections._count_elements
 
@@ -2548,7 +2602,6 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
 /*[clinic end generated code: output=7e0c1789636b3d8f input=e79fad04534a0b45]*/
 {
     PyObject *it, *oldval;
-    PyObject *newval = NULL;
     PyObject *key = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
@@ -2573,48 +2626,12 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         mapping_setitem != NULL && mapping_setitem == dict_setitem &&
         PyDict_Check(mapping))
     {
-        while (1) {
-            /* Fast path advantages:
-                   1. Eliminate double hashing
-                      (by re-using the same hash for both the get and set)
-                   2. Avoid argument overhead of PyObject_CallFunctionObjArgs
-                      (argument tuple creation and parsing)
-                   3. Avoid indirection through a bound method object
-                      (creates another argument tuple)
-                   4. Avoid initial increment from zero
-                      (reuse an existing one-object instead)
-            */
-            Py_hash_t hash;
-
-            key = PyIter_Next(it);
-            if (key == NULL)
-                break;
-
-            hash = _PyObject_HashDictKey(key);
-            if (hash == -1) {
-                goto done;
-            }
-
-            oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
-            if (oldval == NULL) {
-                if (PyErr_Occurred())
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
-                    goto done;
-            } else {
-                /* oldval is a borrowed reference.  Keep it alive across
-                   PyNumber_Add(), which can execute arbitrary user code and
-                   mutate (or even clear) the underlying dict. */
-                Py_INCREF(oldval);
-                newval = PyNumber_Add(oldval, one);
-                Py_DECREF(oldval);
-                if (newval == NULL)
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
-                    goto done;
-                Py_CLEAR(newval);
-            }
-            Py_DECREF(key);
+        int status;
+        Py_BEGIN_CRITICAL_SECTION(mapping);
+        status = _count_elements_dict_lock_held((PyDictObject *)mapping, it);
+        Py_END_CRITICAL_SECTION();
+        if (status < 0) {
+            goto done;
         }
     }
     else {
@@ -2630,6 +2647,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
+            PyObject *newval;
             if (oldval == zero) {
                 newval = Py_NewRef(one);
             } else {
@@ -2638,9 +2656,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
-            if (PyObject_SetItem(mapping, key, newval) < 0)
+            int status = PyObject_SetItem(mapping, key, newval);
+            Py_DECREF(newval);
+            if (status < 0)
                 break;
-            Py_CLEAR(newval);
             Py_DECREF(key);
         }
     }
@@ -2650,7 +2669,6 @@ done:
     Py_XDECREF(mapping_setitem);
     Py_DECREF(it);
     Py_XDECREF(key);
-    Py_XDECREF(newval);
     Py_XDECREF(bound_get);
     if (PyErr_Occurred())
         return NULL;

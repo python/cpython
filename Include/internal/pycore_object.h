@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
+#include "pycore_wasm_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_gc.h"            // _PyObject_GC_TRACK()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -26,9 +26,6 @@ extern "C" {
 // The value is half the maximum shared refcount because the low two bits of
 // `ob_ref_shared` are used for flags.
 #define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
-
-/* For backwards compatibility -- Do not use this */
-#define _Py_IsImmortalLoose(op) _Py_IsImmortal
 
 
 /* Check if an object is consistent. For example, ensure that the reference
@@ -284,8 +281,6 @@ static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags) & feature) != 0;
 }
-
-extern void _PyType_InitCache(PyInterpreterState *interp);
 
 extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
@@ -714,6 +709,8 @@ _PyObject_ResurrectEnd(PyObject *op)
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+        _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_UNOWNED_TID);
+        _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 # ifdef Py_TRACE_REFS
         _Py_ForgetReference(op);
 # endif
@@ -818,18 +815,6 @@ _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
     return (PyWeakReference **)((char *)op + offset);
 }
 
-// Fast inlined version of PyType_IS_GC()
-#define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
-
-// Fast inlined version of PyObject_IS_GC()
-static inline int
-_PyObject_IS_GC(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    return (_PyType_IS_GC(type)
-            && (type->tp_is_gc == NULL || type->tp_is_gc(obj)));
-}
-
 // Fast inlined version of PyObject_Hash(). Dictionaries are very
 // likely to include string keys (class and instance attributes,
 // json, ...) so we include a fast path for strings.
@@ -872,7 +857,8 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
     return (type->tp_weaklistoffset != 0);
 }
 
-extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+// Export for 'array' shared extension.
+PyAPI_FUNC(PyObject*) _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
 PyAPI_FUNC(PyObject *) _PyType_NewManagedObject(PyTypeObject *type);
 
 extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
@@ -958,7 +944,8 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
-PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self);
+PyAPI_FUNC(int) _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method,
+                                              _PyStackRef *self);
 
 // Calls the method named `attr` on `self`, but does not set an exception if
 // the attribute does not exist.
@@ -976,27 +963,6 @@ extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 // Pickle support.
 // Export for '_datetime' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
-
-/* C function call trampolines to mitigate bad function pointer casts.
- *
- * Typical native ABIs ignore additional arguments or fill in missing
- * values with 0/NULL in function pointer cast. Compilers do not show
- * warnings when a function pointer is explicitly casted to an
- * incompatible type.
- *
- * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
- * function signature checks. Argument count, types, and return type must
- * match.
- *
- * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
- */
-#if !(defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE))
-#define _PyCFunction_TrampolineCall(meth, self, args) \
-    (meth)((self), (args))
-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
-    (meth)((self), (args), (kw))
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 // Export these 2 symbols for '_pickle' shared extension
 PyAPI_DATA(PyTypeObject) _PyNone_Type;

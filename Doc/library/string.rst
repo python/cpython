@@ -971,7 +971,8 @@ attributes:
 
 Alternatively, you can provide the entire regular expression pattern by
 overriding the class attribute *pattern*.  If you do this, the value must be a
-regular expression object with four named capturing groups.  The capturing
+regular expression pattern string, or a compiled regular expression
+object, with four named capturing groups.  The capturing
 groups correspond to the rules given above, along with the invalid placeholder
 rule:
 

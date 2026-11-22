@@ -443,7 +443,7 @@ def resolve_name(name, *, strict=False):
                      within the imported package to get to the desired object.
     """
     global _LENIENT_PATTERN, _STRICT_PATTERN
-    dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+    dotted_words = r'([\w--\d]\w*)(\.([\w--\d]\w*))*'
     if strict:
         if _STRICT_PATTERN is None:
             _STRICT_PATTERN = re.compile(

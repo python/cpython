@@ -27,7 +27,6 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
-    PyTypeObject *placeholder_type;
     PyObject *placeholder;  // strong reference (singleton)
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
@@ -54,77 +53,6 @@ typedef struct {
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type);
-
-PyDoc_STRVAR(placeholder_doc,
-"The type of the Placeholder singleton.\n\n"
-"Used as a placeholder for partial arguments.");
-
-static PyObject *
-placeholder_repr(PyObject *op)
-{
-    return PyUnicode_FromString("Placeholder");
-}
-
-static PyObject *
-placeholder_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
-{
-    return PyUnicode_FromString("Placeholder");
-}
-
-static PyMethodDef placeholder_methods[] = {
-    {"__reduce__", placeholder_reduce, METH_NOARGS, NULL},
-    {NULL, NULL}
-};
-
-static void
-placeholder_dealloc(PyObject* self)
-{
-    PyObject_GC_UnTrack(self);
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
-    Py_DECREF(tp);
-}
-
-static PyObject *
-placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
-        PyErr_SetString(PyExc_TypeError, "PlaceholderType takes no arguments");
-        return NULL;
-    }
-    _functools_state *state = get_functools_state_by_type(type);
-    if (state->placeholder != NULL) {
-        return Py_NewRef(state->placeholder);
-    }
-
-    PyObject *placeholder = PyType_GenericNew(type, NULL, NULL);
-    if (placeholder == NULL) {
-        return NULL;
-    }
-
-    if (state->placeholder == NULL) {
-        state->placeholder = Py_NewRef(placeholder);
-    }
-    return placeholder;
-}
-
-static PyType_Slot placeholder_type_slots[] = {
-    {Py_tp_dealloc, placeholder_dealloc},
-    {Py_tp_repr, placeholder_repr},
-    {Py_tp_doc, (void *)placeholder_doc},
-    {Py_tp_methods, placeholder_methods},
-    {Py_tp_new, placeholder_new},
-    {Py_tp_traverse, _PyObject_VisitType},
-    {0, 0}
-};
-
-static PyType_Spec placeholder_type_spec = {
-    .name = "functools._PlaceholderType",
-    .basicsize = sizeof(placeholderobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
-    .slots = placeholder_type_slots
-};
-
 
 typedef struct {
     PyObject_HEAD
@@ -382,9 +310,14 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         return NULL;
     }
 
-    PyObject **pto_args = _PyTuple_ITEMS(pto->args);
-    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
-    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(pto->kw);
+    PyObject *result = NULL;
+    PyObject *partial_function = Py_NewRef(pto->fn);
+    PyObject *partial_args = Py_NewRef(pto->args);
+    PyObject *partial_keywords = Py_NewRef(pto->kw);
+
+    PyObject **pto_args = _PyTuple_ITEMS(partial_args);
+    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(partial_args);
+    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(partial_keywords);
     Py_ssize_t nkwds = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargskw = nargs + nkwds;
 
@@ -392,8 +325,9 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     if (!pto_nkwds) {
         /* Fast path if we're called without arguments */
         if (nargskw == 0) {
-            return _PyObject_VectorcallTstate(tstate, pto->fn, pto_args,
-                                              pto_nargs, NULL);
+            result = _PyObject_VectorcallTstate(tstate, partial_function, pto_args,
+                                                pto_nargs, NULL);
+            goto done;
         }
 
         /* Use PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -402,10 +336,10 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyObject **newargs = (PyObject **)args - 1;
             PyObject *tmp = newargs[0];
             newargs[0] = pto_args[0];
-            PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn, newargs,
-                                                       nargs + 1, kwnames);
+            result = _PyObject_VectorcallTstate(tstate, partial_function, newargs,
+                                                nargs + 1, kwnames);
             newargs[0] = tmp;
-            return ret;
+            goto done;
         }
     }
 
@@ -435,7 +369,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     else {
         stack = PyMem_Malloc(init_stack_size * sizeof(PyObject *));
         if (stack == NULL) {
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
+            goto done;
         }
     }
 
@@ -457,20 +392,20 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         for (Py_ssize_t i = 0; i < nkwds; ++i) {
             key = PyTuple_GET_ITEM(kwnames, i);
             val = args[nargs + i];
-            int contains = PyDict_Contains(pto->kw, key);
+            int contains = PyDict_Contains(partial_keywords, key);
             if (contains < 0) {
-                goto error;
+                goto clean_stack;
             }
             else if (contains == 1) {
                 if (pto_kw_merged == NULL) {
-                    pto_kw_merged = PyDict_Copy(pto->kw);
+                    pto_kw_merged = PyDict_Copy(partial_keywords);
                     if (pto_kw_merged == NULL) {
-                        goto error;
+                        goto clean_stack;
                     }
                 }
                 if (PyDict_SetItem(pto_kw_merged, key, val) < 0) {
                     Py_DECREF(pto_kw_merged);
-                    goto error;
+                    goto clean_stack;
                 }
             }
             else {
@@ -486,7 +421,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         tot_kwnames = PyTuple_New(tot_nkwds - n_merges);
         if (tot_kwnames == NULL) {
             Py_XDECREF(pto_kw_merged);
-            goto error;
+            goto clean_stack;
         }
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
             key = Py_NewRef(stack[tot_nargskw + i]);
@@ -496,7 +431,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Copy pto_keywords with overlapping call keywords merged
          * Note, tail is already coppied. */
         Py_ssize_t pos = 0, i = 0;
-        PyObject *keyword_dict = n_merges ? pto_kw_merged : pto->kw;
+        PyObject *keyword_dict = n_merges ? pto_kw_merged : partial_keywords;
         Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
             assert(i < pto_nkwds);
@@ -515,10 +450,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
                 Py_DECREF(tot_kwnames);
-                if (stack != small_stack) {
-                    PyMem_Free(stack);
-                }
-                return PyErr_NoMemory();
+                PyErr_NoMemory();
+                goto clean_stack;
             }
             stack = tmp_stack;
         }
@@ -547,21 +480,22 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         memcpy(stack + pto_nargs, args, nargs * sizeof(PyObject*));
     }
 
-    PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack,
-                                               tot_nargs, tot_kwnames);
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
+    result = _PyObject_VectorcallTstate(tstate, partial_function, stack,
+                                        tot_nargs, tot_kwnames);
     if (pto_nkwds) {
         Py_DECREF(tot_kwnames);
     }
-    return ret;
 
- error:
+ clean_stack:
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
-    return NULL;
+
+ done:
+    Py_DECREF(partial_function);
+    Py_DECREF(partial_args);
+    Py_DECREF(partial_keywords);
+    return result;
 }
 
 /* Set pto->vectorcall depending on the parameters of the partial object */
@@ -1811,14 +1745,31 @@ lru_cache_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
     return PyObject_GetAttrString(self, "__qualname__");
 }
 
+/*[clinic input]
+_functools._lru_cache_wrapper.__copy__
+
+Return a copy of the wrapper, which is the wrapper itself.
+[clinic start generated code]*/
+
 static PyObject *
-lru_cache_copy(PyObject *self, PyObject *Py_UNUSED(args))
+_functools__lru_cache_wrapper___copy___impl(PyObject *self)
+/*[clinic end generated code: output=d681851615d57391 input=41d000bde05efb2b]*/
 {
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+_functools._lru_cache_wrapper.__deepcopy__
+
+    memo: object
+    /
+
+Return a deep copy of the wrapper, which is the wrapper itself.
+[clinic start generated code]*/
+
 static PyObject *
-lru_cache_deepcopy(PyObject *self, PyObject *Py_UNUSED(args))
+_functools__lru_cache_wrapper___deepcopy__(PyObject *self, PyObject *memo)
+/*[clinic end generated code: output=3445cd9d96273c9e input=84f706565f55ce46]*/
 {
     return Py_NewRef(self);
 }
@@ -1866,8 +1817,8 @@ static PyMethodDef lru_cache_methods[] = {
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_INFO_METHODDEF
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_CLEAR_METHODDEF
     {"__reduce__", lru_cache_reduce, METH_NOARGS},
-    {"__copy__", lru_cache_copy, METH_VARARGS},
-    {"__deepcopy__", lru_cache_deepcopy, METH_VARARGS},
+    _FUNCTOOLS__LRU_CACHE_WRAPPER___COPY___METHODDEF
+    _FUNCTOOLS__LRU_CACHE_WRAPPER___DEEPCOPY___METHODDEF
     {NULL}
 };
 
@@ -1927,16 +1878,7 @@ _functools_exec(PyObject *module)
         return -1;
     }
 
-    state->placeholder_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
-        &placeholder_type_spec, NULL);
-    if (state->placeholder_type == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, state->placeholder_type) < 0) {
-        return -1;
-    }
-
-    PyObject *placeholder = PyObject_CallNoArgs((PyObject *)state->placeholder_type);
+    PyObject *placeholder = PySentinel_New("Placeholder", "functools", NULL);
     if (placeholder == NULL) {
         return -1;
     }
@@ -1944,7 +1886,7 @@ _functools_exec(PyObject *module)
         Py_DECREF(placeholder);
         return -1;
     }
-    Py_DECREF(placeholder);
+    state->placeholder = placeholder;
 
     state->partial_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &partial_type_spec, NULL);
@@ -1990,7 +1932,6 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _functools_state *state = get_functools_state(module);
     Py_VISIT(state->kwd_mark);
-    Py_VISIT(state->placeholder_type);
     Py_VISIT(state->placeholder);
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
@@ -2003,7 +1944,6 @@ _functools_clear(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
     Py_CLEAR(state->kwd_mark);
-    Py_CLEAR(state->placeholder_type);
     Py_CLEAR(state->placeholder);
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);

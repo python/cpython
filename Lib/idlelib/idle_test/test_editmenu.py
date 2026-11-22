@@ -7,7 +7,7 @@ requires('gui')
 import tkinter as tk
 from tkinter import ttk
 import unittest
-from idlelib import pyshell
+from idlelib.util import fix_x11_paste
 
 class PasteTest(unittest.TestCase):
     '''Test pasting into widgets that allow pasting.
@@ -18,7 +18,7 @@ class PasteTest(unittest.TestCase):
     def setUpClass(cls):
         cls.root = root = tk.Tk()
         cls.root.withdraw()
-        pyshell.fix_x11_paste(root)
+        fix_x11_paste(root)
         cls.text = tk.Text(root)
         cls.entry = tk.Entry(root)
         cls.tentry = ttk.Entry(root)

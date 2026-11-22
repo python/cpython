@@ -8,7 +8,6 @@
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
-#include "pycore_lock.h"          // _PySeqLock_*
 #include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
@@ -21,7 +20,8 @@
 #include "pycore_slots.h"         // _PySlotIterator_Init
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
-#include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_typecache.h"     // _PyTypeCache_Lookup()
+#include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
@@ -41,21 +41,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 /* Support type attribute lookup cache */
 
-/* The cache can keep references to the names alive for longer than
-   they normally would.  This is why the maximum size is limited to
-   MCACHE_MAX_ATTR_SIZE, since it might be a problem if very large
-   strings are used as attribute names. */
-#define MCACHE_MAX_ATTR_SIZE    100
-#define MCACHE_HASH(version, name_hash)                                 \
-        (((unsigned int)(version) ^ (unsigned int)(name_hash))          \
-         & ((1 << MCACHE_SIZE_EXP) - 1))
-
-#define MCACHE_HASH_METHOD(type, name)                                  \
-    MCACHE_HASH(FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag),   \
-                ((Py_ssize_t)(name)) >> 3)
-#define MCACHE_CACHEABLE_NAME(name)                             \
-        (PyUnicode_CheckExact(name) &&                           \
-         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE))
+#define MCACHE_CACHEABLE_NAME(name) (PyUnicode_CheckExact(name) && PyUnicode_CHECK_INTERNED(name))
 
 #define NEXT_VERSION_TAG(interp) \
     (interp)->types.next_version_tag
@@ -84,7 +70,6 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#if !defined(NDEBUG) || defined(Py_DEBUG)
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -92,7 +77,6 @@ types_world_is_stopped(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return interp->stoptheworld.world_stopped;
 }
-#endif
 
 // Checks that the type has not yet been revealed (exposed) to other
 // threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_new() and
@@ -138,47 +122,6 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
-// This is used to temporarily prevent the TYPE_LOCK from being suspended
-// when held by the topmost critical section.
-static void
-type_lock_prevent_release(void)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == TYPE_LOCK);
-        c->_cs_mutex = NULL;
-    }
-    else {
-        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        if (c->_cs_mutex == TYPE_LOCK) {
-            c->_cs_mutex = c2->_cs_mutex2;
-            c2->_cs_mutex2 = NULL;
-        } else {
-            assert(c2->_cs_mutex2 == TYPE_LOCK);
-            c2->_cs_mutex2 = NULL;
-        }
-    }
-}
-
-static void
-type_lock_allow_release(void)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    uintptr_t *tagptr = &tstate->critical_section;
-    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
-    if (!(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES)) {
-        assert(c->_cs_mutex == NULL);
-        c->_cs_mutex = TYPE_LOCK;
-    }
-    else {
-        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
-        assert(c2->_cs_mutex2 == NULL);
-        c2->_cs_mutex2 = TYPE_LOCK;
-    }
-}
-
 #else
 
 #define BEGIN_TYPE_LOCK()
@@ -192,8 +135,6 @@ type_lock_allow_release(void)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
-#define type_lock_prevent_release()
-#define type_lock_allow_release()
 
 #endif
 
@@ -596,7 +537,7 @@ _PyType_GetBases(PyTypeObject *self)
 }
 
 static inline void
-set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
+set_tp_bases(PyTypeObject *self, PyObject *bases)
 {
     assert(PyTuple_Check(bases));
     ASSERT_NEW_TYPE_OR_LOCKED(self);
@@ -604,7 +545,6 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
         assert(PyTuple_CheckExact(bases));
-        assert(initial);
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
             assert(self->tp_base == NULL);
@@ -618,6 +558,28 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
         _Py_SetImmortal(bases);
     }
     self->tp_bases = bases;
+}
+
+// Replace tp_bases and tp_base of a type with the world stopped.  Returns true
+// on success and false if tp_bases is no longer 'expected'.  In the latter case
+// the caller still owns 'bases' and 'base'.
+static bool
+try_set_tp_bases(PyTypeObject *self, PyObject *expected,
+                PyObject *bases, PyTypeObject *base)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    assert(PyTuple_Check(bases));
+    assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    bool res = false;
+    types_stop_world();
+    if (self->tp_bases == expected) {
+        self->tp_bases = bases;
+        self->tp_base = base;
+        res = true;
+    }
+    types_start_world();
+    ASSERT_TYPE_LOCK_HELD();
+    return res;
 }
 
 static inline void
@@ -648,14 +610,13 @@ lookup_tp_mro(PyTypeObject *self)
 }
 
 static inline void
-set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
+set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
     if (mro != NULL) {
         assert(PyTuple_CheckExact(mro));
         if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
             // XXX tp_mro can probably be statically allocated for each
             // static builtin type.
-            assert(initial);
             assert(self->tp_mro == NULL);
             /* Other checks are done via set_tp_bases. */
             _Py_SetImmortal(mro);
@@ -664,15 +625,30 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
             PyUnstable_Object_EnableDeferredRefcount(mro);
         }
     }
-    if (!initial) {
-        type_lock_prevent_release();
-        types_stop_world();
-    }
     self->tp_mro = mro;
-    if (!initial) {
-        types_start_world();
-        type_lock_allow_release();
+}
+
+// Replace tp_mro of a type with the world stopped.  Returns true on success and
+// false if tp_mro is no longer 'expected'.  In the latter case the caller still
+// owns 'mro'.
+static bool
+try_set_tp_mro(PyTypeObject *self, PyObject *expected, PyObject *mro)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    assert(!(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(mro == NULL || PyTuple_CheckExact(mro));
+    bool res = false;
+    types_stop_world();
+    if (self->tp_mro == expected) {
+        if (mro != NULL) {
+            PyUnstable_Object_EnableDeferredRefcount(mro);
+        }
+        self->tp_mro = mro;
+        res = true;
     }
+    types_start_world();
+    ASSERT_TYPE_LOCK_HELD();
+    return res;
 }
 
 static inline void
@@ -772,17 +748,14 @@ _PyType_HasSubclasses(PyTypeObject *self)
     return 1;
 }
 
-PyObject*
-_PyType_GetSubclasses(PyTypeObject *self)
+static int
+get_subclasses_unlocked(PyTypeObject *self, PyObject *list)
 {
-    PyObject *list = PyList_New(0);
-    if (list == NULL) {
-        return NULL;
-    }
+    ASSERT_TYPE_LOCK_HELD();
 
     PyObject *subclasses = lookup_tp_subclasses(self);  // borrowed ref
     if (subclasses == NULL) {
-        return list;
+        return 0;
     }
     assert(PyDict_CheckExact(subclasses));
     // The loop cannot modify tp_subclasses, there is no need
@@ -796,12 +769,33 @@ _PyType_GetSubclasses(PyTypeObject *self)
             continue;
         }
 
-        if (PyList_Append(list, _PyObject_CAST(subclass)) < 0) {
-            Py_DECREF(list);
-            Py_DECREF(subclass);
-            return NULL;
-        }
+        int res = PyList_Append(list, _PyObject_CAST(subclass));
         Py_DECREF(subclass);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+PyObject*
+_PyType_GetSubclasses(PyTypeObject *self)
+{
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    // The type lock protects tp_subclasses from being mutated while we
+    // iterate over it (e.g. by add_subclass() or by remove_subclass() when a
+    // subclass is deallocated).
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = get_subclasses_unlocked(self, list);
+    END_TYPE_LOCK();
+
+    if (res < 0) {
+        Py_CLEAR(list);
     }
     return list;
 }
@@ -969,75 +963,17 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
 }
 
 
-static struct type_cache*
-get_type_cache(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->types.type_cache;
-}
-
-
-static void
-type_cache_clear(struct type_cache *cache, PyObject *value)
-{
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-#ifdef Py_GIL_DISABLED
-        _PySeqLock_LockWrite(&entry->sequence);
-#endif
-        entry->version = 0;
-        Py_XSETREF(entry->name, _Py_XNewRef(value));
-        entry->value = NULL;
-#ifdef Py_GIL_DISABLED
-        _PySeqLock_UnlockWrite(&entry->sequence);
-#endif
-    }
-}
-
-
-void
-_PyType_InitCache(PyInterpreterState *interp)
-{
-    struct type_cache *cache = &interp->types.type_cache;
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-        assert(entry->name == NULL);
-
-        entry->version = 0;
-        // Set to None so _PyType_LookupRef() can use Py_SETREF(),
-        // rather than using slower Py_XSETREF().
-        entry->name = Py_None;
-        entry->value = NULL;
-    }
-}
-
-
-static unsigned int
-_PyType_ClearCache(PyInterpreterState *interp)
-{
-    struct type_cache *cache = &interp->types.type_cache;
-    // Set to None, rather than NULL, so _PyType_LookupRef() can
-    // use Py_SETREF() rather than using slower Py_XSETREF().
-    type_cache_clear(cache, Py_None);
-
-    return NEXT_VERSION_TAG(interp) - 1;
-}
-
-
 unsigned int
 PyType_ClearCache(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyType_ClearCache(interp);
+    return NEXT_VERSION_TAG(interp) - 1;
 }
 
 
 void
 _PyTypes_Fini(PyInterpreterState *interp)
 {
-    struct type_cache *cache = &interp->types.type_cache;
-    type_cache_clear(cache, NULL);
-
     // All the managed static types should have been finalized already.
     assert(interp->types.for_extensions.num_initialized == 0);
     for (size_t i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
@@ -1162,8 +1098,8 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 #endif
 }
 
-static void
-type_modified_unlocked(PyTypeObject *type)
+void
+_PyType_Modified_Unlocked(PyTypeObject *type)
 {
     /* Invalidate any cached data for the specified type and all
        subclasses.  This function is called after the base
@@ -1203,7 +1139,7 @@ type_modified_unlocked(PyTypeObject *type)
             if (subclass == NULL) {
                 continue;
             }
-            type_modified_unlocked(subclass);
+            _PyType_Modified_Unlocked(subclass);
             Py_DECREF(subclass);
         }
     }
@@ -1231,6 +1167,7 @@ type_modified_unlocked(PyTypeObject *type)
     }
 
     set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    _PyTypeCache_Invalidate(type);
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1248,7 +1185,7 @@ PyType_Modified(PyTypeObject *type)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 }
 
@@ -1314,6 +1251,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
+    _PyTypeCache_Invalidate(type);
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
@@ -1741,14 +1679,16 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
     types_stop_world();
     if (abstract)
         type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     else
         type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     types_start_world();
+    // Invalidate the version tag after update, while TYPE_LOCK is
+    // still held.
     ASSERT_TYPE_LOCK_HELD();
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 
     return 0;
@@ -1779,12 +1719,14 @@ type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 static PyTypeObject *find_best_base(PyObject *);
 static int mro_internal(PyTypeObject *, int, PyObject **);
 static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
-static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *, int);
+static int compatible_layout(PyTypeObject *, PyTypeObject *, int);
+static void raise_layout_differs(const char *, PyTypeObject *, PyTypeObject *);
+static int update_best_base(PyTypeObject *, PyTypeObject **, PyTypeObject **);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
 static void remove_all_subclasses(PyTypeObject *type, PyObject *bases);
-static int update_all_slots(PyTypeObject *);
+static void update_all_slots(PyTypeObject *);
 
 typedef int (*update_callback)(PyTypeObject *, void *);
 static int update_subclasses(PyTypeObject *type, PyObject *attr_name,
@@ -1825,8 +1767,13 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
     Py_XDECREF(tuple);
 
     if (res < 0) {
-        set_tp_mro(type, old_mro, 0);
-        Py_DECREF(new_mro);
+        // Roll back, unless tp_mro has already been replaced again.
+        if (try_set_tp_mro(type, new_mro, old_mro)) {
+            Py_DECREF(new_mro);
+        }
+        else {
+            Py_XDECREF(old_mro);
+        }
         return -1;
     }
     Py_XDECREF(old_mro);
@@ -1862,8 +1809,10 @@ mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
     return res;
 }
 
+// Checks on the new __bases__ value that do not depend on mutable type
+// state.  Done once per assignment.
 static int
-type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
+type_check_new_bases(PyTypeObject *type, PyObject *new_bases)
 {
     // Check arguments, this is re-entrant due to the PySys_Audit() call
     if (!check_set_special_type_attr(type, new_bases, "__bases__")) {
@@ -1892,7 +1841,42 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
                          type->tp_name, Py_TYPE(ob)->tp_name);
             return -1;
         }
-        PyTypeObject *base = (PyTypeObject*)ob;
+        PyTypeObject *base = (PyTypeObject *)ob;
+        if (!_PyType_IsReady(base)) {
+            if (PyType_Ready(base) < 0) {
+                return -1;
+            }
+        }
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
+            PyErr_Format(PyExc_TypeError,
+                         "type '%.100s' is not an acceptable base type",
+                         base->tp_name);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+typedef enum {
+    NEW_BASES_OK,
+    NEW_BASES_CYCLE,
+    NEW_BASES_LAYOUT_CONFLICT,
+    NEW_BASES_LAYOUT_DIFFERS,
+} new_bases_check_t;
+
+// Checks on the new __bases__ value that depend on the current state of the
+// type hierarchy (inheritance cycles, layout compatibility).  This is called
+// with the world stopped and does not raise; see raise_new_bases_error().
+// On success, *best_base is set to the new tp_base (a borrowed reference
+// from new_bases).
+static new_bases_check_t
+type_validate_new_bases(PyTypeObject *type, PyObject *new_bases,
+                        PyTypeObject **best_base)
+{
+    assert(types_world_is_stopped());
+    Py_ssize_t n = PyTuple_GET_SIZE(new_bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(new_bases, i);
 
         if (is_subtype_with_mro(lookup_tp_mro(base), base, type) ||
             /* In case of reentering here again through a custom mro()
@@ -1907,40 +1891,81 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
             (lookup_tp_mro(base) != NULL
              && type_is_subtype_base_chain(base, type)))
         {
-            PyErr_SetString(PyExc_TypeError,
-                            "a __bases__ item causes an inheritance cycle");
-            return -1;
+            return NEW_BASES_CYCLE;
         }
     }
 
-    // Compute the new MRO and the new base class
-    *best_base = find_best_base(new_bases);
-    if (*best_base == NULL)
-        return -1;
-
-    if (!compatible_for_assignment(type, *best_base, "__bases__", 0)) {
-        return -1;
+    // Compute the new base class.  The bases are known to be ready and
+    // acceptable as base types (see type_check_new_bases()).
+    PyTypeObject *winner = NULL;
+    *best_base = NULL;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(new_bases, i);
+        if (update_best_base(base, best_base, &winner) < 0) {
+            return NEW_BASES_LAYOUT_CONFLICT;
+        }
     }
 
-    return 0;
+    if (!compatible_layout(type, *best_base, 0)) {
+        return NEW_BASES_LAYOUT_DIFFERS;
+    }
+
+    return NEW_BASES_OK;
 }
 
+// Raise the error for a failed type_validate_new_bases() check.  'old_base'
+// is the tp_base of the type when the check was done.
+static void
+raise_new_bases_error(new_bases_check_t check, PyTypeObject *best_base,
+                      PyTypeObject *old_base)
+{
+    switch (check) {
+    case NEW_BASES_CYCLE:
+        PyErr_SetString(PyExc_TypeError,
+                        "a __bases__ item causes an inheritance cycle");
+        break;
+    case NEW_BASES_LAYOUT_CONFLICT:
+        PyErr_SetString(PyExc_TypeError,
+                        "multiple bases have instance lay-out conflict");
+        break;
+    case NEW_BASES_LAYOUT_DIFFERS:
+        raise_layout_differs("__bases__", best_base, old_base);
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+}
+
+// Returns 0 on success and -1 on error.
 static int
-type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *best_base)
+type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases)
 {
     ASSERT_TYPE_LOCK_HELD();
 
+    // Validate and store the new bases with the world stopped, so that the
+    // hierarchy cannot change in between.
     Py_ssize_t n;
+    PyTypeObject *best_base;
+    types_stop_world();
     PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
-
-    type_lock_prevent_release();
-    types_stop_world();
-    set_tp_bases(type, Py_NewRef(new_bases), 0);
-    type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
+    new_bases_check_t check = type_validate_new_bases(type, new_bases,
+                                                      &best_base);
+    if (check == NEW_BASES_OK) {
+        type->tp_bases = Py_NewRef(new_bases);
+        type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
+    }
+    else {
+        // Keep old_base alive for the error message.
+        Py_INCREF(old_base);
+    }
     types_start_world();
-    type_lock_allow_release();
+    if (check != NEW_BASES_OK) {
+        raise_new_bases_error(check, best_base, old_base);
+        Py_DECREF(old_base);
+        return -1;
+    }
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -1964,11 +1989,9 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
            add to all new_bases */
         remove_all_subclasses(type, old_bases);
         res = add_all_subclasses(type, new_bases);
-        if (update_all_slots(type) < 0) {
-            goto bail;
-        }
-        /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-        type_modified_unlocked(type);
+        /* This also clears the VALID_VERSION flag of 'type' and all its
+           subclasses. */
+        update_all_slots(type);
     }
     else {
         res = 0;
@@ -1990,24 +2013,19 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
         PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
                           "", 2, 3, &cls, &new_mro, &old_mro);
         /* Do not rollback if cls has a newer version of MRO.  */
-        if (lookup_tp_mro(cls) == new_mro) {
-            set_tp_mro(cls, Py_XNewRef(old_mro), 0);
+        old_mro = Py_XNewRef(old_mro);
+        if (try_set_tp_mro(cls, new_mro, old_mro)) {
             Py_DECREF(new_mro);
+        }
+        else {
+            Py_XDECREF(old_mro);
         }
     }
     Py_DECREF(temp);
 
   bail:
-    if (lookup_tp_bases(type) == new_bases) {
-        assert(type->tp_base == best_base);
-
-        type_lock_prevent_release();
-        types_stop_world();
-        set_tp_bases(type, old_bases, 0);
-        type->tp_base = old_base;
-        types_start_world();
-        type_lock_allow_release();
-
+    /* Restore the old bases, unless tp_bases has been replaced again. */
+    if (try_set_tp_bases(type, new_bases, old_bases, old_base)) {
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
     }
@@ -2024,14 +2042,22 @@ static int
 type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    PyTypeObject *best_base;
     int res;
-    BEGIN_TYPE_LOCK();
-    res = type_check_new_bases(type, new_bases, &best_base);
-    if (res == 0) {
-        res = type_set_bases_unlocked(type, new_bases, best_base);
+    if (type_check_new_bases(type, new_bases) < 0) {
+        return -1;
     }
+    // Create a fresh bases tuple to store.  Its identity tells whether
+    // tp_bases was replaced again while TYPE_LOCK was released or due to
+    // re-entrancy from the mro() call.
+    Py_ssize_t n = PyTuple_GET_SIZE(new_bases);
+    PyObject *bases = PyTuple_FromArray(((PyTupleObject *)new_bases)->ob_item, n);
+    if (bases == NULL) {
+        return -1;
+    }
+    BEGIN_TYPE_LOCK();
+    res = type_set_bases_unlocked(type, bases);
     END_TYPE_LOCK();
+    Py_DECREF(bases);
     return res;
 }
 
@@ -2801,6 +2827,10 @@ subtype_dealloc(PyObject *self)
         }
         _PyObject_GC_UNTRACK(self);
     }
+
+    /* Extract the type again; tp_finalize may have changed it */
+    type = Py_TYPE(self);
+
     /*
       If we added a weaklist, we clear it. Do this *before* calling tp_del,
       clearing slots, or clearing the instance dict.
@@ -2961,17 +2991,22 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
-// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
-// is the method object and `method_and_self[1]` is `self` if the method is
-// not bound.
+// Lookup the method name `attr` on `*self`. On entry, `*method` is null.
+// On exit, `*method` is the method object and `*self` is cleared if the
+// method is bound.
 // Return 1 on success, -1 on error, and 0 if the method is missing.
+//
+// `method` must point to a location that the garbage collector can see,
+// such as the `ref` field of a `_PyCStackRef` or a slot on the interpreter
+// stack. A descriptor may be invoked while `*method` holds the only
+// reference to the method object, and that can trigger a collection.
 int
-_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method,
+                              _PyStackRef *self)
 {
-    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
-    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
-    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    PyObject *self_o = PyStackRef_AsPyObjectBorrow(*self);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self_o), attr, method);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(*method);
     if (method_o == NULL) {
         return 0;
     }
@@ -2983,14 +3018,14 @@ _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 
     descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
     if (f != NULL) {
-        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        PyObject *func = f(method_o, self_o, (PyObject *)(Py_TYPE(self_o)));
         if (func == NULL) {
             return -1;
         }
-        PyStackRef_CLEAR(method_and_self[0]); // clear method
-        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
+        PyStackRef_CLEAR(*method); // clear method
+        *method = PyStackRef_FromPyObjectSteal(func);
     }
-    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    PyStackRef_CLEAR(*self); // clear self
     return 1;
 }
 
@@ -3657,25 +3692,45 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
     ASSERT_TYPE_LOCK_HELD();
 
     PyObject *new_mro, *old_mro;
-    int reent;
 
     /* Keep a reference to be able to do a reentrancy check below.
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
     new_mro = mro_invoke(type);  /* might cause reentrance */
-    reent = (lookup_tp_mro(type) != old_mro);
-    Py_XDECREF(old_mro);
     if (new_mro == NULL) {
+        Py_XDECREF(old_mro);
         return -1;
     }
-
-    if (reent) {
+    int res;
+    if (initial) {
+        // The type has not been revealed to other threads yet, so only
+        // same-thread reentrance can have replaced tp_mro.
+        if (lookup_tp_mro(type) == old_mro) {
+            set_tp_mro(type, new_mro);
+            res = 1;
+        }
+        else {
+            res = 0;
+        }
+    }
+    else {
+        // Store with the world stopped.  TYPE_LOCK may have been released
+        // while mro_invoke() ran, so check for reentrance inside the
+        // stop-the-world.  mro() can itself update types (assign a slot,
+        // for example) and the result is stored anyway, as on the default
+        // build.
+        res = try_set_tp_mro(type, old_mro, new_mro);
+    }
+    if (res == 0) {
+        /* reentrance: tp_mro was replaced by someone else */
         Py_DECREF(new_mro);
+        Py_XDECREF(old_mro);
         return 0;
     }
-
-    set_tp_mro(type, new_mro, initial);
+    /* Drop our temporary reference.  The reference previously owned by
+       the type is now owned by this function and transferred below. */
+    Py_XDECREF(old_mro);
 
     type_mro_modified(type, new_mro);
     /* corner case: the super class might have been hidden
@@ -3684,7 +3739,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        type_modified_unlocked(type);
+        _PyType_Modified_Unlocked(type);
     }
     else {
         /* For static builtin types, this is only called during init
@@ -3700,6 +3755,30 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
     return 1;
 }
 
+/* Update the best base candidate '*base' (with solid base '*winner') for
+   the next base 'base_i'.  Returns -1 if the instance layouts conflict.
+   Does not raise. */
+static int
+update_best_base(PyTypeObject *base_i, PyTypeObject **base,
+                 PyTypeObject **winner)
+{
+    PyTypeObject *candidate = solid_base(base_i);
+    if (*winner == NULL) {
+        *winner = candidate;
+        *base = base_i;
+    }
+    else if (PyType_IsSubtype(*winner, candidate))
+        ;
+    else if (PyType_IsSubtype(candidate, *winner)) {
+        *winner = candidate;
+        *base = base_i;
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
+
 /* Calculate the best base amongst multiple base classes.
    This is the first one that's on the path to the "solid base". */
 
@@ -3707,7 +3786,7 @@ static PyTypeObject *
 find_best_base(PyObject *bases)
 {
     Py_ssize_t i, n;
-    PyTypeObject *base, *winner, *candidate;
+    PyTypeObject *base, *winner;
 
     assert(PyTuple_Check(bases));
     n = PyTuple_GET_SIZE(bases);
@@ -3734,18 +3813,7 @@ find_best_base(PyObject *bases)
                          base_i->tp_name);
             return NULL;
         }
-        candidate = solid_base(base_i);
-        if (winner == NULL) {
-            winner = candidate;
-            base = base_i;
-        }
-        else if (PyType_IsSubtype(winner, candidate))
-            ;
-        else if (PyType_IsSubtype(candidate, winner)) {
-            winner = candidate;
-            base = base_i;
-        }
-        else {
+        if (update_best_base(base_i, &base, &winner) < 0) {
             PyErr_SetString(
                 PyExc_TypeError,
                 "multiple bases have "
@@ -3786,164 +3854,31 @@ solid_base(PyTypeObject *type)
     }
 }
 
-#ifdef Py_GIL_DISABLED
-
-// The structures and functions below are used in the free-threaded build
-// to safely make updates to type slots, on type_setattro() for a slot
-// or when __bases__ is re-assigned.  Since the slots are read without atomic
-// operations and without locking, we can only safely update them while the
-// world is stopped.  However, with the world stopped, we are very limited on
-// which APIs can be safely used.  For example, calling _PyObject_HashDictKey()
-// or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
-// deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
-// acquire a lock if the dictionary is not owned by the current thread, to
-// mark it shared on reading.
-//
-// We do the slot updates in two steps.  First, with TYPE_LOCK held, we lookup
-// the descriptor for each slot, for each subclass. We build a queue of
-// updates to perform but don't actually update the type structures.  After we
-// are finished the lookups, we stop-the-world and apply all of the updates.
-// The apply_slot_updates() code is simple and easy to confirm that it is
-// safe.
-
-typedef struct {
-    PyTypeObject *type;
-    void **slot_ptr;
-    void *slot_value;
-} slot_update_item_t;
-
-// The number of slot updates performed is based on the number of changed
-// slots and the number of subclasses.  It's possible there are many updates
-// required if there are many subclasses (potentially an unbounded amount).
-// Usually the number of slot updates is small, most often zero or one.  When
-// running the unit tests, we don't exceed 20.  The chunk size is set to
-// handle the common case with a single chunk and to not require too many
-// chunk allocations if there are many subclasses.
-#define SLOT_UPDATE_CHUNK_SIZE 30
-
-typedef struct _slot_update {
-    struct _slot_update *prev;
-    Py_ssize_t n;
-    slot_update_item_t updates[SLOT_UPDATE_CHUNK_SIZE];
-} slot_update_chunk_t;
-
-// a queue of updates to be performed
-typedef struct {
-    slot_update_chunk_t *head;
-} slot_update_t;
-
-static slot_update_chunk_t *
-slot_update_new_chunk(void)
-{
-    slot_update_chunk_t *chunk = PyMem_Malloc(sizeof(slot_update_chunk_t));
-    if (chunk == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    chunk->prev = NULL;
-    chunk->n = 0;
-    return chunk;
-}
-
-static void
-slot_update_free_chunks(slot_update_t *updates)
-{
-    slot_update_chunk_t *chunk = updates->head;
-    while (chunk != NULL) {
-        slot_update_chunk_t *prev = chunk->prev;
-        PyMem_Free(chunk);
-        chunk = prev;
-    }
-}
-
-static int
-queue_slot_update(slot_update_t *updates, PyTypeObject *type,
-                  void **slot_ptr, void *slot_value)
-{
-    if (*slot_ptr == slot_value) {
-        return 0; // slot pointer not actually changed, don't queue update
-    }
-    if (updates->head == NULL || updates->head->n == SLOT_UPDATE_CHUNK_SIZE) {
-        slot_update_chunk_t *chunk = slot_update_new_chunk();
-        if (chunk == NULL) {
-            return -1; // out-of-memory
-        }
-        chunk->prev = updates->head;
-        updates->head = chunk;
-    }
-    slot_update_item_t *item = &updates->head->updates[updates->head->n];
-    item->type = type;
-    item->slot_ptr = slot_ptr;
-    item->slot_value = slot_value;
-    updates->head->n++;
-    assert(updates->head->n <= SLOT_UPDATE_CHUNK_SIZE);
-    return 0;
-}
-
-static void
-apply_slot_updates(slot_update_t *updates)
-{
-    assert(types_world_is_stopped());
-    slot_update_chunk_t *chunk = updates->head;
-    while (chunk != NULL) {
-        for (Py_ssize_t i = 0; i < chunk->n; i++) {
-            slot_update_item_t *item = &chunk->updates[i];
-            *(item->slot_ptr) = item->slot_value;
-            if (item->slot_value == slot_tp_call) {
-                /* A generic __call__ is incompatible with vectorcall */
-                type_clear_flags(item->type, Py_TPFLAGS_HAVE_VECTORCALL);
-            }
-        }
-        chunk = chunk->prev;
-    }
-}
-
-static void
-apply_type_slot_updates(slot_update_t *updates)
-{
-    // This must be done carefully to avoid data races and deadlocks.  We
-    // have just updated the type __dict__, while holding TYPE_LOCK.  We have
-    // collected all of the required type slot updates into the 'updates'
-    // queue.  Note that those updates can apply to multiple types since
-    // subclasses might also be affected by the dict change.
-    //
-    // We need to prevent other threads from writing to the dict before we can
-    // finish updating the slots. The actual stores to the slots are done
-    // with the world stopped.  If we block on the stop-the-world mutex then
-    // we could release TYPE_LOCK mutex and potentially allow other threads
-    // to update the dict.  That's because TYPE_LOCK was acquired using a
-    // critical section.
-    //
-    // The type_lock_prevent_release() call prevents the TYPE_LOCK mutex from
-    // being released even if we block on the STM mutex.  We need to take care
-    // that we do not deadlock because of that.  It is safe because we always
-    // acquire locks in the same order: first the TYPE_LOCK mutex and then the
-    // STM mutex.
-    type_lock_prevent_release();
-    types_stop_world();
-    apply_slot_updates(updates);
-    types_start_world();
-    type_lock_allow_release();
-}
-
-#else
-
-// dummy definition, this parameter is only NULL in the default build
-typedef void slot_update_t;
-
-#endif
+// In the free-threaded build, type slots and tp_flags are read without
+// atomics and without locking, so they can only be updated with the world
+// stopped (or before the type is revealed to other threads).  When a slot
+// name is assigned with type_setattro() or __bases__ is re-assigned, the
+// descriptor lookups for the type and its subclasses and the slot stores are
+// all done within one stop-the-world.  The new slots therefore agree with
+// the type dicts as they are when the world is stopped, whatever happened
+// while TYPE_LOCK was released waiting for it.  With the world stopped, no
+// other thread runs, so dicts and the subclass lists can be read without
+// locking and with borrowed references.  Nothing that can run user code,
+// block or deallocate is allowed; see find_slot_name_in_mro() and
+// recurse_down_subclasses().
 
 /// data passed to update_slots_callback()
 typedef struct {
-    slot_update_t *queued_updates;
     pytype_slotdef **defs;
 } update_callback_data_t;
 
 static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
-static int update_slot(PyTypeObject *, PyObject *, slot_update_t *update);
+static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
+static int type_ready(PyTypeObject *, int, int);
+static int type_ready_publish(PyTypeObject *, int);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 static bool has_slotdef(PyObject *);
@@ -4075,12 +4010,24 @@ subtype_getweakref(PyObject *obj, void *context)
     _PyObject_ASSERT((PyObject *)type,
                      ((type->tp_weaklistoffset + (Py_ssize_t)sizeof(PyObject *))
                       <= type->tp_basicsize));
+
+    /* Synchronize with weakref creation/destruction so the list head cannot
+     * be removed and freed between loading it and taking a reference. */
+    LOCK_WEAKREFS(obj);
     weaklistptr = (PyObject **)((char *)obj + type->tp_weaklistoffset);
-    if (*weaklistptr == NULL)
-        result = Py_None;
-    else
+    if (*weaklistptr == NULL) {
+        result = Py_NewRef(Py_None);
+    }
+    else if (_Py_TryIncref(*weaklistptr)) {
         result = *weaklistptr;
-    return Py_NewRef(result);
+    }
+    else {
+        result = Py_NewRef(Py_None);
+    }
+
+    UNLOCK_WEAKREFS(obj);
+
+    return result;
 }
 
 /* getset definitions for common descriptors */
@@ -4429,7 +4376,7 @@ type_new_alloc(type_new_ctx *ctx)
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
 
-    set_tp_bases(type, Py_NewRef(ctx->bases), 1);
+    set_tp_bases(type, Py_NewRef(ctx->bases));
     type->tp_base = (PyTypeObject *)Py_NewRef(ctx->base);
 
     type->tp_dealloc = subtype_dealloc;
@@ -4894,10 +4841,72 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
 }
 
 
+/* Copy the class namespace.  Keys that are str subclasses are replaced by
+   exact str copies so that the type dict only holds exact str keys (see
+   type_setattro() which does the same for assigned names).  Lookups in a
+   dict with exact str keys cannot run user __eq__ methods, which the slot
+   update code relies on.  Non-str keys are left alone; type_new_impl()
+   warns about them. */
+static PyObject *
+type_new_copy_dict(PyObject *orig_dict)
+{
+    PyObject *dict = _PyDict_CopyAsDict(orig_dict);
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (((PyDictObject *)dict)->ma_keys->dk_kind != DICT_KEYS_GENERAL) {
+        // Only exact str keys are possible, nothing to do.
+        return dict;
+    }
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    int rebuild = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        if (PyUnicode_Check(key) && !PyUnicode_CheckExact(key)) {
+            rebuild = 1;
+            break;
+        }
+    }
+    if (!rebuild) {
+        return dict;
+    }
+    // Rebuild rather than delete/insert so that the key order is kept.
+    PyObject *newdict = PyDict_New();
+    if (newdict == NULL) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    pos = 0;
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+        PyObject *newkey;
+        if (PyUnicode_Check(key) && !PyUnicode_CheckExact(key)) {
+            newkey = _PyUnicode_Copy(key);
+            if (newkey == NULL) {
+                goto error;
+            }
+        }
+        else {
+            newkey = Py_NewRef(key);
+        }
+        int err = PyDict_SetItem(newdict, newkey, value);
+        Py_DECREF(newkey);
+        if (err < 0) {
+            goto error;
+        }
+    }
+    Py_DECREF(dict);
+    return newdict;
+
+error:
+    Py_DECREF(dict);
+    Py_DECREF(newdict);
+    return NULL;
+}
+
 static PyTypeObject*
 type_new_init(type_new_ctx *ctx)
 {
-    PyObject *dict = _PyDict_CopyAsDict(ctx->orig_dict);
+    PyObject *dict = type_new_copy_dict(ctx->orig_dict);
     if (dict == NULL) {
         goto error;
     }
@@ -4950,12 +4959,9 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     /* Initialize the rest */
-    if (PyType_Ready(type) < 0) {
+    if (type_ready_publish(type, 1) < 0) {
         goto error;
     }
-
-    // Put the proper slots in place
-    fixup_slot_dispatchers(type);
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -4977,10 +4983,6 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
     return (PyObject *)type;
 
@@ -5031,6 +5033,13 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
 
     if (winner != ctx->metatype) {
         if (winner->tp_new != type_new) {
+            /* Check if tp_new is NULL (cannot instantiate this type) */
+            if (winner->tp_new == NULL) {
+                PyErr_Format(PyExc_TypeError,
+                             "cannot create '%.400s' instances",
+                             winner->tp_name);
+                return -1;
+            }
             /* Pass it to the winner */
             *type = winner->tp_new(winner, ctx->args, ctx->kwds);
             if (*type == NULL) {
@@ -5635,7 +5644,7 @@ type_from_slots_or_spec(
     /* Set slots we have prepared */
 
     type->tp_base = (PyTypeObject *)Py_NewRef(base);
-    set_tp_bases(type, bases, 1);
+    set_tp_bases(type, bases);
     bases = NULL;  // We give our reference to bases to the type
 
     type->tp_doc = tp_doc;
@@ -5714,8 +5723,7 @@ type_from_slots_or_spec(
      * After this call we should generally only touch up what's
      * accessible to Python code, like __dict__.
      */
-
-    if (PyType_Ready(type) < 0) {
+    if (type_ready_publish(type, 0) < 0) {
         goto finally;
     }
 
@@ -5775,10 +5783,6 @@ type_from_slots_or_spec(
     }
 
     assert(_PyType_CheckConsistency(type));
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
-    // After this point, other threads can potentally use this type.
-    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
-#endif
 
 finally:
     if (PyErr_Occurred()) {
@@ -6187,6 +6191,52 @@ done:
     return res;
 }
 
+#ifdef Py_GIL_DISABLED
+/* Variant of find_name_in_mro() used to compute slots.  'name' must be an
+   exact str.  Keys of the MRO dicts that are not exact str are skipped
+   without being compared, so no user code runs.  This can be called with the
+   world stopped; the result is then a borrowed reference since no other
+   thread can drop it.  Returns 0 if the name was not found and 1 if it was. */
+static int
+find_slot_name_in_mro(PyTypeObject *type, PyObject *name, _PyStackRef *out)
+{
+    assert(PyUnicode_CheckExact(name));
+    *out = PyStackRef_NULL;
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL) {
+        return 0;
+    }
+    int res = 0;
+    int world_stopped = types_world_is_stopped();
+    if (!world_stopped) {
+        // tp_mro can be replaced while the dict locks are released.
+        Py_INCREF(mro);
+    }
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, i);
+        PyDictObject *dict = (PyDictObject *)lookup_tp_dict(_PyType_CAST(base));
+        assert(dict && PyDict_Check(dict));
+        if (world_stopped) {
+            PyObject *value = _PyDict_GetItem_ExactUnicode(dict, name);
+            if (value != NULL) {
+                *out = PyStackRef_FromPyObjectBorrow(value);
+                res = 1;
+                break;
+            }
+        }
+        else if (_PyDict_GetItemStackRef_ExactUnicode(dict, name, out)) {
+            res = 1;
+            break;
+        }
+    }
+    if (!world_stopped) {
+        Py_DECREF(mro);
+    }
+    return res;
+}
+#endif
+
 /* Check if the "readied" PyUnicode name
    is a double-underscore special name. */
 static int
@@ -6203,69 +6253,6 @@ is_dunder_name(PyObject *name)
         );
     }
     return 0;
-}
-
-static PyObject *
-update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
-{
-    _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
-    assert(PyUnstable_Unicode_GET_CACHED_HASH(name) != -1);
-    OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
-    // We're releasing this under the lock for simplicity sake because it's always a
-    // exact unicode object or Py_None so it's safe to do so.
-    PyObject *old_name = entry->name;
-    _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
-    // We must write the version last to avoid _Py_TryXGetStackRef()
-    // operating on an invalid (already deallocated) value inside
-    // _PyType_LookupRefAndVersion().  If we write the version first then a
-    // reader could pass the "entry_version == type_version" check but could
-    // be using the old entry value.
-    _Py_atomic_store_uint32_release(&entry->version, version_tag);
-    return old_name;
-}
-
-#if Py_GIL_DISABLED
-
-static void
-update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
-                          unsigned int version_tag, PyObject *value)
-{
-    _PySeqLock_LockWrite(&entry->sequence);
-
-    // update the entry
-    if (entry->name == name &&
-        entry->value == value &&
-        entry->version == version_tag) {
-        // We raced with another update, bail and restore previous sequence.
-        _PySeqLock_AbandonWrite(&entry->sequence);
-        return;
-    }
-
-    PyObject *old_value = update_cache(entry, name, version_tag, value);
-
-    // Then update sequence to the next valid value
-    _PySeqLock_UnlockWrite(&entry->sequence);
-
-    Py_DECREF(old_value);
-}
-
-#endif
-
-void
-_PyTypes_AfterFork(void)
-{
-#ifdef Py_GIL_DISABLED
-    struct type_cache *cache = get_type_cache();
-    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
-        struct type_cache_entry *entry = &cache->hashtable[i];
-        if (_PySeqLock_AfterFork(&entry->sequence)) {
-            // Entry was in the process of updating while forking, clear it...
-            entry->value = NULL;
-            Py_SETREF(entry->name, Py_None);
-            entry->version = 0;
-        }
-    }
-#endif
 }
 
 /* Internal API to look for a name through the MRO.
@@ -6298,45 +6285,16 @@ should_assign_version_tag(PyTypeObject *type, PyObject *name, unsigned int versi
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
-    unsigned int h = MCACHE_HASH_METHOD(type, name);
-    struct type_cache *cache = get_type_cache();
-    struct type_cache_entry *entry = &cache->hashtable[h];
-#ifdef Py_GIL_DISABLED
-    // synchronize-with other writing threads by doing an acquire load on the sequence
-    while (1) {
-        uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
-        uint32_t entry_version = _Py_atomic_load_uint32_acquire(&entry->version);
-        uint32_t type_version = _Py_atomic_load_uint32_acquire(&type->tp_version_tag);
-        if (entry_version == type_version &&
-            _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
+    int cacheable = MCACHE_CACHEABLE_NAME(name);
+    if (cacheable) {
+        struct _PyTypeCacheLookupResult r = _PyTypeCache_Lookup(type, name);
+        if (r.cache_hit) {
             OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
             OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-            if (_Py_TryXGetStackRef(&entry->value, out)) {
-                // If the sequence is still valid then we're done
-                if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
-                    return entry_version;
-                }
-                PyStackRef_XCLOSE(*out);
-            }
-            else {
-                // If we can't incref the object we need to fallback to locking
-                break;
-            }
-        }
-        else {
-            // cache miss
-            break;
+            *out = r.value;
+            return r.version_tag;
         }
     }
-#else
-    if (entry->version == type->tp_version_tag && entry->name == name) {
-        assert(type->tp_version_tag);
-        OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
-        OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-        *out = entry->value ? PyStackRef_FromPyObjectNew(entry->value) : PyStackRef_NULL;
-        return entry->version;
-    }
-#endif
     OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
     OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
 
@@ -6347,14 +6305,25 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     unsigned int version_tag = FT_ATOMIC_LOAD_UINT(type->tp_version_tag);
-    if (should_assign_version_tag(type, name, version_tag)) {
+    if (cacheable &&
+        (version_tag != 0 || should_assign_version_tag(type, name, version_tag)))
+    {
         BEGIN_TYPE_LOCK();
-        assign_version_tag(interp, type);
         version_tag = type->tp_version_tag;
+        if (version_tag == 0) {
+            assign_version_tag(interp, type);
+            version_tag = type->tp_version_tag;
+        }
         res = find_name_in_mro(type, name, out);
+        // find_name_in_mro can release the type lock and another thread can
+        // modify the type, so we need to check version tag again before caching the result.
+        if (res >= 0 && version_tag != 0 && version_tag == type->tp_version_tag) {
+            _PyTypeCache_Insert(type, name, PyStackRef_AsPyObjectBorrow(*out));
+        }
         END_TYPE_LOCK();
     }
     else {
+        version_tag = 0;
         res = find_name_in_mro(type, name, out);
     }
 
@@ -6364,17 +6333,6 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         return 0;
     }
 
-    if (version_tag == 0 || !MCACHE_CACHEABLE_NAME(name)) {
-        return 0;
-    }
-
-    PyObject *res_obj = PyStackRef_AsPyObjectBorrow(*out);
-#if Py_GIL_DISABLED
-    update_cache_gil_disabled(entry, name, version_tag, res_obj);
-#else
-    PyObject *old_value = update_cache(entry, name, version_tag, res_obj);
-    Py_DECREF(old_value);
-#endif
     return version_tag;
 }
 
@@ -6499,23 +6457,19 @@ void
 _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
     BEGIN_TYPE_LOCK();
-    /* Ideally, changing flags and invalidating the old version tag would
-       happen in one step. But type_modified_unlocked() is re-entrant and
-       cannot run with the world stopped, so we must invalidate first.
-       Immutable/static-builtin types are skipped because
-       set_flags_recursive() does not modify them. */
-    if (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
-        (self->tp_flags & mask) != flags)
-    {
-        type_modified_unlocked(self);
-    }
-    /* Keep TYPE_LOCK held while waiting for stop-the-world so no thread
-       can reassign a version tag before the flag update. */
-    type_lock_prevent_release();
+    // Immutable/static-builtin types are skipped because
+    // set_flags_recursive() does not modify them.
+    int modified = (!PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) &&
+                    (self->tp_flags & mask) != flags);
     types_stop_world();
     set_flags_recursive(self, mask, flags);
     types_start_world();
-    type_lock_allow_release();
+    // Invalidate the version tags after update, while TYPE_LOCK is
+    // still held.
+    ASSERT_TYPE_LOCK_HELD();
+    if (modified) {
+        _PyType_Modified_Unlocked(self);
+    }
     END_TYPE_LOCK();
 }
 
@@ -6688,11 +6642,13 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
 {
     // We don't want any re-entrancy between when we update the dict
-    // and call type_modified_unlocked, including running the destructor
+    // and call _PyType_Modified_Unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
-    // state.  Because we have an exact unicode and our dict has exact
-    // unicodes we know that this will all complete without releasing
-    // the locks.
+    // state.  The name is an exact unicode (see type_setattro()) and
+    // str subclass keys are copied to exact str by type_new_copy_dict()
+    // and type_setattro().  The type dict can still hold non-str keys
+    // (type_new_impl() only warns about them) and comparing with one of
+    // those can run user code that releases the locks.
     if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, old_value) < 0) {
         return -1;
     }
@@ -6702,7 +6658,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         update_subclasses() recursion in update_slot(), but carefully:
         they each have their own conditions on which to stop
         recursing into subclasses. */
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
         PyErr_Format(PyExc_AttributeError,
@@ -6718,25 +6674,19 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 static int
 update_slot_after_setattr(PyTypeObject *type, PyObject *name)
 {
+    types_stop_world();
+    int res = update_slot(type, name);
+    types_start_world();
 #ifdef Py_GIL_DISABLED
-    // stack allocate one chunk since that's all we need
-    assert(SLOT_UPDATE_CHUNK_SIZE >= MAX_EQUIV);
-    slot_update_chunk_t chunk = {0};
-    slot_update_t queued_updates = {&chunk};
-
-    if (update_slot(type, name, &queued_updates) < 0) {
-        return -1;
-    }
-    if (queued_updates.head->n > 0) {
-        apply_type_slot_updates(&queued_updates);
-        ASSERT_TYPE_LOCK_HELD();
-        // should never allocate another chunk
-        assert(chunk.prev == NULL);
-    }
-#else
-    update_slot(type, name, NULL);
+    // Invalidate again, after the slots are updated and while TYPE_LOCK is
+    // still held.  Other threads may have assigned new version tags while
+    // the lock was released waiting for the stop-the-world and cached
+    // decisions based on the old slots.  This is a no-op if the tags are
+    // still invalid.
+    ASSERT_TYPE_LOCK_HELD();
+    _PyType_Modified_Unlocked(type);
 #endif
-    return 0;
+    return res;
 }
 
 static int
@@ -6833,7 +6783,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 done:
     Py_DECREF(name);
     Py_XDECREF(descr);
-    Py_XDECREF(old_value);
+    // delay decref of the old value as lock-free type cache readers may access it
+    _PyObject_XDecRefDelayed(old_value);
     return res;
 }
 
@@ -6844,7 +6795,9 @@ type_dealloc_common(PyTypeObject *type)
     PyObject *bases = lookup_tp_bases(type);
     if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
+        BEGIN_TYPE_LOCK();
         remove_all_subclasses(type, bases);
+        END_TYPE_LOCK();
         PyErr_SetRaisedException(exc);
     }
 }
@@ -6905,6 +6858,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type,
     if (final) {
         Py_CLEAR(type->tp_cache);
     }
+    _PyTypeCache_Invalidate(type);
     clear_tp_dict(type);
     clear_tp_bases(type, final);
     clear_tp_mro(type, final);
@@ -7015,6 +6969,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     clear_tp_subclasses(type);
+    _PyTypeCache_Invalidate(type);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
@@ -7563,7 +7518,9 @@ _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op)
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
-    return Py_NewRef(Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    _Py_INCREF_TYPE(type);
+    return (PyObject *)type;
 }
 
 static int
@@ -7575,6 +7532,24 @@ compatible_with_tp_base(PyTypeObject *child)
             child->tp_itemsize == parent->tp_itemsize &&
             (child->tp_dealloc == subtype_dealloc ||
              child->tp_dealloc == parent->tp_dealloc));
+}
+
+// Compare two ht_slots tuples by string content, without calling a user
+// __eq__, since this can be called with the world stopped.
+static int
+same_slot_names(PyObject *slots_a, PyObject *slots_b)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(slots_a);
+    if (n != PyTuple_GET_SIZE(slots_b)) {
+        return 0;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        if (!_PyUnicode_Equal(PyTuple_GET_ITEM(slots_a, i),
+                              PyTuple_GET_ITEM(slots_b, i))) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static int
@@ -7599,7 +7574,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
     slots_a = ((PyHeapTypeObject *)a)->ht_slots;
     slots_b = ((PyHeapTypeObject *)b)->ht_slots;
     if (slots_a && slots_b) {
-        if (PyObject_RichCompareBool(slots_a, slots_b, Py_EQ) != 1)
+        if (!same_slot_names(slots_a, slots_b))
             return 0;
         size += sizeof(PyObject *) * PyTuple_GET_SIZE(slots_a);
     }
@@ -7617,28 +7592,21 @@ compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsign
                     : !(~(origto->tp_flags & flags) & (newto->tp_flags & flags));
 }
 
+// Return 1 if the object layout of 'newto' is compatible with 'origto' (for
+// __class__ assignment) or with the base of 'origto' (for __bases__
+// assignment), else 0.  Does not raise and does not run user code.
 static int
-compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
-                          const char *attr, int setclass)
+compatible_layout(PyTypeObject *origto, PyTypeObject *newto, int setclass)
 {
     PyTypeObject *newbase, *oldbase;
     PyTypeObject *oldto = setclass ? origto : origto->tp_base;
 
-    if (setclass && newto->tp_free != oldto->tp_free) {
-        PyErr_Format(PyExc_TypeError,
-                     "%s assignment: "
-                     "'%s' deallocator differs from '%s'",
-                     attr,
-                     newto->tp_name,
-                     oldto->tp_name);
-        return 0;
-    }
     if (!compatible_flags(setclass, origto, newto,
                           Py_TPFLAGS_HAVE_GC |
                           Py_TPFLAGS_INLINE_VALUES |
                           Py_TPFLAGS_PREHEADER))
     {
-        goto differs;
+        return 0;
     }
     /* For __class__ assignment, tp_dictoffset and tp_weaklistoffset should
        be the same for old and new types.
@@ -7648,12 +7616,12 @@ compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
     if ((setclass || newto->tp_dictoffset)
         && origto->tp_dictoffset != newto->tp_dictoffset)
     {
-        goto differs;
+        return 0;
     }
     if ((setclass || newto->tp_weaklistoffset)
         && origto->tp_weaklistoffset != newto->tp_weaklistoffset)
     {
-        goto differs;
+        return 0;
     }
     /*
      It's tricky to tell if two arbitrary types are sufficiently compatible as
@@ -7674,17 +7642,43 @@ compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
     if (newbase != oldbase &&
         (newbase->tp_base != oldbase->tp_base ||
          !same_slots_added(newbase, oldbase))) {
-        goto differs;
+        return 0;
     }
     return 1;
-differs:
+}
+
+static void
+raise_layout_differs(const char *attr, PyTypeObject *newto,
+                     PyTypeObject *oldto)
+{
     PyErr_Format(PyExc_TypeError,
                     "%s assignment: "
                     "'%s' object layout differs from '%s'",
                     attr,
                     newto->tp_name,
                     oldto->tp_name);
-    return 0;
+}
+
+static int
+compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
+                          const char *attr, int setclass)
+{
+    PyTypeObject *oldto = setclass ? origto : origto->tp_base;
+
+    if (setclass && newto->tp_free != oldto->tp_free) {
+        PyErr_Format(PyExc_TypeError,
+                     "%s assignment: "
+                     "'%s' deallocator differs from '%s'",
+                     attr,
+                     newto->tp_name,
+                     oldto->tp_name);
+        return 0;
+    }
+    if (!compatible_layout(origto, newto, setclass)) {
+        raise_layout_differs(attr, newto, oldto);
+        return 0;
+    }
+    return 1;
 }
 
 
@@ -8804,10 +8798,23 @@ overrides_hash(PyTypeObject *type)
     PyObject *dict = lookup_tp_dict(type);
 
     assert(dict != NULL);
+#ifdef Py_GIL_DISABLED
+    // Ignore non-str keys, consistent with find_slot_name_in_mro().
+    _PyStackRef ref;
+    int r = _PyDict_GetItemStackRef_ExactUnicode(
+        (PyDictObject *)dict, &_Py_ID(__eq__), &ref);
+    PyStackRef_XCLOSE(ref);
+    if (r == 0) {
+        r = _PyDict_GetItemStackRef_ExactUnicode(
+            (PyDictObject *)dict, &_Py_ID(__hash__), &ref);
+        PyStackRef_XCLOSE(ref);
+    }
+#else
     int r = PyDict_Contains(dict, &_Py_ID(__eq__));
     if (r == 0) {
         r = PyDict_Contains(dict, &_Py_ID(__hash__));
     }
+#endif
     return r;
 }
 
@@ -9112,7 +9119,7 @@ type_ready_set_bases(PyTypeObject *type, int initial)
         if (bases == NULL) {
             return -1;
         }
-        set_tp_bases(type, bases, 1);
+        set_tp_bases(type, bases);
     }
     return 0;
 }
@@ -9518,7 +9525,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type, int initial)
+type_ready(PyTypeObject *type, int initial, int add_subclasses)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -9528,6 +9535,8 @@ type_ready(PyTypeObject *type, int initial)
     if (type_ready_pre_checks(type) < 0) {
         goto error;
     }
+
+    _PyTypeCache_InitType(type);
 
 #ifdef Py_TRACE_REFS
     /* PyType_Ready is the closest thing we have to a choke point
@@ -9571,8 +9580,10 @@ type_ready(PyTypeObject *type, int initial)
     if (type_ready_set_hash(type) < 0) {
         goto error;
     }
-    if (type_ready_add_subclasses(type) < 0) {
-        goto error;
+    if (add_subclasses) {
+        if (type_ready_add_subclasses(type) < 0) {
+            goto error;
+        }
     }
     if (initial) {
         if (type_ready_managed_dict(type) < 0) {
@@ -9583,11 +9594,13 @@ type_ready(PyTypeObject *type, int initial)
         }
     }
 
-    /* All done -- set the ready flag */
-    if (initial) {
-        type_add_flags(type, Py_TPFLAGS_READY);
-    } else {
-        assert(type->tp_flags & Py_TPFLAGS_READY);
+    if (add_subclasses) {
+        /* All done -- set the ready flag */
+        if (initial) {
+            type_add_flags(type, Py_TPFLAGS_READY);
+        } else {
+            assert(type->tp_flags & Py_TPFLAGS_READY);
+        }
     }
 
     stop_readying(type);
@@ -9598,6 +9611,46 @@ type_ready(PyTypeObject *type, int initial)
 error:
     stop_readying(type);
     return -1;
+}
+
+static int
+type_ready_publish(PyTypeObject *type, int fix_slots)
+{
+    int res;
+    BEGIN_TYPE_LOCK();
+    res = type_ready(type, 1, 0);
+    if (res == 0) {
+        assert(!(type->tp_flags & Py_TPFLAGS_READY));
+        assert(!is_readying(type));
+
+        if (fix_slots) {
+            // Put the proper slots in place and only then publish the type as
+            // a subclass of its bases.  Since the type is not reachable by
+            // other threads before it is published, the slots can be updated
+            // without stopping the world.  This step is skipped for
+            // type_from_slots_or_spec().
+            fixup_slot_dispatchers(type);
+        }
+
+        // Set the ready flag before revealing the type since type_add_flags()
+        // may only be used on types that are not yet revealed.
+        type_add_flags(type, Py_TPFLAGS_READY);
+
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+        // Mark the type as revealed while still holding the type lock.
+        // Threads can only find the type through the subclasses of its bases,
+        // which is done below with the lock held.  So, they cannot see the
+        // type before the flag is set.
+        ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+#endif
+
+        res = type_ready_add_subclasses(type);
+        if (res == 0) {
+            assert(_PyType_CheckConsistency(type));
+        }
+    }
+    END_TYPE_LOCK();
+    return res;
 }
 
 int
@@ -9619,7 +9672,7 @@ PyType_Ready(PyTypeObject *type)
     int res;
     BEGIN_TYPE_LOCK();
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
-        res = type_ready(type, 1);
+        res = type_ready(type, 1, 1);
     } else {
         res = 0;
         assert(_PyType_CheckConsistency(type));
@@ -9660,7 +9713,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_ready(self, initial);
+    res = type_ready(self, initial, 1);
     END_TYPE_LOCK();
     if (res < 0) {
         _PyStaticType_ClearWeakRefs(interp, self);
@@ -11779,6 +11832,62 @@ static pytype_slotdef slotdefs[] = {
    interpreter starts. */
 static uint8_t slotdefs_dups[Py_ARRAY_LENGTH(slotdefs)][1 + MAX_EQUIV];
 
+/* Open-addressing hash table: slot name -> index of the first slotdef with
+   that name (slotdefs_dups[] lists the others).  Entry 0 means "empty".
+   Built by _PyType_InitSlotDefs(). */
+#define SLOTNAME_TABLE_SIZE 512
+static uint16_t slotname_table[SLOTNAME_TABLE_SIZE];
+#ifndef NDEBUG
+static bool slotname_table_initialized = false;
+#endif
+
+static size_t
+slotname_probe(PyObject *key, Py_hash_t hash)
+{
+    size_t i = (size_t)hash & (SLOTNAME_TABLE_SIZE - 1);
+    while (slotname_table[i] != 0) {
+        PyObject *name = slotdefs[slotname_table[i] - 1].name_strobj;
+        if (name == key
+            || (PyUnstable_Unicode_GET_CACHED_HASH(name) == hash
+                && _PyUnicode_Equal(name, key))) {
+            break;
+        }
+        i = (i + 1) & (SLOTNAME_TABLE_SIZE - 1);
+    }
+    return i;
+}
+
+static void
+init_slotname_table(void)
+{
+#ifndef NDEBUG
+    slotname_table_initialized = true;
+#endif
+    memset(slotname_table, 0, sizeof(slotname_table));
+    for (size_t idx = 0; slotdefs[idx].name != NULL; idx++) {
+        PyObject *name = slotdefs[idx].name_strobj;
+        /* Computes and caches the hash of name_strobj if not done yet. */
+        Py_hash_t hash = _PyObject_HashDictKey(name);
+        size_t i = slotname_probe(name, hash);
+        if (slotname_table[i] == 0) {
+            slotname_table[i] = (uint16_t)(idx + 1);
+        }
+    }
+    /* Keep the load factor low so probe sequences stay short. */
+    Py_BUILD_ASSERT(4 * Py_ARRAY_LENGTH(slotdefs) <= SLOTNAME_TABLE_SIZE);
+}
+
+/* Return the index of the first slotdef named 'key' (a str with hash
+   'hash'), or -1 if 'key' is not a slot name. */
+static Py_ssize_t
+slotname_lookup(PyObject *key, Py_hash_t hash)
+{
+    assert(slotname_table_initialized);
+    assert(hash != -1);
+    size_t i = slotname_probe(key, hash);
+    return slotname_table[i] ? slotname_table[i] - 1 : -1;
+}
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -11826,12 +11935,84 @@ slotptr(PyTypeObject *type, int ioffset)
 static bool
 has_slotdef(PyObject *name)
 {
-    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
-        if (p->name_strobj == name) {
-            return true;
+    return slotname_lookup(name, _PyObject_HashDictKey(name)) >= 0;
+}
+
+#define SLOT_SCAN_MAX_DICT_SIZE 1000
+
+static void
+clear_slot_descrs(PyObject **descrs)
+{
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(slotdefs) - 1; i++) {
+        Py_CLEAR(descrs[i]);
+    }
+}
+
+/* Scan the dicts along the MRO once and set descrs[i] to a strong reference
+   to what find_name_in_mro() (find_slot_name_in_mro() in the free-threaded
+   build) would return for slotdefs[i].name, or NULL.  Dicts with keys that
+   are not exact str are not scanned.
+   Return -1 (descrs[] all NULL) if some dict cannot be scanned. */
+static int
+collect_slot_descrs(PyTypeObject *type, PyObject **descrs)
+{
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
+    PyObject *mro = lookup_tp_mro(type);
+    assert(mro != NULL && PyTuple_CheckExact(mro));
+    memset(descrs, 0, sizeof(PyObject *) * (Py_ARRAY_LENGTH(slotdefs) - 1));
+    Py_ssize_t mro_size = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t m = 0; m < mro_size; m++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, m);
+        assert(PyType_Check(base));
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        assert(dict != NULL && PyDict_Check(dict));
+#ifdef Py_GIL_DISABLED
+        /* _PyDict_Next() needs the dict mutex, but we must not block for it:
+           blocking detaches the thread, which releases TYPE_LOCK and lets
+           another thread change a dict scanned earlier.  Fall back instead. */
+        PyMutex *mutex = &dict->ob_mutex;
+        if (!PyMutex_LockFast(mutex)) {
+            goto fail;
+        }
+#endif
+        int ok = 1;
+        if (!DK_IS_UNICODE(((PyDictObject *)dict)->ma_keys)
+            || PyDict_GET_SIZE(dict) > SLOT_SCAN_MAX_DICT_SIZE) {
+            ok = 0;
+        }
+        else {
+            Py_ssize_t pos = 0;
+            PyObject *key, *value;
+            Py_hash_t hash;
+            while (_PyDict_Next(dict, &pos, &key, &value, &hash)) {
+                if (!is_dunder_name(key)) {
+                    continue;
+                }
+                Py_ssize_t idx = slotname_lookup(key, hash);
+                if (idx < 0) {
+                    continue;
+                }
+                /* First class in the MRO wins. */
+                const uint8_t *dups = slotdefs_dups[idx];
+                for (uint8_t k = 1; k <= dups[0]; k++) {
+                    if (descrs[dups[k]] == NULL) {
+                        descrs[dups[k]] = Py_NewRef(value);
+                    }
+                }
+            }
+        }
+#ifdef Py_GIL_DISABLED
+        PyMutex_Unlock(mutex);
+#endif
+        if (!ok) {
+            goto fail;
         }
     }
-    return false;
+    return 0;
+
+fail:
+    clear_slot_descrs(descrs);
+    return -1;
 }
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
@@ -11888,17 +12069,18 @@ has_slotdef(PyObject *name)
  * When done, next_p is set to the next slotdef with a different offset,
  * because that's convenient for fixup_slot_dispatchers().
  *
- * If the queued_updates pointer is provided, the actual updates to the slot
- * pointers are queued, rather than being immediately performed.  That argument
- * is only used for the free-threaded build since those updates need to be
- * done while the world is stopped.
+ * In the free-threaded build, this is called with the world stopped for a
+ * type that has been revealed to other threads.  The descriptors are looked
+ * up with find_slot_name_in_mro(), which ignores non-str dict keys.
  *
- * This function will only return an error if the queued_updates argument is
- * provided and allocating memory for the queue fails.  Other exceptions that
- * occur internally are ignored, such as when looking up descriptors. */
-static int
+ * If descrs is not NULL, it holds the descriptors found by
+ * collect_slot_descrs() and no lookups are done.
+ *
+ * Exceptions that occur internally are ignored, such as when looking up
+ * descriptors. */
+static void
 update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
-                slot_update_t *queued_updates)
+                PyObject **descrs)
 {
     ASSERT_NEW_TYPE_OR_LOCKED(type);
 
@@ -11925,14 +12107,27 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         if (next_p != NULL) {
             *next_p = p;
         }
-        return 0;
+        return;
     }
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
     do {
-        /* Use faster uncached lookup as we won't get any cache hits during type setup. */
         _PyStackRef descr_ref;
-        int res = find_name_in_mro(type, p->name_strobj, &descr_ref);
+        int res;
+        if (descrs != NULL) {
+            /* Precomputed by collect_slot_descrs(), which owns the refs. */
+            PyObject *found = descrs[p - slotdefs];
+            res = (found != NULL);
+            descr_ref = res ? PyStackRef_FromPyObjectBorrow(found) : PyStackRef_NULL;
+        }
+        else {
+#ifdef Py_GIL_DISABLED
+            res = find_slot_name_in_mro(type, p->name_strobj, &descr_ref);
+#else
+            /* Use faster uncached lookup as we won't get any cache hits during type setup. */
+            res = find_name_in_mro(type, p->name_strobj, &descr_ref);
+#endif
+        }
         if (res <= 0) {
             if (ptr == (void**)&type->tp_iternext) {
                 specific = (void *)_PyObject_NextNotImplemented;
@@ -12023,9 +12218,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             }
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
-                if (queued_updates == NULL) {
-                    type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
-                }
+                type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
             }
         }
         PyStackRef_CLOSE(descr_ref);
@@ -12038,26 +12231,12 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         slot_value = generic;
     }
 
-#ifdef Py_GIL_DISABLED
-    if (queued_updates != NULL) {
-        // queue the update to perform later, while world is stopped
-        if (queue_slot_update(queued_updates, type, ptr, slot_value) < 0) {
-            return -1;
-        }
-    } else {
-        // do the update to the type structure now
-        *ptr = slot_value;
-    }
-#else
-    // always do the update immediately
-    assert(queued_updates == NULL);
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     *ptr = slot_value;
-#endif
 
     if (next_p != NULL) {
         *next_p = p;
     }
-    return 0;
 }
 
 /* In the type, update the slots whose slotdefs are gathered in the pp array.
@@ -12070,16 +12249,15 @@ update_slots_callback(PyTypeObject *type, void *data)
     update_callback_data_t *update_data = (update_callback_data_t *)data;
     pytype_slotdef **pp = update_data->defs;
     for (; *pp; pp++) {
-        if (update_one_slot(type, *pp, NULL, update_data->queued_updates) < 0) {
-            return -1;
-        }
+        update_one_slot(type, *pp, NULL, NULL);
     }
     return 0;
 }
 
-/* Update the slots after assignment to a class (type) attribute. */
+/* Update the slots after assignment to a class (type) attribute.  In the
+   free-threaded build, this is called with the world stopped. */
 static int
-update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
+update_slot(PyTypeObject *type, PyObject *name)
 {
     pytype_slotdef *ptrs[MAX_EQUIV];
     pytype_slotdef *p;
@@ -12090,89 +12268,66 @@ update_slot(PyTypeObject *type, PyObject *name, slot_update_t *queued_updates)
     assert(PyUnicode_CheckExact(name));
     assert(PyUnicode_CHECK_INTERNED(name));
 
-    pp = ptrs;
-    for (p = slotdefs; p->name; p++) {
-        assert(PyUnicode_CheckExact(p->name_strobj));
-        assert(PyUnicode_CHECK_INTERNED(p->name_strobj));
-        assert(PyUnicode_CheckExact(name));
-        /* bpo-40521: Using interned strings. */
-        if (p->name_strobj == name) {
-            *pp++ = p;
-        }
+    Py_ssize_t idx = slotname_lookup(name, _PyObject_HashDictKey(name));
+    if (idx < 0) {
+        return 0; /* Not an attribute that affects any slots */
     }
-    *pp = NULL;
-    for (pp = ptrs; *pp; pp++) {
-        p = *pp;
+    /* All slotdefs with this name, in slotdefs order. */
+    const uint8_t *dups = slotdefs_dups[idx];
+    pp = ptrs;
+    for (uint8_t k = 1; k <= dups[0]; k++) {
+        p = &slotdefs[dups[k]];
         offset = p->offset;
         while (p > slotdefs && (p-1)->offset == offset)
             --p;
-        *pp = p;
+        *pp++ = p;
     }
-    if (ptrs[0] == NULL)
-        return 0; /* Not an attribute that affects any slots */
+    *pp = NULL;
 
     update_callback_data_t callback_data;
     callback_data.defs = ptrs;
-    callback_data.queued_updates = queued_updates;
     return update_subclasses(type, name,
                              update_slots_callback, (void *)&callback_data);
 }
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
-   dict. */
+   dict.  The type must not be revealed to other threads yet, so that the
+   slots can be updated directly rather than with the world stopped. */
 static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
+    ASSERT_TYPE_LOCK_HELD();
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
     assert(!PyErr_Occurred());
+    PyObject *descrs_buf[Py_ARRAY_LENGTH(slotdefs) - 1];
+    PyObject **descrs = descrs_buf;
+    if (collect_slot_descrs(type, descrs_buf) < 0) {
+        descrs = NULL;
+    }
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        update_one_slot(type, p, &p, NULL);
+        update_one_slot(type, p, &p, descrs);
+    }
+    if (descrs != NULL) {
+        clear_slot_descrs(descrs);
     }
 }
 
-#ifdef Py_GIL_DISABLED
-
-// Called when __bases__ is re-assigned.
-static int
+// Called when __bases__ is re-assigned.  Also clears the VALID_VERSION
+// flag of 'type' and all its subclasses.
+static void
 update_all_slots(PyTypeObject* type)
 {
-    // Note that update_slot() can fail due to out-of-memory when allocating
-    // the queue chunks to hold the updates.  That's unlikely since the number
-    // of updates is normally small but we handle that case.  update_slot()
-    // can fail internally for other reasons (a lookup fails) but those
-    // errors are suppressed.
-    slot_update_t queued_updates = {0};
+    types_stop_world();
     for (pytype_slotdef *p = slotdefs; p->name; p++) {
-        if (update_slot(type, p->name_strobj, &queued_updates) < 0) {
-            if (queued_updates.head) {
-                slot_update_free_chunks(&queued_updates);
-            }
-            return -1;
-        }
-    }
-    if (queued_updates.head != NULL) {
-        apply_type_slot_updates(&queued_updates);
-        ASSERT_TYPE_LOCK_HELD();
-        slot_update_free_chunks(&queued_updates);
-    }
-    return 0;
-}
-
-#else
-
-// Called when __bases__ is re-assigned.
-static int
-update_all_slots(PyTypeObject* type)
-{
-    pytype_slotdef *p;
-    for (p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail in this case*/
-        update_slot(type, p->name_strobj, NULL);
+        update_slot(type, p->name_strobj);
     }
-    return 0;
+    types_start_world();
+    // Invalidate the version tags after the slots are updated, while
+    // TYPE_LOCK is still held: see update_slot_after_setattr().
+    _PyType_Modified_Unlocked(type);
 }
-
-#endif
 
 int
 _PyType_InitSlotDefs(PyInterpreterState *interp)
@@ -12180,68 +12335,30 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     if (!_Py_IsMainInterpreter(interp)) {
         return 0;
     }
-    PyObject *bytearray = NULL;
-    PyObject *cache = PyDict_New();
-    if (!cache) {
-        return -1;
-    }
+    init_slotname_table();
 
-    pytype_slotdef *p;
-    Py_ssize_t idx = 0;
-    for (p = slotdefs; p->name_strobj; p++, idx++) {
+    /* Group the slotdefs by name: slotdefs_dups[i] lists the indices of
+       all slotdefs with the same name as slotdefs[i], in slotdefs order. */
+    memset(slotdefs_dups, 0, sizeof(slotdefs_dups));
+    for (Py_ssize_t idx = 0; slotdefs[idx].name_strobj != NULL; idx++) {
         assert(idx < 255);
-
-        if (PyDict_GetItemRef(cache, p->name_strobj, &bytearray) < 0) {
-            goto error;
-        }
-
-        if (!bytearray) {
-            Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
-            bytearray = PyByteArray_FromStringAndSize(NULL, size);
-            if (!bytearray) {
-                goto error;
-            }
-
-            uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
-            data[0] = 0;
-
-            if (PyDict_SetItem(cache, p->name_strobj, bytearray) < 0) {
-                goto error;
-            }
-        }
-
-        assert(PyByteArray_CheckExact(bytearray));
-        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
-
+        PyObject *name = slotdefs[idx].name_strobj;
+        Py_ssize_t first = slotname_lookup(name, _PyObject_HashDictKey(name));
+        assert(first >= 0 && first <= idx);
+        uint8_t *data = slotdefs_dups[first];
         data[0] += 1;
         assert(data[0] < MAX_EQUIV);
-
         data[data[0]] = (uint8_t)idx;
-
-        Py_CLEAR(bytearray);
     }
-
-    memset(slotdefs_dups, -1, sizeof(slotdefs_dups));
-
-    Py_ssize_t pos = 0;
-    PyObject *key = NULL;
-    PyObject *value = NULL;
-    while (PyDict_Next(cache, &pos, &key, &value)) {
-        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
-        uint8_t n = data[0];
-        for (uint8_t i = 0; i < n; i++) {
-            uint8_t idx = data[i + 1];
-            memcpy(&slotdefs_dups[idx], data, sizeof(uint8_t) * (n + 1));
+    for (Py_ssize_t idx = 0; slotdefs[idx].name_strobj != NULL; idx++) {
+        PyObject *name = slotdefs[idx].name_strobj;
+        Py_ssize_t first = slotname_lookup(name, _PyObject_HashDictKey(name));
+        if (first != idx) {
+            memcpy(slotdefs_dups[idx], slotdefs_dups[first],
+                   sizeof(slotdefs_dups[idx]));
         }
     }
-
-    Py_DECREF(cache);
     return 0;
-
-error:
-    Py_XDECREF(bytearray);
-    Py_DECREF(cache);
-    return -1;
 }
 
 
@@ -12368,6 +12485,31 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     Py_ssize_t i = 0;
     PyObject *ref;
     while (PyDict_Next(subclasses, &i, NULL, &ref)) {
+#ifdef Py_GIL_DISABLED
+        // With the world stopped, use borrowed references to the subclasses,
+        // so that dropping a reference cannot run type_dealloc().  Look up
+        // attr_name without calling __eq__ of non-str keys, consistent with
+        // find_slot_name_in_mro().
+        assert(types_world_is_stopped());
+        if (_PyWeakref_IS_DEAD(ref)) {
+            continue;
+        }
+        PyTypeObject *subclass =
+            _PyType_CAST(((PyWeakReference *)ref)->wr_object);
+
+        /* Avoid recursing down into unaffected classes */
+        PyObject *dict = lookup_tp_dict(subclass);
+        if (dict != NULL && PyDict_Check(dict) &&
+            _PyDict_GetItem_ExactUnicode((PyDictObject *)dict,
+                                         attr_name) != NULL)
+        {
+            continue;
+        }
+
+        if (update_subclasses(subclass, attr_name, callback, data) < 0) {
+            return -1;
+        }
+#else
         PyTypeObject *subclass = type_from_ref(ref);
         if (subclass == NULL) {
             continue;
@@ -12392,6 +12534,7 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
             return -1;
         }
         Py_DECREF(subclass);
+#endif
     }
     return 0;
 }
@@ -12517,7 +12660,7 @@ PyType_Freeze(PyTypeObject *type)
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
-    type_modified_unlocked(type);
+    _PyType_Modified_Unlocked(type);
     END_TYPE_LOCK();
 
     return 0;
