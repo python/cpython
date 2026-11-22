@@ -67,9 +67,9 @@ an awaited call and follows the call with `END_AWAITED_CALL`, whose oparg jumps
 to the `YIELD_VALUE` of the `SEND` loop for the await. A lazily run body reports
 in `lazy_outcome` how it ended:
 
-- It returned: `clear_thread_frame()` stores a tagged int, and
-  `END_AWAITED_CALL` skips the `SEND` loop, jumping past the `END_SEND` that
-  the `SEND` right before `YIELD_VALUE` jumps to.
+- It returned: `clear_thread_frame()` stores the tagged int
+  `LAZY_CORO_RETURNED`, and `END_AWAITED_CALL` skips the `SEND` loop, jumping
+  past the `END_SEND` that the `SEND` right before `YIELD_VALUE` jumps to.
 - It suspended: `YIELD_VALUE` leaves the frame and its `_PyErr_StackItem` on the
   data stack and stores a pointer to the frame. `END_AWAITED_CALL` creates the
   coroutine object, moves the frame and the exception state into it (see

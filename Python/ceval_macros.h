@@ -167,6 +167,10 @@
 #else
 #  define LAZY_CORO_ALLOWED() 1
 #endif
+
+/* The lazy_outcome of a lazily run body that returned. */
+#define LAZY_CORO_RETURNED PyStackRef_TagInt(0)
+
 #define MAYBE_START_LAZY_CORO(FRAME) \
     do { \
         _PyInterpreterFrame *lazy_frame_ = (FRAME); \

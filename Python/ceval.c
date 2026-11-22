@@ -2028,7 +2028,7 @@ clear_lazy_coro_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
     frame->lazy_coro = 0;
     _PyInterpreterFrame *caller = frame->previous;
     assert(PyStackRef_IsNull(caller->stackpointer[-1]));
-    caller->stackpointer[-1] = PyStackRef_TagInt(0);
+    caller->stackpointer[-1] = LAZY_CORO_RETURNED;
     // Like clear_gen_frame(): a frame object that outlives the
     // coroutine must not keep the caller's frame alive via f_back.
     frame->previous = NULL;
