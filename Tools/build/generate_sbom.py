@@ -77,6 +77,7 @@ PACKAGE_TO_FILES = {
         exclude=[
             "Modules/_hacl/refresh.sh",
             "Modules/_hacl/README.md",
+            "Modules/_hacl/_hmac_hacl.c",
             "Modules/_hacl/python_hacl_namespace.h",
         ]
     ),

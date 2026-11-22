@@ -19,6 +19,7 @@ changes needed, work with the upstream repository.
 
 ## Local files
 
+* [_hmac_hacl.c](_hmac_hacl.c)
 * [python_hacl_namespaces.h](python_hacl_namespaces.h)
 * [README.md](README.md)
 * [refresh.sh](refresh.sh)

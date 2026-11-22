@@ -1028,7 +1028,7 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_HMAC.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_hmac_hacl.c">
+    <ClCompile Include="..\Modules\_hacl\_hmac_hacl.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c">
