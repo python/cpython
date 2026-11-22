@@ -861,7 +861,8 @@ class TestPlistlib(unittest.TestCase):
         for xml in (b"<plist><key>x</key></plist>",
                     b'<?xml version="1.0"?><key>x</key>',
                     b"<plist><array><key>x</key></array></plist>"):
-            self.assertRaises(ValueError, plistlib.loads, xml)
+            with self.subTest(xml=xml):
+                self.assertRaises(ValueError, plistlib.loads, xml)
 
     def test_invaliddict(self):
         for i in ["<key><true/>k</key><string>compound key</string>",
