@@ -1,0 +1,4 @@
+Fix :meth:`subprocess.Popen.communicate` hanging or blocking past its
+*timeout* while writing to the child's stdin on macOS and FreeBSD.  This
+works around a kernel bug most likely seen on loaded hosts with many pipes
+in active use at once.
