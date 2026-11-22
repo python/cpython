@@ -100,11 +100,12 @@ __all__ = [
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
 ]
 
-__author__ = 'Bob Ippolito <bob@redivi.com>'
+# Original author: Bob Ippolito <bob@redivi.com>
 
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+lazy import warnings
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -133,7 +134,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``RecursionError`` (or worse).
+    result in a ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
@@ -197,7 +198,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``RecursionError`` (or worse).
+    result in a ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
@@ -387,9 +388,10 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
-        return "2.0.9"  # Do not change
+    if name in ("__version__", "__author__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "2.0.9",
+            "__author__": "Bob Ippolito <bob@redivi.com>",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

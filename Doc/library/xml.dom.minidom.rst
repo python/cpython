@@ -154,7 +154,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Namespace declarations missing for the serialized element
       and its attributes are now written.
       It now works for :class:`!DocumentFragment` nodes.
@@ -180,7 +180,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       It now works for :class:`!DocumentFragment` nodes.
 
 .. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
@@ -208,7 +208,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Whitespace is no longer added inside an element with mixed content
       or marked with ``xml:space="preserve"``.
       It now works for :class:`!DocumentFragment` nodes.
@@ -282,18 +282,18 @@ rules apply:
 
 * :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
      Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
 
 * The constraints of the DOM are now enforced,
   and the corresponding exceptions are raised.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
      Previously, many invalid operations silently succeeded
      and produced an invalid document,
      but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
      Namespaces are now validated in the factory methods and when setting
      :attr:`~xml.dom.Node.prefix` of an attribute.
 
@@ -304,7 +304,7 @@ The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 This reflects information in the XML document that is not of general
 utility to most DOM users.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    :class:`~xml.dom.EntityReference` is now implemented.
    Note that the parser expands entity references,
    so they only occur in a document if created explicitly.

@@ -39,7 +39,7 @@ Here's a sample session using the :mod:`!ftplib` module::
    drwxr-xr-x    3 1176     1176         4096 Oct 10  2012 tools
    '226 Directory send OK.'
    >>> with open('README', 'wb') as fp:
-   >>>     ftp.retrbinary('RETR README', fp.write)
+   ...     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
    '221 Goodbye.'
@@ -92,7 +92,7 @@ FTP objects
 
    :param str user:
       |param_doc_user|
-      If given, :code:`login(host, passwd, acct)` is implicitly called
+      If given, :code:`login(user, passwd, acct)` is implicitly called
       by the constructor.
 
    :param str passwd:
@@ -464,7 +464,7 @@ FTP_TLS objects
 
    :param str user:
       |param_doc_user|
-      If given, :code:`login(host, passwd, acct)` is implicitly called
+      If given, :code:`login(user, passwd, acct)` is implicitly called
       by the constructor.
 
    :param str passwd:

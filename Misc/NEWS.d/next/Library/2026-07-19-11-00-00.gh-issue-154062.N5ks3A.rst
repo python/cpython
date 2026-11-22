@@ -1,2 +1,0 @@
-Stop normalizing differential flamegraph baselines to the duration of the
-current profile.

@@ -368,11 +368,10 @@ class GeckoCollector(Collector):
         if self.opcodes_enabled and frames:
             leaf_frame = frames[0]
             filename, location, funcname, opcode = leaf_frame
-            if isinstance(location, tuple):
-                lineno, _, col_offset, _ = location
+            if location is None:
+                lineno, col_offset = None, -1
             else:
-                lineno = location
-                col_offset = -1
+                lineno, _, col_offset, _ = location
 
             current_state = (opcode, lineno, col_offset, funcname, filename)
 
@@ -541,15 +540,11 @@ class GeckoCollector(Collector):
 
         for frame_tuple in reversed(frames):
             # frame_tuple is (filename, location, funcname, opcode)
-            # location is (lineno, end_lineno, col_offset, end_col_offset) or just lineno
             filename, location, funcname, opcode = frame_tuple
-            if isinstance(location, tuple):
-                lineno, end_lineno, col_offset, end_col_offset = location
+            if location is None:
+                lineno, col_offset = None, -1
             else:
-                # Legacy format: location is just lineno
-                lineno = location
-                col_offset = -1
-                end_col_offset = -1
+                lineno, _, col_offset, _ = location
 
             # Get or create function
             func_idx = self._get_or_create_func(

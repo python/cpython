@@ -1081,6 +1081,25 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
 
+    def test_get_body_malformed_nested_multipart(self):
+        # gh-159304: a nested multipart part without a boundary has a
+        # string payload, which get_body() must not iterate over.
+        msg = textwrap.dedent("""\
+            From: sender@example.com
+            To: receiver@example.com
+            Subject: Malformed
+            Content-Type: multipart/related; boundary=OUTER
+
+            --OUTER
+            Content-Type: multipart/related
+
+            raw body no boundary
+            --OUTER--
+            """)
+        m = self._str_msg(msg)
+        self.assertIsNone(m.get_body(('plain', 'html')))
+        self.assertIs(m.get_body(('related',)), m)
+
     def test_get_bytes_payload_with_quoted_printable_encoding(self):
         # We use a memoryview to avoid directly changing the private payload
         # and to prevent using the dedicated paths for string or bytes objects.

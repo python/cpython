@@ -39,6 +39,13 @@ function_get_module(PyObject *self, PyObject *func)
 
 
 static PyObject *
+function_get_module_macro(PyObject *self, PyObject *func)
+{
+    return Py_XNewRef(PyFunction_GET_MODULE(func));
+}
+
+
+static PyObject *
 function_get_defaults(PyObject *self, PyObject *func)
 {
     PyObject *defaults = PyFunction_GetDefaults(func);
@@ -134,6 +141,7 @@ static PyMethodDef test_methods[] = {
     {"function_get_code", function_get_code, METH_O, NULL},
     {"function_get_globals", function_get_globals, METH_O, NULL},
     {"function_get_module", function_get_module, METH_O, NULL},
+    {"function_get_module_macro", function_get_module_macro, METH_O, NULL},
     {"function_get_defaults", function_get_defaults, METH_O, NULL},
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},

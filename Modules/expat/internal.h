@@ -29,6 +29,7 @@
    Copyright (c) 2026      Matthew Wozniczka <mattheww@simba.com>
    Copyright (c) 2026      Braian Plaku <braianplaku@gmail.com>
    Copyright (c) 2026      Florian Schmaus <florian.schmaus@codasip.com>
+   Copyright (c) 2026      Brooks Davis <brooks@one-eyed-alien.net>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -56,13 +57,11 @@
 #if ! defined(INTERNAL_H)
 #  define INTERNAL_H 1
 
-#  ifndef XML_MIN_SIZE
-#    if ! defined(inline)
-#      ifdef __GNUC__
-#        define inline __inline
-#      endif /* __GNUC__ */
-#    endif
-#  endif /* XML_MIN_SIZE */
+#  if ! defined(inline)
+#    ifdef __GNUC__
+#      define inline __inline
+#    endif /* __GNUC__ */
+#  endif
 
 #  ifndef inline
 #    define inline
@@ -92,11 +91,10 @@
 #      define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
 #    endif
 #  else
-#    include <inttypes.h> // PRIdPTR, PRIuPTR
 #    define EXPAT_FMT_LLX(midpart) "%" midpart "llx"
 #    define EXPAT_FMT_ULL(midpart) "%" midpart "llu"
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart PRIdPTR
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart PRIuPTR
+#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "td"
+#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
 #  endif
 
 #  ifndef UNUSED_P
@@ -128,6 +126,8 @@ union expat_align {
 /* NOTE END */
 
 #  include "expat.h" // so we can use type XML_Parser below
+
+typedef unsigned long long XmlBigCount;
 
 void _INTERNAL_trim_to_complete_utf8_characters(const char *from,
                                                 const char **fromLimRef);

@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 #include "pycore_time.h"          // _PyTimeFraction
 
 #include <time.h>                 // clock()
@@ -486,7 +487,7 @@ tmtotuple(time_module_state *state, struct tm *p
 #define SET(INDEX, VAL) \
     SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
-    SET(0, p->tm_year + 1900);
+    SET_ITEM(0, PyLong_FromLongLong((long long)p->tm_year + 1900));
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
     SET(2, p->tm_mday);
     SET(3, p->tm_hour);
@@ -628,7 +629,7 @@ static int
 gettmarg(time_module_state *state, PyObject *args,
          struct tm *p, const char *format)
 {
-    int y;
+    long long y;
 
     memset((void *) p, '\0', sizeof(struct tm));
 
@@ -644,12 +645,12 @@ gettmarg(time_module_state *state, PyObject *args,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
 
-    if (y < INT_MIN + 1900) {
+    if (y < (long long)INT_MIN + 1900 || y > (long long)INT_MAX + 1900) {
         PyErr_SetString(PyExc_OverflowError, "year out of range");
         return 0;
     }
 
-    p->tm_year = y - 1900;
+    p->tm_year = (int)(y - 1900);
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
@@ -853,14 +854,14 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
         *outbuf = tmp;
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
         errno = 0;
 #endif
         _Py_BEGIN_SUPPRESS_IPH
         buflen = format_time(*outbuf, *bufsize, format, tm);
         _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        /* VisualStudio .NET 2005 does this properly */
+#if defined _MSC_VER && defined(__STDC_SECURE_LIB__)
+        /* The secure CRT reports invalid format strings with EINVAL. */
         if (buflen == 0 && errno == EINVAL) {
             PyErr_SetString(PyExc_ValueError, "Invalid format string");
             return NULL;
@@ -905,7 +906,7 @@ time_strftime(PyObject *module, PyObject *args)
             return NULL;
     }
     else if (!gettmarg(state, tup, &buf,
-                       "iiiiiiiii;strftime(): illegal time tuple argument") ||
+                       "Liiiiiiii;strftime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
         return NULL;
@@ -917,7 +918,7 @@ time_strftime(PyObject *module, PyObject *args)
 // physical devices (#123017).
 #if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) \
     || defined(__VXWORKS__) || defined(__ANDROID__)
-    if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
+    if (buf.tm_year < 1 - 1900 || buf.tm_year > 9999 - 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
         return NULL;
@@ -1006,6 +1007,40 @@ is not present, current time as returned by localtime() is used.\n\
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
+    _PyTime_StrptimeFields fields;
+    if (PyTuple_GET_SIZE(args) == 2 &&
+        _PyTime_Strptime(PyTuple_GET_ITEM(args, 0),
+                         PyTuple_GET_ITEM(args, 1), &fields)) {
+        time_module_state *state = get_time_state(self);
+        PyObject *result = PyStructSequence_New(state->struct_time_type);
+        if (result == NULL) {
+            return NULL;
+        }
+        const int values[] = {
+            fields.year, fields.month, fields.day,
+            fields.hour, fields.minute, fields.second,
+            _PyTime_Weekday(fields.year, fields.yday), fields.yday, -1
+        };
+        for (size_t i = 0; i < Py_ARRAY_LENGTH(values); i++) {
+            PyObject *value = PyLong_FromLong(values[i]);
+            if (value == NULL) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyStructSequence_SET_ITEM(result, i, value);
+        }
+        /* Numeric offsets don't supply a timezone name or DST information. */
+        PyStructSequence_SET_ITEM(result, 9, Py_NewRef(Py_None));
+        PyObject *offset = fields.gmtoff == INT_MIN
+                          ? Py_NewRef(Py_None)
+                          : PyLong_FromLong(fields.gmtoff);
+        if (offset == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyStructSequence_SET_ITEM(result, 10, offset);
+        return result;
+    }
     PyObject *func, *result;
 
     func = PyImport_ImportModuleAttrString("_strptime", "_strptime_time");
@@ -1040,12 +1075,12 @@ _asctime(struct tm *timeptr)
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
     return PyUnicode_FromFormat(
-        "%s %s%3d %.2d:%.2d:%.2d %d",
+        "%s %s%3d %.2d:%.2d:%.2d %lld",
         wday_name[timeptr->tm_wday],
         mon_name[timeptr->tm_mon],
         timeptr->tm_mday, timeptr->tm_hour,
         timeptr->tm_min, timeptr->tm_sec,
-        1900 + timeptr->tm_year);
+        (long long)timeptr->tm_year + 1900);
 }
 
 /*[clinic input]
@@ -1073,7 +1108,7 @@ time_asctime_impl(PyObject *module, PyObject *tup)
             return NULL;
     }
     else if (!gettmarg(state, tup, &buf,
-                       "iiiiiiiii;asctime(): illegal time tuple argument") ||
+                       "Liiiiiiii;asctime(): illegal time tuple argument") ||
              !checktm(&buf))
     {
         return NULL;
@@ -1129,7 +1164,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 
     time_module_state *state = get_time_state(module);
     if (!gettmarg(state, tm_tuple, &tm,
-                  "iiiiiiiii;mktime(): illegal time tuple argument"))
+                  "Liiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
@@ -2164,7 +2199,8 @@ time_exec(PyObject *module)
     }
 
     // struct_time type
-    state->struct_time_type = PyStructSequence_NewType(&struct_time_type_desc);
+    state->struct_time_type = _PyStructSequence_NewType(
+        &struct_time_type_desc, Py_TPFLAGS_IMMUTABLETYPE);
     if (state->struct_time_type == NULL) {
         return -1;
     }

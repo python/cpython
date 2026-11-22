@@ -2373,31 +2373,80 @@ binascii.a2b_qp
 
     data: ascii_buffer
     header: bool = False
+    *
+    strip_ws: bool = False
 
 Decode a string of qp-encoded data.
+
+If strip_ws is true, whitespace at the end of a line is stripped, as
+required by RFC 2045 when decoding a quoted-printable body.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
-/*[clinic end generated code: output=e99f7846cfb9bc53 input=bdfb31598d4e47b9]*/
+binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header,
+                     int strip_ws)
+/*[clinic end generated code: output=7e9431376a28709d input=679b714f08932dd1]*/
 {
     Py_ssize_t in, out;
     char ch;
     const unsigned char *ascii_data;
-    unsigned char *odata;
+    unsigned char *stripped = NULL;
     Py_ssize_t datalen = 0;
-    PyObject *rv;
 
     ascii_data = data->buf;
     datalen = data->len;
 
-    /* We allocate the output same size as input, this is overkill.
+    /* Strip trailing space and tab before each line break and at the end of
+     * the data (RFC 2045).  Done before decoding, so that a "=" left at the
+     * end of a line becomes a soft line break and a "=20" is preserved.
      */
-    odata = (unsigned char *) PyMem_Calloc(1, datalen);
-    if (odata == NULL) {
-        PyErr_NoMemory();
+    if (strip_ws) {
+        Py_ssize_t i = 0, j = 0, start = 0;
+        while (i < datalen) {
+            if (ascii_data[i] != ' ' && ascii_data[i] != '\t') {
+                i++;
+                continue;
+            }
+            /* Find the run of space and tab. */
+            Py_ssize_t k = i;
+            while (k < datalen &&
+                   (ascii_data[k] == ' ' || ascii_data[k] == '\t')) {
+                k++;
+            }
+            /* Drop it if it ends a line: before "\n", "\r\n" or the end of the
+             * data, but not a bare "\r" (RFC 2045: CR occurs only in CRLF).
+             */
+            if (k == datalen || ascii_data[k] == '\n' ||
+                (ascii_data[k] == '\r' && k + 1 < datalen &&
+                 ascii_data[k+1] == '\n')) {
+                if (stripped == NULL) {
+                    /* Allocate only once something is actually stripped. */
+                    stripped = (unsigned char *) PyMem_Malloc(datalen);
+                    if (stripped == NULL) {
+                        PyErr_NoMemory();
+                        return NULL;
+                    }
+                }
+                memcpy(stripped + j, ascii_data + start, i - start);
+                j += i - start;
+                start = k;
+            }
+            i = k;
+        }
+        if (stripped != NULL) {
+            memcpy(stripped + j, ascii_data + start, datalen - start);
+            j += datalen - start;
+            ascii_data = stripped;
+            datalen = j;
+        }
+    }
+
+    PyBytesWriter *writer = PyBytesWriter_Create(datalen);
+    if (writer == NULL) {
+        PyMem_Free(stripped);
         return NULL;
     }
+    unsigned char *odata = PyBytesWriter_GetData(writer);
 
     in = out = 0;
     while (in < datalen) {
@@ -2410,11 +2459,6 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                     while (in < datalen && ascii_data[in] != '\n') in++;
                 }
                 if (in < datalen) in++;
-            }
-            else if (ascii_data[in] == '=') {
-                /* broken case from broken python qp */
-                odata[out++] = '=';
-                in++;
             }
             else if ((in + 1 < datalen) &&
                      ((ascii_data[in] >= 'A' && ascii_data[in] <= 'F') ||
@@ -2444,9 +2488,8 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
             out++;
         }
     }
-    rv = PyBytes_FromStringAndSize((char *)odata, out);
-    PyMem_Free(odata);
-    return rv;
+    PyMem_Free(stripped);
+    return PyBytesWriter_FinishWithSize(writer, out);
 }
 
 static int
@@ -2486,9 +2529,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
 {
     Py_ssize_t in, out;
     const unsigned char *databuf;
-    unsigned char *odata;
     Py_ssize_t datalen = 0, odatalen = 0;
-    PyObject *rv;
     unsigned int linelen = 0;
     unsigned char ch;
     int crlf = 0;
@@ -2573,13 +2614,11 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
         odatalen += delta;
     }
 
-    /* We allocate the output same size as input, this is overkill.
-     */
-    odata = (unsigned char *) PyMem_Calloc(1, odatalen);
-    if (odata == NULL) {
-        PyErr_NoMemory();
+    PyBytesWriter *writer = PyBytesWriter_Create(odatalen);
+    if (writer == NULL) {
         return NULL;
     }
+    unsigned char *odata = PyBytesWriter_GetData(writer);
 
     in = out = linelen = 0;
     while (in < datalen) {
@@ -2649,9 +2688,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             }
         }
     }
-    rv = PyBytes_FromStringAndSize((char *)odata, out);
-    PyMem_Free(odata);
-    return rv;
+    return PyBytesWriter_FinishWithSize(writer, out);
 }
 
 /* List of functions defined in the module */

@@ -12,7 +12,7 @@ import struct
 import sys
 import threading
 import time
-lazy import warnings
+import warnings  # must stay eager to support finalization
 
 try:
     import zlib # We may need its compression method
@@ -240,8 +240,9 @@ def _check_zipfile(fp):
                 return True     # Empty zipfiles are still zipfiles
             elif endrec[_ECD_DISK_NUMBER] == endrec[_ECD_DISK_START]:
                 # Central directory is on the same disk
-                fp.seek(sum(_handle_prepended_data(endrec)))
-                if endrec[_ECD_SIZE] >= sizeCentralDir:
+                start_dir = sum(_handle_prepended_data(endrec))
+                if start_dir >= 0 and endrec[_ECD_SIZE] >= sizeCentralDir:
+                    fp.seek(start_dir)
                     data = fp.read(sizeCentralDir)   # CD is where we expect it to be
                     if len(data) == sizeCentralDir:
                         centdir = struct.unpack(structCentralDir, data) # CD is the right size
@@ -576,11 +577,11 @@ class ZipInfo:
 
     def _encodeFilenameFlags(self):
         if self.flag_bits & _MASK_UTF_FILENAME:
-            encoding = 'ascii'
+            encoding = 'utf-8'
         else:
             encoding = 'cp437'
         try:
-            return self.filename.encode(encoding), self.flag_bits & ~_MASK_UTF_FILENAME
+            return self.filename.encode(encoding), self.flag_bits
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
@@ -1557,7 +1558,7 @@ class _ZipRepacker:
                         zinfo.header_offset, entry_size, used_entry_size)
             if used_entry_size > entry_size:
                 raise BadZipFile(
-                    f"Overlapped entries: {zinfo.orig_filename!r} ")
+                    f"Overlapped entries: {zinfo.orig_filename!r}")
 
             if removed is not None and zinfo not in removed_zinfos:
                 used_entry_size = entry_size
@@ -2318,7 +2319,9 @@ class ZipFile:
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = _MASK_UTF_FILENAME
+        zinfo.flag_bits &= _MASK_UTF_FILENAME
+        if not zinfo.filename.isascii():
+            zinfo.flag_bits |= _MASK_UTF_FILENAME
         if zinfo.compress_type == ZIP_LZMA:
             # Compressed data includes an end-of-stream (EOS) marker
             zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
@@ -2630,6 +2633,15 @@ class ZipFile:
         else:
             raise TypeError("Expected type str or ZipInfo")
 
+        if not self.fp:
+            raise ValueError(
+                "Attempt to write to ZIP archive that was already closed"
+            )
+        if self._writing:
+            raise ValueError(
+                "Can't write to ZIP archive while an open writing handle exists."
+            )
+
         with self._lock:
             if self._seekable:
                 self.fp.seek(self.start_dir)
@@ -2646,14 +2658,18 @@ class ZipFile:
             self.fp.write(zinfo.FileHeader(False))
             self.start_dir = self.fp.tell()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         """Call the "close()" method in case the user forgot."""
         # gh-81954: Warn if writable ZipFile is implicitly closed.
         # GC cleanup order is non-deterministic and can result in data loss.
-        if self.fp is not None and self.mode in ('w', 'x', 'a'):
-            warnings.warn(f"unclosed ZipFile {self!r}",
-                          ResourceWarning, source=self, stacklevel=2)
-        self.close()
+        try:
+            # Wrap within a try to ensure the file is closed even if
+            # warnings raises.
+            if self.fp is not None and self.mode in ('w', 'x', 'a'):
+                _warn(f"unclosed ZipFile {self!r}",
+                      ResourceWarning, source=self, stacklevel=2)
+        finally:
+            self.close()
 
     def close(self):
         """Close the file, and for mode 'w', 'x' and 'a' write the ending
@@ -2912,6 +2928,10 @@ class PyZipFile(ZipFile):
 
 def main(args=None):
     import argparse
+    import runpy
+
+    # Prevent shadowing stdlib modules from extracted files
+    runpy._remove_sys_path0()
 
     description = 'A simple command-line interface for zipfile module.'
     parser = argparse.ArgumentParser(description=description)

@@ -7,7 +7,7 @@ Configure Python
 
 .. _build-requirements:
 
-Build Requirements
+Build requirements
 ==================
 
 To build CPython, you will need:
@@ -171,6 +171,8 @@ platform-specific modules like :mod:`winreg` are not listed here.
    SQLite 3.15.2 is now required for :mod:`sqlite3`.
 
 
+.. _generated-files:
+
 Generated files
 ===============
 
@@ -181,9 +183,11 @@ files. Commands to regenerate all generated files::
     make regen-stdlib-module-names
     make regen-limited-abi
     make regen-configure
+    make regen-sbom
+    make regen-unicodedata
 
-The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
-to regenerate them. Search for ``regen-*`` make targets.
+The :source:`Makefile.pre.in` file documents generated files, their inputs, and
+tools used to regenerate them. Search for ``regen-*`` make targets.
 
 configure script
 ----------------
@@ -214,7 +218,7 @@ and `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ 1.8.1.
 
 .. _configure-options:
 
-Configure Options
+Configure options
 =================
 
 List all :file:`configure` script options using::
@@ -223,7 +227,7 @@ List all :file:`configure` script options using::
 
 See also the :file:`Misc/SpecialBuilds.txt` in the Python source distribution.
 
-General Options
+General options
 ---------------
 
 .. option:: --enable-loadable-sqlite-extensions
@@ -247,7 +251,7 @@ General Options
 
    By default, the digit size is 30.
 
-   Define the ``PYLONG_BITS_IN_DIGIT`` to ``15`` or ``30``.
+   Define :c:macro:`PYLONG_BITS_IN_DIGIT` to ``15`` or ``30``.
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
@@ -628,7 +632,7 @@ Options for third-party dependencies
    overriding ``pkg-config``.
 
 
-WebAssembly Options
+WebAssembly options
 -------------------
 
 .. option:: --enable-wasm-dynamic-linking
@@ -647,7 +651,7 @@ WebAssembly Options
    .. versionadded:: 3.11
 
 
-Install Options
+Install options
 ---------------
 
 .. option:: --prefix=PREFIX
@@ -735,7 +739,14 @@ also be used to improve performance.
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
    The C compiler Clang requires ``llvm-ar`` for LTO (``ar`` on macOS), as well
-   as an LTO-aware linker (``ld.gold`` or ``lld``).
+   as an LTO-aware linker (``ld.gold`` or ``lld``). GNU linkers require the
+   ``LLVMgold.so`` plugin for Clang LTO; ``lld`` does not. On platforms other
+   than macOS, configure tries ``-fuse-ld=lld`` if the configured linker cannot
+   link a Clang LTO program.
+
+   .. versionchanged:: next
+      Fall back to ``lld`` when the configured linker cannot link Clang LTO
+      programs.
 
    .. versionadded:: 3.6
 
@@ -762,6 +773,24 @@ also be used to improve performance.
    are supported.
    BOLT versions before LLVM 16 are known to crash BOLT under some scenarios.
    Use of LLVM 16 or newer for BOLT optimization is strongly encouraged.
+
+   BOLT does not preserve protection against Cortex-A53 erratum 843419. Binaries
+   processed by BOLT must not run on processors affected by this erratum,
+   including during the build. On AArch64, :program:`configure` reports an error
+   if build flags explicitly request the workaround. Recent BOLT versions reject
+   workaround veneers by default during the build, including when the workaround
+   is enabled by compiler defaults.
+
+   If none of the generated executables or shared libraries will run on affected
+   processors, disable the workaround explicitly. For GCC toolchains that enable
+   it by default, pass ``-mno-fix-cortex-a53-843419`` through
+   :envvar:`LDFLAGS_NODIST`::
+
+      LDFLAGS_NODIST="-mno-fix-cortex-a53-843419" ./configure --enable-bolt
+
+   Remove any explicit ``-mfix-cortex-a53-843419`` or
+   ``-Wl,--fix-cortex-a53-843419`` flags from the build configuration. The GCC
+   option does not override explicit linker flags.
 
    The :envvar:`!BOLT_INSTRUMENT_FLAGS` and :envvar:`!BOLT_APPLY_FLAGS`
    :program:`configure` variables can be defined to override the default set of
@@ -877,7 +906,12 @@ also be used to improve performance.
    Disable static documentation strings to reduce the memory footprint (enabled
    by default). Documentation strings defined in Python are not affected.
 
-   Don't define the ``WITH_DOC_STRINGS`` macro.
+   Don't define the :c:macro:`WITH_DOC_STRINGS` macro.
+
+   .. c:macro:: WITH_DOC_STRINGS
+
+      Define this macro to include static documentation strings in the build.
+      It is defined by default, unless :option:`--without-doc-strings` is used.
 
    See the ``PyDoc_STRVAR()`` macro.
 
@@ -911,7 +945,7 @@ also be used to improve performance.
 
 .. _debug-build:
 
-Python Debug Build
+Python debug build
 ------------------
 
 A debug build is Python built with the :option:`--with-pydebug` configure
@@ -1016,9 +1050,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
-   To improve ASan detection capabilities you may also want to combine this
-   with :option:`--without-pymalloc` to disable the specialized small-object
-   allocator whose allocations are not tracked by ASan.
+
+   When built with ``asan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 
@@ -1033,7 +1067,10 @@ Debug options
    <https://clang.llvm.org/docs/HardwareAssistedAddressSanitizerDesign.html>`_
    for more information.
 
-   .. versionadded:: next
+   When built with ``hwasan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
+
+   .. versionadded:: 3.16
 
 .. option:: --with-memory-sanitizer
 
@@ -1042,6 +1079,9 @@ Debug options
    MSan reports false positives for memory initialized by libraries that are
    not built with MSan, so either build all dependencies with MSan or disable
    the extension modules that use them in :file:`Modules/Setup.local`.
+
+   When built with ``msan``, Python uses ``malloc`` instead of :ref:`pymalloc <pymalloc>` by default.
+   Set :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to use pymalloc.
 
    .. versionadded:: 3.6
 
@@ -1084,7 +1124,7 @@ Linker options
 
    This option does nothing if ``--enable-shared`` is not used.
 
-   The default (when ``-enable-shared`` is used) is to link the Python
+   The default (when ``--enable-shared`` is used) is to link the Python
    interpreter against the built shared library.
 
    .. versionadded:: 3.15
@@ -1136,14 +1176,14 @@ Libraries options
    tries ``ncursesw`` and then ``ncurses``; the native ``curses`` is used only
    when requested explicitly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-curses
 
    Don't build the :mod:`curses` and :mod:`curses.panel` modules, even when a
    curses library is present (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-zlib=zlib|zlib-ng|zlib-rs
 
@@ -1161,14 +1201,14 @@ Libraries options
    zlib is used when found; configure only fails when an implementation was
    requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-zlib
 
    Don't build the :mod:`zlib` module, even when a zlib library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-bzip2=bzip2|bzip2-rs
 
@@ -1184,14 +1224,14 @@ Libraries options
    system bzip2 is used when found; configure only fails when an
    implementation was requested explicitly but cannot be found.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --without-bzip2
 
    Don't build the :mod:`bz2` module, even when a bzip2 library is present
    (built by default when one is found).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. option:: --with-libm=STRING
 
@@ -1219,7 +1259,7 @@ Libraries options
    .. versionadded:: 3.10
 
 
-Security Options
+Security options
 ----------------
 
 .. option:: --with-hash-algorithm=[fnv|siphash13|siphash24]
@@ -1297,7 +1337,7 @@ Security Options
    .. versionadded:: 3.14
 
 
-macOS Options
+macOS options
 -------------
 
 See :source:`Mac/README.rst`.
@@ -1352,7 +1392,7 @@ See :source:`Mac/README.rst`.
 
    .. versionadded:: 3.13
 
-iOS Options
+iOS options
 -----------
 
 See :source:`Platforms/Apple/iOS/README.md`.
@@ -1377,7 +1417,7 @@ rejects :option:`--enable-shared`. See
    iOS builds may be configured without a framework.
 
 
-Cross Compiling Options
+Cross compiling options
 -----------------------
 
 Cross compiling, also known as cross building, can be used to build Python
@@ -1427,7 +1467,7 @@ Cross compiling example::
        --with-build-python=../x86_64/python
 
 
-Python Build System
+Python build system
 ===================
 
 Main files of the build system
@@ -1451,107 +1491,88 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-make
-^^^^
+.. make-target:: make
 
-For the most part, when rebuilding after editing some code or
-refreshing your checkout from upstream, all you need to do is execute
-``make``, which (per Make's semantics) builds the default target, the
-first one defined in the Makefile.  By tradition (including in the
-CPython project) this is usually the ``all`` target. The
-``configure`` script expands an ``autoconf`` variable,
-``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
-all`` will build. The three choices are:
+   For the most part, when rebuilding after editing some code or
+   refreshing your checkout from upstream, all you need to do is execute
+   ``make``, which (per Make's semantics) builds the default target, the
+   first one defined in the Makefile.  By tradition (including in the
+   CPython project) this is usually the ``all`` target. The
+   ``configure`` script expands an ``autoconf`` variable,
+   ``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
+   all`` will build. The choices are:
 
-* ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
-  ``wasm32-emscripten``)
-* ``build_all`` (configured without explicitly using either of the others)
+   * ``profile-opt`` (configured with ``--enable-optimizations``)
+   * ``bolt-opt`` (configured with ``--enable-bolt``)
+   * ``build_emscripten`` (chosen if the host platform matches
+     ``wasm32-emscripten``)
+   * ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*``)
+   * ``build_all`` (configured without explicitly using any of the others)
 
-Depending on the most recent source file changes, Make will rebuild
-any targets (object files and executables) deemed out-of-date,
-including running ``configure`` again if necessary. Source/target
-dependencies are many and maintained manually however, so Make
-sometimes doesn't have all the information necessary to correctly
-detect all targets which need to be rebuilt.  Depending on which
-targets aren't rebuilt, you might experience a number of problems. If
-you have build or test problems which you can't otherwise explain,
-``make clean && make`` should work around most dependency problems, at
-the expense of longer build times.
+   Depending on the most recent source file changes, Make will rebuild
+   any targets (object files and executables) deemed out-of-date,
+   including running ``configure`` again if necessary. Source/target
+   dependencies are many and maintained manually however, so Make
+   sometimes doesn't have all the information necessary to correctly
+   detect all targets which need to be rebuilt.  Depending on which
+   targets aren't rebuilt, you might experience a number of problems. If
+   you have build or test problems which you can't otherwise explain,
+   ``make clean && make`` should work around most dependency problems, at
+   the expense of longer build times.
 
+.. make-target:: make platform
 
-make platform
-^^^^^^^^^^^^^
+   Build the ``python`` program, but don't build the standard library
+   extension modules. This generates a file named ``platform`` which
+   contains a single line describing the details of the build platform,
+   for example, ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
 
-Build the ``python`` program, but don't build the standard library
-extension modules. This generates a file named ``platform`` which
-contains a single line describing the details of the build platform,
-e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+.. make-target:: make profile-opt
 
+   Build Python using profile-guided optimization (PGO).  You can use the
+   configure :option:`--enable-optimizations` option to make this the
+   default target of the ``make`` command (``make all`` or just
+   ``make``).
 
-make profile-opt
-^^^^^^^^^^^^^^^^
+.. make-target:: make clean
 
-Build Python using profile-guided optimization (PGO).  You can use the
-configure :option:`--enable-optimizations` option to make this the
-default target of the ``make`` command (``make all`` or just
-``make``).
+   Remove built files.
 
+.. make-target:: make distclean
 
+   In addition to the work done by ``make clean``, remove files
+   created by the configure script.  ``configure`` will have to be run
+   before building again. [#]_
 
-make clean
-^^^^^^^^^^
+.. make-target:: make install
 
-Remove built files.
+   Build the ``all`` target and install Python.
 
+.. make-target:: make test
 
-make distclean
-^^^^^^^^^^^^^^
+   Build the ``all`` target and run the Python test suite with the
+   ``--fast-ci`` option without GUI tests. Variables:
 
-In addition to the work done by ``make clean``, remove files
-created by the configure script.  ``configure`` will have to be run
-before building again. [#]_
+   * ``TESTOPTS``: additional regrtest command-line options.
+   * ``TESTPYTHONOPTS``: additional Python command-line options.
+   * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
 
+.. make-target:: make ci
 
-make install
-^^^^^^^^^^^^
+   This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
 
-Build the ``all`` target and install Python.
+   .. versionadded:: 3.14
 
+.. make-target:: make buildbottest
 
-make test
-^^^^^^^^^
+   This is similar to ``make test``, but uses the ``--slow-ci``
+   option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
 
-Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option without GUI tests. Variables:
+.. make-target:: make regen-all
 
-* ``TESTOPTS``: additional regrtest command-line options.
-* ``TESTPYTHONOPTS``: additional Python command-line options.
-* ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
-
-
-make ci
-^^^^^^^
-
-This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
-
-.. versionadded:: 3.14
-
-
-make buildbottest
-^^^^^^^^^^^^^^^^^
-
-This is similar to ``make test``, but uses the ``--slow-ci``
-option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
-
-
-make regen-all
-^^^^^^^^^^^^^^
-
-Regenerate (almost) all generated files. These include (but are not
-limited to) bytecode cases, and parser generator file.
-``make regen-stdlib-module-names`` and ``autoconf`` must be run
-separately for the remaining `generated files <#generated-files>`_.
+   Regenerate (almost) all generated files. These include (but are not
+   limited to) bytecode cases, and parser generator files. See
+   :ref:`generated-files` for the targets that must be run separately.
 
 
 C extensions
@@ -1571,23 +1592,23 @@ Built-in modules have no ``__file__`` attribute:
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraries, like the ``_zoneinfo`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64:
+For example on Linux x86-64:
 
 .. code-block:: pycon
 
-    >>> import _asyncio
-    >>> _asyncio
-    <module '_asyncio' from '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'>
-    >>> _asyncio.__file__
-    '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'
+    >>> import _zoneinfo
+    >>> _zoneinfo
+    <module '_zoneinfo' from '/.../lib.linux-x86_64-3.16/_zoneinfo.cpython-316d-x86_64-linux-gnu.so'>
+    >>> _zoneinfo.__file__
+    '/.../lib.linux-x86_64-3.16/_zoneinfo.cpython-316d-x86_64-linux-gnu.so'
 
 :file:`Modules/Setup` is used to generate Makefile targets to build C extensions.
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
 :c:macro:`PyMODINIT_FUNC` macros of :file:`Include/exports.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
