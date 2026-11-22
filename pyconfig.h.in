@@ -1677,6 +1677,9 @@
 /* Define if mvwdelch in curses.h is an expression. */
 #undef MVWDELCH_IS_EXPRESSION
 
+/* The OpenHarmony API level. */
+#undef OHOS_API_LEVEL
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 

@@ -395,10 +395,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # OpenHarmony
         os.name = 'posix'
         sys.platform = 'ohos'
+        get_config_vars()['OHOS_API_LEVEL'] = 26
         self._set_uname(('Linux', 'localhost', '5.10.43', '#1 SMP', 'aarch64'))
-        self.assertEqual(get_platform(), 'ohos-aarch64')
+        self.assertEqual(get_platform(), 'ohos-26-aarch64')
+        sys.platform = 'linux'
         with patch.dict(os.environ, {'_PYTHON_HOST_PLATFORM': 'ohos-aarch64'}):
-            self.assertEqual(get_platform(), 'ohos-aarch64')
+            self.assertEqual(get_platform(), 'ohos-26-aarch64')
 
         # XXX more platforms to tests here
 

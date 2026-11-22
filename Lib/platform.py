@@ -583,6 +583,35 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device="",
         release, api_level, manufacturer, model, device, is_emulator)
 
 
+OhosVer = collections.namedtuple("OhosVer", "release api_level")
+
+def ohos_ver(release="", api_level=0):
+    if sys.platform == "ohos":
+        try:
+            from ctypes import CDLL, c_char_p, c_int
+            from ctypes.util import wrap_dll_function
+        except ImportError:
+            pass
+        else:
+            deviceinfo = CDLL("libdeviceinfo_ndk.z.so")
+
+            @wrap_dll_function(deviceinfo)
+            def OH_GetOSFullName() -> c_char_p:
+                pass
+
+            @wrap_dll_function(deviceinfo)
+            def OH_GetSdkApiVersion() -> c_int:
+                pass
+
+            os_full_name = OH_GetOSFullName()
+            if os_full_name is not None:
+                release = os_full_name.decode("UTF-8", "backslashreplace")
+                release = release.removeprefix("OpenHarmony-")
+            api_level = OH_GetSdkApiVersion()
+
+    return OhosVer(release, api_level)
+
+
 ### System name aliasing
 
 def system_alias(system, release, version):

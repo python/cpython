@@ -723,8 +723,9 @@ def get_platform():
             "i686": "x86",
             "x86_64": "x86_64",
         }[machine]
-    elif sys.platform == "ohos":
-        return f"ohos-{machine}"
+    elif osname == "ohos" or sys.platform == "ohos":
+        osname = "ohos"
+        release = get_config_var("OHOS_API_LEVEL")
     elif osname == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
