@@ -219,7 +219,8 @@ static PyObject *
 paramspecargs_new_impl(PyTypeObject *type, PyObject *origin);
 
 static PyObject *
-paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+paramspecargs_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -251,10 +252,9 @@ paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *origin;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -263,6 +263,38 @@ paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return_value = paramspecargs_new_impl(type, origin);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return paramspecargs_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+paramspecargs_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *origin;
+
+    assert(_PyType_CAST(type)->tp_new == paramspecargs_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 1) {
+        return paramspecargs_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    origin = args[0];
+    return_value = paramspecargs_new_impl(_PyType_CAST(type), origin);
+
     return return_value;
 }
 
@@ -276,7 +308,8 @@ static PyObject *
 paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin);
 
 static PyObject *
-paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+paramspeckwargs_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -308,10 +341,9 @@ paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *origin;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -320,6 +352,38 @@ paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return_value = paramspeckwargs_new_impl(type, origin);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return paramspeckwargs_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+paramspeckwargs_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *origin;
+
+    assert(_PyType_CAST(type)->tp_new == paramspeckwargs_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 1) {
+        return paramspeckwargs_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    origin = args[0];
+    return_value = paramspeckwargs_new_impl(_PyType_CAST(type), origin);
+
     return return_value;
 }
 
@@ -737,7 +801,8 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname);
 
 static PyObject *
-typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+typealias_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -769,14 +834,13 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    Py_ssize_t noptargs = nargs + nkw - 2;
     PyObject *name;
     PyObject *value;
     PyObject *type_params = NULL;
     PyObject *qualname = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -803,4 +867,28 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=310ab79d0f3a4b5c input=a9049054013a1b77]*/
+
+static PyObject *
+typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return typealias_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+typealias_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == typealias_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return typealias_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+/*[clinic end generated code: output=87b75f9eb5c613f1 input=a9049054013a1b77]*/

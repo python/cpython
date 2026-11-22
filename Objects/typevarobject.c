@@ -1025,6 +1025,7 @@ paramspecargs_repr(PyObject *self)
 
 
 /*[clinic input]
+@vectorcall
 @classmethod
 paramspecargs.__new__ as paramspecargs_new
 
@@ -1035,7 +1036,7 @@ Create a ParamSpecArgs object.
 
 static PyObject *
 paramspecargs_new_impl(PyTypeObject *type, PyObject *origin)
-/*[clinic end generated code: output=9a1463dc8942fe4e input=3596a0bb6183c208]*/
+/*[clinic end generated code: output=9a1463dc8942fe4e input=af38ada22a6b114a]*/
 {
     return (PyObject *)paramspecattr_new(type, origin);
 }
@@ -1072,6 +1073,7 @@ static PyType_Slot paramspecargs_slots[] = {
     {Py_tp_doc, (void *)paramspecargs_doc},
     {Py_tp_methods, paramspecargs_methods},
     {Py_tp_new, paramspecargs_new},
+    {Py_tp_vectorcall, paramspecargs_vectorcall},
     {Py_tp_dealloc, paramspecattr_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
@@ -1105,6 +1107,7 @@ paramspeckwargs_repr(PyObject *self)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 paramspeckwargs.__new__ as paramspeckwargs_new
 
@@ -1115,7 +1118,7 @@ Create a ParamSpecKwargs object.
 
 static PyObject *
 paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin)
-/*[clinic end generated code: output=277b11967ebaf4ab input=981bca9b0cf9e40a]*/
+/*[clinic end generated code: output=277b11967ebaf4ab input=200fd6f0d3ea40ba]*/
 {
     return (PyObject *)paramspecattr_new(type, origin);
 }
@@ -1152,6 +1155,7 @@ static PyType_Slot paramspeckwargs_slots[] = {
     {Py_tp_doc, (void *)paramspeckwargs_doc},
     {Py_tp_methods, paramspeckwargs_methods},
     {Py_tp_new, paramspeckwargs_new},
+    {Py_tp_vectorcall, paramspeckwargs_vectorcall},
     {Py_tp_dealloc, paramspecattr_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
@@ -2149,6 +2153,7 @@ static PyMethodDef typealias_methods[] = {
 
 
 /*[clinic input]
+@vectorcall
 @classmethod
 typealias.__new__ as typealias_new
 
@@ -2164,7 +2169,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=6516623275f87b5e]*/
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=7245ee7629d55ea9]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2245,6 +2250,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = typealias_dealloc,
     .tp_new = typealias_new,
+    .tp_vectorcall = typealias_vectorcall,
     .tp_free = PyObject_GC_Del,
     .tp_iter = unpack_iter,
     .tp_traverse = typealias_traverse,
