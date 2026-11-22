@@ -1816,6 +1816,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
 }
 
 /*[clinic input]
+@vectorcall
 property.__init__ as property_init
 
     fget: object(c_default="NULL") = None
@@ -1855,7 +1856,7 @@ class C(object):
 static int
 property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                    PyObject *fdel, PyObject *doc)
-/*[clinic end generated code: output=01a960742b692b57 input=dfb5dbbffc6932d5]*/
+/*[clinic end generated code: output=01a960742b692b57 input=ea89304c10df241b]*/
 {
     if (fget == Py_None)
         fget = NULL;
@@ -2101,4 +2102,5 @@ PyTypeObject PyProperty_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = property_vectorcall,
 };
