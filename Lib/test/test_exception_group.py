@@ -928,6 +928,28 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
 
 class NestedExceptionGroupSubclassSplitTest(ExceptionGroupSplitTestBase):
 
+    def test_split_subgroup_overwrite_derived_traceback(self):
+        class EG(ExceptionGroup):
+            def derive(self, excs):
+                try:
+                    raise EG(self.message, excs)
+                except EG as exc:
+                    return exc
+
+        for raised in (False, True):
+            eg = EG("eg", [ValueError(1), TypeError(2)])
+            if raised:
+                try:
+                    raise eg
+                except EG:
+                    pass
+            else:
+                self.assertIsNone(eg.__traceback__)
+
+            for types in (OSError, (ValueError, TypeError), ValueError):
+                with self.subTest(raised=raised, types=types):
+                    self.split_exception_group(eg, types)
+
     def test_split_ExceptionGroup_subclass_no_derive_no_new_override(self):
         class EG(ExceptionGroup):
             pass

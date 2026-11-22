@@ -1,0 +1,3 @@
+Fix :meth:`BaseExceptionGroup.split` and :meth:`~BaseExceptionGroup.subgroup`
+to overwrite the traceback set by :meth:`~BaseExceptionGroup.derive` even when
+the original exception group has no traceback.
