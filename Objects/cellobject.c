@@ -33,7 +33,7 @@ PyCell_New(PyObject *obj)
 @text_signature "([contents])"
 cell.__new__ as cell_new
 
-    contents: object(c_default="NULL") = None
+    contents: object = NULL
     /
 
 Create a new cell object.
@@ -46,7 +46,7 @@ Create a new cell object.
 
 static PyObject *
 cell_new_impl(PyTypeObject *type, PyObject *contents)
-/*[clinic end generated code: output=0b7db264f0621bb4 input=2772e49193d8e5d9]*/
+/*[clinic end generated code: output=0b7db264f0621bb4 input=4460339a82243798]*/
 {
     return PyCell_New(contents);
 }
