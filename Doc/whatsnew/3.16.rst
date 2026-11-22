@@ -1243,6 +1243,14 @@ Porting to Python 3.16
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+* :meth:`asyncio.Queue.get` and :meth:`asyncio.Queue.get_nowait` now reserve
+  the freed slot for the longest waiting :meth:`asyncio.Queue.put` call, and
+  :meth:`asyncio.Queue.full` counts reserved slots.  ``full()`` can therefore
+  return ``True`` while :meth:`~asyncio.Queue.qsize` is less than
+  :attr:`~asyncio.Queue.maxsize`.  Subclasses that override ``put()`` and wait
+  in the private ``_putters`` deque keep the previous behavior.
+  (Contributed by Andrew Svetlov in :gh:`83055`.)
+
 * In :mod:`tkinter`, the *name* parameter of the
   :meth:`~tkinter.Misc.wait_variable`, :meth:`~tkinter.Misc.setvar` and
   :meth:`~tkinter.Misc.getvar` methods and the *value* parameter of
