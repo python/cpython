@@ -326,15 +326,9 @@ def enum_attr():
         MyEnum.Z
 
 
-class _SharedAttrValue:
-    pass
-
 class MyClassWithSharedAttr:
-    # A class attribute whose value is an instance of a *different* class.
-    # Reading it from multiple threads did not scale because LOAD_ATTR_CLASS
-    # cannot specialize this case (the value's type is not the owner class),
-    # leaving the shared value's reference count contended on every read.
-    attr = _SharedAttrValue()
+    # instance of another heap type: LOAD_ATTR_CLASS can't specialize this
+    attr = MyObject()
 
 @register_benchmark
 def class_attribute():
