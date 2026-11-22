@@ -1432,33 +1432,37 @@ class map "mapobject *" "&PyMap_Type"
 @classmethod
 map.__new__ as map_new
 
-    *args: array
+    function: object
+    iterable: object
+    /
+    *iterables: array
     strict: bool = False
 [clinic start generated code]*/
 
 static PyObject *
-map_new_impl(PyTypeObject *type, PyObject * const *args,
-             Py_ssize_t args_length, int strict)
-/*[clinic end generated code: output=a42e882981848ca5 input=f037decab456747b]*/
+map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
+             PyObject * const *iterables, Py_ssize_t iterables_length,
+             int strict)
+/*[clinic end generated code: output=de1354b02d08604b input=5fbe90bd74aaa2e2]*/
 {
-    if (args_length < 2) {
-        PyErr_SetString(PyExc_TypeError,
-           "map() must have at least two arguments.");
-        return NULL;
-    }
-
-    PyObject *iters = PyTuple_New(args_length - 1);
+    PyObject *iters = PyTuple_New(iterables_length + 1);
     if (iters == NULL) {
         return NULL;
     }
 
-    for (Py_ssize_t i = 1; i < args_length; i++) {
-        PyObject *it = PyObject_GetIter(args[i]);
+    PyObject *it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        Py_DECREF(iters);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(iters, 0, it);
+    for (Py_ssize_t i = 0; i < iterables_length; i++) {
+        it = PyObject_GetIter(iterables[i]);
         if (it == NULL) {
             Py_DECREF(iters);
             return NULL;
         }
-        PyTuple_SET_ITEM(iters, i - 1, it);
+        PyTuple_SET_ITEM(iters, i + 1, it);
     }
 
     mapobject *lz = (mapobject *)type->tp_alloc(type, 0);
@@ -1467,7 +1471,7 @@ map_new_impl(PyTypeObject *type, PyObject * const *args,
         return NULL;
     }
     lz->iters = iters;
-    lz->func = Py_NewRef(args[0]);
+    lz->func = Py_NewRef(function);
     lz->strict = strict;
 
     return (PyObject *)lz;

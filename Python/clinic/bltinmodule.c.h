@@ -858,8 +858,9 @@ builtin_id(PyObject *self, PyObject *v)
 }
 
 static PyObject *
-map_new_impl(PyTypeObject *type, PyObject * const *args,
-             Py_ssize_t args_length, int strict);
+map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
+             PyObject * const *iterables, Py_ssize_t iterables_length,
+             int strict);
 
 static PyObject *
 map_new_helper(PyTypeObject *type, PyObject *const *args,
@@ -886,36 +887,40 @@ map_new_helper(PyTypeObject *type, PyObject *const *args,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"strict", NULL};
+    static const char * const _keywords[] = {"", "", "strict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "map",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[3];
     PyObject * const *fastargs;
-    Py_ssize_t noptargs = 0 + nkw - 0;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
+    Py_ssize_t noptargs = Py_MIN(nargs, 2) + nkw - 2;
+    PyObject *function;
+    PyObject *iterable;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
     int strict = 0;
 
     fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
     if (!fastargs) {
         goto exit;
     }
+    function = fastargs[0];
+    iterable = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    strict = PyObject_IsTrue(fastargs[0]);
+    strict = PyObject_IsTrue(fastargs[2]);
     if (strict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = map_new_impl(type, __clinic_args, args_length, strict);
+    iterables = args + 2;
+    iterables_length = nargs - 2;
+    return_value = map_new_impl(type, function, iterable, iterables, iterables_length, strict);
 
 exit:
     return return_value;
@@ -1749,4 +1754,4 @@ zip_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=d4c5d02ec7922900 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d5ebfb0a3e33097 input=a9049054013a1b77]*/
