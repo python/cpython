@@ -769,12 +769,20 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._buffer += data
         self._maybe_pause_protocol()
 
+    def _resume_write_polling(self):
+        if self._buffer:  # abort() may have discarded the pending write.
+            self._loop._add_writer(self._fileno, self._write_ready)
+
     def _write_ready(self):
         assert self._buffer, 'Data should not be empty'
 
         try:
             n = os.write(self._fileno, self._buffer)
-        except (BlockingIOError, InterruptedError):
+        except BlockingIOError:
+            # A full pipe can keep polling as writable on macOS (gh-162016).
+            self._loop._remove_writer(self._fileno)
+            self._loop.call_later(0.01, self._resume_write_polling)
+        except InterruptedError:
             pass
         except (SystemExit, KeyboardInterrupt):
             raise
