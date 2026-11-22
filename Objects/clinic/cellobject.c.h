@@ -5,7 +5,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(cell_new__doc__,
-"cell(contents=None, /)\n"
+"cell([contents])\n"
 "--\n"
 "\n"
 "Create a new cell object.\n"
@@ -71,4 +71,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20733d23a75f61ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=687470647f1a75f8 input=a9049054013a1b77]*/
