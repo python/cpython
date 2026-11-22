@@ -1,0 +1,1 @@
+Use the globals that own a lazy import binding when reifying it.
