@@ -2936,7 +2936,7 @@ array_buffer_relbuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 @classmethod
 array.array.__new__ as array_new
     typecode as s: str
-    initializer as initial: object(c_default="NULL") = None
+    initializer as initial: object(c_default="NULL") = ()
     /
 
 Create array object.
@@ -2999,7 +2999,7 @@ itemsize -- the length in bytes of one array item
 
 static PyObject *
 array_new_impl(PyTypeObject *type, const char *s, PyObject *initial)
-/*[clinic end generated code: output=4b6a68b7540f8f3f input=a91c3679e757d2cf]*/
+/*[clinic end generated code: output=4b6a68b7540f8f3f input=23a2e91f05deccff]*/
 {
     array_state *state = find_array_state_by_type(type);
     PyObject *it = NULL;

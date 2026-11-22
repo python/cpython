@@ -680,13 +680,13 @@ exit:
 }
 
 PyDoc_STRVAR(array_new__doc__,
-"array(typecode, initializer=None, /)\n"
+"array(typecode, initializer=(), /)\n"
 "--\n"
 "\n"
 "Create array object.\n"
 "\n"
 "Return a new array whose items are restricted by typecode, and\n"
-"initialized from the optional initializer value, which must be a list\n"
+"initialized from the optional initializer value, which must be a list,\n"
 "string or iterable over elements of the appropriate type.\n"
 "\n"
 "Arrays represent basic values and behave very much like lists, except\n"
@@ -858,4 +858,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=e8e9fb64ccb7c470 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9127e1678f4b995b input=a9049054013a1b77]*/
