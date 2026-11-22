@@ -1,0 +1,2 @@
+Fix :func:`binascii.a2b_base32` incorrectly counting ignored padding
+characters when validating Base32 padding.
