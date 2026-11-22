@@ -1,5 +1,4 @@
 import asyncio
-import importlib.util
 import io
 import sys
 import types
@@ -1071,10 +1070,16 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
         self._Future = asyncio.Future
         asyncio.Future = futures.Future = futures._PyFuture
 
-        py_tasks = importlib.util.module_from_spec(tasks.__spec__)
-        tasks.__spec__.loader.exec_module(py_tasks)
+        # The real _GatheringFuture subclasses the C Future, which the
+        # pure-Python awaited-by helpers ignore.
+        class _PyGatheringFuture(futures._PyFuture):
+            def __init__(self, children, *, loop):
+                super().__init__(loop=loop)
+                self._children = children
+                self._cancel_requested = False
+            cancel = tasks._GatheringFuture.cancel
         self.enterContext(mock.patch.object(tasks, '_GatheringFuture',
-                                           py_tasks._GatheringFuture))
+                                            _PyGatheringFuture))
 
         self._Task = asyncio.Task
         asyncio.Task = tasks.Task = tasks._PyTask
