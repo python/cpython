@@ -1,0 +1,1 @@
+Fix a reference leak in :mod:`ctypes` on Windows when converting a callback argument fails during the COM reference-count lookup.

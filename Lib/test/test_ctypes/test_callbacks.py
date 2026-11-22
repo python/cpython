@@ -141,6 +141,58 @@ class Callbacks(unittest.TestCase):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'TryAddRef() is only used on Windows')
+    def test_argument_conversion_error_does_not_leak(self):
+        import weakref
+
+        class PoisonedKey(str):
+            __hash__ = str.__hash__
+
+            def __eq__(self, other):
+                if str(other) == '_needs_com_addref_':
+                    raise RuntimeError('injected lookup failure')
+                return str.__eq__(self, other)
+
+        refs = []
+        track = False
+
+        def init(arg):
+            if track:
+                refs.append(weakref.ref(arg))
+
+        Arg = type('Arg', (ctypes.c_void_p,), {
+            '__init__': init,
+            PoisonedKey('_needs_com_addref_'): True,
+        })
+
+        # Verify that the dictionary lookup in TryAddRef() can fail.
+        with self.assertRaises(RuntimeError):
+            '_needs_com_addref_' in vars(Arg)
+
+        calls = 0
+
+        def callback(arg):
+            nonlocal calls
+            calls += 1
+
+        c_callback = CFUNCTYPE(None, Arg)(callback)
+        source = Arg()
+        old_hook = sys.unraisablehook
+        try:
+            sys.unraisablehook = lambda unraisable: None
+            track = True
+            for _ in range(32):
+                c_callback(source)
+        finally:
+            track = False
+            sys.unraisablehook = old_hook
+
+        gc.collect()
+        self.assertEqual(calls, 0)
+        self.assertEqual(len(refs), 32)
+        self.assertTrue(all(ref() is None for ref in refs))
+
     @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
                          'ctypes.WINFUNCTYPE is required')
     def test_i38748_stackCorruption(self):

@@ -181,6 +181,7 @@ static void _CallPythonObject(ctypes_state *st,
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
             if (TryAddRef(cnv, obj) < 0) {
+                Py_DECREF(obj);
                 goto Error;
             }
 #endif
