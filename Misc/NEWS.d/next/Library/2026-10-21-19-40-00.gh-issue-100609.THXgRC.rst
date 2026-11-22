@@ -1,5 +1,0 @@
-``str()`` of a :class:`zipfile.Path` whose underlying zipfile has no
-filename, such as one constructed from an :class:`io.BytesIO`, now renders
-that filename as ``:zipfile:`` instead of raising :exc:`TypeError`. The root
-of a zipfile is also no longer rendered with a trailing slash. Synchronized
-with :pypi:`zipp` 3.23.1.

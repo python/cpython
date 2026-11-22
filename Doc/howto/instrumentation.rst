@@ -430,7 +430,7 @@ Here is a tapset file, based on a non-shared build of CPython:
     /*
        Provide a higher-level wrapping around the function__entry and
        function__return markers:
-     \*/
+     */
     probe python.function.entry = process("python").mark("function__entry")
     {
         filename = user_string($arg1);
@@ -498,7 +498,7 @@ frames, each second, across the whole system:
     }
 
     probe timer.ms(1000) {
-        printf("\033[2J\033[1;1H") /* clear screen \*/
+        printf("\033[2J\033[1;1H") /* clear screen */
         printf("%6s %80s %6s %30s %6s\n",
                "PID", "FILENAME", "LINE", "FUNCTION", "CALLS")
         foreach ([pid, filename, funcname, lineno] in fn_calls- limit 20) {

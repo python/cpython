@@ -30,7 +30,7 @@
  * InternalDocs/interpreter.md `Specialization` section.
  */
 
-#if Py_STATS
+#ifdef Py_STATS
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     PyStats *s = _PyStats_GET(); \
@@ -42,7 +42,7 @@ do { \
 } while (0)
 #else
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
-#endif  // Py_STATS
+#endif  // !Py_STATS
 
 static void
 fixup_getiter(_Py_CODEUNIT *instruction, int flags)

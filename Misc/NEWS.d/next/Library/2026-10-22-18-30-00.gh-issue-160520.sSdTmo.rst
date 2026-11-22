@@ -1,4 +1,0 @@
-Fix :mod:`asyncio` SSL transports not applying *ssl_shutdown_timeout* when
-the peer has sent EOF but does not read the data still queued for it.
-Closing such a connection could wait indefinitely; it is now aborted with
-:exc:`TimeoutError` once the timeout expires.

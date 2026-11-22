@@ -1,2 +1,0 @@
-Fix :class:`zoneinfo.ZoneInfo` interpreting the Julian day rule ``J59`` as
-February 29 in leap years instead of February 28.

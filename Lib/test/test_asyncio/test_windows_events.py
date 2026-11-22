@@ -1,6 +1,7 @@
 import os
 import signal
 import socket
+import struct
 import sys
 import time
 import threading
@@ -19,6 +20,7 @@ from asyncio import windows_events
 from asyncio import windows_utils
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 
@@ -114,6 +116,38 @@ class ProactorTests(WindowsEventsTestCase):
         self.loop.run_until_complete(f)
         self.assertEqual(f.result(), b'')
         b.close()
+
+    def test_accept_connection_reset(self):
+        # gh-93821: a connection reset while it waits in the listen queue
+        # makes AcceptEx fail with ERROR_NETNAME_DELETED.  The server must
+        # keep accepting.
+        async def handle(reader, writer):
+            writer.close()
+
+        async def main():
+            server = await asyncio.start_server(handle, socket_helper.HOSTv4, 0)
+            port = server.sockets[0].getsockname()[1]
+            # Both connects complete while the loop is blocked here: the
+            # first is taken by the pending AcceptEx, the second waits in
+            # the listen queue and is reset there.
+            first = socket.create_connection((socket_helper.HOSTv4, port))
+            second = socket.create_connection((socket_helper.HOSTv4, port))
+            second.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                              struct.pack('HH', 1, 0))
+            second.close()
+            try:
+                await asyncio.sleep(0.5)
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(socket_helper.HOSTv4, port),
+                    support.SHORT_TIMEOUT)
+                writer.close()
+                await writer.wait_closed()
+            finally:
+                first.close()
+                server.close()
+                await server.wait_closed()
+
+        self.loop.run_until_complete(main())
 
     def test_double_bind(self):
         ADDRESS = r'\\.\pipe\test_double_bind-%s' % os.getpid()

@@ -2438,11 +2438,9 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
-        if (rv < 0) {
-            return NULL;
-        }
-        if (rv) {
+        if (key == node->key ||
+            (PyUnicode_Check(key) && PyUnicode_Check(node->key) &&
+             PyUnicode_Equal(key, node->key))) {
             return (StrongCacheNode *)node;
         }
 

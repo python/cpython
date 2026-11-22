@@ -415,6 +415,9 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 {
     PyObject *op;
 
+    if (type == &PyComplex_Type) {
+        return PyComplex_FromCComplex(cval);
+    }
     op = type->tp_alloc(type, 0);
     if (op != NULL)
         ((PyComplexObject *)op)->cval = cval;

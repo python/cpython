@@ -2981,6 +2981,21 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
                          'valid t\xe9xt \u20ac')
 
+    def test_cleanup_test_name(self):
+        cleanup_test_name = utils.cleanup_test_name
+
+        # Strip "test." prefix
+        self.assertEqual(cleanup_test_name('test.test_asyncio.test_graph'),
+                         'test_asyncio.test_graph')
+        self.assertEqual(cleanup_test_name('test.test_multiprocessing_spawn.test_manager'),
+                         'test_multiprocessing_spawn.test_manager')
+
+        # No change
+        self.assertEqual(cleanup_test_name('test_cmath'),
+                         'test_cmath')
+        self.assertEqual(cleanup_test_name('test_asyncio.test_graph'),
+                         'test_asyncio.test_graph')
+
 
 class GitHubActionsReporterTestCase(unittest.TestCase):
     def setUp(self):

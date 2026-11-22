@@ -40,6 +40,11 @@ class frame "PyFrameObject *" "&PyFrame_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d1dbf2e06cf351f]*/
 
+/*[clinic input]
+class FrameLocalsProxy "PyFrameLocalsProxyObject *" "&PyFrameLocalsProxy_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b877b1c7551e6925]*/
+
 
 // Returns new reference or NULL
 static PyObject *
@@ -452,36 +457,32 @@ framelocalsproxy_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+/*[clinic input]
+@vectorcall
+@classmethod
+FrameLocalsProxy.__new__ as framelocalsproxy_new
+    frame: object
+    /
+
+Create a write-through view of the locals dictionary for a frame.
+
+  frame
+    the frame object to wrap.
+[clinic start generated code]*/
+
 static PyObject *
-framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+framelocalsproxy_new_impl(PyTypeObject *type, PyObject *frame)
+/*[clinic end generated code: output=803b377132a928b9 input=5ab4ffd26ec8e290]*/
 {
-    if (PyTuple_GET_SIZE(args) != 1) {
-        PyErr_Format(PyExc_TypeError,
-                     "FrameLocalsProxy expected 1 argument, got %zd",
-                     PyTuple_GET_SIZE(args));
+    if (!PyFrame_Check(frame)) {
+        PyErr_Format(PyExc_TypeError, "expect frame, not %T", frame);
         return NULL;
     }
-    PyObject *item = PyTuple_GET_ITEM(args, 0);
-
-    if (!PyFrame_Check(item)) {
-        PyErr_Format(PyExc_TypeError, "expect frame, not %T", item);
-        return NULL;
-    }
-    PyFrameObject *frame = (PyFrameObject*)item;
-
-    if (kwds != NULL && PyDict_Size(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError,
-                        "FrameLocalsProxy takes no keyword arguments");
-        return 0;
-    }
-
     PyFrameLocalsProxyObject *self = (PyFrameLocalsProxyObject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-
-    ((PyFrameLocalsProxyObject*)self)->frame = (PyFrameObject*)Py_NewRef(frame);
-
+    self->frame = (PyFrameObject *)Py_NewRef(frame);
     return (PyObject *)self;
 }
 
@@ -988,15 +989,6 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {NULL, NULL}   /* sentinel */
 };
 
-PyDoc_STRVAR(framelocalsproxy_doc,
-"FrameLocalsProxy($frame)\n"
-"--\n"
-"\n"
-"Create a write-through view of the locals dictionary for a frame.\n"
-"\n"
-"  frame\n"
-"    the frame object to wrap.");
-
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "FrameLocalsProxy",
@@ -1017,20 +1009,14 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = framelocalsproxy_new,
     .tp_free = PyObject_GC_Del,
-    .tp_doc = framelocalsproxy_doc,
+    .tp_doc = framelocalsproxy_new__doc__,
+    .tp_vectorcall = framelocalsproxy_vectorcall,
 };
 
 PyObject *
 _PyFrameLocalsProxy_New(PyFrameObject *frame)
 {
-    PyObject* args = PyTuple_Pack(1, frame);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    PyObject* proxy = framelocalsproxy_new(&PyFrameLocalsProxy_Type, args, NULL);
-    Py_DECREF(args);
-    return proxy;
+    return framelocalsproxy_new_impl(&PyFrameLocalsProxy_Type, (PyObject *)frame);
 }
 
 static PyMemberDef frame_memberlist[] = {
@@ -2324,6 +2310,53 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
     }
     *pvalue = value;
     return 1;
+}
+
+
+int
+PyUnstable_InterpreterFrame_GetLocal(_PyInterpreterFrame *frame,
+                                     Py_ssize_t index, PyObject **result)
+{
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    *result = NULL;
+    if (index < 0 || index >= co->co_nlocalsplus) {
+        PyErr_Format(
+            PyExc_IndexError,
+            "PyUnstable_InterpreterFrame_GetLocal: index %zd out of range [0, %d)",
+            index, co->co_nlocalsplus);
+        return -1;
+    }
+
+    int offset = PyUnstable_Code_GetFirstFree(co);  // co_nlocalsplus - co_nfreevars
+    if (index < offset) {
+        // Local or cell variable. frame_get_var unboxes cells and copes with
+        // not-yet-started frames and arguments not yet promoted by MAKE_CELL.
+        if (_PyLocals_GetKind(co->co_localspluskinds, (int)index) & CO_FAST_HIDDEN) {
+            return 0;
+        }
+        PyObject *value = NULL;
+        frame_get_var(frame, co, (int)index, &value);
+        if (value == NULL) {
+            return 0;
+        }
+        *result = value;  // strong reference
+        return 1;
+    }
+
+    // Free variable: read from the function closure rather than localsplus.
+    if ((co->co_flags & CO_OPTIMIZED)
+         && PyStackRef_FunctionCheck(frame->f_funcobj))
+    {
+        PyFunctionObject *func = _PyFrame_GetFunction(frame);
+        PyObject *cell = PyTuple_GET_ITEM(func->func_closure, index - offset);
+        PyObject *value = PyCell_GetRef((PyCellObject *)cell);
+        if (value == NULL) {
+            return 0;
+        }
+        *result = value;
+        return 1;
+    }
+    return 0;
 }
 
 
