@@ -12,7 +12,7 @@ LOG_THRESHOLD_FOR_CONNLOST_WRITES = 5
 ACCEPT_RETRY_DELAY = 1
 
 # Seconds to wait before retrying a write to a full pipe.
-PIPE_WRITE_RETRY_DELAY = 0.01
+PIPE_WRITE_RETRY_DELAY = 0.001
 
 # Number of stack entries to capture in debug mode.
 # The larger the number, the slower the operation in debug mode
