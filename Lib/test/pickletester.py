@@ -5299,6 +5299,22 @@ class AbstractPicklerUnpicklerObjectTests:
             self.assertNotEqual(first_pickled, second_pickled)
             self.assertEqual(first_pickled, third_pickled)
 
+    def test_empty_unpickler_memo(self):
+        # gh-162334: assigning an empty memo used to crash the C unpickler
+        # on the next memoized object.
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                value = [b'repeated'] * 2
+                data = pickle.dumps(value, protocol=proto)
+                unpickler = self.unpickler_class(io.BytesIO(data))
+                unpickler.memo = {}
+                result = unpickler.load()
+                self.assertEqual(result, value)
+                self.assertIs(result[0], result[1])
+        unpickler = self.unpickler_class(io.BytesIO(b'\x80\x04N\x94.'))
+        unpickler.memo = {}
+        self.assertIsNone(unpickler.load())
+
     def test_clear_unpickler_memo(self):
         value = [b'repeated'] * 2
         data = pickle.dumps(value, protocol=4)
