@@ -169,8 +169,6 @@ static void _CallPythonObject(ctypes_state *st,
                 goto Error;
             }
 #ifdef MS_WIN32
-            // Look up the marker before exposing the borrowed pointer to
-            // the wrapper's finalizer.
             int needs_addref = NeedsComAddRef(cnv);
             if (needs_addref < 0) {
                 Py_DECREF(obj);
