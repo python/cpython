@@ -679,6 +679,142 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(array_new__doc__,
+"array(typecode, initializer=None, /)\n"
+"--\n"
+"\n"
+"Create array object.\n"
+"\n"
+"Return a new array whose items are restricted by typecode, and\n"
+"initialized from the optional initializer value, which must be a list\n"
+"string or iterable over elements of the appropriate type.\n"
+"\n"
+"Arrays represent basic values and behave very much like lists, except\n"
+"the type of objects stored in them is constrained. The type is specified\n"
+"at object creation time by using a type code, which is a string.\n"
+"The following type codes are defined:\n"
+"\n"
+"    Type code   C Type             Minimum size in bytes\n"
+"    \'b\'         signed integer     1\n"
+"    \'B\'         unsigned integer   1\n"
+"    \'w\'         Py_UCS4            4\n"
+"    \'h\'         signed integer     2\n"
+"    \'H\'         unsigned integer   2\n"
+"    \'i\'         signed integer     2\n"
+"    \'I\'         unsigned integer   2\n"
+"    \'l\'         signed integer     4\n"
+"    \'L\'         unsigned integer   4\n"
+"    \'q\'         signed integer     8 (see note)\n"
+"    \'Q\'         unsigned integer   8 (see note)\n"
+"    \'e\'         16-bit IEEE floats 2\n"
+"    \'f\'         floating-point     4\n"
+"    \'d\'         floating-point     8\n"
+"    \'Zf\'        float complex      8\n"
+"    \'Zd\'        double complex     16\n"
+"\n"
+"NOTE: The \'q\' and \'Q\' type codes are only available if the platform\n"
+"C compiler used to build Python supports \'long long\', or, on Windows,\n"
+"\'__int64\'.\n"
+"\n"
+"Methods:\n"
+"\n"
+"append() -- append a new item to the end of the array\n"
+"buffer_info() -- return information giving the current memory info\n"
+"byteswap() -- byteswap all the items of the array\n"
+"count() -- return number of occurrences of an object\n"
+"extend() -- extend array by appending multiple elements from an iterable\n"
+"fromfile() -- read items from a file object\n"
+"fromlist() -- append items from the list\n"
+"frombytes() -- append items from the string\n"
+"index() -- return index of first occurrence of an object\n"
+"insert() -- insert a new item into the array at a provided position\n"
+"pop() -- remove and return item (default last)\n"
+"remove() -- remove first occurrence of an object\n"
+"reverse() -- reverse the order of the items in the array\n"
+"tofile() -- write all items to a file object\n"
+"tolist() -- return the array converted to an ordinary list\n"
+"tobytes() -- return the array converted to a string\n"
+"\n"
+"Attributes:\n"
+"\n"
+"typecode -- the typecode character used to create the array\n"
+"itemsize -- the length in bytes of one array item");
+
+static PyObject *
+array_new_impl(PyTypeObject *type, const char *s, PyObject *initial);
+
+static PyObject *
+array_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->ArrayType;
+    const char *s;
+    PyObject *initial = NULL;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("array", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("array", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 0))) {
+        _PyArg_BadArgument("array", "argument 1", "str", PyTuple_GET_ITEM(args, 0));
+        goto exit;
+    }
+    s = _PyUnicode_AsUTF8NoNUL(PyTuple_GET_ITEM(args, 0));
+    if (s == NULL) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    initial = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    return_value = array_new_impl(type, s, initial);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+array_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    const char *s;
+    PyObject *initial = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == array_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("array", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("array", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("array", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    s = _PyUnicode_AsUTF8NoNUL(args[0]);
+    if (s == NULL) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    initial = args[1];
+skip_optional:
+    return_value = array_new_impl(_PyType_CAST(type), s, initial);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(array_arrayiterator___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -722,4 +858,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=172a9af0316afc14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8e9fb64ccb7c470 input=a9049054013a1b77]*/
