@@ -1,0 +1,2 @@
+Prevent :mod:`asyncio` from busy-looping when a full pipe keeps being reported
+as writable on Unix.
