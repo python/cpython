@@ -102,8 +102,13 @@ class Test_pygettext(unittest.TestCase):
             res = assert_python_ok('-Xutf8', self.script, *args, filename)
             if strict:
                 self.assertEqual(res.err, b'')
-            with open('messages.pot', encoding='utf-8') as fp:
-                data = fp.read()
+            if Path('messages.pot').exists():
+                with open('messages.pot', encoding='utf-8') as fp:
+                    data = fp.read()
+            else:
+                # No output file is generated when no messages are found
+                # (gh-133049); there are no msgids to return.
+                data = ''
         if not raw:
             data = self.get_msgids(data)
         if not with_stderr:
@@ -122,7 +127,8 @@ class Test_pygettext(unittest.TestCase):
            http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
         """
         with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
+            Path('test.py').write_text("_('hello')\n", encoding='utf-8')
+            assert_python_ok('-Xutf8', self.script, 'test.py')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -149,7 +155,8 @@ class Test_pygettext(unittest.TestCase):
         """ Match the date format from xgettext for POT-Creation-Date """
         from datetime import datetime
         with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
+            Path('test.py').write_text("_('hello')\n", encoding='utf-8')
+            assert_python_ok('-Xutf8', self.script, 'test.py')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -165,9 +172,10 @@ class Test_pygettext(unittest.TestCase):
     def test_output_option(self):
         for opt in ('-o', '--output='):
             with temp_cwd():
-                assert_python_ok(self.script, f'{opt}test')
+                Path('test.py').write_text("_('hello')\n", encoding='utf-8')
+                assert_python_ok(self.script, f'{opt}test', 'test.py')
                 self.assertTrue(os.path.exists('test'))
-                res = assert_python_ok(self.script, f'{opt}-')
+                res = assert_python_ok(self.script, f'{opt}-', 'test.py')
                 self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
 
     def test_funcdocstring(self):
@@ -386,7 +394,7 @@ class Test_pygettext(unittest.TestCase):
         class _(object):
             pass
         '''))
-        self.assertEqual(msgids, [''])
+        self.assertEqual(msgids, [])
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
@@ -449,6 +457,34 @@ class Test_pygettext(unittest.TestCase):
             "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
             "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
         )
+
+    def test_no_messages_no_output(self):
+        """No output file is generated when no messages are found (gh-133049)."""
+        with temp_cwd(None):
+            with open('test.py', 'w', encoding='utf-8') as fp:
+                fp.write('x = 1\n')
+            res = assert_python_ok('-Xutf8', self.script, 'test.py')
+            self.assertEqual(res.out, b'')
+            self.assertEqual(res.err, b'')
+            self.assertFalse(Path('messages.pot').exists())
+
+    def test_no_messages_no_stdout_output(self):
+        """No output is written to stdout when no messages are found (gh-133049)."""
+        with temp_cwd(None):
+            with open('test.py', 'w', encoding='utf-8') as fp:
+                fp.write('x = 1\n')
+            res = assert_python_ok('-Xutf8', self.script, '-o', '-', 'test.py')
+            self.assertEqual(res.out, b'')
+            self.assertEqual(res.err, b'')
+
+    def test_no_messages_verbose(self):
+        """Verbose mode reports that no output file was generated (gh-133049)."""
+        with temp_cwd(None):
+            with open('test.py', 'w', encoding='utf-8') as fp:
+                fp.write('x = 1\n')
+            res = assert_python_ok('-Xutf8', self.script, '-v', 'test.py')
+            self.assertIn(b'no output file generated', res.err)
+            self.assertFalse(Path('messages.pot').exists())
 
     def test_extract_all_comments(self):
         """
@@ -584,7 +620,7 @@ class Test_pygettext(unittest.TestCase):
         _(42, y)
         '''), args=('--keyword=_:1', '--keyword=_:2'), with_stderr=True,
               strict=False)
-        self.assertEqual(msgids, [''])
+        self.assertEqual(msgids, [])
         # Normalize line endings on Windows
         stderr = stderr.decode('utf-8').replace('\r', '')
         self.assertEqual(

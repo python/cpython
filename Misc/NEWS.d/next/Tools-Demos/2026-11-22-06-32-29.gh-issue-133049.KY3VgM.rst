@@ -1,0 +1,2 @@
+:program:`pygettext` now generates no output when no translatable messages
+are found, like :program:`xgettext`.

@@ -841,6 +841,13 @@ def main():
 
         visitor.visit_file(source, filename)
 
+    # xgettext-compatible: no output is generated if there are no messages
+    if not visitor.messages:
+        if options.verbose:
+            print("No module matched or no strings to extract; no output file generated.",
+                  file=sys.stderr)
+        sys.exit(0)
+
     # write the output
     if options.outfile == '-':
         fp = sys.stdout
