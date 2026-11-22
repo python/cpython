@@ -2496,7 +2496,7 @@ via docstrings.  So these can be used as online-help via the Python help
 facilities:
 
 - When using IDLE, tooltips show the signatures and first lines of the
-  docstrings of typed in function-/method calls.
+  docstrings of typed in function/method calls.
 
 - Calling :func:`help` on methods or functions displays the docstrings::
 
