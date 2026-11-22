@@ -934,10 +934,9 @@ def gather(*coros_or_futures, return_exceptions=False):
 
     outer = _GatheringFuture(children, loop=loop)
     # Add the awaited-by edges only after all arguments are validated
-    if len(done_futs) < nfuts:
-        for fut in arg_to_fut.values():
-            if not fut.done():
-                futures.future_add_to_awaited_by(fut, outer)
+    for fut in arg_to_fut.values():
+        if not fut.done():
+            futures.future_add_to_awaited_by(fut, outer)
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
