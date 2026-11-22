@@ -48,7 +48,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`Py_GetCopyright`
   * :c:func:`Py_GetPlatform`
   * :c:func:`Py_GetVersion`
-  * :c:func:`Py_IsInitialized`
 
 * Utilities:
 
@@ -265,6 +264,48 @@ Initializing and finalizing the interpreter
    first initialized).
 
 
+.. c:function:: int Py_FrozenMain(int argc, char **argv)
+
+   .. index:: single: freeze utility
+
+   The main program for a "frozen" Python program (an executable that embeds
+   the interpreter together with the bytecode of the program's modules, as
+   produced by the :program:`freeze` utility; see :source:`Tools/freeze`).
+
+   This function initializes the interpreter, imports the frozen module named
+   ``__main__``, and finalizes the interpreter.
+   The frozen modules must have been registered in
+   :c:var:`PyImport_FrozenModules` before calling this function;
+   it is a fatal error if ``__main__`` is not among them.
+
+   *argc* and *argv* are byte strings like the arguments of a C program's
+   ``main`` function, and are passed to the interpreter with
+   :c:func:`PyConfig_SetBytesArgv`.
+   Unlike :c:func:`Py_Main`, the arguments are not parsed as Python command
+   line options (:c:member:`PyConfig.parse_argv` is ``0``), so all of them
+   are made available to the program in :data:`sys.argv`.
+   Apart from that, the interpreter uses the
+   :ref:`Python Configuration <init-python-config>`, so environment variables
+   such as :envvar:`PYTHONPATH` are honored.
+   Warnings about the path configuration
+   (:c:member:`PyConfig.pathconfig_warnings`) are suppressed.
+   If :envvar:`PYTHONINSPECT` is set and standard input is a terminal, an
+   interactive prompt is run after ``__main__`` has finished, as with the
+   :option:`-i` option.
+
+   Return ``0`` if ``__main__`` ran without an unhandled exception, ``1``
+   otherwise, and ``120`` if finalizing the interpreter failed (see
+   :c:func:`Py_FinalizeEx`).
+   An unhandled :exc:`SystemExit` terminates the process.
+   If the interpreter cannot be initialized, the process exits via
+   :c:func:`Py_ExitStatusException`.
+
+   On Windows, this function is not exported by the Python DLL.
+   The :program:`freeze` utility compiles :file:`Python/frozenmain.c` into the
+   frozen program instead, together with the Windows-specific hooks that the
+   function requires.
+
+
 .. c:function:: int Py_RunMain(void)
 
    Executes the main module in a fully configured CPython runtime.
@@ -449,7 +490,7 @@ deleted. This can be done using interpreter views.
 
    An opaque view of an interpreter.
 
-   This is a thread-safe way to access an interpreter that may have be
+   This is a thread-safe way to access an interpreter that may be
    finalizing or already destroyed.
 
    .. versionadded:: 3.15
@@ -534,9 +575,9 @@ Process-wide parameters
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
    also known as SunOS 5.x, the value is ``'sunos5'``.  On macOS, it is
-   ``'darwin'``.  On Windows, it is ``'win'``.  The returned string points into
-   static storage; the caller should not modify its value.  The value is available
-   to Python code as ``sys.platform``.
+   ``'darwin'``.  On Windows, it is ``'win32'``.  The returned string points
+   into static storage; the caller should not modify its value.  The value is
+   available to Python code as ``sys.platform``.
 
 
 .. c:function:: const char* Py_GetCopyright()

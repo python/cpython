@@ -67,46 +67,44 @@ Debugger commands
 
 import os
 import io
-import re
 import sys
 import cmd
-import bdb
 import dis
+import bdb
 import code
-import glob
-import json
 import stat
 import token
 import types
 import atexit
 import codeop
-import pprint
-import signal
-import socket
 import typing
 import inspect
-import weakref
 import builtins
-import tempfile
-import textwrap
-import tokenize
 import itertools
-import traceback
 import linecache
-import selectors
-import threading
-import _colorize
 
 from contextlib import ExitStack, closing, contextmanager
 from types import CodeType
 from warnings import deprecated
 
+lazy import _colorize
+lazy import argparse
 lazy import asyncio
-
-try:
-    import _pyrepl.utils
-except ModuleNotFoundError:
-    _pyrepl = None
+lazy import glob
+lazy import json
+lazy import pprint
+lazy import re
+lazy import runpy
+lazy import selectors
+lazy import shlex
+lazy import signal
+lazy import socket
+lazy import tempfile
+lazy import textwrap
+lazy import threading
+lazy import tokenize
+lazy import traceback
+lazy import weakref
 
 
 class Restart(Exception):
@@ -247,7 +245,6 @@ class _ModuleTarget(_ExecutableTarget):
     def __init__(self, target):
         self._target = target
 
-        import runpy
         try:
             _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
@@ -282,8 +279,6 @@ class _ModuleTarget(_ExecutableTarget):
 
 class _ZipTarget(_ExecutableTarget):
     def __init__(self, target):
-        import runpy
-
         self._target = os.path.realpath(target)
         sys.path.insert(0, self._target)
         try:
@@ -466,6 +461,7 @@ class PdbPyReplInput:
             return None
 
     def gen_colors(self, buffer):
+        import _pyrepl.utils
         from _pyrepl.utils import ColorSpan, Span
 
         if not buffer.strip():
@@ -632,11 +628,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self.start_trace()
 
+    def _install_sigint_handler(self):
+        if self.nosigint:
+            return
+        try:
+            Pdb._previous_sigint_handler = \
+                signal.signal(signal.SIGINT, self.sigint_handler)
+        except ValueError:
+            # signal only works in the main thread.
+            pass
+
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
             raise KeyboardInterrupt
         self.message("\nProgram interrupted. (Use 'cont' to resume).")
-        self.set_step()
         self.set_trace(frame)
 
     def reset(self):
@@ -1271,7 +1276,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return False
 
     def _colorize_code(self, code):
-        if self.colorize and _pyrepl:
+        if self.colorize:
+            try:
+                import _pyrepl.utils
+            except ModuleNotFoundError:
+                return code
             colors = list(_pyrepl.utils.gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
@@ -1688,10 +1697,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # More than one part.
             # First is module, second is method/class
-            f = self.lookupmodule(parts[0])
+            f = self.lookupmodule('.'.join(parts[:-1]))
             if f:
                 fname = f
-                item = parts[1]
+                item = parts[-1]
             else:
                 return failed
         answer = find_function(item, self.canonic(fname))
@@ -2045,6 +2054,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             lineno = None
         self.set_until(self.curframe, lineno)
+        self._install_sigint_handler()
         return 1
     do_unt = do_until
 
@@ -2072,6 +2082,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         self.set_next(self.curframe)
+        self._install_sigint_handler()
         return 1
     do_n = do_next
 
@@ -2089,7 +2100,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                        'e.g. "python -m pdb myscript.py"')
             return
         if arg:
-            import shlex
             argv0 = sys.argv[0:1]
             try:
                 sys.argv = shlex.split(arg)
@@ -2111,6 +2121,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         self.set_return(self.curframe)
+        self._install_sigint_handler()
         return 1
     do_r = do_return
 
@@ -2122,16 +2133,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        if not self.nosigint:
-            try:
-                Pdb._previous_sigint_handler = \
-                    signal.signal(signal.SIGINT, self.sigint_handler)
-            except ValueError:
-                # ValueError happens when do_continue() is invoked from
-                # a non-main thread in which case we just continue without
-                # SIGINT set. Would printing a message here (once) make
-                # sense?
-                pass
+        self._install_sigint_handler()
         self.set_continue()
         return 1
     do_c = do_cont = do_continue
@@ -3787,9 +3789,7 @@ def parse_args():
     # "python -m pdb -m foo -p 1" should pass "-p 1" to "foo".
     # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
     # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
-    # This require some customized parsing logic to find the actual debug target.
-
-    import argparse
+    # This requires some customized parsing logic to find the actual debug target.
 
     parser = argparse.ArgumentParser(
         usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",

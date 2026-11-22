@@ -254,13 +254,12 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
-    || defined(_Py_OPAQUE_PYOBJECT)
-    // Stable ABI implements Py_INCREF() as a function call on limited C API
-    // version 3.12 and newer, abi3t, and on Python built in debug mode.
-    // _Py_IncRef() was added to Python 3.10.0a7, use Py_IncRef() on older versions.
-    // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#if defined(Py_LIMITED_API) || defined(_Py_OPAQUE_PYOBJECT)
+    // gh-158401: The stable ABI now implements Py_INCREF() as a function
+    // call on all limited C API versions. _Py_IncRef() was added to Python
+    // 3.10.0a7, use Py_IncRef() on older versions. Py_IncRef() accepts NULL,
+    // whereas _Py_IncRef() doesn't.
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_IncRef(op);
 #  else
     Py_IncRef(op);
@@ -324,14 +323,13 @@ PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
 #endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API
 
-#if (defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))) \
-    || defined(_Py_OPAQUE_PYOBJECT)
-// Stable ABI implements Py_DECREF() as a function call on limited C API
-// version 3.12 and newer, abi3t, and on Python built in debug mode.
-// _Py_DecRef() was added to Python 3.10.0a7, use Py_DecRef() on older versions.
-// Py_DecRef() accepts NULL whereas _Py_DecRef() doesn't.
+#if defined(Py_LIMITED_API) || defined(_Py_OPAQUE_PYOBJECT)
+// gh-158401: The stable ABI now implements Py_DECREF() as a function call
+// on all limited C API versions. _Py_DecRef() was added to Python 3.10.0a7,
+// use Py_DecRef() on older versions. Py_DecRef() accepts NULL, whereas
+// _Py_DecRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#  if Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
     _Py_DecRef(op);
 #  else
     Py_DecRef(op);
@@ -489,7 +487,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
         if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \
-            Py_DECREF(_tmp_old_op); \
+            Py_DECREF(_PyObject_CAST(_tmp_old_op)); \
         } \
     } while (0)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
@@ -499,14 +497,15 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         auto _tmp_old_op = (*_tmp_op_ptr); \
         if (_tmp_old_op != _Py_NULL) { \
             *_tmp_op_ptr = _Py_NULL; \
-            Py_DECREF(_tmp_old_op); \
+            Py_DECREF(_PyObject_CAST(_tmp_old_op)); \
         } \
     } while (0)
 #else
 #define Py_CLEAR(op) \
     do { \
         PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
-        PyObject *_tmp_old_op = (*_tmp_op_ptr); \
+        PyObject *_tmp_old_op; \
+        memcpy(&_tmp_old_op, _tmp_op_ptr, sizeof(PyObject*)); \
         if (_tmp_old_op != _Py_NULL) { \
             PyObject *_null_ptr = _Py_NULL; \
             memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
@@ -545,7 +544,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF(_tmp_old_dst); \
+        Py_DECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
 #define Py_SETREF(dst, src) \
@@ -553,14 +552,15 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         auto _tmp_dst_ptr = &(dst); \
         auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_DECREF(_tmp_old_dst); \
+        Py_DECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #else
 #define Py_SETREF(dst, src) \
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_old_dst; \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_DECREF(_tmp_old_dst); \
     } while (0)
@@ -575,7 +575,7 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         _Py_TYPEOF(&(dst)) _tmp_dst_ptr = &(dst); \
         _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF(_tmp_old_dst); \
+        Py_XDECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L ||  _MSVC_LANG >= 201103L)
 #define Py_XSETREF(dst, src) \
@@ -583,14 +583,15 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
         auto _tmp_dst_ptr = &(dst); \
         auto _tmp_old_dst = (*_tmp_dst_ptr); \
         *_tmp_dst_ptr = (src); \
-        Py_XDECREF(_tmp_old_dst); \
+        Py_XDECREF(_PyObject_CAST(_tmp_old_dst)); \
     } while (0)
 #else
 #define Py_XSETREF(dst, src) \
     do { \
         PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_old_dst; \
         PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(&_tmp_old_dst, _tmp_dst_ptr, sizeof(PyObject*)); \
         memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
         Py_XDECREF(_tmp_old_dst); \
     } while (0)

@@ -7,6 +7,7 @@ Graphic User Interface FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 .. XXX need review for Python 3.
 

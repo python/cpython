@@ -27,6 +27,7 @@ incomplete_string_token(struct tok_state *tok, struct token *token,
 {
     string_error_token(tok, token, start, location);
     tok->done = E_INCOMPLETE;
+    token->is_incomplete = 1;
     return type;
 }
 
@@ -464,8 +465,18 @@ _PyLexer_get_ftstring(struct tok_state *tok, ftstring_state *current, struct tok
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             if (c == EOF && tok->allow_incomplete_input) {
-                return incomplete_string_token(tok, token,
+                int type = incomplete_string_token(tok, token,
                     FTSTRING_MIDDLE(current), current->start, current->start_loc);
+                // Preserve the actual prefix for incremental escape decoding.
+                _PyTok_Off end = tok->cur;
+                if (end > tok->start && tok->implicit_newline) {
+                    end--;
+                }
+                token->span = (_PyTok_Span){tok->start, end};
+                token->start_loc = tok->start_loc;
+                token->end_loc = (_PyTok_Loc){tok->lineno, (int)(end - tok->line_start)};
+                token->is_raw = raw;
+                return type;
             }
 
             if (in_format_spec && c == '\n') {

@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_openssl_mem.h" />
+    <ClInclude Include="..\Modules\_ssl\distrusted_spki.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ssl.c" />

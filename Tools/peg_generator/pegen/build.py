@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 import logging
 import os
@@ -6,10 +7,11 @@ import sys
 import sysconfig
 import tempfile
 import tokenize
+from collections.abc import Sequence
 from typing import IO, Any
 
 from pegen.c_generator import CParserGenerator
-from pegen.grammar import Grammar
+from pegen.grammar import Grammar, GrammarError
 from pegen.grammar_parser import GeneratedParser as GrammarParser
 from pegen.parser import Parser
 from pegen.parser_generator import ParserGenerator
@@ -70,12 +72,13 @@ def fixup_build_ext(cmd: Incomplete) -> None:
 
 
 def compile_c_extension(
-    generated_source_path: str,
+    generated_source_path: pathlib.Path,
     build_dir: str | None = None,
     verbose: bool = False,
     keep_asserts: bool = True,
     disable_optimization: bool = False,
     library_dir: str | None = None,
+    extra_generated_sources: Sequence[pathlib.Path] = (),
 ) -> pathlib.Path:
     """Compile the generated source for a parser generator into an extension module.
 
@@ -90,6 +93,9 @@ def compile_c_extension(
     If *library_dir* is provided, that path will be used as the directory for a
     static library of the common parser sources (this is useful in case you are
     creating multiple extensions).
+
+    *extra_generated_sources* are the C files generated for the included
+    grammar files (see included_output_files()).
     """
     import setuptools.command.build_ext
     import setuptools.logging
@@ -101,8 +107,7 @@ def compile_c_extension(
     if verbose:
         setuptools.logging.set_threshold(logging.DEBUG)
 
-    source_file_path = pathlib.Path(generated_source_path)
-    extension_name = source_file_path.stem
+    extension_name = generated_source_path.stem
     extra_compile_args = get_extra_flags("CFLAGS", "PY_CFLAGS_NODIST")
     extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
     # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
@@ -122,40 +127,40 @@ def compile_c_extension(
                 extra_link_args.append("-fno-lto")
 
     common_sources = [
-        str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
-        str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
-        str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
+        MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c",
+        MOD_DIR.parent.parent.parent / "Python" / "asdl.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "layout.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "number.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "string.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "decoder.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "api.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "reader.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "pegen.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c",
+        MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c",
+        MOD_DIR.parent / "peg_extension" / "peg_extension.c",
     ]
     include_dirs = [
-        str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
-        str(MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc"),
-        str(MOD_DIR.parent.parent.parent / "Parser"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
+        MOD_DIR.parent.parent.parent / "Include" / "internal",
+        MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc",
+        MOD_DIR.parent.parent.parent / "Parser",
+        MOD_DIR.parent.parent.parent / "Parser" / "lexer",
+        MOD_DIR.parent.parent.parent / "Parser" / "tokenizer",
     ]
-    library_dirs: list[str] = []
+    library_dirs: list[pathlib.Path] = []
     if sys.platform == "win32":
         # HACK: The location of pyconfig.h has moved within our build, and
         # setuptools hasn't updated for it yet. So add the path manually for now
-        include_dirs.append(str(pathlib.Path(sysconfig.get_config_h_filename()).parent))
+        include_dirs.append(pathlib.Path(sysconfig.get_config_h_filename()).parent)
         if sysconfig.is_python_build():
             # HACK: Our output directory for free-threaded builds has moved, and so
             # tests running in-tree require our sys.executable directory for libs
-            library_dirs.append(str(pathlib.Path(sys.executable).parent))
-    sources = [generated_source_path]
+            library_dirs.append(pathlib.Path(sys.executable).parent)
+    sources = [generated_source_path, *extra_generated_sources]
     extension = Extension(
         extension_name,
         sources=sources,
@@ -166,9 +171,9 @@ def compile_c_extension(
     cmd = dist.get_command_obj("build_ext")
     assert isinstance(cmd, setuptools.command.build_ext.build_ext)
     fixup_build_ext(cmd)
-    cmd.build_lib = str(source_file_path.parent)
-    cmd.include_dirs = include_dirs
-    cmd.library_dirs = library_dirs
+    cmd.build_lib = str(generated_source_path.parent)
+    cmd.include_dirs = [str(d) for d in include_dirs]
+    cmd.library_dirs = [str(d) for d in library_dirs]
     if build_dir:
         cmd.build_temp = build_dir
     cmd.ensure_finalized()
@@ -246,8 +251,8 @@ def compile_c_extension(
     return pathlib.Path(ext_path)
 
 
-def build_parser(
-    grammar_file: str, verbose_tokenizer: bool = False, verbose_parser: bool = False
+def _parse_grammar_file(
+    grammar_file: pathlib.Path, verbose_tokenizer: bool, verbose_parser: bool
 ) -> tuple[Grammar, Parser, Tokenizer]:
     with open(grammar_file) as file:
         tokenizer = Tokenizer(tokenize.generate_tokens(file.readline), verbose=verbose_tokenizer)
@@ -255,9 +260,93 @@ def build_parser(
         grammar = parser.start()
 
         if not grammar:
-            raise parser.make_syntax_error(grammar_file)
+            raise parser.make_syntax_error(str(grammar_file))
 
     return grammar, parser, tokenizer
+
+
+def _include_rules(
+    root_grammar: Grammar,
+    root_dir: pathlib.Path,
+    includes: list[str],
+    including_file: pathlib.Path,
+    rule_files: dict[str, pathlib.Path],
+    include_stack: list[pathlib.Path],
+    included_from: dict[pathlib.Path, pathlib.Path],
+    verbose_tokenizer: bool,
+    verbose_parser: bool,
+) -> None:
+    # Append the rules of each included file (and, depth-first, of the files
+    # it includes) to *root_grammar*, in order.
+    for include in includes:
+        path = (including_file.parent / include).resolve()
+        if path in include_stack:
+            raise GrammarError(f"Circular @include of '{path!s}' in '{including_file!s}'")
+        if path in included_from:
+            raise GrammarError(
+                f"'{path}' is included more than once: "
+                f"from '{included_from[path]}' and from '{including_file}'"
+            )
+        included_from[path] = including_file
+        new_grammar, _, _ = _parse_grammar_file(path, verbose_tokenizer, verbose_parser)
+        if new_grammar.metas:
+            names = ", ".join(f"@{name}" for name in new_grammar.metas)
+            raise GrammarError(f"Included grammar '{path!s}' cannot define metas: {names}")
+        for name, rule in new_grammar.rules.items():
+            if name in root_grammar.rules:
+                raise GrammarError(
+                    f"Repeated rule {name!r} in '{path!s}' "
+                    f"(first defined in '{rule_files[name]!s}')"
+                )
+            rule.source = pathlib.Path(os.path.relpath(path, root_dir))
+            root_grammar.rules[name] = rule
+            rule_files[name] = path
+        _include_rules(
+            root_grammar,
+            root_dir,
+            new_grammar.includes,
+            path,
+            rule_files,
+            include_stack + [path],
+            included_from,
+            verbose_tokenizer,
+            verbose_parser,
+        )
+
+
+def build_parser(
+    grammar_file: pathlib.Path, verbose_tokenizer: bool = False, verbose_parser: bool = False
+) -> tuple[Grammar, Parser, Tokenizer]:
+    grammar, parser, tokenizer = _parse_grammar_file(
+        grammar_file, verbose_tokenizer, verbose_parser
+    )
+    resolve_includes(grammar, grammar_file, verbose_tokenizer, verbose_parser)
+    return grammar, parser, tokenizer
+
+
+def resolve_includes(
+    grammar: Grammar,
+    grammar_file: pathlib.Path,
+    verbose_tokenizer: bool = False,
+    verbose_parser: bool = False,
+) -> None:
+    """Add the rules of the files that *grammar* includes, and clear its includes.
+
+    *grammar_file* is the file *grammar* was parsed from: its @include paths
+    are relative to that file's directory.
+    """
+    _include_rules(
+        grammar,
+        grammar_file.resolve().parent,
+        grammar.includes,
+        grammar_file,
+        dict.fromkeys(grammar.rules, grammar_file),
+        [grammar_file.resolve()],
+        {},
+        verbose_tokenizer,
+        verbose_parser,
+    )
+    grammar.includes = []
 
 
 def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
@@ -289,11 +378,39 @@ def generate_token_definitions(tokens: IO[str]) -> TokenDefinitions:
     return all_tokens, exact_tokens, non_exact_tokens
 
 
+def included_output_files(
+    grammar: Grammar, output_file: pathlib.Path
+) -> dict[pathlib.Path, pathlib.Path]:
+    stem, dot, rest = output_file.name.partition(".")
+    outputs: dict[pathlib.Path, pathlib.Path] = {}
+    for rule in grammar.rules.values():
+        if rule.source is None or rule.source in outputs:
+            continue
+        if rule.source.is_absolute() or ".." in rule.source.parts:
+            raise GrammarError(
+                f"The C file for '{rule.source}' would be outside the output directory; "
+                "included grammar files must be in the root grammar file's directory "
+                "or its subdirectories"
+            )
+        path = (
+            output_file.parent
+            / rule.source.parent
+            / f"{stem}_{rule.source.stem}{dot}{rest}"
+        )
+        if path in outputs.values():
+            raise GrammarError(
+                f"The C file for '{rule.source}' would be '{path}', "
+                "which is already used by another grammar file"
+            )
+        outputs[rule.source] = path
+    return outputs
+
+
 def build_c_generator(
     grammar: Grammar,
-    grammar_file: str,
-    tokens_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    tokens_file: pathlib.Path,
+    output_file: pathlib.Path,
     compile_extension: bool = False,
     verbose_c_extension: bool = False,
     keep_asserts_in_extension: bool = True,
@@ -301,9 +418,23 @@ def build_c_generator(
 ) -> ParserGenerator:
     with open(tokens_file) as tok_file:
         all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
-    with open(output_file, "w") as file:
+    included_outputs = included_output_files(grammar, output_file)
+    with contextlib.ExitStack() as stack:
+        file: IO[str] = stack.enter_context(open(output_file, "w"))
+        for path in included_outputs.values():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        included_files: dict[pathlib.Path, IO[str]] = {
+            source: stack.enter_context(open(path, "w"))
+            for source, path in included_outputs.items()
+        }
         gen: ParserGenerator = CParserGenerator(
-            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=skip_actions
+            grammar,
+            all_tokens,
+            exact_tok,
+            non_exact_tok,
+            file,
+            skip_actions=skip_actions,
+            included_files=included_files,
         )
         gen.generate(grammar_file)
 
@@ -314,14 +445,15 @@ def build_c_generator(
                 build_dir=build_dir,
                 verbose=verbose_c_extension,
                 keep_asserts=keep_asserts_in_extension,
+                extra_generated_sources=list(included_outputs.values()),
             )
     return gen
 
 
 def build_python_generator(
     grammar: Grammar,
-    grammar_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    output_file: pathlib.Path,
     skip_actions: bool = False,
 ) -> ParserGenerator:
     with open(output_file, "w") as file:
@@ -331,9 +463,9 @@ def build_python_generator(
 
 
 def build_c_parser_and_generator(
-    grammar_file: str,
-    tokens_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    tokens_file: pathlib.Path,
+    output_file: pathlib.Path,
     compile_extension: bool = False,
     verbose_tokenizer: bool = False,
     verbose_parser: bool = False,
@@ -375,8 +507,8 @@ def build_c_parser_and_generator(
 
 
 def build_python_parser_and_generator(
-    grammar_file: str,
-    output_file: str,
+    grammar_file: pathlib.Path,
+    output_file: pathlib.Path,
     verbose_tokenizer: bool = False,
     verbose_parser: bool = False,
     skip_actions: bool = False,

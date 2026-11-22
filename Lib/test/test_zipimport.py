@@ -1102,6 +1102,62 @@ class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
 class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_ZSTANDARD
 
+    def test_concatenated_frames(self):
+        from compression import zstd
+        import zipfile
+
+        class ConcatenatedFrameCompressor:
+            def compress(self, data):
+                return b"".join(zstd.compress(bytes([byte])) for byte in data)
+
+            def flush(self):
+                return b""
+
+        with unittest.mock.patch.object(
+            zipfile,
+            "_get_compressor",
+            return_value=ConcatenatedFrameCompressor(),
+        ):
+            self.doTest(".py", {TESTMOD + ".py": test_src}, TESTMOD)
+
+    def test_concatenated_frames_linear_input(self):
+        from compression import zstd
+
+        frame_count = 100
+        frame = zstd.compress(b"x")
+        compressed = frame * frame_count
+        input_sizes = []
+        decompressor_class = zipimport._get_zstd_decompressor_class()
+
+        class RecordingDecompressor:
+            def __init__(self):
+                self._decompressor = decompressor_class()
+
+            def __getattr__(self, name):
+                return getattr(self._decompressor, name)
+
+            def decompress(self, data, max_length=-1):
+                input_sizes.append(memoryview(data).nbytes)
+                return self._decompressor.decompress(data, max_length)
+
+        with unittest.mock.patch.object(
+            zipimport, "_zstd_decompressor_class", RecordingDecompressor
+        ):
+            self.assertEqual(
+                zipimport._zstd_decompress(compressed), b"x" * frame_count
+            )
+
+        self.assertEqual(sum(input_sizes), len(compressed))
+
+    def test_truncated_frame(self):
+        from compression import zstd
+
+        compressed = zstd.compress(b"x")
+        for data in (b"", compressed[:-1]):
+            with self.subTest(data=data):
+                with self.assertRaises(zipimport.ZipImportError):
+                    zipimport._zstd_decompress(data)
+
 
 class BadFileZipImportTestCase(unittest.TestCase):
     def assertZipFailure(self, filename):
@@ -1149,6 +1205,24 @@ class BadFileZipImportTestCase(unittest.TestCase):
         fp.write('a' * 22)
         fp.close()
         self.assertZipFailure(TESTMOD)
+
+    def testInvalidUTF8FileName(self):
+        # A UTF-8-flagged file name that is not valid UTF-8 raises ZipImportError.
+        UTF8_FLAG = 0x800
+        name = b'\xff\xfe\xff'
+        cdh = b'PK\x01\x02' + struct.pack(
+            '<HHHHHHIIIHHHHHII',
+            20, 20, UTF8_FLAG, 0, 0, 0, 0, 50, 100,
+            len(name), 0, 0, 0, 0, 0, 0)
+        cdh += name
+        eocd = b'PK\x05\x06' + struct.pack(
+            '<HHHHIIH', 0, 0, 1, 1, len(cdh), 0, 0)
+        os_helper.unlink(TESTMOD)
+        with open(TESTMOD, 'wb') as fp:
+            fp.write(cdh + eocd)
+        with self.assertRaises(zipimport.ZipImportError) as cm:
+            zipimport.zipimporter(TESTMOD)
+        self.assertIsInstance(cm.exception.__cause__, UnicodeDecodeError)
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):

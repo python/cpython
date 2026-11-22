@@ -1,0 +1,5 @@
+Fix :class:`bytearray` reading and writing memory outside of its buffer
+after ``del b[:n]`` or ``b[:n] = shorter`` failed with :exc:`MemoryError`.
+The bytes are now removed even if shrinking the memory block fails;
+:exc:`MemoryError` is still raised.  Also fix the missing null byte after the
+data when shrinking fails for a slice which is not at the front.

@@ -178,6 +178,10 @@ class TestResult:
     def has_meaningful_duration(self):
         return State.has_meaningful_duration(self.state)
 
+    @property
+    def failed_test_cases(self) -> list[tuple[str, str]]:
+        return (self.errors or []) + (self.failures or [])
+
     def set_env_changed(self, *reasons):
         if self.state is None or self.state == State.PASSED:
             self.state = State.ENV_CHANGED
@@ -222,6 +226,7 @@ class TestResult:
 
     def write_json_into(self, file) -> None:
         json.dump(self, file, cls=_EncodeTestResult)
+        file.flush()
 
     @staticmethod
     def from_json(worker_json: StrJSON) -> 'TestResult':

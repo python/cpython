@@ -468,7 +468,12 @@ _Py_MergeZeroLocalRefcount(PyObject *op)
 Py_ssize_t
 _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
 {
-    assert(!_Py_IsImmortal(op));
+    if (_Py_IsImmortal(op)) {
+        // The object may have become immortal after it was queued to be
+        // merged (for example, by sys.intern()). There is nothing to merge
+        // and the reference total no longer includes the object.
+        return _Py_IMMORTAL_INITIAL_REFCNT;
+    }
 
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyThreadState_GET(), extra);
@@ -583,13 +588,13 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
-        return;
-
-    tp->tp_finalize(self);
     if (_PyType_IS_GC(tp)) {
+        if (_PyGC_FINALIZED(self))
+            return;
+
         _PyGC_SET_FINALIZED(self);
     }
+    tp->tp_finalize(self);
 }
 
 int
@@ -956,6 +961,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
+    clear_freelist(&freelists->tracebacks, is_finalization, PyObject_GC_Del);
 }
 
 /*
@@ -2533,8 +2539,6 @@ _PyObject_FiniState(PyInterpreterState *interp)
 }
 
 
-extern PyTypeObject _PyACallIter_Type;
-extern PyTypeObject _PyACallIterAwaitable_Type;
 extern PyTypeObject _PyLegacyEventHandler_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyMemoryIter_Type;
@@ -2627,8 +2631,6 @@ static PyTypeObject* static_types[_Py_NUM_MANAGED_PREINITIALIZED_TYPES] = {
     &PyWrapperDescr_Type,
     &PyZip_Type,
     &Py_GenericAliasType,
-    &_PyACallIter_Type,
-    &_PyACallIterAwaitable_Type,
     &_PyAsyncGenASend_Type,
     &_PyAsyncGenAThrow_Type,
     &_PyAsyncGenWrappedValue_Type,

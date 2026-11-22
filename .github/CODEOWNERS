@@ -172,8 +172,12 @@ Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
 # WebAssembly (Emscripten)
-Platforms/emscripten          @freakboy3742 @emmatyping
-Tools/wasm/emscripten         @freakboy3742 @emmatyping
+Platforms/emscripten          @freakboy3742 @emmatyping @hoodmane
+Tools/wasm/emscripten         @freakboy3742 @emmatyping @hoodmane
+Python/wasm_trampoline.c      @hoodmane
+Python/emscripten_signal.c    @hoodmane
+Python/emscripten_syscalls.c  @hoodmane
+.github/workflows/reusable-emscripten.yml @hoodmane
 
 # WebAssembly (WASI)
 Platforms/WASI                @brettcannon @emmatyping @savannahostrowski
@@ -283,11 +287,10 @@ Programs/_bootstrap_python.c  @ericsnowcurrently @FFY00
 Programs/python.c             @ericsnowcurrently @FFY00
 
 # JIT
-.github/workflows/jit.yml     @savannahostrowski
-Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
-Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
-Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
-InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
+Include/internal/pycore_jit.h @brandtbucher @diegorusso
+Python/jit.c                  @brandtbucher @diegorusso
+Tools/jit/                    @brandtbucher @diegorusso
+InternalDocs/jit.md           @brandtbucher @diegorusso @AA-Turner
 
 # Lazy imports (PEP 810)
 .github/workflows/reusable-test-lazy-imports-all.yml    @yhg1s @DinoV @pablogsal
@@ -297,12 +300,13 @@ Lib/test/test_lazy_import                               @yhg1s @DinoV @pablogsal
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon @Fidget-Spinner
-Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
-Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
-Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner @savannahostrowski
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
+Grammar/invalid.gram          @pablogsal @lysnikolaou
 Lib/test/test_peg_generator/  @pablogsal @lysnikolaou
 Lib/test/test_tokenize.py     @pablogsal @lysnikolaou
 Lib/tokenize.py               @pablogsal @lysnikolaou
@@ -432,6 +436,7 @@ Lib/test/test_*time.py           @pganssle @StanFromIreland
 Modules/*zoneinfo*               @pganssle @StanFromIreland
 Modules/*time*                   @pganssle @StanFromIreland
 Python/pytime.c                  @pganssle @StanFromIreland
+Python/_strptime.c               @pganssle @StanFromIreland
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -493,6 +498,11 @@ Lib/_markupbase.py                  @ezio-melotti
 Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
 
+# HTTP
+Doc/library/http*             @orsenthil
+Lib/http/                     @orsenthil
+Lib/test/test_http*.py        @orsenthil
+
 # IDLE
 Doc/library/idle.rst          @terryjreedy
 Lib/idlelib/                  @terryjreedy
@@ -508,6 +518,13 @@ Doc/library/importlib.resources.abc.rst   @jaraco @warsaw @FFY00
 Doc/library/importlib.resources.rst       @jaraco @warsaw @FFY00
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
+
+# IO
+Doc/library/io.rst            @cmaloney
+Lib/_pyio.py                  @cmaloney
+Lib/io.py                     @cmaloney
+Lib/test/test_io/             @cmaloney
+Modules/_io/                  @cmaloney
 
 # Itertools
 Doc/library/itertools.rst     @rhettinger
@@ -620,6 +637,11 @@ Modules/_typesmodule.c        @AA-Turner
 # Unittest
 Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
+
+# Urllib
+Doc/library/urllib*           @orsenthil
+Lib/urllib/                   @orsenthil
+Lib/test/test_urllib*.py      @orsenthil
 
 # Venv
 **/*venv*                     @vsajip @FFY00

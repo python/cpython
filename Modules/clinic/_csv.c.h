@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 
 PyDoc_STRVAR(_csv_Dialect___reduce____doc__,
@@ -69,20 +70,27 @@ _csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        changes = PyDict_New();
-        if (changes == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        changes = Py_NewRef(kwargs);
-    }
+    changes = Py_XNewRef(kwargs);
     return_value = _csv_Dialect___replace___impl((DialectObj *)self, changes);
 
 exit:
     /* Cleanup for changes */
     Py_XDECREF(changes);
+
+    return return_value;
+}
+
+static PyObject *
+Reader_iternext_impl(ReaderObj *self);
+
+static PyObject *
+Reader_iternext(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = Reader_iternext_impl((ReaderObj *)self);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -126,15 +134,7 @@ _csv_reader(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_reader_impl(module, iterable, dialect, fmtparams);
 
 exit:
@@ -179,15 +179,7 @@ _csv_writer(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_writer_impl(module, output_file, dialect, fmtparams);
 
 exit:
@@ -250,15 +242,7 @@ _csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect_obj = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    if (kwargs == NULL) {
-        fmtparams = PyDict_New();
-        if (fmtparams == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        fmtparams = Py_NewRef(kwargs);
-    }
+    fmtparams = Py_XNewRef(kwargs);
     return_value = _csv_register_dialect_impl(module, name_obj, dialect_obj, fmtparams);
 
 exit:
@@ -449,4 +433,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a90b8a8ed82497d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30eac1c04ff9d38a input=a9049054013a1b77]*/
