@@ -102,10 +102,12 @@ PyDoc_STRVAR(complex_new__doc__,
 "with the specified real and imaginary components.");
 
 static PyObject *
-complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
+complex_new_impl(PyTypeObject *type, PyObject *real_pos, PyObject *imag_pos,
+                 PyObject *r, PyObject *i);
 
 static PyObject *
-complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+complex_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -128,40 +130,76 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"real", "imag", NULL};
+    static const char * const _keywords[] = {"", "", "real", "imag", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "complex",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
+    PyObject *real_pos = NULL;
+    PyObject *imag_pos = NULL;
     PyObject *r = NULL;
     PyObject *i = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 1) {
+        goto skip_optional_posonly;
     }
-    if (fastargs[0]) {
-        r = fastargs[0];
+    noptargs--;
+    real_pos = fastargs[0];
+    if (nargs < 2) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    imag_pos = fastargs[1];
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[2]) {
+        r = fastargs[2];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
-    i = fastargs[1];
-skip_optional_pos:
-    return_value = complex_new_impl(type, r, i);
+    i = fastargs[3];
+skip_optional_kwonly:
+    return_value = complex_new_impl(type, real_pos, imag_pos, r, i);
 
 exit:
     return return_value;
+}
+
+static PyObject *
+complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return complex_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+complex_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == complex_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return complex_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
 
 PyDoc_STRVAR(complex_from_number__doc__,
@@ -185,4 +223,4 @@ complex_from_number(PyObject *type, PyObject *number)
 
     return return_value;
 }
-/*[clinic end generated code: output=05d2ff43fc409733 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35512ea9996f9935 input=a9049054013a1b77]*/

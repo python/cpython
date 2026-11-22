@@ -1121,27 +1121,19 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /* The constructor should only accept a string as a positional argument,
  * not as by the 'real' keyword.  But Argument Clinic does not allow
  * to distinguish between argument passed positionally and by keyword.
- * So the constructor must be split into two parts: actual_complex_new()
- * handles the case of no arguments and one positional argument, and calls
- * complex_new(), implemented with Argument Clinic, to handle the remaining
- * cases: 'real' and 'imag' arguments.  This separation is well suited
- * for different constructor roles: converting a string or number to a complex
+ * So complex_new() declares 'real' and 'imag' twice: as positional-only and
+ * as keyword-only parameters.  complex_new_impl() calls complex_from_arg()
+ * for one positional argument and handles the remaining cases itself:
+ * 'real' and 'imag' arguments.  This separation is well suited for
+ * different constructor roles: converting a string or number to a complex
  * number and constructing a complex number from real and imaginary parts.
  */
 static PyObject *
-actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+complex_from_arg(PyTypeObject *type, PyObject *arg)
 {
     PyObject *res = NULL;
     PyNumberMethods *nbr;
 
-    if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
-        return complex_new(type, args, kwargs);
-    }
-    if (!PyTuple_GET_SIZE(args)) {
-        return complex_subtype_from_doubles(type, 0, 0);
-    }
-
-    PyObject *arg = PyTuple_GET_ITEM(args, 0);
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(arg) && type == &PyComplex_Type) {
         /* Note that we can't know whether it's safe to return
@@ -1190,10 +1182,16 @@ actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
+@text_signature "(real=0, imag=0)"
 complex.__new__ as complex_new
-    real as r: object(c_default="NULL") = 0
-    imag as i: object(c_default="NULL") = 0
+    real_pos: object = NULL
+    imag_pos: object = NULL
+    /
+    *
+    real as r: object = NULL
+    imag as i: object = NULL
 
 Create a complex number from a string or numbers.
 
@@ -1204,8 +1202,9 @@ with the specified real and imaginary components.
 [clinic start generated code]*/
 
 static PyObject *
-complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=ff4268dc540958a4]*/
+complex_new_impl(PyTypeObject *type, PyObject *real_pos, PyObject *imag_pos,
+                 PyObject *r, PyObject *i)
+/*[clinic end generated code: output=fdc6ecf8914112b7 input=09930f0cd44fd3a8]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
@@ -1214,7 +1213,30 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     int cr_is_complex = 0;
     int ci_is_complex = 0;
 
+    /* See the comment before complex_from_arg(). */
+    if (real_pos != NULL) {
+        if (r != NULL) {
+            PyErr_SetString(PyExc_TypeError, "argument for complex() given "
+                            "by name ('real') and position (1)");
+            return NULL;
+        }
+        if (imag_pos == NULL && i == NULL) {
+            return complex_from_arg(type, real_pos);
+        }
+        r = real_pos;
+    }
+    if (imag_pos != NULL) {
+        if (i != NULL) {
+            PyErr_SetString(PyExc_TypeError, "argument for complex() given "
+                            "by name ('imag') and position (2)");
+            return NULL;
+        }
+        i = imag_pos;
+    }
     if (r == NULL) {
+        if (i == NULL) {
+            return complex_subtype_from_doubles(type, 0, 0);
+        }
         r = _PyLong_GetZero();
     }
     PyObject *orig_r = r;
@@ -1454,7 +1476,8 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    actual_complex_new,                         /* tp_new */
+    complex_new,                                /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_vectorcall = complex_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_COMPLEX,
 };
