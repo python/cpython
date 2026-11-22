@@ -1,2 +1,0 @@
-:mod:`concurrent.interpreters`: fix a crash when internal cross-interpreter
-channel ends have incorrect channel IDs. Patch by Bénédikt Tran.

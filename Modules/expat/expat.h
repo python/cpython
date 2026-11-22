@@ -21,6 +21,7 @@
    Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
    Copyright (c) 2025      Matthew Fernandez <matthew.fernandez@gmail.com>
    Copyright (c) 2026      Braian Plaku <braianplaku@gmail.com>
+   Copyright (c) 2026      Xisco Fauli <xiscofauli@libreoffice.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -1084,7 +1085,7 @@ enum XML_Parser_Property {
 #  if defined(XML_TESTING)
   XML_PROP_INVALID = 0,
 #  endif
-#  if XML_GE == 1
+#  if defined(XML_GE) && XML_GE == 1
   XML_PROP_ALLOC_TRACKER_ACTIVATION_THRESHOLD = 1,   // of type `uint64_t`
   XML_PROP_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION = 2,  // of type `double`
   XML_PROP_BILLION_LAUGHS_ACTIVATION_THRESHOLD = 3,  // of type `uint64_t`
@@ -1146,7 +1147,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
    See https://semver.org
 */
 #  define XML_MAJOR_VERSION 2
-#  define XML_MINOR_VERSION 9
+#  define XML_MINOR_VERSION 10
 #  define XML_MICRO_VERSION 0
 
 #  ifdef __cplusplus

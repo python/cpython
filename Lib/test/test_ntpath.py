@@ -701,9 +701,9 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(r"broken1\baz"),
                                  ABSTFN + r"\broken\bar\baz")
             self.assertPathEqual(ntpath.realpath("broken2"),
-                                 ABSTFN + r"\self\self\missing")
+                                 ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken3"),
-                                 ABSTFN + r"\subdir\parent\subdir\parent\missing")
+                                 ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken4"),
                                  ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken5"),
@@ -718,13 +718,38 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(rb"broken1\baz"),
                                  os.fsencode(ABSTFN + r"\broken\bar\baz"))
             self.assertPathEqual(ntpath.realpath(b"broken2"),
-                                 os.fsencode(ABSTFN + r"\self\self\missing"))
+                                 os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(rb"broken3"),
-                                 os.fsencode(ABSTFN + r"\subdir\parent\subdir\parent\missing"))
+                                 os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken4"),
                                  os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken5"),
                                  os.fsencode(ABSTFN + r"\missing"))
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    @_parameterize({}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
+    def test_realpath_broken_symlink_in_linked_dir(self, kwargs):
+        # A relative target is resolved against the directory containing
+        # the link, not against the path by which the link was reached.
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        os.makedirs(ABSTFN + r"\sub")
+        self.addCleanup(os_helper.rmtree, ABSTFN)
+        os.symlink(".", ABSTFN + r"\sub\alias", target_is_directory=True)
+        os.symlink(r"..\missing", ABSTFN + r"\sub\broken")
+        os.symlink(r"alias\alias\broken", ABSTFN + r"\sub\broken2")
+
+        expected = ABSTFN + r"\missing"
+        for name in "broken", r"alias\broken", "broken2", r"alias\broken2":
+            path = ABSTFN + "\\sub\\" + name
+            with self.subTest(name=name):
+                self.assertPathEqual(ntpath.realpath(path, **kwargs), expected)
+                self.assertPathEqual(
+                    ntpath.realpath(os.fsencode(path), **kwargs),
+                    os.fsencode(expected))
+                self.assertPathEqual(
+                    ntpath.realpath("\\\\?\\" + path, **kwargs),
+                    "\\\\?\\" + expected)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')

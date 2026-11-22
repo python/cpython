@@ -560,11 +560,18 @@ func_get_annotation_dict(PyFunctionObject *op)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     if (op->func_annotations == NULL) {
-        if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
+        PyObject *annotate = op->func_annotate;
+        if (annotate == NULL || !PyCallable_Check(annotate)) {
             Py_RETURN_NONE;
         }
+        // Calling __annotate__ can run arbitrary code which may replace
+        // func_annotate or func_annotations, either directly or from another
+        // thread while the critical section is suspended.  Keep the callable
+        // alive during the call.
+        Py_INCREF(annotate);
         PyObject *one = _PyLong_GetOne();
-        PyObject *ann_dict = _PyObject_CallOneArg(op->func_annotate, one);
+        PyObject *ann_dict = _PyObject_CallOneArg(annotate, one);
+        Py_DECREF(annotate);
         if (ann_dict == NULL) {
             return NULL;
         }
@@ -575,13 +582,22 @@ func_get_annotation_dict(PyFunctionObject *op)
             Py_DECREF(ann_dict);
             return NULL;
         }
+        if (op->func_annotations != NULL) {
+            // Annotations were set during the call, keep them.
+            Py_DECREF(ann_dict);
+            assert(PyDict_Check(op->func_annotations));
+            return op->func_annotations;
+        }
         _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
         return ann_dict;
     }
     if (PyTuple_CheckExact(op->func_annotations)) {
-        PyObject *ann_tuple = op->func_annotations;
+        // Keep the tuple alive while building the dict, since it can be
+        // replaced if the critical section is suspended.
+        PyObject *ann_tuple = Py_NewRef(op->func_annotations);
         PyObject *ann_dict = PyDict_New();
         if (ann_dict == NULL) {
+            Py_DECREF(ann_tuple);
             return NULL;
         }
 
@@ -594,10 +610,12 @@ func_get_annotation_dict(PyFunctionObject *op)
 
             if (err < 0) {
                 Py_DECREF(ann_dict);
+                Py_DECREF(ann_tuple);
                 return NULL;
             }
         }
         _PyObject_XSetRefDelayed(&op->func_annotations, ann_dict);
+        _PyObject_XDecRefDelayed(ann_tuple);
     }
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;

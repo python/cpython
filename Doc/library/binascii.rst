@@ -291,7 +291,7 @@ The :mod:`!binascii` module defines the following functions:
    If the optional argument *strip_ws* is true,
    trailing whitespace is stripped from each line, as required by :rfc:`2045`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Added the *strip_ws* parameter.
 
 
@@ -301,11 +301,11 @@ The :mod:`!binascii` module defines the following functions:
    encoding.  The return value is the converted line(s). If the optional argument
    *quotetabs* is present and true, all tabs and spaces will be encoded.   If the
    optional argument *istext* is present and true, newlines are not encoded but
-   trailing whitespace will be encoded. If the optional argument *header* is
-   present and true, spaces will be encoded as underscores per :rfc:`1522`. If the
-   optional argument *header* is present and false, newline characters will be
-   encoded as well; otherwise linefeed conversion might corrupt the binary data
-   stream.
+   trailing whitespace will be encoded. If the optional argument *istext* is
+   present and false, newline characters will be encoded as well; otherwise
+   linefeed conversion might corrupt the binary data stream. If the optional
+   argument *header* is present and true, spaces will be encoded as underscores
+   per :rfc:`1522`.
 
 
 .. function:: crc_hqx(data, value)

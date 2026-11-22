@@ -603,7 +603,7 @@ otherwise stated.
    Called for each declared attribute for an element type.  If an attribute list
    declaration declares three attributes, this handler is called three times, once
    for each attribute.  *elname* is the name of the element to which the
-   declaration applies and *attname* is the name of the attribute declared.  The
+   declaration applies and *attname* is the name of the attribute declared.
    The attribute type is a string passed as *type*:
    ``'CDATA'``, ``'ID'``, ``'IDREF'``, ``'IDREFS'``, ``'ENTITY'``,
    ``'ENTITIES'``, ``'NMTOKEN'`` or ``'NMTOKENS'``,

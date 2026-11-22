@@ -21,6 +21,7 @@ from test.support import (
     verbose,
 )
 from test import support
+from test.support import os_helper
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
@@ -915,6 +916,96 @@ class TestExit(unittest.TestCase):
     def test_pymain_run_module(self):
         ham = self.ham
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
+
+
+class MiscTests(unittest.TestCase):
+    def test_remove_sys_path0(self):
+        # Check that all path0 copies are removed
+        PATH0 = '/path/zero'
+        STDLIB_PATH = '/to/stdlib'
+        OTHER_PATH = '/other/path'
+        sys_path = [PATH0, STDLIB_PATH, PATH0, '', OTHER_PATH, PATH0]
+        expected = [STDLIB_PATH, '', OTHER_PATH]
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', PATH0),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+            # Calling it twice does nothing
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+        # Do nothing if sys._path0 is sys._stdlib_dir
+        sys_path = ['', STDLIB_PATH, OTHER_PATH]
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', STDLIB_PATH),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+        # Do nothing if sys._path0 is None
+        sys_path = ['', STDLIB_PATH, OTHER_PATH]
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', None),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+    def run_python(self, *args, PYTHONPATH=None):
+        cmd = [sys.executable, *args]
+        env = support.make_clean_env()
+        if PYTHONPATH:
+            env['PYTHONPATH'] = PYTHONPATH
+        proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    @support.requires_subprocess()
+    def test_remove_sys_path0_run_python(self):
+        CODE = textwrap.dedent("""
+            import runpy, sys
+
+            # Remove sys.path[0]
+            orig_path = sys.path.copy()
+            path0 = sys._path0
+            runpy._remove_sys_path0()
+
+            if path0 is not None and path0 in sys.path:
+                raise Exception(f"path0 {path0!r} found in sys.path {sys.path!r}")
+            if not sys.flags.safe_path:
+                if sys.path == orig_path:
+                    raise Exception("sys.path was not changed")
+            else:
+                if sys.path != orig_path:
+                    raise Exception("sys.path was changed")
+
+            # Calling it twice must do nothing
+            clean_path = sys.path.copy()
+            runpy._remove_sys_path0()
+            if sys.path != clean_path:
+                raise Exception("sys.path was changed")
+        """)
+
+        # Test "python -c code"
+        self.run_python('-c', CODE)
+        self.run_python('-P', '-c', CODE)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            name = 'test_remove_sys_path0'
+            filename = os.path.join(tmpdir, f'{name}.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE)
+
+            # Test "python script.py"
+            self.run_python(filename)
+            self.run_python('-P', filename)
+
+            with os_helper.change_cwd(tmpdir):
+                # Test "python -m module"
+                self.run_python('-m', name)
+                self.run_python('-P', '-m', name, PYTHONPATH=tmpdir)
 
 
 if __name__ == "__main__":

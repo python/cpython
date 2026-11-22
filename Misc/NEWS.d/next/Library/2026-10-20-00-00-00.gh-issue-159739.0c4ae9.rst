@@ -1,2 +1,0 @@
-Fix reference cycles involving the types of grapheme iterators and segments
-created by :func:`unicodedata.iter_graphemes`.
