@@ -26,6 +26,7 @@ custom_converter(PyObject *obj, custom_t *val)
 static PyTypeObject VcNew_Type;
 static PyTypeObject VcNewBase_Type;
 static PyTypeObject VcKwOnly_Type;
+static PyTypeObject VcKwds_Type;
 #include "clinic/_testclinic.c.h"
 
 
@@ -2671,6 +2672,37 @@ static PyTypeObject VcKwOnly_Type = {
 };
 
 
+/* VcKwds: @vectorcall + **kwargs.  __new__ returns the parsed arguments. */
+
+/*[clinic input]
+class _testclinic.VcKwds "PyObject *" "&VcKwds_Type"
+@classmethod
+@vectorcall
+_testclinic.VcKwds.__new__ as vc_kwds_new
+    a: object
+    b: object = None
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+vc_kwds_new_impl(PyTypeObject *type, PyObject *a, PyObject *b,
+                 PyObject *kwds)
+/*[clinic end generated code: output=481e680d2e76fdbd input=1c27337c5efd9a79]*/
+{
+    return pack_arguments_newref(3, a, b, kwds);
+}
+
+static PyTypeObject VcKwds_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.VcKwds",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = vc_kwds_new,
+    .tp_vectorcall = vc_kwds_vectorcall,
+};
+
+
 
 /*[clinic input]
 output push
@@ -2886,6 +2918,7 @@ _testclinic_exec(PyObject *m)
 {
     PyTypeObject *static_types[] = {
         &TestClass, &VcNew_Type, &VcNewBase_Type, &VcKwOnly_Type,
+        &VcKwds_Type,
     };
     for (size_t i = 0; i < Py_ARRAY_LENGTH(static_types); i++) {
         if (PyModule_AddType(m, static_types[i]) < 0) {
