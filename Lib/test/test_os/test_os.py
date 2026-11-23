@@ -4682,6 +4682,45 @@ class CPUCountTests(unittest.TestCase):
         affinity2 = os.process_cpu_count()
         self.assertEqual(affinity2, affinity1 - 1)
 
+    @unittest.skipUnless(
+        sys.platform == "linux" and shutil.which("systemd-run") is not None,
+        "testing cgroups requires Linux with systemd-run",
+    )
+    def test_process_cpu_count_cgroups(self):
+        base_count = os.process_cpu_count()
+        if base_count is None:
+            self.skipTest("Could not determine the number of CPUs")
+        elif base_count < 2:
+            self.skipTest("require at least 2 CPU cores to test")
+
+        # TODO test setting the period too
+        # TODO test nested cgroups
+        for setting, expected in [
+            (0.01, 1),
+            (0.5, 1),
+            (1, 1),
+            (1.5, 2),
+            (base_count - 1, base_count - 1),
+        ]:
+            result = int(
+                subprocess.check_output(
+                    [
+                        "systemd-run",
+                        "--user",
+                        "--scope",
+                        "--quiet",
+                        "--property",
+                        f"CPUQuota={int(100 * setting)}%",
+                        "--",
+                        sys.executable,
+                        "-c",
+                        "import os; print(os.process_cpu_count())",
+                    ],
+                    encoding="utf-8",
+                ).strip()
+            )
+            self.assertEqual(result, expected)
+
 
 # FD inheritance check is only useful for systems with process support.
 @support.requires_subprocess()
