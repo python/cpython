@@ -1089,11 +1089,11 @@
           "checksumValue": "5466a341f9c692ef7a958a6881311be597f8e1ce345984cf78414f54793dea4c"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_10_0/expat-2.10.0.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_11_0/expat-2.11.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.10.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.11.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1101,7 +1101,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.10.0"
+      "versionInfo": "2.11.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
