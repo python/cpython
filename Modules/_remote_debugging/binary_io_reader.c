@@ -35,6 +35,13 @@
 
 #define FRAME_INFO_CACHE_SIZE 1024
 
+#if !USE_MMAP
+/* A block on disk is at most MAX_BLOCK_SIZE plus a small header */
+#define MAX_STORED_BLOCK_SIZE (MAX_BLOCK_SIZE + 1024)
+/* Replay reads samples through a window that fits any block */
+#define SAMPLE_WINDOW_SIZE (2 * MAX_BLOCK_SIZE)
+#endif
+
 /* ============================================================================
  * BINARY READER IMPLEMENTATION
  * ============================================================================ */
@@ -304,10 +311,10 @@ reader_validate_count(const char *what, uint32_t count,
 }
 
 static inline int
-reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
+reader_parse_string_table(BinaryReader *reader, const uint8_t *data,
+                          size_t size, size_t offset)
 {
-    if (reader_validate_count("string", reader->strings_count,
-                              file_size - (size_t)reader->string_table_offset,
+    if (reader_validate_count("string", reader->strings_count, size - offset,
                               MIN_STRING_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -318,15 +325,14 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
         return -1;
     }
 
-    size_t offset = (size_t)reader->string_table_offset;
     for (uint32_t i = 0; i < reader->strings_count; i++) {
         size_t prev_offset = offset;
-        uint32_t str_len = decode_varint_u32(data, &offset, file_size);
+        uint32_t str_len = decode_varint_u32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in string table");
             return -1;
         }
-        if (offset > file_size || str_len > file_size - offset) {
+        if (offset > size || str_len > size - offset) {
             PyErr_SetString(PyExc_ValueError, "String table overflow");
             return -1;
         }
@@ -342,7 +348,8 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
 }
 
 static inline int
-reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
+reader_parse_frame_table(BinaryReader *reader, const uint8_t *data,
+                         size_t size, size_t offset)
 {
     /* Check for integer overflow in allocation size calculation. */
 #if SIZEOF_SIZE_T < 8
@@ -352,8 +359,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
     }
 #endif
 
-    if (reader_validate_count("frame", reader->frames_count,
-                              file_size - (size_t)reader->frame_table_offset,
+    if (reader_validate_count("frame", reader->frames_count, size - offset,
                               MIN_FRAME_ENTRY_SIZE) < 0) {
         return -1;
     }
@@ -365,34 +371,33 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         return -1;
     }
 
-    size_t offset = (size_t)reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
         FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
 
         prev_offset = offset;
-        frame->filename_idx = decode_varint_u32(data, &offset, file_size);
+        frame->filename_idx = decode_varint_u32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (filename)");
             return -1;
         }
 
         prev_offset = offset;
-        frame->funcname_idx = decode_varint_u32(data, &offset, file_size);
+        frame->funcname_idx = decode_varint_u32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (funcname)");
             return -1;
         }
 
         prev_offset = offset;
-        frame->lineno = decode_varint_i32(data, &offset, file_size);
+        frame->lineno = decode_varint_i32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (lineno)");
             return -1;
         }
 
         prev_offset = offset;
-        int32_t end_lineno_delta = decode_varint_i32(data, &offset, file_size);
+        int32_t end_lineno_delta = decode_varint_i32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_lineno_delta)");
             return -1;
@@ -405,14 +410,14 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         }
 
         prev_offset = offset;
-        frame->column = decode_varint_i32(data, &offset, file_size);
+        frame->column = decode_varint_i32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (column)");
             return -1;
         }
 
         prev_offset = offset;
-        int32_t end_column_delta = decode_varint_i32(data, &offset, file_size);
+        int32_t end_column_delta = decode_varint_i32(data, &offset, size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_column_delta)");
             return -1;
@@ -425,7 +430,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
         }
 
         /* Read opcode byte */
-        if (offset >= file_size) {
+        if (offset >= size) {
             PyErr_SetString(PyExc_ValueError, "Unexpected end of frame table (opcode)");
             return -1;
         }
@@ -435,7 +440,7 @@ reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_
     return 0;
 }
 
-#if defined(__linux__) && defined(MADV_DONTNEED)
+#if USE_MMAP && defined(__linux__) && defined(MADV_DONTNEED)
 static size_t
 reader_discard_mapped_pages(BinaryReader *reader, size_t start, size_t end)
 {
@@ -452,6 +457,43 @@ static inline size_t
 reader_discard_mapped_pages(BinaryReader *reader, size_t start, size_t end)
 {
     return end;
+}
+#endif
+
+#if !USE_MMAP
+/* Checked fread with GIL release - returns 0 on success, -1 on error */
+static int
+fread_checked_allow_threads(void *data, size_t size, FILE *fp)
+{
+    size_t nread;
+    Py_BEGIN_ALLOW_THREADS
+    nread = fread(data, 1, size, fp);
+    Py_END_ALLOW_THREADS
+    if (nread != size) {
+        int err = errno;
+        if (ferror(fp) && err != 0) {
+            errno = err;
+            PyErr_SetFromErrno(PyExc_IOError);
+        }
+        else {
+            PyErr_Format(PyExc_ValueError,
+                "Unexpected end of file: read %zu of %zu bytes",
+                nread, size);
+        }
+        return -1;
+    }
+    return 0;
+}
+
+static int
+reader_read_at(BinaryReader *reader, size_t offset, uint8_t *buffer,
+               size_t size)
+{
+    if (FSEEK64(reader->fp, (file_offset_t)offset, SEEK_SET) != 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        return -1;
+    }
+    return fread_checked_allow_threads(buffer, size, reader->fp);
 }
 #endif
 
@@ -529,7 +571,8 @@ binary_reader_open(PyObject *path)
     uint8_t *data = reader->mapped_data;
     size_t file_size = reader->mapped_size;
 #else
-    /* Use stdio on Windows */
+    /* Use stdio on Windows. Read the header and tables now, samples during
+     * replay. */
     reader->fp = Py_fopen(path, "rb");
     if (!reader->fp) {
         goto error;
@@ -553,44 +596,15 @@ binary_reader_open(PyObject *path)
         PyErr_SetString(PyExc_ValueError, "File too small for header");
         goto error;
     }
-    if (FSEEK64(reader->fp, 0, SEEK_SET) != 0) {
-        PyErr_SetFromErrno(PyExc_IOError);
-        goto error;
-    }
-
-    reader->file_data = PyMem_Malloc(reader->file_size);
-    if (!reader->file_data) {
-        PyErr_NoMemory();
-        goto error;
-    }
-
-    size_t nread = fread(reader->file_data, 1, reader->file_size, reader->fp);
-    if (nread != reader->file_size) {
-        int err = errno;
-        if (ferror(reader->fp) && err != 0) {
-            errno = err;
-            PyErr_SetFromErrno(PyExc_IOError);
-        }
-        else {
-            PyErr_Format(PyExc_ValueError,
-                "Unexpected end of file: read %zu of %zu bytes",
-                nread, reader->file_size);
-        }
-        goto error;
-    }
-
-    uint8_t *data = reader->file_data;
+    uint8_t data[FILE_HEADER_PLACEHOLDER_SIZE];
     size_t file_size = reader->file_size;
+    if (reader_read_at(reader, 0, data,
+                       Py_MIN(file_size, sizeof(data))) < 0) {
+        goto error;
+    }
 #endif
 
-    /* Parse header and footer */
     if (reader_parse_header(reader, data, file_size) < 0) {
-        goto error;
-    }
-    if (reader_parse_footer(reader, data, file_size) < 0) {
-        goto error;
-    }
-    if (reader_parse_profile_stats(reader, data, file_size) < 0) {
         goto error;
     }
 
@@ -640,19 +654,45 @@ binary_reader_open(PyObject *path)
         goto error;
 #endif
     }
-    reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
     reader->sample_data_size =
         (size_t)reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
 
-    /* Parse string and frame tables */
-    if (reader_parse_string_table(reader, data, file_size) < 0) {
+    /* Tables, statistics and footer follow the samples. The footer is
+     * always the last bytes of the file. */
+    size_t tail_offset = Py_MIN((size_t)reader->string_table_offset,
+                                file_size - FILE_FOOTER_SIZE);
+    size_t tail_size = file_size - tail_offset;
+#if USE_MMAP
+    reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
+    const uint8_t *tail = data + tail_offset;
+#else
+    reader->table_data = PyMem_Malloc(tail_size);
+    if (!reader->table_data) {
+        PyErr_NoMemory();
         goto error;
     }
-    if (reader_parse_frame_table(reader, data, file_size) < 0) {
+    if (reader_read_at(reader, tail_offset, reader->table_data,
+                       tail_size) < 0) {
         goto error;
     }
-    (void)reader_discard_mapped_pages(
-        reader, (size_t)reader->string_table_offset, file_size);
+    const uint8_t *tail = reader->table_data;
+#endif
+    if (reader_parse_footer(reader, tail, tail_size) < 0 ||
+        reader_parse_profile_stats(reader, tail, tail_size) < 0 ||
+        reader_parse_string_table(
+            reader, tail, tail_size,
+            (size_t)reader->string_table_offset - tail_offset) < 0 ||
+        reader_parse_frame_table(
+            reader, tail, tail_size,
+            (size_t)reader->frame_table_offset - tail_offset) < 0) {
+        goto error;
+    }
+#if USE_MMAP
+    (void)reader_discard_mapped_pages(reader, tail_offset, file_size);
+#else
+    PyMem_Free(reader->table_data);
+    reader->table_data = NULL;
+#endif
 
     return reader;
 
@@ -1599,23 +1639,81 @@ replay_block(BinaryReader *reader, RemoteDebuggingState *state,
     return result;
 }
 
+/* Set section and offset to the block at sample offset pos */
+#if USE_MMAP
+static int
+reader_load_samples(BinaryReader *reader, size_t pos, ByteBuffer *section,
+                    size_t *offset)
+{
+    *section = (ByteBuffer){reader->sample_data, reader->sample_data_size, 0};
+    *offset = pos;
+    return 0;
+}
+#else
+static int
+reader_load_samples(BinaryReader *reader, size_t pos, ByteBuffer *section,
+                    size_t *offset)
+{
+    ByteBuffer *window = &reader->sample_window;
+    if (pos == 0) {
+        /* A new replay starts at the first block */
+        if (buffer_reserve(window, SAMPLE_WINDOW_SIZE) < 0) {
+            return -1;
+        }
+        if (FSEEK64(reader->fp, FILE_HEADER_PLACEHOLDER_SIZE, SEEK_SET) != 0) {
+            PyErr_SetFromErrno(PyExc_IOError);
+            return -1;
+        }
+        window->size = 0;
+        reader->sample_window_start = 0;
+    }
+
+    size_t start = reader->sample_window_start;
+    size_t end = start + window->size;
+    size_t needed = Py_MIN(MAX_STORED_BLOCK_SIZE,
+                           reader->sample_data_size - pos);
+    if (end - pos < needed) {
+        /* Keep the unread bytes and refill the rest */
+        size_t kept = end - pos;
+        memmove(window->data, window->data + (pos - start), kept);
+        size_t size = Py_MIN(SAMPLE_WINDOW_SIZE - kept,
+                             reader->sample_data_size - end);
+        if (fread_checked_allow_threads(window->data + kept, size,
+                                        reader->fp) < 0) {
+            return -1;
+        }
+        reader->sample_window_start = pos;
+        window->size = kept + size;
+    }
+    *section = (ByteBuffer){window->data, window->size, 0};
+    *offset = pos - reader->sample_window_start;
+    return 0;
+}
+#endif
+
 static int
 replay_blocks(BinaryReader *reader, RemoteDebuggingState *state,
               PyObject *collector, PyObject *progress_callback,
               Py_ssize_t *replayed)
 {
-    ByteBuffer section = {reader->sample_data, reader->sample_data_size, 0};
-    size_t offset = 0;
+    size_t pos = 0;
     size_t discarded = 0;
-    while (offset < section.size) {
+    while (pos < reader->sample_data_size) {
+        ByteBuffer section;
+        size_t offset;
+        if (reader_load_samples(reader, pos, &section, &offset) < 0) {
+            return -1;
+        }
+        size_t block_start = offset;
         DecodedBlock block;
         if (decode_block(reader, &section, &offset, &block) < 0 ||
             replay_block(reader, state, collector, progress_callback,
                          &block, replayed) < 0) {
             return -1;
         }
+        pos += offset - block_start;
         discarded = reader_discard_mapped_pages(
-            reader, discarded, FILE_HEADER_PLACEHOLDER_SIZE + offset);
+            reader, discarded, FILE_HEADER_PLACEHOLDER_SIZE + pos);
     }
     return 0;
 }
@@ -1852,11 +1950,10 @@ binary_reader_close(BinaryReader *reader)
         Py_fclose(reader->fp);
         reader->fp = NULL;
     }
-    if (reader->file_data) {
-        PyMem_Free(reader->file_data);
-        reader->file_data = NULL;
-        reader->file_size = 0;
-    }
+    PyMem_Free(reader->table_data);
+    reader->table_data = NULL;
+    buffer_clear(&reader->sample_window);
+    reader->file_size = 0;
 #endif
 
 #ifdef HAVE_ZSTD

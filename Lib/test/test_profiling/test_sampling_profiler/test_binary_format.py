@@ -1227,6 +1227,33 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             ):
                 self.assertIs(first_frame, second_frame)
 
+    def test_reader_replays_large_file_twice(self):
+        """Replaying more sample data than the reader buffers is exact."""
+        class StackCollector:
+            def __init__(self):
+                self.stacks = []
+
+            def collect(self, stack_frames, timestamps_us):
+                for interp in stack_frames:
+                    for thread in interp.threads:
+                        stack = list(thread.frame_info)
+                        self.stacks.extend([stack] * len(timestamps_us))
+
+        # Deep, shifting stacks give about 2.5 MB of sample data, more than
+        # the reader reads at once on platforms without mmap.
+        frames = [make_frame("deep.py", line, "f") for line in range(1356)]
+        stacks = [frames[i % 1100:i % 1100 + 256] for i in range(5000)]
+        samples = [[make_interpreter(0, [make_thread(1, stack)])]
+                   for stack in stacks]
+        filename = self.create_binary_file(samples)
+        with BinaryReader(filename) as reader:
+            first = StackCollector()
+            second = StackCollector()
+            self.assertEqual(reader.replay_samples(first), len(samples))
+            self.assertEqual(reader.replay_samples(second), len(samples))
+        self.assertEqual(first.stacks, stacks)
+        self.assertEqual(second.stacks, stacks)
+
     def test_writer_repeat_run_spans_interleaved_streams(self):
         """A thread's repeat run continues across other threads' samples."""
         filename = self.temp_filename()
