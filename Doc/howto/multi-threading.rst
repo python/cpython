@@ -26,9 +26,8 @@ Threads can also divide work between CPU cores. In the default build of
 CPython, :term:`parallelism` between threads is only possible while an
 operation releases the :term:`global interpreter lock` (GIL), as blocking I/O
 and many functions implemented in :term:`native code` do. In the
-:term:`free-threaded build` the GIL is disabled, and threads can also run
-Python code in parallel, assuming some other lock or coordination does not
-hinder parallelism.
+:term:`free-threaded build`, there is no GIL and threads can run
+Python code in parallel.
 
 All the threads in a program share the same modules and globals. Objects can
 also be shared between threads, allowing multiple threads to simultaneously
@@ -37,17 +36,17 @@ access the same data directly. Sharing objects can avoid the costs that
 processes.
 
 Sharing objects between threads also introduces the possibility of bugs that
-cannot occur in single-threaded programs. An :mod:`asyncio` task only
-gives up control at an ``await``, but a thread can be interrupted at any point
-so that another can run, and two threads can even be using the same objects at
-the same instant. Code that is correct when one thread runs it can therefore
-give wrong answers when several threads run it, and it may only do so
-occasionally. Such a bug is called a :term:`race condition`.
+cannot occur in single-threaded programs. Tasks running on one asyncio event
+loop only switch at an await, but a thread can be interrupted at any point so
+that another can run, and two threads can even be using the same objects at the
+same instant. Code that is correct in single-threaded use can therefore give
+wrong answers in multi-threaded use, and it may only do so occasionally. Such a
+bug is called a :term:`race condition`.
 
-Code that behaves correctly when several threads use it concurrently is called
-:term:`thread-safe`. The rest of this HOWTO explains how to recognize code
-that is not thread-safe and how to fix it. After reading this HOWTO, you
-should be able to answer these questions:
+APIs that behave correctly when several threads use functions, objects, and
+types provided the API concurrently are called :term:`thread-safe`. The rest of
+this HOWTO explains how to recognize code that is not thread-safe and how to fix
+it. After reading this HOWTO, you should be able to answer these questions:
 
 - Should my program use threads or a different form of concurrency?
 - Why does my threaded program give different results from run to run and how
@@ -57,15 +56,16 @@ should be able to answer these questions:
   cost?
 - How do I coordinate work between the threads in my program?
 
-This HOWTO describes several strategies for making code thread-safe. Working
-with threads requires a trade-off between safety, performance and code
-simplicity. Each section describes the costs of a strategy as well as its
-benefits. Hopefully you can use the examples below to write and update
-real-world Python code to use threads or fix issues seen when executing in
-multiple threads.
+This HOWTO is for Python programmers who are new to writing multi-threaded
+code. It assumes you know Python's built-in types and how to write functions and
+classes, and it does not assume any experience with threads.
 
-.. TODO: adjust the list of questions to match the sections once they are
-   written.
+Below, we describe several strategies for making Python code
+thread-safe. Working with threads requires a trade-off between safety,
+performance and code simplicity. Each section describes the costs of a strategy
+as well as its benefits. Hopefully you can use the examples below to write and
+update real-world Python code to use threads or fix issues seen when executing
+in multiple threads.
 
 .. TODO: link glossary entries on first use. Beyond the ones linked above,
    the glossary has: atomic operation, concurrent modification, data race,
@@ -99,30 +99,8 @@ behave differently are marked with a box titled "Free-threaded build".
          duplicate items.
 
 
-Is threading the right tool?
-============================
-
-.. TODO: keep this to a paragraph or two.
-   - Who this HOWTO is for.
-   - Short comparison with asyncio, multiprocessing and
-     concurrent.interpreters, with links rather than detail.
-   - asyncio and threads both keep a program going while something waits.
-     asyncio needs code written with async and await; threads work with
-     ordinary blocking functions, and asyncio itself uses threads for
-     those (asyncio.to_thread(), loop.run_in_executor()).
-   - The price of not needing async and await: an asyncio task switches
-     only at an await, while a thread can be preempted anywhere and
-     threads can run simultaneously on the same objects.
-   - Compared with multiprocessing, threads avoid the cost of starting
-     processes and of copying data between them. Do not describe sharing
-     as free: see the note on contention under "Fine-grained locks".
-   - Build difference: under the GIL, threads run in parallel only while an
-     operation releases the GIL, which blocking I/O and much native code
-     do. On the free-threaded build, Python code runs in parallel too.
-
-
-What goes wrong
-===============
+Understanding Race Conditions
+=============================
 
 .. TODO:
    - Motivating example: a counter. Show the serial version giving a
@@ -145,15 +123,40 @@ What goes wrong
 Running threads
 ===============
 
-.. TODO: keep this short; the threading and concurrent.futures references
-   cover the API.
-   - concurrent.futures.ThreadPoolExecutor first, threading.Thread second.
-   - Waiting for threads: join() and futures.
-   - Exceptions: threading.excepthook compared with exceptions carried by
-     futures.
-   - Stopping a thread: there is no way to kill one, so cancellation is
-     cooperative (threading.Event).
-   - Daemon threads and interpreter shutdown.
+The standard library has several interfaces for running a code in another
+thread. The table below states, for each of a set of common tasks, the best
+tool to use for that task.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Task you want to perform
+     - The best tool for the task
+   * - Run a function in another thread and use its return value
+     - :meth:`ThreadPoolExecutor.submit() <concurrent.futures.Executor.submit>`,
+       which returns a :class:`~concurrent.futures.Future`
+   * - Run a function once for each item in a collection
+     - :meth:`ThreadPoolExecutor.map() <concurrent.futures.Executor.map>`
+   * - Run a function in a thread with low-level control over the thread
+     - :class:`threading.Thread`
+   * - Call a blocking function from :mod:`asyncio` code
+     - :func:`asyncio.to_thread`
+   * - Wait for threads to finish
+     - A :keyword:`with` block around a
+       :class:`~concurrent.futures.ThreadPoolExecutor`, or
+       :meth:`Thread.join() <threading.Thread.join>`
+   * - Handle an exception raised in another thread
+     - Call :meth:`~concurrent.futures.Future.result` on the
+       :class:`~concurrent.futures.Future` that
+       :meth:`ThreadPoolExecutor.submit()
+       <concurrent.futures.Executor.submit>` returned.
+
+Stopping a long-running thread is tricky. Python has no way to stop a thread
+from outside, and a thread stopped at an arbitrary point could leave a lock
+held or shared data half updated. Cancelling a thread therefore requires
+coordination, for example by having the thread periodically check a
+:class:`threading.Event` and return when the event is set.
 
 
 Strategies for sharing data
