@@ -4,11 +4,11 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
@@ -225,7 +225,8 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *errors);
 
 static int
-_io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+_io_IncrementalNewlineDecoder___init___helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -257,13 +258,12 @@ _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject 
     #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    Py_ssize_t noptargs = nargs + nkw - 2;
     PyObject *decoder;
     int translate;
     PyObject *errors = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -279,6 +279,72 @@ _io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject 
     errors = fastargs[2];
 skip_optional_pos:
     return_value = _io_IncrementalNewlineDecoder___init___impl((nldecoder_object *)self, decoder, translate, errors);
+
+exit:
+    return return_value;
+}
+
+static int
+_io_IncrementalNewlineDecoder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return _io_IncrementalNewlineDecoder___init___helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+_io_IncrementalNewlineDecoder_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+    PyObject *decoder;
+    int translate;
+    PyObject *errors = NULL;
+
+    assert(_PyType_CAST(type)->tp_init == _io_IncrementalNewlineDecoder___init__);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 2 || nargs > 3) {
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+        if (self == NULL) {
+            return NULL;
+        }
+        _result = _io_IncrementalNewlineDecoder___init___helper(self, args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
+    }
+    decoder = args[0];
+    translate = PyObject_IsTrue(args[1]);
+    if (translate < 0) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    errors = args[2];
+skip_optional:
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    _result = _io_IncrementalNewlineDecoder___init___impl((nldecoder_object *)self, decoder, translate, errors);
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
 
 exit:
     return return_value;
@@ -1261,4 +1327,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=f3dd3fff36cd2142 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea77f719ad508581 input=a9049054013a1b77]*/
