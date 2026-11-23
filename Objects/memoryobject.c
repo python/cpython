@@ -3446,9 +3446,11 @@ cmp_base(const char *p, const char *q, const Py_ssize_t *shape,
 
     if ((*fmt == 'B' || *fmt == 'b' || *fmt == 'c') &&
         pstrides[0] == 1 && qstrides[0] == 1 &&
-        psuboffsets == NULL && qsuboffsets == NULL && shape[0] > 0) {
+        psuboffsets == NULL && qsuboffsets == NULL && shape[0] > 0)
+    {
         return memcmp(p, q, shape[0]) == 0;
     }
+
     for (i = 0; i < shape[0]; p+=pstrides[0], q+=qstrides[0], i++) {
         const char *xp = ADJUST_PTR(p, psuboffsets, 0);
         const char *xq = ADJUST_PTR(q, qsuboffsets, 0);
