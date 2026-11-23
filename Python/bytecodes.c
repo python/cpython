@@ -1665,9 +1665,13 @@ dummy_func(
         // GET_AWAITABLE: SEND is at next_instr and YIELD_VALUE follows its cache.
         replaced op(_LAZY_CALL_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- lazy_outcome[(oparg >> 2) & 1], res)) {
             if (oparg & GET_AWAITABLE_AWAITED_CALL) {
-                _PyStackRef outcome = lazy_outcome[0];
+                // The slot is at a fixed offset here: reading it through
+                // lazy_outcome would make the load wait for oparg.
+                _PyStackRef *slot = &stack_pointer[-2];
+                assert(slot == lazy_outcome);
+                _PyStackRef outcome = *slot;
                 if (PyStackRef_IsTaggedInt(outcome)) {
-                    lazy_outcome[0] = PyStackRef_NULL;
+                    *slot = PyStackRef_NULL;
                     assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
                                                (int)(next_instr - _PyFrame_GetBytecode(frame))).op.code == SEND);
                     _Py_CODEUNIT *end_send = next_instr + 1 + INLINE_CACHE_ENTRIES_SEND + next_instr->op.arg;
@@ -1686,7 +1690,7 @@ dummy_func(
                 }
                 else if (!PyStackRef_IsNull(outcome)) {
                     _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(outcome);
-                    lazy_outcome[0] = PyStackRef_NULL;
+                    *slot = PyStackRef_NULL;
                     PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
                     _PyStackRef v = res;
                     DEAD(res);

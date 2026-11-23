@@ -7649,9 +7649,11 @@
                 res = stack_pointer[-1];
                 lazy_outcome = &stack_pointer[-1 - ((oparg >> 2) & 1)];
                 if (oparg & GET_AWAITABLE_AWAITED_CALL) {
-                    _PyStackRef outcome = lazy_outcome[0];
+                    _PyStackRef *slot = &stack_pointer[-2];
+                    assert(slot == lazy_outcome);
+                    _PyStackRef outcome = *slot;
                     if (PyStackRef_IsTaggedInt(outcome)) {
-                        lazy_outcome[0] = PyStackRef_NULL;
+                        *slot = PyStackRef_NULL;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyFrame_StackPointerValidate(frame);
                         assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
@@ -7676,7 +7678,7 @@
                     }
                     else if (!PyStackRef_IsNull(outcome)) {
                         _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(outcome);
-                        lazy_outcome[0] = PyStackRef_NULL;
+                        *slot = PyStackRef_NULL;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyFrame_StackPointerValidate(frame);
                         PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
