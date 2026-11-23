@@ -861,9 +861,8 @@ PyDoc_STRVAR(map_new__doc__,
 "map(function, iterable, /, *iterables, strict=False)\n"
 "--\n"
 "\n"
-"Make an iterator that applies function to items of the iterables.\n"
+"Make an iterator that computes the function using arguments from each of the iterables.\n"
 "\n"
-"The function is called with one argument from each of the iterables.\n"
 "Stops when the shortest iterable is exhausted.\n"
 "\n"
 "If strict is true and one of the arguments is exhausted before the\n"
@@ -1766,4 +1765,4 @@ zip_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=7f6bdf6537550b8a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26ee4ad6d2521b8a input=a9049054013a1b77]*/

@@ -1428,6 +1428,7 @@ typedef struct {
 
 /*[clinic input]
 class map "mapobject *" "&PyMap_Type"
+@permit_long_summary
 @vectorcall
 @classmethod
 map.__new__ as map_new
@@ -1438,9 +1439,8 @@ map.__new__ as map_new
     *iterables: array
     strict: bool = False
 
-Make an iterator that applies function to items of the iterables.
+Make an iterator that computes the function using arguments from each of the iterables.
 
-The function is called with one argument from each of the iterables.
 Stops when the shortest iterable is exhausted.
 
 If strict is true and one of the arguments is exhausted before the
@@ -1451,7 +1451,7 @@ static PyObject *
 map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
              PyObject * const *iterables, Py_ssize_t iterables_length,
              int strict)
-/*[clinic end generated code: output=de1354b02d08604b input=d3bf952f6bb775c8]*/
+/*[clinic end generated code: output=de1354b02d08604b input=8a35a5f93c39cbcf]*/
 {
     PyObject *iters = PyTuple_New(iterables_length + 1);
     if (iters == NULL) {
