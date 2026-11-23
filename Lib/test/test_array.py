@@ -105,6 +105,19 @@ class MiscTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     a.fromlist(lst)
 
+    @subTests("typecode", ["e", "f", "d", "Zf", "Zd"])
+    def test_setitem_conversion_error(self, typecode):
+        class BadNumber:
+            def __float__(self):
+                raise ValueError("conversion failed")
+
+            __complex__ = __float__
+
+        a = array.array(typecode, [-1, 42])
+        with self.assertRaisesRegex(ValueError, "conversion failed"):
+            a[1] = BadNumber()
+        self.assertEqual(a.tolist(), [-1, 42])
+
     def test_typecodes(self):
         self.assertIsInstance(array.typecodes, tuple)
         for typecode in array.typecodes:
