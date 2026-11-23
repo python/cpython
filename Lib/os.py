@@ -1225,6 +1225,123 @@ if name == 'nt':
         )
 
 
+if sys.platform == "linux":
+    def _get_cgroup2_mount_point():
+        from builtins import open
+
+        if path.exists("/sys/fs/cgroup/cgroup.controllers"):
+            return "/sys/fs/cgroup"
+
+        try:
+            with open("/proc/mounts") as fp:
+                for line in fp:
+                    parts = line.split()
+                    _, mount_dir, mount_type, *_ = parts
+                    if mount_type == "cgroup2":
+                        for quoted, value in [
+                            (r"\040", " "),
+                            (r"\011", "\t"),
+                            (r"\012", "\n"),
+                            (r"\134", "\\"),
+                        ]:
+                            mount_dir = mount_dir.replace(quoted, value)
+                        return mount_dir
+        except OSError:
+            return
+
+
+    def _parse_cgroup2_cpu_max(filename):
+        """
+        Returns None if file not found or a parsing error, or a number of cores
+        if successful.
+        """
+        from builtins import open
+
+        try:
+            with open(filename) as fp:
+                line = fp.readline()
+        except OSError:
+            return
+
+        parts = line.split()
+        if len(parts) != 2:
+            return
+
+        if parts[0] == "max":
+            return cpu_count()
+
+        try:
+            quota = int(parts[0])
+            period = int(parts[1])
+        except ValueError:
+            return
+
+        # Rounds up in order to saturate CPUs if the quota is fractional:
+        import math
+
+        return max(math.ceil(quota / period), 1)
+
+
+    def _cpu_count_cgroups():
+        from builtins import open
+
+        sched = sched_getscheduler(0)
+        if sched in (SCHED_FIFO, SCHED_RR, SCHED_DEADLINE):
+            return
+
+        cgroup_subpath = None
+        try:
+            fp = open("/proc/self/cgroup")
+        except OSError:
+            return
+        with fp:
+            for line in fp:
+                # Cgroups v2 format; see cgroups(7) man page, section on
+                # /proc/pid/cgroups
+                if line.startswith("0::/"):
+                    cgroup_subpath = line[3:].rstrip("\n")
+
+        if cgroup_subpath is None:
+            return
+
+        cgroup2_mount_point = _get_cgroup2_mount_point()
+        if cgroup2_mount_point is None:
+            return
+
+        # Traverse nested controllers, from child to parent, looking for a CPU
+        # limit:
+        cpu_quota = cpu_count()
+        while True:
+            cpu_max_filename = path.join(
+                cgroup2_mount_point,
+                cgroup_subpath[1:],
+                "cpu.max"
+            )
+            num_cpus = _parse_cgroup2_cpu_max(cpu_max_filename)
+            if num_cpus is not None:
+                # Per the docs
+                # (https://docs.kernel.org/admin-guide/cgroup-v2.html): "When a
+                # controller is enabled on a nested cgroup, it always restricts
+                # the resource distribution further. The restrictions set
+                # closer to the root in the hierarchy can not be overridden
+                # from further away." So we have to pick the minimum.
+                cpu_quota = min(num_cpus, cpu_quota)
+                if cpu_quota == 1:
+                    # Can't get any lower than 1:
+                    return 1
+
+            # Move on to the parent cgroup, if any:
+            if cgroup_subpath == "/":
+                break
+
+            cgroup_subpath = path.dirname(cgroup_subpath)
+
+        return cpu_quota
+else:
+    def _cpu_count_cgroups():
+        return
+
+
 if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
     def process_cpu_count():
         """
@@ -1233,7 +1350,10 @@ if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
         Return the number of logical CPUs usable by the calling thread of the
         current process. Return None if indeterminable.
         """
-        return len(sched_getaffinity(0))
+        cpu_count_cgroups = _cpu_count_cgroups()
+        if cpu_count_cgroups is None:
+            cpu_count_cgroups = cpu_count()
+        return min(len(sched_getaffinity(0)), cpu_count_cgroups)
 else:
     # Just an alias to cpu_count() (same docstring)
     process_cpu_count = cpu_count
