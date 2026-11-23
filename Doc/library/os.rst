@@ -6281,7 +6281,7 @@ Miscellaneous System Information
 
    Get the number of logical CPUs usable by the calling thread of the **current
    process**. Returns ``None`` if undetermined. It can be less than
-   :func:`cpu_count` depending on the CPU affinity.
+   :func:`cpu_count` depending on the CPU affinity and cgroups settings.
 
    The :func:`cpu_count` function can be used to get the number of logical CPUs
    in the **system**.
