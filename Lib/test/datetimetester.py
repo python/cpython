@@ -697,6 +697,28 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             td = timedelta(microseconds=ms)
             self.assertEqual(td.total_seconds(), td / timedelta(seconds=1))
 
+        # Converting the numerator to double before division loses a microsecond.
+        us = 2**53 + 1
+        td = timedelta(microseconds=us)
+        self.assertEqual(td.total_seconds(), us / 1_000_000)
+
+    def test_to_microseconds_int64_boundary(self):
+        us_per_day = 86_400 * 1_000_000
+        max_seconds = (2**63 - 1) // 1_000_000 - 1
+        first_fast = -max_seconds * 1_000_000
+        last_fast = max_seconds * 1_000_000 + 999_999
+
+        for value in (
+            timedelta.min.days * us_per_day,
+            -2**63 - 1, -2**63,
+            first_fast - 1, first_fast,
+            last_fast, last_fast + 1,
+            2**63 - 1, 2**63,
+            (timedelta.max.days + 1) * us_per_day - 1,
+        ):
+            td = timedelta(microseconds=value)
+            self.assertEqual(td // timedelta.resolution, value)
+
     def test_carries(self):
         t1 = timedelta(days=100,
                        weeks=-7,
