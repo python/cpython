@@ -4,12 +4,12 @@
 Multi-threaded programming
 **************************
 
-A :term:`thread` is an independent flow of execution inside a program.  Every
+A :term:`thread` is an independent flow of execution inside a program. Every
 Python program has at least one thread, the *main thread*, and a program
-that never starts another is *single-threaded*.  A *multi-threaded* program
+that never starts another is *single-threaded*. A *multi-threaded* program
 starts more threads, either directly with the :mod:`threading` module or
 indirectly through functionality provided by a library, such as
-:class:`concurrent.futures.ThreadPoolExecutor`.  Each thread runs its own
+:class:`concurrent.futures.ThreadPoolExecutor`. Each thread runs its own
 function :term:`concurrently <concurrency>` with the others.
 
 Using threads allows a program's execution to proceed when it is necessary to
@@ -22,38 +22,39 @@ examples of blocking calls. :mod:`asyncio` does the same job for code written
 with ``async`` and ``await``; threads do it for ordinary functions that may
 block.
 
-Threads can also divide work between CPU cores.  In the default build of
+Threads can also divide work between CPU cores. In the default build of
 CPython, :term:`parallelism` between threads is only possible while an
 operation releases the :term:`global interpreter lock` (GIL), as blocking I/O
-and many functions implemented in :term:`native code` do.  In the
+and many functions implemented in :term:`native code` do. In the
 :term:`free-threaded build` the GIL is disabled, and threads can also run
 Python code in parallel, assuming some other lock or coordination does not
 hinder parallelism.
 
 All the threads in a program share the same modules and globals. Objects can
 also be shared between threads, allowing multiple threads to simultaneously
-access the the same data directly. This can avoid the costs that
+access the same data directly. Sharing objects can avoid the costs that
 :mod:`multiprocessing` pays to start processes and to copy data between
 processes.
 
 Sharing objects between threads also introduces the possibility of bugs that
-cannot occur in single-threaded programs.  An :mod:`asyncio` task only
+cannot occur in single-threaded programs. An :mod:`asyncio` task only
 gives up control at an ``await``, but a thread can be interrupted at any point
 so that another can run, and two threads can even be using the same objects at
-the same instant.  Code that is correct when one thread runs it can therefore
+the same instant. Code that is correct when one thread runs it can therefore
 give wrong answers when several threads run it, and it may only do so
-occasionally.  Such a bug is called a :term:`race condition`.
+occasionally. Such a bug is called a :term:`race condition`.
 
 Code that behaves correctly when several threads use it concurrently is called
-thread-safe. The rest of the guide explains how to recognize code that is not
-thread-safe and how to fix it. After reading the guide, you should be able to
-answer these questions:
+:term:`thread-safe`. The rest of this HOWTO explains how to recognize code
+that is not thread-safe and how to fix it. After reading this HOWTO, you
+should be able to answer these questions:
 
 - Should my program use threads or a different form of concurrency?
 - Why does my threaded program give different results from run to run and how
   do I make my program deterministic?
 - Which objects can my program safely share between threads?
-- What are my options for protecting shared data, and what does each option cost?
+- What are my options for protecting shared data, and what does each option
+  cost?
 - How do I coordinate work between the threads in my program?
 
 This HOWTO describes several strategies for making code thread-safe. Working
@@ -66,14 +67,14 @@ multiple threads.
 .. TODO: adjust the list of questions to match the sections once they are
    written.
 
-.. TODO: link glossary entries on first use.  Beyond the ones linked above,
+.. TODO: link glossary entries on first use. Beyond the ones linked above,
    the glossary has: atomic operation, concurrent modification, data race,
    deadlock, global interpreter lock, global state, immutable, lock-free,
    mutable, per-object lock, reentrant, synchronization primitive.
 
 The advice applies both to the default build of CPython and to the
-:term:`free-threaded build`.  Places where the two builds
-behave differently are called out where they matter.
+:term:`free-threaded build`. Places where the two builds
+behave differently are marked with a box titled "Free-threaded build".
 
 .. seealso::
 
@@ -85,17 +86,24 @@ behave differently are called out where they matter.
       from several threads.
 
    :mod:`threading`, :mod:`queue` and :mod:`concurrent.futures`
-      The reference documentation for the modules used in this guide.
+      The reference documentation for the modules used in this HOWTO.
 
-.. TODO: decide on one callout style for build differences (for example a
-   note that starts "On the free-threaded build") and use it throughout.
+.. TODO: every "Build difference" item in the notes below becomes a titled
+   admonition, placed where the difference matters. Use the same title
+   every time and describe both builds inside the box when the difference
+   is about the default build:
+
+      .. admonition:: Free-threaded build
+
+         Concurrent calls to ``next()`` on one iterator can skip or
+         duplicate items.
 
 
 Is threading the right tool?
 ============================
 
 .. TODO: keep this to a paragraph or two.
-   - Who this guide is for.
+   - Who this HOWTO is for.
    - Short comparison with asyncio, multiprocessing and
      concurrent.interpreters, with links rather than detail.
    - asyncio and threads both keep a program going while something waits.
@@ -106,30 +114,30 @@ Is threading the right tool?
      only at an await, while a thread can be preempted anywhere and
      threads can run simultaneously on the same objects.
    - Compared with multiprocessing, threads avoid the cost of starting
-     processes and of copying data between them.  Do not describe sharing
+     processes and of copying data between them. Do not describe sharing
      as free: see the note on contention under "Fine-grained locks".
    - Build difference: under the GIL, threads run in parallel only while an
      operation releases the GIL, which blocking I/O and much native code
-     do.  On the free-threaded build, Python code runs in parallel too.
+     do. On the free-threaded build, Python code runs in parallel too.
 
 
 What goes wrong
 ===============
 
 .. TODO:
-   - Motivating example: a counter.  Show the serial version giving a
+   - Motivating example: a counter. Show the serial version giving a
      consistent result, then an unsynchronized threaded version giving
      results that vary from run to run.
-   - The example has to fail on both builds.  A bare ``counter += 1`` loop
+   - The example has to fail on both builds. A bare ``counter += 1`` loop
      almost never loses updates under the GIL since 3.10, because thread
-     switches only happen at backward jumps and calls.  Use a check-then-act
+     switches only happen at backward jumps and calls. Use a check-then-act
      with a call in the middle, or use the difference to show that the GIL
      hides races without removing them.
    - Define "data race" and "race condition" and keep them distinct.
      Link the glossary entries for both, and for "atomic operation".
    - Compound operations: check-then-act and read-modify-write.
    - What built-in types guarantee: single operations are safe, sequences of
-     them are not.  Link to the thread safety reference.
+     them are not. Link to the thread safety reference.
    - Wording: reserve "guarantee" for documented behaviour on both builds.
      Anything else that happens to hold under the GIL is not to be relied on.
 
@@ -152,7 +160,7 @@ Strategies for sharing data
 ===========================
 
 The strategies below are ordered from the one to reach for first to the one
-to reach for last.  Each fixes the same running example, a global dictionary
+to reach for last. Each fixes the same running example, a global dictionary
 used as a cache, so that the costs can be compared.
 
 .. TODO: introduce the running example: a module-level dict cache filled by
@@ -215,11 +223,11 @@ Don't share
 -----------
 
 .. TODO:
-   - What matters is shared mutation.  Work that is partitioned so that no
+   - What matters is shared mutation. Work that is partitioned so that no
      two threads touch the same data is safe by construction.
    - Example: filling an image where each thread fills a disjoint band.
      Standard library only (bytearray or list), using executor.map().
-   - Per-thread results merged at the end.  This also fixes the counter.
+   - Per-thread results merged at the end. This also fixes the counter.
    - threading.local and contextvars for per-thread state; when to prefer
      which.
    - Cost: the work has to be restructured, and per-thread copies of a cache
@@ -229,7 +237,7 @@ Don't share
      build.
    - Build difference: the partitioned example is safe on both builds.
      Under the GIL it is only faster if the work on each piece releases the
-     GIL.  On the free-threaded build, pure-Python work speeds up too.
+     GIL. On the free-threaded build, pure-Python work speeds up too.
 
 
 .. _multi-threading-immutable:
@@ -261,11 +269,11 @@ Copy-on-write
 
 .. TODO:
    - Define on first use: never mutate the shared object; copy it, modify the
-     copy, then rebind the shared reference.  Distinguish from the lazy-copy
+     copy, then rebind the shared reference. Distinguish from the lazy-copy
      optimization of the same name (fork, pandas).
    - Readers take one snapshot of the shared reference and use only that.
    - Without a writer lock, the last writer wins and concurrent updates are
-     lost.  That is fine for memoization and wrong for most other state.
+     lost. That is fine for memoization and wrong for most other state.
      Adding a lock around writers fixes it and keeps readers lock-free.
    - Cost: each write copies the whole structure.
 
@@ -293,7 +301,7 @@ Fine-grained locks
    - Cost: more locks mean more ways to deadlock and code that is harder to
      verify.
    - Removing locks does not guarantee scaling.
-   - Sharing is not free even without locks.  Build difference: on the
+   - Sharing is not free even without locks. Build difference: on the
      free-threaded build, threads that use the same objects contend on
      their reference counts, which limits scaling.
 
