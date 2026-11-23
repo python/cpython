@@ -1,0 +1,3 @@
+Fix quadratic-time cost in :mod:`urllib.robotparser` when many groups share
+a ``User-agent:``, and when a group with many user agents is checked for
+a user agent that is not listed explicitly.

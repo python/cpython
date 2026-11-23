@@ -609,6 +609,73 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_as_frozendict_and_clear(self):
+        # Test PyDict_AsFrozenDictAndClear()
+        as_frozendict = _testcapi.dict_as_frozendict_and_clear
+        d = dict(x=1, y=2)
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict(x=1, y=2))
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        d = {}
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict())
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        class DictSubtype(dict): ...
+
+        d = DictSubtype(x=123)
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict(x=123))
+        self.assertIs(type(d), DictSubtype)
+        self.assertEqual(d, DictSubtype({}))
+
+        # non str keys:
+        d = {1: 'a', 2: 'b', 3: 'c', None: 'f'}
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict({1: 'a', 2: 'b', 3: 'c', None: 'f'}))
+        self.assertIs(type(d), dict)
+        self.assertEqual(d, {})
+
+        d = DictSubtype({1: 'a', 2: 'b', 3: 'c', None: 'f'})
+        f = as_frozendict(d)
+        self.assertIs(type(f), frozendict)
+        self.assertEqual(f, frozendict({1: 'a', 2: 'b', 3: 'c', None: 'f'}))
+        self.assertIs(type(d), DictSubtype)
+        self.assertEqual(d, DictSubtype({}))
+
+        # wrong inputs:
+        for wrong_input in (frozendict(), [], None):
+            with self.subTest(wrong_input=wrong_input):
+                with self.assertRaises(SystemError):
+                    as_frozendict(wrong_input)
+
+        # gh-161767: check type with inline values and dict with embedded values
+        class Regular: ...
+
+        for klass in (Regular, _testcapi.ManagedDictType):
+            with self.subTest(klass=klass):
+                instance = klass()  # empty `.__dict__`
+                with self.assertRaisesRegex(ValueError, 'dict with embedded values'):
+                    as_frozendict(instance.__dict__)
+                self.assertEqual(instance.__dict__, {})
+
+                instance = klass()  # non-empty `.__dict__`
+                instance.key = 'value'
+                with self.assertRaisesRegex(ValueError, 'dict with embedded values'):
+                    as_frozendict(instance.__dict__)
+
+                self.assertEqual(instance.__dict__, {'key': 'value'})
+                # Both of these actions were needed to cause a crash:
+                instance.other = 'new'
+                del instance  # must not crash
+
     def test_frozendict_check(self):
         # Test PyFrozenDict_Check()
         check = _testcapi.frozendict_check

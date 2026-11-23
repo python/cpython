@@ -227,7 +227,7 @@ fits in memory::
    >>> temp = io.BytesIO()
    >>> zipapp.create_archive('myapp.pyz', temp, '/usr/bin/python2')
    >>> with open('myapp.pyz', 'wb') as f:
-   >>>     f.write(temp.getvalue())
+   ...     f.write(temp.getvalue())
 
 
 .. _zipapp-specifying-the-interpreter:

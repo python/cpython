@@ -17,7 +17,7 @@ pytest = import_or_skip('pytest')
 class TestComplexity(unittest.TestCase):
     @pytest.mark.flaky
     def test_implied_dirs_performance(self):
-        best, others = big_o.big_o(
+        best, _others = big_o.big_o(
             compose(consume, zipfile._path.CompleteDirs._implied_dirs),
             lambda size: [
                 '/'.join(string.ascii_lowercase + str(n)) for n in range(size)
@@ -66,7 +66,7 @@ class TestComplexity(unittest.TestCase):
         return ''.join(('d/',) * depth)
 
     def test_baseline_regex_complexity(self):
-        best, others = big_o.big_o(
+        best, _others = big_o.big_o(
             lambda path: re.fullmatch(r'[^/]*\\.txt', path),
             self.make_deep_path,
             max_n=100,
@@ -76,7 +76,7 @@ class TestComplexity(unittest.TestCase):
 
     @pytest.mark.flaky
     def test_glob_depth(self):
-        best, others = big_o.big_o(
+        best, _others = big_o.big_o(
             lambda path: consume(path.glob('*.txt')),
             self.make_zip_path,
             max_n=100,
@@ -86,7 +86,7 @@ class TestComplexity(unittest.TestCase):
 
     @pytest.mark.flaky
     def test_glob_width(self):
-        best, others = big_o.big_o(
+        best, _others = big_o.big_o(
             lambda path: consume(path.glob('*.txt')),
             lambda size: self.make_zip_path(width=size),
             max_n=100,
@@ -96,7 +96,7 @@ class TestComplexity(unittest.TestCase):
 
     @pytest.mark.flaky
     def test_glob_width_and_depth(self):
-        best, others = big_o.big_o(
+        best, _others = big_o.big_o(
             lambda path: consume(path.glob('*.txt')),
             lambda size: self.make_zip_path(depth=size, width=size),
             max_n=10,

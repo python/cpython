@@ -5,6 +5,7 @@ Design and History FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 
 Why does Python use indentation for grouping of statements?
@@ -400,7 +401,7 @@ library that are impossible to free (e.g. a tool like Purify will complain about
 these).  Python is, however, aggressive about cleaning up memory on exit and
 does try to destroy every single object.
 
-If you want to force Python to delete certain things on deallocation use the
+If you want to force Python to delete certain things when Python exits, use the
 :mod:`atexit` module to run a function that will force those deletions.
 
 
@@ -430,6 +431,8 @@ tuples, but not lists, can be used as keys. Note, however, that a tuple is
 only hashable if all of its elements are hashable.
 
 
+.. _how-are-lists-implemented:
+
 How are lists implemented in CPython?
 -------------------------------------
 
@@ -445,6 +448,10 @@ cleverness is applied to improve the performance of appending items repeatedly;
 when the array must be grown, some extra space is allocated so the next few
 times don't require an actual resize.
 
+See :ref:`time-complexity` for the costs of the various list operations.
+
+
+.. _how-are-dictionaries-implemented:
 
 How are dictionaries implemented in CPython?
 --------------------------------------------
@@ -461,6 +468,8 @@ to ``1142331976``.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
 constant time -- *O*\ (1), in Big-O notation -- to retrieve a key.
+
+See :ref:`time-complexity` for the costs of the various dictionary operations.
 
 
 Why must dictionary keys be immutable?

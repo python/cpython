@@ -1,5 +1,9 @@
 # -*- makefile -*-
 
+# Mark bootstrap modules explicitly so older Makefile recipes work
+# without passing -b to makesetup (gh-161364).
+*bootstrap*
+
 # ---
 # Built-in modules required to get a functioning interpreter;
 # cannot be built as shared!

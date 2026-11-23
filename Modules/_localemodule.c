@@ -126,7 +126,7 @@ check_locale_name_all(const char *locale)
 _locale.setlocale
 
     category: int
-    locale: str(accept={str, NoneType}) = NULL
+    locale: str(accept={str, NoneType}) = None
     /
 
 Activates/queries locale processing.
@@ -134,7 +134,7 @@ Activates/queries locale processing.
 
 static PyObject *
 _locale_setlocale_impl(PyObject *module, int category, const char *locale)
-/*[clinic end generated code: output=a0e777ae5d2ff117 input=dbe18f1d66c57a6a]*/
+/*[clinic end generated code: output=a0e777ae5d2ff117 input=b53449b63407179b]*/
 {
     char *result;
     PyObject *result_object;

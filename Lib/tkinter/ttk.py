@@ -12,7 +12,7 @@ maintaining the widget state and invoking callbacks, all aspects
 of the widgets appearance lies at Themes.
 """
 
-__author__ = "Guilherme Polo <ggpolo@gmail.com>"
+# Original author: Guilherme Polo <ggpolo@gmail.com>
 
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
@@ -24,6 +24,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "tclobjs_to_py", "setup_master"]
 
 import tkinter
+lazy import warnings
 from tkinter import _flatten, _join, _stringify, _splitdict
 
 
@@ -2210,9 +2211,10 @@ class OptionMenu(Menubutton):
 
 
 def __getattr__(name):
-    if name == "__version__":
-        from warnings import _deprecated
-
-        _deprecated("__version__", remove=(3, 20))
-        return "0.3.1"  # Do not change
+    if name in ("__version__", "__author__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.3.1",
+            "__author__": "Guilherme Polo <ggpolo@gmail.com>",
+        }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

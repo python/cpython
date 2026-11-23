@@ -18,7 +18,8 @@ static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping);
 
 static PyObject *
-mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+mappingproxy_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -50,16 +51,78 @@ mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *mapping;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     mapping = fastargs[0];
     return_value = mappingproxy_new_impl(type, mapping);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+mappingproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return mappingproxy_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+mappingproxy_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *mapping;
+
+    assert(_PyType_CAST(type)->tp_new == mappingproxy_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 1) {
+        return mappingproxy_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    mapping = args[0];
+    return_value = mappingproxy_new_impl(_PyType_CAST(type), mapping);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(property___set_name____doc__,
+"__set_name__($self, owner, name, /)\n"
+"--\n"
+"\n"
+"Method to set name of a property.");
+
+#define PROPERTY___SET_NAME___METHODDEF    \
+    {"__set_name__", _PyCFunction_CAST(property___set_name__), METH_FASTCALL, property___set_name____doc__},
+
+static PyObject *
+property___set_name___impl(propertyobject *self, PyObject *owner,
+                           PyObject *name);
+
+static PyObject *
+property___set_name__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *owner;
+    PyObject *name;
+
+    if (!_PyArg_CheckPositional("__set_name__", nargs, 2, 2)) {
+        goto exit;
+    }
+    owner = args[0];
+    name = args[1];
+    return_value = property___set_name___impl((propertyobject *)self, owner, name);
 
 exit:
     return return_value;
@@ -179,4 +242,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e8df497abc4f915 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41ae2d4147b31052 input=a9049054013a1b77]*/

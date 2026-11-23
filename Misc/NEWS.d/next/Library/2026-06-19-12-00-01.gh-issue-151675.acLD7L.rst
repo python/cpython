@@ -1,3 +1,0 @@
-Add the :meth:`~tkinter.Text.sync` and :meth:`~tkinter.Text.pendingsync`
-methods of :class:`!tkinter.Text`, wrapping the Tk ``sync`` and
-``pendingsync`` subcommands.
