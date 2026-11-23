@@ -1,3 +1,3 @@
-:func:`os.process_cpu_count` will now respect cgroups-v2 CPU quotas on on
+Fix :func:`os.process_cpu_count` to respect cgroups-v2 CPU quotas on
 Linux. This includes CPU limits set by Docker, Kubernetes, and other tools
 that rely on cgroups.
