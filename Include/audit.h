@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PySys_Audit(
     const char *event,
     const char *argFormat,
