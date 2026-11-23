@@ -42,8 +42,11 @@ def _task_get_stack(task, limit):
     elif hasattr(task._coro, 'ag_frame'):
         # case 3: async generators
         f = task._coro.ag_frame
+    elif not task.done() and hasattr(task._coro, 'aga_gen'):
+        # case 4: async generator's asend/athrow/aclose
+        f = task._coro.aga_gen.ag_frame
     else:
-        # case 4: unknown objects
+        # case 5: unknown objects
         f = None
     if f is not None:
         while f is not None:
@@ -67,10 +70,16 @@ def _task_get_stack(task, limit):
 
 
 def _task_print_stack(task, limit, file):
+    exc = task._exception
+    tb = exc.__traceback__ if exc is not None else None
     extracted_list = []
     checked = set()
     for f in task.get_stack(limit=limit):
-        lineno = f.f_lineno
+        if tb is not None:
+            lineno = tb.tb_lineno
+            tb = tb.tb_next
+        else:
+            lineno = f.f_lineno
         co = f.f_code
         filename = co.co_filename
         name = co.co_name
@@ -80,7 +89,6 @@ def _task_print_stack(task, limit, file):
         line = linecache.getline(filename, lineno, f.f_globals)
         extracted_list.append((filename, lineno, name, line))
 
-    exc = task._exception
     if not extracted_list:
         print(f'No stack for {task!r}', file=file)
     elif exc is not None:

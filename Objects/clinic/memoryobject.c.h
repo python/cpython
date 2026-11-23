@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(memoryview__doc__,
 "memoryview(object)\n"
@@ -147,18 +148,50 @@ memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
     return memoryview_release_impl((PyMemoryViewObject *)self);
 }
 
-PyDoc_STRVAR(memoryview_cast__doc__,
-"cast($self, /, format, shape=<unrepresentable>)\n"
+PyDoc_STRVAR(memoryview___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
 "--\n"
 "\n"
-"Cast a memoryview to a new format or shape.");
+"Release the underlying buffer exposed by the memoryview object.");
+
+#define MEMORYVIEW___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(memoryview___exit__), METH_FASTCALL, memoryview___exit____doc__},
+
+static PyObject *
+memoryview___exit___impl(PyMemoryViewObject *self,
+                         PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length);
+
+static PyObject *
+memoryview___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = memoryview___exit___impl((PyMemoryViewObject *)self, exc_info, exc_info_length);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(memoryview_cast__doc__,
+"cast($self, /, format, shape=<unrepresentable>, *, order=\'C\')\n"
+"--\n"
+"\n"
+"Cast a memoryview to a new format or shape.\n"
+"\n"
+"With a multidimensional *shape*, *order* selects the result\n"
+"layout: \'C\' for C-contiguous (row-major, the default) or \'F\'\n"
+"for Fortran-contiguous (column-major).");
 
 #define MEMORYVIEW_CAST_METHODDEF    \
     {"cast", _PyCFunction_CAST(memoryview_cast), METH_FASTCALL|METH_KEYWORDS, memoryview_cast__doc__},
 
 static PyObject *
 memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
-                     PyObject *shape);
+                     PyObject *shape, int order);
 
 static PyObject *
 memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -166,7 +199,7 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -175,7 +208,7 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(format), &_Py_ID(shape), },
+        .ob_item = { &_Py_ID(format), &_Py_ID(shape), &_Py_ID(order), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -184,17 +217,18 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"format", "shape", NULL};
+    static const char * const _keywords[] = {"format", "shape", "order", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "cast",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *format;
     PyObject *shape = NULL;
+    int order = 'C';
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -209,9 +243,30 @@ memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    shape = args[1];
+    if (args[1]) {
+        shape = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
 skip_optional_pos:
-    return_value = memoryview_cast_impl((PyMemoryViewObject *)self, format, shape);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("cast", "argument 'order'", "a unicode character", args[2]);
+        goto exit;
+    }
+    if (PyUnicode_GET_LENGTH(args[2]) != 1) {
+        PyErr_Format(PyExc_TypeError,
+            "cast(): argument 'order' must be a unicode character, "
+            "not a string of length %zd",
+            PyUnicode_GET_LENGTH(args[2]));
+        goto exit;
+    }
+    order = PyUnicode_READ_CHAR(args[2], 0);
+skip_optional_kwonly:
+    return_value = memoryview_cast_impl((PyMemoryViewObject *)self, format, shape, order);
 
 exit:
     return return_value;
@@ -319,13 +374,8 @@ memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         order = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t order_length;
-        order = PyUnicode_AsUTF8AndSize(args[0], &order_length);
+        order = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (order == NULL) {
-            goto exit;
-        }
-        if (strlen(order) != (size_t)order_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -506,4 +556,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3abf9c80cd49229a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=889b7cc1a94bfc9b input=a9049054013a1b77]*/

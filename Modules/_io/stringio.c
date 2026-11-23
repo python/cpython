@@ -1,7 +1,8 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
+#include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_object.h"
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
+#include "pycore_unicodeobject.h" // _PyUnicode_ResizeCompact()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -41,8 +42,6 @@ typedef struct {
     PyObject *readnl;
     PyObject *writenl;
 
-    PyObject *dict;
-    PyObject *weakreflist;
     _PyIO_State *module_state;
 } stringio;
 
@@ -66,6 +65,20 @@ static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwarg
         PyErr_SetString(PyExc_ValueError, \
             "I/O operation on closed file"); \
         return NULL; \
+    }
+
+#define CHECK_INITIALIZED_INT(self) \
+    if (self->ok <= 0) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on uninitialized object"); \
+        return -1; \
+    }
+
+#define CHECK_CLOSED_INT(self) \
+    if (self->closed) { \
+        PyErr_SetString(PyExc_ValueError, \
+            "I/O operation on closed file"); \
+        return -1; \
     }
 
 #define ENSURE_REALIZED(self) \
@@ -129,25 +142,52 @@ resize_buffer(stringio *self, size_t size)
     return -1;
 }
 
+/* Shrink the buffer of the writer to its contents, so that the following
+   PyUnicodeWriter_Finish() has nothing to allocate and cannot fail.
+   If this fails, the writer is unchanged. */
+static int
+shrink_writer(stringio *self)
+{
+    _PyUnicodeWriter *writer = (_PyUnicodeWriter *)self->writer;
+    if (writer->readonly || writer->buffer == NULL
+        || writer->pos == 0 || writer->pos == writer->size)
+    {
+        return 0;
+    }
+    PyObject *buffer = _PyUnicode_ResizeCompact(writer->buffer, writer->pos);
+    if (buffer == NULL) {
+        return -1;
+    }
+    writer->buffer = NULL;
+    _PyUnicodeWriter_SetBuffer(writer, buffer);
+    return 0;
+}
+
 static PyObject *
 make_intermediate(stringio *self)
 {
-    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
-    self->writer = NULL;
-    self->state = STATE_REALIZED;
-    if (intermediate == NULL)
+    /* Create the new writer and shrink the old one first: if this fails,
+       the object keeps its contents. */
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL)
         return NULL;
+    if (shrink_writer(self) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
 
-    self->writer = PyUnicodeWriter_Create(0);
-    if (self->writer == NULL) {
-        Py_DECREF(intermediate);
+    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
+    self->writer = writer;
+    if (intermediate == NULL) {
+        /* The contents are lost, the new writer is empty. */
+        self->string_size = 0;
         return NULL;
     }
     if (PyUnicodeWriter_WriteStr(self->writer, intermediate)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return NULL;
     }
-    self->state = STATE_ACCUMULATING;
     return intermediate;
 }
 
@@ -160,23 +200,30 @@ realize(stringio *self)
     if (self->state == STATE_REALIZED)
         return 0;
     assert(self->state == STATE_ACCUMULATING);
+
+    /* Allocate the internal buffer and shrink the writer first: if this
+       fails, the object stays in the accumulating state and keeps its
+       contents. */
+    if (resize_buffer(self, self->string_size) < 0)
+        return -1;
+    if (shrink_writer(self) < 0)
+        return -1;
     self->state = STATE_REALIZED;
 
     intermediate = PyUnicodeWriter_Finish(self->writer);
     self->writer = NULL;
-    if (intermediate == NULL)
-        return -1;
-
-    /* Append the intermediate string to the internal buffer.
-       The length should be equal to the current cursor position.
-     */
-    len = PyUnicode_GET_LENGTH(intermediate);
-    if (resize_buffer(self, len) < 0) {
-        Py_DECREF(intermediate);
+    if (intermediate == NULL) {
+        /* The contents are lost, the internal buffer contains nothing. */
+        self->string_size = 0;
         return -1;
     }
+
+    /* Copy the intermediate string to the internal buffer. */
+    len = PyUnicode_GET_LENGTH(intermediate);
+    assert(len == self->string_size);
     if (!PyUnicode_AsUCS4(intermediate, self->buf, len, 0)) {
         Py_DECREF(intermediate);
+        self->string_size = 0;
         return -1;
     }
 
@@ -344,7 +391,9 @@ _io_StringIO_read_impl(stringio *self, Py_ssize_t size)
     /* Optimization for seek(0); read() */
     if (self->state == STATE_ACCUMULATING && self->pos == 0 && size == n) {
         PyObject *result = make_intermediate(self);
-        self->pos = self->string_size;
+        if (result != NULL) {
+            self->pos = self->string_size;
+        }
         return result;
     }
 
@@ -406,11 +455,18 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
     return _stringio_readline(self, size);
 }
 
+/*[clinic input]
+@critical_section
+_io.StringIO.__next__ as stringio_iternext
+[clinic start generated code]*/
+
 static PyObject *
-stringio_iternext(PyObject *op)
+stringio_iternext_impl(stringio *self)
+/*[clinic end generated code: output=51eb3991b1c79c41 input=b6cf3e73fab6b42e]*/
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     PyObject *line;
-    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -422,7 +478,7 @@ stringio_iternext(PyObject *op)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -469,7 +525,7 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
         size = self->pos;
     }
     else {
-        size = PyLong_AsLong(pos);
+        size = PyNumber_AsSsize_t(pos, PyExc_OverflowError);
         if (size == -1 && PyErr_Occurred()) {
             return NULL;
         }
@@ -478,6 +534,9 @@ _io_StringIO_truncate_impl(stringio *self, PyObject *pos)
                          "negative pos value %zd", size);
             return NULL;
         }
+        /* __index__ may have closed or reinitialized the stream. */
+        CHECK_INITIALIZED(self);
+        CHECK_CLOSED(self);
     }
 
     if (size < self->string_size) {
@@ -614,8 +673,7 @@ stringio_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->readnl);
     Py_VISIT(self->writenl);
     Py_VISIT(self->decoder);
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static int
@@ -625,7 +683,7 @@ stringio_clear(PyObject *op)
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -642,7 +700,7 @@ stringio_dealloc(PyObject *op)
     }
     PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(op);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -869,11 +927,16 @@ _io_StringIO___getstate___impl(stringio *self)
 
     if (initvalue == NULL)
         return NULL;
-    if (self->dict == NULL) {
+    if (_PyObject_IsInstanceDictEmpty((PyObject *)self)) {
         dict = Py_NewRef(Py_None);
     }
     else {
-        dict = PyDict_Copy(self->dict);
+        dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (dict == NULL) {
+            Py_DECREF(initvalue);
+            return NULL;
+        }
+        Py_SETREF(dict, PyDict_Copy(dict));
         if (dict == NULL) {
             Py_DECREF(initvalue);
             return NULL;
@@ -984,14 +1047,16 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
                          Py_TYPE(dict)->tp_name);
             return NULL;
         }
-        if (self->dict) {
-            /* Alternatively, we could replace the internal dictionary
-               completely. However, it seems more practical to just update it. */
-            if (PyDict_Update(self->dict, dict) < 0)
-                return NULL;
+        /* Alternatively, we could replace the internal dictionary
+           completely. However, it seems more practical to just update it. */
+        PyObject *self_dict = PyObject_GenericGetDict((PyObject *)self, NULL);
+        if (self_dict == NULL) {
+            return NULL;
         }
-        else {
-            self->dict = Py_NewRef(dict);
+        int rc = PyDict_Update(self_dict, dict);
+        Py_DECREF(self_dict);
+        if (rc < 0) {
+            return NULL;
         }
     }
 
@@ -1001,30 +1066,30 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.closed
+_io.StringIO.closed -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_closed_get_impl(stringio *self)
-/*[clinic end generated code: output=531ddca7954331d6 input=178d2ef24395fd49]*/
+/*[clinic end generated code: output=754068c44422cafa input=ea05e89b945e721c]*/
 {
-    CHECK_INITIALIZED(self);
-    return PyBool_FromLong(self->closed);
+    CHECK_INITIALIZED_INT(self);
+    return self->closed;
 }
 
 /*[clinic input]
 @critical_section
 @getter
-_io.StringIO.line_buffering
+_io.StringIO.line_buffering -> bool
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_StringIO_line_buffering_get_impl(stringio *self)
-/*[clinic end generated code: output=360710e0112966ae input=6a7634e7f890745e]*/
+/*[clinic end generated code: output=56c0edde9001fb37 input=326f8b3bd1feb699]*/
 {
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    Py_RETURN_FALSE;
+    CHECK_INITIALIZED_INT(self);
+    CHECK_CLOSED_INT(self);
+    return 0;
 }
 
 /*[clinic input]
@@ -1077,12 +1142,6 @@ static PyGetSetDef stringio_getset[] = {
     {NULL}
 };
 
-static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
-    {NULL},
-};
-
 static PyType_Slot stringio_slots[] = {
     {Py_tp_dealloc, stringio_dealloc},
     {Py_tp_doc, (void *)_io_StringIO___init____doc__},
@@ -1090,7 +1149,6 @@ static PyType_Slot stringio_slots[] = {
     {Py_tp_clear, stringio_clear},
     {Py_tp_iternext, stringio_iternext},
     {Py_tp_methods, stringio_methods},
-    {Py_tp_members, stringio_members},
     {Py_tp_getset, stringio_getset},
     {Py_tp_init, _io_StringIO___init__},
     {Py_tp_new, stringio_new},

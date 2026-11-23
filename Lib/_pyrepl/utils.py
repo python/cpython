@@ -1,4 +1,3 @@
-from __future__ import annotations
 import builtins
 import functools
 import keyword
@@ -9,21 +8,39 @@ import unicodedata
 import _colorize
 
 from collections import deque
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from io import StringIO
+from re import Match
 from tokenize import TokenInfo as TI
-from typing import Iterable, Iterator, Match, NamedTuple, Self
+from typing import NamedTuple, Self
 
 from .types import CharBuffer, CharWidths
 from .trace import trace
 
 
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
+ANSI_ESCAPE_SEQUENCE = re.compile(
+    r"""
+    \x1b
+    (?:
+        # CSI: ESC [ followed by parameter/intermediate bytes and a final byte.
+        # For example, ESC [ 31 m ("\x1b[31m") selects red foreground text.
+        \[ [ -@]* [A-~]
+        |
+        # OSC: ESC ] followed by a payload terminated by BEL or ST (ESC \).
+        # For example, ESC ] 0 ; title BEL ("\x1b]0;title\x07") sets the title.
+        \] [^\x1b\x07]* (?: \x07 | \x1b\\ )
+    )
+    """,
+    re.X,
+)
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = frozenset({"def", "class"})
 KEYWORD_CONSTANTS = frozenset({"True", "False", "None"})
 BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
+# Keep this in sync with _pyrepl.simple_interact.REPL_COMMANDS
+COMMANDS = frozenset({"exit", "quit", "copyright", "help", "clear"})
 
 
 def THEME(**kwargs):
@@ -235,6 +252,13 @@ def gen_colors_from_token_stream(
                 ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "soft_keyword")
+                elif (
+                    token.string in COMMANDS
+                    and (not prev_token or prev_token.type == T.INDENT)
+                    and (not next_token or next_token.type == T.NEWLINE)
+                ):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "command")
                 elif (
                     token.string in BUILTINS
                     and not (prev_token and prev_token.exact_type == T.DOT)

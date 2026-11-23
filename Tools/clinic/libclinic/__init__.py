@@ -26,6 +26,8 @@ from .identifiers import (
     is_legal_py_identifier,
 )
 from .utils import (
+    FileChange,
+    FileWriter,
     FormatCounterFormatter,
     NULL,
     NullType,
@@ -33,6 +35,7 @@ from .utils import (
     VersionTuple,
     compute_checksum,
     create_regex,
+    read_file,
     unknown,
     unspecified,
     write_file,
@@ -66,6 +69,8 @@ __all__ = [
     "is_legal_py_identifier",
 
     # Utility functions
+    "FileChange",
+    "FileWriter",
     "FormatCounterFormatter",
     "NULL",
     "NullType",
@@ -73,6 +78,7 @@ __all__ = [
     "VersionTuple",
     "compute_checksum",
     "create_regex",
+    "read_file",
     "unknown",
     "unspecified",
     "write_file",

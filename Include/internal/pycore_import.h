@@ -32,15 +32,18 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
-extern PyObject * _PyImport_ResolveName(
-    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject * _PyImport_GetAbsName(
     PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 // Symbol is exported for the JIT on Windows builds.
 PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
     PyThreadState *tstate, PyObject *lazy_import);
+// Bind a pending child on module before removing its registration. Return a
+// new reference, NULL without an exception if absent, or NULL on error.
+// Set recheck_dict if a concurrent lookup may have already bound the child.
 extern PyObject * _PyImport_TryLoadLazySubmodule(
-    PyObject *mod_name, PyObject *attr_name);
+    PyObject *module, PyObject *attr_name, int suppress, int *recheck_dict);
+extern int _PyImport_ClearLazySubmodule(
+    PyThreadState *tstate, PyObject *name, int bind);
 extern PyObject * _PyImport_LazyImportModuleLevelObject(
     PyThreadState *tstate, PyObject *name, PyObject *builtins,
     PyObject *globals, PyObject *locals, PyObject *fromlist, int level);
@@ -86,6 +89,8 @@ extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 extern PyObject * _PyImport_InitLazyModules(
     PyInterpreterState *interp);
 extern void _PyImport_ClearLazyModules(PyInterpreterState *interp);
+extern int _PyImport_DiscardLazyModule(
+    PyInterpreterState *interp, PyObject *name);
 
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
 extern int _PyImport_IsDefaultImportFunc(

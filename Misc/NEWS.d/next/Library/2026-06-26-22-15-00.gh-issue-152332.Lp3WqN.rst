@@ -1,2 +1,0 @@
-Add the :func:`curses.term_attrs` function, the counterpart of
-:func:`curses.termattrs` for the ``WA_*`` attributes.

@@ -31,19 +31,29 @@ else:
     HAVE_GETFINALPATHNAME = True
 
 try:
-    import ctypes
+    import ctypes.util
+    import ctypes.wintypes
 except ImportError:
     HAVE_GETSHORTPATHNAME = False
 else:
     HAVE_GETSHORTPATHNAME = True
     def _getshortpathname(path):
-        GSPN = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
-        GSPN.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
-        GSPN.restype = ctypes.c_uint32
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        @ctypes.util.wrap_dll_function(kernel32)
+        def GetShortPathNameW(
+            lpszLongPath: ctypes.c_wchar_p,
+            lpszShortPath: ctypes.c_wchar_p,
+            cchBuffer: ctypes.wintypes.DWORD,
+        ) -> ctypes.wintypes.DWORD:
+            pass
+        GSPN = GetShortPathNameW
+
         result_len = GSPN(path, None, 0)
         if not result_len:
             raise OSError("failed to get short path name 0x{:08X}"
                           .format(ctypes.get_last_error()))
+
         result = ctypes.create_unicode_buffer(result_len)
         result_len = GSPN(path, result, result_len)
         return result[:result_len]
@@ -691,9 +701,9 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(r"broken1\baz"),
                                  ABSTFN + r"\broken\bar\baz")
             self.assertPathEqual(ntpath.realpath("broken2"),
-                                 ABSTFN + r"\self\self\missing")
+                                 ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken3"),
-                                 ABSTFN + r"\subdir\parent\subdir\parent\missing")
+                                 ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken4"),
                                  ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken5"),
@@ -708,13 +718,38 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(rb"broken1\baz"),
                                  os.fsencode(ABSTFN + r"\broken\bar\baz"))
             self.assertPathEqual(ntpath.realpath(b"broken2"),
-                                 os.fsencode(ABSTFN + r"\self\self\missing"))
+                                 os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(rb"broken3"),
-                                 os.fsencode(ABSTFN + r"\subdir\parent\subdir\parent\missing"))
+                                 os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken4"),
                                  os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken5"),
                                  os.fsencode(ABSTFN + r"\missing"))
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    @_parameterize({}, {'strict': ALL_BUT_LAST}, {'strict': ALLOW_MISSING})
+    def test_realpath_broken_symlink_in_linked_dir(self, kwargs):
+        # A relative target is resolved against the directory containing
+        # the link, not against the path by which the link was reached.
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        os.makedirs(ABSTFN + r"\sub")
+        self.addCleanup(os_helper.rmtree, ABSTFN)
+        os.symlink(".", ABSTFN + r"\sub\alias", target_is_directory=True)
+        os.symlink(r"..\missing", ABSTFN + r"\sub\broken")
+        os.symlink(r"alias\alias\broken", ABSTFN + r"\sub\broken2")
+
+        expected = ABSTFN + r"\missing"
+        for name in "broken", r"alias\broken", "broken2", r"alias\broken2":
+            path = ABSTFN + "\\sub\\" + name
+            with self.subTest(name=name):
+                self.assertPathEqual(ntpath.realpath(path, **kwargs), expected)
+                self.assertPathEqual(
+                    ntpath.realpath(os.fsencode(path), **kwargs),
+                    os.fsencode(expected))
+                self.assertPathEqual(
+                    ntpath.realpath("\\\\?\\" + path, **kwargs),
+                    "\\\\?\\" + expected)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -1524,6 +1559,62 @@ class TestNtpath(NtpathTestCase):
                 self.assertTrue(ntpath.isjunction('testjunc'))
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_like_names(self):
+        # gh-102475: the unresolved tail is appended, not joined, so a name
+        # which looks like a drive does not reset the path.
+        drive = ntpath.splitroot(os.getcwd())[0]
+        for path, expected in [
+            ('C:/spam:eggs', 'C:\\spam:eggs'),
+            ('C:/nonexistent/spam:eggs', 'C:\\nonexistent\\spam:eggs'),
+            ('C:/spam:eggs/ham', 'C:\\spam:eggs\\ham'),
+            ('C:/nonexistent/spam:eggs/ham', 'C:\\nonexistent\\spam:eggs\\ham'),
+        ]:
+            with self.subTest(path=path):
+                self.assertEqual(ntpath.realpath(path), expected)
+                self.assertEqual(ntpath.realpath(os.fsencode(path)),
+                                 os.fsencode(expected))
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test on win32.")
+    def test_realpath_drive_relative(self):
+        # gh-102475: the working directory of a drive which does not exist
+        # is its root directory.
+        for drive in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            if not ntpath.exists(drive + ':'):
+                break
+        else:
+            raise unittest.SkipTest('all drives exist')
+        self.assertEqual(ntpath.realpath(drive + ':spam'),
+                         drive + ':\\spam')
+        self.assertEqual(ntpath.realpath(drive + ':'), drive + ':\\')
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_realpath_volume_guid_path(self):
+        # gh-89760: the \\?\ prefix cannot be stripped from a volume GUID path.
+        # Find a volume which is not mounted as a drive.
+        for volume in os.listvolumes():
+            if not os.listmounts(volume):
+                break
+        else:
+            raise unittest.SkipTest('no volume without a mount point')
+
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                # _winapi.CreateJunction() adds the \\??\\ prefix to a path
+                # which already has a prefix.
+                try:
+                    subprocess.run(['cmd', '/c', 'mklink', '/j',
+                                    'testjunc', volume],
+                                   check=True, capture_output=True)
+                except (OSError, subprocess.CalledProcessError):
+                    raise unittest.SkipTest('creating the test junction failed')
+
+                for path in 'testjunc', 'testjunc/spam', 'testjunc/spam/eggs':
+                    with self.subTest(path=path):
+                        realpath = ntpath.realpath(path)
+                        self.assertStartsWith(realpath, '\\\\?\\Volume{')
+                        self.assertTrue(ntpath.isabs(realpath), realpath)
 
     def test_isfile_invalid_paths(self):
         isfile = ntpath.isfile
