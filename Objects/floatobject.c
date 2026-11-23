@@ -260,6 +260,11 @@ PyFloat_AsDouble(PyObject *op)
         return PyFloat_AS_DOUBLE(op);
     }
 
+    // int subclass can override __float__() method
+    if (PyLong_CheckExact(op)) {
+        return PyLong_AsDouble(op);
+    }
+
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
