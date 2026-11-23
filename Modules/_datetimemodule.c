@@ -2178,12 +2178,14 @@ delta_to_microseconds(PyDateTime_Delta *self)
         return NULL;
     }
 
-    x1 = PyLong_FromInt64(seconds);
+    x1 = PyLong_FromInt64(seconds);     /* days and seconds in seconds */
     if (x1 == NULL)
         goto Done;
-    x2 = PyNumber_Multiply(x1, CONST_US_PER_SECOND(st));
+    x2 = PyNumber_Multiply(x1, CONST_US_PER_SECOND(st));          /* us */
     if (x2 == NULL)
         goto Done;
+
+    /* x2 has days+seconds in us */
     Py_SETREF(x1, PyLong_FromLong(GET_TD_MICROSECONDS(self)));
     if (x1 == NULL)
         goto Done;
