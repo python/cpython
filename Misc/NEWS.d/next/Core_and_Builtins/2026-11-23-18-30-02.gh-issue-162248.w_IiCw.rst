@@ -1,0 +1,4 @@
+Speed up the marking phase of the :term:`free-threaded <free threading>`
+garbage collector on some AArch64 CPUs, such as Apple M5 and Arm Neoverse N3,
+by avoiding a paired load of two counters that were just written by separate
+stores.
