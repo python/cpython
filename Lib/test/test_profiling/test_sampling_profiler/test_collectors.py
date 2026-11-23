@@ -597,7 +597,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
 
     def test_flamegraph_escapes_special_chars_in_funcname(self):
-        """Function names with <, >, & must be escaped in the HTML."""
+        # Function names with <, >, & must be escaped in the HTML.
         flamegraph_out = tempfile.NamedTemporaryFile(
             suffix=".html", delete=False
         )
@@ -610,7 +610,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 [MockThreadInfo(
                     1,
                     [MockFrameInfo("test.py", 1, "root"),
-                     MockFrameInfo("test.py", 2, '</script><b>&')]
+                     MockFrameInfo("test.py", 2, '</script><lambda>&')]
                 )],
             )
         ]
@@ -625,8 +625,17 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # The funcname's </script> must be escaped in the embedded data so it
         # cannot close the inline <script> block; the raw form must be absent.
-        self.assertIn(r"\u003c/script\u003e\u003cb\u003e\u0026", content)
-        self.assertNotIn("</script><b>", content)
+        self.assertIn(
+            r"\u003c/script\u003e\u003clambda\u003e\u0026", content
+        )
+        self.assertNotIn("</script><lambda>", content)
+
+        # The tooltip inserts the function name as HTML after resolving it.
+        self.assertIn(
+            "const funcname = escapeHtml("
+            'resolveString(d.data.funcname) || resolveString(d.data.name) || "");',
+            content,
+        )
 
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
