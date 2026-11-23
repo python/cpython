@@ -169,7 +169,8 @@ It should be separated from the tag by a slash (either ``/`` or ``\``),
 and may be shortened to any prefix of its full value.
 Specifying the company is optional when it is ``PythonCore``, and specifying the
 tag is optional (but not the slash) when you want the latest release from a
-specific company.
+specific company. For more details about how tags are matched, see
+:ref:`pymanager-tag-matching`.
 
 .. code::
 
@@ -997,6 +998,145 @@ proxy server to be overridden. It follows the same format as ``HTTPS_PROXY``.
 Credentials may be embedded in either setting, however, when ``HTTPS_PROXY`` has
 credentials embedded they will be used in preference to other credentials. Only
 one set of credentials will be used for both types of proxy.
+
+.. _pymanager-tag-matching:
+
+Tags and tag matching
+---------------------
+
+.. versionchanged:: 26.5
+   Previously the behavior was very similar to what is described here, but had
+   many more inconsistencies. We have streamlined it and ensured the behavior is
+   well-defined, which may result in some small differences from previous
+   versions.
+
+Tags identify Python runtimes that may be installed, modified, or launched by
+the Python install manager. They are based on :pep:`514`, with matching and
+ordering rules specific to the install manager. These rules do not change
+PEP 514's specification.
+
+A tag has three components: Company, Tag, and Platform. Each part is
+case-insensitive, but the exact comparison semantics vary.
+
+.. code-block:: text
+
+   [<Company>/]<Tag>[-<Platform>]
+
+The Company is optional and defaults to ``PythonCore``. It may contain slashes,
+while the rest may not, and so the last forward slash or backslash separates it
+from the Tag. When omitting Company, also omit any slash. In general, Company is
+matched as a prefix.
+
+The optional Platform suffix is one of the known platform suffixes, currently
+``-32``, ``-64``, or ``-arm64``. Broadly speaking, the Platform suffix behaves
+as part of the Tag, but it may be implied from the current configuration or
+system in a way that is different from the rest of the tag. It also does not
+parse or compare as a number.
+
+Runtimes are defined as having a primary tag, and offer several more tags for
+installation (``install-for``) and launching (``run-for``). Whether the install
+tags or the launch tags are considered depends on context, but both sets are
+used to filter to matching runtimes, from which the best option is selected
+using more complex logic. If a runtime doesn't have specific tags, its primary
+tag may be used for installation and uninstallation (but not launch - it will be
+unlaunchable without any ``run-for`` tags).
+
+You can observe this behaviour using ``py list`` with and without the ``--one``
+option (to show the "best" or all candidates) and with and without the
+``--online``/``--source`` options (to show install matches or launch matches).
+
+Tags are not version numbers, though numeric sequences are treated as version
+numbers. Hyphens divide the Tag into segments, where each segment is either text
+or a version number with a text suffix. The version number part includes those
+ending in ``a``, ``b``, or ``rc`` followed by a serial number, but any other
+text is considered a separate suffix. Without a serial number, an ``a``, ``b``
+or ``rc`` suffix is also treated as text.
+
+Broadly, numbers are compared as numerical versions, so ``3.10`` is greater than
+``3.1``, ``3.14`` is greater than ``3.14a1``, and ``3`` is equal to both ``3.0``
+and ``3.0.0``. Text is compared case-insensitively, and must match, so ``2024b``
+is not equivalent to ``2024.0`` because ``'b' != ''``.
+
+.. note::
+
+   Do not interpret the depth of detail of the following few paragraphs about
+   constraints as representing their importance. Constraints are a necessary
+   evil, and we would prefer nobody rely on them instead of specific tags, which
+   are much simpler to reason about for publishers and end users. Unfortunately,
+   we are obliged to explain how our implementation handles constraints, and
+   this is the place for that explanation.
+
+Constraints can select multiple tags. A matching tag will start with the same
+segments as the constraining tag, where text segments are equal and numeric
+segments are above, below, or equal, according to the constraint. The first
+non-equal segment determines the result: non-equal text results in failure,
+while a non-equal version either succeeds or fails based on the constraint.
+Remaining segments in the matching tag are ignored.
+
+When applying a constraint check to a version segment that was shorter than the
+constraint (e.g. ``3`` has one field and so is shorter than ``==3.14``), it is
+interpreted as representing any possible version. This will result in many
+failed constraint checks that will usually be overridden by a more specific one.
+For example ``3`` could represent ``3.99`` and so it is not equal to ``3.14``,
+but if the install is offering tags ``['3', '3.14']`` then the later tag will
+result in the constraint matching.
+
+Here are some example cases showing the different applications of constraints:
+
+* ``>=3.13`` matches ``3.13.4`` and ``3.14``
+* ``>3.13`` matches ``3.14``, but not ``3.13.4``
+* ``>=3.13t`` matches ``3.14t``, while ``>=3.13`` does not
+* ``>=3.13`` matches ``3.14-abc`` but not ``3.14abc``
+* ``>3.13-abc-123`` matches ``3.14`` (number is higher) and ``3.13-abc-124``
+  (number ``124`` is higher) but not ``3.13-def-123`` (text mismatch),
+  ``3.14def`` (text ``def`` is not in the constraint),
+  ``3.13-abc-123`` (number is not higher) or
+  ``3.13-abc`` (not enough segments)
+* ``>=3.0`` matches ``3``, but ``>3.0`` does not
+* ``<4`` matches ``3``, but ``<3.12`` and ``<=3.12`` do not
+* ``==3.0`` does not match ``3``, while ``==3.10`` still matches ``3.10.1``
+* ``!=3.13`` rejects ``3`` (because it could be ``3.13``), but ``!=3.13t``
+  accepts ``3`` (different suffix)
+
+The difference between hyphen-separated segments and adjacent text and numbers
+is subtle, but should not be relevant to most users. Publishers will choose and
+advertise the tags for their packages, and so should take care to choose between
+adjacent text or separated text. For example, the core python\.org releases use
+``3.14t`` for free-threaded builds, which should not be confused with original
+builds and so ``3.14t`` should not match ``3.14``. However, ``3.14`` should be
+allowed to match with ``3.14-64`` (recalling that known platform tags are
+treated at text), and so the hyphenated convention is chosen instead. End users
+get intuitive behavior because the publisher considered the impact of their
+choices.
+
+Note that constraints are not complementary, that is, the ``>=`` constraint does
+not necessarily include every tag rejected by the ``<`` constraint.
+For example, ``3.14t`` satisfies neither ``>=3.14`` nor ``<3.14``.
+
+Publishers should provide tags for each way they want users to select a
+runtime, commonly from most specific to least specific. For example, a
+free-threaded runtime might offer ``3.14.4t``, ``3.14t``, and ``3t``. Include
+a generic tag such as ``3.14`` only if that runtime should be eligible for
+generic requests. Exact matches of user requested tags are preferred over
+partial matches, so include the tags you expect your users to use.
+
+The primary tag should be orderable against other runtimes from the same
+publisher, but should not change with in-place updates. Also be aware that
+operations reading an online feed assume that the feed is already ordered, and
+will select the first runtime that matches requested tags.
+
+After filtering, runtimes are ordered by their primary tag and then the best is
+selected. "Best" is very context sensitive, and may be influenced by user
+configuration (such as the default tag), active virtual environments, prerelease
+marks on a runtime's sortable version, and whether a windowless interpreter is
+desired (such as launching through ``pyw.exe`` instead of ``py.exe``).
+
+Most notably, a request containing the text field ``dev``, such as ``3-dev``,
+causes prereleases to be considered on equal footing with stable releases.
+Typically stable releases are preferred unless filtering excludes all viable
+options. However, this behavior only takes place after filtering, and so a
+runtime that does not offer a tag containing ``dev`` will not be selected as a
+candidate.
 
 .. _pymanager-troubleshoot:
 
