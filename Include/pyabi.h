@@ -39,7 +39,7 @@
 #  undef Py_LIMITED_API
 #  define Py_LIMITED_API 0x03020000
 #endif
-#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < 0x030f0000
+#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < _Py_PACK_VERSION(3, 15)
 #  error "Py_TARGET_ABI3T must be 0x030f0000 (3.15) or above"
 #endif
 

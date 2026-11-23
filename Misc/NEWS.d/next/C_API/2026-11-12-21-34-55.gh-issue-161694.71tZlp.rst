@@ -1,0 +1,2 @@
+:c:func:`!_PyObject_VAR_SIZE` now returns ``SIZE_MAX`` on integer overflow (if
+the result would be greater than ``PY_SSIZE_T_MAX``). Patch by Victor Stinner.

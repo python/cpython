@@ -1210,7 +1210,8 @@ class BufferedReader(_BufferedIOMixin):
             while written < len(buf):
 
                 # First try to read from internal buffer
-                avail = min(len(self._read_buf) - self._read_pos, len(buf))
+                avail = min(len(self._read_buf) - self._read_pos,
+                            len(buf) - written)
                 if avail:
                     buf[written:written+avail] = \
                         self._read_buf[self._read_pos:self._read_pos+avail]
@@ -1394,8 +1395,12 @@ class BufferedRWPair(BufferedIOBase):
         if not writer.writable():
             raise OSError('"writer" argument must be writable.')
 
-        self.reader = BufferedReader(reader, buffer_size)
-        self.writer = BufferedWriter(writer, buffer_size)
+        new_reader = BufferedReader(reader, buffer_size)
+        new_writer = BufferedWriter(writer, buffer_size)
+        # Release a previous writer before a previous reader so it flushes
+        # before the reader closes a shared raw stream.
+        self.writer = new_writer
+        self.reader = new_reader
 
     def read(self, size=-1):
         if size is None:
